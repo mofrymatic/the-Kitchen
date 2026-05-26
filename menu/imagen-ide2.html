@@ -674,17 +674,17 @@ html,body{height:100%;overflow:hidden;background:var(--bg0);color:var(--text);fo
 </div><!-- #root -->
 <script>
 // ══════════════════════════════════════════════════════
-//  IMAGEN IDE  v2.1 — Reactive State + IndexedDB
+//  IMAGEN IDE  v2.0 — Engine + UI
 // ══════════════════════════════════════════════════════
 
 // ── Constants ─────────────────────────────────────────
 const PHASES = [
-  {id:"L0",label:"Intent Model",      sub:"Parse & structure intent",  role:"Intent"},
-  {id:"L1",label:"Structural Model",  sub:"Topology & hierarchy",       role:"Structure"},
-  {id:"L2",label:"Authoring Core",    sub:"Generate base artifact",     role:"Authoring"},
-  {id:"L3",label:"Refinement",        sub:"Multi-pass polish",          role:"Refinement"},
-  {id:"L4",label:"Artifact Compiler", sub:"Package & validate",         role:"Compiler"},
-  {id:"L5",label:"Deployment Fabric", sub:"Route to targets",           role:"Deployment"},
+  {id:"L0",label:"Intent Model",      sub:"Parse & structure intent",   role:"Intent"},
+  {id:"L1",label:"Structural Model",  sub:"Topology & hierarchy",        role:"Structure"},
+  {id:"L2",label:"Authoring Core",    sub:"Generate base artifact",      role:"Authoring"},
+  {id:"L3",label:"Refinement",        sub:"Multi-pass polish",           role:"Refinement"},
+  {id:"L4",label:"Artifact Compiler", sub:"Package & validate",          role:"Compiler"},
+  {id:"L5",label:"Deployment Fabric", sub:"Route to targets",            role:"Deployment"},
 ];
 const PASSES = [
   "Global composition alignment",
@@ -693,7 +693,7 @@ const PASSES = [
   "Confidence-gated micro refinement",
   "Typography & material harmonization",
 ];
-const KPI_KEYS   = ["coherence","structural_validity","detail_fidelity","export_readiness"];
+const KPI_KEYS = ["coherence","structural_validity","detail_fidelity","export_readiness"];
 const KPI_TARGET = {coherence:.90,structural_validity:.95,detail_fidelity:.88,export_readiness:.92};
 const ANCHORS = [
   {label:"Linework Density", id:"LW_03", icon:"≋", color:"#4a8fc4"},
@@ -703,7 +703,7 @@ const ANCHORS = [
   {label:"Pattern Language", id:"PL_06", icon:"⬡", color:"#3ab8c4"},
 ];
 
-// ── Provider Registry ─────────────────────────────────
+// ── Provider Registry ──────────────────────────────────
 const PROVIDERS = {
   anthropic:{
     name:"Anthropic",short:"ANTHROPIC",color:"#c9a84c",
@@ -730,238 +730,89 @@ const PROVIDERS = {
     name:"Google",short:"GEMINI",color:"#4285f4",
     detect:k=>k.startsWith("AIza"),
     models:[
-      {id:"gemini-2.0-flash", label:"Gemini 2.0 Flash"},
-      {id:"gemini-1.5-pro",   label:"Gemini 1.5 Pro"},
-      {id:"gemini-1.5-flash", label:"Gemini 1.5 Flash"},
+      {id:"gemini-2.0-flash",label:"Gemini 2.0 Flash"},
+      {id:"gemini-1.5-pro",  label:"Gemini 1.5 Pro"},
+      {id:"gemini-1.5-flash",label:"Gemini 1.5 Flash"},
     ],
     default:"gemini-2.0-flash",
   },
-  // nano_banana:{ name:"Nano Banana", short:"NANO🍌", color:"#f5d020",
+  // nano_banana:{ name:"Nano Banana",short:"NANO🍌",color:"#f5d020",
   //   detect:k=>k.startsWith("nb-"),
   //   models:[{id:"nano-banana-v1",label:"Nano Banana v1"}],
   //   default:"nano-banana-v1" },
 };
 
-// ══════════════════════════════════════════════════════
-//  LAYER 1 — ImagenStore (reactive, pub/sub)
-// ══════════════════════════════════════════════════════
-class ImagenStore {
-  // session keys: in-memory only, not persisted
-  static #SESSION = new Set(['running','phase','provider','kpis','lastOutput','lastIntent']);
-  // project keys: localStorage
-  static #PROJECT = new Set(['operator','project','passNum','apiKey']);
+// ── State ──────────────────────────────────────────────
+const S = {
+  running:false, provider:null, phase:-1, passNum:0,
+  kpis:{}, passes:[], output:"", lastIntent:"",
+  operator:"RED EYE", project:"BRZN_07",
+};
 
-  #state = {
-    // session
-    running:    false,
-    phase:      -1,
-    provider:   null,
-    kpis:       {},
-    lastOutput: "",
-    lastIntent: "",
-    // project (persisted)
-    operator:   "RED EYE",
-    project:    "BRZN_07",
-    passNum:    0,
-    apiKey:     "",
-  };
-  #listeners = {};  // { key: [fn, ...], '*': [fn, ...] }
-
-  get(k)       { return this.#state[k]; }
-
-  set(k, v) {
-    const prev = this.#state[k];
-    // shallow-equal skip for primitives; always update objects
-    if (typeof v !== 'object' && prev === v) return;
-    this.#state[k] = v;
-    this.#emit(k, v, prev);
-    if (ImagenStore.#PROJECT.has(k)) this.#persist(k, v);
-  }
-
-  patch(obj) { Object.entries(obj).forEach(([k,v]) => this.set(k,v)); }
-
-  // store.on('phase', (next, prev) => ...)
-  // store.on('*',     (key, next, prev) => ...)
-  // returns unsubscribe fn
-  on(k, fn) {
-    (this.#listeners[k] ??= []).push(fn);
-    return () => { this.#listeners[k] = (this.#listeners[k]||[]).filter(f=>f!==fn); };
-  }
-
-  #emit(k, v, prev) {
-    (this.#listeners[k]  ||[]).forEach(fn => fn(v, prev));
-    (this.#listeners['*']||[]).forEach(fn => fn(k, v, prev));
-  }
-
-  #persist(k, v) {
-    try { localStorage.setItem(`ig2_${k}`, JSON.stringify(v)); } catch {}
-  }
-
-  // Restore PROJECT keys from localStorage on boot
-  restore() {
-    for (const k of ImagenStore.#PROJECT) {
-      try {
-        const raw = localStorage.getItem(`ig2_${k}`);
-        if (raw !== null) this.#state[k] = JSON.parse(raw);
-      } catch {}
-    }
-    // backward-compat: migrate old keys
-    const oldKey  = localStorage.getItem('ig_key');
-    const oldOp   = localStorage.getItem('ig_op');
-    const oldProj = localStorage.getItem('ig_proj');
-    if (oldKey  && !this.#state.apiKey)   this.#state.apiKey   = oldKey;
-    if (oldOp   && this.#state.operator === 'RED EYE') this.#state.operator = oldOp;
-    if (oldProj && this.#state.project  === 'BRZN_07') this.#state.project  = oldProj;
+// ── Provider Detection ─────────────────────────────────
+function detectProvider(key){
+  for(const[id,p]of Object.entries(PROVIDERS)) if(p.detect(key)) return id;
+  return null;
+}
+function onKeyChange(key){
+  const pid=detectProvider(key);
+  S.provider=pid;
+  const pi=document.getElementById("prov-indicator");
+  const ms=document.getElementById("mdl-sel");
+  if(pid){
+    const p=PROVIDERS[pid];
+    pi.textContent=p.short;
+    pi.style.setProperty("--pcolor",p.color);
+    pi.className="ok";
+    ms.innerHTML=p.models.map(m=>`<option value="${m.id}">${m.label}</option>`).join("");
+    ms.value=p.default;
+    updateModelBadge(p.default,p.name);
+    clog("SYS",`Provider: ${p.name} · ${p.default}`,"tc");
+  } else {
+    pi.textContent=key.length>6?"UNKNOWN":"KEY";
+    pi.className="";
+    ms.innerHTML="";
+    if(key.length>6) clog("SYS","Unknown key format. Nano Banana? Let us know!","rc");
   }
 }
-
-// ══════════════════════════════════════════════════════
-//  LAYER 2 — PassDB (IndexedDB, unlimited storage)
-// ══════════════════════════════════════════════════════
-class PassDB {
-  #db = null;
-  static DB_NAME    = 'imagen_v2';
-  static DB_VERSION = 2;
-  static STORE      = 'passes';
-
-  async open() {
-    return new Promise((res, rej) => {
-      const req = indexedDB.open(PassDB.DB_NAME, PassDB.DB_VERSION);
-      req.onupgradeneeded = e => {
-        const db = e.target.result;
-        if (!db.objectStoreNames.contains(PassDB.STORE)) {
-          const os = db.createObjectStore(PassDB.STORE, { keyPath:'num' });
-          os.createIndex('ts',      'ts',      { unique:false });
-          os.createIndex('project', 'project', { unique:false });
-          os.createIndex('status',  'status',  { unique:false });
-        }
-      };
-      req.onsuccess = e => { this.#db = e.target.result; res(this); };
-      req.onerror   = e => rej(e.target.error);
-    });
-  }
-
-  save(pass) {
-    return new Promise((res, rej) => {
-      const tx = this.#db.transaction(PassDB.STORE, 'readwrite');
-      tx.objectStore(PassDB.STORE).put(pass).onsuccess = res;
-      tx.onerror = e => rej(e.target.error);
-    });
-  }
-
-  // update only the status field of an existing pass
-  async tag(num, status) {
-    const pass = await this.get(num);
-    if (pass) { pass.status = status; await this.save(pass); }
-  }
-
-  get(num) {
-    return new Promise((res, rej) => {
-      const tx = this.#db.transaction(PassDB.STORE, 'readonly');
-      tx.objectStore(PassDB.STORE).get(num).onsuccess = e => res(e.target.result ?? null);
-      tx.onerror = e => rej(e.target.error);
-    });
-  }
-
-  getAll() {
-    return new Promise((res, rej) => {
-      const tx = this.#db.transaction(PassDB.STORE, 'readonly');
-      tx.objectStore(PassDB.STORE).getAll().onsuccess = e => res(e.target.result);
-      tx.onerror = e => rej(e.target.error);
-    });
-  }
-
-  // returns the highest pass num stored (or 0)
-  async maxNum() {
-    const all = await this.getAll();
-    return all.length ? Math.max(...all.map(p=>p.num)) : 0;
-  }
+function updateModelBadge(modelId, provName){
+  document.getElementById("pm-model").textContent=modelId.split("-").slice(0,3).join("-");
 }
 
-// ══════════════════════════════════════════════════════
-//  Global instances
-// ══════════════════════════════════════════════════════
-const store = new ImagenStore();
-const db    = new PassDB();
-
-// ══════════════════════════════════════════════════════
-//  LAYER 3 — UI subscriptions (pure reactions to state)
-// ══════════════════════════════════════════════════════
-function wireSubscriptions() {
-
-  // running → forge button + status
-  store.on('running', running => {
-    document.getElementById('forge').disabled = running;
-    document.getElementById('sst').textContent = running ? 'RUNNING' : 'READY';
-    if (running) subItems('running');
-  });
-
-  // phase → phase indicators + canvas reacts via store.get('phase')
-  store.on('phase', phase => {
-    const statusEl = document.getElementById('pm-status');
-    if (phase < 0)                  { statusEl.textContent='Idle';     statusEl.className=''; }
-    else if (phase >= PHASES.length){ statusEl.textContent='Complete'; statusEl.className='ok'; }
-    else                            { statusEl.textContent=PHASES[phase]?.label; statusEl.className=''; }
-  });
-
-  // kpis → KPI strip
-  store.on('kpis', kpis => renderKPIStrip(kpis));
-
-  // passNum → pass meta bar
-  store.on('passNum', num => {
-    document.getElementById('pm-pass').textContent = String(num).padStart(4,'0');
-  });
-
-  // operator → header badge + settings input
-  store.on('operator', op => {
-    document.getElementById('op-name').textContent = op;
-    document.getElementById('op-av').textContent   = op.slice(0,2).toUpperCase();
-    document.getElementById('s-opname').value      = op;
-  });
-
-  // project → breadcrumb + settings input
-  store.on('project', proj => {
-    document.getElementById('bc-proj').textContent = proj;
-    document.getElementById('s-proj').value        = proj;
-  });
-}
-
-// ══════════════════════════════════════════════════════
-//  API adapters (no state changes here — pure I/O)
-// ══════════════════════════════════════════════════════
-async function callModel(sys, msgs, maxTok=900) {
-  const key = store.get('apiKey');
-  if (!key)              throw new Error("No API key. Open ⚙ Settings.");
-  const pid = store.get('provider');
-  if (!pid)              throw new Error("Provider not detected. Check key format.");
-  const model = document.getElementById('mdl-sel').value || PROVIDERS[pid].default;
-  switch(pid) {
-    case 'anthropic': return callAnthropic(key, model, sys, msgs, maxTok);
-    case 'openai':    return callOpenAI   (key, model, sys, msgs, maxTok);
-    case 'google':    return callGoogle   (key, model, sys, msgs, maxTok);
-    default: throw new Error(`No adapter: ${pid}`);
+// ── API Adapters ───────────────────────────────────────
+async function callModel(sys,msgs,maxTok=900){
+  const key=document.getElementById("key-in").value.trim();
+  if(!key) throw new Error("No API key. Open ⚙ Settings to configure.");
+  if(!S.provider) throw new Error("Provider not detected. Check your key format.");
+  const model=document.getElementById("mdl-sel").value||PROVIDERS[S.provider].default;
+  switch(S.provider){
+    case"anthropic":return callAnthropic(key,model,sys,msgs,maxTok);
+    case"openai":   return callOpenAI(key,model,sys,msgs,maxTok);
+    case"google":   return callGoogle(key,model,sys,msgs,maxTok);
+    default: throw new Error(`No adapter for: ${S.provider}`);
   }
 }
 async function callAnthropic(key,model,sys,msgs,maxTok){
   const body={model,max_tokens:maxTok,messages:msgs};
   if(sys) body.system=sys;
-  const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",
+  const r=await fetch("https://api.anthropic.com/v1/messages",{
+    method:"POST",
     headers:{"Content-Type":"application/json","x-api-key":key,
       "anthropic-version":"2023-06-01",
       "anthropic-dangerous-direct-browser-access":"true"},
     body:JSON.stringify(body)});
   if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error?.message||`Anthropic ${r.status}`);}
-  return (await r.json()).content[0].text;
+  return(await r.json()).content[0].text;
 }
 async function callOpenAI(key,model,sys,msgs,maxTok){
   const full=sys?[{role:"system",content:sys},...msgs]:[...msgs];
   const isR=model.startsWith("o1")||model.startsWith("o3");
   const body={model,messages:full,[isR?"max_completion_tokens":"max_tokens"]:maxTok};
-  const r=await fetch("https://api.openai.com/v1/chat/completions",{method:"POST",
-    headers:{"Content-Type":"application/json","Authorization":`Bearer ${key}`},
+  const r=await fetch("https://api.openai.com/v1/chat/completions",{
+    method:"POST",headers:{"Content-Type":"application/json","Authorization":`Bearer ${key}`},
     body:JSON.stringify(body)});
   if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error?.message||`OpenAI ${r.status}`);}
-  return (await r.json()).choices[0].message.content;
+  return(await r.json()).choices[0].message.content;
 }
 async function callGoogle(key,model,sys,msgs,maxTok){
   const contents=msgs.map(m=>({role:m.role==="assistant"?"model":"user",parts:[{text:m.content}]}));
@@ -970,38 +821,31 @@ async function callGoogle(key,model,sys,msgs,maxTok){
   const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
     {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
   if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error?.message||`Gemini ${r.status}`);}
-  return (await r.json()).candidates[0].content.parts[0].text;
+  return(await r.json()).candidates[0].content.parts[0].text;
 }
 
-// ══════════════════════════════════════════════════════
-//  Evaluator (pure function — takes output, returns kpis)
-// ══════════════════════════════════════════════════════
-async function evaluate(output, intent) {
+// ── Evaluator ──────────────────────────────────────────
+async function evaluate(output,intent){
   const p=`Score this artifact output (0.0–1.0 each). Intent: "${intent.slice(0,100)}"
 Output: ${output.slice(0,600)}
-Return ONLY JSON, no prose: {"coherence":0.0,"structural_validity":0.0,"detail_fidelity":0.0,"export_readiness":0.0}`;
-  try {
+Return ONLY JSON: {"coherence":0.0,"structural_validity":0.0,"detail_fidelity":0.0,"export_readiness":0.0}`;
+  try{
     const txt=await callModel(null,[{role:"user",content:p}],200);
     const sc=JSON.parse(txt.replace(/```[a-z]*/g,"").replace(/```/g,"").trim());
     return Object.fromEntries(Object.entries(sc).map(([k,v])=>[k,parseFloat(v)||0]));
-  } catch {
-    return {coherence:.72,structural_validity:.70,detail_fidelity:.68,export_readiness:.55};
-  }
+  }catch{return{coherence:.72,structural_validity:.70,detail_fidelity:.68,export_readiness:.55};}
 }
 
-// ══════════════════════════════════════════════════════
-//  Canvas (reads from store, never writes to it)
-// ══════════════════════════════════════════════════════
-const cv  = document.getElementById("cv");
-const ctx = cv.getContext("2d");
-let T=0, nodes=[], particles=[];
-
-function resizeCanvas() {
+// ── Canvas ─────────────────────────────────────────────
+const cv=document.getElementById("cv");
+const ctx=cv.getContext("2d");
+let RAF,T=0,nodes=[],particles=[];
+function resizeCanvas(){
   const r=cv.parentElement.getBoundingClientRect();
-  cv.width=r.width; cv.height=r.height; rebuildNodes();
+  cv.width=r.width;cv.height=r.height;rebuildNodes();
 }
-function rebuildNodes() {
-  const W=cv.width, H=cv.height;
+function rebuildNodes(){
+  const W=cv.width,H=cv.height;
   nodes=PHASES.map((p,i)=>{
     const t=i/(PHASES.length-1);
     return{id:p.id,label:p.label,x:W*.10+t*(W*.80),
@@ -1012,19 +856,21 @@ function rebuildNodes() {
 function spawnParticle(a,b){
   particles.push({x:a.x,y:a.y,tx:b.x,ty:b.y,p:0,s:.012+Math.random()*.01});
 }
-function drawCanvas() {
+function drawCanvas(){
   const W=cv.width,H=cv.height;
-  const phase=store.get('phase');  // ← reads store, not S
   ctx.clearRect(0,0,W,H);
-  ctx.strokeStyle="rgba(20,32,44,.8)"; ctx.lineWidth=.5;
+  // grid
+  ctx.strokeStyle="rgba(20,32,44,.8)";ctx.lineWidth=.5;
   for(let x=0;x<W;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
   for(let y=0;y<H;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+  // edges
   for(let i=0;i<nodes.length-1;i++){
-    const a=nodes[i],b=nodes[i+1],dn=phase>i,ac=phase===i;
+    const a=nodes[i],b=nodes[i+1],dn=S.phase>i,ac=S.phase===i;
     ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);
     ctx.strokeStyle=dn?"rgba(58,184,196,.5)":ac?"rgba(201,168,76,.4)":"rgba(22,36,50,.9)";
     ctx.lineWidth=dn?2:1.5;ctx.stroke();
   }
+  // particles
   for(const p of particles){
     p.p=Math.min(1,p.p+p.s);
     const px=p.x+(p.tx-p.x)*p.p,py=p.y+(p.ty-p.y)*p.p,a=Math.sin(p.p*Math.PI);
@@ -1032,13 +878,15 @@ function drawCanvas() {
     ctx.fillStyle=`rgba(201,168,76,${a})`;ctx.fill();
   }
   particles=particles.filter(p=>p.p<1);
+  // nodes
   for(const n of nodes){
-    const dn=phase>n.i,ac=phase===n.i,glow=dn?10:ac?(13+Math.sin(T*4)*3):0;
+    const dn=S.phase>n.i,ac=S.phase===n.i,glow=dn?10:ac?(13+Math.sin(T*4)*3):0;
     if(glow>0){
       const g=ctx.createRadialGradient(n.x,n.y,0,n.x,n.y,n.r+glow);
       g.addColorStop(0,dn?"rgba(58,184,196,.2)":"rgba(201,168,76,.25)");
       g.addColorStop(1,"rgba(0,0,0,0)");
-      ctx.beginPath();ctx.arc(n.x,n.y,n.r+glow,0,Math.PI*2);ctx.fillStyle=g;ctx.fill();
+      ctx.beginPath();ctx.arc(n.x,n.y,n.r+glow,0,Math.PI*2);
+      ctx.fillStyle=g;ctx.fill();
     }
     ctx.beginPath();ctx.arc(n.x,n.y,n.r,0,Math.PI*2);
     ctx.fillStyle=dn?"#0c1e28":ac?"#18200e":"#0a0e12";
@@ -1050,131 +898,10 @@ function drawCanvas() {
     ctx.fillStyle=ac?"#e8c870":"#526070";ctx.font="7.5px 'Raleway',sans-serif";
     ctx.fillText(n.label,n.x,n.y+n.r+12);
   }
-  T+=.016;
-  requestAnimationFrame(drawCanvas);
+  T+=.016;RAF=requestAnimationFrame(drawCanvas);
 }
 
-// ══════════════════════════════════════════════════════
-//  UI render functions (pure DOM — no state writes)
-// ══════════════════════════════════════════════════════
-function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
-
-function renderKPIStrip(kpis) {
-  document.getElementById("kpi-strip").innerHTML=KPI_KEYS.map(k=>{
-    const v=kpis[k]??0,t=KPI_TARGET[k],pct=Math.round(v*100);
-    const cls=v>=t?"":v<t-.1?"crit":"warn";
-    return`<div class="kpi-row"><div>
-      <div style="display:flex;justify-content:space-between;font-family:var(--font-m);font-size:7.5px;color:var(--text-dim);margin-bottom:2px">
-        <span>${k.replace(/_/g," ")}</span><span class="kpi-val">${pct}%</span>
-      </div>
-      <div class="kpi-track"><div class="kpi-fill ${cls}" style="width:${pct}%"></div></div>
-    </div></div>`;
-  }).join("");
-}
-
-function renderAnalysisTree(outputs, kpis, finalStatus) {
-  const tree=document.getElementById("analysis-tree");
-  tree.innerHTML="";
-  Object.entries(outputs).forEach(([layerId, , i]) => {
-    const ph=PHASES.find(p=>p.id===layerId); if(!ph) return;
-    const avg=Object.values(kpis).reduce((a,b)=>a+b,0)/KPI_KEYS.length;
-    addAnalysisRow(layerId,
-      `${layerId}.${ph.label.toLowerCase().replace(/ /g,"_")}`,
-      avg, ph.role, PHASES.indexOf(ph)+1, finalStatus);
-  });
-}
-
-function addAnalysisRow(type,name,conf,role,links,status){
-  const tree=document.getElementById("analysis-tree");
-  const pct=Math.round(conf*100),cls=conf>=.9?"hi":conf<.7?"lo":"";
-  const dotCls=status==="Mapped"?"mapped":status==="Running"?"run":"pend";
-  const row=document.createElement("div");
-  row.className="at-row fi";
-  row.innerHTML=`
-    <span class="at-type">${esc(type)}</span>
-    <span class="at-name" title="${esc(name)}">${esc(name)}</span>
-    <span class="at-conf ${cls}">${pct}%</span>
-    <span style="font-size:8px;color:var(--text-dim)">${esc(role)}</span>
-    <span style="font-size:8px;color:var(--text-dim)">${links}</span>
-    <span class="at-status">
-      <span class="at-dot ${dotCls}"></span>
-      <span style="font-size:8px;color:var(--text-dim)">${esc(status)}</span>
-    </span>`;
-  tree.appendChild(row);
-}
-
-function renderPassHistoryRow(pass, isLatest) {
-  const rows=document.getElementById("ph-rows");
-  // dedupe: remove if already exists
-  document.getElementById(`ph-row-${pass.num}`)?.remove();
-  const time=new Date(pass.ts).toTimeString().slice(0,8);
-  const statusIcon={preserved:"⊕",suppressed:"⊗",error:"✗",complete:"·"}[pass.status]||"·";
-  const statusColor={preserved:"var(--teal)",suppressed:"var(--red)",error:"var(--red)",complete:"var(--text-dim)"}[pass.status]||"var(--text-dim)";
-  const row=document.createElement("div");
-  row.id=`ph-row-${pass.num}`;
-  row.className="ph-row fi"+(isLatest?" latest":"");
-  row.style.cursor="pointer";
-  row.onclick=()=>loadPassIntoView(pass.num);
-  row.innerHTML=`<div class="ph-thumb" style="color:${statusColor};font-size:9px;display:flex;align-items:center;justify-content:center">${statusIcon}</div><span class="ph-pass">${String(pass.num).padStart(4,"0")}</span><span class="ph-time">${time}</span><span class="ph-op">${esc(pass.operator||"—")}</span><span class="ph-note">${esc((pass.intent||"").slice(0,55))}…</span>`;
-  rows.insertBefore(row,rows.firstChild);
-}
-
-function renderCritiqueNotes(kpis) {
-  const items=[];
-  if(kpis.coherence>=KPI_TARGET.coherence)
-    items.push({ok:true,  text:`Coherence within target (${Math.round(kpis.coherence*100)}%).`});
-  else
-    items.push({ok:false, text:`Coherence below target — clarify intent.`});
-  if(kpis.structural_validity>=KPI_TARGET.structural_validity)
-    items.push({ok:true,  text:`Structural validity consistent.`});
-  else
-    items.push({ok:false, text:`Structure needs reinforcement.`});
-  if(kpis.detail_fidelity>=KPI_TARGET.detail_fidelity)
-    items.push({ok:true,  text:`Detail fidelity HIGH.`});
-  else
-    items.push({ok:false, text:`Detail fidelity LOW — run additional passes.`});
-  const avg=Object.values(kpis).reduce((a,b)=>a+b,0)/KPI_KEYS.length;
-  items.push({ok:avg>=.85,text:`Overall mapping confidence: ${(avg).toFixed(2)}`});
-  document.getElementById("cn-notes").innerHTML=items.map(it=>`
-    <div class="cn-item">
-      <span class="cn-bullet" style="color:${it.ok?"var(--green)":"var(--red)"}">${it.ok?"✓":"✗"}</span>
-      <span style="color:${it.ok?"var(--text)":"var(--text-dim)"}">${esc(it.text)}</span>
-    </div>`).join("");
-}
-
-function computeDiff(intent, output) {
-  const iw=new Set(intent.toLowerCase().split(/\s+/).filter(w=>w.length>3));
-  const ow=output.toLowerCase().split(/\s+/).filter(w=>w.length>4);
-  return {
-    removed:[...iw].filter(w=>!ow.includes(w)).slice(0,6),
-    added:  [...new Set(ow.filter(w=>!iw.has(w)&&w.match(/^[a-z]/)))].slice(0,8),
-  };
-}
-
-function renderPromptDiff(diff, passNum) {
-  document.getElementById("pd-label").textContent=`Pass ${String(passNum).padStart(4,"0")}`;
-  document.getElementById("pd-rem").innerHTML=
-    diff.removed.map(w=>`<div class="pd-item rem">${esc(w)}</div>`).join("")||
-    "<div style='color:var(--text-dim);font-size:9px'>—</div>";
-  document.getElementById("pd-add").innerHTML=
-    diff.added.map(w=>`<div class="pd-item add">${esc(w)}</div>`).join("")||
-    "<div style='color:var(--text-dim);font-size:9px'>—</div>";
-}
-
-function renderTaggedRow(num, status) {
-  const row=document.getElementById(`ph-row-${num}`);
-  if(!row) return;
-  const thumb=row.querySelector(".ph-thumb");
-  const color={preserved:"var(--teal)",suppressed:"var(--red)"}[status]||"var(--text-dim)";
-  const icon ={preserved:"⊕",suppressed:"⊗"}[status]||"·";
-  if(thumb){thumb.textContent=icon;thumb.style.color=color;}
-}
-
-function clog(tag,msg,cls="") {
-  const el=document.getElementById("clog-inline");
-  el.innerHTML=`<span class="clog-tag ${cls}">[${esc(tag)}]</span>${esc(msg)}`;
-}
-
+// ── UI helpers ─────────────────────────────────────────
 function buildAnchors(){
   document.getElementById("anchor-grid").innerHTML=ANCHORS.map((a,i)=>`
     <div class="anchor-card" id="anc${i}" onclick="activateAnchor(${i})">
@@ -1185,14 +912,52 @@ function buildAnchors(){
 }
 function activateAnchor(i){
   document.querySelectorAll(".anchor-card").forEach(c=>c.classList.remove("active"));
-  document.getElementById(`anc${i}`)?.classList.add("active");
+  document.getElementById(`anc${i}`).classList.add("active");
 }
-function subItems(status){
-  ["si-sc","si-px","si-gx","si-mx","si-pa"].forEach(id=>{
-    const el=document.getElementById(id);if(!el) return;
-    el.className="sub-item"+(status==="mapped"?" mapped":status==="running"?" running":"");
-    el.querySelector(".sub-dot").className="sub-dot"+(status==="mapped"?" mapped":status==="running"?" run":"");
-  });
+function buildKPIStrip(){
+  document.getElementById("kpi-strip").innerHTML=KPI_KEYS.map(k=>{
+    const v=S.kpis[k]??0,t=KPI_TARGET[k],pct=Math.round(v*100);
+    const cls=v>=t?"":v<t-.1?"crit":"warn";
+    return`<div class="kpi-row">
+      <div>
+        <div style="display:flex;justify-content:space-between;font-family:var(--font-m);font-size:7.5px;color:var(--text-dim);margin-bottom:2px">
+          <span>${k.replace(/_/g," ")}</span>
+          <span class="kpi-val">${pct}%</span>
+        </div>
+        <div class="kpi-track"><div class="kpi-fill ${cls}" style="width:${pct}%"></div></div>
+      </div>
+    </div>`;
+  }).join("");
+}
+function addAnalysisRow(type,name,conf,role,links,status){
+  const tree=document.getElementById("analysis-tree");
+  const pct=Math.round(conf*100);
+  const cls=conf>=.9?"hi":conf<.7?"lo":"";
+  const dotCls=status==="Mapped"?"mapped":status==="Running"?"run":"pend";
+  const row=document.createElement("div");
+  row.className="at-row fi";
+  row.innerHTML=`
+    <span class="at-type">${type}</span>
+    <span class="at-name" title="${name}">${name}</span>
+    <span class="at-conf ${cls}">${pct}%</span>
+    <span style="font-size:8px;color:var(--text-dim)">${role}</span>
+    <span style="font-size:8px;color:var(--text-dim)">${links}</span>
+    <span class="at-status"><span class="at-dot ${dotCls}"></span><span style="font-size:8px;color:var(--text-dim)">${status}</span></span>`;
+  tree.appendChild(row);
+}
+function clog(tag,msg,cls=""){
+  const el=document.getElementById("clog-inline");
+  el.innerHTML=`<span class="clog-tag ${cls}">[${esc(tag)}]</span>${esc(msg)}`;
+}
+function setFtr(s,p=""){
+  document.getElementById("sst").textContent=s;
+  clog(s,p,s==="ERROR"?"rc":s==="COMPLETE ✓"?"gc":"tc");
+}
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function setPhase(i){
+  S.phase=i;
+  document.getElementById("pm-status").textContent=i<0?"Idle":i>=PHASES.length?"Complete":PHASES[i]?.label;
+  document.getElementById("pm-status").className=i>=PHASES.length?"ok":"";
 }
 function setTab(t){
   document.querySelectorAll(".bot-tab").forEach(e=>e.classList.remove("active"));
@@ -1200,275 +965,199 @@ function setTab(t){
   document.getElementById("tab-"+t).classList.add("active");
   document.getElementById(t+"-pane").classList.add("active");
 }
-
-// ══════════════════════════════════════════════════════
-//  Load a stored pass back into the active view
-// ══════════════════════════════════════════════════════
-async function loadPassIntoView(num) {
-  const pass=await db.get(num);
-  if(!pass) return;
-  // highlight row
-  document.querySelectorAll(".ph-row").forEach(r=>r.classList.remove("latest"));
-  document.getElementById(`ph-row-${num}`)?.classList.add("latest");
-  // restore state (session-only — no persist)
-  store.patch({
-    kpis:       pass.kpis||{},
-    lastIntent: pass.intent||"",
-    lastOutput: pass.outputs?.L4||"",
-    phase:      6,
+function addPassHistoryRow(passNum,note,isLatest){
+  const rows=document.getElementById("ph-rows");
+  const now=new Date();
+  const time=`${now.getHours().toString().padStart(2,"0")}:${now.getMinutes().toString().padStart(2,"0")}:${now.getSeconds().toString().padStart(2,"0")}`;
+  const row=document.createElement("div");
+  row.className="ph-row fi"+(isLatest?" latest":"");
+  row.innerHTML=`<div class="ph-thumb"></div><span class="ph-pass">${String(passNum).padStart(4,"0")}</span><span class="ph-time">${time}</span><span class="ph-op">${esc(S.operator)}</span><span class="ph-note">${esc(note)}</span>`;
+  rows.insertBefore(row,rows.firstChild);
+  document.getElementById("pm-pass").textContent=String(passNum).padStart(4,"0");
+}
+function setCritiqueNotes(kpis,passNum){
+  const notes=document.getElementById("cn-notes");
+  const items=[];
+  if(kpis.coherence>=KPI_TARGET.coherence) items.push({ok:true, text:`Coherence within target (${Math.round(kpis.coherence*100)}%).`});
+  else items.push({ok:false, text:`Coherence below target — consider clarifying intent.`});
+  if(kpis.structural_validity>=KPI_TARGET.structural_validity) items.push({ok:true, text:`Structural validity consistent.`});
+  else items.push({ok:false, text:`Structure needs reinforcement.`});
+  if(kpis.detail_fidelity>=KPI_TARGET.detail_fidelity) items.push({ok:true, text:`Detail fidelity HIGH.`});
+  else items.push({ok:false, text:`Detail fidelity LOW — run additional passes.`});
+  const avg=Object.values(kpis).reduce((a,b)=>a+b,0)/KPI_KEYS.length;
+  items.push({ok:avg>=.85, text:`Overall mapping confidence: ${Math.round(avg*100)/100}`});
+  notes.innerHTML=items.map(it=>`
+    <div class="cn-item"><span class="cn-bullet">${it.ok?"✓":"✗"}</span><span style="color:${it.ok?"var(--text)":"var(--text-dim)"}">${esc(it.text)}</span></div>`).join("");
+}
+function setPromptDiff(intent,output){
+  const intentWords=new Set(intent.toLowerCase().split(/\s+/).filter(w=>w.length>3));
+  const outputWords=output.toLowerCase().split(/\s+/).filter(w=>w.length>4);
+  const added=[...new Set(outputWords.filter(w=>!intentWords.has(w) && w.match(/^[a-z]/)))].slice(0,8);
+  const removed=[...intentWords].filter(w=>!outputWords.includes(w)).slice(0,6);
+  document.getElementById("pd-label").textContent=`Pass ${String(S.passNum).padStart(4,"0")}`;
+  document.getElementById("pd-rem").innerHTML=removed.map(w=>`<div class="pd-item rem">${esc(w)}</div>`).join("")||"<div style='color:var(--text-dim);font-size:9px'>—</div>";
+  document.getElementById("pd-add").innerHTML=added.map(w=>`<div class="pd-item add">${esc(w)}</div>`).join("")||"<div style='color:var(--text-dim);font-size:9px'>—</div>";
+}
+function subItems(status){
+  ["si-sc","si-px","si-gx","si-mx","si-pa"].forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el) return;
+    el.className="sub-item"+(status==="mapped"?" mapped":status==="running"?" running":"");
+    el.querySelector(".sub-dot").className="sub-dot"+(status==="mapped"?" mapped":status==="running"?" run":"");
   });
-  // render panels
-  document.getElementById("idle-msg").style.display="none";
-  renderAnalysisTree(pass.outputs||{}, pass.kpis||{}, pass.status==="complete"?"Mapped":"Error");
-  renderCritiqueNotes(pass.kpis||{});
-  if(pass.diff) renderPromptDiff(pass.diff, pass.num);
-  document.getElementById("pm-pass").textContent=String(pass.num).padStart(4,"0");
-  document.getElementById("pm-status").textContent="Complete";
-  document.getElementById("pm-status").className="ok";
-  subItems(pass.status==="complete"?"mapped":"");
-  clog("DB",`Loaded pass ${String(pass.num).padStart(4,"0")}  ·  ${pass.intent.slice(0,40)}…`,"tc");
 }
 
-// ══════════════════════════════════════════════════════
-//  PIPELINE — pure data flow, all mutations via store
-// ══════════════════════════════════════════════════════
+// ── System prompt ──────────────────────────────────────
 const SYS=`You are the IMAGEN Engine — a structured creative operating system.
 Produce precise, detailed, actionable creative specifications.
 Principles: intent first, structure driven, aesthetic precision, endless iteration, boundless creation.
 Every response is specific, concrete, and actionable. Never be vague.`;
 
-async function runPipeline() {
-  if (store.get('running')) return;
+// ── Pipeline ───────────────────────────────────────────
+async function runPipeline(){
+  if(S.running) return;
   const intent=document.getElementById("prompt").value.trim();
-  if(!intent) { clog("ERR","Enter a creative intent first.","rc"); return; }
-  if(!store.get('provider')) { clog("ERR","Configure your API key in ⚙ Settings.","rc"); return; }
+  if(!intent){clog("ERR","Enter a creative intent first.","rc");return;}
+  if(!S.provider){clog("ERR","Configure your API key in ⚙ Settings.","rc");return;}
 
-  const passNum = store.get('passNum') + 1;
-
-  // Single patch to kick off — subscriptions handle all DOM side-effects
-  store.patch({
-    running:    true,
-    phase:      -1,
-    kpis:       {},
-    passNum,
-    lastIntent: intent,
-    lastOutput: "",
-  });
-
-  // Build the pass record we'll persist to IndexedDB
-  const rec = {
-    num:      passNum,
-    ts:       Date.now(),
-    intent,
-    operator: store.get('operator'),
-    project:  store.get('project'),
-    model:    document.getElementById('mdl-sel').value,
-    outputs:  {},
-    kpis:     {},
-    status:   'running',
-    diff:     {},
-  };
-
+  S.running=true;S.passNum++;
+  document.getElementById("forge").disabled=true;
   document.getElementById("idle-msg").style.display="none";
+  setPhase(-1);S.kpis={};
   document.getElementById("analysis-tree").innerHTML="";
-
-  // Phase runner: executes fn, evaluates, writes to store + record
-  const runPhase = async (pi, label, fn) => {
-    store.set('phase', pi);
-    clog("RUNNING", label, "tc");
-    if(pi>0 && nodes[pi-1] && nodes[pi]) spawnParticle(nodes[pi-1], nodes[pi]);
-    const output = await fn();
-    const kpis   = await evaluate(output, intent);
-    store.set('kpis', kpis);
-    rec.outputs[PHASES[pi].id] = output;
-    const avg=Object.values(kpis).reduce((a,b)=>a+b,0)/KPI_KEYS.length;
-    addAnalysisRow(PHASES[pi].id,
-      `${PHASES[pi].id}.${PHASES[pi].label.toLowerCase().replace(/ /g,"_")}`,
-      avg, PHASES[pi].role, pi+1, "Mapped");
-    return output;
-  };
+  subItems("running");
 
   let I="",St="",Dr="",Co="";
-  try {
-    I=await runPhase(0,"L0 · Intent",()=>callModel(SYS,[{role:"user",content:
-      `You are L0 Intent Model. Raw intent: "${intent}"\nProduce a structured Intent Manifest:\n1. GOAL\n2. MEDIUM\n3. AESTHETIC SEED (3-5 attractors)\n4. CONSTRAINTS\n5. SCOPE\n6. AUDIENCE\n7. OPEN QUESTIONS\nBe specific and actionable.`}]));
+  const addRow=(type,name,conf,role,links)=>addAnalysisRow(type,name,conf,role,links,"Running");
 
-    St=await runPhase(1,"L1 · Structure",()=>callModel(SYS,[{role:"user",content:
-      `L0:\n${I.slice(0,600)}\nYou are L1 Structural Model. Produce:\n1. COMPONENT HIERARCHY\n2. DEPTH MAP\n3. RELATIONSHIP MATRIX\n4. ARTICULATION POINTS\n5. LOAD PATHS\n6. CONSTRAINT PROPAGATION\nUse concrete names.`}]));
+  const phase=async(pi,label,fn)=>{
+    setPhase(pi);setFtr("RUNNING",label);
+    if(pi>0&&nodes[pi-1]&&nodes[pi]) spawnParticle(nodes[pi-1],nodes[pi]);
+    try{
+      const r=await fn();
+      const kpis=await evaluate(r,intent);
+      S.kpis=kpis;buildKPIStrip();
+      const avg=Object.values(kpis).reduce((a,b)=>a+b,0)/KPI_KEYS.length;
+      addAnalysisRow(PHASES[pi].id,`${PHASES[pi].id}.${PHASES[pi].label.toLowerCase().replace(/ /g,"_")}`,
+        avg,PHASES[pi].role,pi+1,"Mapped");
+      return r;
+    }catch(e){clog("ERR",e.message,"rc");throw e;}
+  };
 
-    Dr=await runPhase(2,"L2 · Authoring",()=>callModel(SYS,[{role:"user",content:
-      `Intent:\n${I.slice(0,400)}\nStructure:\n${St.slice(0,400)}\nYou are L2 Authoring Core. Produce a richly detailed creative specification. Every component: material, texture, proportion, color, function. Be exhaustive.`}]));
-
-    // L3 refinement loop — convergence-gated
+  try{
+    I=await phase(0,"L0 · Intent",async()=>{
+      const o=await callModel(SYS,[{role:"user",content:
+        `You are L0 Intent Model. Raw intent: "${intent}"\nProduce a structured Intent Manifest:\n1. GOAL\n2. MEDIUM\n3. AESTHETIC SEED (3-5 attractors)\n4. CONSTRAINTS\n5. SCOPE\n6. AUDIENCE\n7. OPEN QUESTIONS\nBe specific and actionable.`}]);
+      addPassHistoryRow(S.passNum,"L0 complete — intent manifest generated",false);
+      return o;
+    });
+    St=await phase(1,"L1 · Structure",async()=>{
+      const o=await callModel(SYS,[{role:"user",content:
+        `L0:\n${I.slice(0,600)}\nYou are L1 Structural Model. Produce:\n1. COMPONENT HIERARCHY\n2. DEPTH MAP\n3. RELATIONSHIP MATRIX\n4. ARTICULATION POINTS\n5. LOAD PATHS\n6. CONSTRAINT PROPAGATION\nUse concrete names.`}]);
+      return o;
+    });
+    Dr=await phase(2,"L2 · Authoring",async()=>{
+      const o=await callModel(SYS,[{role:"user",content:
+        `Intent:\n${I.slice(0,400)}\nStructure:\n${St.slice(0,400)}\nYou are L2 Authoring Core. Produce a richly detailed creative specification. Every component: material, texture, proportion, color, function. Be exhaustive.`}]);
+      return o;
+    });
+    setFtr("RUNNING","L3 · Refinement");
     for(let i=0;i<PASSES.length;i++){
-      Dr=await runPhase(3,`L3.${i+1} · ${PASSES[i]}`,()=>callModel(SYS,[{role:"user",content:
-        `L3 Pass ${i+1} — Focus: ${PASSES[i]}\nIntent: ${intent}\nDraft:\n${Dr.slice(0,700)}\nSurgically improve the weakest element. Return FULL spec with [PASS ${i+1} CHANGES] at end.`}]));
-      const avg=Object.values(store.get('kpis')).reduce((a,b)=>a+b,0)/KPI_KEYS.length;
-      if(avg>=.92){clog("L3","Converged early — halting passes","tc");break;}
+      Dr=await phase(3,`L3.${i+1} · ${PASSES[i]}`,async()=>{
+        const o=await callModel(SYS,[{role:"user",content:
+          `L3 Pass ${i+1} — Focus: ${PASSES[i]}\nIntent: ${intent}\nDraft:\n${Dr.slice(0,700)}\nSurgically improve weakest element. Return FULL spec with [PASS ${i+1} CHANGES] at end.`}]);
+        return o;
+      });
+      const avg=Object.values(S.kpis).reduce((a,b)=>a+b,0)/KPI_KEYS.length;
+      if(avg>=.92){clog("L3","Converged early","tc");break;}
     }
+    Co=await phase(4,"L4 · Compiler",async()=>{
+      const o=await callModel(SYS,[{role:"user",content:
+        `You are L4 Artifact Compiler.\nRefined output:\n${Dr.slice(0,900)}\nProduce:\n## ASSET MANIFEST\n## TECHNICAL SPECIFICATION\n## QUALITY CERTIFICATE\n## INTEGRATION HOOKS\n## USAGE GUIDE`}]);
+      return o;
+    });
 
-    Co=await runPhase(4,"L4 · Compiler",()=>callModel(SYS,[{role:"user",content:
-      `You are L4 Artifact Compiler.\nRefined output:\n${Dr.slice(0,900)}\nProduce:\n## ASSET MANIFEST\n## TECHNICAL SPECIFICATION\n## QUALITY CERTIFICATE\n## INTEGRATION HOOKS\n## USAGE GUIDE`}]));
-
-    // L5 deploy phase (no API call — just routing)
-    store.set('phase', 5);
+    // L5 deploy
+    setPhase(5);setFtr("RUNNING","L5 · Deploy");
     if(nodes[4]&&nodes[5]) spawnParticle(nodes[4],nodes[5]);
-    store.set('lastOutput', Co);
+    S.output=Co;S.lastIntent=intent;
 
-    // Finalize record
-    rec.kpis   = store.get('kpis');
-    rec.status  = 'complete';
-    rec.diff    = computeDiff(intent, Co);
-
-    // ── Persist to IndexedDB ──────────────────────────
-    await db.save(rec);
-
-    // ── Render all result panels ──────────────────────
-    store.set('phase', 6);
-    renderPassHistoryRow(rec, true);
-    renderCritiqueNotes(rec.kpis);
-    renderPromptDiff(rec.diff, passNum);
-    subItems('mapped');
-
-    // Update breadcrumb from intent
+    addPassHistoryRow(S.passNum,intent.slice(0,60)+"…",true);
+    setCritiqueNotes(S.kpis,S.passNum);
+    setPromptDiff(intent,Co);
+    subItems("mapped");
+    // Update breadcrumb asset name from intent
     const assetWord=intent.split(" ").find(w=>w.length>4)||"Asset";
-    document.getElementById("bc-asset").textContent=
-      assetWord.charAt(0).toUpperCase()+assetWord.slice(1);
+    document.getElementById("bc-asset").textContent=assetWord.charAt(0).toUpperCase()+assetWord.slice(1);
+    setPhase(6);
+    setFtr("COMPLETE ✓","Pipeline finished");
 
-    clog("COMPLETE ✓","Pipeline finished — pass saved to DB","gc");
-
-  } catch(e) {
-    rec.status='error';
-    await db.save(rec).catch(()=>{});
-    renderPassHistoryRow(rec, true);
+  }catch(e){
+    setFtr("ERROR","Pipeline halted: "+e.message.slice(0,50));
     subItems("");
-    clog("ERROR","Pipeline halted: "+e.message.slice(0,60),"rc");
-    store.set('phase', -1);
-  } finally {
-    store.set('running', false);
+  }finally{
+    S.running=false;
+    document.getElementById("forge").disabled=false;
+    document.getElementById("pm-status").textContent="Complete";
+    document.getElementById("pm-status").className="ok";
   }
 }
 
-// ══════════════════════════════════════════════════════
-//  Critique actions — tagged in DB, rendered instantly
-// ══════════════════════════════════════════════════════
-async function onPreserve(){
-  const num=store.get('passNum');
-  await db.tag(num,'preserved');
-  renderTaggedRow(num,'preserved');
-  clog("ACTION",`Pass ${String(num).padStart(4,"0")} preserved.`,"gc");
-}
-async function onSuppress(){
-  const num=store.get('passNum');
-  await db.tag(num,'suppressed');
-  renderTaggedRow(num,'suppressed');
-  document.getElementById("analysis-tree").innerHTML="";
-  store.patch({kpis:{}, phase:-1});
-  document.getElementById("idle-msg").style.display="block";
-  subItems("");
-  clog("ACTION","Pass suppressed — record kept in DB.","rc");
+// ── Critique Actions ───────────────────────────────────
+function onPreserve(){
+  addPassHistoryRow(S.passNum,"[PRESERVED] "+S.lastIntent.slice(0,50),false);
+  clog("ACTION","Output preserved.","gc");
 }
 function onModify(){
-  document.getElementById("prompt").value=store.get('lastIntent');
+  document.getElementById("prompt").value=S.lastIntent;
   document.getElementById("prompt").focus();
   clog("ACTION","Ready to modify — edit intent and FORGE.","tc");
 }
-
-// ══════════════════════════════════════════════════════
-//  Provider detection (writes to store)
-// ══════════════════════════════════════════════════════
-function onKeyChange(key){
-  const pid=Object.entries(PROVIDERS).find(([,p])=>p.detect(key))?.[0]||null;
-  store.set('provider', pid);
-  store.set('apiKey',   key);
-  const pi=document.getElementById("prov-indicator");
-  const ms=document.getElementById("mdl-sel");
-  if(pid){
-    const p=PROVIDERS[pid];
-    pi.textContent=p.short; pi.style.setProperty("--pcolor",p.color); pi.className="ok";
-    ms.innerHTML=p.models.map(m=>`<option value="${m.id}">${m.label}</option>`).join("");
-    ms.value=p.default;
-    document.getElementById("pm-model").textContent=p.default.split("-").slice(0,3).join("-");
-    clog("SYS",`Provider: ${p.name} · ${p.default}`,"tc");
-  } else {
-    pi.textContent=key.length>6?"UNKNOWN":"KEY"; pi.className="";
-    ms.innerHTML="";
-    if(key.length>6) clog("SYS","Unknown key. Nano Banana? Tell us the prefix!","rc");
-  }
+function onSuppress(){
+  document.getElementById("analysis-tree").innerHTML="";
+  S.kpis={};buildKPIStrip();setPhase(-1);
+  document.getElementById("idle-msg").style.display="block";
+  addPassHistoryRow(S.passNum,"[SUPPRESSED]",false);
+  clog("ACTION","Pass suppressed.","rc");
 }
 
-// ══════════════════════════════════════════════════════
-//  Settings modal
-// ══════════════════════════════════════════════════════
+// ── Settings ───────────────────────────────────────────
 function openSettings(){document.getElementById("settings-overlay").classList.add("show");}
 function closeSettings(){document.getElementById("settings-overlay").classList.remove("show");}
 function saveSettings(){
-  store.set('operator', document.getElementById("s-opname").value||"Operator");
-  store.set('project',  document.getElementById("s-proj").value||"IMAGEN");
+  S.operator=document.getElementById("s-opname").value||"Operator";
+  S.project=document.getElementById("s-proj").value||"IMAGEN";
+  document.getElementById("op-name").textContent=S.operator;
+  document.getElementById("op-av").textContent=S.operator.slice(0,2).toUpperCase();
+  document.getElementById("bc-proj").textContent=S.project;
   const key=document.getElementById("key-in").value.trim();
   if(key) onKeyChange(key);
+  localStorage.setItem("ig_key",key);
+  localStorage.setItem("ig_op",S.operator);
+  localStorage.setItem("ig_proj",S.project);
   closeSettings();
   clog("CFG","Settings saved.","gc");
 }
 
-// ══════════════════════════════════════════════════════
-//  Boot sequence
-// ══════════════════════════════════════════════════════
-async function boot() {
-  // 1. Restore persisted state (operator, project, passNum, apiKey)
-  store.restore();
+// ── Keyboard ───────────────────────────────────────────
+document.getElementById("key-in").addEventListener("input",e=>onKeyChange(e.target.value));
+document.getElementById("key-in").addEventListener("paste",()=>setTimeout(()=>onKeyChange(document.getElementById("key-in").value),0));
+document.getElementById("prompt").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();runPipeline();}});
 
-  // 2. Wire all UI subscriptions
-  wireSubscriptions();
+// ── Init ───────────────────────────────────────────────
+buildAnchors();
+buildKPIStrip();
+resizeCanvas();
+window.addEventListener("resize",resizeCanvas);
+drawCanvas();
 
-  // 3. Open IndexedDB
-  await db.open();
-
-  // 4. Sync passNum from DB (source of truth beats localStorage)
-  const dbMax = await db.maxNum();
-  if (dbMax > store.get('passNum')) store.set('passNum', dbMax);
-
-  // 5. Hydrate UI from restored state
-  store.set('operator', store.get('operator'));   // fires subscription
-  store.set('project',  store.get('project'));
-  store.set('passNum',  store.get('passNum'));
-  store.set('kpis',     {});
-
-  // 6. Restore API key into settings input + detect provider
-  const key=store.get('apiKey');
-  if(key){
-    document.getElementById("key-in").value=key;
-    onKeyChange(key);
-  }
-
-  // 7. Load pass history from DB → populate Pass History tab
-  const allPasses=await db.getAll();
-  allPasses.sort((a,b)=>a.num-b.num);   // oldest first so insertBefore puts newest on top
-  for(const p of allPasses) renderPassHistoryRow(p, false);
-  if(allPasses.length){
-    const latest=allPasses[allPasses.length-1];
-    renderPassHistoryRow(latest, true);       // re-render with isLatest flag
-    // Optionally restore latest pass view on load:
-    // await loadPassIntoView(latest.num);
-  }
-
-  // 8. Canvas
-  buildAnchors();
-  renderKPIStrip({});
-  resizeCanvas();
-  window.addEventListener("resize", resizeCanvas);
-  drawCanvas();
-
-  clog("SYS",`IMAGEN IDE v2.1 ready · ${allPasses.length} passes in DB`,"tc");
-}
-
-// ── Event listeners ─────────────────────────────────────────
-document.getElementById("key-in").addEventListener("input",  e=>onKeyChange(e.target.value));
-document.getElementById("key-in").addEventListener("paste",  ()=>setTimeout(()=>onKeyChange(document.getElementById("key-in").value),0));
-document.getElementById("prompt").addEventListener("keydown", e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();runPipeline();}});
-
-// ── Boot ────────────────────────────────────────────────────
-boot().catch(e=>{ clog("BOOT ERR", e.message, "rc"); console.error("Boot failed:",e); });
+// Restore
+const sk=localStorage.getItem("ig_key");
+const sop=localStorage.getItem("ig_op");
+const sproj=localStorage.getItem("ig_proj");
+if(sk){document.getElementById("key-in").value=sk;onKeyChange(sk);}
+if(sop){S.operator=sop;document.getElementById("s-opname").value=sop;document.getElementById("op-name").textContent=sop;document.getElementById("op-av").textContent=sop.slice(0,2).toUpperCase();}
+if(sproj){S.project=sproj;document.getElementById("s-proj").value=sproj;document.getElementById("bc-proj").textContent=sproj;}
 </script>
 </body>
 </html>
