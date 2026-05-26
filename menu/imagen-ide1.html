@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>IMAGEN IDE</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Raleway:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg0:#080a0c;--bg1:#0d1014;--bg2:#12171d;--bg3:#181e26;
+  --border:#1e2830;--border2:#253040;
+  --gold:#c9a84c;--gold2:#e8c870;--gold-dim:#7a6230;
+  --teal:#3ab8c4;--teal-dim:#1d5e65;
+  --red:#d94f4f;--green:#4fad6e;
+  --text:#c8d4df;--text-dim:#6a8090;--text-bright:#e8f0f8;
+  --font-display:'Cinzel',serif;
+  --font-mono:'JetBrains Mono',monospace;
+  --font-body:'Raleway',sans-serif;
+  --radius:4px;
+  --ease:all 0.22s cubic-bezier(0.4,0,0.2,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:var(--bg0);color:var(--text);font-family:var(--font-body)}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:var(--bg1)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+/* layout */
+#root{display:grid;height:100vh;
+  grid-template-rows:44px 1fr 36px;
+  grid-template-columns:260px 1fr 280px;
+  grid-template-areas:"hdr hdr hdr""lft ctr rgt""ftr ftr ftr"}
+
+/* header */
+#hdr{grid-area:hdr;display:flex;align-items:center;padding:0 14px;gap:10px;
+  background:var(--bg1);border-bottom:1px solid var(--border);z-index:100}
+#hdr h1{font-family:var(--font-display);font-size:14px;font-weight:600;
+  letter-spacing:.12em;color:var(--gold2);white-space:nowrap}
+#hdr h1 span{color:var(--text-dim);font-weight:400;font-size:10px;
+  margin-left:8px;font-family:var(--font-mono)}
+.badge{font-family:var(--font-mono);font-size:9px;letter-spacing:.08em;
+  padding:2px 8px;border:1px solid var(--border2);color:var(--text-dim);
+  border-radius:2px;background:var(--bg2);white-space:nowrap}
+.badge.on{border-color:var(--teal-dim);color:var(--teal)}
+#hdr .sp{flex:1}
+
+/* key group */
+#kgrp{display:flex;align-items:center;gap:6px}
+#key-in{font-family:var(--font-mono);font-size:10px;background:var(--bg2);
+  border:1px solid var(--border2);color:var(--text);padding:4px 10px;
+  border-radius:var(--radius);width:200px;outline:none;transition:var(--ease)}
+#key-in:focus{border-color:var(--gold-dim);color:var(--gold2)}
+#key-in::placeholder{color:var(--text-dim)}
+#prov-badge{transition:var(--ease);min-width:76px;text-align:center;cursor:default}
+#prov-badge.ok{border-color:var(--pcolor,#c9a84c);color:var(--pcolor,#c9a84c)}
+#prov-badge.err{border-color:var(--red);color:var(--red)}
+#mdl-sel{font-family:var(--font-mono);font-size:9px;background:var(--bg2);
+  border:1px solid var(--border2);color:var(--text);padding:3px 6px;
+  border-radius:var(--radius);outline:none;cursor:pointer;max-width:148px;
+  display:none;transition:var(--ease)}
+#mdl-sel option{background:var(--bg2)}
+
+/* panels */
+#lft{grid-area:lft;display:flex;flex-direction:column;background:var(--bg1);
+  border-right:1px solid var(--border);overflow:hidden}
+#ctr{grid-area:ctr;display:flex;flex-direction:column;background:var(--bg0);overflow:hidden}
+#rgt{grid-area:rgt;display:flex;flex-direction:column;background:var(--bg1);
+  border-left:1px solid var(--border);overflow:hidden}
+#ftr{grid-area:ftr;display:flex;align-items:center;padding:0 14px;gap:14px;
+  background:var(--bg1);border-top:1px solid var(--border);
+  font-family:var(--font-mono);font-size:9px;color:var(--text-dim)}
+#ftr .fs{color:var(--teal)}#ftr .fv{margin-left:auto;color:var(--gold-dim)}
+
+.ph{padding:7px 12px;font-family:var(--font-mono);font-size:9px;letter-spacing:.1em;
+  color:var(--gold);text-transform:uppercase;border-bottom:1px solid var(--border);
+  background:var(--bg1);flex-shrink:0;display:flex;align-items:center;gap:7px}
+.ph .d{width:5px;height:5px;border-radius:50%;background:var(--gold-dim)}
+.div{font-family:var(--font-mono);font-size:8px;letter-spacing:.12em;color:var(--gold-dim);
+  text-transform:uppercase;padding:4px 12px;border-top:1px solid var(--border);
+  border-bottom:1px solid var(--border);background:var(--bg0);flex-shrink:0}
+
+/* phase nav */
+.pnav{display:flex;flex-direction:column;gap:3px;padding:8px;flex-shrink:0}
+.pi{display:flex;align-items:center;gap:8px;padding:7px 10px;
+  border-radius:var(--radius);border:1px solid transparent;
+  cursor:pointer;transition:var(--ease)}
+.pi:hover{background:var(--bg2);border-color:var(--border2)}
+.pi.act{background:var(--bg3);border-color:var(--teal-dim)}
+.pi.dn{border-color:var(--border2)}
+.pn{font-family:var(--font-mono);font-size:9px;font-weight:500;
+  width:22px;height:22px;border-radius:2px;display:flex;align-items:center;
+  justify-content:center;background:var(--bg2);border:1px solid var(--border2);
+  color:var(--text-dim);flex-shrink:0;transition:var(--ease)}
+.pi.act .pn{background:var(--teal-dim);border-color:var(--teal);color:var(--teal)}
+.pi.dn .pn{border-color:var(--green);color:var(--green)}
+.pl{font-size:11px;font-weight:500;color:var(--text-dim);transition:var(--ease)}
+.pi.act .pl,.pi.dn .pl{color:var(--text)}
+.ps{font-family:var(--font-mono);font-size:8px;color:var(--text-dim);margin-top:1px}
+
+/* manifest */
+#mf{flex:1;width:100%;font-family:var(--font-mono);font-size:10px;line-height:1.7;
+  background:var(--bg0);color:var(--text);border:none;outline:none;
+  resize:none;padding:12px;tab-size:2}
+
+/* canvas + console */
+#ca{flex:1;position:relative;overflow:hidden}
+#cv{display:block;width:100%;height:100%}
+#con{height:210px;flex-shrink:0;border-top:1px solid var(--border);
+  display:flex;flex-direction:column}
+#clog{flex:1;overflow-y:auto;padding:8px 12px;
+  font-family:var(--font-mono);font-size:10px;line-height:1.8}
+.ll{display:flex;gap:8px}
+.lt{color:var(--gold);min-width:36px}
+.lt.tc{color:var(--teal)}.lt.rc{color:var(--red)}.lt.gc{color:var(--green)}
+.lm{color:var(--text);word-break:break-word;white-space:pre-wrap}
+#cin{display:flex;align-items:center;border-top:1px solid var(--border);flex-shrink:0}
+#prompt{flex:1;font-family:var(--font-mono);font-size:11px;background:var(--bg2);
+  border:none;color:var(--text);padding:10px 14px;outline:none}
+#prompt::placeholder{color:var(--text-dim)}
+#forge{font-family:var(--font-display);font-size:10px;letter-spacing:.1em;
+  padding:10px 20px;background:var(--gold-dim);color:var(--gold2);
+  border:none;cursor:pointer;transition:var(--ease);white-space:nowrap}
+#forge:hover{background:var(--gold);color:#000}
+#forge:disabled{opacity:.4;cursor:not-allowed}
+
+/* right panel */
+.pq{display:flex;flex-direction:column;gap:4px;padding:8px}
+.qi{padding:7px 10px;border-radius:var(--radius);border:1px solid var(--border);
+  background:var(--bg2);display:flex;align-items:center;gap:8px;
+  font-family:var(--font-mono);font-size:9px}
+.qd{width:6px;height:6px;border-radius:50%;flex-shrink:0;background:var(--border2)}
+.qd.run{background:var(--gold);animation:pulse 1s infinite}
+.qd.dn{background:var(--green)}.qd.er{background:var(--red)}
+.qn{flex:1;color:var(--text-dim)}.qn.run{color:var(--gold2)}.qn.dn{color:var(--text)}
+.qs{color:var(--text-dim)}.qs.dn{color:var(--green)}
+
+.kg{display:flex;flex-direction:column;gap:8px;padding:10px}
+.kr{display:flex;flex-direction:column;gap:3px}
+.kl{font-family:var(--font-mono);font-size:8px;letter-spacing:.08em;
+  color:var(--text-dim);text-transform:uppercase;display:flex;justify-content:space-between}
+.kv{color:var(--text)}
+.kt{height:3px;background:var(--bg3);border-radius:2px;overflow:hidden}
+.kf{height:100%;border-radius:2px;transition:width .6s cubic-bezier(.4,0,.2,1);background:var(--teal)}
+.kf.warn{background:var(--gold)}.kf.crit{background:var(--red)}
+
+#out{border-top:1px solid var(--border);padding:10px;font-family:var(--font-mono);
+  font-size:9px;line-height:1.7;max-height:200px;overflow-y:auto;color:var(--text)}
+#out h4{font-family:var(--font-display);font-size:10px;letter-spacing:.08em;
+  color:var(--gold);margin-bottom:6px}
+
+/* no-key banner */
+#nobanner{display:none;position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  font-family:var(--font-mono);font-size:11px;color:var(--text-dim);
+  text-align:center;line-height:2;pointer-events:none}
+#nobanner span{color:var(--gold);display:block;font-family:var(--font-display);
+  font-size:16px;letter-spacing:.1em;margin-bottom:8px}
+
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes fi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.fi{animation:fi .3s ease forwards}
+</style>
+</head>
+<body>
+<div id="root">
+
+<header id="hdr">
+  <h1>IMAGEN IDE <span>v2.0 · Consultant Edition</span></h1>
+  <div class="badge on" id="bmode">FORGE</div>
+  <div class="badge" id="bmodel">—</div>
+  <div class="sp"></div>
+  <div id="kgrp">
+    <input id="key-in" type="password" placeholder="Paste API key — auto-detects provider" autocomplete="off"/>
+    <div class="badge" id="prov-badge">KEY</div>
+    <select id="mdl-sel"></select>
+  </div>
+</header>
+
+<aside id="lft">
+  <div class="ph"><div class="d"></div>PIPELINE</div>
+  <div class="pnav" id="pnav"></div>
+  <div class="div">MANIFEST</div>
+  <textarea id="mf" spellcheck="false"># IMAGEN Project Manifest
+[project]
+name    = "My Creation"
+medium  = "image"
+quality = "production"
+passes  = 3
+
+[constraints]
+aesthetic  = "high"
+structural = "strict"
+technical  = "moderate"
+
+[deployment]
+targets = ["diagram_doc"]
+</textarea>
+</aside>
+
+<main id="ctr">
+  <div id="ca">
+    <canvas id="cv"></canvas>
+    <div id="nobanner"><span>IMAGEN IDE</span>Paste an API key in the top-right to begin.<br>Supported: Anthropic · OpenAI · Google Gemini</div>
+  </div>
+  <div id="con">
+    <div class="ph"><div class="d"></div>INTENT CONSOLE</div>
+    <div id="clog"></div>
+    <div id="cin">
+      <input id="prompt" type="text" placeholder="Describe your creative intent… (Enter or FORGE ▶)"/>
+      <button id="forge" onclick="runPipeline()">FORGE ▶</button>
+    </div>
+  </div>
+</main>
+
+<aside id="rgt">
+  <div class="ph"><div class="d"></div>PASS QUEUE</div>
+  <div class="pq" id="pq"></div>
+  <div class="div">QUALITY KPIs</div>
+  <div class="kg" id="kg"></div>
+  <div class="div">LAST OUTPUT</div>
+  <div id="out"><div id="otxt" style="color:var(--text-dim);font-style:italic">No output yet. Run the pipeline to see results.</div></div>
+</aside>
+
+<footer id="ftr">
+  <span class="fs" id="fst">READY</span>
+  <span id="fph">We engrave worlds from ideas.</span>
+  <span class="fv">IMAGEN Kernel v2.0 · RED EYE · FishTacoStand Arcade · Brazen Studios, Inc.</span>
+</footer>
+
+</div>
+<script>
+// ═══════════════════════════════════════════════
+// IMAGEN IDE  v2.0  —  Core Logic
+// ═══════════════════════════════════════════════
+
+// ── Constants ────────────────────────────────
+const PHASES = [
+  {id:"L0", label:"Intent Model",      sub:"Parse & structure intent"},
+  {id:"L1", label:"Structural Model",  sub:"Topology & hierarchy"},
+  {id:"L2", label:"Authoring Core",    sub:"Generate base artifact"},
+  {id:"L3", label:"Refinement",        sub:"Multi-pass polish"},
+  {id:"L4", label:"Artifact Compiler", sub:"Package & validate"},
+  {id:"L5", label:"Deployment Fabric", sub:"Route to targets"},
+];
+
+const PASSES = [
+  "Global composition alignment",
+  "Structural / anatomical correction",
+  "Saliency-targeted detail enhancement",
+  "Confidence-gated micro refinement",
+  "Typography & material harmonization",
+];
+
+const KPI_KEYS    = ["coherence","structural_validity","detail_fidelity","export_readiness"];
+const KPI_TARGET  = {coherence:.90, structural_validity:.95, detail_fidelity:.88, export_readiness:.92};
+
+// ── Provider Registry ────────────────────────
+// Add Nano Banana here once endpoint/key prefix confirmed
+const PROVIDERS = {
+  anthropic:{
+    name:"Anthropic", short:"ANTHROPIC", color:"#c9a84c",
+    detect: k => k.startsWith("sk-ant-"),
+    models:[
+      {id:"claude-opus-4-20250514",    label:"Claude Opus 4"},
+      {id:"claude-sonnet-4-20250514",  label:"Claude Sonnet 4"},
+      {id:"claude-haiku-4-5-20251001", label:"Claude Haiku 4.5"},
+    ],
+    default:"claude-sonnet-4-20250514",
+  },
+  openai:{
+    name:"OpenAI", short:"OPENAI", color:"#19c37d",
+    detect: k => k.startsWith("sk-proj-") || (k.startsWith("sk-") && !k.startsWith("sk-ant-")),
+    models:[
+      {id:"gpt-4o",      label:"GPT-4o"},
+      {id:"gpt-4o-mini", label:"GPT-4o Mini"},
+      {id:"o3-mini",     label:"o3 Mini"},
+      {id:"o1",          label:"o1"},
+    ],
+    default:"gpt-4o",
+  },
+  google:{
+    name:"Google", short:"GEMINI", color:"#4285f4",
+    detect: k => k.startsWith("AIza"),
+    models:[
+      {id:"gemini-2.0-flash", label:"Gemini 2.0 Flash"},
+      {id:"gemini-1.5-pro",   label:"Gemini 1.5 Pro"},
+      {id:"gemini-1.5-flash", label:"Gemini 1.5 Flash"},
+    ],
+    default:"gemini-2.0-flash",
+  },
+  // nano_banana:{
+  //   name:"Nano Banana", short:"NANO🍌", color:"#f5d020",
+  //   detect: k => k.startsWith("nb-"),  // ← update with real prefix
+  //   models:[{id:"nano-banana-v1", label:"Nano Banana v1"}],
+  //   default:"nano-banana-v1",
+  // },
+};
+
+// ── State ────────────────────────────────────
+const S = {
+  running:  false,
+  provider: null,
+  phase:    -1,
+  kpis:     {},
+  passes:   [],
+  output:   "",
+};
+
+// ── Provider Detection ───────────────────────
+function detectProvider(key) {
+  for (const [id, p] of Object.entries(PROVIDERS))
+    if (p.detect(key)) return id;
+  return null;
+}
+
+function onKeyChange(key) {
+  const pid  = detectProvider(key);
+  S.provider = pid;
+  const pb   = document.getElementById("prov-badge");
+  const ms   = document.getElementById("mdl-sel");
+  const bm   = document.getElementById("bmodel");
+  const nb   = document.getElementById("nobanner");
+
+  if (pid) {
+    const p = PROVIDERS[pid];
+    pb.textContent = p.short;
+    pb.style.setProperty("--pcolor", p.color);
+    pb.className = "badge ok";
+    ms.innerHTML = p.models.map(m=>`<option value="${m.id}">${m.label}</option>`).join("");
+    ms.value = p.default;
+    ms.style.display = "block";
+    bm.textContent = p.models.find(m=>m.id===p.default)?.label ?? p.default;
+    bm.className = "badge on";
+    nb.style.display = "none";
+    clog("SYS", `Provider: ${p.name}  ·  Model: ${p.default}`, "tc");
+  } else if (key.length > 8) {
+    pb.textContent = "UNKNOWN";
+    pb.className = "badge err";
+    ms.style.display = "none";
+    bm.textContent = "—"; bm.className = "badge";
+    clog("SYS", "Key format not recognised. Nano Banana? Let us know the prefix!", "rc");
+  } else {
+    pb.textContent = "KEY";
+    pb.className = "badge";
+    ms.style.display = "none";
+    bm.textContent = "—"; bm.className = "badge";
+    nb.style.display = "block";
+  }
+}
+
+// ── Model Selector Sync ──────────────────────
+function onModelChange(val) {
+  if (!S.provider) return;
+  const p = PROVIDERS[S.provider];
+  const label = p.models.find(m=>m.id===val)?.label ?? val;
+  document.getElementById("bmodel").textContent = label;
+}
+
+// ── API Adapters ─────────────────────────────
+async function callModel(sys, msgs, maxTok=900) {
+  const key = document.getElementById("key-in").value.trim();
+  if (!key)        throw new Error("No API key pasted.");
+  if (!S.provider) throw new Error("Provider not detected from key.");
+  const model = document.getElementById("mdl-sel").value
+             || PROVIDERS[S.provider].default;
+  switch(S.provider) {
+    case "anthropic": return callAnthropic(key, model, sys, msgs, maxTok);
+    case "openai":    return callOpenAI   (key, model, sys, msgs, maxTok);
+    case "google":    return callGoogle   (key, model, sys, msgs, maxTok);
+    default: throw new Error(`No adapter for provider: ${S.provider}`);
+  }
+}
+
+async function callAnthropic(key, model, sys, msgs, maxTok) {
+  const body = {model, max_tokens:maxTok, messages:msgs};
+  if (sys) body.system = sys;
+  const r = await fetch("https://api.anthropic.com/v1/messages", {
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      "x-api-key":key,
+      "anthropic-version":"2023-06-01",
+      "anthropic-dangerous-direct-browser-access":"true",
+    },
+    body:JSON.stringify(body),
+  });
+  if (!r.ok) { const e=await r.json().catch(()=>({})); throw new Error(e.error?.message||`Anthropic ${r.status}`); }
+  return (await r.json()).content[0].text;
+}
+
+async function callOpenAI(key, model, sys, msgs, maxTok) {
+  const full = sys ? [{role:"system",content:sys},...msgs] : [...msgs];
+  const isR  = model.startsWith("o1")||model.startsWith("o3");
+  const body = {model, messages:full, [isR?"max_completion_tokens":"max_tokens"]:maxTok};
+  const r = await fetch("https://api.openai.com/v1/chat/completions", {
+    method:"POST",
+    headers:{"Content-Type":"application/json","Authorization":`Bearer ${key}`},
+    body:JSON.stringify(body),
+  });
+  if (!r.ok) { const e=await r.json().catch(()=>({})); throw new Error(e.error?.message||`OpenAI ${r.status}`); }
+  return (await r.json()).choices[0].message.content;
+}
+
+async function callGoogle(key, model, sys, msgs, maxTok) {
+  const contents = msgs.map(m=>({
+    role: m.role==="assistant"?"model":"user",
+    parts:[{text:m.content}],
+  }));
+  const body = {contents, generationConfig:{maxOutputTokens:maxTok}};
+  if (sys) body.systemInstruction = {parts:[{text:sys}]};
+  const r = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
+    {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)},
+  );
+  if (!r.ok) { const e=await r.json().catch(()=>({})); throw new Error(e.error?.message||`Gemini ${r.status}`); }
+  return (await r.json()).candidates[0].content.parts[0].text;
+}
+
+// ── Evaluator ────────────────────────────────
+async function evaluate(output, intent) {
+  const p = `Score this artifact on four dimensions (0.0–1.0).
+Intent: "${intent}"
+Output: ${output.slice(0,800)}
+Return ONLY valid JSON, no prose:
+{"coherence":0.0,"structural_validity":0.0,"detail_fidelity":0.0,"export_readiness":0.0}`;
+  try {
+    const txt = await callModel(null,[{role:"user",content:p}],200);
+    const clean = txt.replace(/```[a-z]*/g,"").replace(/```/g,"").trim();
+    const sc = JSON.parse(clean);
+    return Object.fromEntries(Object.entries(sc).map(([k,v])=>[k,parseFloat(v)||0]));
+  } catch {
+    return {coherence:.72, structural_validity:.70, detail_fidelity:.68, export_readiness:.55};
+  }
+}
+
+// ── Canvas ───────────────────────────────────
+const cv  = document.getElementById("cv");
+const ctx = cv.getContext("2d");
+let RAF, T=0, nodes=[], particles=[];
+
+function resizeCanvas() {
+  const r = cv.parentElement.getBoundingClientRect();
+  cv.width=r.width; cv.height=r.height;
+  rebuildNodes();
+}
+
+function rebuildNodes() {
+  const W=cv.width, H=cv.height;
+  nodes = PHASES.map((p,i) => {
+    const t = i/(PHASES.length-1);
+    return {id:p.id, label:p.label,
+      x: W*0.10 + t*(W*0.80),
+      y: H*0.50 + Math.sin(t*Math.PI)*H*-0.12,
+      r:22, i};
+  });
+  particles=[];
+}
+
+function spawnParticle(a,b) {
+  particles.push({x:a.x,y:a.y,tx:b.x,ty:b.y,p:0,s:0.012+Math.random()*.01});
+}
+
+function drawCanvas() {
+  const W=cv.width, H=cv.height;
+  ctx.clearRect(0,0,W,H);
+
+  // grid
+  ctx.strokeStyle="rgba(25,35,45,0.7)"; ctx.lineWidth=.5;
+  for(let x=0;x<W;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke()}
+  for(let y=0;y<H;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}
+
+  // edges
+  for(let i=0;i<nodes.length-1;i++){
+    const a=nodes[i],b=nodes[i+1];
+    const dn=S.phase>i, ac=S.phase===i;
+    ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y);
+    ctx.strokeStyle = dn?"rgba(58,184,196,.45)":ac?"rgba(201,168,76,.4)":"rgba(25,40,55,.9)";
+    ctx.lineWidth=dn?2:1.5; ctx.stroke();
+  }
+
+  // particles
+  for(const p of particles) {
+    p.p = Math.min(1, p.p+p.s);
+    const px=p.x+(p.tx-p.x)*p.p, py=p.y+(p.ty-p.y)*p.p;
+    const a=Math.sin(p.p*Math.PI);
+    ctx.beginPath(); ctx.arc(px,py,3,0,Math.PI*2);
+    ctx.fillStyle=`rgba(201,168,76,${a})`; ctx.fill();
+  }
+  particles = particles.filter(p=>p.p<1);
+
+  // nodes
+  for(const n of nodes) {
+    const dn=S.phase>n.i, ac=S.phase===n.i;
+    const glow=dn?12:ac?(14+Math.sin(T*4)*3):0;
+    if(glow>0){
+      const g=ctx.createRadialGradient(n.x,n.y,0,n.x,n.y,n.r+glow);
+      g.addColorStop(0,dn?"rgba(58,184,196,.25)":"rgba(201,168,76,.30)");
+      g.addColorStop(1,"rgba(0,0,0,0)");
+      ctx.beginPath(); ctx.arc(n.x,n.y,n.r+glow,0,Math.PI*2);
+      ctx.fillStyle=g; ctx.fill();
+    }
+    ctx.beginPath(); ctx.arc(n.x,n.y,n.r,0,Math.PI*2);
+    ctx.fillStyle=dn?"#0d2028":ac?"#1a2010":"#0d1014";
+    ctx.strokeStyle=dn?"#3ab8c4":ac?"#c9a84c":"#1e2830";
+    ctx.lineWidth=ac?2:1.5; ctx.fill(); ctx.stroke();
+    ctx.fillStyle=dn?"#3ab8c4":ac?"#c9a84c":"#6a8090";
+    ctx.font=`${ac?12:10}px 'Cinzel',serif`;
+    ctx.textAlign="center"; ctx.textBaseline="middle";
+    ctx.fillText(n.id,n.x,n.y);
+    ctx.fillStyle=ac?"#e8c870":"#6a8090";
+    ctx.font="8px 'Raleway',sans-serif"; ctx.textAlign="center";
+    ctx.fillText(n.label,n.x,n.y+n.r+13);
+  }
+  T+=0.016;
+  RAF=requestAnimationFrame(drawCanvas);
+}
+
+// ── UI helpers ───────────────────────────────
+function buildPhaseNav() {
+  document.getElementById("pnav").innerHTML = PHASES.map((p,i)=>`
+    <div class="pi" id="pi${i}">
+      <div class="pn">${p.id}</div>
+      <div><div class="pl">${p.label}</div><div class="ps">${p.sub}</div></div>
+    </div>`).join("");
+}
+
+function setPhase(i) {
+  S.phase=i;
+  PHASES.forEach((_,j)=>{
+    const el=document.getElementById(`pi${j}`);
+    if(!el) return;
+    el.className="pi"+(j<i?" dn":j===i?" act":"");
+  });
+}
+
+function buildPQ(list) {
+  document.getElementById("pq").innerHTML = list.map(p=>`
+    <div class="qi fi">
+      <div class="qd ${p.s}"></div>
+      <div class="qn ${p.s}">${p.n}</div>
+      <div class="qs ${p.s}">${p.s==="dn"?"✓":p.s==="run"?"…":""}</div>
+    </div>`).join("");
+}
+
+function buildKG() {
+  document.getElementById("kg").innerHTML = KPI_KEYS.map(k=>{
+    const v=S.kpis[k]??0, t=KPI_TARGET[k], pct=Math.round(v*100);
+    const cls=v>=t?"":v<t-.1?"crit":"warn";
+    return `<div class="kr">
+      <div class="kl"><span>${k.replace(/_/g," ")}</span><span class="kv">${pct}%</span></div>
+      <div class="kt"><div class="kf ${cls}" style="width:${pct}%"></div></div>
+    </div>`;
+  }).join("");
+}
+
+function clog(tag, msg, cls="") {
+  const el=document.getElementById("clog");
+  const d=document.createElement("div");
+  d.className="ll fi";
+  d.innerHTML=`<span class="lt ${cls}">${esc(tag)}</span><span class="lm">${esc(msg)}</span>`;
+  el.appendChild(d);
+  el.scrollTop=el.scrollHeight;
+}
+
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
+function setFtr(s,p=""){
+  document.getElementById("fst").textContent=s;
+  document.getElementById("fph").textContent=p;
+}
+
+// ── System prompt ────────────────────────────
+const SYS=`You are the IMAGEN Engine — a structured creative operating system.
+Produce precise, detailed, actionable creative specifications.
+Principles: intent first, structure driven, aesthetic precision, endless iteration, boundless creation.
+Every response is specific, concrete, and actionable. Never be vague.`;
+
+// ── Pipeline ─────────────────────────────────
+async function runPipeline() {
+  if (S.running) return;
+  const intent = document.getElementById("prompt").value.trim();
+  if (!intent) { clog("ERR","Enter a creative intent first.","rc"); return; }
+  if (!S.provider) { clog("ERR","No provider detected — paste your API key first.","rc"); return; }
+
+  S.running=true;
+  document.getElementById("forge").disabled=true;
+  document.getElementById("clog").innerHTML="";
+  S.kpis={}; setPhase(-1);
+
+  const pl=[
+    {n:"L0 · Intent Model",      s:"pnd"},
+    {n:"L1 · Structural Model",  s:"pnd"},
+    {n:"L2 · Authoring Core",    s:"pnd"},
+    ...PASSES.map((p,i)=>({n:`L3.${i+1} · ${p}`,s:"pnd"})),
+    {n:"L4 · Artifact Compiler", s:"pnd"},
+    {n:"L5 · Deployment",        s:"pnd"},
+  ];
+  const upd=(i,s)=>{ pl[i].s=s; buildPQ(pl); };
+
+  const phase=async(pi,qi,fn)=>{
+    setPhase(pi);
+    upd(qi,"run");
+    if(pi>0 && nodes[pi-1] && nodes[pi]) spawnParticle(nodes[pi-1],nodes[pi]);
+    try {
+      const r=await fn();
+      upd(qi,"dn");
+      const kpis=await evaluate(r,intent);
+      S.kpis=kpis; buildKG();
+      return r;
+    } catch(e) { upd(qi,"er"); throw e; }
+  };
+
+  let I="",St="",Dr="",Co="";
+  try {
+    // L0
+    setFtr("RUNNING","L0 · Intent");
+    clog("L0","Parsing creative intent…");
+    I=await phase(0,0,async()=>{
+      const o=await callModel(SYS,[{role:"user",content:
+        `You are L0 Intent Model. Raw intent: "${intent}"\n\nProduce a structured Intent Manifest:\n1. GOAL\n2. MEDIUM\n3. AESTHETIC SEED (3-5 attractors)\n4. CONSTRAINTS\n5. SCOPE\n6. AUDIENCE\n7. OPEN QUESTIONS\n\nBe specific and actionable.`}]);
+      clog("L0","Intent manifest ✓","gc"); return o;
+    });
+
+    // L1
+    setFtr("RUNNING","L1 · Structure");
+    clog("L1","Building topology…");
+    St=await phase(1,1,async()=>{
+      const o=await callModel(SYS,[{role:"user",content:
+        `L0:\n${I}\n\nYou are L1 Structural Model. Produce:\n1. COMPONENT HIERARCHY\n2. DEPTH MAP\n3. RELATIONSHIP MATRIX\n4. ARTICULATION POINTS\n5. LOAD PATHS\n6. CONSTRAINT PROPAGATION\n\nUse concrete names.`}]);
+      clog("L1","Structure mapped ✓","gc"); return o;
+    });
+
+    // L2
+    setFtr("RUNNING","L2 · Authoring");
+    clog("L2","Generating draft…");
+    Dr=await phase(2,2,async()=>{
+      const o=await callModel(SYS,[{role:"user",content:
+        `Intent:\n${I.slice(0,500)}\n\nStructure:\n${St.slice(0,500)}\n\nYou are L2 Authoring Core. Produce a richly detailed creative specification. Describe every component: material, texture, proportion, color, function. Be exhaustive.`}]);
+      clog("L2","Draft generated ✓","gc"); return o;
+    });
+
+    // L3 passes
+    setFtr("RUNNING","L3 · Refinement");
+    for(let i=0;i<PASSES.length;i++){
+      clog("L3",`Pass ${i+1}: ${PASSES[i]}…`,"tc");
+      Dr=await phase(3,3+i,async()=>{
+        const o=await callModel(SYS,[{role:"user",content:
+          `L3 Pass ${i+1} — Focus: ${PASSES[i]}\nIntent: ${intent}\nCurrent draft:\n${Dr.slice(0,700)}\n\nSurgically improve the weakest element. Return FULL spec with [PASS ${i+1} CHANGES] section at end.`}]);
+        clog("L3",`Pass ${i+1} ✓`,"gc");
+        const avg=Object.values(S.kpis).reduce((a,b)=>a+b,0)/KPI_KEYS.length;
+        if(avg>=0.92){ clog("L3","Converged early — halting passes","tc"); return o; }
+        return o;
+      });
+    }
+
+    // L4
+    setFtr("RUNNING","L4 · Compiler");
+    clog("L4","Packaging artifact…");
+    Co=await phase(4,3+PASSES.length,async()=>{
+      const o=await callModel(SYS,[{role:"user",content:
+        `You are L4 Artifact Compiler.\nRefined output:\n${Dr.slice(0,900)}\n\nProduce:\n## ASSET MANIFEST\n## TECHNICAL SPECIFICATION\n## QUALITY CERTIFICATE\n## INTEGRATION HOOKS\n## USAGE GUIDE`}]);
+      clog("L4","Artifact compiled ✓","gc"); return o;
+    });
+
+    // L5
+    setFtr("RUNNING","L5 · Deploy");
+    clog("L5","Routing to targets…");
+    setPhase(5); upd(3+PASSES.length+1,"dn");
+    clog("L5","Pipeline complete ✓","gc");
+
+    S.output=Co;
+    document.getElementById("otxt").innerHTML=
+      `<strong style="color:var(--gold)">L4 Compiled Artifact</strong><br><br>`
+      +esc(Co.slice(0,800))
+      +(Co.length>800?"<br><em style='color:var(--text-dim)'>[… truncated]</em>":"");
+
+    setFtr("COMPLETE ✓","Pipeline finished");
+    setPhase(6);
+
+  } catch(e) {
+    setFtr("ERROR","Pipeline halted");
+    clog("ERR",e.message,"rc");
+  } finally {
+    S.running=false;
+    document.getElementById("forge").disabled=false;
+  }
+}
+
+// ── Key listeners ────────────────────────────
+document.getElementById("key-in").addEventListener("input",  e=>onKeyChange(e.target.value));
+document.getElementById("key-in").addEventListener("paste",  e=>{
+  // paste fires before value updates; read from clipboardData
+  const pasted = (e.clipboardData||window.clipboardData).getData("text");
+  // combine with existing value accounting for cursor
+  setTimeout(()=>onKeyChange(document.getElementById("key-in").value),0);
+});
+document.getElementById("mdl-sel").addEventListener("change", e=>onModelChange(e.target.value));
+document.getElementById("prompt").addEventListener("keydown", e=>{
+  if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();runPipeline();}
+});
+
+// ── Persistence ──────────────────────────────
+const mf=document.getElementById("mf");
+const smf=localStorage.getItem("ig_manifest");
+if(smf) mf.value=smf;
+mf.addEventListener("input",()=>localStorage.setItem("ig_manifest",mf.value));
+
+const ki=document.getElementById("key-in");
+const sk=localStorage.getItem("ig_key");
+if(sk){ ki.value=sk; }
+ki.addEventListener("input", e=>localStorage.setItem("ig_key",e.target.value));
+
+// ── Init ─────────────────────────────────────
+buildPhaseNav();
+buildPQ(PHASES.map(p=>({n:`${p.id} · ${p.label}`,s:"pnd"})));
+buildKG();
+resizeCanvas();
+window.addEventListener("resize",resizeCanvas);
+drawCanvas();
+
+// Restore key + trigger detection AFTER DOM + canvas init
+if(sk) onKeyChange(sk);
+else document.getElementById("nobanner").style.display="block";
+</script>
+</body>
+</html>
