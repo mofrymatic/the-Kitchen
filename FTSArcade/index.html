@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FishTacoStand Arcade</title>
     <!-- ── Primary Meta ─────────────────────────────────────────────────────── -->
-    <meta name="description" content="FishTacoStand Arcade — a playful retro arcade hub serving Neon Invaders, Astroids, Cave Racer, RED EYE, Packman, Tetris, and more." />
+    <meta name="description" content="FishTacoStand Arcade — a playful retro arcade hub serving Neon Invaders, Astroids, Cave Racer, RED EYE, RC Racer, Tetris, and more." />
 
     <!-- ── Favicons ─────────────────────────────────────────────────────────── -->
     <link rel="icon" type="image/png" href="fts-favicon.png">
@@ -14,7 +14,7 @@
 
     <!-- ── Open Graph (Facebook, Discord, iMessage, etc.) ────────────────────── -->
     <meta property="og:title" content="FishTacoStand Arcade">
-    <meta property="og:description" content="Step up to the FishTacoStand Arcade: a retro cabinet hub for Neon Invaders, Astroids, Cave Racer, RED EYE, Packman, Tetris, and more.">
+    <meta property="og:description" content="Step up to the FishTacoStand Arcade: a retro cabinet hub for Neon Invaders, Astroids, Cave Racer, RED EYE, RC Racer, Tetris, and more.">
     <meta property="og:url" content="https://frymatic.us/FTSArcade/">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="FishTacoStand Arcade">
@@ -216,7 +216,7 @@
             height: 15.5%;
         }
 
-        .pac-man {
+        .rc-racer {
             color: var(--neon-yellow);
             left: 48.3%;
             top: 54%;
@@ -285,6 +285,180 @@
                 padding: 3px 6px;
             }
         }
+
+        /* ── EDGE VOLUME SLIDER ─────────────────────────────────────────────── */
+        #edge-volume {
+            position: fixed;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 500;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            /* Docked: only icon tab visible */
+            width: 44px;
+            padding: 14px 10px;
+            background: rgba(10, 0, 20, 0.85);
+            border: 1px solid rgba(255, 0, 110, 0.3);
+            border-right: none;
+            border-radius: 10px 0 0 10px;
+            backdrop-filter: blur(8px);
+            transition: width 0.35s cubic-bezier(0.34, 1.3, 0.64, 1),
+                        border-color 0.3s ease,
+                        box-shadow 0.3s ease;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        #edge-volume:hover,
+        #edge-volume.open {
+            width: 72px;
+            border-color: rgba(255, 0, 110, 0.7);
+            box-shadow: -4px 0 24px rgba(255, 0, 110, 0.25),
+                        inset 0 0 20px rgba(255, 0, 110, 0.05);
+        }
+
+        #vol-icon {
+            font-size: 14px;
+            color: var(--neon-pink);
+            text-shadow: 0 0 8px var(--neon-pink);
+            user-select: none;
+            flex-shrink: 0;
+            transition: text-shadow 0.3s ease;
+            line-height: 1;
+        }
+
+        #edge-volume:hover #vol-icon {
+            text-shadow: 0 0 14px var(--neon-pink), 0 0 28px var(--neon-pink);
+        }
+
+        #vol-pct {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 7px;
+            color: var(--neon-blue);
+            text-shadow: 0 0 6px var(--neon-blue);
+            white-space: nowrap;
+            letter-spacing: 0.5px;
+            flex-shrink: 0;
+            opacity: 0;
+            transition: opacity 0.25s ease;
+        }
+
+        #edge-volume:hover #vol-pct,
+        #edge-volume.open #vol-pct {
+            opacity: 1;
+        }
+
+        /* Vertical slider track wrapper */
+        #vol-track {
+            position: relative;
+            width: 20px;
+            height: 140px;
+            flex-shrink: 0;
+            opacity: 0;
+            transition: opacity 0.25s ease 0.05s;
+        }
+
+        #edge-volume:hover #vol-track,
+        #edge-volume.open #vol-track {
+            opacity: 1;
+        }
+
+        /* Custom track */
+        #vol-track::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            transform: translateX(-50%);
+            background: rgba(255, 0, 110, 0.2);
+            border-radius: 2px;
+        }
+
+        /* Filled portion — driven by CSS var */
+        #vol-track::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            bottom: 0;
+            width: 2px;
+            height: var(--vol-fill, 20%);
+            transform: translateX(-50%);
+            background: linear-gradient(to top, var(--neon-pink), var(--neon-blue));
+            border-radius: 2px;
+            box-shadow: 0 0 6px var(--neon-pink);
+            transition: height 0.05s linear;
+        }
+
+        #vol-range {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            transform: translateX(-50%) rotate(-90deg);
+            transform-origin: center center;
+            width: 140px;
+            height: 20px;
+            margin-left: -60px;
+            margin-top: 60px;
+            appearance: none;
+            -webkit-appearance: none;
+            background: transparent;
+            cursor: pointer;
+            outline: none;
+        }
+
+        #vol-range::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--neon-blue);
+            border: 2px solid var(--neon-pink);
+            box-shadow: 0 0 8px var(--neon-blue), 0 0 16px var(--neon-pink);
+            transition: box-shadow 0.2s ease, transform 0.2s ease;
+        }
+
+        #vol-range::-webkit-slider-thumb:hover {
+            transform: scale(1.3);
+            box-shadow: 0 0 12px var(--neon-blue), 0 0 24px var(--neon-pink);
+        }
+
+        #vol-range::-moz-range-thumb {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--neon-blue);
+            border: 2px solid var(--neon-pink);
+            box-shadow: 0 0 8px var(--neon-blue);
+            cursor: pointer;
+        }
+
+        /* Tick marks */
+        #vol-ticks {
+            position: absolute;
+            right: -6px;
+            top: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            pointer-events: none;
+        }
+
+        .vol-tick {
+            width: 4px;
+            height: 1px;
+            background: rgba(255, 0, 110, 0.4);
+        }
+
+        .vol-tick.major {
+            width: 6px;
+            background: rgba(0, 217, 255, 0.6);
+        }
     </style>
 </head>
 <body>
@@ -324,11 +498,11 @@
                 <img src="red-eye.png" alt="Red Eye">
             </a>
             
-            <a href="https://frymatic.us/FTSArcade/packman.html" target="_blank" 
-               class="game-tile pac-man" 
-               data-game="PAC MAN"
-               aria-label="Play Pac Man">
-                <img src="packman.png" alt="Pac Man">
+            <a href="https://frymatic.us/FTSArcade/rc-racer.html" target="_blank" 
+               class="game-tile rc-racer" 
+               data-game="RC Racer"
+               aria-label="Play RC Racer">
+                <img src="rc_racer.png" alt="RC Racer">
             </a>
             
             <a href="https://frymatic.us/FTSArcade/tetris.html" target="_blank" 
@@ -340,19 +514,47 @@
         </div>
     </div>
 
+    <!-- ── EDGE VOLUME SLIDER ─────────────────────────────────────────────── -->
+    <div id="edge-volume" title="Volume">
+        <div id="vol-icon">◁)))</div>
+        <div id="vol-pct">20%</div>
+        <div id="vol-track">
+            <div id="vol-ticks">
+                <span class="vol-tick major"></span>
+                <span class="vol-tick"></span>
+                <span class="vol-tick"></span>
+                <span class="vol-tick"></span>
+                <span class="vol-tick major"></span>
+                <span class="vol-tick"></span>
+                <span class="vol-tick"></span>
+                <span class="vol-tick"></span>
+                <span class="vol-tick major"></span>
+            </div>
+            <input type="range" id="vol-range" min="0" max="100" value="20" step="1">
+        </div>
+    </div>
+
     <script>
-        // Add sound effects on hover
+        // ── AUDIO ENGINE WITH MASTER GAIN ──────────────────────────────────
         const gameTiles = document.querySelectorAll('.game-tile');
         
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         const audioCtx = new AudioContext();
+
+        // Master gain — all sounds route through here
+        const masterGain = audioCtx.createGain();
+        masterGain.connect(audioCtx.destination);
+
+        // Init volume from localStorage (default 20%)
+        const savedVol = parseFloat(localStorage.getItem('fts-volume') ?? '20');
+        masterGain.gain.value = savedVol / 100;
         
         function playHoverSound() {
             const oscillator = audioCtx.createOscillator();
             const gainNode = audioCtx.createGain();
             
             oscillator.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
+            gainNode.connect(masterGain);          // → master gain
             
             oscillator.frequency.value = 800;
             oscillator.type = 'square';
@@ -369,7 +571,7 @@
             const gainNode = audioCtx.createGain();
             
             oscillator.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
+            gainNode.connect(masterGain);          // → master gain
             
             oscillator.frequency.value = 1200;
             oscillator.type = 'square';
@@ -383,16 +585,47 @@
         
         gameTiles.forEach(tile => {
             tile.addEventListener('mouseenter', () => {
-                if (audioCtx.state === 'suspended') {
-                    audioCtx.resume();
-                }
+                if (audioCtx.state === 'suspended') audioCtx.resume();
                 playHoverSound();
             });
-            
-            tile.addEventListener('click', (e) => {
-                playClickSound();
-            });
+            tile.addEventListener('click', () => playClickSound());
         });
+
+        // ── EDGE VOLUME SLIDER ─────────────────────────────────────────────
+        const edgeVol   = document.getElementById('edge-volume');
+        const volRange  = document.getElementById('vol-range');
+        const volPct    = document.getElementById('vol-pct');
+        const volTrack  = document.getElementById('vol-track');
+
+        // Sync slider to saved value
+        volRange.value = savedVol;
+        volPct.textContent = Math.round(savedVol) + '%';
+        volTrack.style.setProperty('--vol-fill', savedVol + '%');
+
+        // Update icon based on level
+        function updateVolIcon(pct) {
+            const icon = document.getElementById('vol-icon');
+            if (pct === 0)       icon.textContent = '◁';
+            else if (pct < 40)   icon.textContent = '◁)';
+            else if (pct < 75)   icon.textContent = '◁))';
+            else                 icon.textContent = '◁)))';
+        }
+        updateVolIcon(savedVol);
+
+        volRange.addEventListener('input', (e) => {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            const val = parseFloat(e.target.value);
+            masterGain.gain.setTargetAtTime(val / 100, audioCtx.currentTime, 0.015);
+            volPct.textContent = Math.round(val) + '%';
+            volTrack.style.setProperty('--vol-fill', val + '%');
+            updateVolIcon(val);
+            localStorage.setItem('fts-volume', val);
+        });
+
+        // Keep open while interacting with slider
+        volRange.addEventListener('mousedown', () => edgeVol.classList.add('open'));
+        document.addEventListener('mouseup',   () => edgeVol.classList.remove('open'));
 
         // Konami code easter egg
         const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
