@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TRADEGEN — All-Trades Permit Engineering Factory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Cinzel+Decorative:wght@400;700&family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap" rel="stylesheet">
+<style>
+:root {
+  --parchment: #ede8d8;
+  --parchment-dark: #e0d9c2;
+  --ink: #1c1a0e;
+  --ink-dark: #12100a;
+  --ink-mid: rgba(28,26,14,0.75);
+  --ink-light: rgba(28,26,14,0.45);
+  --ink-faint: rgba(28,26,14,0.14);
+  --red: #7a1c1c;
+  --red-dim: rgba(122,28,28,0.12);
+  --gold: #8b6a10;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #1c1a14;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  padding: 40px 20px;
+  font-family: 'IM Fell English', serif;
+}
+
+.poster {
+  width: 1100px;
+  background: var(--parchment);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 24px 100px rgba(0,0,0,0.75);
+}
+
+.poster::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, rgba(139,106,16,0.06) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── BORDERS ── */
+.outer-border { margin: 14px; border: 3px double var(--ink); position: relative; }
+.inner-border { margin: 6px; border: 1px solid var(--ink-light); position: relative; }
+
+/* ── HEADER ── */
+.header {
+  padding: 24px 40px 18px;
+  text-align: center;
+  border-bottom: 2px solid var(--ink);
+  position: relative;
+  background: linear-gradient(180deg, rgba(28,26,14,0.04) 0%, transparent 100%);
+}
+
+.header-badge {
+  width: 56px; height: 56px;
+  margin: 0 auto 8px;
+  border: 2.5px solid var(--ink);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+}
+.header-badge::before {
+  content: '';
+  position: absolute; inset: 3px;
+  border: 1px solid var(--ink-light);
+  border-radius: 50%;
+}
+.badge-text { font-family: 'Cinzel', serif; font-size: 12px; font-weight: 700; color: var(--ink); letter-spacing: 0.04em; }
+
+.header-super { font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 0.4em; color: var(--ink-light); text-transform: uppercase; margin-bottom: 3px; }
+.header-title { font-family: 'Cinzel Decorative', serif; font-size: 68px; font-weight: 900; color: var(--ink); line-height: 0.9; letter-spacing: -0.01em; }
+.header-sub { font-family: 'IM Fell English', serif; font-style: italic; font-size: 15px; color: var(--ink-mid); margin-top: 6px; letter-spacing: 0.06em; }
+.header-sub .stars { color: var(--gold); margin: 0 8px; }
+
+.header-corners { position: absolute; top: 24px; width: 100%; left: 0; display: flex; justify-content: space-between; padding: 0 28px; pointer-events: none; }
+.hc-item { text-align: center; width: 90px; }
+.hc-item svg { width: 44px; height: 44px; display: block; margin: 0 auto 4px; }
+.hc-label { font-family: 'Cinzel', serif; font-size: 6.5px; letter-spacing: 0.1em; color: var(--ink-light); text-transform: uppercase; line-height: 1.45; }
+
+/* ── TRADES RIBBON ── */
+.trades-ribbon {
+  border-bottom: 1.5px solid var(--ink);
+  padding: 10px 0;
+  display: flex;
+  justify-content: center;
+  gap: 0;
+  background: rgba(28,26,14,0.04);
+}
+.trade-tab {
+  flex: 1;
+  text-align: center;
+  padding: 5px 6px;
+  border-right: 1px solid var(--ink-faint);
+  cursor: default;
+}
+.trade-tab:last-child { border-right: none; }
+.trade-tab-icon svg { width: 20px; height: 20px; display: block; margin: 0 auto 3px; color: var(--ink); }
+.trade-tab-name { font-family: 'Cinzel', serif; font-size: 6.5px; letter-spacing: 0.12em; color: var(--ink); text-transform: uppercase; font-weight: 600; }
+.trade-tab-lic { font-family: 'IM Fell English', serif; font-size: 7px; color: var(--ink-light); font-style: italic; }
+
+/* ── PHASE ROW HEADERS ── */
+.phase-headers {
+  display: grid;
+  grid-template-columns: 140px 1fr 1fr 1.4fr 1fr 1fr;
+  border-bottom: 1.5px solid var(--ink);
+  background: rgba(28,26,14,0.06);
+}
+.ph-empty { border-right: 1px solid var(--ink-light); }
+.ph-item {
+  text-align: center;
+  padding: 7px 4px;
+  border-right: 1px solid var(--ink-light);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.ph-item:last-child { border-right: none; }
+.ph-num {
+  width: 16px; height: 16px;
+  border: 1.5px solid var(--ink);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Cinzel', serif;
+  font-size: 8px; font-weight: 700; color: var(--ink);
+  margin-bottom: 2px;
+}
+.ph-title { font-family: 'Cinzel', serif; font-size: 9px; font-weight: 700; letter-spacing: 0.12em; color: var(--ink); text-transform: uppercase; }
+.ph-sub { font-family: 'IM Fell English', serif; font-style: italic; font-size: 8px; color: var(--ink-light); }
+
+/* ── TRADE GRID ── */
+.trade-grid {
+  display: grid;
+  grid-template-columns: 140px 1fr 1fr 1.4fr 1fr 1fr;
+}
+.trade-row {
+  display: contents;
+}
+.trade-row-label {
+  border-right: 1.5px solid var(--ink);
+  border-bottom: 1px solid var(--ink-faint);
+  padding: 12px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  background: rgba(28,26,14,0.04);
+  text-align: center;
+}
+.trade-row-label svg { width: 22px; height: 22px; color: var(--ink); }
+.trade-label-name { font-family: 'Cinzel', serif; font-size: 7.5px; font-weight: 700; letter-spacing: 0.1em; color: var(--ink); text-transform: uppercase; }
+.trade-label-lic { font-family: 'IM Fell English', serif; font-size: 7px; color: var(--ink-light); font-style: italic; }
+
+.cell {
+  border-right: 1px solid var(--ink-faint);
+  border-bottom: 1px solid var(--ink-faint);
+  padding: 9px 10px;
+}
+.cell:last-child { border-right: none; }
+.cell.engine-cell {
+  border-right: 1px solid var(--ink-light);
+  border-left: 1px solid var(--ink-light);
+  background: rgba(28,26,14,0.03);
+}
+
+.cell-list { list-style: none; display: flex; flex-direction: column; gap: 4px; }
+.cell-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  font-size: 8px;
+  color: var(--ink-mid);
+  font-family: 'IM Fell English', serif;
+  line-height: 1.3;
+}
+.cell-item::before { content: '·'; color: var(--ink); flex-shrink: 0; margin-top: 0; }
+
+.cell-engine-item {
+  text-align: center;
+  border: 0.5px solid var(--ink-faint);
+  padding: 4px;
+  margin-bottom: 4px;
+  font-family: 'Cinzel', serif;
+  font-size: 6.5px;
+  letter-spacing: 0.08em;
+  color: var(--ink-mid);
+  text-transform: uppercase;
+}
+
+.engine-badge {
+  border: 1px solid var(--ink-light);
+  padding: 5px;
+  margin-bottom: 5px;
+  text-align: center;
+  background: rgba(28,26,14,0.04);
+}
+.engine-badge-title {
+  font-family: 'Cinzel', serif;
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--ink);
+  text-transform: uppercase;
+}
+
+.qgate {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 7.5px;
+  color: var(--ink-mid);
+  font-family: 'IM Fell English', serif;
+  margin-bottom: 3px;
+}
+.qgate svg { width: 10px; height: 10px; flex-shrink: 0; color: var(--ink); }
+
+/* Separator row within grid */
+.section-sep-row {
+  grid-column: 1 / -1;
+  height: 1.5px;
+  background: var(--ink);
+  opacity: 0.25;
+}
+
+/* ── DIVIDER ORNAMENT ── */
+.div-row {
+  grid-column: 1 / -1;
+  border-top: 1px solid var(--ink-faint);
+  border-bottom: 1px solid var(--ink-faint);
+  padding: 3px;
+  text-align: center;
+  font-family: 'Cinzel', serif;
+  font-size: 6.5px;
+  letter-spacing: 0.3em;
+  color: var(--ink-light);
+  text-transform: uppercase;
+}
+
+/* ── FORGE ENGINE CENTRAL COLUMN CELLS ── */
+.engine-lightning {
+  width: 60px; height: 60px;
+  margin: 0 auto 5px;
+}
+
+/* ── PROCESS STRIP ── */
+.process-strip {
+  border-top: 2px solid var(--ink);
+  padding: 12px 32px;
+}
+.process-title { text-align: center; font-family: 'Cinzel', serif; font-size: 8px; letter-spacing: 0.3em; color: var(--ink-light); text-transform: uppercase; margin-bottom: 10px; }
+.process-flow { display: flex; align-items: center; justify-content: center; gap: 0; }
+.pf-step { text-align: center; flex: 1; }
+.pf-step svg { width: 30px; height: 30px; display: block; margin: 0 auto 3px; color: var(--ink); }
+.pf-label { font-family: 'Cinzel', serif; font-size: 6px; letter-spacing: 0.12em; color: var(--ink-mid); text-transform: uppercase; }
+.pf-arrow { color: var(--ink-mid); font-size: 14px; padding: 0 2px; margin-bottom: 14px; opacity: 0.5; }
+
+/* ── FOUNDATION ── */
+.foundation {
+  border-top: 1.5px solid var(--ink);
+  padding: 9px 32px;
+  background: rgba(28,26,14,0.04);
+}
+.found-title { text-align: center; font-family: 'Cinzel', serif; font-size: 7.5px; letter-spacing: 0.3em; color: var(--ink-light); text-transform: uppercase; margin-bottom: 7px; }
+.found-grid { display: flex; justify-content: space-around; align-items: center; }
+.found-item { display: flex; align-items: center; gap: 5px; }
+.found-item svg { width: 15px; height: 15px; color: var(--ink); flex-shrink: 0; }
+.found-text { font-family: 'Cinzel', serif; font-size: 6px; letter-spacing: 0.1em; color: var(--ink-mid); text-transform: uppercase; line-height: 1.4; }
+
+/* ── FOOTER ── */
+.footer-bar {
+  border-top: 2px solid var(--ink);
+  padding: 10px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.footer-est { border: 1px solid var(--ink); padding: 3px 10px; font-family: 'Cinzel', serif; font-size: 8px; letter-spacing: 0.12em; color: var(--ink); }
+.footer-tagline { font-family: 'Cinzel Decorative', serif; font-size: 13px; font-weight: 700; color: var(--ink); letter-spacing: 0.04em; }
+.footer-badge { width: 36px; height: 36px; border: 2px solid var(--ink); border-radius: 50%; display: flex; align-items: center; justify-content: center; position: relative; }
+.footer-badge::before { content: ''; position: absolute; inset: 3px; border: 1px solid var(--ink-light); border-radius: 50%; }
+.footer-badge-text { font-family: 'Cinzel', serif; font-size: 9px; font-weight: 700; color: var(--ink); }
+</style>
+</head>
+<body>
+<div class="poster">
+<div class="outer-border">
+<div class="inner-border">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-corners">
+      <div class="hc-item">
+        <svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="30" cy="30" r="28" stroke="#1c1a0e" stroke-width="1"/>
+          <circle cx="30" cy="30" r="20" stroke="#1c1a0e" stroke-width="0.5"/>
+          <circle cx="30" cy="30" r="3" fill="#1c1a0e"/>
+          <polygon points="30,2 32,26 30,23 28,26" fill="#1c1a0e"/>
+          <polygon points="30,58 32,34 30,37 28,34" fill="#1c1a0e" opacity="0.4"/>
+          <polygon points="2,30 26,32 23,30 26,28" fill="#1c1a0e" opacity="0.4"/>
+          <polygon points="58,30 34,32 37,30 34,28" fill="#1c1a0e"/>
+          <line x1="30" y1="7" x2="30" y2="53" stroke="#1c1a0e" stroke-width="0.4" opacity="0.25"/>
+          <line x1="7" y1="30" x2="53" y2="30" stroke="#1c1a0e" stroke-width="0.4" opacity="0.25"/>
+          <line x1="11" y1="11" x2="49" y2="49" stroke="#1c1a0e" stroke-width="0.3" opacity="0.2"/>
+          <line x1="49" y1="11" x2="11" y2="49" stroke="#1c1a0e" stroke-width="0.3" opacity="0.2"/>
+          <text x="30" y="20" text-anchor="middle" font-family="Cinzel,serif" font-size="5" fill="#1c1a0e" opacity="0.7">N</text>
+        </svg>
+        <div class="hc-label">TRADEGEN<br>BUILT TO<br>FORGE ALL TRADES</div>
+      </div>
+      <div class="hc-item" style="text-align:right;">
+        <svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="30" cy="30" r="26" stroke="#1c1a0e" stroke-width="1"/>
+          <ellipse cx="30" cy="30" rx="13" ry="26" stroke="#1c1a0e" stroke-width="0.6"/>
+          <ellipse cx="30" cy="30" rx="26" ry="8" stroke="#1c1a0e" stroke-width="0.5"/>
+          <line x1="4" y1="30" x2="56" y2="30" stroke="#1c1a0e" stroke-width="0.4"/>
+          <line x1="30" y1="4" x2="30" y2="56" stroke="#1c1a0e" stroke-width="0.4"/>
+          <path d="M8 18 Q30 22 52 18" stroke="#1c1a0e" stroke-width="0.4" fill="none"/>
+          <path d="M8 42 Q30 38 52 42" stroke="#1c1a0e" stroke-width="0.4" fill="none"/>
+        </svg>
+        <div class="hc-label">FROM PLANS<br>TO PERMITS,<br>ALL TRADES.</div>
+      </div>
+    </div>
+    <div class="header-badge"><span class="badge-text">TG</span></div>
+    <div class="header-super">The Development of</div>
+    <div class="header-title">TRADEGEN</div>
+    <div class="header-sub"><span class="stars">✦</span> All-Trades Permit Engineering Factory (ATPEF) <span class="stars">✦</span></div>
+  </div>
+
+  <!-- TRADES RIBBON -->
+  <div class="trades-ribbon">
+    <!-- Electrical -->
+    <div class="trade-tab">
+      <div class="trade-tab-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M12 3 L8 10 H11 L7 17"/><circle cx="10" cy="10" r="8" stroke-width="0.7"/></svg></div>
+      <div class="trade-tab-name">Electrical</div>
+      <div class="trade-tab-lic">C-10</div>
+    </div>
+    <!-- HVAC -->
+    <div class="trade-tab">
+      <div class="trade-tab-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="3" y="5" width="14" height="10" rx="1"/><path d="M7 9 Q10 7 13 9 Q10 11 7 9z"/><line x1="10" y1="2" x2="10" y2="5"/><line x1="10" y1="15" x2="10" y2="18"/></svg></div>
+      <div class="trade-tab-name">HVAC / Mech</div>
+      <div class="trade-tab-lic">C-20 / C-38</div>
+    </div>
+    <!-- Plumbing -->
+    <div class="trade-tab">
+      <div class="trade-tab-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M5 3 Q5 10 10 10 Q15 10 15 17"/><circle cx="5" cy="3" r="2"/><circle cx="15" cy="17" r="2"/><line x1="8" y1="10" x2="12" y2="10"/></svg></div>
+      <div class="trade-tab-name">Plumbing</div>
+      <div class="trade-tab-lic">C-36</div>
+    </div>
+    <!-- Structural -->
+    <div class="trade-tab">
+      <div class="trade-tab-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M3 17 L10 4 L17 17 H3z"/><line x1="10" y1="4" x2="10" y2="17"/><line x1="3" y1="13" x2="17" y2="13"/></svg></div>
+      <div class="trade-tab-name">Structural</div>
+      <div class="trade-tab-lic">SE / C-51</div>
+    </div>
+    <!-- Fire Sprinkler -->
+    <div class="trade-tab">
+      <div class="trade-tab-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="10" cy="8" r="4"/><path d="M10 12 L10 16"/><path d="M7 15 L10 16 L13 15"/><line x1="5" y1="8" x2="2" y2="8"/><line x1="15" y1="8" x2="18" y2="8"/></svg></div>
+      <div class="trade-tab-name">Fire Sprinkler</div>
+      <div class="trade-tab-lic">C-16</div>
+    </div>
+    <!-- Low Voltage / Comm -->
+    <div class="trade-tab">
+      <div class="trade-tab-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M4 14 Q10 4 16 14"/><path d="M6 16 Q10 10 14 16"/><circle cx="10" cy="17" r="1.5"/></svg></div>
+      <div class="trade-tab-name">Low Voltage</div>
+      <div class="trade-tab-lic">C-7 / C-10</div>
+    </div>
+    <!-- Solar / PV -->
+    <div class="trade-tab">
+      <div class="trade-tab-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="2" y="7" width="16" height="9" rx="1"/><line x1="10" y1="3" x2="10" y2="7"/><line x1="6" y1="4" x2="7" y2="6"/><line x1="14" y1="4" x2="13" y2="6"/><line x1="6" y1="11" x2="14" y2="11"/><line x1="6" y1="13" x2="14" y2="13"/></svg></div>
+      <div class="trade-tab-name">Solar / PV</div>
+      <div class="trade-tab-lic">C-10 / C-46</div>
+    </div>
+    <!-- Roofing -->
+    <div class="trade-tab">
+      <div class="trade-tab-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M2 12 L10 4 L18 12"/><rect x="5" y="12" width="10" height="7"/><rect x="8" y="14" width="4" height="5"/></svg></div>
+      <div class="trade-tab-name">Roofing</div>
+      <div class="trade-tab-lic">C-39</div>
+    </div>
+    <!-- GC -->
+    <div class="trade-tab">
+      <div class="trade-tab-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="2" y="10" width="16" height="8" rx="0.5"/><path d="M5 10 L5 7 Q10 3 15 7 L15 10"/><line x1="8" y1="14" x2="12" y2="14"/><line x1="10" y1="12" x2="10" y2="16"/></svg></div>
+      <div class="trade-tab-name">Gen. Contractor</div>
+      <div class="trade-tab-lic">B / A</div>
+    </div>
+  </div>
+
+  <!-- PHASE HEADERS -->
+  <div class="phase-headers">
+    <div class="ph-empty" style="border-right:1px solid var(--ink-light);"></div>
+    <div class="ph-item">
+      <div class="ph-num">1</div>
+      <div class="ph-title">Intake</div>
+      <div class="ph-sub">Capture & Validate</div>
+    </div>
+    <div class="ph-item">
+      <div class="ph-num">2</div>
+      <div class="ph-title">Standardize</div>
+      <div class="ph-sub">Package & Prepare</div>
+    </div>
+    <div class="ph-item">
+      <div class="ph-num">3</div>
+      <div class="ph-title">Forge Engine</div>
+      <div class="ph-sub">Build, Test & Verify</div>
+    </div>
+    <div class="ph-item">
+      <div class="ph-num">4</div>
+      <div class="ph-title">Refinement</div>
+      <div class="ph-sub">Review & Improve</div>
+    </div>
+    <div class="ph-item" style="border-right:none;">
+      <div class="ph-num">5</div>
+      <div class="ph-title">Deployment</div>
+      <div class="ph-sub">Release & Deliver</div>
+    </div>
+  </div>
+
+  <!-- TRADE GRID -->
+  <div class="trade-grid">
+
+    <!-- ── ELECTRICAL ── -->
+    <div class="trade-row-label">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M13 2 L7 13 H11 L9 22 L17 11 H13 L15 2z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div class="trade-label-name">Electrical</div>
+      <div class="trade-label-lic">C-10</div>
+    </div>
+    <div class="cell">
+      <ul class="cell-list">
+        <li class="cell-item">Load calculations</li>
+        <li class="cell-item">Site survey & panel assessment</li>
+        <li class="cell-item">Scope of work</li>
+        <li class="cell-item">NEC jurisdiction check</li>
+      </ul>
+    </div>
+    <div class="cell">
+      <ul class="cell-list">
+        <li class="cell-item">Single-line diagrams</li>
+        <li class="cell-item">Panel schedules</li>
+        <li class="cell-item">Code templates (NEC)</li>
+        <li class="cell-item">AFCI/GFCI requirements</li>
+      </ul>
+    </div>
+    <div class="cell engine-cell">
+      <div class="engine-badge">
+        <div class="engine-badge-title">⚡ Spark Engine</div>
+      </div>
+      <div class="cell-engine-item">Auto-populate Accela forms</div>
+      <div class="cell-engine-item">Title 24 energy compliance scan</div>
+      <div class="cell-engine-item">E-submission to AHJ portal</div>
+    </div>
+    <div class="cell">
+      <ul class="cell-list">
+        <li class="cell-item">Inspection result loop</li>
+        <li class="cell-item">AHJ correction response</li>
+        <li class="cell-item">Code update tracking</li>
+      </ul>
+    </div>
+    <div class="cell">
+      <ul class="cell-list">
+        <li class="cell-item">Digital permit issued</li>
+        <li class="cell-item">Inspection scheduled</li>
+        <li class="cell-item">Certificate of completion</li>
+      </ul>
+    </div>
+
+    <!-- ── HVAC ── -->
+    <div class="trade-row-label">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="3" y="6" width="18" height="12" rx="1"/><path d="M8 11 Q12 9 16 11 Q12 13 8 11z"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4" y1="22" x2="20" y2="22"/></svg>
+      <div class="trade-label-name">HVAC / Mech</div>
+      <div class="trade-label-lic">C-20 / C-38</div>
+    </div>
+    <div class="cell">
+      <ul class="cell-list">
+        <li class="cell-item">Manual J load calcs</li>
+        <li class="cell-item">Equipment specs & BTU</li>
+        <li class="cell-item">Duct layout survey</li>
+        <li class="cell-item">HERS rating needed?</li>
+      </ul>
+    </div>
+    <div class="cell">
+      <ul class="cell-list">
+        <li class="cell-item">Mechanical permit forms</li>
+        <li class="cell-item">Title 24 energy docs</li>
+        <li class="cell-item">CHEERS.org integration</li>
+        <li class="cell-item">Equipment cut sheets</li>
+      </ul>
+    </div>
+    <div class="cell engine-cell">
+      <div class="engine-badge">
+        <div class="engine-badge-title">🔧 Forge Engine</div>
+      </div>
+      <div class="cell-engine-item">CHEERS HERS auto-verify</div>
+      <div class="cell-engine-item">Accela mechanical submission</div>
+      <div class="cell-engine-item">Dual permit (mech + elec)</div>
+    </div>
+    <div class="cell">
+      <ul class="cell-list">
+        <li class="cell-item">HERS rater feedback</li>
+        <li class="cell-item">Inspection corrections</li>
+        <li class="cell-item">Energy compliance audit</li>
+      </ul>
+    </div>
+    <div class="cell">
+      <ul class="cell-list">
+        <li class="cell-item">CF-1R / CF-2R filed</li>
+        <li class="cell-item">Final inspection passed</li>
+        <li class="cell-item">HERS certificate issued</li>
+      </ul>
+    </div>
+
+    <!-- ── PLUMBING ── -->
+    <div class="trade-row-label">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M6 4 Q6 12 12 12 Q18 12 18 20"/><circle cx="6" cy="4" r="2.5"/><circle cx="18" cy="20" r="2.5"/><path d="M9 12 Q12 10 15 12" stroke-width="0.8"/></svg>
+      <div class="trade-label-name">Plumbing</div>
+      <div class="trade-label-lic">C-36</div>
+    </div>
+    <div class="cell">
+      <ul class="cell-list">
+        <li class="cell-item">Fixture count & flow rates</li>
+        <li class="cell-item">Water pressure survey</li>
+        <li class="cell-item">Drain / waste / vent layout</li>
+        <li class="cell-item">Gas line assessment</li>
+      </ul>
+    </div>
+    <div class="cell">
+      <ul class="cell-list">
+        <li class="cell-item">Isometric plumbing drawings</li>
+        <li class="cell-item">CPC compliance checklist</li>
+        <li class="cell-item">Gas piping diagrams</li>
+        <li class="cell-item">Backflow prevention specs</li>
+      </ul>
+    </div>
+    <div class="cell engine-cell">
+      <div class="engine-badge">
+        <div class="engine-badge-title">💧 Flow Engine</div>
+      </div>
+      <div class="cell-engine-item">CPC code compliance scan</div>
+      <div class="cell-engine-item">Water district coordination</div>
+      <div class="cell-engine-item">Automated permit submission</div>
+    </div>
+    <div class="cell">
+      <ul class="cell-list">
+        <li class="cell-item">Rough-in inspection loop</li>
+        <li class="cell-item">Water district feedback</li>
+        <li class="cell-item">Pressure test results</li>
+      </ul>
+    </div>
+    <div class="cell">
+      <ul class="cell-list">
+        <li class="cell-item">Plumbing permit finaled</li>
+        <li class="cell-item">Water meter release</li>
+        <li class="cell-item">Gas test certification</li>
+      </ul>
+    </div>
+
+    <!-- ── STRUCTURAL ── -->
+    <div class="trade-row-label">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M3 20 L12 5 L21 20 H3z"/><line x1="12" y1="5" x2="12" y2="20"/><line x1="3" y1="16" x2="21" y2="16"/><line x1="3" y1="12" x2="7" y2="12"/><line x1="17" y1="12" x2="21" y2="12"/></svg>
+      <div class="trade-label-name">Structural</div>
+      <div class="trade-label-lic">SE / C-51</div>
+    </div>
+    <div class="cell">
+      <ul class="cell-list">
+        <li class="cell-item">Geotechnical report review</li>
+        <li class="cell-item">Existing structure assessment</li>
+        <li class="cell-item">Load path analysis</li>
+        <li class="cell-item">Seismic zone classification</li>
+      </ul>
+    </div>
+    <div class="cell">
+      <ul class="cell-list">
+        <li class="cell-item">Structural calcs & plans</li>
+        <li class="cell-item">CBC Chapter 16 checklist</li>
+        <li class="cell-item">Shear wall schedules</li>
+        <li class="cell-item">Foundation details</li>
+      </ul>
+    </div>
+    <div class="cell engine-cell">
+      <div class="engine-badge">
+        <div class="engine-badge-title">🏗 Build Engine</div>
+      </div>
+      <div class="cell-engine-item">DSA / OSHPD routing logic</div>
+      <div class="cell-engine-item">PE stamp verification</div>
+      <div class="cell-engine-item">Plan check portal submission</div>
+    </div>
+    <div class="cell">
+      <ul class="cell-list">
+        <li class="cell-item">Plan check corrections</li>
+        <li class="cell-item">Special inspection coord.</li>
+        <li class="cell-item">Structural observation logs</li>
+      </ul>
+    </div>
+    <div class="cell">
+      <ul class="cell-list">
+        <li class="cell-item">Structural permit issued</li>
+        <li class="cell-item">Framing inspection passed</li>
+        <li class="cell-item">Special inspection report filed</li>
+      </ul>
+    </div>
+
+    <!-- ── FIRE SPRINKLER ── -->
+    <div class="trade-row-label">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="12" cy="9" r="4"/><path d="M12 13 L12 18"/><path d="M9 17 L12 18 L15 17"/><line x1="6" y1="9" x2="3" y2="9"/><line x1="18" y1="9" x2="21" y2="9"/><line x1="12" y1="5" x2="12" y2="3"/></svg>
+      <div class="trade-label-name">Fire Sprinkler</div>
+      <div class="trade-label-lic">C-16</div>
+    </div>
+    <div class="cell">
+      <ul class="cell-list">
+        <li class="cell-item">Hazard occupancy class</li>
+        <li class="cell-item">Water supply flow test</li>
+        <li class="cell-item">Sprinkler head density</li>
+        <li class="cell-item">NFPA 13 / 13R / 13D scope</li>
+      </ul>
+    </div>
+    <div class="cell">
+      <ul class="cell-list">
+        <li class="cell-item">Hydraulic calculations</li>
+        <li class="cell-item">Sprinkler layout drawings</li>
+        <li class="cell-item">Fire dept coordination</li>
+        <li class="cell-item">Antifreeze / dry system specs</li>
+      </ul>
+    </div>
+    <div class="cell engine-cell">
+      <div class="engine-badge">
+        <div class="engine-badge-title">🔴 Fire Engine</div>
+      </div>
+      <div class="cell-engine-item">NFPA code compliance check</div>
+      <div class="cell-engine-item">Fire dept portal submission</div>
+      <div class="cell-engine-item">Hydraulic calc auto-verify</div>
+    </div>
+    <div class="cell">
+      <ul class="cell-list">
+        <li class="cell-item">Fire marshal review loop</li>
+        <li class="cell-item">Flush test coordination</li>
+        <li class="cell-item">Deficiency tracking</li>
+      </ul>
+    </div>
+    <div class="cell">
+      <ul class="cell-list">
+        <li class="cell-item">System acceptance test</li>
+        <li class="cell-item">Certificate of occupancy</li>
+        <li class="cell-item">ITM schedule initiated</li>
+      </ul>
+    </div>
+
+    <!-- ── LOW VOLTAGE ── -->
+    <div class="trade-row-label">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M5 17 Q12 5 19 17"/><path d="M7 19 Q12 11 17 19"/><circle cx="12" cy="20" r="2"/></svg>
+      <div class="trade-label-name">Low Voltage</div>
+      <div class="trade-label-lic">C-7 / C-10</div>
+    </div>
+    <div class="cell">
+      <ul class="cell-list">
+        <li class="cell-item">Comm / data / AV scope</li>
+        <li class="cell-item">Security system survey</li>
+        <li class="cell-item">Backbone pathway review</li>
+        <li class="cell-item">Access control design</li>
+      </ul>
+    </div>
+    <div class="cell">
+      <ul class="cell-list">
+        <li class="cell-item">Riser diagrams</li>
+        <li class="cell-item">TIA-568 compliance</li>
+        <li class="cell-item">Conduit & pathway plans</li>
+        <li class="cell-item">Equipment cut sheets</li>
+      </ul>
+    </div>
+    <div class="cell engine-cell">
+      <div class="engine-badge">
+        <div class="engine-badge-title">📡 Signal Engine</div>
+      </div>
+      <div class="cell-engine-item">NEC Article 800 compliance</div>
+      <div class="cell-engine-item">Combined elec permit coordination</div>
+      <div class="cell-engine-item">AHJ low-voltage exemption check</div>
+    </div>
+    <div class="cell">
+      <ul class="cell-list">
+        <li class="cell-item">AHJ review feedback</li>
+        <li class="cell-item">Cable testing results</li>
+        <li class="cell-item">Documentation update</li>
+      </ul>
+    </div>
+    <div class="cell">
+      <ul class="cell-list">
+        <li class="cell-item">System certification</li>
+        <li class="cell-item">As-built drawings filed</li>
+        <li class="cell-item">Warranty documentation</li>
+      </ul>
+    </div>
+
+    <!-- ── SOLAR / PV ── -->
+    <div class="trade-row-label">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="2" y="9" width="20" height="11" rx="1"/><line x1="12" y1="4" x2="12" y2="9"/><line x1="7" y1="5" x2="8" y2="7"/><line x1="17" y1="5" x2="16" y2="7"/><line x1="6" y1="13" x2="18" y2="13"/><line x1="6" y1="16" x2="18" y2="16"/><line x1="10" y1="9" x2="10" y2="20"/><line x1="14" y1="9" x2="14" y2="20"/></svg>
+      <div class="trade-label-name">Solar / PV</div>
+      <div class="trade-label-lic">C-10 / C-46</div>
+    </div>
+    <div class="cell">
+      <ul class="cell-list">
+        <li class="cell-item">Roof structural assessment</li>
+        <li class="cell-item">Shading & irradiance analysis</li>
+        <li class="cell-item">System size (kW) scoping</li>
+        <li class="cell-item">Utility interconnect check</li>
+      </ul>
+    </div>
+    <div class="cell">
+      <ul class="cell-list">
+        <li class="cell-item">PV system diagrams</li>
+        <li class="cell-item">String sizing calculations</li>
+        <li class="cell-item">NEC 690 checklist</li>
+        <li class="cell-item">Structural attachment details</li>
+      </ul>
+    </div>
+    <div class="cell engine-cell">
+      <div class="engine-badge">
+        <div class="engine-badge-title">☀ Solar Engine</div>
+      </div>
+      <div class="cell-engine-item">SolarApp+ / Sunstone integration</div>
+      <div class="cell-engine-item">NEM / SGIP incentive routing</div>
+      <div class="cell-engine-item">Dual elec + building permit</div>
+    </div>
+    <div class="cell">
+      <ul class="cell-list">
+        <li class="cell-item">Utility PTO coordination</li>
+        <li class="cell-item">Structural cert verification</li>
+        <li class="cell-item">Interconnect approval loop</li>
+      </ul>
+    </div>
+    <div class="cell">
+      <ul class="cell-list">
+        <li class="cell-item">PTO (Permission to Operate)</li>
+        <li class="cell-item">Net metering activated</li>
+        <li class="cell-item">Incentive application filed</li>
+      </ul>
+    </div>
+
+    <!-- ── ROOFING ── -->
+    <div class="trade-row-label">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M2 14 L12 5 L22 14"/><rect x="6" y="14" width="12" height="8"/><rect x="10" y="17" width="4" height="5"/></svg>
+      <div class="trade-label-name">Roofing</div>
+      <div class="trade-label-lic">C-39</div>
+    </div>
+    <div class="cell">
+      <ul class="cell-list">
+        <li class="cell-item">Roof deck condition survey</li>
+        <li class="cell-item">Square footage & pitch</li>
+        <li class="cell-item">Material selection (class A)</li>
+        <li class="cell-item">Structural roof load check</li>
+      </ul>
+    </div>
+    <div class="cell">
+      <ul class="cell-list">
+        <li class="cell-item">Roofing permit application</li>
+        <li class="cell-item">CBC Chapter 15 compliance</li>
+        <li class="cell-item">Product data sheets</li>
+        <li class="cell-item">Underlayment specifications</li>
+      </ul>
+    </div>
+    <div class="cell engine-cell">
+      <div class="engine-badge">
+        <div class="engine-badge-title">🏠 Roof Engine</div>
+      </div>
+      <div class="cell-engine-item">Fire rating class verification</div>
+      <div class="cell-engine-item">HOA / historic review routing</div>
+      <div class="cell-engine-item">Over-the-counter permit submit</div>
+    </div>
+    <div class="cell">
+      <ul class="cell-list">
+        <li class="cell-item">Mid-roof inspection results</li>
+        <li class="cell-item">Weather barrier verification</li>
+        <li class="cell-item">Correction documentation</li>
+      </ul>
+    </div>
+    <div class="cell">
+      <ul class="cell-list">
+        <li class="cell-item">Final inspection approved</li>
+        <li class="cell-item">Manufacturer warranty filed</li>
+        <li class="cell-item">Lien waiver processed</li>
+      </ul>
+    </div>
+
+    <!-- ── GEN CONTRACTOR ── -->
+    <div class="trade-row-label" style="background:rgba(28,26,14,0.07);">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="3" y="12" width="18" height="9" rx="0.5"/><path d="M6 12 L6 9 Q12 4 18 9 L18 12"/><line x1="9" y1="17" x2="15" y2="17"/><line x1="12" y1="15" x2="12" y2="19"/></svg>
+      <div class="trade-label-name">Gen. Contractor</div>
+      <div class="trade-label-lic">B / A</div>
+    </div>
+    <div class="cell" style="background:rgba(28,26,14,0.02);">
+      <ul class="cell-list">
+        <li class="cell-item">Project scope coordination</li>
+        <li class="cell-item">Sub-contractor license verify</li>
+        <li class="cell-item">Site logistics planning</li>
+        <li class="cell-item">Owner-builder determination</li>
+      </ul>
+    </div>
+    <div class="cell" style="background:rgba(28,26,14,0.02);">
+      <ul class="cell-list">
+        <li class="cell-item">Master permit application</li>
+        <li class="cell-item">Sub-permit coordination</li>
+        <li class="cell-item">Workers comp / insurance</li>
+        <li class="cell-item">OSHA site safety plan</li>
+      </ul>
+    </div>
+    <div class="cell engine-cell" style="background:rgba(28,26,14,0.05);">
+      <div class="engine-badge">
+        <div class="engine-badge-title">🏛 Master Engine</div>
+      </div>
+      <div class="cell-engine-item">Multi-trade permit bundling</div>
+      <div class="cell-engine-item">Jurisdiction fee calculation</div>
+      <div class="cell-engine-item">Plan check & permit tracking</div>
+    </div>
+    <div class="cell" style="background:rgba(28,26,14,0.02);">
+      <ul class="cell-list">
+        <li class="cell-item">Multi-trade inspection sequencing</li>
+        <li class="cell-item">RFI / correction tracking</li>
+        <li class="cell-item">Sub-permit close-out coord.</li>
+      </ul>
+    </div>
+    <div class="cell" style="background:rgba(28,26,14,0.02);">
+      <ul class="cell-list">
+        <li class="cell-item">Certificate of Occupancy</li>
+        <li class="cell-item">All sub-permits finaled</li>
+        <li class="cell-item">Lien releases & close-out</li>
+      </ul>
+    </div>
+
+  </div><!-- end trade-grid -->
+
+  <!-- QUALITY GATES BAR -->
+  <div style="border-top:1.5px solid var(--ink); padding:10px 32px; background:rgba(28,26,14,0.05);">
+    <div style="text-align:center; font-family:'Cinzel',serif; font-size:7.5px; letter-spacing:0.28em; color:var(--ink-light); text-transform:uppercase; margin-bottom:8px;">— Universal Quality Gates —</div>
+    <div style="display:flex; justify-content:space-around;">
+      <div style="text-align:center;">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#1c1a0e" stroke-width="1.2"><path d="M9 2L2 5.5v4C2 13 5 16 9 17c4-1 7-4 7-7.5v-4L9 2z"/></svg>
+        <div style="font-family:'Cinzel',serif; font-size:6.5px; letter-spacing:0.1em; color:var(--ink-mid); text-transform:uppercase; margin-top:3px;">Life Safety</div>
+      </div>
+      <div style="text-align:center;">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#1c1a0e" stroke-width="1.2"><circle cx="9" cy="9" r="7"/><polyline points="5,9 8,12 13,6"/></svg>
+        <div style="font-family:'Cinzel',serif; font-size:6.5px; letter-spacing:0.1em; color:var(--ink-mid); text-transform:uppercase; margin-top:3px;">Code Quality</div>
+      </div>
+      <div style="text-align:center;">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#1c1a0e" stroke-width="1.2"><rect x="2" y="3" width="14" height="12" rx="1"/><line x1="5" y1="7" x2="13" y2="7"/><line x1="5" y1="10" x2="10" y2="10"/></svg>
+        <div style="font-family:'Cinzel',serif; font-size:6.5px; letter-spacing:0.1em; color:var(--ink-mid); text-transform:uppercase; margin-top:3px;">Documentation</div>
+      </div>
+      <div style="text-align:center;">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#1c1a0e" stroke-width="1.2"><path d="M2 16 L4 8 L7 12 L10 5 L13 9 L16 7"/></svg>
+        <div style="font-family:'Cinzel',serif; font-size:6.5px; letter-spacing:0.1em; color:var(--ink-mid); text-transform:uppercase; margin-top:3px;">Compliance Score</div>
+      </div>
+      <div style="text-align:center;">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#1c1a0e" stroke-width="1.2"><circle cx="9" cy="9" r="7"/><path d="M9 5v4l3 3"/></svg>
+        <div style="font-family:'Cinzel',serif; font-size:6.5px; letter-spacing:0.1em; color:var(--ink-mid); text-transform:uppercase; margin-top:3px;">Timeline</div>
+      </div>
+      <div style="text-align:center;">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#1c1a0e" stroke-width="1.2"><rect x="2" y="5" width="6" height="10" rx="0.5"/><rect x="10" y="2" width="6" height="13" rx="0.5"/></svg>
+        <div style="font-family:'Cinzel',serif; font-size:6.5px; letter-spacing:0.1em; color:var(--ink-mid); text-transform:uppercase; margin-top:3px;">Cost Efficiency</div>
+      </div>
+      <div style="text-align:center;">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#1c1a0e" stroke-width="1.2"><path d="M4 14L9 4l5 10H4z"/><line x1="9" y1="8" x2="9" y2="10"/><circle cx="9" cy="12" r="0.6" fill="currentColor"/></svg>
+        <div style="font-family:'Cinzel',serif; font-size:6.5px; letter-spacing:0.1em; color:var(--ink-mid); text-transform:uppercase; margin-top:3px;">Risk Flags</div>
+      </div>
+      <div style="text-align:center;">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#1c1a0e" stroke-width="1.2"><path d="M3 9 Q9 3 15 9 Q9 15 3 9z"/><circle cx="9" cy="9" r="2.5"/></svg>
+        <div style="font-family:'Cinzel',serif; font-size:6.5px; letter-spacing:0.1em; color:var(--ink-mid); text-transform:uppercase; margin-top:3px;">Visibility</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROCESS STRIP -->
+  <div class="process-strip">
+    <div class="process-title">— The ATPEF Process —</div>
+    <div class="process-flow">
+      <div class="pf-step">
+        <svg viewBox="0 0 32 32" fill="none" stroke="#1c1a0e" stroke-width="1.2"><circle cx="16" cy="11" r="7"/><path d="M10 18 Q8 25 12 27 H20 Q24 25 22 18"/><line x1="16" y1="4" x2="16" y2="6"/></svg>
+        <div class="pf-label">Intake</div>
+      </div>
+      <div class="pf-arrow">→</div>
+      <div class="pf-step">
+        <svg viewBox="0 0 32 32" fill="none" stroke="#1c1a0e" stroke-width="1.2"><rect x="7" y="5" width="18" height="22" rx="1"/><line x1="11" y1="11" x2="21" y2="11"/><line x1="11" y1="15" x2="18" y2="15"/><line x1="11" y1="19" x2="16" y2="19"/></svg>
+        <div class="pf-label">Standardize</div>
+      </div>
+      <div class="pf-arrow">→</div>
+      <div class="pf-step">
+        <svg viewBox="0 0 32 32" fill="none" stroke="#1c1a0e" stroke-width="1.3"><circle cx="16" cy="16" r="12"/><circle cx="16" cy="16" r="7"/><circle cx="16" cy="16" r="2.5" fill="#1c1a0e" opacity="0.5"/></svg>
+        <div class="pf-label">Forge Engine</div>
+      </div>
+      <div class="pf-arrow">→</div>
+      <div class="pf-step">
+        <svg viewBox="0 0 32 32" fill="none" stroke="#1c1a0e" stroke-width="1.2"><path d="M8 16 Q8 8 14 8 Q20 8 16 16 Q12 24 18 24 Q24 24 24 16 Q24 8 18 8 Q12 8 16 16 Q20 24 14 24 Q8 24 8 16z"/></svg>
+        <div class="pf-label">Refinement</div>
+      </div>
+      <div class="pf-arrow">→</div>
+      <div class="pf-step">
+        <svg viewBox="0 0 32 32" fill="none" stroke="#1c1a0e" stroke-width="1.2"><path d="M16 5 L22 26 H10 L16 5z"/><line x1="10" y1="20" x2="22" y2="20"/></svg>
+        <div class="pf-label">Deployment</div>
+      </div>
+      <div class="pf-arrow">→</div>
+      <div class="pf-step">
+        <svg viewBox="0 0 32 32" fill="none" stroke="#1c1a0e" stroke-width="1.2"><rect x="6" y="4" width="20" height="24" rx="1"/><polyline points="10,14 14,18 22,10"/></svg>
+        <div class="pf-label">Certificate</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOUNDATION -->
+  <div class="foundation">
+    <div class="found-title">— ATPEF Foundation —</div>
+    <div class="found-grid">
+      <div class="found-item">
+        <svg viewBox="0 0 18 18" fill="none" stroke="#1c1a0e" stroke-width="1.2"><path d="M9 2L2 5.5v4C2 13 5 16 9 17c4-1 7-4 7-7.5v-4L9 2z"/></svg>
+        <div class="found-text">Life Safety<br>by Design</div>
+      </div>
+      <div class="found-item">
+        <svg viewBox="0 0 18 18" fill="none" stroke="#1c1a0e" stroke-width="1.2"><polyline points="3,9 7,13 15,5"/></svg>
+        <div class="found-text">Code as<br>Policy</div>
+      </div>
+      <div class="found-item">
+        <svg viewBox="0 0 18 18" fill="none" stroke="#1c1a0e" stroke-width="1.2"><rect x="2" y="3" width="14" height="12" rx="1"/><line x1="5" y1="7" x2="13" y2="7"/></svg>
+        <div class="found-text">Multi-Trade<br>Coordination</div>
+      </div>
+      <div class="found-item">
+        <svg viewBox="0 0 18 18" fill="none" stroke="#1c1a0e" stroke-width="1.2"><path d="M2 16 L4 8 L7 12 L10 5 L13 9 L16 7"/></svg>
+        <div class="found-text">Observability<br>by Default</div>
+      </div>
+      <div class="found-item">
+        <svg viewBox="0 0 18 18" fill="none" stroke="#1c1a0e" stroke-width="1.2"><circle cx="9" cy="9" r="7"/><path d="M6 9 Q9 5 12 9 Q9 13 6 9z"/></svg>
+        <div class="found-text">AHJ Relationship<br>Management</div>
+      </div>
+      <div class="found-item">
+        <svg viewBox="0 0 18 18" fill="none" stroke="#1c1a0e" stroke-width="1.2"><rect x="2" y="3" width="14" height="12" rx="1"/><line x1="5" y1="7" x2="13" y2="7"/><line x1="5" y1="10" x2="10" y2="10"/></svg>
+        <div class="found-text">Knowledge<br>Continuously Improved</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer-bar">
+    <div class="footer-est">EST. MMXXIV</div>
+    <div class="footer-tagline">WE FORGE ALL PERMITS FROM ONE ENGINE.</div>
+    <div class="footer-badge"><span class="footer-badge-text">TG</span></div>
+  </div>
+
+</div><!-- inner-border -->
+</div><!-- outer-border -->
+</div><!-- poster -->
+</body>
+</html>
