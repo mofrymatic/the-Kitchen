@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ELECTRIGEN — Electrical Permit Engineering Factory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Cinzel+Decorative:wght@400;700&family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap" rel="stylesheet">
+<style>
+:root {
+  --parchment: #f2e8d0;
+  --parchment-dark: #e8d9b8;
+  --ink: #1a2756;
+  --ink-mid: #243272;
+  --ink-light: rgba(26,39,86,0.55);
+  --ink-faint: rgba(26,39,86,0.18);
+  --gold: #8b6914;
+  --gold-light: rgba(139,105,20,0.25);
+  --amber: #c47d0e;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #2a2a2a;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  padding: 40px 20px;
+  font-family: 'IM Fell English', serif;
+}
+
+/* ── POSTER SHELL ── */
+.poster {
+  width: 900px;
+  background: var(--parchment);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 20px 80px rgba(0,0,0,0.6);
+}
+
+/* Grain texture overlay */
+.poster::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 10;
+  opacity: 0.5;
+}
+
+/* ── OUTER BORDER ── */
+.outer-border {
+  margin: 14px;
+  border: 2.5px solid var(--ink);
+  position: relative;
+}
+.inner-border {
+  margin: 5px;
+  border: 1px solid var(--ink-light);
+  position: relative;
+}
+
+/* Corner ornaments */
+.corner {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  z-index: 5;
+}
+.corner svg { width: 100%; height: 100%; }
+.corner.tl { top: -14px; left: -14px; }
+.corner.tr { top: -14px; right: -14px; transform: scaleX(-1); }
+.corner.bl { bottom: -14px; left: -14px; transform: scaleY(-1); }
+.corner.br { bottom: -14px; right: -14px; transform: scale(-1); }
+
+/* ── HEADER ── */
+.header {
+  padding: 22px 32px 16px;
+  text-align: center;
+  border-bottom: 1px solid var(--ink-faint);
+  position: relative;
+}
+
+.header-badge {
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 8px;
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.header-badge::before {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border: 1px solid var(--ink-light);
+  border-radius: 50%;
+}
+.badge-text {
+  font-family: 'Cinzel', serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: 0.05em;
+}
+
+.header-super {
+  font-family: 'Cinzel', serif;
+  font-size: 9px;
+  letter-spacing: 0.35em;
+  color: var(--ink-light);
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.header-title {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 62px;
+  font-weight: 900;
+  color: var(--ink);
+  line-height: 0.9;
+  letter-spacing: -0.01em;
+  text-shadow: 2px 2px 0 rgba(26,39,86,0.15);
+}
+
+.header-sub {
+  font-family: 'IM Fell English', serif;
+  font-style: italic;
+  font-size: 16px;
+  color: var(--ink-mid);
+  margin-top: 6px;
+  letter-spacing: 0.05em;
+}
+.header-sub .stars { color: var(--gold); margin: 0 8px; }
+
+.header-corners {
+  position: absolute;
+  top: 22px;
+  width: 100%;
+  left: 0;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 24px;
+  pointer-events: none;
+}
+.hc-item {
+  text-align: center;
+  width: 80px;
+}
+.hc-item svg { width: 40px; height: 40px; display: block; margin: 0 auto 4px; }
+.hc-label {
+  font-family: 'Cinzel', serif;
+  font-size: 6.5px;
+  letter-spacing: 0.12em;
+  color: var(--ink-light);
+  text-transform: uppercase;
+  line-height: 1.4;
+  text-align: center;
+}
+
+/* ── 5-COLUMN BODY ── */
+.columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.3fr 1fr 1fr;
+  border-top: 2px solid var(--ink);
+}
+
+.col {
+  border-right: 1px solid var(--ink-light);
+  padding: 18px 14px;
+  position: relative;
+}
+.col:last-child { border-right: none; }
+.col.center-col {
+  border-right: 1px solid var(--ink-light);
+  border-left: 1px solid var(--ink-light);
+  padding: 16px 12px;
+  background: rgba(26,39,86,0.03);
+}
+
+/* column step number */
+.col-num {
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--ink-light);
+  margin-bottom: 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.num-circle {
+  width: 18px; height: 18px;
+  border: 1.5px solid var(--ink);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Cinzel', serif;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--ink);
+  flex-shrink: 0;
+}
+
+.col-title {
+  font-family: 'Cinzel', serif;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--ink);
+  text-transform: uppercase;
+  margin-bottom: 2px;
+  line-height: 1.2;
+}
+.col-subtitle {
+  font-family: 'IM Fell English', serif;
+  font-style: italic;
+  font-size: 9.5px;
+  color: var(--ink-light);
+  margin-bottom: 10px;
+}
+
+/* icon block */
+.col-icon {
+  text-align: center;
+  margin: 8px 0;
+}
+.col-icon svg { width: 40px; height: 40px; }
+
+.col-tagline {
+  font-family: 'Cinzel', serif;
+  font-size: 8px;
+  letter-spacing: 0.15em;
+  color: var(--ink-mid);
+  text-transform: uppercase;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+/* mini sections */
+.mini-section {
+  border: 1px solid var(--ink-faint);
+  padding: 8px 9px;
+  margin-bottom: 8px;
+  background: rgba(255,255,255,0.25);
+}
+.mini-title {
+  font-family: 'Cinzel', serif;
+  font-size: 7.5px;
+  letter-spacing: 0.18em;
+  color: var(--ink);
+  text-transform: uppercase;
+  font-weight: 700;
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 0.5px solid var(--ink-faint);
+}
+.mini-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.mini-row:last-child { margin-bottom: 0; }
+.mini-row svg { width: 13px; height: 13px; color: var(--ink-mid); flex-shrink: 0; }
+.mini-row-text {
+  font-size: 8.5px;
+  color: var(--ink-mid);
+  font-family: 'IM Fell English', serif;
+}
+
+/* compass rose */
+.compass-small {
+  width: 36px; height: 36px;
+  margin: 8px auto 0;
+}
+
+/* ── CENTER COLUMN ── */
+.forge-arch {
+  border: 1.5px solid var(--ink);
+  padding: 12px 8px;
+  margin-bottom: 10px;
+  position: relative;
+  text-align: center;
+  background: linear-gradient(180deg, rgba(26,39,86,0.06) 0%, rgba(26,39,86,0.02) 100%);
+}
+.forge-arch::before {
+  content: '';
+  position: absolute;
+  top: 4px; left: 4px; right: 4px; bottom: 4px;
+  border: 0.5px solid var(--ink-faint);
+  pointer-events: none;
+}
+
+/* Lightning bolt radial */
+.lightning-radial {
+  width: 110px; height: 110px;
+  margin: 0 auto 8px;
+  position: relative;
+}
+.lightning-radial svg {
+  width: 100%; height: 100%;
+}
+
+.forge-center-title {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: 0.05em;
+  margin-bottom: 2px;
+}
+.forge-center-sub {
+  font-family: 'Cinzel', serif;
+  font-size: 7px;
+  letter-spacing: 0.18em;
+  color: var(--ink-light);
+  text-transform: uppercase;
+}
+
+/* side labels on center col */
+.side-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.side-label {
+  font-family: 'Cinzel', serif;
+  font-size: 6.5px;
+  letter-spacing: 0.14em;
+  color: var(--ink-light);
+  text-transform: uppercase;
+  writing-mode: horizontal-tb;
+}
+
+/* quality gates */
+.quality-gates {
+  border: 1px solid var(--ink-faint);
+  padding: 7px;
+  margin-bottom: 8px;
+}
+.qg-title {
+  font-family: 'Cinzel', serif;
+  font-size: 7px;
+  letter-spacing: 0.2em;
+  color: var(--ink);
+  text-transform: uppercase;
+  text-align: center;
+  margin-bottom: 6px;
+  font-weight: 700;
+}
+.qg-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+.qg-item {
+  text-align: center;
+  border: 0.5px solid var(--ink-faint);
+  padding: 4px 2px;
+}
+.qg-item svg { width: 14px; height: 14px; display: block; margin: 0 auto 2px; color: var(--ink); }
+.qg-label {
+  font-family: 'Cinzel', serif;
+  font-size: 5.5px;
+  letter-spacing: 0.12em;
+  color: var(--ink-mid);
+  text-transform: uppercase;
+}
+
+/* artifacts */
+.artifacts {
+  border: 1px solid var(--ink-faint);
+  padding: 7px;
+}
+.art-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  margin-top: 5px;
+}
+.art-item {
+  text-align: center;
+}
+.art-item svg { width: 16px; height: 16px; display: block; margin: 0 auto 2px; color: var(--ink-mid); }
+.art-label {
+  font-family: 'Cinzel', serif;
+  font-size: 5.5px;
+  letter-spacing: 0.1em;
+  color: var(--ink-mid);
+  text-transform: uppercase;
+}
+
+/* Center col action labels */
+.center-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.ca-left, .ca-right {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.ca-label {
+  font-family: 'Cinzel', serif;
+  font-size: 6px;
+  letter-spacing: 0.12em;
+  color: var(--ink-light);
+  text-transform: uppercase;
+}
+
+/* ── BOTTOM PROCESS STRIP ── */
+.process-strip {
+  border-top: 2px solid var(--ink);
+  padding: 14px 24px;
+  position: relative;
+}
+.process-title {
+  text-align: center;
+  font-family: 'Cinzel', serif;
+  font-size: 8.5px;
+  letter-spacing: 0.3em;
+  color: var(--ink-light);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.process-flow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+}
+.pf-step {
+  text-align: center;
+  flex: 1;
+}
+.pf-step svg { width: 32px; height: 32px; display: block; margin: 0 auto 4px; color: var(--ink); }
+.pf-label {
+  font-family: 'Cinzel', serif;
+  font-size: 6.5px;
+  letter-spacing: 0.12em;
+  color: var(--ink-mid);
+  text-transform: uppercase;
+}
+.pf-arrow {
+  color: var(--ink-mid);
+  font-size: 16px;
+  padding: 0 4px;
+  margin-bottom: 16px;
+  opacity: 0.6;
+}
+
+/* ── FOUNDATION BAR ── */
+.foundation {
+  border-top: 1.5px solid var(--ink);
+  padding: 10px 24px;
+  background: rgba(26,39,86,0.04);
+}
+.found-title {
+  text-align: center;
+  font-family: 'Cinzel', serif;
+  font-size: 8px;
+  letter-spacing: 0.3em;
+  color: var(--ink-light);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.found-grid {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+}
+.found-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.found-item svg { width: 16px; height: 16px; color: var(--ink); flex-shrink: 0; }
+.found-text {
+  font-family: 'Cinzel', serif;
+  font-size: 6.5px;
+  letter-spacing: 0.12em;
+  color: var(--ink-mid);
+  text-transform: uppercase;
+  line-height: 1.3;
+}
+
+/* ── FOOTER BAR ── */
+.footer-bar {
+  border-top: 2px solid var(--ink);
+  padding: 10px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.footer-est {
+  border: 1px solid var(--ink);
+  padding: 3px 9px;
+  font-family: 'Cinzel', serif;
+  font-size: 8px;
+  letter-spacing: 0.12em;
+  color: var(--ink);
+}
+.footer-tagline {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: 0.05em;
+}
+.footer-badge {
+  width: 36px; height: 36px;
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+}
+.footer-badge::before {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border: 1px solid var(--ink-light);
+  border-radius: 50%;
+}
+.footer-badge-text {
+  font-family: 'Cinzel', serif;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+/* divider ornament */
+.div-orn {
+  text-align: center;
+  color: var(--ink-light);
+  font-size: 11px;
+  letter-spacing: 6px;
+  margin: 4px 0;
+}
+
+/* horizontal separator in col */
+.col-sep {
+  border: none;
+  border-top: 0.5px solid var(--ink-faint);
+  margin: 8px 0;
+}
+</style>
+</head>
+<body>
+<div class="poster">
+<div class="outer-border">
+<div class="inner-border">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-corners">
+      <div class="hc-item">
+        <!-- Compass Rose Left -->
+        <svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="30" cy="30" r="28" stroke="#1a2756" stroke-width="1"/>
+          <circle cx="30" cy="30" r="22" stroke="#1a2756" stroke-width="0.5"/>
+          <circle cx="30" cy="30" r="3" fill="#1a2756"/>
+          <polygon points="30,2 32,28 30,25 28,28" fill="#1a2756"/>
+          <polygon points="30,58 32,32 30,35 28,32" fill="#1a2756" opacity="0.5"/>
+          <polygon points="2,30 28,32 25,30 28,28" fill="#1a2756" opacity="0.5"/>
+          <polygon points="58,30 32,32 35,30 32,28" fill="#1a2756"/>
+          <line x1="30" y1="8" x2="30" y2="52" stroke="#1a2756" stroke-width="0.4" opacity="0.3"/>
+          <line x1="8" y1="30" x2="52" y2="30" stroke="#1a2756" stroke-width="0.4" opacity="0.3"/>
+          <line x1="12" y1="12" x2="48" y2="48" stroke="#1a2756" stroke-width="0.3" opacity="0.25"/>
+          <line x1="48" y1="12" x2="12" y2="48" stroke="#1a2756" stroke-width="0.3" opacity="0.25"/>
+          <text x="30" y="20" text-anchor="middle" font-family="Cinzel,serif" font-size="5" fill="#1a2756">N</text>
+        </svg>
+        <div class="hc-label">ELECTRIGEN<br>WIRED TO<br>WIRE THE GRID</div>
+      </div>
+      <div class="hc-item" style="text-align:right;">
+        <!-- Globe Right -->
+        <svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="30" cy="30" r="26" stroke="#1a2756" stroke-width="1"/>
+          <ellipse cx="30" cy="30" rx="13" ry="26" stroke="#1a2756" stroke-width="0.6"/>
+          <ellipse cx="30" cy="30" rx="26" ry="8" stroke="#1a2756" stroke-width="0.5"/>
+          <line x1="4" y1="30" x2="56" y2="30" stroke="#1a2756" stroke-width="0.4"/>
+          <line x1="30" y1="4" x2="30" y2="56" stroke="#1a2756" stroke-width="0.4"/>
+          <path d="M8 18 Q30 22 52 18" stroke="#1a2756" stroke-width="0.4" fill="none"/>
+          <path d="M8 42 Q30 38 52 42" stroke="#1a2756" stroke-width="0.4" fill="none"/>
+        </svg>
+        <div class="hc-label">FROM PANEL<br>TO PERMIT,<br>ENERGISED.</div>
+      </div>
+    </div>
+
+    <div class="header-badge"><span class="badge-text">EG</span></div>
+    <div class="header-super">The Development of</div>
+    <div class="header-title">ELECTRIGEN</div>
+    <div class="header-sub"><span class="stars">✦</span> Electrical Permit Engineering Factory (EPEF) <span class="stars">✦</span></div>
+  </div>
+
+  <!-- 5 COLUMNS -->
+  <div class="columns">
+
+    <!-- COL 1: CONCEPTION -->
+    <div class="col">
+      <div class="col-num"><div class="num-circle">1</div></div>
+      <div class="col-title">Intake</div>
+      <div class="col-subtitle">Capture & Validate</div>
+      <div class="col-icon">
+        <svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Light bulb -->
+          <circle cx="30" cy="22" r="14" stroke="#1a2756" stroke-width="1.2"/>
+          <path d="M22 32 Q20 42 25 46 H35 Q40 42 38 32" stroke="#1a2756" stroke-width="1" fill="none"/>
+          <line x1="26" y1="46" x2="34" y2="46" stroke="#1a2756" stroke-width="1"/>
+          <line x1="27" y1="49" x2="33" y2="49" stroke="#1a2756" stroke-width="1"/>
+          <!-- lightning in bulb -->
+          <path d="M33 15 L27 23 H31 L26 31" stroke="#1a2756" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+          <!-- rays -->
+          <line x1="30" y1="4" x2="30" y2="7" stroke="#1a2756" stroke-width="0.8"/>
+          <line x1="44" y1="8" x2="42" y2="10" stroke="#1a2756" stroke-width="0.8"/>
+          <line x1="16" y1="8" x2="18" y2="10" stroke="#1a2756" stroke-width="0.8"/>
+          <line x1="48" y1="22" x2="45" y2="22" stroke="#1a2756" stroke-width="0.8"/>
+          <line x1="12" y1="22" x2="15" y2="22" stroke="#1a2756" stroke-width="0.8"/>
+        </svg>
+      </div>
+      <div class="col-tagline">Ideas Energise.</div>
+
+      <div class="mini-section">
+        <div class="mini-title">Ingest</div>
+        <div class="mini-row">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="2" y="1" width="10" height="13" rx="1"/><line x1="4" y1="5" x2="10" y2="5"/><line x1="4" y1="8" x2="10" y2="8"/><line x1="4" y1="11" x2="8" y2="11"/></svg>
+          <span class="mini-row-text">Work Orders</span>
+        </div>
+        <div class="mini-row">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M2 2h8l4 4v8a1 1 0 01-1 1H3a1 1 0 01-1-1V2z"/><polyline points="10,2 10,6 14,6"/></svg>
+          <span class="mini-row-text">Load Calcs</span>
+        </div>
+        <div class="mini-row">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="8" r="6"/><line x1="8" y1="5" x2="8" y2="8"/><line x1="8" y1="8" x2="11" y2="10"/></svg>
+          <span class="mini-row-text">Site Surveys</span>
+        </div>
+      </div>
+
+      <div class="mini-section">
+        <div class="mini-title">Validate</div>
+        <div class="mini-row">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><polyline points="3,8 6,11 13,4"/></svg>
+          <span class="mini-row-text">Scope of Work</span>
+        </div>
+        <div class="mini-row">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><polyline points="3,8 6,11 13,4"/></svg>
+          <span class="mini-row-text">Panel Capacity</span>
+        </div>
+        <div class="mini-row">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><polyline points="3,8 6,11 13,4"/></svg>
+          <span class="mini-row-text">NEC Compliance</span>
+        </div>
+      </div>
+
+      <svg class="compass-small" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="18" cy="18" r="16" stroke="#1a2756" stroke-width="0.8" opacity="0.4"/>
+        <circle cx="18" cy="18" r="10" stroke="#1a2756" stroke-width="0.5" opacity="0.3"/>
+        <circle cx="18" cy="18" r="2" fill="#1a2756" opacity="0.5"/>
+        <polygon points="18,2 19,16 18,14 17,16" fill="#1a2756" opacity="0.6"/>
+        <polygon points="18,34 19,20 18,22 17,20" fill="#1a2756" opacity="0.3"/>
+        <polygon points="2,18 16,19 14,18 16,17" fill="#1a2756" opacity="0.3"/>
+        <polygon points="34,18 20,19 22,18 20,17" fill="#1a2756" opacity="0.6"/>
+      </svg>
+    </div>
+
+    <!-- COL 2: STANDARDIZATION -->
+    <div class="col">
+      <div class="col-num"><div class="num-circle">2</div></div>
+      <div class="col-title">Standardize</div>
+      <div class="col-subtitle">Package & Prepare</div>
+      <div class="col-icon">
+        <svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Electrical panel -->
+          <rect x="10" y="8" width="40" height="44" stroke="#1a2756" stroke-width="1.2" rx="1"/>
+          <rect x="14" y="12" width="32" height="36" stroke="#1a2756" stroke-width="0.6" fill="rgba(26,39,86,0.05)"/>
+          <line x1="30" y1="12" x2="30" y2="48" stroke="#1a2756" stroke-width="0.5"/>
+          <!-- breakers left -->
+          <rect x="16" y="15" width="12" height="4" rx="0.5" stroke="#1a2756" stroke-width="0.6" fill="rgba(26,39,86,0.1)"/>
+          <rect x="16" y="21" width="12" height="4" rx="0.5" stroke="#1a2756" stroke-width="0.6" fill="rgba(26,39,86,0.1)"/>
+          <rect x="16" y="27" width="12" height="4" rx="0.5" stroke="#1a2756" stroke-width="0.6" fill="rgba(26,39,86,0.1)"/>
+          <rect x="16" y="33" width="12" height="4" rx="0.5" stroke="#1a2756" stroke-width="0.6" fill="rgba(26,39,86,0.1)"/>
+          <rect x="16" y="39" width="12" height="4" rx="0.5" stroke="#1a2756" stroke-width="0.6" fill="rgba(26,39,86,0.1)"/>
+          <!-- breakers right -->
+          <rect x="32" y="15" width="12" height="4" rx="0.5" stroke="#1a2756" stroke-width="0.6" fill="rgba(26,39,86,0.1)"/>
+          <rect x="32" y="21" width="12" height="4" rx="0.5" stroke="#1a2756" stroke-width="0.6" fill="rgba(26,39,86,0.1)"/>
+          <rect x="32" y="27" width="12" height="4" rx="0.5" stroke="#1a2756" stroke-width="0.6" fill="rgba(26,39,86,0.1)"/>
+          <rect x="32" y="33" width="12" height="4" rx="0.5" stroke="#1a2756" stroke-width="0.6" fill="rgba(26,39,86,0.1)"/>
+          <rect x="32" y="39" width="12" height="4" rx="0.5" stroke="#1a2756" stroke-width="0.6" fill="rgba(26,39,86,0.1)"/>
+        </svg>
+      </div>
+      <div class="col-tagline">Templates & Golden Paths</div>
+
+      <div class="mini-section">
+        <div class="mini-title">Standardize</div>
+        <div class="mini-row">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="2" y="2" width="12" height="12" rx="1"/><line x1="5" y1="6" x2="11" y2="6"/><line x1="5" y1="9" x2="9" y2="9"/></svg>
+          <span class="mini-row-text">Single-line Diagrams</span>
+        </div>
+        <div class="mini-row">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M8 2L2 6v8h12V6L8 2z"/></svg>
+          <span class="mini-row-text">Load Schedules</span>
+        </div>
+        <div class="mini-row">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="8" r="5"/><path d="M8 5v3l2 2"/></svg>
+          <span class="mini-row-text">Code Templates</span>
+        </div>
+      </div>
+
+      <div class="mini-section">
+        <div class="mini-title">Pipelines</div>
+        <div style="text-align:center; margin: 6px 0;">
+          <svg width="90" height="28" viewBox="0 0 90 28" fill="none">
+            <circle cx="10" cy="14" r="7" stroke="#1a2756" stroke-width="1"/>
+            <line x1="17" y1="14" x2="28" y2="14" stroke="#1a2756" stroke-width="0.8" stroke-dasharray="2,2"/>
+            <circle cx="35" cy="14" r="7" stroke="#1a2756" stroke-width="1"/>
+            <circle cx="35" cy="14" r="3" stroke="#1a2756" stroke-width="0.6"/>
+            <line x1="42" y1="14" x2="53" y2="14" stroke="#1a2756" stroke-width="0.8" stroke-dasharray="2,2"/>
+            <circle cx="60" cy="14" r="7" stroke="#1a2756" stroke-width="1"/>
+            <line x1="67" y1="14" x2="78" y2="14" stroke="#1a2756" stroke-width="0.8" stroke-dasharray="2,2"/>
+            <polygon points="80,10 88,14 80,18" fill="#1a2756" opacity="0.6"/>
+          </svg>
+        </div>
+        <div class="mini-row-text" style="font-size:7.5px; color:var(--ink-light); text-align:center; font-style:italic;">Versioned. Compliant. Repeatable.</div>
+      </div>
+
+      <svg class="compass-small" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="18" cy="18" r="16" stroke="#1a2756" stroke-width="0.8" opacity="0.4"/>
+        <circle cx="18" cy="18" r="10" stroke="#1a2756" stroke-width="0.5" opacity="0.3"/>
+        <circle cx="18" cy="18" r="2" fill="#1a2756" opacity="0.5"/>
+        <polygon points="18,2 19,16 18,14 17,16" fill="#1a2756" opacity="0.6"/>
+        <polygon points="18,34 19,20 18,22 17,20" fill="#1a2756" opacity="0.3"/>
+        <polygon points="2,18 16,19 14,18 16,17" fill="#1a2756" opacity="0.3"/>
+        <polygon points="34,18 20,19 22,18 20,17" fill="#1a2756" opacity="0.6"/>
+      </svg>
+    </div>
+
+    <!-- COL 3: CENTER ENGINE -->
+    <div class="col center-col">
+      <div class="col-num" style="justify-content:center;"><div class="num-circle">3</div></div>
+      <div class="col-title" style="text-align:center; font-size:12.5px;">Spark Engine</div>
+      <div class="col-subtitle" style="text-align:center;">Build, Test & Verify</div>
+
+      <!-- Action labels flanking arch -->
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div class="ca-label">DRAW</div>
+          <div class="ca-label">TEST</div>
+          <div class="ca-label">SCAN</div>
+        </div>
+
+        <!-- Central Arch with Lightning -->
+        <div class="forge-arch" style="flex:1;margin:0 8px;">
+          <div class="lightning-radial">
+            <svg viewBox="0 0 110 110" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Outer rings -->
+              <circle cx="55" cy="55" r="52" stroke="#1a2756" stroke-width="0.8" opacity="0.3"/>
+              <circle cx="55" cy="55" r="44" stroke="#1a2756" stroke-width="0.6" opacity="0.25"/>
+              <circle cx="55" cy="55" r="36" stroke="#1a2756" stroke-width="0.5" opacity="0.2"/>
+              <circle cx="55" cy="55" r="28" stroke="#1a2756" stroke-width="1" opacity="0.4"/>
+              <circle cx="55" cy="55" r="18" stroke="#1a2756" stroke-width="0.8" opacity="0.5"/>
+              <!-- Radiating lines -->
+              <line x1="55" y1="3" x2="55" y2="20" stroke="#1a2756" stroke-width="0.6" opacity="0.4"/>
+              <line x1="55" y1="90" x2="55" y2="107" stroke="#1a2756" stroke-width="0.6" opacity="0.4"/>
+              <line x1="3" y1="55" x2="20" y2="55" stroke="#1a2756" stroke-width="0.6" opacity="0.4"/>
+              <line x1="90" y1="55" x2="107" y2="55" stroke="#1a2756" stroke-width="0.6" opacity="0.4"/>
+              <line x1="18" y1="18" x2="30" y2="30" stroke="#1a2756" stroke-width="0.5" opacity="0.3"/>
+              <line x1="92" y1="18" x2="80" y2="30" stroke="#1a2756" stroke-width="0.5" opacity="0.3"/>
+              <line x1="18" y1="92" x2="30" y2="80" stroke="#1a2756" stroke-width="0.5" opacity="0.3"/>
+              <line x1="92" y1="92" x2="80" y2="80" stroke="#1a2756" stroke-width="0.5" opacity="0.3"/>
+              <!-- Glow center -->
+              <circle cx="55" cy="55" r="10" fill="rgba(26,39,86,0.12)" stroke="#1a2756" stroke-width="1.5"/>
+              <!-- Lightning bolt -->
+              <path d="M62 34 L48 56 H57 L44 77" stroke="#1a2756" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <!-- Spark dots -->
+              <circle cx="55" cy="55" r="2.5" fill="#1a2756"/>
+              <circle cx="55" cy="19" r="1.5" fill="#1a2756" opacity="0.5"/>
+              <circle cx="55" cy="91" r="1.5" fill="#1a2756" opacity="0.5"/>
+              <circle cx="19" cy="55" r="1.5" fill="#1a2756" opacity="0.5"/>
+              <circle cx="91" cy="55" r="1.5" fill="#1a2756" opacity="0.5"/>
+            </svg>
+          </div>
+          <div class="forge-center-title">ELECTRIGEN</div>
+          <div class="forge-center-sub">Spark Engine · EPEF</div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:12px;text-align:right;">
+          <div class="ca-label">SECURE</div>
+          <div class="ca-label">QUALITY</div>
+          <div class="ca-label">VERIFY</div>
+        </div>
+      </div>
+
+      <!-- Quality Gates -->
+      <div class="quality-gates">
+        <div class="qg-title">Quality Gates</div>
+        <div class="qg-grid">
+          <div class="qg-item">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M8 2L2 5v4c0 3 2.5 5.5 6 6 3.5-.5 6-3 6-6V5L8 2z"/></svg>
+            <div class="qg-label">Safety</div>
+          </div>
+          <div class="qg-item">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="8" cy="8" r="6"/><polyline points="5,8 7,10 11,6"/></svg>
+            <div class="qg-label">Quality</div>
+          </div>
+          <div class="qg-item">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M2 12L8 2l6 10H2z"/><line x1="8" y1="7" x2="8" y2="9"/><circle cx="8" cy="11" r="0.6" fill="currentColor"/></svg>
+            <div class="qg-label">NEC Code</div>
+          </div>
+          <div class="qg-item">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M3 8 Q8 2 13 8 Q8 14 3 8z"/><circle cx="8" cy="8" r="2.5"/></svg>
+            <div class="qg-label">Inspect</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Artifacts -->
+      <div class="artifacts">
+        <div class="qg-title">Artifacts & Permits</div>
+        <div class="art-grid">
+          <div class="art-item">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="2" y="2" width="9" height="12" rx="1"/><path d="M11 2h1a2 2 0 012 2v8a2 2 0 01-2 2h-1"/></svg>
+            <div class="art-label">Permit</div>
+          </div>
+          <div class="art-item">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="1" y="3" width="14" height="10" rx="1"/><line x1="5" y1="6" x2="11" y2="6"/><line x1="5" y1="9" x2="9" y2="9"/></svg>
+            <div class="art-label">Diagrams</div>
+          </div>
+          <div class="art-item">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M2 14 L4 6 L8 10 L11 4 L14 14z"/></svg>
+            <div class="art-label">Load Calcs</div>
+          </div>
+          <div class="art-item">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="8" cy="8" r="6"/><polyline points="5,8 7,10 11,6"/></svg>
+            <div class="art-label">Approvals</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COL 4: REFINEMENT -->
+    <div class="col">
+      <div class="col-num"><div class="num-circle">4</div></div>
+      <div class="col-title">Refinement</div>
+      <div class="col-subtitle">Review & Improve</div>
+      <div class="col-icon">
+        <svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Infinity / continuous improvement -->
+          <path d="M15 30 Q15 16 25 16 Q35 16 30 30 Q25 44 35 44 Q45 44 45 30 Q45 16 35 16 Q25 16 30 30 Q35 44 25 44 Q15 44 15 30z" stroke="#1a2756" stroke-width="1.5" fill="none"/>
+          <circle cx="30" cy="30" r="3" fill="#1a2756" opacity="0.3"/>
+          <polygon points="24,44 20,40 28,40" fill="#1a2756" opacity="0.6"/>
+        </svg>
+      </div>
+      <div class="col-tagline">Continuous Improvement</div>
+
+      <div class="mini-section">
+        <div class="mini-title">Feedback Loops</div>
+        <div class="mini-row">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M2 14 L4 8 L7 11 L10 5 L13 9 L15 6"/></svg>
+          <span class="mini-row-text">Inspection Results</span>
+        </div>
+        <div class="mini-row">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="6" r="3"/><path d="M3 14c0-3 2-5 5-5s5 2 5 5"/></svg>
+          <span class="mini-row-text">AHJ Feedback</span>
+        </div>
+        <div class="mini-row">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="2" y="3" width="12" height="10" rx="1"/><line x1="5" y1="7" x2="11" y2="7"/><line x1="5" y1="10" x2="9" y2="10"/></svg>
+          <span class="mini-row-text">Metrics & KPIs</span>
+        </div>
+      </div>
+
+      <div class="mini-section">
+        <div class="mini-title">Governance</div>
+        <div class="mini-row">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M8 2L2 5v4c0 3 2.5 5.5 6 6 3.5-.5 6-3 6-6V5L8 2z"/></svg>
+          <span class="mini-row-text">NEC Policies</span>
+        </div>
+        <div class="mini-row">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><polyline points="3,8 6,11 13,4"/></svg>
+          <span class="mini-row-text">AHJ Approvals</span>
+        </div>
+        <div class="mini-row">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="2" y="2" width="12" height="12" rx="1"/><line x1="5" y1="6" x2="11" y2="6"/><line x1="5" y1="9" x2="11" y2="9"/></svg>
+          <span class="mini-row-text">Audit Trail</span>
+        </div>
+      </div>
+
+      <svg class="compass-small" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="18" cy="18" r="16" stroke="#1a2756" stroke-width="0.8" opacity="0.4"/>
+        <circle cx="18" cy="18" r="10" stroke="#1a2756" stroke-width="0.5" opacity="0.3"/>
+        <circle cx="18" cy="18" r="2" fill="#1a2756" opacity="0.5"/>
+        <polygon points="18,2 19,16 18,14 17,16" fill="#1a2756" opacity="0.6"/>
+        <polygon points="18,34 19,20 18,22 17,20" fill="#1a2756" opacity="0.3"/>
+        <polygon points="2,18 16,19 14,18 16,17" fill="#1a2756" opacity="0.3"/>
+        <polygon points="34,18 20,19 22,18 20,17" fill="#1a2756" opacity="0.6"/>
+      </svg>
+    </div>
+
+    <!-- COL 5: DEPLOYMENT -->
+    <div class="col">
+      <div class="col-num"><div class="num-circle">5</div></div>
+      <div class="col-title">Deployment</div>
+      <div class="col-subtitle">Release & Deliver</div>
+      <div class="col-icon">
+        <svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Globe with power symbol -->
+          <circle cx="30" cy="30" r="22" stroke="#1a2756" stroke-width="1.2"/>
+          <ellipse cx="30" cy="30" rx="10" ry="22" stroke="#1a2756" stroke-width="0.7"/>
+          <ellipse cx="30" cy="30" rx="22" ry="7" stroke="#1a2756" stroke-width="0.6"/>
+          <line x1="8" y1="30" x2="52" y2="30" stroke="#1a2756" stroke-width="0.5"/>
+          <path d="M12 20 Q30 24 48 20" stroke="#1a2756" stroke-width="0.4" fill="none"/>
+          <path d="M12 40 Q30 36 48 40" stroke="#1a2756" stroke-width="0.4" fill="none"/>
+          <!-- power bolt -->
+          <path d="M33 16 L26 30 H31 L25 45" stroke="#1a2756" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="col-tagline">Deliver With Confidence</div>
+
+      <div class="mini-section">
+        <div class="mini-title">Deliver</div>
+        <div class="mini-row">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M3 8 L8 3 L13 8"/><line x1="8" y1="3" x2="8" y2="13"/></svg>
+          <span class="mini-row-text">Automate & Submit</span>
+        </div>
+        <div class="mini-row">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M8 3 L14 12 H2 L8 3z"/><line x1="8" y1="7" x2="8" y2="9"/></svg>
+          <span class="mini-row-text">Safe Releases</span>
+        </div>
+        <div class="mini-row">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="2" y="6" width="5" height="8"/><rect x="9" y="3" width="5" height="11"/><line x1="1" y1="14" x2="15" y2="14"/></svg>
+          <span class="mini-row-text">Progressive Energize</span>
+        </div>
+      </div>
+
+      <div class="mini-section">
+        <div class="mini-title">Observe</div>
+        <div class="mini-row">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M3 8 Q8 2 13 8 Q8 14 3 8z"/><circle cx="8" cy="8" r="2"/></svg>
+          <span class="mini-row-text">Real-time Visibility</span>
+        </div>
+        <div class="mini-row">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M8 2a5 5 0 000 10 5 5 0 000-10zm0 7v1"/><line x1="8" y1="2" x2="8" y2="5"/></svg>
+          <span class="mini-row-text">Alerts & Insights</span>
+        </div>
+      </div>
+
+      <svg class="compass-small" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="18" cy="18" r="16" stroke="#1a2756" stroke-width="0.8" opacity="0.4"/>
+        <circle cx="18" cy="18" r="10" stroke="#1a2756" stroke-width="0.5" opacity="0.3"/>
+        <circle cx="18" cy="18" r="2" fill="#1a2756" opacity="0.5"/>
+        <polygon points="18,2 19,16 18,14 17,16" fill="#1a2756" opacity="0.6"/>
+        <polygon points="18,34 19,20 18,22 17,20" fill="#1a2756" opacity="0.3"/>
+        <polygon points="2,18 16,19 14,18 16,17" fill="#1a2756" opacity="0.3"/>
+        <polygon points="34,18 20,19 22,18 20,17" fill="#1a2756" opacity="0.6"/>
+      </svg>
+    </div>
+
+  </div><!-- end columns -->
+
+  <!-- PROCESS STRIP -->
+  <div class="process-strip">
+    <div class="process-title">— The EPEF Process —</div>
+    <div class="process-flow">
+      <div class="pf-step">
+        <svg viewBox="0 0 32 32" fill="none" stroke="#1a2756" stroke-width="1.2"><circle cx="16" cy="11" r="7"/><path d="M10 18 Q8 25 12 27 H20 Q24 25 22 18"/><line x1="16" y1="4" x2="16" y2="6"/><line x1="22" y1="6" x2="21" y2="7"/><line x1="10" y1="6" x2="11" y2="7"/><path d="M18 9 L14 13 H16 L13 17" stroke-width="1.4" stroke-linecap="round"/></svg>
+        <div class="pf-label">Intake</div>
+      </div>
+      <div class="pf-arrow">→</div>
+      <div class="pf-step">
+        <svg viewBox="0 0 32 32" fill="none" stroke="#1a2756" stroke-width="1.2"><rect x="6" y="4" width="20" height="24" rx="1"/><rect x="9" y="8" width="6" height="3" rx="0.5"/><rect x="17" y="8" width="6" height="3" rx="0.5"/><rect x="9" y="13" width="6" height="3" rx="0.5"/><rect x="17" y="13" width="6" height="3" rx="0.5"/><line x1="16" y1="4" x2="16" y2="28"/></svg>
+        <div class="pf-label">Standardize</div>
+      </div>
+      <div class="pf-arrow">→</div>
+      <div class="pf-step">
+        <svg viewBox="0 0 32 32" fill="none" stroke="#1a2756" stroke-width="1.3"><circle cx="16" cy="16" r="12"/><circle cx="16" cy="16" r="7"/><path d="M19 9 L14 16 H17 L13 23" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div class="pf-label">Spark Engine</div>
+      </div>
+      <div class="pf-arrow">→</div>
+      <div class="pf-step">
+        <svg viewBox="0 0 32 32" fill="none" stroke="#1a2756" stroke-width="1.2"><path d="M8 16 Q8 8 14 8 Q20 8 16 16 Q12 24 18 24 Q24 24 24 16 Q24 8 18 8 Q12 8 16 16 Q20 24 14 24 Q8 24 8 16z"/></svg>
+        <div class="pf-label">Refinement</div>
+      </div>
+      <div class="pf-arrow">→</div>
+      <div class="pf-step">
+        <svg viewBox="0 0 32 32" fill="none" stroke="#1a2756" stroke-width="1.2"><circle cx="16" cy="16" r="12"/><ellipse cx="16" cy="16" rx="5" ry="12"/><ellipse cx="16" cy="16" rx="12" ry="4"/><line x1="4" y1="16" x2="28" y2="16"/><path d="M18 8 L14 16 H17 L13 24" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <div class="pf-label">Deployment</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOUNDATION -->
+  <div class="foundation">
+    <div class="found-title">— EPEF Foundation —</div>
+    <div class="found-grid">
+      <div class="found-item">
+        <svg viewBox="0 0 18 18" fill="none" stroke="#1a2756" stroke-width="1.2"><path d="M9 2L2 5.5v4C2 13 5 16 9 17c4-1 7-4 7-7.5v-4L9 2z"/></svg>
+        <div class="found-text">Safety<br>by Design</div>
+      </div>
+      <div class="found-item">
+        <svg viewBox="0 0 18 18" fill="none" stroke="#1a2756" stroke-width="1.2"><polyline points="3,9 7,13 15,5"/></svg>
+        <div class="found-text">NEC Code<br>as Policy</div>
+      </div>
+      <div class="found-item">
+        <svg viewBox="0 0 18 18" fill="none" stroke="#1a2756" stroke-width="1.2"><path d="M4 14L9 3l5 11H4z"/><line x1="9" y1="8" x2="9" y2="10"/><circle cx="9" cy="12" r="0.6" fill="currentColor"/></svg>
+        <div class="found-text">Compliance<br>Built-in</div>
+      </div>
+      <div class="found-item">
+        <svg viewBox="0 0 18 18" fill="none" stroke="#1a2756" stroke-width="1.2"><path d="M2 16 L4 8 L7 12 L10 5 L13 10 L16 7"/></svg>
+        <div class="found-text">Observability<br>by Default</div>
+      </div>
+      <div class="found-item">
+        <svg viewBox="0 0 18 18" fill="none" stroke="#1a2756" stroke-width="1.2"><rect x="2" y="3" width="14" height="12" rx="1"/><line x1="6" y1="3" x2="6" y2="15"/><line x1="2" y1="7" x2="16" y2="7"/></svg>
+        <div class="found-text">Knowledge<br>Continuously Improved</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer-bar">
+    <div class="footer-est">EST. MMXXIV</div>
+    <div class="footer-tagline">WE ENERGISE PERMITS FROM IDEAS.</div>
+    <div class="footer-badge"><span class="footer-badge-text">EG</span></div>
+  </div>
+
+</div><!-- inner-border -->
+</div><!-- outer-border -->
+</div><!-- poster -->
+</body>
+</html>
