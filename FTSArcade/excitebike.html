@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>EXCITEBIKE</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#000; display:flex; flex-direction:column; align-items:center; 
+       justify-content:center; height:100vh; overflow:hidden; }
+#wrap { position:relative; }
+canvas { display:block; image-rendering:pixelated; }
+#overlay {
+  position:absolute; inset:0; background:#000080;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  font-family:'Courier New',monospace; color:#fff; z-index:10;
+}
+#overlay h1 { font-size:clamp(28px,6vw,52px); color:#ffcc00; letter-spacing:6px;
+  text-shadow:3px 3px 0 #cc0000, 6px 6px 0 #000; margin-bottom:12px; }
+#overlay .copy { font-size:clamp(9px,1.5vw,13px); color:#aaa; letter-spacing:3px; margin-bottom:32px; }
+.blink { animation:blink .7s step-end infinite; color:#00ffff; 
+         font-size:clamp(10px,1.8vw,15px); letter-spacing:2px; }
+.ctrls { margin-top:24px; color:#888; font-size:clamp(8px,1.3vw,11px); 
+         letter-spacing:1px; line-height:2.2; text-align:center; }
+@keyframes blink { 50%{opacity:0} }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="c"></canvas>
+  <div id="overlay">
+    <h1>EXCITEBIKE</h1>
+    <div class="copy">&copy; 1984 NINTENDO</div>
+    <div class="blink">PRESS SPACE OR ENTER TO START</div>
+    <div class="ctrls">
+      Z / UP &nbsp;&nbsp; ACCELERATE<br>
+      SHIFT &nbsp;&nbsp; TURBO BOOST (overheats!)<br>
+      UP/DOWN ARROWS &nbsp;&nbsp; CHANGE LANE<br>
+      X / DOWN &nbsp;&nbsp; BRAKE
+    </div>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────
+// NES EXCITEBIKE  –  faithful 2D side-scroller
+// Canvas 2D rendering for pixel-perfect NES look
+// ─────────────────────────────────────────────────────────
+
+const SCALE  = Math.min(Math.floor(Math.min(window.innerWidth/256, window.innerHeight/240)), 4) || 2;
+const NW     = 256;  // NES native width
+const NH     = 240;  // NES native height
+
+const canvas = document.getElementById('c');
+canvas.width  = NW * SCALE;
+canvas.height = NH * SCALE;
+const ctx     = canvas.getContext('2d');
+ctx.imageSmoothingEnabled = false;
+
+// ── NES PALETTE ──────────────────────────────────────────
+const P = {
+  black:   '#000000',
+  white:   '#FCFCFC',
+  sky:     '#5C94FC',   // NES blue (audience stands)
+  green:   '#58D854',   // bright grass green
+  dkGreen: '#007800',   // dark green
+  orange:  '#D07010',   // track surface (main color)
+  dkOrange:'#A04000',   // track shadow/dark
+  ltOrange:'#F0B048',   // track highlight
+  pink:    '#F8B8B8',   // side walls
+  dkPink:  '#C87878',   // side wall shadow
+  yellow:  '#FCD018',   // chevrons / HUD
+  red:     '#E83000',   // bike body
+  ltRed:   '#FC5030',   // bike highlight
+  brown:   '#703800',   // track edge detail
+  bikeWhite:'#FCFCFC',  // rider
+  hudBlack:'#000000',
+  hudBlue: '#0000BC',
+  tempGreen:'#00A800',
+  tempRed:  '#E83000',
+  tempYellow:'#FCD018',
+};
+
+// ── LAYOUT ───────────────────────────────────────────────
+// NES Excitebike screen layout (240px tall):
+//   0-19:    audience top (blue + people)
+//  20-27:    top grass strip  
+//  28-35:    pink side wall top
+//  36-195:   TRACK (4 lanes * ~40px each = 160px)  
+//  196-203:  pink side wall bottom
+//  204-215:  bottom grass with obstacles
+//  216-239:  HUD bar
+
+const TRACK_TOP    = 36;
+const TRACK_BOTTOM = 196;
+const TRACK_H      = TRACK_BOTTOM - TRACK_TOP;  // 160
+const LANE_COUNT   = 4;
+const LANE_H       = TRACK_H / LANE_COUNT;      // 40
+const HUD_Y        = 216;
+
+function laneY(lane) {   // top of lane
+  return TRACK_TOP + lane * LANE_H;
+}
+function laneCY(lane) {  // center of lane
+  return laneY(lane) + LANE_H / 2;
+}
+
+// ── STATE ────────────────────────────────────────────────
+let state  = 'title'; // title | playing | gameover | finish
+let raceTime = 0;
+let bestTime = null;
+let scrollX  = 0;      // how far we've scrolled (px at native res)
+let lapDist  = 0;
+const LAP_DIST = 4096; // px per lap
+const LAPS     = 3;
+let   curLap   = 1;
+
+let playerLane = 1;
+let playerTargetLane = 1;
+let playerLaneY      = laneCY(1);  // current visual Y (smooth transition)
+let playerX          = 60;         // fixed X on screen
+
+let speed      = 0;   // px/s at native res
+let engineTemp = 0;   // 0-100
+let overheated = false;
+let overheatTimer = 0;
+let crashing   = false;
+let crashTimer = 0;
+let airborne   = false;
+let airY       = 0;
+let airVY      = 0;
+let laneChangeCooldown = 0;
+let lapFlash   = 0;
+
+const SPEED_NORMAL = 200;
+const SPEED_TURBO  = 310;
+const SPEED_MIN    = 0;
+
+// Wheel animation
+let wheelRot = 0;
+
+// ── INPUT ────────────────────────────────────────────────
+const K = {};
+window.addEventListener('keydown', e => {
+  if(!K[e.code]) {
+    K[e.code] = true;
+    if((e.code==='Space'||e.code==='Enter') && state==='title')   startGame();
+    if((e.code==='Space'||e.code==='Enter') && state==='gameover') startGame();
+    if((e.code==='Space'||e.code==='Enter') && state==='finish')   startGame();
+
+    // Lane change on keydown (not held)
+    if(state==='playing' && !crashing && !airborne) {
+      if((e.code==='ArrowUp') && playerTargetLane > 0) {
+        playerTargetLane--;
+      }
+      if((e.code==='ArrowDown') && playerTargetLane < LANE_COUNT-1) {
+        playerTargetLane++;
+      }
+    }
+  }
+  e.preventDefault();
+});
+window.addEventListener('keyup', e => { K[e.code] = false; });
+
+function startGame() {
+  state           = 'playing';
+  raceTime        = 0;
+  scrollX         = 0;
+  lapDist         = 0;
+  curLap          = 1;
+  playerLane      = 1;
+  playerTargetLane= 1;
+  playerLaneY     = laneCY(1);
+  speed           = 0;
+  engineTemp      = 0;
+  overheated      = false;
+  overheatTimer   = 0;
+  crashing        = false;
+  crashTimer      = 0;
+  airborne        = false;
+  airY            = 0;
+  airVY           = 0;
+  lapFlash        = 0;
+  wheelRot        = 0;
+  generateTrack();
+  document.getElementById('overlay').style.display = 'none';
+}
+
+// ── TRACK GENERATION ────────────────────────────────────
+// Each obstacle/ramp is {x, lane, type: 'block'|'ramp'|'chevron'}
+let trackObjects = [];
+
+function generateTrack() {
+  trackObjects = [];
+  const types = ['block','block','block','ramp','chevron','block'];
+  let x = 300;
+  while(x < LAP_DIST * LAPS + 200) {
+    const type = types[Math.floor(Math.random()*types.length)];
+    const lane = Math.floor(Math.random() * LANE_COUNT);
+    trackObjects.push({ x, lane, type, hit: false });
+    x += 100 + Math.random() * 200;
+    // Sometimes cluster
+    if(Math.random() < 0.3) {
+      trackObjects.push({ x: x+60, lane: (lane+1)%LANE_COUNT, type:'block', hit:false });
+    }
+  }
+}
+
+// ── AI RIDERS ────────────────────────────────────────────
+const AI_COLORS = ['#2040D0','#30B040','#D07800'];
+let aiRiders = [];
+function resetAI() {
+  aiRiders = AI_COLORS.map((col,i) => ({
+    col,
+    lane:      (i+1) % LANE_COUNT,
+    targetLane:(i+1) % LANE_COUNT,
+    laneY:     laneCY((i+1)%LANE_COUNT),
+    screenX:   NW - 40 - i*50,  // start ahead/behind
+    scrollOffset: -(i+1)*80,    // offset in world
+    speed:     170 + Math.random()*60,
+    temp:      0,
+  }));
+}
+
+// ── DRAW HELPERS ─────────────────────────────────────────
+function sc(x,y,w,h) { // scale a rect
+  return [x*SCALE, y*SCALE, w*SCALE, h*SCALE];
+}
+
+function fillRect(color, x, y, w, h) {
+  ctx.fillStyle = color;
+  ctx.fillRect(x*SCALE, y*SCALE, w*SCALE, h*SCALE);
+}
+
+function drawText(text, x, y, color, scale=1) {
+  ctx.save();
+  ctx.fillStyle = color;
+  ctx.font = `bold ${8*SCALE*scale}px "Courier New"`;
+  ctx.textBaseline = 'top';
+  ctx.fillText(text, x*SCALE, y*SCALE);
+  ctx.restore();
+}
+
+// Pixel-art bike (facing right, 16x12 native pixels)
+function drawBike(cx, cy, color, wRot, leaning) {
+  const X = Math.round(cx - 8);
+  const Y = Math.round(cy - 6);
+  
+  // Shadow
+  fillRect('rgba(0,0,0,0.3)', X+1, Y+11, 16, 2);
+  
+  // Wheels (circles approximated as squares at NES res)
+  fillRect(P.black, X,    Y+8, 6, 5);   // rear wheel
+  fillRect(P.black, X+10, Y+8, 6, 5);  // front wheel
+  fillRect(P.white, X+1,  Y+9, 4, 3);  // rear hub
+  fillRect(P.white, X+11, Y+9, 4, 3);  // front hub
+  
+  // Frame
+  fillRect(color,   X+2,  Y+5, 12, 4); // main frame
+  fillRect(color,   X+8,  Y+3, 4,  5); // fork area
+  
+  // Exhaust
+  fillRect(P.dkOrange, X, Y+7, 3, 2);
+  
+  // Rider body  
+  const ly = leaning ? -1 : 0;
+  fillRect(P.bikeWhite, X+4,  Y+1+ly, 5, 5);  // torso/arms
+  fillRect(P.red,       X+4,  Y+5+ly, 5, 3);  // legs
+  // Helmet
+  fillRect(P.bikeWhite, X+4,  Y-1+ly, 5, 3);
+  fillRect(P.brown,     X+3,  Y+0+ly, 7, 2);  // brim
+}
+
+function drawAiBike(cx, cy, color) {
+  const X = Math.round(cx - 7);
+  const Y = Math.round(cy - 6);
+  fillRect(P.black, X,   Y+8, 5, 4);
+  fillRect(P.black, X+9, Y+8, 5, 4);
+  fillRect(color,   X+2, Y+4, 10, 5);
+  fillRect(P.bikeWhite, X+4, Y+1, 4, 5);
+  fillRect(P.bikeWhite, X+3, Y-1, 5, 3);
+}
+
+// Obstacle block (looks like NES fallen bike / mud mound)
+function drawBlock(x, lane) {
+  const cy = laneCY(lane);
+  const bx = Math.round(x);
+  const by = Math.round(cy);
+  fillRect(P.dkOrange, bx-5, by-3, 10, 6);
+  fillRect(P.ltOrange, bx-4, by-4, 10, 3);
+  fillRect(P.brown,    bx-5, by+2,  10, 2);
+}
+
+// Ramp
+function drawRamp(x, lane) {
+  const cy = laneCY(lane);
+  const bx = Math.round(x);
+  const by = Math.round(cy);
+  // Triangle-ish ramp shape
+  for(let i=0;i<12;i++) {
+    const h = Math.round((i/11)*8)+1;
+    fillRect(P.ltOrange, bx-6+i, by-h, 1, h+2);
+  }
+  fillRect(P.yellow, bx-6, by+1, 12, 1); // base line
+}
+
+// Chevron speed marker >>
+function drawChevron(x, lane) {
+  const cy = laneCY(lane);
+  const bx = Math.round(x);
+  const by = Math.round(cy);
+  ctx.fillStyle = P.pink;
+  ctx.font = `bold ${9*SCALE}px monospace`;
+  ctx.fillText('>>', (bx-8)*SCALE, (by-5)*SCALE);
+}
+
+// ── DRAW SCENE ───────────────────────────────────────────
+function drawScene() {
+  // ── 1. Audience area (top) ──
+  fillRect(P.sky, 0, 0, NW, 20);
+  // Audience heads (little colored dots)
+  for(let i=0; i<NW; i+=7) {
+    const col = (i%14<7) ? P.orange : P.ltRed;
+    fillRect(col, i, 4, 5, 5);
+    fillRect(col, i+3, 10, 5, 5);
+  }
+  // Fence top
+  fillRect(P.white, 0, 18, NW, 2);
+
+  // ── 2. Top grass strip ──
+  fillRect(P.green, 0, 20, NW, 16);
+  // Grass texture dots
+  for(let i=0;i<NW;i+=8) {
+    fillRect(P.dkGreen, i,   22, 3, 2);
+    fillRect(P.dkGreen, i+4, 26, 3, 2);
+  }
+
+  // ── 3. Left pink wall (diagonal) ──
+  fillRect(P.pink,   0, TRACK_TOP-8, 8, TRACK_H+16);
+  fillRect(P.dkPink, 0, TRACK_TOP-8, 3, TRACK_H+16);
+  // Diagonal stripe texture
+  for(let i=0;i<TRACK_H+16;i+=6) {
+    fillRect(P.dkPink, 0, TRACK_TOP-8+i, 8, 2);
+  }
+
+  // ── 4. Right pink wall ──
+  fillRect(P.pink,   NW-8, TRACK_TOP-8, 8, TRACK_H+16);
+  fillRect(P.dkPink, NW-5, TRACK_TOP-8, 3, TRACK_H+16);
+  for(let i=0;i<TRACK_H+16;i+=6) {
+    fillRect(P.dkPink, NW-8, TRACK_TOP-8+i, 8, 2);
+  }
+
+  // ── 5. Track surface (orange dirt) ──
+  fillRect(P.orange, 8, TRACK_TOP, NW-16, TRACK_H);
+  
+  // Track texture (subtle darker lines)
+  for(let i=0;i<TRACK_H;i+=8) {
+    fillRect(P.dkOrange, 8, TRACK_TOP+i, NW-16, 1);
+  }
+
+  // ── 6. Lane dividers (dashed lines) ──
+  for(let lane=1; lane<LANE_COUNT; lane++) {
+    const ly = laneY(lane);
+    // dashed line
+    const dashW = 10, gapW = 8;
+    const scrollOffset = Math.round(scrollX) % (dashW+gapW);
+    for(let dx = -scrollOffset; dx < NW-16; dx += dashW+gapW) {
+      fillRect(P.dkOrange, 8+Math.max(0,dx), ly, 
+               Math.min(dashW, NW-16-dx), 2);
+    }
+  }
+
+  // ── 7. Track objects (scroll from right) ──
+  for(const obj of trackObjects) {
+    if(obj.hit) continue;
+    const screenX = obj.x - scrollX + playerX;
+    if(screenX < -20 || screenX > NW+20) continue;
+    if(obj.type==='block')   drawBlock(screenX, obj.lane);
+    else if(obj.type==='ramp')    drawRamp(screenX, obj.lane);
+    else if(obj.type==='chevron') drawChevron(screenX, obj.lane);
+  }
+
+  // ── 8. AI riders ──
+  for(const ai of aiRiders) {
+    const sx = ai.screenX;
+    if(sx < -20 || sx > NW+20) continue;
+    // smooth lane transition
+    const ty = laneCY(ai.targetLane);
+    ai.laneY += (ty - ai.laneY) * 0.15;
+    
+    const vy = airborne && ai===aiRiders[0] ? ai.laneY - 8 : ai.laneY;
+    drawAiBike(sx, ai.laneY, ai.col);
+  }
+
+  // ── 9. Player bike ──
+  {
+    const bx = playerX;
+    const by = airborne ? airY : playerLaneY;
+    // shadow on ground when airborne
+    if(airborne) {
+      fillRect('rgba(0,0,0,0.25)', bx-8, playerLaneY+2, 16, 4);
+    }
+    const lean = (K['ShiftLeft']||K['ShiftRight']) && speed>50;
+    drawBike(bx, by, P.red, wheelRot, lean);
+  }
+
+  // ── 10. Bottom grass ──
+  fillRect(P.green, 0, TRACK_BOTTOM+4, NW, 12);
+  // Bottom obstacle row (decorative stumps, NES style)
+  const stumpScroll = Math.round(scrollX * 0.5) % 16;
+  for(let i=-stumpScroll; i<NW; i+=16) {
+    fillRect(P.dkOrange, i, TRACK_BOTTOM+5, 8, 8);
+    fillRect(P.ltOrange, i+1, TRACK_BOTTOM+5, 6, 3);
+  }
+  fillRect(P.dkGreen, 0, TRACK_BOTTOM+13, NW, 3);
+
+  // ── 11. HUD BAR ──
+  fillRect(P.hudBlack, 0, HUD_Y, NW, NH-HUD_Y);
+
+  // Position indicator
+  drawText('1ST', 4, HUD_Y+2, P.white, 0.85);
+  
+  // TEMP label + gauge
+  const tempX = 82;
+  drawText('TEMP', tempX-2, HUD_Y+2, P.white, 0.7);
+  // Temp bar background
+  fillRect(P.white, tempX+22, HUD_Y+3, 52, 8);
+  fillRect(P.hudBlack, tempX+23, HUD_Y+4, 50, 6);
+  // Temp fill
+  const tempFill = Math.round(engineTemp/100 * 48);
+  const tempCol  = engineTemp > 75 ? P.tempRed : engineTemp > 50 ? P.tempYellow : P.tempGreen;
+  if(tempFill > 0) fillRect(tempCol, tempX+24, HUD_Y+5, tempFill, 4);
+  
+  // TIME label
+  drawText('TIME', 154, HUD_Y+2, P.white, 0.7);
+  const ts = raceTime;
+  const tm = String(Math.floor(ts/60)).padStart(1,'0');
+  const tss= String(Math.floor(ts%60)).padStart(2,'0');
+  const th = String(Math.floor((ts%1)*100)).padStart(2,'0');
+  drawText(`${tm}:${tss}:${th}`, 175, HUD_Y+2, P.white, 0.85);
+  
+  // LAP indicator below
+  fillRect(P.hudBlue, 0, HUD_Y+14, NW, NH-HUD_Y-14);
+  drawText(`LAP ${curLap}/${LAPS}`, 4, HUD_Y+15, P.yellow, 0.85);
+  if(bestTime!==null) {
+    const bm=Math.floor(bestTime/60), bs=Math.floor(bestTime%60);
+    drawText(`BEST ${bm}:${String(bs).padStart(2,'0')}`, 100, HUD_Y+15, P.white, 0.85);
+  }
+  drawText(`${Math.round(speed/SPEED_NORMAL*99).toString().padStart(3,' ')} km/h`, 184, HUD_Y+15, P.white, 0.85);
+  
+  // Overheat flash
+  if(overheated && Math.floor(raceTime*4)%2===0) {
+    fillRect('rgba(255,0,0,0.15)', 0, 0, NW, NH);
+    drawText('OVERHEAT!', 72, NH/2-8, P.tempRed, 1.2);
+  }
+  
+  // Lap flash
+  if(lapFlash > 0) {
+    drawText(`LAP ${curLap-1} COMPLETE!`, 44, NH/2-8, P.yellow, 1);
+  }
+  
+  // Crash flash
+  if(crashing && Math.floor(crashTimer*8)%2===0) {
+    fillRect('rgba(255,80,0,0.2)', 0, 0, NW, NH);
+  }
+}
+
+// ── UPDATE ────────────────────────────────────────────────
+let lastT = 0;
+function update(now) {
+  const dt = Math.min((now - lastT)/1000, 0.05);
+  lastT = now;
+  if(state !== 'playing') { requestAnimationFrame(update); ctx.clearRect(0,0,canvas.width,canvas.height); drawScene(); return; }
+
+  raceTime += dt;
+
+  // ── Speed / Input ──
+  const accel = K['KeyZ'] || K['ArrowUp'];
+  const brake = K['KeyX'] || K['ArrowDown'];  // Note: ArrowDown also changes lane, but brake is X
+  const turbo = K['ShiftLeft'] || K['ShiftRight'];
+  
+  // Override: ArrowDown only changes lane (not brake), X is brake
+  const doBrake = K['KeyX'];
+  
+  if(crashing) {
+    crashTimer -= dt;
+    speed = Math.max(0, speed - 300*dt);
+    if(crashTimer <= 0) { crashing = false; crashTimer = 0; }
+  } else {
+    const maxSpd = (turbo && !overheated) ? SPEED_TURBO : SPEED_NORMAL;
+    if(accel) speed = Math.min(speed + 220*dt, maxSpd);
+    else if(doBrake) speed = Math.max(0, speed - 280*dt);
+    else speed = Math.max(0, speed - 80*dt);
+    
+    // Engine temp
+    if(turbo && speed > 30) {
+      engineTemp = Math.min(100, engineTemp + 28*dt);
+    } else {
+      engineTemp = Math.max(0, engineTemp - 12*dt);
+    }
+    if(overheated) {
+      overheatTimer -= dt;
+      engineTemp = Math.max(0, engineTemp - 22*dt);
+      speed = Math.min(speed, 60);
+      if(overheatTimer <= 0) { overheated = false; }
+    }
+    if(engineTemp >= 100 && !overheated) {
+      overheated = true; overheatTimer = 2.5;
+    }
+  }
+
+  // ── Lane transition (smooth) ──
+  if(!crashing && !airborne) {
+    const targetY = laneCY(playerTargetLane);
+    const diff = targetY - playerLaneY;
+    playerLaneY += diff * Math.min(1, 12*dt);
+    if(Math.abs(diff) < 0.5) { playerLaneY = targetY; playerLane = playerTargetLane; }
+  }
+
+  // ── Scroll ──
+  const scrollDelta = speed * dt;
+  scrollX  += scrollDelta;
+  lapDist  += scrollDelta;
+
+  // ── Lap check ──
+  if(lapFlash > 0) lapFlash -= dt;
+  if(lapDist >= LAP_DIST) {
+    lapDist -= LAP_DIST;
+    curLap++;
+    lapFlash = 1.5;
+    if(curLap > LAPS) {
+      state = 'finish';
+      if(bestTime === null || raceTime < bestTime) bestTime = raceTime;
+      const ov = document.getElementById('overlay');
+      ov.style.display = 'flex';
+      const min=Math.floor(raceTime/60), sec=Math.floor(raceTime%60);
+      ov.innerHTML = `<h1 style="color:#ffcc00;font-family:monospace;letter-spacing:4px;text-shadow:3px 3px 0 #c00">FINISH!</h1>
+        <div style="color:#fff;font-family:monospace;font-size:clamp(10px,2vw,16px);margin:12px 0">
+          TIME: ${min}:${String(sec).padStart(2,'0')}<br>
+          ${bestTime===raceTime?'<span style="color:#0ff">NEW BEST!</span>':''}
+        </div>
+        <div class="blink" style="color:#0ff;font-family:monospace;animation:blink .7s step-end infinite">PRESS SPACE TO RACE AGAIN</div>`;
+      return;
+    }
+  }
+
+  // ── Airborne ──
+  if(!airborne) {
+    // check ramp collision
+    for(const obj of trackObjects) {
+      if(obj.hit || obj.type !== 'ramp') continue;
+      const sx = obj.x - scrollX + playerX;
+      if(Math.abs(sx - playerX) < 10 && obj.lane === playerLane && speed > 60) {
+        airborne = true;
+        airY     = playerLaneY;
+        airVY    = -speed * 0.35;
+        obj.hit  = true;
+      }
+    }
+  } else {
+    airVY += 480 * dt; // gravity
+    airY  += airVY * dt;
+    if(airY >= laneCY(playerLane)) {
+      airY = laneCY(playerLane);
+      airborne = false; airVY = 0;
+    }
+  }
+
+  // ── Block collision ──
+  if(!crashing && !airborne) {
+    for(const obj of trackObjects) {
+      if(obj.hit || obj.type !== 'block') continue;
+      const sx = obj.x - scrollX + playerX;
+      if(Math.abs(sx - playerX) < 12 && obj.lane === playerLane) {
+        obj.hit    = true;
+        crashing   = true;
+        crashTimer = 1.0;
+        engineTemp = Math.min(100, engineTemp + 15);
+      }
+    }
+  }
+
+  // ── AI update ──
+  for(const ai of aiRiders) {
+    ai.scrollOffset += ai.speed * dt;
+    // AI screen X: they move relative to player scroll
+    // Their world X = scrollX + (their screenX offset from player)
+    const worldX = scrollX + (ai.screenX - playerX);
+    // Just drift their screenX to simulate relative motion
+    const relSpeed = ai.speed - speed;
+    ai.screenX += relSpeed * dt;
+    // Keep roughly on screen (wrap if too far)
+    if(ai.screenX > NW + 40) ai.screenX = -40;
+    if(ai.screenX < -60) ai.screenX = NW + 20;
+    // Random lane changes
+    if(Math.random() < 0.01) {
+      ai.targetLane = Math.floor(Math.random()*LANE_COUNT);
+    }
+    ai.laneY += (laneCY(ai.targetLane) - ai.laneY) * 0.1;
+  }
+
+  // ── Wheel spin ──
+  wheelRot += speed * dt * 0.05;
+
+  requestAnimationFrame(update);
+  drawScene();
+}
+
+// ── INIT ─────────────────────────────────────────────────
+resetAI();
+generateTrack();
+requestAnimationFrame(update);
+</script>
+</body>
+</html>
