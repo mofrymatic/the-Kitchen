@@ -105,12 +105,12 @@
 
         .cabinet-wrapper {
             display: flex;
-            align-items: flex-start;   /* top-anchor: marquee visible, feet overflow off-screen */
+            align-items: center;
             justify-content: center;
             width: 100vw;
+            height: 100vh;
             height: 100dvh;
-            padding-top: clamp(0.25rem, 0.75dvh, 0.75rem); /* tiny top breathing room for marquee */
-            overflow: hidden;          /* clip the feet cleanly */
+            padding: clamp(0.5rem, 2vh, 2rem);
             position: relative;
             z-index: 1;
         }
@@ -120,7 +120,7 @@
             display: inline-block;
             line-height: 0;        /* kill inline-block ghost gap */
             max-width: 100%;
-            flex-shrink: 0;
+            max-height: 100%;
         }
 
         /* Subtle CRT glow behind the game grid — Screen X:24.9-74.7%, Y:14-53% */
@@ -145,44 +145,13 @@
             50%       { opacity: 1.2; }
         }
 
-        /*
-         * ── CABINET SIZING ───────────────────────────────────────────────────
-         * Landscape default: height=150dvh keeps the screen (Y:14-53%) filling
-         * ~58% of the viewport. Feet (at 95% of cabinet) land at 142dvh — safely
-         * off-screen. Cabinet is top-anchored so marquee is always visible.
-         *
-         * Portrait override: width-constrained so the full cabinet (feet included)
-         * fits the narrow viewport. min(90vw, 67.5dvh) prevents it from being
-         * taller than the screen at any portrait aspect ratio.
-         * ────────────────────────────────────────────────────────────────────
-         */
         .cabinet-base {
             display: block;
-            height: 150dvh;
+            max-width: 100%;
+            /* Explicit max-height accounts for wrapper padding so container never overflows */
+            max-height: calc(100dvh - clamp(1rem, 4vh, 4rem));
             width: auto;
-            max-width: none;       /* let it be as wide as 150dvh dictates */
-            flex-shrink: 0;
-        }
-
-        /* Portrait: show full cabinet including feet */
-        @media (orientation: portrait) {
-            .cabinet-wrapper {
-                align-items: center;   /* vertically center the full cabinet */
-                padding: clamp(0.5rem, 2vw, 1.5rem);
-                overflow: hidden;
-            }
-            .cabinet-base {
-                height: auto;
-                width: min(90vw, calc(67.5dvh * (1086 / 1448)));
-                max-width: 90vw;
-            }
-        }
-
-        /* Small landscape (phones): slightly tighter top padding */
-        @media (orientation: landscape) and (max-height: 450px) {
-            .cabinet-wrapper {
-                padding-top: 0;
-            }
+            height: auto;
         }
 
         .game-tile {
@@ -284,11 +253,32 @@
             bottom: -50px;
         }
 
-        /* Tooltip size on very small devices */
-        @media (max-height: 450px) {
+        /* Mobile optimizations */
+        @media (max-height: 500px) and (orientation: landscape) {
+            .cabinet-wrapper {
+                padding: clamp(0.3rem, 1vh, 1rem);
+            }
+
             .game-tile::after {
                 font-size: clamp(5px, 1.2vh, 8px);
                 padding: 4px 8px;
+            }
+        }
+
+        @media (max-width: 768px) and (orientation: portrait) {
+            .cabinet-wrapper {
+                padding: clamp(0.5rem, 2vw, 1.5rem);
+            }
+        }
+
+        @media (max-width: 400px) {
+            .cabinet-wrapper {
+                padding: 0.5rem;
+            }
+
+            .game-tile::after {
+                font-size: 6px;
+                padding: 3px 6px;
             }
         }
 
