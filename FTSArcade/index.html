@@ -168,12 +168,19 @@
            ═══════════════════════════════════════════════════════════ */
         .arcade-screen {
             position: absolute;
-            left: 18%; top: 20%;
-            width: 65%; height: 28%;
+            left: 16%; top: 20.5%;
+            width: 68%; height: 27%;
             z-index: 10;
             cursor: pointer;
             overflow: hidden;
             border-radius: 3px;
+
+            /* The Magic Sauce */
+            transform-origin: center center; /* Try 'bottom center' if it's easier to line up */
+            transform: perspective(600px) rotateX(3deg); /* Tweak these until it matches the bezel */
+            
+            /* Smooths out the text rendering during the 3D tilt */
+            backface-visibility: hidden;
         }
 
         /* Per-screen dense scanlines */
@@ -722,7 +729,7 @@
                         </a>
 
                         <!-- 4 · Red Eye -->
-                        <a class="game-tile tile-red-eye" href="redye-hud.html" data-game="red-eye">
+                        <a class="game-tile tile-red-eye" href="redeye-hud.html" data-game="red-eye">
                             <svg class="tile-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
                                 <!-- Eye whites / outer -->
                                 <path d="M2,16 Q16,3 30,16 Q16,29 2,16 Z"
