@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>NEON INVADERS</title>
 
   <!-- ── Primary Meta ─────────────────────────────────────────────────────── -->
@@ -29,13 +29,6 @@
   -->
 
   <style>
-    :root {
-      /* JS sets --ctrl-h to 76px on mobile; stays 0px on desktop so canvas fills freely */
-      --ctrl-h: 0px;
-    }
-    html {
-      overscroll-behavior: none;
-    }
     body {
       margin: 0;
       background: #000010;
@@ -44,23 +37,12 @@
       align-items: center;
       justify-content: center;
       min-height: 100vh;
-      height: 100vh;
-      overflow: hidden;
-      touch-action: none;
-      user-select: none;
-      -webkit-user-select: none;
-      overscroll-behavior: none;
     }
     canvas {
       display: block;
       image-rendering: pixelated;
       border: 2px solid #1a1a2e;
       box-shadow: 0 0 50px rgba(0, 216, 216, 0.1);
-      /* Scale to fit screen on both axes without ever growing past native 600px.
-         Formula: whichever is smallest — native size, viewport width, or the
-         width that keeps canvas within the remaining height after UI + controls. */
-      width: min(600px, 100vw, calc((100vh - 40px - var(--ctrl-h)) * 600 / 520));
-      height: auto;
     }
     #ui {
       font-family: monospace;
@@ -68,10 +50,7 @@
       display: flex;
       gap: 32px;
       margin-bottom: 6px;
-      /* Match canvas width so it never overflows on small screens */
-      width: min(600px, 100vw);
-      padding: 0 8px;
-      box-sizing: border-box;
+      width: 600px;
     }
     #ui span {
       flex: 1;
@@ -82,111 +61,6 @@
     #score-el { color: #00d8d8; }
     #lives-el  { color: #f800f8; text-align: center; }
     #wave-el   { color: #7b5fff; text-align: right; }
-
-    /* ── Touch Controls ───────────────────────────────────────────────── */
-    #touch-controls {
-      display: none;           /* JS shows this on touch devices */
-      width: min(600px, 100vw);
-      box-sizing: border-box;
-      padding: 8px 12px 4px;
-      gap: 10px;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: 6px;
-    }
-    .touch-btn {
-      font-family: monospace;
-      font-size: 22px;
-      font-weight: bold;
-      color: #00d8d8;
-      background: rgba(0, 216, 216, 0.08);
-      border: 2px solid rgba(0, 216, 216, 0.55);
-      border-radius: 10px;
-      width: 82px;
-      height: 56px;
-      cursor: pointer;
-      touch-action: none;
-      -webkit-tap-highlight-color: transparent;
-      text-shadow: 0 0 10px #00d8d8;
-      box-shadow: 0 0 10px rgba(0, 216, 216, 0.18), inset 0 0 8px rgba(0, 216, 216, 0.04);
-      transition: background 0.07s, box-shadow 0.07s;
-    }
-    .touch-btn.pressed {
-      background: rgba(0, 216, 216, 0.26);
-      box-shadow: 0 0 22px rgba(0, 216, 216, 0.5), inset 0 0 12px rgba(0, 216, 216, 0.12);
-    }
-    .fire-btn {
-      font-size: 13px;
-      letter-spacing: 2px;
-      color: #f800f8;
-      background: rgba(248, 0, 248, 0.08);
-      border-color: rgba(248, 0, 248, 0.55);
-      text-shadow: 0 0 10px #f800f8;
-      box-shadow: 0 0 10px rgba(248, 0, 248, 0.18), inset 0 0 8px rgba(248, 0, 248, 0.04);
-      width: 110px;
-      flex-shrink: 0;
-    }
-    .fire-btn.pressed {
-      background: rgba(248, 0, 248, 0.26);
-      box-shadow: 0 0 22px rgba(248, 0, 248, 0.5), inset 0 0 12px rgba(248, 0, 248, 0.12);
-    }
-
-    /* ── Mobile Name-Entry Overlay ────────────────────────────────────── */
-    #mobile-name-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 18, 0.94);
-      z-index: 999;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 18px;
-      font-family: monospace;
-    }
-    #mobile-name-overlay.visible { display: flex; }
-    .mn-title {
-      font-size: 22px;
-      font-weight: bold;
-      color: #f8b800;
-      text-shadow: 0 0 20px #f8b800;
-      letter-spacing: 3px;
-    }
-    .mn-sub {
-      font-size: 13px;
-      color: #aaccee;
-      letter-spacing: 2px;
-    }
-    #mobile-name-input {
-      background: #050520;
-      color: #58d854;
-      border: 2px solid #58d854;
-      text-align: center;
-      font-family: monospace;
-      font-size: 38px;
-      letter-spacing: 16px;
-      padding: 10px 16px;
-      width: 178px;
-      text-transform: uppercase;
-      outline: none;
-      caret-color: #58d854;
-      text-shadow: 0 0 18px #58d854;
-      box-shadow: 0 0 22px rgba(88, 216, 84, 0.32);
-    }
-    #mobile-name-submit {
-      font-family: monospace;
-      font-size: 16px;
-      font-weight: bold;
-      letter-spacing: 3px;
-      color: #000010;
-      background: linear-gradient(135deg, #58d854, #00d8d8);
-      border: none;
-      padding: 14px 36px;
-      cursor: pointer;
-      text-transform: uppercase;
-      box-shadow: 0 0 22px rgba(88, 216, 84, 0.38);
-      -webkit-tap-highlight-color: transparent;
-    }
   </style>
 </head>
 <body>
@@ -198,29 +72,7 @@
 </div>
 <canvas id="c" width="600" height="520"></canvas>
 
-<!-- ── Mobile touch controls (shown on touch devices via JS) ── -->
-<div id="touch-controls">
-  <button class="touch-btn" id="btn-left"  aria-label="Move Left">◀</button>
-  <button class="touch-btn fire-btn" id="btn-fire" aria-label="Fire">FIRE</button>
-  <button class="touch-btn" id="btn-right" aria-label="Move Right">▶</button>
-</div>
-
-<!-- ── Mobile name-entry overlay ── -->
-<div id="mobile-name-overlay">
-  <div class="mn-title">NEW HIGH SCORE!</div>
-  <div class="mn-sub">ENTER YOUR NAME (3 CHARS)</div>
-  <input id="mobile-name-input" type="text" maxlength="3"
-    autocomplete="off" autocorrect="off" spellcheck="false"
-    autocapitalize="characters" inputmode="text">
-  <button id="mobile-name-submit">SUBMIT ▶</button>
-</div>
-
 <script>
-// ── MOBILE DETECTION ─────────────────────────────────────────────────────────
-const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-              || ('ontouchstart' in window)
-              || navigator.maxTouchPoints > 0;
-
 // ── DYNAMIC ASSET GENERATION ─────────────────────────────────────────────────
 function generateBranding() {
   // 1. Create Favicon (32x32)
@@ -596,13 +448,7 @@ function playerHit() {
 }
 function triggerGameOver() { S.phase = 'over'; checkHS(); }
 function triggerWin()      { S.phase = 'win';  checkHS(); }
-function checkHS() {
-  const sc = getScores();
-  if (sc.length < 5 || S.score > sc[sc.length - 1].score) {
-    S.phase = 'namentry';
-    if (isMobile && window._mobileNameEntry) window._mobileNameEntry.show();
-  }
-}
+function checkHS() { const sc = getScores(); if (sc.length < 5 || S.score > sc[sc.length - 1].score) S.phase = 'namentry'; }
 function updateHUD() {
   document.getElementById('score-el').textContent = 'SCORE: ' + S.score;
   document.getElementById('lives-el').innerHTML = '▶ '.repeat(Math.max(0, S.lives)).trim() || '';
@@ -749,7 +595,7 @@ function draw() {
     ctx.fillText('SCORE: ' + S.score + '   WAVE: ' + S.wave + '/' + MAX_WAVES, W / 2, H / 2 - 32); ctx.restore();
     drawScoreTable(H / 2);
     ctx.save(); ctx.fillStyle = '#445566'; ctx.font = '12px monospace'; ctx.textAlign = 'center';
-    ctx.fillText(isMobile ? 'TAP SCREEN TO RESTART' : 'press R to restart', W / 2, H - 20); ctx.restore();
+    ctx.fillText('press R to restart', W / 2, H - 20); ctx.restore();
   }
   if (S.phase === 'namentry') {
     ctx.fillStyle = 'rgba(0,0,18,0.84)'; ctx.fillRect(0, 0, W, H);
@@ -797,76 +643,6 @@ window.addEventListener('keyup', e => { if (S.phase !== 'namentry') S.keys[e.key
 
 init(false);
 requestAnimationFrame(tick);
-
-// ── MOBILE SETUP ─────────────────────────────────────────────────────────────
-if (isMobile) {
-  // 1. Adjust canvas height budget so it doesn't overlap controls
-  document.documentElement.style.setProperty('--ctrl-h', '76px');
-
-  // 2. Show the touch control bar
-  const touchControls = document.getElementById('touch-controls');
-  touchControls.style.display = 'flex';
-
-  // 3. Wire up each button to the existing S.keys system
-  function bindTouchBtn(id, key) {
-    const el = document.getElementById(id);
-    function down(e) {
-      e.preventDefault();
-      if (S && S.phase !== 'namentry') {
-        S.keys[key] = true;
-        el.classList.add('pressed');
-      }
-    }
-    function up(e) {
-      e.preventDefault();
-      if (S) S.keys[key] = false;
-      el.classList.remove('pressed');
-    }
-    el.addEventListener('touchstart',  down, { passive: false });
-    el.addEventListener('touchend',    up,   { passive: false });
-    el.addEventListener('touchcancel', up,   { passive: false });
-  }
-  bindTouchBtn('btn-left',  'ArrowLeft');
-  bindTouchBtn('btn-right', 'ArrowRight');
-  bindTouchBtn('btn-fire',  ' ');
-
-  // 4. Tap canvas to restart on game-over / win screens
-  document.getElementById('c').addEventListener('touchstart', e => {
-    e.preventDefault();
-    if (S && (S.phase === 'over' || S.phase === 'win')) {
-      particles = [];
-      init(false);
-    }
-  }, { passive: false });
-
-  // 5. Mobile name-entry overlay wiring
-  const nameOverlay  = document.getElementById('mobile-name-overlay');
-  const nameInput    = document.getElementById('mobile-name-input');
-  const nameSubmit   = document.getElementById('mobile-name-submit');
-
-  function submitMobileName() {
-    const name = nameInput.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3);
-    if (!name.length) return;
-    saveScore({ name, score: S.score, wave: S.wave });
-    S.phase = S.wave >= MAX_WAVES ? 'win' : 'over';
-    nameOverlay.classList.remove('visible');
-    nameInput.blur();
-  }
-
-  // Exposed so checkHS() can call it
-  window._mobileNameEntry = {
-    show() {
-      nameInput.value = '';
-      nameOverlay.classList.add('visible');
-      // Small delay lets the overlay paint before keyboard opens
-      setTimeout(() => nameInput.focus(), 120);
-    }
-  };
-
-  nameSubmit.addEventListener('touchend', e => { e.preventDefault(); submitMobileName(); }, { passive: false });
-  nameSubmit.addEventListener('click', submitMobileName);
-  nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') submitMobileName(); });
-}
 </script>
 
 </body>
