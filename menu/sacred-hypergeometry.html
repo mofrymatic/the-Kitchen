@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>Sacred Hypergeometry · FTS</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;background:#000;overflow:hidden;touch-action:none}
+canvas{display:block;width:100vw;height:100vh;cursor:crosshair}
+#hud{
+  position:fixed;bottom:18px;left:50%;transform:translateX(-50%);
+  color:#1d7;font:500 9px/1 'Courier New',monospace;
+  letter-spacing:4px;opacity:.28;pointer-events:none;white-space:nowrap;
+  text-shadow:0 0 12px #0f08
+}
+#err{
+  display:none;position:fixed;inset:0;background:#000;color:#0b0;
+  font:13px/1.7 'Courier New',monospace;flex-direction:column;
+  align-items:center;justify-content:center;gap:10px;text-align:center;padding:24px
+}
+#err.on{display:flex}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud">DRAG · ORBIT &nbsp;&nbsp; SCROLL · ZOOM &nbsp;&nbsp; SACRED HYPERGEOMETRY</div>
+<div id="err">
+  <div style="font-size:32px;margin-bottom:4px">⬡</div>
+  <div>WebGPU Not Supported</div>
+  <small style="opacity:.5">Chrome 113+ &nbsp;·&nbsp; Edge 113+ &nbsp;·&nbsp; Opera 99+</small>
+</div>
+
+<script type="module">
+'use strict';
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+const C   = document.getElementById('c');
+const ERR = document.getElementById('err');
+
+if (!navigator.gpu) { ERR.classList.add('on'); throw 0; }
+const adapter = await navigator.gpu.requestAdapter({ powerPreference: 'high-performance' });
+if (!adapter)      { ERR.classList.add('on'); throw 0; }
+const device = await adapter.requestDevice();
+
+const dpr    = Math.min(devicePixelRatio, 2);
+function resize() {
+  C.width  = Math.floor(window.innerWidth  * dpr);
+  C.height = Math.floor(window.innerHeight * dpr);
+}
+resize();
+
+const gpuCtx = C.getContext('webgpu');
+const SWFMT  = navigator.gpu.getPreferredCanvasFormat();
+gpuCtx.configure({ device, format: SWFMT, alphaMode: 'opaque' });
+
+// ── CONSTANTS ─────────────────────────────────────────────────────────────────
+const PHI  = (1 + Math.sqrt(5)) / 2;
+const CAMz = 6.0, FOV = 1.8, W4D = 4.0;
+const cos = Math.cos, sin = Math.sin;
+
+// ── 4D GEOMETRY ───────────────────────────────────────────────────────────────
+
+// Tesseract — 16 vertices, 32 edges
+const T4V = Array.from({ length: 16 }, (_, i) =>
+  [(i & 1) ? 1 : -1, (i & 2) ? 1 : -1, (i & 4) ? 1 : -1, (i & 8) ? 1 : -1]);
+const T4E = (() => {
+  const e = [];
+  for (let i = 0; i < 16; i++)
+    for (let j = i + 1; j < 16; j++) {
+      let d = 0;
+      for (let b = 0; b < 4; b++) if (((i >> b) & 1) !== ((j >> b) & 1)) d++;
+      if (d === 1) e.push([i, j]);
+    }
+  return e;
+})();
+
+// 24-Cell — 24 vertices, 96 edges
+const C24V = [];
+for (let i = 0; i < 4; i++)
+  for (let j = i + 1; j < 4; j++)
+    for (const si of [1, -1])
+      for (const sj of [1, -1]) {
+        const v = [0, 0, 0, 0]; v[i] = si; v[j] = sj; C24V.push(v);
+      }
+const C24E = (() => {
+  const e = [];
+  for (let i = 0; i < 24; i++)
+    for (let j = i + 1; j < 24; j++) {
+      const d2 = C24V[i].reduce((s, x, k) => s + (x - C24V[j][k]) ** 2, 0);
+      if (Math.abs(d2 - 2) < 0.01) e.push([i, j]);
+    }
+  return e;
+})();
+
+// Icosahedron — 12 vertices, 30 edges
+const ICO12V = [
+  [0,1,PHI],[0,-1,PHI],[0,1,-PHI],[0,-1,-PHI],
+  [1,PHI,0],[-1,PHI,0],[1,-PHI,0],[-1,-PHI,0],
+  [PHI,0,1],[PHI,0,-1],[-PHI,0,1],[-PHI,0,-1]
+].map(v => { const l = Math.hypot(...v); return v.map(x => x / l); });
+const ICO12E = (() => {
+  const e = [], d2 = (a, b) => a.reduce((s, x, k) => s + (x - b[k]) ** 2, 0);
+  let m = Infinity;
+  for (let i = 0; i < 12; i++) for (let j = i + 1; j < 12; j++) {
+    const d = d2(ICO12V[i], ICO12V[j]); if (d < m) m = d;
+  }
+  for (let i = 0; i < 12; i++) for (let j = i + 1; j < 12; j++)
+    if (Math.abs(d2(ICO12V[i], ICO12V[j]) - m) < 0.001) e.push([i, j]);
+  return e;
+})();
+
+// Star Tetrahedron (Merkaba) — 8 vertices, 12 edges
+const SQ89 = Math.sqrt(8/9), SQ29 = Math.sqrt(2/9), SQ23 = Math.sqrt(2/3);
+const MRKV = [
+  [0,1,0],[SQ89,-1/3,0],[-SQ29,-1/3,SQ23],[-SQ29,-1/3,-SQ23],
+  [0,-1,0],[-SQ89,1/3,0],[SQ29,1/3,-SQ23],[SQ29,1/3,SQ23]
+];
+const MRKE = [];
+for (let t = 0; t < 2; t++) {
+  const o = t * 4;
+  for (let i = 0; i < 4; i++) for (let j = i + 1; j < 4; j++) MRKE.push([o+i, o+j]);
+}
+
+// ── 3D GEOMETRY (debris) ──────────────────────────────────────────────────────
+
+// Cube — 8 verts, 12 edges
+const CUBV = Array.from({ length: 8 }, (_, i) =>
+  [(i&1)?1:-1, (i&2)?1:-1, (i&4)?1:-1]);
+const CUBE = [];
+for (let i = 0; i < 8; i++) for (let j = i + 1; j < 8; j++) {
+  let d = 0; for (let b = 0; b < 3; b++) if (((i>>b)&1) !== ((j>>b)&1)) d++;
+  if (d === 1) CUBE.push([i, j]);
+}
+
+// Octahedron — 6 verts, 12 edges
+const OCTV = [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
+const OCTE = [];
+for (let i = 0; i < 6; i++) for (let j = i + 1; j < 6; j++) {
+  const d2 = OCTV[i].reduce((s, x, k) => s + (x - OCTV[j][k]) ** 2, 0);
+  if (Math.abs(d2 - 2) < 0.01) OCTE.push([i, j]);
+}
+
+// ── DEBRIS FIELD ──────────────────────────────────────────────────────────────
+const DEBRIS = Array.from({ length: 52 }, () => {
+  const r  = 3.2 + Math.random() * 4.0;
+  const th = Math.random() * 6.283;
+  const ph = Math.acos(2 * Math.random() - 1);
+  return {
+    pos: [
+      r * Math.sin(ph) * Math.cos(th) * 0.9,
+      r * Math.sin(ph) * Math.sin(th) * 0.62,
+      r * Math.cos(ph) * 0.48
+    ],
+    scl: 0.025 + Math.random() * 0.115,
+    typ: Math.random() < 0.55 ? 0 : 1,
+    rs:  [(Math.random()-.5)*2.0, (Math.random()-.5)*1.6, (Math.random()-.5)*1.0],
+    ra:  [Math.random()*6.28, Math.random()*6.28, Math.random()*6.28],
+    bri: 0.12 + Math.random() * 0.33,
+  };
+});
+
+// ── MATH ──────────────────────────────────────────────────────────────────────
+const r4xw = (v,a)=>{let[x,y,z,w]=v,c=cos(a),s=sin(a);return[x*c-w*s,y,z,x*s+w*c];};
+const r4yw = (v,a)=>{let[x,y,z,w]=v,c=cos(a),s=sin(a);return[x,y*c-w*s,z,y*s+w*c];};
+const r4zw = (v,a)=>{let[x,y,z,w]=v,c=cos(a),s=sin(a);return[x,y,z*c-w*s,z*s+w*c];};
+const r4xy = (v,a)=>{let[x,y,z,w]=v,c=cos(a),s=sin(a);return[x*c-y*s,x*s+y*c,z,w];};
+
+const proj4 = (v, d=W4D) => {
+  const [x,y,z,w] = v, s = d / (d - w);
+  return { p: [x*s, y*s, z*s], b: (w + 2) / 4 };   // w∈[-2,2] → brightness∈[0,1]
+};
+
+const rx3 = (v,a)=>{let[x,y,z]=v,c=cos(a),s=sin(a);return[x,y*c-z*s,y*s+z*c];};
+const ry3 = (v,a)=>{let[x,y,z]=v,c=cos(a),s=sin(a);return[x*c+z*s,y,-x*s+z*c];};
+const rz3 = (v,a)=>{let[x,y,z]=v,c=cos(a),s=sin(a);return[x*c-y*s,x*s+y*c,z];};
+
+const camRot = (v, [rx, ry]) => rx3(ry3(v, ry), rx);
+
+// ── BUFFERS ───────────────────────────────────────────────────────────────────
+const MAXV   = 4096;
+const uniBuf = device.createBuffer({ size: 16, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
+const vtxBuf = device.createBuffer({ size: MAXV*16, usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST });
+const VD     = new Float32Array(MAXV * 4);
+
+let scTex, scView;
+function mkSceneTex() {
+  scTex  = device.createTexture({
+    size: [C.width, C.height, 1],
+    format: 'rgba8unorm',
+    usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
+  });
+  scView = scTex.createView();
+}
+mkSceneTex();
+
+const samp = device.createSampler({ magFilter: 'linear', minFilter: 'linear' });
+
+// ── SHADERS ───────────────────────────────────────────────────────────────────
+const GEOM_WGSL = /* wgsl */`
+struct Uni { aspect: f32, zoom: f32, time: f32, _p: f32 }
+@group(0) @binding(0) var<uniform> u: Uni;
+
+struct VI { @location(0) pos: vec3f, @location(1) bri: f32 }
+struct VO { @builtin(position) p: vec4f, @location(0) c: f32 }
+
+@vertex fn vs(v: VI) -> VO {
+  var o: VO;
+  let dz = max(${CAMz.toFixed(1)} - v.pos.z, 0.15);
+  let pr = ${FOV.toFixed(1)} / (dz * u.zoom);
+  o.p    = vec4f(v.pos.x * pr / u.aspect, v.pos.y * pr, 0.5, 1.0);
+  o.c    = v.bri;
+  return o;
+}
+
+@fragment fn fs(v: VO) -> @location(0) vec4f {
+  let g = clamp(v.c, 0.0, 1.0);
+  return vec4f(g * 0.04, g * 0.92, g * 0.16, 1.0);
+}
+`;
+
+const POST_WGSL = /* wgsl */`
+@group(0) @binding(0) var tex: texture_2d<f32>;
+@group(0) @binding(1) var smp: sampler;
+
+struct VO { @builtin(position) p: vec4f, @location(0) uv: vec2f }
+
+@vertex fn vs(@builtin(vertex_index) i: u32) -> VO {
+  var pts = array<vec2f, 6>(
+    vec2f(-1,-1), vec2f(1,-1), vec2f(1,1),
+    vec2f(-1,-1), vec2f(1,1), vec2f(-1,1)
+  );
+  var o: VO;
+  let q  = pts[i];
+  o.p    = vec4f(q, 0.0, 1.0);
+  o.uv   = q * vec2f(0.5, -0.5) + 0.5;
+  return o;
+}
+
+@fragment fn fs(v: VO) -> @location(0) vec4f {
+  let uv = v.uv;
+
+  // Chromatic aberration — phosphor fringe
+  let ca = 0.0015;
+  let rc = textureSample(tex, smp, uv + vec2f( ca, 0.0)).r;
+  let gc = textureSample(tex, smp, uv).g;
+  let bc = textureSample(tex, smp, uv - vec2f( ca, 0.0)).b;
+  var col = vec3f(rc, gc, bc);
+
+  // 8-tap radial bloom
+  let bk = 0.0026;
+  col += (
+    textureSample(tex, smp, uv + vec2f( bk,  0.0 )).rgb +
+    textureSample(tex, smp, uv + vec2f(-bk,  0.0 )).rgb +
+    textureSample(tex, smp, uv + vec2f( 0.0,  bk )).rgb +
+    textureSample(tex, smp, uv + vec2f( 0.0, -bk )).rgb +
+    textureSample(tex, smp, uv + vec2f( bk,  bk ) * 0.707).rgb +
+    textureSample(tex, smp, uv + vec2f(-bk,  bk ) * 0.707).rgb +
+    textureSample(tex, smp, uv + vec2f( bk, -bk ) * 0.707).rgb +
+    textureSample(tex, smp, uv + vec2f(-bk, -bk ) * 0.707).rgb
+  ) * (1.0 / 8.0) * 0.65;
+
+  // Exposure + gamma
+  col = pow(clamp(col * 1.3, vec3f(0.0), vec3f(1.0)), vec3f(0.42));
+
+  // Interlaced scanlines
+  col *= 0.78 + 0.22 * step(0.5, fract(v.p.y * 0.5));
+
+  // CRT vignette
+  let d   = length(uv - 0.5) * 2.0;
+  col    *= 1.0 - smoothstep(0.55, 1.25, d);
+
+  return vec4f(col, 1.0);
+}
+`;
+
+// ── PIPELINES ─────────────────────────────────────────────────────────────────
+const geomMod = device.createShaderModule({ code: GEOM_WGSL });
+const postMod = device.createShaderModule({ code: POST_WGSL });
+
+const geomPipe = device.createRenderPipeline({
+  layout: 'auto',
+  vertex: {
+    module: geomMod, entryPoint: 'vs',
+    buffers: [{
+      arrayStride: 16,
+      attributes: [
+        { shaderLocation: 0, offset: 0,  format: 'float32x3' },
+        { shaderLocation: 1, offset: 12, format: 'float32'   },
+      ]
+    }]
+  },
+  fragment: {
+    module: geomMod, entryPoint: 'fs',
+    targets: [{
+      format: 'rgba8unorm',
+      blend: {
+        color: { operation: 'add', srcFactor: 'one', dstFactor: 'one' },
+        alpha: { operation: 'add', srcFactor: 'one', dstFactor: 'one' },
+      }
+    }]
+  },
+  primitive: { topology: 'line-list' },
+});
+
+const postPipe = device.createRenderPipeline({
+  layout: 'auto',
+  vertex:   { module: postMod, entryPoint: 'vs' },
+  fragment: { module: postMod, entryPoint: 'fs', targets: [{ format: SWFMT }] },
+  primitive: { topology: 'triangle-list' },
+});
+
+const geomBG = device.createBindGroup({
+  layout: geomPipe.getBindGroupLayout(0),
+  entries: [{ binding: 0, resource: { buffer: uniBuf } }]
+});
+
+let postBG;
+function mkPostBG() {
+  postBG = device.createBindGroup({
+    layout: postPipe.getBindGroupLayout(0),
+    entries: [
+      { binding: 0, resource: scView },
+      { binding: 1, resource: samp   },
+    ]
+  });
+}
+mkPostBG();
+
+// ── RESIZE ────────────────────────────────────────────────────────────────────
+window.addEventListener('resize', () => { resize(); mkSceneTex(); mkPostBG(); });
+
+// ── INPUT ─────────────────────────────────────────────────────────────────────
+let mRX = 0, mRY = 0, drag = false, lx = 0, ly = 0, zoom = 1.0, lpd = 0;
+
+const onMove = (cx, cy) => {
+  if (!drag) return;
+  mRY += (cx - lx) * 0.007;
+  mRX += (cy - ly) * 0.007;
+  lx = cx; ly = cy;
+};
+const pinchD = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+
+C.addEventListener('mousedown', e => { drag = true; lx = e.clientX; ly = e.clientY; });
+window.addEventListener('mousemove', e => onMove(e.clientX, e.clientY));
+window.addEventListener('mouseup',   () => drag = false);
+C.addEventListener('wheel', e => {
+  zoom = Math.max(0.25, Math.min(5.0, zoom * (e.deltaY > 0 ? 1.09 : 0.92)));
+  e.preventDefault();
+}, { passive: false });
+
+C.addEventListener('touchstart', e => {
+  if (e.touches.length === 1) { drag = true; lx = e.touches[0].clientX; ly = e.touches[0].clientY; }
+  else { drag = false; lpd = pinchD(e.touches); }
+}, { passive: true });
+C.addEventListener('touchmove', e => {
+  if (e.touches.length === 1) onMove(e.touches[0].clientX, e.touches[0].clientY);
+  else { const d = pinchD(e.touches); zoom = Math.max(0.25, Math.min(5, zoom * lpd / d)); lpd = d; }
+  e.preventDefault();
+}, { passive: false });
+C.addEventListener('touchend', () => drag = false);
+
+// ── VERTEX BUILDING ───────────────────────────────────────────────────────────
+let vi = 0;
+
+const pushV = (ax, ay, az, ab, bx, by, bz, bb) => {
+  const i = vi * 4;
+  VD[i]   = ax; VD[i+1] = ay; VD[i+2] = az; VD[i+3] = ab;
+  VD[i+4] = bx; VD[i+5] = by; VD[i+6] = bz; VD[i+7] = bb;
+  vi += 2;
+};
+
+const pushEdges = (pts, edges, b) => {
+  for (const [i, j] of edges) {
+    const a = pts[i], v = pts[j];
+    const ab = Array.isArray(b) ? b[i] : b;
+    const bb = Array.isArray(b) ? b[j] : b;
+    pushV(a[0], a[1], a[2], ab, v[0], v[1], v[2], bb);
+  }
+};
+
+function buildFrame(t, dt, mrx, mry) {
+  vi = 0;
+  const MR = [mrx, mry];
+
+  // ── Tesseract (4D auto-rotating) ───────────────────────────────────
+  {
+    const ta = [t*0.27, t*0.18, t*0.11, t*0.07];
+    const pts = T4V.map(v => {
+      let p = r4xw(v, ta[0]); p = r4yw(p, ta[1]); p = r4zw(p, ta[2]); p = r4xy(p, ta[3]);
+      const { p: p3, b } = proj4(p);
+      return { p: camRot(p3, MR), b };
+    });
+    for (const [i, j] of T4E) {
+      const a = pts[i], bv = pts[j];
+      pushV(a.p[0],a.p[1],a.p[2], 0.28 + a.b*0.72,
+            bv.p[0],bv.p[1],bv.p[2], 0.28 + bv.b*0.72);
+    }
+  }
+
+  // ── 24-Cell (inner dense lattice, faster rotation) ─────────────────
+  {
+    const tb = [t*0.38, t*0.25, t*0.44];
+    const sc = 0.42;
+    const pts = C24V.map(v => {
+      let p = r4xw(v, tb[0]); p = r4yw(p, tb[1]); p = r4zw(p, tb[2]);
+      const { p: p3, b } = proj4(p);
+      return { p: camRot([p3[0]*sc, p3[1]*sc, p3[2]*sc], MR), b };
+    });
+    for (const [i, j] of C24E) {
+      const a = pts[i], bv = pts[j];
+      pushV(a.p[0],a.p[1],a.p[2], 0.12 + a.b*0.38,
+            bv.p[0],bv.p[1],bv.p[2], 0.12 + bv.b*0.38);
+    }
+  }
+
+  // ── Icosahedron (outer shell, slow drift) ──────────────────────────
+  {
+    const sc = 2.15, rr = [t*0.038, t*0.028];
+    const pts = ICO12V.map(v => camRot(rx3(ry3(v.map(x => x*sc), rr[1]), rr[0]), MR));
+    pushEdges(pts, ICO12E, 0.26);
+  }
+
+  // ── Merkaba (star tetrahedron, counter-rotating) ───────────────────
+  {
+    const sc = 0.9, rr = [-t*0.21, t*0.14];
+    const pts = MRKV.map(v => camRot(rx3(ry3(v.map(x => x*sc), rr[1]), rr[0]), MR));
+    pushEdges(pts, MRKE, 0.60);
+  }
+
+  // ── Debris field ───────────────────────────────────────────────────
+  for (const d of DEBRIS) {
+    d.ra[0] += d.rs[0] * dt;
+    d.ra[1] += d.rs[1] * dt;
+    d.ra[2] += d.rs[2] * dt;
+    const verts = d.typ === 0 ? CUBV : OCTV;
+    const edges = d.typ === 0 ? CUBE : OCTE;
+    const pts = verts.map(v => {
+      let p = rz3(rx3(ry3(v.map(x => x * d.scl), d.ra[1]), d.ra[0]), d.ra[2]);
+      return camRot([p[0]+d.pos[0], p[1]+d.pos[1], p[2]+d.pos[2]], MR);
+    });
+    pushEdges(pts, edges, d.bri);
+  }
+
+  return vi;
+}
+
+// ── RENDER LOOP ───────────────────────────────────────────────────────────────
+let prevTs = 0;
+
+function frame(ts) {
+  requestAnimationFrame(frame);
+  const dt = Math.min((ts - prevTs) * 0.001, 0.05);
+  prevTs = ts;
+  const t = ts * 0.001;
+
+  // Slow auto-orbit layered on top of mouse input
+  const totalRY = mRY + t * 0.04;
+  const totalRX = mRX;
+
+  const aspect = C.width / C.height;
+  device.queue.writeBuffer(uniBuf, 0, new Float32Array([aspect, zoom, t, 0]));
+
+  const nv = buildFrame(t, dt, totalRX, totalRY);
+  // Write exactly nv vertices × 16 bytes
+  device.queue.writeBuffer(vtxBuf, 0, VD.buffer, 0, nv * 16);
+
+  const enc = device.createCommandEncoder();
+
+  // Pass 1 — geometry → offscreen texture (additive glow)
+  {
+    const pass = enc.beginRenderPass({
+      colorAttachments: [{
+        view: scView,
+        clearValue: { r: 0, g: 0, b: 0, a: 1 },
+        loadOp: 'clear', storeOp: 'store',
+      }]
+    });
+    pass.setPipeline(geomPipe);
+    pass.setBindGroup(0, geomBG);
+    pass.setVertexBuffer(0, vtxBuf);
+    pass.draw(nv);
+    pass.end();
+  }
+
+  // Pass 2 — post-process → swapchain
+  {
+    const pass = enc.beginRenderPass({
+      colorAttachments: [{
+        view: gpuCtx.getCurrentTexture().createView(),
+        clearValue: { r: 0, g: 0, b: 0, a: 1 },
+        loadOp: 'clear', storeOp: 'store',
+      }]
+    });
+    pass.setPipeline(postPipe);
+    pass.setBindGroup(0, postBG);
+    pass.draw(6);
+    pass.end();
+  }
+
+  device.queue.submit([enc.finish()]);
+}
+
+// Seed prevTs before first frame to avoid a huge dt spike
+requestAnimationFrame(ts => { prevTs = ts; requestAnimationFrame(frame); });
+</script>
+</body>
+</html>
