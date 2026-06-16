@@ -1,0 +1,1356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>frymatic ✦ — Explore the signal. Build the myth.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* ── TOKENS ──────────────────────────────────────────────────────────── */
+:root {
+  --bg:          #07070F;
+  --surface:     #0D0D1B;
+  --surface-2:   #121222;
+  --border:      rgba(255,255,255,0.07);
+  --border-h:    rgba(255,255,255,0.15);
+  --red:         #FF1F4C;
+  --red-dim:     rgba(255,31,76,0.35);
+  --cyan:        #00C8E8;
+  --purple:      #8B5CF6;
+  --blue:        #3B82F6;
+  --text:        #FFFFFF;
+  --text-2:      #8A8AA0;
+  --text-3:      #4A4A62;
+  --font:        'Space Grotesk', sans-serif;
+  --mono:        'Space Mono', monospace;
+  --radius:      12px;
+  --radius-lg:   16px;
+  --radius-pill: 100px;
+}
+
+/* ── RESET ───────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.6;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; text-decoration: none; }
+button { cursor: pointer; font-family: var(--font); }
+img { display: block; max-width: 100%; }
+
+/* ── NAVIGATION ──────────────────────────────────────────────────────── */
+.nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 200;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  padding: 0 32px;
+  background: rgba(7,7,15,0.82);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-logo {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-right: auto;
+  white-space: nowrap;
+}
+.nav-logo .sparkle { color: var(--text-2); font-size: 13px; }
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+  list-style: none;
+}
+.nav-links a {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text-2);
+  transition: color 0.18s;
+}
+.nav-links a:hover { color: var(--text); }
+
+.nav-sun {
+  margin-left: 24px;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-2);
+  background: transparent;
+  transition: border-color 0.18s, color 0.18s;
+}
+.nav-sun:hover { border-color: var(--border-h); color: var(--text); }
+
+.nav-burger {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 32px; height: 32px;
+  background: transparent;
+  border: none;
+  padding: 4px;
+  margin-left: 16px;
+}
+.nav-burger span {
+  display: block;
+  width: 20px; height: 1.5px;
+  background: var(--text-2);
+  transition: background 0.18s;
+}
+.nav-burger:hover span { background: var(--text); }
+
+/* mobile drawer */
+.mobile-drawer {
+  position: fixed;
+  top: 58px; left: 0; right: 0;
+  z-index: 199;
+  background: rgba(7,7,15,0.97);
+  border-bottom: 1px solid var(--border);
+  padding: 24px 32px 28px;
+  display: none;
+}
+.mobile-drawer.open { display: block; }
+.mobile-drawer ul { list-style: none; }
+.mobile-drawer li + li { margin-top: 18px; }
+.mobile-drawer a {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-2);
+  transition: color 0.18s;
+}
+.mobile-drawer a:hover { color: var(--text); }
+
+/* ── HERO ────────────────────────────────────────────────────────────── */
+.hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 100px 24px 80px;
+  overflow: hidden;
+}
+
+.hero-topo {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  width: 100%; height: 100%;
+}
+
+/* crosshair plusses */
+.xhair {
+  position: absolute;
+  font-size: 18px;
+  line-height: 1;
+  color: rgba(255,255,255,0.12);
+  user-select: none;
+  pointer-events: none;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+  max-width: 660px;
+  width: 100%;
+  text-align: center;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 16px 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--text-2);
+  margin-bottom: 28px;
+}
+.badge-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--red);
+  flex-shrink: 0;
+}
+
+.hero-h1 {
+  font-size: clamp(38px, 6.5vw, 78px);
+  font-weight: 700;
+  line-height: 1.06;
+  letter-spacing: -0.035em;
+  margin-bottom: 32px;
+}
+.hero-h1 .dot { color: var(--red); }
+
+/* gradient-border search */
+.search-wrap {
+  position: relative;
+  border-radius: calc(var(--radius) + 1.5px);
+  background: linear-gradient(135deg, var(--red-dim) 0%, rgba(139,92,246,0.4) 50%, rgba(0,200,232,0.25) 100%);
+  padding: 1.5px;
+  margin-bottom: 18px;
+}
+.search-inner {
+  display: flex;
+  align-items: center;
+  background: #0B0B17;
+  border-radius: var(--radius);
+}
+.search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 13px 12px 13px 18px;
+  font-family: var(--font);
+  font-size: 14.5px;
+  color: var(--text);
+}
+.search-input::placeholder { color: var(--text-3); }
+.search-btn {
+  flex-shrink: 0;
+  margin: 6px;
+  width: 34px; height: 34px;
+  background: var(--red);
+  border: none;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  transition: opacity 0.18s;
+}
+.search-btn:hover { opacity: 0.82; }
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 38px;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: rgba(255,255,255,0.02);
+  font-family: var(--font);
+  font-size: 12.5px;
+  color: var(--text-2);
+  transition: border-color 0.18s, color 0.18s, background 0.18s;
+}
+.chip:hover { border-color: var(--border-h); color: var(--text); background: rgba(255,255,255,0.04); }
+.chip svg { opacity: 0.65; flex-shrink: 0; }
+
+.hero-desc {
+  font-size: 14.5px;
+  color: var(--text-2);
+  line-height: 1.75;
+}
+.hero-desc .signal-link {
+  color: var(--red);
+  border-bottom: 1px solid rgba(255,31,76,0.35);
+  transition: border-color 0.18s;
+}
+.hero-desc .signal-link:hover { border-color: var(--red); }
+
+/* ── SECTIONS ────────────────────────────────────────────────────────── */
+.section {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 72px 32px;
+}
+
+.section-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-2);
+  margin-bottom: 28px;
+}
+.section-label-diamond {
+  width: 14px; height: 14px;
+  flex-shrink: 0;
+}
+
+/* ── WORLDS GRID ─────────────────────────────────────────────────────── */
+.worlds-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+.world-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 26px 22px 22px;
+  background: var(--surface);
+  transition: border-color 0.2s, background 0.2s;
+  display: flex;
+  flex-direction: column;
+}
+.world-card:hover {
+  border-color: var(--border-h);
+  background: var(--surface-2);
+}
+
+.world-icon-wrap {
+  width: 62px; height: 62px;
+  margin-bottom: 18px;
+}
+
+.world-card h3 {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.world-card p {
+  font-size: 13px;
+  color: var(--text-2);
+  line-height: 1.5;
+  flex: 1;
+  margin-bottom: 18px;
+}
+.world-arrow {
+  font-size: 15px;
+  color: var(--text-3);
+  transition: color 0.18s, transform 0.18s;
+  display: inline-block;
+}
+.world-card:hover .world-arrow {
+  color: var(--text-2);
+  transform: translateX(4px);
+}
+
+/* ── SOCIAL ROW ──────────────────────────────────────────────────────── */
+.social-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.social-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-2);
+  transition: border-color 0.18s, color 0.18s, background 0.18s;
+}
+.social-link:hover {
+  border-color: var(--border-h);
+  color: var(--text);
+  background: rgba(255,255,255,0.03);
+}
+.social-link svg { flex-shrink: 0; opacity: 0.7; }
+.social-link:hover svg { opacity: 1; }
+
+/* ── LATEST SIGNALS ──────────────────────────────────────────────────── */
+.signals-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+.signals-header .section-label { margin-bottom: 0; }
+.view-all {
+  font-size: 12.5px;
+  color: var(--text-2);
+  transition: color 0.18s;
+  white-space: nowrap;
+}
+.view-all:hover { color: var(--text); }
+
+.signals-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+.signal-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.signal-card:hover { border-color: var(--border-h); }
+
+.signal-thumb {
+  height: 116px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.signal-thumb-red   { background: radial-gradient(ellipse at 50% 50%, rgba(255,31,76,0.28) 0%, transparent 68%), var(--surface-2); }
+.signal-thumb-blue  { background: radial-gradient(ellipse at 50% 50%, rgba(59,130,246,0.28) 0%, transparent 68%), var(--surface-2); }
+.signal-thumb-purp  { background: radial-gradient(ellipse at 50% 50%, rgba(139,92,246,0.28) 0%, transparent 68%), var(--surface-2); }
+
+.signal-body { padding: 16px 18px 18px; }
+.signal-tag {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.tag-red    { color: var(--red); }
+.tag-purple { color: var(--purple); }
+.tag-blue   { color: var(--blue); }
+
+.signal-body h4 {
+  font-size: 14.5px;
+  font-weight: 600;
+  margin-bottom: 7px;
+}
+.signal-body p {
+  font-size: 12.5px;
+  color: var(--text-2);
+  line-height: 1.55;
+  margin-bottom: 14px;
+}
+.signal-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--text-3);
+}
+.signal-meta .read-more {
+  color: var(--text-2);
+  transition: color 0.18s;
+}
+.signal-meta .read-more:hover { color: var(--text); }
+
+/* tablet/mobile signals = list */
+.signal-card-list { display: none; }
+
+/* ── FOOTER ──────────────────────────────────────────────────────────── */
+.footer-outer {
+  border-top: 1px solid var(--border);
+  padding: 0 32px;
+}
+.footer-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.footer-grid {
+  display: grid;
+  grid-template-columns: 1.8fr 1fr 1fr 1fr 1.8fr;
+  gap: 40px 48px;
+  padding: 60px 0 52px;
+}
+.footer-brand-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.footer-brand-logo h2 {
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.footer-brand-logo .sparkle { color: var(--text-2); font-size: 12px; }
+.footer-brand p {
+  font-size: 12.5px;
+  color: var(--text-2);
+  line-height: 1.6;
+}
+
+.footer-col h4 {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 16px;
+}
+.footer-col ul { list-style: none; }
+.footer-col li + li { margin-top: 10px; }
+.footer-col a {
+  font-size: 13px;
+  color: var(--text-2);
+  transition: color 0.18s;
+}
+.footer-col a:hover { color: var(--text); }
+
+.signal-boost h4 {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 8px;
+}
+.signal-boost p {
+  font-size: 12.5px;
+  color: var(--text-2);
+  margin-bottom: 14px;
+}
+/* gradient border on email too */
+.email-wrap {
+  border-radius: calc(8px + 1.5px);
+  background: linear-gradient(135deg, var(--red-dim) 0%, rgba(139,92,246,0.35) 100%);
+  padding: 1.5px;
+}
+.email-inner {
+  display: flex;
+  align-items: center;
+  background: #0B0B17;
+  border-radius: 8px;
+}
+.email-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 10px 10px 10px 14px;
+  font-family: var(--font);
+  font-size: 12.5px;
+  color: var(--text);
+}
+.email-input::placeholder { color: var(--text-3); }
+.email-btn {
+  flex-shrink: 0;
+  margin: 5px;
+  width: 28px; height: 28px;
+  background: var(--red);
+  border: none;
+  border-radius: 5px;
+  display: flex; align-items: center; justify-content: center;
+  transition: opacity 0.18s;
+}
+.email-btn:hover { opacity: 0.82; }
+
+.footer-bottom {
+  border-top: 1px solid var(--border);
+  padding: 20px 0 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.footer-copy {
+  font-size: 11.5px;
+  color: var(--text-3);
+}
+.footer-legal {
+  display: flex;
+  gap: 20px;
+}
+.footer-legal a {
+  font-size: 11.5px;
+  color: var(--text-3);
+  transition: color 0.18s;
+}
+.footer-legal a:hover { color: var(--text-2); }
+
+.signal-wave {
+  flex-shrink: 0;
+}
+
+/* ── ANIMATIONS ──────────────────────────────────────────────────────── */
+@keyframes badge-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+.badge-dot { animation: badge-pulse 2.2s ease-in-out infinite; }
+
+@keyframes wave-run {
+  from { stroke-dashoffset: 220; }
+  to   { stroke-dashoffset: 0; }
+}
+.wave-path {
+  stroke-dasharray: 220;
+  animation: wave-run 3s linear infinite;
+}
+
+@keyframes float-a {
+  0%, 100% { transform: translate(0, 0); }
+  33%  { transform: translate(3px, -5px); }
+  66%  { transform: translate(-3px, 3px); }
+}
+@keyframes float-b {
+  0%, 100% { transform: translate(0, 0); }
+  33%  { transform: translate(-4px, 4px); }
+  66%  { transform: translate(3px, -3px); }
+}
+@keyframes float-c {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(4px, 6px); }
+}
+.xhair-a { animation: float-a 9s ease-in-out infinite; }
+.xhair-b { animation: float-b 11s ease-in-out infinite; }
+.xhair-c { animation: float-c 7s ease-in-out infinite; }
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-in { opacity: 0; }
+.fade-in.visible { animation: fade-up 0.55s ease forwards; }
+
+@media (prefers-reduced-motion: reduce) {
+  .badge-dot { animation: none; opacity: 1; }
+  .wave-path { animation: none; }
+  .xhair-a, .xhair-b, .xhair-c { animation: none; }
+  .fade-in { opacity: 1; }
+  .fade-in.visible { animation: none; }
+}
+
+/* ── RESPONSIVE ──────────────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .nav-links, .nav-sun { display: none; }
+  .nav-burger { display: flex; }
+
+  .worlds-grid { grid-template-columns: repeat(2, 1fr); }
+  .signals-grid { display: none; }
+  .signal-card-list { display: flex; flex-direction: column; gap: 12px; }
+
+  .footer-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 32px 40px;
+  }
+  .footer-brand { grid-column: 1 / -1; }
+  .signal-boost { grid-column: 1 / -1; }
+}
+
+@media (max-width: 640px) {
+  .nav { padding: 0 20px; }
+  .hero { padding: 90px 20px 64px; }
+  .section { padding: 56px 20px; }
+
+  .worlds-grid { grid-template-columns: 1fr; }
+
+  .footer-outer { padding: 0 20px; }
+  .footer-grid { grid-template-columns: 1fr; gap: 28px; }
+  .footer-brand { grid-column: auto; }
+  .signal-boost { grid-column: auto; }
+}
+
+/* focus styles for keyboard nav */
+:focus-visible {
+  outline: 2px solid var(--red);
+  outline-offset: 2px;
+}
+</style>
+</head>
+<body>
+
+<!-- ══ NAVIGATION ════════════════════════════════════════════════════ -->
+<nav class="nav">
+  <a href="#" class="nav-logo" aria-label="frymatic home">
+    frymatic <span class="sparkle">✦</span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#">Projects</a></li>
+    <li><a href="#">Arcade</a></li>
+    <li><a href="#">RED EYE</a></li>
+    <li><a href="#">Spacecast</a></li>
+    <li><a href="#">About</a></li>
+    <li><a href="#">Links</a></li>
+  </ul>
+  <button class="nav-sun" aria-label="Settings">
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+      <circle cx="7.5" cy="7.5" r="2.5" stroke="currentColor" stroke-width="1.4"/>
+      <line x1="7.5" y1="0" x2="7.5" y2="2.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+      <line x1="7.5" y1="12.6" x2="7.5" y2="15" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+      <line x1="15" y1="7.5" x2="12.6" y2="7.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+      <line x1="2.4" y1="7.5" x2="0" y2="7.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+      <line x1="12.7" y1="2.3" x2="11" y2="4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+      <line x1="4" y1="11" x2="2.3" y2="12.7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+      <line x1="12.7" y1="12.7" x2="11" y2="11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+      <line x1="4" y1="4" x2="2.3" y2="2.3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+    </svg>
+  </button>
+  <button class="nav-burger" aria-label="Toggle menu" onclick="toggleDrawer()">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<div class="mobile-drawer" id="drawer" aria-hidden="true">
+  <ul>
+    <li><a href="#" onclick="toggleDrawer()">Projects</a></li>
+    <li><a href="#" onclick="toggleDrawer()">Arcade</a></li>
+    <li><a href="#" onclick="toggleDrawer()">RED EYE</a></li>
+    <li><a href="#" onclick="toggleDrawer()">Spacecast</a></li>
+    <li><a href="#" onclick="toggleDrawer()">About</a></li>
+    <li><a href="#" onclick="toggleDrawer()">Links</a></li>
+  </ul>
+</div>
+
+<!-- ══ HERO ══════════════════════════════════════════════════════════ -->
+<section class="hero" aria-label="Hero">
+  <!-- topographic background -->
+  <svg class="hero-topo" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <defs>
+      <filter id="topo-blur"><feGaussianBlur stdDeviation="0.6"/></filter>
+    </defs>
+    <!-- left blue/purple wave cluster -->
+    <path d="M-60,500 C80,460 200,490 380,450 S600,400 740,420 S940,470 1060,440 S1280,390 1500,410" fill="none" stroke="rgba(59,130,246,0.14)" stroke-width="1.5"/>
+    <path d="M-60,540 C80,500 180,530 360,490 S580,440 720,460 S920,510 1040,480 S1260,430 1500,450" fill="none" stroke="rgba(59,130,246,0.09)" stroke-width="1.5"/>
+    <path d="M-60,460 C100,420 220,450 400,410 S620,360 760,380 S960,430 1080,400 S1300,350 1500,370" fill="none" stroke="rgba(139,92,246,0.11)" stroke-width="1.5"/>
+    <path d="M-60,580 C80,540 160,570 330,530 S550,480 690,500 S890,550 1010,520 S1230,470 1500,490" fill="none" stroke="rgba(139,92,246,0.07)" stroke-width="1"/>
+    <path d="M-60,420 C120,380 240,410 420,370 S640,320 780,340 S980,390 1100,360 S1320,310 1500,330" fill="none" stroke="rgba(59,130,246,0.07)" stroke-width="1"/>
+    <!-- top-right red accent lines -->
+    <path d="M950,-20 C1000,70 1040,130 1090,180 S1170,260 1220,310 S1320,390 1380,440 S1460,490 1500,520" fill="none" stroke="rgba(255,31,76,0.18)" stroke-width="1.5"/>
+    <path d="M1060,-20 C1100,60 1130,110 1170,160 S1240,240 1290,290 S1380,370 1440,420" fill="none" stroke="rgba(255,31,76,0.09)" stroke-width="1"/>
+    <path d="M840,-20 C900,80 950,150 1010,200 S1100,280 1150,330 S1250,410 1310,460" fill="none" stroke="rgba(139,92,246,0.11)" stroke-width="1"/>
+  </svg>
+
+  <!-- floating crosshairs -->
+  <span class="xhair xhair-a" style="top:17%;left:7%" aria-hidden="true">+</span>
+  <span class="xhair xhair-b" style="top:21%;right:10%" aria-hidden="true">+</span>
+  <span class="xhair xhair-c" style="top:58%;left:4%" aria-hidden="true">+</span>
+  <span class="xhair xhair-a" style="top:62%;right:6%" aria-hidden="true">+</span>
+  <span class="xhair xhair-b" style="bottom:22%;left:14%" aria-hidden="true">+</span>
+
+  <div class="hero-content">
+    <!-- badge -->
+    <div class="hero-badge">
+      <span class="badge-dot" aria-hidden="true"></span>
+      CREATIVE TECHNOLOGY &bull; FOUNDER &bull; ARTIST &bull; EXPERIMENTER
+    </div>
+
+    <!-- headline -->
+    <h1 class="hero-h1">
+      Explore the signal<span class="dot">.</span><br>
+      Build the myth<span class="dot">.</span>
+    </h1>
+
+    <!-- search bar -->
+    <div class="search-wrap" role="search">
+      <div class="search-inner">
+        <input class="search-input" id="heroSearch" type="text"
+               placeholder="Ask frymatic anything…"
+               aria-label="Ask frymatic anything">
+        <button class="search-btn" onclick="handleSearch()" aria-label="Submit">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+            <path d="M1 6.5h11M7.5 2l4.5 4.5L7.5 11" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- quick chips -->
+    <div class="chips" role="group" aria-label="Quick searches">
+      <button class="chip" onclick="fillSearch('Show me the arcade')">
+        <!-- controller icon -->
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.3">
+          <rect x="0.65" y="2.65" width="11.7" height="7.7" rx="2.2"/>
+          <line x1="6.5" y1="2.65" x2="6.5" y2="10.35"/>
+          <circle cx="3.25" cy="6.5" r="1.1" fill="currentColor" stroke="none"/>
+          <circle cx="9.75" cy="6.5" r="1.1" fill="currentColor" stroke="none"/>
+          <line x1="3.25" y1="4.8" x2="3.25" y2="8.2"/>
+          <line x1="1.55" y1="6.5" x2="4.95" y2="6.5"/>
+        </svg>
+        Show me the arcade
+      </button>
+      <button class="chip" onclick="fillSearch('What is RED EYE?')">
+        <!-- eye icon -->
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.3">
+          <path d="M1 6.5c0 0 2.2-4 5.5-4s5.5 4 5.5 4-2.2 4-5.5 4-5.5-4-5.5-4z"/>
+          <circle cx="6.5" cy="6.5" r="1.6"/>
+        </svg>
+        What is RED EYE?
+      </button>
+      <button class="chip" onclick="fillSearch('Listen to Spacecast')">
+        <!-- headphones icon -->
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.3">
+          <path d="M2.5 8V6.5a4 4 0 0 1 8 0V8"/>
+          <rect x="1" y="7.5" width="2.5" height="4" rx="1"/>
+          <rect x="9.5" y="7.5" width="2.5" height="4" rx="1"/>
+        </svg>
+        Listen to Spacecast
+      </button>
+      <button class="chip" onclick="fillSearch('What is OpenCoven?')">
+        <!-- compass icon -->
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.3">
+          <path d="M6.5 1L7.4 5.6l4.6.9-4.6.9-.9 4.6-.9-4.6L1 6.5l4.6-.9z"/>
+        </svg>
+        What is OpenCoven?
+      </button>
+      <button class="chip" onclick="fillSearch('Where can I find frymatic online?')">
+        <!-- globe icon -->
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.3">
+          <circle cx="6.5" cy="6.5" r="5.5"/>
+          <ellipse cx="6.5" cy="6.5" rx="2.2" ry="5.5"/>
+          <line x1="1" y1="6.5" x2="12" y2="6.5"/>
+        </svg>
+        Where can I find frymatic online?
+      </button>
+    </div>
+
+    <!-- description -->
+    <p class="hero-desc">
+      frymatic is a creative technology brand, founder hub, and experiment lab.<br>
+      I build immersive art, code, music, games, and transmissions at the<br>
+      intersection of culture, systems, and the <a href="#" class="signal-link">unexplained</a>.
+    </p>
+  </div>
+</section>
+
+<!-- ══ WORLDS & PILLARS ═══════════════════════════════════════════════ -->
+<div class="section" id="worlds">
+  <div class="section-label">
+    <svg class="section-label-diamond" viewBox="0 0 14 14" fill="none">
+      <path d="M7 1L8.3 5.7H13L9.2 8.3l1.4 4.5L7 10.2l-3.6 2.6L4.8 8.3 1 5.7h4.7z" stroke="#8B5CF6" stroke-width="1.3" fill="none"/>
+    </svg>
+    WORLDS &amp; PILLARS
+  </div>
+
+  <div class="worlds-grid">
+    <!-- FTS ARCADE -->
+    <div class="world-card fade-in">
+      <div class="world-icon-wrap">
+        <svg viewBox="0 0 62 62" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="cyanGlow" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="2.5" result="b"/>
+              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+          <!-- body -->
+          <rect x="4" y="14" width="54" height="34" rx="9" stroke="#00C8E8" stroke-width="1.8"/>
+          <rect x="4" y="14" width="54" height="34" rx="9" stroke="#00C8E8" stroke-width="4" opacity="0.1" filter="url(#cyanGlow)"/>
+          <!-- divider -->
+          <line x1="31" y1="14" x2="31" y2="48" stroke="#00C8E8" stroke-width="1" opacity="0.25"/>
+          <!-- D-pad -->
+          <rect x="13" y="27" width="11" height="4" rx="1.2" stroke="#00C8E8" stroke-width="1.5"/>
+          <rect x="16" y="24" width="5" height="10" rx="1.2" stroke="#00C8E8" stroke-width="1.5"/>
+          <!-- ABXY buttons -->
+          <circle cx="44" cy="26" r="2.8" stroke="#00C8E8" stroke-width="1.5"/>
+          <circle cx="50.5" cy="31" r="2.8" stroke="#00C8E8" stroke-width="1.5"/>
+          <circle cx="44" cy="36" r="2.8" stroke="#00C8E8" stroke-width="1.5"/>
+          <circle cx="37.5" cy="31" r="2.8" stroke="#00C8E8" stroke-width="1.5"/>
+          <!-- center buttons -->
+          <rect x="27" y="29" width="8" height="4" rx="1.5" stroke="#00C8E8" stroke-width="1.1" opacity="0.45"/>
+        </svg>
+      </div>
+      <h3>FTS ARCADE</h3>
+      <p>Retro-future games</p>
+      <span class="world-arrow">→</span>
+    </div>
+
+    <!-- RED EYE -->
+    <div class="world-card fade-in">
+      <div class="world-icon-wrap">
+        <svg viewBox="0 0 62 62" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="redGlow" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="2.5" result="b"/>
+              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+          <!-- outer eye shape -->
+          <path d="M4,31 Q31,10 58,31 Q31,52 4,31 Z" stroke="#FF3355" stroke-width="1.7" fill="none"/>
+          <path d="M4,31 Q31,10 58,31 Q31,52 4,31 Z" stroke="#FF3355" stroke-width="4" opacity="0.1" fill="none" filter="url(#redGlow)"/>
+          <!-- iris rings -->
+          <circle cx="31" cy="31" r="10" stroke="#FF3355" stroke-width="1.7"/>
+          <circle cx="31" cy="31" r="5.5" stroke="#FF5566" stroke-width="1.4"/>
+          <!-- target crosshairs -->
+          <line x1="31" y1="21" x2="31" y2="18" stroke="#FF3355" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="31" y1="41" x2="31" y2="44" stroke="#FF3355" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="21" y1="31" x2="18" y2="31" stroke="#FF3355" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="41" y1="31" x2="44" y2="31" stroke="#FF3355" stroke-width="1.5" stroke-linecap="round"/>
+          <!-- pupil -->
+          <circle cx="31" cy="31" r="2.5" fill="#FF4455"/>
+        </svg>
+      </div>
+      <h3>RED EYE</h3>
+      <p>Signal, vision,<br>watchful experiments</p>
+      <span class="world-arrow">→</span>
+    </div>
+
+    <!-- SPACECAST -->
+    <div class="world-card fade-in">
+      <div class="world-icon-wrap">
+        <svg viewBox="0 0 62 62" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="purpGlow" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="2.5" result="b"/>
+              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+          <!-- planet body -->
+          <circle cx="31" cy="31" r="13" stroke="#8B5CF6" stroke-width="1.8"/>
+          <!-- rings -->
+          <ellipse cx="31" cy="31" rx="23" ry="7.5" stroke="#8B5CF6" stroke-width="1.6" transform="rotate(-22 31 31)"/>
+          <ellipse cx="31" cy="31" rx="23" ry="7.5" stroke="#8B5CF6" stroke-width="5" opacity="0.08" filter="url(#purpGlow)" transform="rotate(-22 31 31)"/>
+          <!-- surface latitude lines -->
+          <path d="M18,31 Q31,27 44,31" stroke="#8B5CF6" stroke-width="1" opacity="0.4"/>
+          <path d="M20,37 Q31,33 42,37" stroke="#8B5CF6" stroke-width="1" opacity="0.28"/>
+          <!-- ambient stars -->
+          <circle cx="10" cy="14" r="1.2" fill="#8B5CF6" opacity="0.55"/>
+          <circle cx="52" cy="12" r="1" fill="#8B5CF6" opacity="0.5"/>
+          <circle cx="57" cy="48" r="1.5" fill="#A78BFA" opacity="0.45"/>
+          <circle cx="7" cy="50" r="1" fill="#8B5CF6" opacity="0.35"/>
+          <circle cx="54" cy="28" r="0.8" fill="#A78BFA" opacity="0.45"/>
+        </svg>
+      </div>
+      <h3>SPACECAST</h3>
+      <p>Space-themed podcast / transmissions / orbital conversations</p>
+      <span class="world-arrow">→</span>
+    </div>
+
+    <!-- OPENCOVEN -->
+    <div class="world-card fade-in">
+      <div class="world-icon-wrap">
+        <svg viewBox="0 0 62 62" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="whiteGlow" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="2" result="b"/>
+              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+          <!-- 4-pointed star -->
+          <path d="M31 4L34.2 27.8L58 31L34.2 34.2L31 58L27.8 34.2L4 31L27.8 27.8Z" stroke="white" stroke-width="1.8" fill="none"/>
+          <path d="M31 4L34.2 27.8L58 31L34.2 34.2L31 58L27.8 34.2L4 31L27.8 27.8Z" stroke="white" stroke-width="4" opacity="0.07" fill="none" filter="url(#whiteGlow)"/>
+          <!-- inner star (smaller) -->
+          <path d="M31 14L32.8 29.2L48 31L32.8 32.8L31 48L29.2 32.8L14 31L29.2 29.2Z" stroke="white" stroke-width="0.9" opacity="0.22"/>
+          <!-- center circle -->
+          <circle cx="31" cy="31" r="3.5" stroke="white" stroke-width="1.5"/>
+          <!-- cardinal dots -->
+          <circle cx="31" cy="5.5"  r="1.6" fill="white" opacity="0.55"/>
+          <circle cx="56.5" cy="31" r="1.6" fill="white" opacity="0.55"/>
+          <circle cx="31" cy="56.5" r="1.6" fill="white" opacity="0.55"/>
+          <circle cx="5.5"  cy="31" r="1.6" fill="white" opacity="0.55"/>
+        </svg>
+      </div>
+      <h3>OPENCOVEN /<br>EXPERIMENTS</h3>
+      <p>Code rituals and open-source spells</p>
+      <span class="world-arrow">→</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CONNECT & FOLLOW ═══════════════════════════════════════════════ -->
+<div class="section" id="connect">
+  <div class="section-label">
+    <svg class="section-label-diamond" viewBox="0 0 14 14" fill="none">
+      <path d="M7 1L8.3 5.7H13L9.2 8.3l1.4 4.5L7 10.2l-3.6 2.6L4.8 8.3 1 5.7h4.7z" stroke="#8B5CF6" stroke-width="1.3" fill="none"/>
+    </svg>
+    CONNECT &amp; FOLLOW
+  </div>
+  <div class="social-row">
+    <a href="https://x.com/mofrymatic" target="_blank" rel="noopener noreferrer" class="social-link">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+        <path d="M10.96 1H13L8.54 6.13 13.82 13H9.7L6.48 8.79 2.75 13H.7l4.75-5.43L.18 1h4.22l2.91 3.8L10.96 1zm-.86 10.78h1.15L3.96 2.18H2.72l7.38 9.6z"/>
+      </svg>
+      X
+    </a>
+    <a href="https://github.com/frymatic" target="_blank" rel="noopener noreferrer" class="social-link">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+        <path d="M7 .5A6.5 6.5 0 0 0 .5 7c0 2.87 1.86 5.3 4.44 6.16.32.06.44-.14.44-.31v-1.1c-1.8.39-2.18-.87-2.18-.87-.29-.75-.72-.95-.72-.95-.59-.4.04-.4.04-.4.65.05 1 .67 1 .67.58 1 1.53.71 1.9.54.06-.42.23-.71.41-.87-1.44-.16-2.95-.72-2.95-3.2 0-.71.25-1.28.67-1.73-.07-.16-.29-.82.06-1.71 0 0 .55-.18 1.8.67A6.3 6.3 0 0 1 7 3.82c.56 0 1.12.07 1.64.22 1.25-.85 1.8-.67 1.8-.67.35.89.13 1.55.06 1.71.42.45.67 1.02.67 1.73 0 2.49-1.52 3.04-2.96 3.2.23.2.44.59.44 1.19v1.77c0 .17.11.37.44.31A6.5 6.5 0 0 0 13.5 7 6.5 6.5 0 0 0 7 .5z"/>
+      </svg>
+      GitHub
+    </a>
+    <a href="https://www.beatport.com/artist/frymatic" target="_blank" rel="noopener noreferrer" class="social-link">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4">
+        <path d="M2 10V7a5 5 0 0 1 10 0v3"/>
+        <path d=".5 9.5H2a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H1a.5.5 0 0 1-.5-.5v-2.5zm11 0H12a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1h-.5A1.5 1.5 0 0 1 10 11v-1.5z"/>
+      </svg>
+      Beatport
+    </a>
+    <a href="https://www.facebook.com/profile.php?id=100010717081846" target="_blank" rel="noopener noreferrer" class="social-link">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+        <path d="M10 1H8a3 3 0 0 0-3 3v2H3v2.5h2V13h2.5V8.5H9L9.5 6H7.5V4a.5.5 0 0 1 .5-.5H10V1z"/>
+      </svg>
+      Facebook
+    </a>
+    <a href="https://www.reddit.com/user/mofrymatic" target="_blank" rel="noopener noreferrer" class="social-link">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+        <path d="M7 1.4a1.1 1.1 0 1 1-.1 2.2L5.6 7a4.9 4.9 0 0 0-1.3.4A1.4 1.4 0 1 0 2.5 9a3 3 0 0 0 3.9 2.7A3 3 0 0 0 10.1 9a1.4 1.4 0 1 0-1.8-1.6A4.9 4.9 0 0 0 7 7l1.2-3.4A1.1 1.1 0 0 1 7 1.4zm-1.5 7a.9.9 0 1 1 1.8 0 .9.9 0 0 1-1.8 0zm3 0a.9.9 0 1 1 1.8 0 .9.9 0 0 1-1.8 0zm-3 2.3a2.3 2.3 0 0 0 1.5.5 2.3 2.3 0 0 0 1.5-.5.3.3 0 0 0-.4-.4 1.7 1.7 0 0 1-1.1.4 1.7 1.7 0 0 1-1.1-.4.3.3 0 0 0-.4.4z"/>
+      </svg>
+      Reddit
+    </a>
+    <a href="https://soundcloud.com/mofrymatic" target="_blank" rel="noopener noreferrer" class="social-link">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+        <path d="M1 8.2a1.2 1.2 0 1 0 2.4 0 1.2 1.2 0 0 0-2.4 0zm2.8 1.2h7.5a2.3 2.3 0 0 0 0-4.6A2.3 2.3 0 0 0 9.5 6a3.5 3.5 0 1 0-5.7 3.4z"/>
+      </svg>
+      SoundCloud
+    </a>
+    <a href="https://www.dndbeyond.com/members/frymatic" target="_blank" rel="noopener noreferrer" class="social-link">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M7 1l1.2 3.5H12l-2.9 2.1 1.1 3.4L7 8.2l-3.2 1.8 1.1-3.4L2 4.5h3.8z"/>
+        <line x1="7" y1="10.5" x2="7" y2="13"/>
+        <line x1="4.5" y1="12.5" x2="9.5" y2="12.5"/>
+      </svg>
+      D&amp;D Beyond
+    </a>
+    <a href="https://www.twitch.tv/mofrymatic" target="_blank" rel="noopener noreferrer" class="social-link">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+        <path d="M2.5 1.5L1 4.5v7h3V13l1.5 1H8l2-2h2l2.5-2.5V1.5H2.5zm8.5 7L9 10H7.5L6 11.5V10H3.5V3h7.5v5.5zm-1.5-4.5H8v3h1.5V4zm-3 0H5v3h1.5V4z"/>
+      </svg>
+      Twitch
+    </a>
+  </div>
+</div>
+
+<!-- ══ LATEST SIGNALS ═════════════════════════════════════════════════ -->
+<div class="section" id="signals">
+  <div class="signals-header">
+    <div class="section-label">
+      <svg class="section-label-diamond" viewBox="0 0 14 14" fill="none">
+        <path d="M7 1L8.3 5.7H13L9.2 8.3l1.4 4.5L7 10.2l-3.6 2.6L4.8 8.3 1 5.7h4.7z" stroke="#8B5CF6" stroke-width="1.3" fill="none"/>
+      </svg>
+      LATEST SIGNALS
+    </div>
+    <a href="#" class="view-all">View all updates →</a>
+  </div>
+
+  <!-- DESKTOP 3-col grid -->
+  <div class="signals-grid" aria-label="Latest signals">
+    <!-- card 1 -->
+    <article class="signal-card fade-in">
+      <div class="signal-thumb signal-thumb-red" aria-hidden="true">
+        <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+          <circle cx="32" cy="32" r="22" stroke="#FF3355" stroke-width="1.2" opacity="0.4"/>
+          <circle cx="32" cy="32" r="14" stroke="#FF3355" stroke-width="1.5" opacity="0.6"/>
+          <circle cx="32" cy="32" r="7"  stroke="#FF4466" stroke-width="1.5" opacity="0.7"/>
+          <circle cx="32" cy="32" r="3.5" fill="#FF3355" opacity="0.9"/>
+          <line x1="32" y1="10" x2="32" y2="7" stroke="#FF3355" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="32" y1="54" x2="32" y2="57" stroke="#FF3355" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="10" y1="32" x2="7"  y2="32" stroke="#FF3355" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="54" y1="32" x2="57" y2="32" stroke="#FF3355" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="signal-body">
+        <div class="signal-tag tag-red">PROJECT UPDATE</div>
+        <h4>RED EYE v2.1</h4>
+        <p>New visual system + signal maps. Peering deeper.</p>
+        <div class="signal-meta">
+          <span>May 6, 2025</span>
+          <span>&bull;</span>
+          <a href="#" class="read-more">Read more →</a>
+        </div>
+      </div>
+    </article>
+
+    <!-- card 2 -->
+    <article class="signal-card fade-in">
+      <div class="signal-thumb signal-thumb-blue" aria-hidden="true">
+        <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+          <circle cx="32" cy="32" r="14" stroke="#3B82F6" stroke-width="1.5" opacity="0.6"/>
+          <ellipse cx="32" cy="32" rx="24" ry="8" stroke="#60A5FA" stroke-width="1.4" transform="rotate(-25 32 32)" opacity="0.55"/>
+          <circle cx="32" cy="32" r="5" fill="#3B82F6" opacity="0.8"/>
+          <circle cx="18" cy="18" r="2.2" fill="#60A5FA" opacity="0.4"/>
+          <circle cx="50" cy="16" r="1.4" fill="#60A5FA" opacity="0.35"/>
+        </svg>
+      </div>
+      <div class="signal-body">
+        <div class="signal-tag tag-purple">BUILD LOG</div>
+        <h4>Arcade Cabinet OS</h4>
+        <p>Backend upgrades &amp; new mini-game drops.</p>
+        <div class="signal-meta">
+          <span>May 3, 2025</span>
+          <span>&bull;</span>
+          <a href="#" class="read-more">Read more →</a>
+        </div>
+      </div>
+    </article>
+
+    <!-- card 3 -->
+    <article class="signal-card fade-in">
+      <div class="signal-thumb signal-thumb-purp" aria-hidden="true">
+        <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+          <circle cx="32" cy="32" r="15" stroke="#8B5CF6" stroke-width="1.5" opacity="0.6"/>
+          <ellipse cx="32" cy="32" rx="25" ry="8" stroke="#A78BFA" stroke-width="1.3" transform="rotate(-20 32 32)" opacity="0.5"/>
+          <path d="M32 12L33.5 30.5L52 32L33.5 33.5L32 52L30.5 33.5L12 32L30.5 30.5Z" stroke="#A78BFA" stroke-width="1" opacity="0.4"/>
+          <circle cx="32" cy="32" r="3.5" fill="#8B5CF6" opacity="0.9"/>
+        </svg>
+      </div>
+      <div class="signal-body">
+        <div class="signal-tag tag-blue">NEW EPISODE</div>
+        <h4>Spacecast #12</h4>
+        <p>Signals from the outer rim. Conversations in orbit.</p>
+        <div class="signal-meta">
+          <span>May 1, 2025</span>
+          <span>&bull;</span>
+          <a href="#" class="read-more">Read more →</a>
+        </div>
+      </div>
+    </article>
+  </div>
+
+  <!-- TABLET/MOBILE list -->
+  <div class="signal-card-list" aria-label="Latest signals">
+    <style>
+      .signal-card-list .sl-item {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 12px 14px;
+        background: var(--surface);
+        transition: border-color 0.18s;
+      }
+      .signal-card-list .sl-item:hover { border-color: var(--border-h); }
+      .sl-thumb {
+        flex-shrink: 0;
+        width: 52px; height: 52px;
+        border-radius: 8px;
+        display: flex; align-items: center; justify-content: center;
+      }
+      .sl-thumb-red  { background: radial-gradient(ellipse, rgba(255,31,76,0.3) 0%, transparent 70%), var(--surface-2); }
+      .sl-thumb-blue { background: radial-gradient(ellipse, rgba(59,130,246,0.3) 0%, transparent 70%), var(--surface-2); }
+      .sl-thumb-purp { background: radial-gradient(ellipse, rgba(139,92,246,0.3) 0%, transparent 70%), var(--surface-2); }
+      .sl-body { flex: 1; min-width: 0; }
+      .sl-tag { font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 3px; }
+      .sl-title { font-size: 13.5px; font-weight: 600; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .sl-meta { font-size: 11px; color: var(--text-3); }
+      .sl-chevron { color: var(--text-3); flex-shrink: 0; }
+    </style>
+
+    <a href="#" class="sl-item">
+      <div class="sl-thumb sl-thumb-red">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+          <circle cx="14" cy="14" r="9" stroke="#FF3355" stroke-width="1.4" opacity="0.6"/>
+          <circle cx="14" cy="14" r="4" stroke="#FF3355" stroke-width="1.4" opacity="0.8"/>
+          <circle cx="14" cy="14" r="1.5" fill="#FF3355"/>
+        </svg>
+      </div>
+      <div class="sl-body">
+        <div class="sl-tag tag-red">PROJECT UPDATE</div>
+        <div class="sl-title">RED EYE v2.1</div>
+        <div class="sl-meta">May 6, 2025 &bull; Read more</div>
+      </div>
+      <svg class="sl-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </a>
+
+    <a href="#" class="sl-item">
+      <div class="sl-thumb sl-thumb-blue">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+          <circle cx="14" cy="14" r="6" stroke="#3B82F6" stroke-width="1.4" opacity="0.7"/>
+          <ellipse cx="14" cy="14" rx="10" ry="3.5" stroke="#60A5FA" stroke-width="1.2" transform="rotate(-25 14 14)" opacity="0.5"/>
+          <circle cx="14" cy="14" r="2" fill="#3B82F6" opacity="0.9"/>
+        </svg>
+      </div>
+      <div class="sl-body">
+        <div class="sl-tag tag-purple">BUILD LOG</div>
+        <div class="sl-title">Arcade Cabinet OS</div>
+        <div class="sl-meta">May 3, 2025 &bull; Read more</div>
+      </div>
+      <svg class="sl-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </a>
+
+    <a href="#" class="sl-item">
+      <div class="sl-thumb sl-thumb-purp">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+          <circle cx="14" cy="14" r="6.5" stroke="#8B5CF6" stroke-width="1.4" opacity="0.7"/>
+          <ellipse cx="14" cy="14" rx="11" ry="3.5" stroke="#A78BFA" stroke-width="1.2" transform="rotate(-20 14 14)" opacity="0.5"/>
+          <circle cx="14" cy="14" r="2" fill="#8B5CF6" opacity="0.9"/>
+        </svg>
+      </div>
+      <div class="sl-body">
+        <div class="sl-tag tag-blue">NEW EPISODE</div>
+        <div class="sl-title">Spacecast #12</div>
+        <div class="sl-meta">May 1, 2025 &bull; Read more</div>
+      </div>
+      <svg class="sl-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </a>
+  </div>
+</div>
+
+<!-- ══ FOOTER ═════════════════════════════════════════════════════════ -->
+<footer class="footer-outer">
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <!-- Brand -->
+      <div class="footer-brand">
+        <div class="footer-brand-logo">
+          <svg width="38" height="38" viewBox="0 0 38 38" fill="none">
+            <path d="M19 2L21.2 16.8L36 19L21.2 21.2L19 36L16.8 21.2L2 19L16.8 16.8Z" stroke="white" stroke-width="1.5" fill="none"/>
+            <circle cx="19" cy="19" r="4.5" stroke="white" stroke-width="1.1" opacity="0.4"/>
+            <circle cx="19" cy="19" r="1.8" fill="white" opacity="0.55"/>
+          </svg>
+          <div>
+            <h2>frymatic <span class="sparkle">✦</span></h2>
+          </div>
+        </div>
+        <p>Code. Art. Sound. Play.<br>Building the signal.</p>
+      </div>
+
+      <!-- EXPLORE -->
+      <nav class="footer-col" aria-label="Explore">
+        <h4>EXPLORE</h4>
+        <ul>
+          <li><a href="#">Projects</a></li>
+          <li><a href="#">Arcade</a></li>
+          <li><a href="#">RED EYE</a></li>
+          <li><a href="#">Spacecast</a></li>
+        </ul>
+      </nav>
+
+      <!-- ABOUT -->
+      <nav class="footer-col" aria-label="About">
+        <h4>ABOUT</h4>
+        <ul>
+          <li><a href="#">About</a></li>
+          <li><a href="#">Manifesto</a></li>
+          <li><a href="#">Press Kit</a></li>
+        </ul>
+      </nav>
+
+      <!-- LINKS -->
+      <nav class="footer-col" aria-label="Links">
+        <h4>LINKS</h4>
+        <ul>
+          <li><a href="https://github.com/frymatic" target="_blank" rel="noopener">GitHub</a></li>
+          <li><a href="https://www.beatport.com/artist/frymatic" target="_blank" rel="noopener">Beatport</a></li>
+          <li><a href="https://soundcloud.com/mofrymatic" target="_blank" rel="noopener">SoundCloud</a></li>
+          <li><a href="https://www.dndbeyond.com/members/frymatic" target="_blank" rel="noopener">D&amp;D Beyond</a></li>
+          <li><a href="https://www.twitch.tv/mofrymatic" target="_blank" rel="noopener">Twitch</a></li>
+        </ul>
+      </nav>
+
+      <!-- SIGNAL BOOST (TODO: wire to Discord webhook or Google Form) -->
+      <div class="signal-boost">
+        <h4>SIGNAL BOOST</h4>
+        <p>Get updates and transmissions.</p>
+        <div class="email-wrap">
+          <div class="email-inner">
+            <input class="email-input" id="emailInput" type="email"
+                   placeholder="you@domain.com"
+                   aria-label="Email for signal updates">
+            <button class="email-btn" onclick="handleEmail()" aria-label="Subscribe">
+              <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+                <path d="M1 5.5h9M6.5 2l4 3.5L6.5 9" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <!-- placeholder notice — remove when wired -->
+        <p style="font-size:10.5px;color:var(--text-3);margin-top:8px;">
+          📡 Form wiring pending — Discord / Google Forms
+        </p>
+      </div>
+    </div>
+
+    <!-- bottom bar -->
+    <div class="footer-bottom">
+      <p class="footer-copy">© 2025 frymatic. All rights reserved.</p>
+      <nav class="footer-legal" aria-label="Legal">
+        <a href="#">Privacy</a>
+        <a href="#">Terms</a>
+        <a href="#">Accessibility</a>
+      </nav>
+      <!-- animated signal wave -->
+      <svg class="signal-wave" width="130" height="22" viewBox="0 0 130 22" fill="none" aria-hidden="true">
+        <path class="wave-path"
+          d="M0,11 L10,11 L14,5 L18,17 L22,5 L26,17 L30,11
+             L40,11 L44,5 L48,17 L52,5 L56,17 L60,11
+             L70,11 L74,5 L78,17 L82,11 L90,11
+             L94,5 L98,17 L102,11 L110,11 L130,11"
+          stroke="#FF1F4C" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" opacity="0.7"/>
+      </svg>
+    </div>
+  </div>
+</footer>
+
+<!-- ══ SCRIPT ══════════════════════════════════════════════════════════ -->
+<script>
+'use strict';
+
+/* nav drawer */
+function toggleDrawer() {
+  const d = document.getElementById('drawer');
+  const open = d.classList.toggle('open');
+  d.setAttribute('aria-hidden', !open);
+}
+document.addEventListener('click', (e) => {
+  const d = document.getElementById('drawer');
+  if (d.classList.contains('open') && !d.contains(e.target) && !e.target.closest('.nav-burger')) {
+    d.classList.remove('open');
+    d.setAttribute('aria-hidden', 'true');
+  }
+});
+
+/* search */
+function fillSearch(text) {
+  const inp = document.getElementById('heroSearch');
+  inp.value = text;
+  inp.focus();
+}
+function handleSearch() {
+  const q = document.getElementById('heroSearch').value.trim();
+  if (!q) return;
+  // TODO: replace with Claude embed or Discord pipe
+  alert('🔍 Query ready for integration:\n"' + q + '"');
+}
+document.getElementById('heroSearch').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') handleSearch();
+});
+
+/* email */
+function handleEmail() {
+  const val = document.getElementById('emailInput').value.trim();
+  if (!val || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
+    document.getElementById('emailInput').focus();
+    return;
+  }
+  // TODO: POST to Discord webhook or Google Form embed
+  alert('📡 Signal received for: ' + val + '\n\nWire to Discord or Google Forms when ready.');
+  document.getElementById('emailInput').value = '';
+}
+document.getElementById('emailInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') handleEmail();
+});
+
+/* fade-in on scroll */
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach((en, i) => {
+    if (en.isIntersecting) {
+      setTimeout(() => en.target.classList.add('visible'), i * 80);
+      observer.unobserve(en.target);
+    }
+  });
+}, { threshold: 0.12 });
+
+document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+/* nav transparency on scroll */
+const nav = document.querySelector('.nav');
+window.addEventListener('scroll', () => {
+  nav.style.background = window.scrollY > 20
+    ? 'rgba(7,7,15,0.95)'
+    : 'rgba(7,7,15,0.82)';
+}, { passive: true });
+</script>
+</body>
+</html>
