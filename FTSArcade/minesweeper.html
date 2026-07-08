@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>MINESWEEPER/title>
+
+<!-- ── Primary Meta ─────────────────────────────────────────────────── -->
+<meta name="description" content="FishTacoStand Arcade — Minesweeper. Neon logic. Detonation optional." />
+
+<!-- ── Favicons ─────────────────────────────────────────────────────── -->
+<link rel="icon" type="image/png" href="fts-favicon.png">
+<link rel="shortcut icon" type="image/png" href="fts-favicon.png">
+<link rel="apple-touch-icon" href="fts-favicon.png">
+
+<!-- ── Open Graph ────────────────────────────────────────────────────── -->
+<meta property="og:title" content="Minesteward">
+<meta property="og:description" content="Minesweeper — Neon logic. Detonation optional.">
+<meta property="og:url" content="https://frymatic.us/FTSArcade/minesweeper.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="FishTacoStand Arcade">
+<meta property="og:image" content="https://frymatic.us/FTSArcade/minesweeper_preview.png">
+<meta property="og:image:alt" content="FishTacoStand Arcade cabinet.">
+<meta property="og:image:type" content="image/png">
+
+<!-- ── Twitter / X Card ─────────────────────────────────────────────── -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Minesweeper · Obliteratus">
+<meta name="twitter:description" content="Neon logic. Detonation optional.">
+<meta name="twitter:image" content="https://frymatic.us/FTSArcade/minesweeper_preview.png">
+
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;background:#020b18;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+canvas{display:block;position:fixed;top:0;left:0;touch-action:none;cursor:crosshair}
+
+/* ── NUI (touch-only overlay) ───────────────────────────────── */
+#nui{display:none;position:fixed;bottom:clamp(12px,3vh,24px);right:clamp(14px,4vw,28px);
+  z-index:50;flex-direction:column;align-items:flex-end;gap:10px;pointer-events:none}
+@media(pointer:coarse){#nui{display:flex}}
+
+.nb{
+  pointer-events:all;touch-action:none;-webkit-tap-highlight-color:transparent;
+  -webkit-appearance:none;appearance:none;outline:none;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  width:var(--nb-sz,clamp(62px,13.5vw,88px));height:var(--nb-sz,clamp(62px,13.5vw,88px));
+  border-radius:14px;background:rgba(2,14,32,.68);
+  border:1.5px solid rgba(0,190,255,.28);
+  box-shadow:0 0 12px rgba(0,170,255,.12),inset 0 0 10px rgba(0,160,255,.05);
+  color:rgba(0,210,255,.72);font-family:'Courier New',monospace;
+  font-weight:bold;font-size:clamp(22px,5vw,28px);
+  animation:nb-appear .35s ease both;
+  transition:background .06s,border-color .06s,box-shadow .06s,color .06s,transform .06s;
+}
+.nb-lbl{font-size:clamp(7px,1.5vw,10px);letter-spacing:.14em;margin-top:3px;opacity:.65}
+
+/* Persistent "on" state (flag mode active) */
+.nb.active{
+  background:rgba(255,238,0,.12);border-color:rgba(255,238,0,.62);
+  color:rgba(255,238,0,.88);
+  box-shadow:0 0 18px rgba(255,220,0,.42),inset 0 0 10px rgba(255,220,0,.07);
+}
+/* Press flash */
+.nb:active,.nb.hit{
+  background:rgba(255,238,0,.18);border-color:rgba(255,238,0,.94);
+  color:#ffee00;transform:scale(.93);
+  box-shadow:0 0 28px rgba(255,220,0,.62),inset 0 0 12px rgba(255,220,0,.1);
+}
+@keyframes nb-appear{from{opacity:0;transform:translateY(14px) scale(.88)}to{opacity:1;transform:none}}
+@media(pointer:coarse)and(orientation:landscape){.nb{--nb-sz:clamp(52px,11vw,72px)}}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div id="nui" role="group" aria-label="Game controls">
+  <button class="nb" id="nb-flag" aria-label="Toggle flag mode" aria-pressed="false">
+    <span style="line-height:1;font-size:1.1em">⚑</span>
+    <span class="nb-lbl" id="nb-flag-lbl">FLAG</span>
+  </button>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════
+//  M I N E S W E E P E R  ·  O B L I T E R A T U S
+//  Spring-mesh grid · Neon logic · Adaptive NUI
+//  FishTacoStand Arcade — frymatic.us/FTSArcade/
+// ═══════════════════════════════════════════════════════════════════════
+
+// ── Canvas setup ──────────────────────────────────────────────────────
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d');
+let W, H;
+function resize() {
+  W = canvas.width  = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  grid.init();
+  calcLayout();
+}
+window.addEventListener('resize', resize);
+
+// ── Palette ───────────────────────────────────────────────────────────
+const C = {
+  bg:      '#020b18',
+  covCell: '#031b30',
+  hovCell: '#073a5a',
+  revCell: '#010d1b',
+  brd:     'rgba(0,185,255,0.2)',
+  brdHi:   'rgba(0,255,255,0.72)',
+  mine:    '#ff0055',
+  explBg:  '#240012',
+  flag:    '#ffee00',
+  wrongX:  '#ff3300',
+  nums:    ['','#00e5ff','#22ff77','#ff4455','#4488ff','#ff8800','#ff44ff','#ffee00','#ccffff'],
+  ui:      '#00e5ff',
+  uiD:     'rgba(0,229,255,0.38)',
+  red:     '#ff0055',
+  yel:     '#ffee00',
+  grn:     '#22ff77',
+};
+
+const glow   = (c, b) => { ctx.shadowColor = c; ctx.shadowBlur = b; };
+const noGlow = ()     => { ctx.shadowBlur  = 0; };
+
+// ── Audio ─────────────────────────────────────────────────────────────
+let _ac = null;
+const AC = () => _ac || (_ac = new (window.AudioContext || window.webkitAudioContext)());
+
+function tone(freq, type, dur, vol = 0.18, startF = null) {
+  try {
+    const ac = AC(), o = ac.createOscillator(), g = ac.createGain();
+    o.connect(g); g.connect(ac.destination);
+    o.type = type;
+    o.frequency.setValueAtTime(startF || freq, ac.currentTime);
+    if (startF) o.frequency.exponentialRampToValueAtTime(freq, ac.currentTime + dur);
+    g.gain.setValueAtTime(vol, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + dur);
+    o.start(); o.stop(ac.currentTime + dur);
+  } catch (e) {}
+}
+
+function noise(dur, bandFreq = 150, vol = 0.2) {
+  try {
+    const ac = AC();
+    const buf = ac.createBuffer(1, Math.ceil(ac.sampleRate * dur), ac.sampleRate);
+    const d   = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    const src = ac.createBufferSource(); src.buffer = buf;
+    const flt = ac.createBiquadFilter(); flt.type = 'bandpass';
+    flt.frequency.value = bandFreq; flt.Q.value = 0.6;
+    const g = ac.createGain();
+    g.gain.setValueAtTime(vol, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + dur);
+    src.connect(flt); flt.connect(g); g.connect(ac.destination);
+    src.start(); src.stop(ac.currentTime + dur);
+  } catch (e) {}
+}
+
+const SFX = {
+  tick:    () => tone(900, 'square', 0.04, 0.04),
+  reveal:  () => tone(580, 'sine', 0.08, 0.07, 940),
+  flag:    () => { tone(660, 'square', 0.06, 0.05); tone(900, 'square', 0.06, 0.03); },
+  unflag:  () => tone(440, 'square', 0.07, 0.05),
+  chord:   () => { tone(880, 'sine', 0.07, 0.08); tone(1100, 'sine', 0.07, 0.05); },
+  sel:     () => tone(520, 'sine', 0.07, 0.06, 420),
+  explode: () => { noise(0.5, 58, 0.52); tone(52, 'sawtooth', 0.42, 0.24, 120); },
+  win:     () => [523,659,784,1047,1568].forEach((f,i) =>
+                    setTimeout(() => tone(f,'sine',0.3,0.18), i*108)),
+};
+
+// ── Spring-mesh grid (shared arcade DNA — same as Astroids·Obliteratus) ─
+const grid = {
+  cells: 52, nodes: [], cw: 0, ch: 0, cols: 0, rows: 0,
+
+  init() {
+    this.cw   = W / this.cells;
+    this.ch   = this.cw;
+    this.cols = Math.ceil(W / this.cw) + 1;
+    this.rows = Math.ceil(H / this.ch) + 1;
+    this.nodes = [];
+    for (let r = 0; r < this.rows; r++) {
+      this.nodes[r] = [];
+      for (let c = 0; c < this.cols; c++)
+        this.nodes[r][c] = { dx: 0, dy: 0, vx: 0, vy: 0 };
+    }
+  },
+
+  // Called on mine detonation — distorts mesh outward from impact point
+  ripple(wx, wy, mag, radius) {
+    const cr = wx / this.cw, rr = wy / this.ch;
+    const c0 = Math.max(0, Math.floor(cr - radius / this.cw) - 1);
+    const c1 = Math.min(this.cols - 1, Math.ceil(cr + radius / this.cw) + 1);
+    const r0 = Math.max(0, Math.floor(rr - radius / this.ch) - 1);
+    const r1 = Math.min(this.rows - 1, Math.ceil(rr + radius / this.ch) + 1);
+    for (let r = r0; r <= r1; r++)
+      for (let c = c0; c <= c1; c++) {
+        const nx = c * this.cw, ny = r * this.ch;
+        const dx = nx - wx, dy = ny - wy, d = Math.hypot(dx, dy);
+        if (d < radius && d > 0) {
+          const f = mag * (1 - d / radius);
+          this.nodes[r][c].vx += (dx / d) * f;
+          this.nodes[r][c].vy += (dy / d) * f;
+        }
+      }
+  },
+
+  update(dt) {
+    const spring = 8, damp = 0.88;
+    for (let r = 0; r < this.rows; r++)
+      for (let c = 0; c < this.cols; c++) {
+        const n = this.nodes[r][c];
+        n.vx += -n.dx * spring * dt; n.vy += -n.dy * spring * dt;
+        n.vx *= damp; n.vy *= damp;
+        n.dx += n.vx * dt; n.dy += n.vy * dt;
+      }
+  },
+
+  draw() {
+    ctx.save(); ctx.lineWidth = 0.8;
+    // Horizontal segments
+    for (let r = 0; r < this.rows; r++)
+      for (let c = 0; c < this.cols - 1; c++) {
+        const n0 = this.nodes[r][c], n1 = this.nodes[r][c + 1];
+        const d  = Math.hypot(n0.dx, n0.dy) + Math.hypot(n1.dx, n1.dy);
+        ctx.strokeStyle = `rgba(0,190,255,${Math.min(0.22, 0.06 + d * 0.015)})`;
+        ctx.beginPath();
+        ctx.moveTo(c     * this.cw + n0.dx, r * this.ch + n0.dy);
+        ctx.lineTo((c+1) * this.cw + n1.dx, r * this.ch + n1.dy);
+        ctx.stroke();
+      }
+    // Vertical segments
+    for (let c = 0; c < this.cols; c++)
+      for (let r = 0; r < this.rows - 1; r++) {
+        const n0 = this.nodes[r][c], n1 = this.nodes[r + 1][c];
+        const d  = Math.hypot(n0.dx, n0.dy) + Math.hypot(n1.dx, n1.dy);
+        ctx.strokeStyle = `rgba(0,190,255,${Math.min(0.22, 0.06 + d * 0.015)})`;
+        ctx.beginPath();
+        ctx.moveTo(c * this.cw + n0.dx, r       * this.ch + n0.dy);
+        ctx.lineTo(c * this.cw + n1.dx, (r + 1) * this.ch + n1.dy);
+        ctx.stroke();
+      }
+    ctx.restore();
+  },
+};
+
+// ── Spark particle ─────────────────────────────────────────────────────
+class Spark {
+  constructor(x, y, vx, vy, col, life, r) {
+    Object.assign(this, { x, y, vx, vy, col, life, maxLife: life, r, dead: false });
+  }
+  update(dt) {
+    this.x  += this.vx * dt;
+    this.y  += this.vy * dt;
+    this.vy += 260 * dt;   // gravity pull
+    this.vx *= 0.985;
+    this.life -= dt;
+    if (this.life <= 0) this.dead = true;
+  }
+  draw() {
+    const a = Math.max(0, this.life / this.maxLife);
+    ctx.save();
+    ctx.globalAlpha = a * a;
+    glow(this.col, 7); ctx.fillStyle = this.col;
+    ctx.beginPath(); ctx.arc(this.x, this.y, this.r * a + 0.4, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+}
+
+// ── Difficulty configs ─────────────────────────────────────────────────
+const DIFFS = {
+  beginner:     { label: 'BEGINNER',     cols:  9, rows:  9, mines:  10 },
+  intermediate: { label: 'INTERMEDIATE', cols: 16, rows: 16, mines:  40 },
+  expert:       { label: 'EXPERT',       cols: 30, rows: 16, mines:  99 },
+};
+
+// ── Layout ─────────────────────────────────────────────────────────────
+const HUD_H  = 64;
+const MARGIN = 8;
+let cellSz, boardX, boardY;
+let curDiff = 'beginner', diff = DIFFS[curDiff];
+
+function calcLayout() {
+  const avW = W - MARGIN * 2;
+  const avH = H - HUD_H - MARGIN * 2;
+  const szW = Math.floor(avW / diff.cols);
+  const szH = Math.floor(avH / diff.rows);
+  cellSz = Math.max(10, Math.min(szW, szH, 56));
+  boardX = Math.floor((W - diff.cols * cellSz) / 2);
+  boardY = HUD_H + MARGIN + Math.floor((avH - diff.rows * cellSz) / 2);
+}
+
+// ── Game state ─────────────────────────────────────────────────────────
+const ST = { TITLE: 'title', PLAY: 'play', OVER: 'over', WIN: 'win' };
+
+let gs = freshGS();
+function freshGS() {
+  return {
+    state:     ST.TITLE,
+    board:     [],
+    rows: 0,  cols: 0,  totalMines: 0,
+    revealed:  0,  flagCount: 0,
+    startTime: 0,  elapsed: 0,
+    first:     true,
+    xplR: -1, xplC: -1,       // explode cell coords
+    hover:     { r: -1, c: -1 },
+    flagMode:  false,
+    mDown:     false,
+    sparks:    [],
+    shakeT:    0,  shakeMag: 0,
+    faceBtn:   null,
+    startBtn:  null,
+    diffBtns:  {},
+  };
+}
+
+// ── Board construction ─────────────────────────────────────────────────
+function makeBoard(rows, cols) {
+  return Array.from({ length: rows }, () =>
+    Array.from({ length: cols }, () =>
+      ({ mine: false, revealed: false, flagged: false, count: 0 })));
+}
+
+function placeMines(board, rows, cols, count, safeR, safeC) {
+  // Safe zone: clicked cell + its 8 neighbors (first click always safe)
+  const safe = new Set();
+  for (let dr = -1; dr <= 1; dr++)
+    for (let dc = -1; dc <= 1; dc++) {
+      const nr = safeR + dr, nc = safeC + dc;
+      if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) safe.add(nr * cols + nc);
+    }
+
+  let placed = 0;
+  while (placed < count) {
+    const r = (Math.random() * rows) | 0;
+    const c = (Math.random() * cols) | 0;
+    if (!board[r][c].mine && !safe.has(r * cols + c)) {
+      board[r][c].mine = true;
+      placed++;
+    }
+  }
+
+  // Adjacency counts
+  for (let r = 0; r < rows; r++)
+    for (let c = 0; c < cols; c++) {
+      if (board[r][c].mine) continue;
+      let n = 0;
+      for (let dr = -1; dr <= 1; dr++)
+        for (let dc = -1; dc <= 1; dc++) {
+          if (!dr && !dc) continue;
+          const nr = r + dr, nc = c + dc;
+          if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && board[nr][nc].mine) n++;
+        }
+      board[r][c].count = n;
+    }
+}
+
+// BFS flood-fill reveal — iterative, safe for 30×16 expert boards
+function revealFrom(startR, startC) {
+  const { board, rows, cols } = gs;
+  const cell = board[startR][startC];
+  if (cell.revealed || cell.flagged) return;
+
+  if (cell.mine) {
+    cell.revealed = true;
+    gs.revealed++;
+    gs.xplR = startR;
+    gs.xplC = startC;
+    endGame(false);
+    return;
+  }
+
+  const queue = [[startR, startC]];
+  const seen  = new Set([startR * cols + startC]);
+
+  while (queue.length) {
+    const [r, c] = queue.shift();
+    const cur = board[r][c];
+    if (cur.revealed || cur.flagged) continue;
+    cur.revealed = true;
+    gs.revealed++;
+
+    if (cur.count === 0) {
+      for (let dr = -1; dr <= 1; dr++)
+        for (let dc = -1; dc <= 1; dc++) {
+          if (!dr && !dc) continue;
+          const nr = r + dr, nc = c + dc;
+          if (nr < 0 || nr >= rows || nc < 0 || nc >= cols) continue;
+          const key = nr * cols + nc;
+          if (!seen.has(key) && !board[nr][nc].revealed && !board[nr][nc].flagged) {
+            seen.add(key);
+            queue.push([nr, nc]);
+          }
+        }
+    }
+  }
+  SFX.reveal();
+}
+
+function toggleFlag(r, c) {
+  const cell = gs.board[r][c];
+  if (cell.revealed) return;
+  if (!cell.flagged) { cell.flagged = true;  gs.flagCount++; SFX.flag();   }
+  else               { cell.flagged = false; gs.flagCount--; SFX.unflag(); }
+}
+
+// Chord: click a revealed number with matching adjacent flag count
+function chordCell(r, c) {
+  const { board, rows, cols } = gs;
+  const cell = board[r][c];
+  if (!cell.revealed || !cell.count) return;
+
+  let flags = 0;
+  const toReveal = [];
+  for (let dr = -1; dr <= 1; dr++)
+    for (let dc = -1; dc <= 1; dc++) {
+      if (!dr && !dc) continue;
+      const nr = r + dr, nc = c + dc;
+      if (nr < 0 || nr >= rows || nc < 0 || nc >= cols) continue;
+      if (board[nr][nc].flagged) flags++;
+      else if (!board[nr][nc].revealed) toReveal.push([nr, nc]);
+    }
+  if (flags !== cell.count) return;
+  SFX.chord();
+  toReveal.forEach(([nr, nc]) => revealFrom(nr, nc));
+}
+
+function checkWin() {
+  if (gs.state !== ST.PLAY) return;
+  if (gs.revealed >= gs.rows * gs.cols - gs.totalMines) endGame(true);
+}
+
+// ── Game flow ──────────────────────────────────────────────────────────
+function startGame() {
+  diff = DIFFS[curDiff];
+  calcLayout();
+  const flagMode = gs.flagMode; // preserve user preference across restarts
+  gs = {
+    ...freshGS(),
+    state:      ST.PLAY,
+    board:      makeBoard(diff.rows, diff.cols),
+    rows:       diff.rows,
+    cols:       diff.cols,
+    totalMines: diff.mines,
+    flagMode,
+    faceBtn:    gs.faceBtn,  // keep last known position until HUD redraws it
+  };
+}
+
+function endGame(won) {
+  gs.state   = won ? ST.WIN : ST.OVER;
+  gs.elapsed = gs.startTime
+    ? Math.min(999, Math.floor((Date.now() - gs.startTime) / 1000))
+    : 0;
+
+  if (won) {
+    SFX.win();
+    // Auto-flag remaining un-flagged mines
+    for (let r = 0; r < gs.rows; r++)
+      for (let c = 0; c < gs.cols; c++)
+        if (gs.board[r][c].mine && !gs.board[r][c].flagged) {
+          gs.board[r][c].flagged = true;
+          gs.flagCount++;
+        }
+    // Cascade celebration sparks across the board
+    for (let i = 0; i < 60; i++)
+      setTimeout(() => {
+        if (gs.state !== ST.WIN) return;
+        const bw = diff.cols * cellSz, bh = diff.rows * cellSz;
+        spawnBurst(
+          boardX + Math.random() * bw,
+          boardY + Math.random() * bh,
+          7, [C.grn, C.ui, C.yel, '#ff44ff']);
+      }, i * 44);
+
+  } else {
+    SFX.explode();
+    doShake(13, 0.52);
+
+    // Reveal all un-flagged mines
+    for (let r = 0; r < gs.rows; r++)
+      for (let c = 0; c < gs.cols; c++)
+        if (gs.board[r][c].mine && !gs.board[r][c].flagged)
+          gs.board[r][c].revealed = true;
+
+    // Grid ripple + burst at impact cell
+    if (gs.xplR >= 0) {
+      const ex = boardX + gs.xplC * cellSz + cellSz / 2;
+      const ey = boardY + gs.xplR * cellSz + cellSz / 2;
+      grid.ripple(ex, ey, 72, 230);
+      spawnBurst(ex, ey, 55, [C.mine, '#ff6600', '#ff9900', C.yel]);
+    }
+  }
+}
+
+function doShake(mag, dur) { gs.shakeMag = mag; gs.shakeT = dur; }
+
+function spawnBurst(x, y, n, cols) {
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const s = 80 + Math.random() * 340;
+    const c = cols[(Math.random() * cols.length) | 0];
+    gs.sparks.push(
+      new Spark(x, y, Math.cos(a)*s, Math.sin(a)*s - 65,
+                c, 0.38 + Math.random() * 0.9, 2 + Math.random() * 3.5));
+  }
+}
+
+function goTitle() {
+  const flagMode = gs.flagMode;
+  const faceBtn  = gs.faceBtn;
+  gs = { ...freshGS(), flagMode, faceBtn };
+}
+
+// ── Input ─────────────────────────────────────────────────────────────
+function getCellAt(px, py) {
+  const c = Math.floor((px - boardX) / cellSz);
+  const r = Math.floor((py - boardY) / cellSz);
+  if (r >= 0 && r < gs.rows && c >= 0 && c < gs.cols) return { r, c };
+  return null;
+}
+
+function handleReveal(r, c) {
+  if (gs.state !== ST.PLAY) return;
+  if (gs.board[r][c].flagged) return;
+
+  if (gs.first) {
+    gs.first     = false;
+    gs.startTime = Date.now();
+    placeMines(gs.board, gs.rows, gs.cols, gs.totalMines, r, c);
+  }
+
+  const cell = gs.board[r][c];
+  if (cell.revealed) chordCell(r, c);
+  else               revealFrom(r, c);
+  checkWin();
+}
+
+function handleFlag(r, c) {
+  if (gs.state !== ST.PLAY) return;
+  toggleFlag(r, c);
+}
+
+// Unified primary tap/click (reveal path)
+function onPrimary(x, y) {
+  // Face button hit test
+  if (gs.faceBtn) {
+    const f   = gs.faceBtn;
+    const tap = Math.max(f.r, 30); // generous touch target
+    if (Math.hypot(x - f.cx, y - f.cy) <= tap) { SFX.sel(); goTitle(); return; }
+  }
+
+  if (gs.state === ST.TITLE) {
+    for (const [key, b] of Object.entries(gs.diffBtns)) {
+      if (b && x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) {
+        if (curDiff !== key) { curDiff = key; diff = DIFFS[key]; SFX.sel(); calcLayout(); }
+        return;
+      }
+    }
+    if (gs.startBtn) {
+      const b = gs.startBtn;
+      if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) { startGame(); return; }
+    }
+    return;
+  }
+
+  if (gs.state !== ST.PLAY) return;
+  const cell = getCellAt(x, y);
+  if (cell) handleReveal(cell.r, cell.c);
+}
+
+// Unified secondary tap/click (flag path)
+function onSecondary(x, y) {
+  if (gs.state !== ST.PLAY) return;
+  const cell = getCellAt(x, y);
+  if (cell) handleFlag(cell.r, cell.c);
+}
+
+// ── Audio context unlock ───────────────────────────────────────────────
+let _acReady = false;
+function acUnlock() {
+  if (_acReady) return;
+  try { AC().resume(); _acReady = true; } catch (e) {}
+}
+
+// ── Mouse events ───────────────────────────────────────────────────────
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+canvas.addEventListener('mousemove', e => {
+  gs.hover = (gs.state === ST.PLAY)
+    ? (getCellAt(e.clientX, e.clientY) || { r: -1, c: -1 })
+    : { r: -1, c: -1 };
+});
+canvas.addEventListener('mouseleave', () => { gs.hover = { r: -1, c: -1 }; });
+canvas.addEventListener('mousedown',  e  => { gs.mDown = true; acUnlock(); SFX.tick(); });
+canvas.addEventListener('mouseup',    e  => {
+  gs.mDown = false;
+  if (e.button === 2) onSecondary(e.clientX, e.clientY);
+  else               onPrimary(e.clientX, e.clientY);
+});
+
+// ── Touch events ───────────────────────────────────────────────────────
+let _tStart = 0, _tX = 0, _tY = 0, _tMoved = false;
+
+canvas.addEventListener('touchstart', e => {
+  e.preventDefault();
+  acUnlock();
+  const t = e.touches[0];
+  _tStart = Date.now(); _tX = t.clientX; _tY = t.clientY; _tMoved = false;
+  gs.mDown = true;
+  SFX.tick();
+}, { passive: false });
+
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  const t = e.touches[0];
+  if (Math.hypot(t.clientX - _tX, t.clientY - _tY) > 9) _tMoved = true;
+}, { passive: false });
+
+canvas.addEventListener('touchend', e => {
+  e.preventDefault();
+  gs.mDown = false;
+  if (_tMoved) return;
+  const dur = Date.now() - _tStart;
+  // Long-press (>340ms) or flag mode = flag action
+  if (dur > 340 || gs.flagMode) onSecondary(_tX, _tY);
+  else                          onPrimary(_tX, _tY);
+}, { passive: false });
+
+// ── Keyboard events ────────────────────────────────────────────────────
+window.addEventListener('keydown', e => {
+  acUnlock();
+  if (e.code === 'Space' || e.code === 'Enter') {
+    if (gs.state === ST.TITLE)     { startGame(); }
+    else if (gs.state !== ST.PLAY) { goTitle();   }
+  }
+  if (e.code === 'Escape') goTitle();
+  if (e.code === 'KeyF')  { gs.flagMode = !gs.flagMode; updateFlagBtn(); }
+});
+
+// ── NUI flag toggle button ─────────────────────────────────────────────
+const nbFlag = document.getElementById('nb-flag');
+nbFlag.addEventListener('pointerdown', e => {
+  e.preventDefault();
+  nbFlag.setPointerCapture(e.pointerId);
+  gs.flagMode = !gs.flagMode;
+  updateFlagBtn();
+  SFX.sel();
+  nbFlag.classList.add('hit');
+}, { passive: false });
+nbFlag.addEventListener('pointerup',     e => { e.preventDefault(); nbFlag.classList.remove('hit'); }, { passive: false });
+nbFlag.addEventListener('pointercancel', ()  => nbFlag.classList.remove('hit'));
+
+function updateFlagBtn() {
+  nbFlag.classList.toggle('active', gs.flagMode);
+  nbFlag.setAttribute('aria-pressed', gs.flagMode ? 'true' : 'false');
+  document.getElementById('nb-flag-lbl').textContent = gs.flagMode ? 'FLAGGING' : 'FLAG';
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  DRAW LAYER
+// ═══════════════════════════════════════════════════════════════════════
+
+// ── Covered cell ──────────────────────────────────────────────────────
+function drawCoveredCell(x, y, S, hover) {
+  const pad = S > 16 ? 1 : 0;
+  ctx.fillStyle = hover ? C.hovCell : C.covCell;
+  ctx.fillRect(x + pad, y + pad, S - pad*2, S - pad*2);
+  ctx.strokeStyle = hover ? C.brdHi : C.brd;
+  ctx.lineWidth   = 1;
+  ctx.strokeRect(x + pad + 0.5, y + pad + 0.5, S - pad*2 - 1, S - pad*2 - 1);
+  // Subtle 3-D bevel (top + left edge lighter)
+  if (S > 18) {
+    ctx.fillStyle = 'rgba(0,200,255,0.07)';
+    ctx.fillRect(x + pad, y + pad, S - pad*2, 2);
+    ctx.fillRect(x + pad, y + pad, 2, S - pad*2);
+  }
+}
+
+// ── Mine symbol ───────────────────────────────────────────────────────
+function drawMine(cx, cy, r, color, blur) {
+  glow(color, blur);
+  ctx.fillStyle = color;
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = color;
+  ctx.lineWidth   = Math.max(1.5, r * 0.22);
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.moveTo(cx + Math.cos(a) * r * 0.82, cy + Math.sin(a) * r * 0.82);
+    ctx.lineTo(cx + Math.cos(a) * r * 1.74, cy + Math.sin(a) * r * 1.74);
+    ctx.stroke();
+  }
+  noGlow();
+  ctx.fillStyle = 'rgba(255,255,255,0.30)';
+  ctx.beginPath(); ctx.arc(cx - r*0.28, cy - r*0.28, r*0.26, 0, Math.PI*2); ctx.fill();
+}
+
+// ── Flag symbol ───────────────────────────────────────────────────────
+function drawFlag(cx, cy, r) {
+  glow(C.flag, 10);
+  ctx.strokeStyle = C.flag;
+  ctx.fillStyle   = C.flag;
+  ctx.lineWidth   = Math.max(1.5, r * 0.18);
+  // Pole
+  ctx.beginPath(); ctx.moveTo(cx, cy + r*1.22); ctx.lineTo(cx, cy - r*1.12); ctx.stroke();
+  // Triangle
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - r*1.12);
+  ctx.lineTo(cx + r*1.16, cy - r*0.44);
+  ctx.lineTo(cx, cy + r*0.08);
+  ctx.closePath(); ctx.fill();
+  // Base
+  ctx.lineWidth = Math.max(2, r * 0.22);
+  ctx.beginPath(); ctx.moveTo(cx - r*0.72, cy + r*1.22); ctx.lineTo(cx + r*0.72, cy + r*1.22); ctx.stroke();
+  noGlow();
+}
+
+// ── Wrong-flag (flagged non-mine revealed on game-over) ───────────────
+function drawWrongFlag(cx, cy, r) {
+  drawFlag(cx, cy, r * 0.72);
+  glow(C.wrongX, 8);
+  ctx.strokeStyle = C.wrongX;
+  ctx.lineWidth   = Math.max(2, r * 0.28);
+  const d = r * 0.9;
+  ctx.beginPath();
+  ctx.moveTo(cx-d, cy-d); ctx.lineTo(cx+d, cy+d);
+  ctx.moveTo(cx+d, cy-d); ctx.lineTo(cx-d, cy+d);
+  ctx.stroke(); noGlow();
+}
+
+// ── Face button ───────────────────────────────────────────────────────
+function drawFace(cx, cy, r, state) {
+  // Outer glow ring
+  glow(C.ui, 12);
+  ctx.strokeStyle = C.ui; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.stroke();
+  noGlow();
+  // Interior fill
+  ctx.fillStyle = '#031628';
+  ctx.beginPath(); ctx.arc(cx, cy, r - 1.5, 0, Math.PI*2); ctx.fill();
+
+  const ey = cy - r*0.12, ex = r*0.28, er = r*0.115;
+
+  // Eyes
+  if (state === ST.OVER) {
+    // ✕ eyes
+    glow(C.red, 8); ctx.strokeStyle = C.red; ctx.lineWidth = 1.5;
+    [-ex, ex].forEach(ox => {
+      ctx.beginPath();
+      ctx.moveTo(cx+ox-er, ey-er); ctx.lineTo(cx+ox+er, ey+er);
+      ctx.moveTo(cx+ox+er, ey-er); ctx.lineTo(cx+ox-er, ey+er);
+      ctx.stroke();
+    });
+  } else if (state === 'click') {
+    // O eyes (surprised)
+    glow(C.ui, 6); ctx.strokeStyle = C.ui; ctx.lineWidth = 1.5;
+    [-ex, ex].forEach(ox => {
+      ctx.beginPath(); ctx.arc(cx+ox, ey, er*1.3, 0, Math.PI*2); ctx.stroke();
+    });
+  } else {
+    // Dot eyes
+    const col = state === ST.WIN ? C.grn : C.ui;
+    glow(col, 6); ctx.fillStyle = col;
+    [-ex, ex].forEach(ox => {
+      ctx.beginPath(); ctx.arc(cx+ox, ey, er, 0, Math.PI*2); ctx.fill();
+    });
+  }
+  noGlow();
+
+  // Mouth
+  const my = cy + r*0.30, mr = r*0.33;
+  if (state === ST.OVER) {
+    glow(C.red, 6); ctx.strokeStyle = C.red; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(cx, my + mr*0.55, mr, Math.PI*0.1, Math.PI*0.9, false); ctx.stroke();
+  } else if (state === ST.WIN) {
+    glow(C.grn, 8); ctx.strokeStyle = C.grn; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(cx, my - mr*0.22, mr, 0.05, Math.PI-0.05, false); ctx.stroke();
+  } else if (state === 'click') {
+    glow(C.ui, 5); ctx.strokeStyle = C.ui; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(cx, my + r*0.08, r*0.15, 0, Math.PI*2); ctx.stroke();
+  } else {
+    glow(C.ui, 5); ctx.strokeStyle = C.ui; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(cx, my - mr*0.18, mr*0.8, 0.1, Math.PI-0.1, false); ctx.stroke();
+  }
+  noGlow();
+}
+
+// ── Segmented LCD display (mines / timer) ─────────────────────────────
+function drawSegDisp(val, x, y, h, col) {
+  const s  = String(Math.max(0, Math.min(999, Math.abs(val)))).padStart(3, '0');
+  const bw = h * 2.12;
+  ctx.save();
+  ctx.fillStyle   = '#000d1c';
+  ctx.fillRect(x - 4, y - h/2 - 4, bw + 8, h + 8);
+  ctx.strokeStyle = col + '44'; ctx.lineWidth = 1;
+  ctx.strokeRect(x - 3.5, y - h/2 - 3.5, bw + 7, h + 7);
+  glow(col, 14); ctx.fillStyle = col;
+  ctx.font          = `bold ${h}px "Courier New", monospace`;
+  ctx.textAlign     = 'left';
+  ctx.textBaseline  = 'middle';
+  ctx.fillText(s, x, y);
+  noGlow(); ctx.restore();
+}
+
+// ── HUD ────────────────────────────────────────────────────────────────
+function drawHUD() {
+  ctx.fillStyle = 'rgba(2,11,24,0.94)';
+  ctx.fillRect(0, 0, W, HUD_H);
+  // Bottom rule
+  ctx.strokeStyle = 'rgba(0,190,255,0.16)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, HUD_H-0.5); ctx.lineTo(W, HUD_H-0.5); ctx.stroke();
+
+  const cy = HUD_H / 2, dh = 24;
+
+  // Mines remaining (left)
+  const mLeft = (gs.state === ST.TITLE)
+    ? diff.mines
+    : Math.max(0, gs.totalMines - gs.flagCount);
+  drawSegDisp(mLeft, 18, cy, dh, C.red);
+
+  // Timer (right)
+  const elapsed = (gs.state === ST.PLAY && gs.startTime)
+    ? Math.min(999, Math.floor((Date.now() - gs.startTime) / 1000))
+    : gs.elapsed;
+  drawSegDisp(elapsed, W - 78, cy, dh, C.yel);
+
+  // Face button (center)
+  const fr     = Math.floor(HUD_H * 0.36);
+  const fState = gs.state === ST.OVER ? ST.OVER
+               : gs.state === ST.WIN  ? ST.WIN
+               : (gs.mDown && gs.state === ST.PLAY) ? 'click'
+               : 'normal';
+  drawFace(W/2, cy, fr, fState);
+  gs.faceBtn = { cx: W/2, cy, r: fr };
+
+  // Micro label (top of HUD)
+  ctx.save();
+  ctx.font          = '8px "Courier New", monospace';
+  ctx.fillStyle     = C.uiD;
+  ctx.textAlign     = 'center';
+  ctx.textBaseline  = 'top';
+  ctx.fillText('MINESWEEPER  ·  OBLITERATUS', W/2, 4);
+  ctx.restore();
+}
+
+// ── Individual cell ────────────────────────────────────────────────────
+function drawCell(r, c) {
+  const cell = gs.board[r][c];
+  const x    = boardX + c * cellSz;
+  const y    = boardY + r * cellSz;
+  const S    = cellSz;
+  const cx   = x + S/2, cy = y + S/2;
+  const over  = gs.state === ST.OVER || gs.state === ST.WIN;
+  const hover = gs.hover.r === r && gs.hover.c === c && gs.state === ST.PLAY;
+
+  ctx.save();
+
+  if (!cell.revealed && cell.flagged) {
+    // Flagged (covered) cell
+    drawCoveredCell(x, y, S, false);
+    const fr = S * 0.27;
+    if (over && !cell.mine) drawWrongFlag(cx, cy, fr);  // incorrectly flagged
+    else                    drawFlag(cx, cy, fr);
+
+  } else if (!cell.revealed) {
+    // Plain covered cell
+    drawCoveredCell(x, y, S, hover);
+
+  } else {
+    // Revealed cell
+    const isXpl = gs.xplR === r && gs.xplC === c;
+    ctx.fillStyle = isXpl ? C.explBg : C.revCell;
+    ctx.fillRect(x + 1, y + 1, S - 2, S - 2);
+
+    if (cell.mine) {
+      drawMine(cx, cy, S * (isXpl ? 0.37 : 0.25), C.mine, isXpl ? 26 : 10);
+    } else if (cell.count > 0) {
+      const fs = Math.max(9, Math.floor(S * 0.54));
+      ctx.font          = `bold ${fs}px "Courier New", monospace`;
+      ctx.textAlign     = 'center';
+      ctx.textBaseline  = 'middle';
+      glow(C.nums[cell.count], 7); ctx.fillStyle = C.nums[cell.count];
+      ctx.fillText(cell.count, cx, cy); noGlow();
+    }
+  }
+
+  ctx.restore();
+}
+
+// ── Full board ─────────────────────────────────────────────────────────
+function drawBoard() {
+  if (!gs.board.length) return;
+  for (let r = 0; r < gs.rows; r++)
+    for (let c = 0; c < gs.cols; c++) drawCell(r, c);
+  noGlow();
+  ctx.strokeStyle = 'rgba(0,190,255,0.15)'; ctx.lineWidth = 1;
+  ctx.strokeRect(boardX - 0.5, boardY - 0.5, diff.cols*cellSz+1, diff.rows*cellSz+1);
+}
+
+// ── Status overlay (game-over / win) ──────────────────────────────────
+function drawStatus() {
+  const won = gs.state === ST.WIN;
+  const col = won ? C.grn : C.red;
+  const msg = won ? 'CLEARED' : 'DETONATED';
+  const sy  = Math.max(HUD_H + 22, boardY - 28);
+
+  ctx.save();
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = `bold 26px "Courier New", monospace`;
+  glow(col, 24); ctx.fillStyle = col; ctx.fillText(msg, W/2, sy); noGlow();
+  ctx.font      = '10px "Courier New", monospace';
+  ctx.fillStyle = C.uiD;
+  ctx.fillText(`TIME: ${gs.elapsed}s  ·  CLICK FACE TO RETURN`, W/2, sy + 20);
+  ctx.restore();
+}
+
+// ── Title / difficulty screen ──────────────────────────────────────────
+function drawTitle() {
+  const t    = Date.now() / 1000;
+  const avH  = H - HUD_H;
+
+  // ── Big title
+  const ts     = Math.min(60, Math.max(26, Math.floor(W / 9)));
+  const titleY = HUD_H + avH * 0.16;
+
+  ctx.save();
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.globalAlpha = 0.96 + Math.sin(t * 0.65) * 0.04;
+  ctx.font = `900 ${ts}px "Courier New", monospace`;
+  glow(C.ui, 30);     ctx.fillStyle = C.ui;     ctx.fillText('MINESWEEPER', W/2, titleY);
+  glow('#ff00ff', 62); ctx.fillStyle = C.ui;    ctx.fillText('MINESWEEPER', W/2, titleY);
+  ctx.globalAlpha = 1; noGlow();
+  ctx.font = `11px "Courier New", monospace`; ctx.fillStyle = C.uiD;
+  ctx.fillText('· OBLITERATUS ·', W/2, titleY + ts * 0.66);
+  ctx.restore();
+
+  // ── Difficulty buttons
+  const btnW  = Math.min(252, W * 0.74);
+  const btnH  = Math.min(44, Math.max(32, Math.floor(avH * 0.115)));
+  const btnGp = Math.min(10, Math.floor(avH * 0.022));
+  const keys  = Object.keys(DIFFS);
+  const totBH = keys.length * (btnH + btnGp);
+  const startY = HUD_H + avH * 0.38;
+
+  gs.diffBtns = {};
+  keys.forEach((key, i) => {
+    const d   = DIFFS[key];
+    const sel = curDiff === key;
+    const bx  = W/2 - btnW/2;
+    const by  = startY + i * (btnH + btnGp);
+    gs.diffBtns[key] = { x: bx, y: by, w: btnW, h: btnH };
+
+    ctx.save();
+    ctx.fillStyle = sel ? 'rgba(0,180,255,0.13)' : 'rgba(2,14,32,0.72)';
+    ctx.fillRect(bx, by, btnW, btnH);
+    if (sel) glow(C.ui, 14);
+    ctx.strokeStyle = sel ? 'rgba(0,255,255,0.9)' : 'rgba(0,180,255,0.28)';
+    ctx.lineWidth   = sel ? 2 : 1;
+    ctx.strokeRect(bx+0.5, by+0.5, btnW-1, btnH-1); noGlow();
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font      = `bold ${sel ? 14 : 12}px "Courier New", monospace`;
+    ctx.fillStyle = sel ? '#00ffff' : 'rgba(0,200,255,0.62)';
+    ctx.fillText(d.label, W/2, by + btnH/2 - 7);
+    ctx.font      = '9px "Courier New", monospace';
+    ctx.fillStyle = sel ? 'rgba(0,255,255,0.5)' : 'rgba(0,180,255,0.30)';
+    ctx.fillText(`${d.cols}×${d.rows}  ·  ${d.mines} MINES`, W/2, by + btnH/2 + 8);
+    ctx.restore();
+  });
+
+  // ── BEGIN button
+  const sbW = Math.min(202, W * 0.56);
+  const sbH = Math.min(50, Math.max(36, Math.floor(avH * 0.11)));
+  const sbX = W/2 - sbW/2;
+  const sbY = startY + totBH + 14;
+  gs.startBtn = { x: sbX, y: sbY, w: sbW, h: sbH };
+
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,180,255,0.08)'; ctx.fillRect(sbX, sbY, sbW, sbH);
+  glow('#00ffff', 14 + Math.sin(t * 3.2) * 6);
+  ctx.strokeStyle = '#00ffff'; ctx.lineWidth = 2;
+  ctx.strokeRect(sbX+0.5, sbY+0.5, sbW-1, sbH-1);
+  ctx.font = `bold 19px "Courier New", monospace`; ctx.fillStyle = '#00ffff';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('BEGIN', W/2, sbY + sbH/2);
+  noGlow(); ctx.restore();
+
+  // ── Controls hint (bottom)
+  const isMob = window.matchMedia('(pointer:coarse)').matches;
+  ctx.save();
+  ctx.font          = '9px "Courier New", monospace';
+  ctx.fillStyle     = 'rgba(0,160,255,0.28)';
+  ctx.textAlign     = 'center';
+  ctx.textBaseline  = 'bottom';
+  ctx.fillText(
+    isMob
+      ? 'TAP: REVEAL  ·  HOLD: FLAG  ·  ⚑ BUTTON: TOGGLE MODE'
+      : 'LEFT CLICK: REVEAL  ·  RIGHT CLICK: FLAG  ·  CLICK NUMBER: CHORD',
+    W/2, H - 10);
+  ctx.restore();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  MAIN LOOP
+// ═══════════════════════════════════════════════════════════════════════
+let _last = 0;
+
+function loop(ts) {
+  const dt = Math.min((ts - _last) / 1000, 0.05);
+  _last = ts;
+
+  // Update
+  grid.update(dt);
+  if (gs.shakeT > 0) gs.shakeT -= dt;
+  gs.sparks = gs.sparks.filter(s => { s.update(dt); return !s.dead; });
+
+  // ── Render ────────────────────────────────────────────────────
+  ctx.save();
+
+  // Screen shake
+  if (gs.shakeT > 0) {
+    const m = gs.shakeMag * (gs.shakeT / 0.52);
+    ctx.translate((Math.random()-0.5)*m, (Math.random()-0.5)*m);
+  }
+
+  // Background
+  ctx.fillStyle = C.bg;
+  ctx.fillRect(-20, -20, W+40, H+40);
+
+  // Spring-mesh grid
+  grid.draw();
+
+  // HUD (always)
+  drawHUD();
+
+  if (gs.state === ST.TITLE) {
+    drawTitle();
+  } else {
+    drawBoard();
+    for (const s of gs.sparks) s.draw();
+    if (gs.state === ST.OVER || gs.state === ST.WIN) drawStatus();
+  }
+
+  ctx.restore();
+  requestAnimationFrame(loop);
+}
+
+// ── Boot ───────────────────────────────────────────────────────────────
+resize();
+requestAnimationFrame(ts => { _last = ts; requestAnimationFrame(loop); });
+</script>
+</body>
+</html>
