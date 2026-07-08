@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>UNDERHALL — OBLITERATUS</title>
+
+<!-- ── Primary Meta ─────────────────────────────────────────────────── -->
+<meta name="description" content="FishTacoStand Arcade — Underhall Obliteratus. A 12-level descent. Turn-based glyphs, real-time glow. Permadeath, obviously." />
+
+<!-- ── Favicons ─────────────────────────────────────────────────────── -->
+<link rel="icon" type="image/png" href="fts-favicon.png">
+<link rel="shortcut icon" type="image/png" href="fts-favicon.png">
+<link rel="apple-touch-icon" href="fts-favicon.png">
+
+<!-- ── Open Graph ────────────────────────────────────────────────────── -->
+<meta property="og:title" content="Underhall · Obliteratus">
+<meta property="og:description" content="FishTacoStand Arcade — a 12-level descent. Turn-based glyphs, real-time glow.">
+<meta property="og:url" content="https://frymatic.us/FTSArcade/underhall.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="FishTacoStand Arcade">
+<meta property="og:image" content="https://frymatic.us/FTSArcade/FishTacoStand.png">
+<meta property="og:image:alt" content="FishTacoStand Arcade cabinet.">
+<meta property="og:image:type" content="image/png">
+
+<!-- ── Twitter / X Card ─────────────────────────────────────────────── -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Underhall · Obliteratus">
+<meta name="twitter:description" content="A 12-level descent. Turn-based glyphs, real-time glow.">
+<meta name="twitter:image" content="https://frymatic.us/FTSArcade/FishTacoStand.png">
+
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;background:#020b18;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+canvas{display:block;position:fixed;top:0;left:0;touch-action:none;cursor:crosshair}
+
+/* ── NUI (touch-only overlay) ───────────────────────────────── */
+#nui{display:none;position:fixed;bottom:0;left:0;right:0;z-index:50;
+  height:var(--nui-h,196px);pointer-events:none;
+  align-items:flex-end;justify-content:space-between;
+  padding:0 clamp(14px,5vw,34px) clamp(10px,2.5vh,20px);
+  background:linear-gradient(to top,rgba(2,11,24,.75) 0%,transparent 100%)}
+@media(pointer:coarse){#nui{display:flex}}
+
+#nui-dpad{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);
+  gap:clamp(4px,1.2vw,8px);pointer-events:none}
+#nui-act{display:flex;flex-direction:column;align-items:center;gap:clamp(6px,1.4vh,12px);pointer-events:none}
+
+.nb{
+  pointer-events:all;touch-action:none;-webkit-tap-highlight-color:transparent;
+  -webkit-appearance:none;appearance:none;outline:none;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  width:var(--nb-sz,clamp(46px,10vw,62px));height:var(--nb-sz,clamp(46px,10vw,62px));
+  border-radius:12px;background:rgba(2,14,32,.68);
+  border:1.5px solid rgba(0,190,255,.28);
+  box-shadow:0 0 12px rgba(0,170,255,.12),inset 0 0 10px rgba(0,160,255,.05);
+  color:rgba(0,210,255,.72);font-family:'Courier New',monospace;
+  font-weight:bold;font-size:clamp(16px,4vw,22px);
+  animation:nb-appear .35s ease both;
+  transition:background .06s,border-color .06s,box-shadow .06s,color .06s,transform .06s;
+}
+.nb-lbl{font-size:clamp(6px,1.3vw,9px);letter-spacing:.1em;margin-top:1px;opacity:.65}
+.nb:active,.nb.hit{
+  background:rgba(0,190,255,.14);border-color:rgba(0,220,255,.82);
+  color:#00ffff;transform:scale(.92);
+  box-shadow:0 0 20px rgba(0,200,255,.5),inset 0 0 12px rgba(0,200,255,.1);
+}
+.nb-act{--nb-sz:clamp(64px,15vw,86px);border-radius:50%;
+  border-color:rgba(255,215,0,.32);color:rgba(255,215,0,.82);
+  font-size:clamp(22px,6vw,30px);
+  box-shadow:0 0 14px rgba(255,190,0,.16),inset 0 0 12px rgba(255,180,0,.06);}
+.nb-act:active,.nb-act.hit{
+  background:rgba(255,200,0,.14);border-color:rgba(255,220,0,.92);color:#ffee00;
+  box-shadow:0 0 26px rgba(255,200,0,.62),inset 0 0 14px rgba(255,200,0,.1);}
+.nb-wait{--nb-sz:clamp(40px,9vw,54px);font-size:clamp(9px,2.2vw,12px);letter-spacing:.1em;}
+#g-c1{grid-column:2;grid-row:1}
+#g-c3{grid-column:2;grid-row:3}
+#g-c7{grid-column:1;grid-row:2}
+#g-c9{grid-column:3;grid-row:2}
+#g-c5{grid-column:2;grid-row:2}
+@media(pointer:coarse)and(orientation:landscape){
+  #nui{--nui-h:clamp(112px,24vh,148px)}
+  .nb{--nb-sz:clamp(38px,8vw,50px)}
+  .nb-act{--nb-sz:clamp(52px,11vw,68px)}
+}
+@keyframes nb-appear{from{opacity:0;transform:translateY(14px) scale(.88)}to{opacity:1;transform:none}}
+
+/* Message log */
+#log{position:fixed;left:8px;bottom:8px;z-index:40;pointer-events:none;
+  font-family:'Courier New',monospace;font-size:11px;line-height:1.5;
+  max-width:min(46vw,420px);display:none}
+body.playing #log{display:block}
+.log-line{color:rgba(0,220,255,.72);text-shadow:0 0 6px rgba(0,200,255,.4);opacity:0;
+  animation:log-in .25s ease forwards}
+.log-line.dmg{color:#ff5577;text-shadow:0 0 6px rgba(255,0,80,.5)}
+.log-line.good{color:#5cffa0;text-shadow:0 0 6px rgba(40,255,140,.5)}
+.log-line.warn{color:#ffee00;text-shadow:0 0 6px rgba(255,220,0,.5)}
+@keyframes log-in{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="log"></div>
+
+<div id="nui" role="group" aria-label="Game controls">
+  <div id="nui-dpad" role="group" aria-label="Movement">
+    <button class="nb" id="g-c7" data-dx="-1" data-dy="0"><span>◄</span></button>
+    <button class="nb" id="g-c1" data-dx="0" data-dy="-1"><span>▲</span></button>
+    <button class="nb" id="g-c5" data-dx="0" data-dy="0"><span>·</span></button>
+    <button class="nb" id="g-c9" data-dx="1" data-dy="0"><span>►</span></button>
+    <button class="nb" id="g-c3" data-dx="0" data-dy="1"><span>▼</span></button>
+  </div>
+  <div id="nui-act">
+    <button class="nb nb-act" id="nb-use" aria-label="Use / attack"><span>⚔</span></button>
+    <button class="nb nb-wait" id="nb-wait" aria-label="Wait"><span>WAIT</span></button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════
+//  U N D E R H A L L  ·  O B L I T E R A T U S
+//  A 12-level descent · turn-based glyphs, real-time glow · permadeath
+//  FishTacoStand Arcade — frymatic.us/FTSArcade/
+// ═══════════════════════════════════════════════════════════════════════
+
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d');
+const logEl  = document.getElementById('log');
+let W, H;
+function resize(){ W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; grid.init(); }
+window.addEventListener('resize', resize);
+
+// ── Palette ───────────────────────────────────────────────────────────
+const C = {
+  bg:'#020b18', ui:'#00e5ff', uiD:'rgba(0,229,255,0.38)',
+  red:'#ff0055', yel:'#ffee00', grn:'#22ff77', mag:'#ff44ff',
+  wall:'#0b3454', floor:'#02233e', stairs:'#ffee00',
+  player:'#00ffff', gold:'#ffcc33',
+};
+const glow=(c,b)=>{ctx.shadowColor=c;ctx.shadowBlur=b;};
+const noGlow=()=>{ctx.shadowBlur=0;};
+
+// ── Audio (zero-asset primitives) ───────────────────────────────────────
+let _ac=null;
+const AC=()=>_ac||(_ac=new (window.AudioContext||window.webkitAudioContext)());
+function tone(freq,type,dur,vol=0.16,startF=null){
+  try{
+    const ac=AC(),o=ac.createOscillator(),g=ac.createGain();
+    o.connect(g);g.connect(ac.destination);o.type=type;
+    o.frequency.setValueAtTime(startF||freq,ac.currentTime);
+    if(startF)o.frequency.exponentialRampToValueAtTime(freq,ac.currentTime+dur);
+    g.gain.setValueAtTime(vol,ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001,ac.currentTime+dur);
+    o.start();o.stop(ac.currentTime+dur);
+  }catch(e){}
+}
+function noise(dur,bandFreq=150,vol=0.2){
+  try{
+    const ac=AC();
+    const buf=ac.createBuffer(1,Math.ceil(ac.sampleRate*dur),ac.sampleRate);
+    const d=buf.getChannelData(0);
+    for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+    const src=ac.createBufferSource();src.buffer=buf;
+    const flt=ac.createBiquadFilter();flt.type='bandpass';flt.frequency.value=bandFreq;flt.Q.value=0.7;
+    const g=ac.createGain();
+    g.gain.setValueAtTime(vol,ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001,ac.currentTime+dur);
+    src.connect(flt);flt.connect(g);g.connect(ac.destination);
+    src.start();src.stop(ac.currentTime+dur);
+  }catch(e){}
+}
+const SFX = {
+  step:    ()=>tone(180,'square',0.03,0.03),
+  bump:    ()=>tone(90,'square',0.05,0.06),
+  hit:     ()=>{noise(0.08,900,0.1);tone(320,'square',0.05,0.08);},
+  crit:    ()=>{noise(0.12,700,0.16);tone(180,'sawtooth',0.12,0.14,420);},
+  kill:    ()=>{tone(140,'sawtooth',0.22,0.16,60);noise(0.18,300,0.14);},
+  playerHurt:()=>{noise(0.1,220,0.2);tone(90,'sawtooth',0.15,0.15);},
+  pickup:  ()=>tone(700,'sine',0.08,0.09,1100),
+  gold:    ()=>{tone(1200,'sine',0.05,0.07);tone(1500,'sine',0.05,0.05);},
+  quaff:   ()=>tone(500,'sine',0.14,0.1,300),
+  equip:   ()=>{tone(400,'square',0.06,0.08);tone(600,'square',0.06,0.06);},
+  descend: ()=>[220,330,440,550].forEach((f,i)=>setTimeout(()=>tone(f,'sine',0.18,0.12),i*70)),
+  door:    ()=>tone(140,'square',0.1,0.09),
+  levelFeel:(depth)=>tone(90-depth*3,'sine',0.5,0.05),
+  death:   ()=>{noise(0.6,80,0.3);tone(60,'sawtooth',0.7,0.2,140);},
+  win:     ()=>[523,659,784,1047,1568].forEach((f,i)=>setTimeout(()=>tone(f,'sine',0.3,0.18),i*108)),
+  bossRoar:()=>{noise(0.4,60,0.28);tone(48,'sawtooth',0.6,0.22,90);},
+};
+let _acReady=false;
+function acUnlock(){ if(_acReady) return; try{AC().resume();_acReady=true;}catch(e){} }
+
+// ── Spring-mesh grid (shared arcade DNA) ────────────────────────────────
+const grid = {
+  cells:44, nodes:[], cw:0, ch:0, cols:0, rows:0,
+  init(){
+    this.cw=W/this.cells; this.ch=this.cw;
+    this.cols=Math.ceil(W/this.cw)+1; this.rows=Math.ceil(H/this.ch)+1;
+    this.nodes=[];
+    for(let r=0;r<this.rows;r++){ this.nodes[r]=[]; for(let c=0;c<this.cols;c++) this.nodes[r][c]={dx:0,dy:0,vx:0,vy:0}; }
+  },
+  ripple(wx,wy,mag,radius){
+    const cr=wx/this.cw, rr=wy/this.ch;
+    const c0=Math.max(0,Math.floor(cr-radius/this.cw)-1), c1=Math.min(this.cols-1,Math.ceil(cr+radius/this.cw)+1);
+    const r0=Math.max(0,Math.floor(rr-radius/this.ch)-1), r1=Math.min(this.rows-1,Math.ceil(rr+radius/this.ch)+1);
+    for(let r=r0;r<=r1;r++) for(let c=c0;c<=c1;c++){
+      const nx=c*this.cw, ny=r*this.ch, dx=nx-wx, dy=ny-wy, d=Math.hypot(dx,dy);
+      if(d<radius&&d>0){ const f=mag*(1-d/radius); this.nodes[r][c].vx+=(dx/d)*f; this.nodes[r][c].vy+=(dy/d)*f; }
+    }
+  },
+  update(dt){
+    const spring=8, damp=0.88;
+    for(let r=0;r<this.rows;r++) for(let c=0;c<this.cols;c++){
+      const n=this.nodes[r][c];
+      n.vx+=-n.dx*spring*dt; n.vy+=-n.dy*spring*dt;
+      n.vx*=damp; n.vy*=damp; n.dx+=n.vx*dt; n.dy+=n.vy*dt;
+    }
+  },
+  draw(){
+    ctx.save(); ctx.lineWidth=0.8;
+    for(let r=0;r<this.rows;r++) for(let c=0;c<this.cols-1;c++){
+      const n0=this.nodes[r][c], n1=this.nodes[r][c+1];
+      const d=Math.hypot(n0.dx,n0.dy)+Math.hypot(n1.dx,n1.dy);
+      ctx.strokeStyle=`rgba(0,190,255,${Math.min(0.2,0.05+d*0.015)})`;
+      ctx.beginPath(); ctx.moveTo(c*this.cw+n0.dx,r*this.ch+n0.dy); ctx.lineTo((c+1)*this.cw+n1.dx,r*this.ch+n1.dy); ctx.stroke();
+    }
+    for(let c=0;c<this.cols;c++) for(let r=0;r<this.rows-1;r++){
+      const n0=this.nodes[r][c], n1=this.nodes[r+1][c];
+      const d=Math.hypot(n0.dx,n0.dy)+Math.hypot(n1.dx,n1.dy);
+      ctx.strokeStyle=`rgba(0,190,255,${Math.min(0.2,0.05+d*0.015)})`;
+      ctx.beginPath(); ctx.moveTo(c*this.cw+n0.dx,r*this.ch+n0.dy); ctx.lineTo(c*this.cw+n1.dx,(r+1)*this.ch+n1.dy); ctx.stroke();
+    }
+    ctx.restore();
+  },
+};
+
+// ── Spark particles ──────────────────────────────────────────────────────
+class Spark{
+  constructor(x,y,vx,vy,col,life,r){ Object.assign(this,{x,y,vx,vy,col,life,maxLife:life,r,dead:false}); }
+  update(dt){ this.x+=this.vx*dt; this.y+=this.vy*dt; this.vy+=200*dt; this.vx*=0.98; this.life-=dt; if(this.life<=0) this.dead=true; }
+  draw(){
+    const a=Math.max(0,this.life/this.maxLife);
+    ctx.save(); ctx.globalAlpha=a*a; glow(this.col,7); ctx.fillStyle=this.col;
+    ctx.beginPath(); ctx.arc(this.x,this.y,this.r*a+0.4,0,Math.PI*2); ctx.fill(); ctx.restore();
+  }
+}
+function spawnBurst(x,y,n,cols){
+  for(let i=0;i<n;i++){
+    const a=Math.random()*Math.PI*2, s=60+Math.random()*220, c=cols[(Math.random()*cols.length)|0];
+    gs.sparks.push(new Spark(x,y,Math.cos(a)*s,Math.sin(a)*s-40,c,0.3+Math.random()*0.7,1.6+Math.random()*2.6));
+  }
+}
+
+// ── Seeded RNG ────────────────────────────────────────────────────────
+function makeRng(seed){
+  let s = seed>>>0;
+  return function(){ s ^= s<<13; s^=s>>>17; s^=s<<5; s>>>=0; return (s>>>0)/4294967296; };
+}
+function ri(rng,a,b){ return a + Math.floor(rng()*(b-a+1)); }
+function choice(rng,arr){ return arr[ri(rng,0,arr.length-1)]; }
+
+// ═══════════════════════════════════════════════════════════════════════
+// PACKET A — DUNGEON GENERATOR (pure, no drawing)
+// ═══════════════════════════════════════════════════════════════════════
+const TILE = { WALL:0, FLOOR:1, STAIRS:2, DOOR:3 };
+
+function generateLevel(depth, rng){
+  const w = 46 + Math.min(depth,6)*2, h = 30 + Math.min(depth,6);
+  const cells = new Uint8Array(w*h).fill(TILE.WALL);
+  const idx=(x,y)=>y*w+x;
+  const rooms=[];
+  const roomCount = ri(rng, 6, 9);
+  let tries=0;
+  while(rooms.length<roomCount && tries<200){
+    tries++;
+    const rw=ri(rng,4,9), rh=ri(rng,3,7);
+    const rx=ri(rng,1,w-rw-2), ry=ri(rng,1,h-rh-2);
+    const room={x:rx,y:ry,w:rw,h:rh};
+    let overlap=false;
+    for(const r of rooms){ if(rx<r.x+r.w+1 && rx+rw+1>r.x && ry<r.y+r.h+1 && ry+rh+1>r.y){ overlap=true; break; } }
+    if(overlap) continue;
+    rooms.push(room);
+    for(let y=ry;y<ry+rh;y++) for(let x=rx;x<rx+rw;x++) cells[idx(x,y)]=TILE.FLOOR;
+  }
+  if(rooms.length===0){ rooms.push({x:2,y:2,w:8,h:6}); for(let y=2;y<8;y++) for(let x=2;x<10;x++) cells[idx(x,y)]=TILE.FLOOR; }
+  // connect rooms sequentially with L-shaped tunnels
+  function carveH(x0,x1,y){ for(let x=Math.min(x0,x1);x<=Math.max(x0,x1);x++) cells[idx(x,y)]=TILE.FLOOR; }
+  function carveV(y0,y1,x){ for(let y=Math.min(y0,y1);y<=Math.max(y0,y1);y++) cells[idx(x,y)]=TILE.FLOOR; }
+  const centers = rooms.map(r=>({x:(r.x+((r.w/2)|0)), y:(r.y+((r.h/2)|0))}));
+  for(let i=1;i<centers.length;i++){
+    const a=centers[i-1], b=centers[i];
+    if(rng()<0.5){ carveH(a.x,b.x,a.y); carveV(a.y,b.y,b.x); }
+    else{ carveV(a.y,b.y,a.x); carveH(a.x,b.x,b.y); }
+    if(rng()<0.3){ const dx=Math.random()<0.5?a.x:b.x; cells[idx(dx, rng()<0.5?a.y:b.y)]=TILE.DOOR; }
+  }
+  const spawnRoom = rooms[0];
+  const spawn = {x:spawnRoom.x+((spawnRoom.w/2)|0), y:spawnRoom.y+((spawnRoom.h/2)|0)};
+  // stairs = farthest room center from spawn
+  let far=centers[0], farD=-1;
+  for(const c of centers){ const d=Math.hypot(c.x-spawn.x,c.y-spawn.y); if(d>farD){farD=d;far=c;} }
+  cells[idx(far.x,far.y)] = TILE.STAIRS;
+
+  // connectivity check via flood fill; if stairs unreachable, force reconnect via straight tunnel
+  function reachable(){
+    const seen = new Uint8Array(w*h);
+    const q=[idx(spawn.x,spawn.y)]; seen[q[0]]=1;
+    while(q.length){
+      const p=q.pop(); const x=p%w, y=(p/w)|0;
+      const neighbors=[[x+1,y],[x-1,y],[x,y+1],[x,y-1]];
+      for(const [nx,ny] of neighbors){
+        if(nx<0||ny<0||nx>=w||ny>=h) continue;
+        const ni=idx(nx,ny);
+        if(seen[ni]) continue;
+        if(cells[ni]===TILE.WALL) continue;
+        seen[ni]=1; q.push(ni);
+      }
+    }
+    return seen[idx(far.x,far.y)]===1;
+  }
+  if(!reachable()){ carveH(spawn.x,far.x,spawn.y); carveV(spawn.y,far.y,far.x); }
+
+  // spawn points: room centers except first
+  const spawnPoints = centers.slice(1).map(c=>({x:c.x,y:c.y}));
+
+  return { w, h, cells, rooms, spawnPoints, depth, spawn, idx };
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// PACKET B — BESTIARY + COMBAT AI
+// ═══════════════════════════════════════════════════════════════════════
+const MONSTERS = {
+  rat:      { glyph:'r', color:'#a0824a', tier:1, hp:4,  atk:2, def:0, spd:1.1, ai:'melee', name:'giant rat', xp:2 },
+  orc:      { glyph:'o', color:'#7fdc6a', tier:1, hp:8,  atk:3, def:1, spd:1.0, ai:'melee', name:'orc scout', xp:4 },
+  bat:      { glyph:'b', color:'#c98aff', tier:1, hp:5,  atk:2, def:0, spd:1.6, ai:'erratic', name:'cave bat', xp:3 },
+  spider:   { glyph:'s', color:'#ff5577', tier:1, hp:6,  atk:3, def:1, spd:1.2, ai:'melee', name:'cave spider', xp:4 },
+  archer:   { glyph:'a', color:'#66ffcc', tier:2, hp:9,  atk:3, def:1, spd:1.0, ai:'ranged', name:'goblin archer', xp:6 },
+  warg:     { glyph:'w', color:'#dcae4a', tier:2, hp:12, atk:4, def:1, spd:1.3, ai:'melee', name:'warg', xp:7 },
+  wraith:   { glyph:'W', color:'#8888ff', tier:2, hp:14, atk:5, def:2, spd:1.0, ai:'melee', name:'barrow wraith', xp:9 },
+  troll:    { glyph:'T', color:'#55dd88', tier:3, hp:26, atk:7, def:3, spd:0.8, ai:'melee', name:'cave troll', xp:14 },
+  wight:    { glyph:'n', color:'#aa77ff', tier:3, hp:20, atk:6, def:2, spd:1.0, ai:'melee', name:'barrow wight', xp:12 },
+  drake:    { glyph:'d', color:'#ff8844', tier:3, hp:24, atk:7, def:2, spd:1.0, ai:'ranged', name:'fire drake', xp:15 },
+  balrog:   { glyph:'B', color:'#ff2200', tier:4, hp:80, atk:11, def:4, spd:1.0, ai:'boss', name:'the Terror of the Deep', xp:100 },
+};
+const TIER_TABLE = { 1:['rat','orc','bat','spider'], 2:['archer','warg','wraith'], 3:['troll','wight','drake'] };
+
+function pickMonsterForDepth(depth, rng){
+  let tier = 1;
+  if(depth>=8) tier = choice(rng,[2,3,3]);
+  else if(depth>=5) tier = choice(rng,[1,2,2,3]);
+  else if(depth>=3) tier = choice(rng,[1,1,2]);
+  return choice(rng, TIER_TABLE[tier]);
+}
+
+function spawnMonster(key, x, y){
+  const t = MONSTERS[key];
+  return { key, x, y, glyph:t.glyph, color:t.color, hp:t.hp, maxHp:t.hp, atk:t.atk, def:t.def,
+            spd:t.spd, ai:t.ai, name:t.name, xp:t.xp, cool:0, alive:true, cd:0 };
+}
+
+function resolveAttack(atk, atkPow, defPow, rng){
+  const crit = rng() < 0.12;
+  let dmg = Math.max(1, ri(rng, 1, atkPow) - Math.floor(defPow*0.6));
+  if(crit) dmg = Math.ceil(dmg*1.8);
+  return { dmg, crit };
+}
+
+function monsterAct(mon, level, player, rng, emit){
+  if(!mon.alive) return;
+  const dx = player.x - mon.x, dy = player.y - mon.y;
+  const dist = Math.hypot(dx,dy);
+  const canSee = fovValue(mon.x,mon.y) // proxy: use player's visMap symmetric enough for arcade purposes
+  ;
+  if(mon.ai==='boss'){
+    if(mon.cd>0){ mon.cd--; }
+    if(dist<=1.5){ doMonsterAttack(mon, player, rng, emit); }
+    else if(dist<8){ stepToward(mon, level, player); }
+    return;
+  }
+  if(mon.ai==='ranged'){
+    if(dist<6 && dist>1.6 && lineOfSight(level, mon.x, mon.y, player.x, player.y)){
+      emit('ranged', mon);
+      const {dmg} = resolveAttack(mon, mon.atk, player.def, rng);
+      player.hp -= dmg;
+      emit('playerHit', {dmg, mon});
+      return;
+    }
+  }
+  if(mon.ai==='erratic' && rng()<0.4){
+    const dirs=[[1,0],[-1,0],[0,1],[0,-1]];
+    const [dx2,dy2] = choice(rng,dirs);
+    tryMove(mon, level, dx2, dy2);
+    return;
+  }
+  if(dist<=1.5){ doMonsterAttack(mon, player, rng, emit); return; }
+  if(dist<7){ stepToward(mon, level, player); }
+}
+function doMonsterAttack(mon, player, rng, emit){
+  const {dmg,crit} = resolveAttack(mon, mon.atk, player.def, rng);
+  player.hp -= dmg;
+  emit('playerHit', {dmg, crit, mon});
+}
+function stepToward(mon, level, player){
+  const dx = Math.sign(player.x-mon.x), dy = Math.sign(player.y-mon.y);
+  // greedy: try primary axis, then secondary
+  const opts = Math.abs(player.x-mon.x) > Math.abs(player.y-mon.y) ? [[dx,0],[0,dy]] : [[0,dy],[dx,0]];
+  for(const [ox,oy] of opts){ if(ox===0&&oy===0) continue; if(tryMove(mon, level, ox, oy)) return; }
+}
+function tryMove(ent, level, dx, dy){
+  const nx=ent.x+dx, ny=ent.y+dy;
+  if(nx<0||ny<0||nx>=level.w||ny>=level.h) return false;
+  const t = level.cells[level.idx(nx,ny)];
+  if(t===TILE.WALL) return false;
+  if(occupiedBy(nx,ny)) return false;
+  ent.x=nx; ent.y=ny; return true;
+}
+function occupiedBy(x,y){
+  if(gs.player && gs.player.x===x && gs.player.y===y) return gs.player;
+  for(const m of gs.monsters) if(m.alive && m.x===x && m.y===y) return m;
+  return null;
+}
+function lineOfSight(level,x0,y0,x1,y1){
+  // bresenham
+  let dx=Math.abs(x1-x0), dy=-Math.abs(y1-y0), sx=x0<x1?1:-1, sy=y0<y1?1:-1, err=dx+dy, x=x0,y=y0;
+  while(true){
+    if(x===x1&&y===y1) return true;
+    if(!(x===x0&&y===y0) && level.cells[level.idx(x,y)]===TILE.WALL) return false;
+    const e2=2*err;
+    if(e2>=dy){ err+=dy; x+=sx; }
+    if(e2<=dx){ err+=dx; y+=sy; }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// PACKET D — ITEMS
+// ═══════════════════════════════════════════════════════════════════════
+const POTION_COLORS = ['crimson','azure','emerald','violet','amber','ashen','opal','copper'];
+const SCROLL_RUNES  = ['ithil','ang','ost','tûr','mor','anor'];
+
+function makeItemTables(rng){
+  const colors = [...POTION_COLORS]; for(let i=colors.length-1;i>0;i--){ const j=ri(rng,0,i); [colors[i],colors[j]]=[colors[j],colors[i]]; }
+  const runes  = [...SCROLL_RUNES]; for(let i=runes.length-1;i>0;i--){ const j=ri(rng,0,i); [runes[i],runes[j]]=[runes[j],runes[i]]; }
+  return {
+    potionSkin: { heal:colors[0], strength:colors[1], poison:colors[2], mystery:colors[3] },
+    scrollSkin: { identify:runes[0], teleport:runes[1], curse:runes[2] },
+  };
+}
+
+const ITEMS = {
+  potion_heal:     { glyph:'!', kind:'potion', sub:'heal', color:C.grn },
+  potion_strength: { glyph:'!', kind:'potion', sub:'strength', color:C.mag },
+  potion_poison:   { glyph:'!', kind:'potion', sub:'poison', color:C.red },
+  scroll_id:       { glyph:'?', kind:'scroll', sub:'identify', color:C.ui },
+  scroll_tp:       { glyph:'?', kind:'scroll', sub:'teleport', color:C.mag },
+  weapon:          { glyph:'/', kind:'weapon', color:'#ffcc88' },
+  armor:           { glyph:'[', kind:'armor', color:'#88ccff' },
+  torch:           { glyph:'~', kind:'torch', color:C.yel },
+  gold:            { glyph:'$', kind:'gold', color:C.gold },
+};
+
+function rollItem(rng, depth){
+  const roll = rng();
+  if(roll<0.30) return {key:'gold', amt: ri(rng, 5, 10+depth*4)};
+  if(roll<0.55) return {key: choice(rng,['potion_heal','potion_strength','potion_poison']), skinId: rng()};
+  if(roll<0.68) return {key: choice(rng,['scroll_id','scroll_tp']), skinId: rng()};
+  if(roll<0.83) return {key:'weapon', bonus: ri(rng,1,2+Math.floor(depth/3))};
+  if(roll<0.94) return {key:'armor', bonus: ri(rng,1,2+Math.floor(depth/3))};
+  return {key:'torch'};
+}
+
+function applyItem(item, player, emit){
+  const def = ITEMS[item.key];
+  if(def.kind==='gold'){ player.gold += item.amt; emit('gold', item.amt); SFX.gold(); return; }
+  if(def.kind==='weapon'){
+    if(item.bonus > player.weaponBonus){ player.weaponBonus = item.bonus; emit('equip', {slot:'weapon', bonus:item.bonus}); SFX.equip(); }
+    else emit('msg', {text:'Found a lesser blade. Left it.', cls:''});
+    return;
+  }
+  if(def.kind==='armor'){
+    if(item.bonus > player.armorBonus){ player.armorBonus = item.bonus; emit('equip', {slot:'armor', bonus:item.bonus}); SFX.equip(); }
+    else emit('msg', {text:'Found lesser plate. Left it.', cls:''});
+    return;
+  }
+  if(def.kind==='torch'){ player.torchFuel = Math.min(player.torchFuel+120, 260); emit('msg',{text:'Torch refueled.', cls:'good'}); SFX.pickup(); return; }
+  if(def.kind==='potion'){
+    player.inventory.push(item);
+    emit('msg', {text:`Picked up a ${player.potionSkin[item.key.split('_')[1]]||''} potion.`.replace('  ',' '), cls:''});
+    SFX.pickup();
+    return;
+  }
+  if(def.kind==='scroll'){
+    player.inventory.push(item);
+    emit('msg', {text:'Picked up a scroll.', cls:''});
+    SFX.pickup();
+    return;
+  }
+}
+
+function quaffPotion(item, player, emit){
+  const sub = item.key.split('_')[1];
+  if(sub==='heal'){ const heal=ri(gs.rng,8,16); player.hp=Math.min(player.maxHp, player.hp+heal); emit('msg',{text:`Restored ${heal} HP.`, cls:'good'}); }
+  else if(sub==='strength'){ player.atkBonus+=1; emit('msg',{text:'Strength surges through you.', cls:'good'}); }
+  else if(sub==='poison'){ player.hp-=ri(gs.rng,4,9); emit('msg',{text:'Poison burns in your veins!', cls:'dmg'}); }
+  SFX.quaff();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// PACKET C — FOV (simplified shadowcasting via ray sampling) + RENDER
+// ═══════════════════════════════════════════════════════════════════════
+let visMap = null, exploredMap = null;
+function fovValue(x,y){ if(!visMap) return 0; const lvl=gs.level; if(x<0||y<0||x>=lvl.w||y>=lvl.h) return 0; return visMap[y*lvl.w+x]||0; }
+
+function computeFOV(level, px, py, radius){
+  const vis = new Float32Array(level.w*level.h);
+  const RAYS = 180;
+  for(let i=0;i<RAYS;i++){
+    const ang = (i/RAYS)*Math.PI*2;
+    const dx=Math.cos(ang), dy=Math.sin(ang);
+    let x=px+0.5, y=py+0.5;
+    for(let step=0; step<radius; step++){
+      const cx=x|0, cy=y|0;
+      if(cx<0||cy<0||cx>=level.w||cy>=level.h) break;
+      const d = Math.hypot(cx-px, cy-py);
+      const light = Math.max(0, 1 - d/radius);
+      const ii = cy*level.w+cx;
+      if(light>vis[ii]) vis[ii]=light;
+      if(level.cells[ii]===TILE.WALL) break;
+      x+=dx; y+=dy;
+    }
+  }
+  return vis;
+}
+
+function refreshFOV(){
+  visMap = computeFOV(gs.level, gs.player.x, gs.player.y, gs.player.torchFuel>0?7.5:4.5);
+  if(!exploredMap) exploredMap = new Uint8Array(gs.level.w*gs.level.h);
+  for(let i=0;i<visMap.length;i++) if(visMap[i]>0.02) exploredMap[i]=1;
+}
+
+// ── camera / cell sizing ──────────────────────────────────────────────
+let cell = 22, camX=0, camY=0;
+function calcCamera(){
+  const avH = H - HUD_H;
+  cell = Math.max(14, Math.min(30, Math.floor(Math.min(W/22, avH/16))));
+  camX = gs.player.x*cell - W/2;
+  camY = gs.player.y*cell - avH/2 - HUD_H;
+}
+
+function drawDungeon(){
+  const lvl = gs.level;
+  ctx.save();
+  ctx.translate(-camX, -camY);
+  const x0 = Math.max(0, Math.floor(camX/cell)-1), x1 = Math.min(lvl.w, Math.ceil((camX+W)/cell)+1);
+  const y0 = Math.max(0, Math.floor(camY/cell)-1), y1 = Math.min(lvl.h, Math.ceil((camY+H)/cell)+1);
+  ctx.font = `${Math.floor(cell*0.82)}px "Courier New", monospace`;
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+
+  for(let y=y0;y<y1;y++){
+    for(let x=x0;x<x1;x++){
+      const ii = y*lvl.w+x;
+      const t = lvl.cells[ii];
+      const v = visMap[ii]||0;
+      const explored = exploredMap[ii];
+      if(!explored) continue;
+      const cx = x*cell+cell/2, cy=y*cell+cell/2;
+      const memAlpha = v>0.02 ? 1 : 0.16;
+      if(t===TILE.WALL){
+        ctx.fillStyle = `rgba(11,52,84,${0.55*memAlpha})`;
+        ctx.fillRect(x*cell, y*cell, cell, cell);
+      } else {
+        ctx.fillStyle = `rgba(2,35,62,${0.9*memAlpha})`;
+        ctx.fillRect(x*cell, y*cell, cell, cell);
+        if(t===TILE.STAIRS){
+          const glowAmt = v>0.02 ? 14*v : 3;
+          glow(C.stairs, glowAmt);
+          ctx.fillStyle = `rgba(255,238,0,${memAlpha})`;
+          ctx.fillText('>', cx, cy);
+          noGlow();
+        } else if(t===TILE.DOOR){
+          ctx.fillStyle = `rgba(200,150,80,${memAlpha})`;
+          ctx.fillText('+', cx, cy);
+        }
+      }
+    }
+  }
+
+  // items
+  for(const it of gs.groundItems){
+    const ii = it.y*lvl.w+it.x;
+    if(!exploredMap[ii]) continue;
+    const v = visMap[ii]||0;
+    if(v<0.02) continue;
+    const def = ITEMS[it.key];
+    const cx=it.x*cell+cell/2, cy=it.y*cell+cell/2;
+    glow(def.color, 8*v);
+    ctx.fillStyle = def.color;
+    ctx.fillText(def.glyph, cx, cy);
+    noGlow();
+  }
+
+  // monsters
+  for(const m of gs.monsters){
+    if(!m.alive) continue;
+    const ii=m.y*lvl.w+m.x;
+    const v = visMap[ii]||0;
+    if(v<0.05) continue;
+    const cx=m.x*cell+cell/2, cy=m.y*cell+cell/2;
+    glow(m.color, 10*v);
+    ctx.fillStyle = m.color;
+    ctx.fillText(m.glyph, cx, cy);
+    noGlow();
+    // hp sliver
+    if(m.hp<m.maxHp){
+      const bw=cell*0.7;
+      ctx.fillStyle='rgba(255,0,80,0.8)';
+      ctx.fillRect(cx-bw/2, cy-cell*0.5, bw*(m.hp/m.maxHp), 3);
+    }
+  }
+
+  // player
+  {
+    const p=gs.player;
+    const cx=p.x*cell+cell/2, cy=p.y*cell+cell/2;
+    const pulse = 14 + Math.sin(Date.now()/220)*4;
+    glow(C.player, pulse);
+    ctx.fillStyle = C.player;
+    ctx.fillText('@', cx, cy);
+    noGlow();
+  }
+
+  ctx.restore();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// KERNEL — state machine, turn loop, message log
+// ═══════════════════════════════════════════════════════════════════════
+const ST = { TITLE:'title', PLAY:'play', OVER:'over', WIN:'win' };
+const HUD_H = 56;
+const MAX_DEPTH = 12;
+
+function freshPlayer(){
+  return {
+    x:0,y:0, hp:26, maxHp:26, atk:4, atkBonus:0, def:1,
+    weaponBonus:0, armorBonus:0, gold:0, torchFuel:200,
+    inventory:[], potionSkin:{}, scrollSkin:{}, kills:0,
+  };
+}
+function freshGS(){
+  return {
+    state: ST.TITLE,
+    seed: (Math.random()*0xffffffff)>>>0,
+    rng: null,
+    level: null, depth: 1,
+    player: freshPlayer(),
+    monsters: [], groundItems: [],
+    sparks: [], shakeT:0, shakeMag:0,
+    turnLock:false,
+    startBtn:null,
+    msgs: [],
+    score:0,
+  };
+}
+let gs = freshGS();
+
+function emit(type, payload){
+  switch(type){
+    case 'playerHit':
+      SFX[payload.crit?'crit':'hit']();
+      logMsg(`${cap(payload.mon.name)} hits you for ${payload.dmg}.`, 'dmg');
+      doShake(payload.crit?9:5, 0.25);
+      { const p=gs.player; grid.ripple(p.x*cell-camX+cell/2, p.y*cell-camY+cell/2, 20, 60); }
+      break;
+    case 'ranged':
+      tone(700,'square',0.06,0.06);
+      break;
+    case 'gold':
+      logMsg(`+${payload} gold.`, 'good');
+      break;
+    case 'equip':
+      logMsg(`Equipped ${payload.slot} +${payload.bonus}.`, 'good');
+      break;
+    case 'msg':
+      logMsg(payload.text, payload.cls);
+      break;
+  }
+}
+function cap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+
+function logMsg(text, cls=''){
+  gs.msgs.push({text, cls});
+  if(gs.msgs.length>5) gs.msgs.shift();
+  renderLog();
+}
+function renderLog(){
+  logEl.innerHTML = gs.msgs.map(m=>`<div class="log-line ${m.cls}">${escapeHtml(m.text)}</div>`).join('');
+}
+function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+
+function doShake(mag,dur){ gs.shakeMag=mag; gs.shakeT=dur; }
+
+// ── Level construction ──────────────────────────────────────────────
+function buildLevel(depth){
+  const rng = makeRng(gs.seed + depth*7919);
+  gs.rng = rng;
+  const level = generateLevel(depth, rng);
+  gs.level = level;
+  gs.player.x = level.spawn.x; gs.player.y = level.spawn.y;
+  exploredMap = new Uint8Array(level.w*level.h);
+
+  const skins = makeItemTables(rng);
+  gs.player.potionSkin = skins.potionSkin; gs.player.scrollSkin = skins.scrollSkin;
+
+  gs.monsters = [];
+  const monsterCount = Math.min(4+depth, 14);
+  const spots = [...level.spawnPoints];
+  for(let i=0;i<monsterCount && spots.length;i++){
+    const idx = ri(rng,0,spots.length-1);
+    const p = spots.splice(idx,1)[0];
+    const key = pickMonsterForDepth(depth, rng);
+    gs.monsters.push(spawnMonster(key, p.x, p.y));
+  }
+  if(depth===MAX_DEPTH){
+    const stairsCell = level.cells.indexOf(TILE.STAIRS);
+    const bx = stairsCell % level.w, by = (stairsCell/level.w)|0;
+    gs.monsters.push(spawnMonster('balrog', bx, by-2 >=0 ? by-2 : by));
+    SFX.bossRoar();
+    logMsg('The air grows heavy. Something ancient stirs below.', 'warn');
+  }
+
+  gs.groundItems = [];
+  const itemCount = ri(rng, 4, 8);
+  const spots2 = level.rooms.map(r=>({x:r.x+ri(rng,0,r.w-1), y:r.y+ri(rng,0,r.h-1)}));
+  for(let i=0;i<itemCount;i++){
+    const p = choice(rng, spots2);
+    if(level.cells[level.idx(p.x,p.y)]!==TILE.FLOOR) continue;
+    const item = rollItem(rng, depth);
+    gs.groundItems.push({...item, x:p.x, y:p.y});
+  }
+
+  refreshFOV();
+  calcCamera();
+  SFX.levelFeel(depth);
+}
+
+// ── Player actions ──────────────────────────────────────────────────
+function playerTurn(dx,dy){
+  if(gs.state!==ST.PLAY || gs.turnLock) return;
+  const p = gs.player;
+  const nx=p.x+dx, ny=p.y+dy;
+  if(dx===0&&dy===0){ endPlayerTurn(); return; } // wait
+  if(nx<0||ny<0||nx>=gs.level.w||ny>=gs.level.h) return;
+  const target = occupiedBy(nx,ny);
+  if(target && target!==p){
+    meleeAttack(p, target);
+    endPlayerTurn();
+    return;
+  }
+  const t = gs.level.cells[gs.level.idx(nx,ny)];
+  if(t===TILE.WALL){ SFX.bump(); return; }
+  p.x=nx; p.y=ny;
+  SFX.step();
+  if(t===TILE.DOOR) SFX.door();
+  pickupCheck();
+  if(t===TILE.STAIRS){ descend(); return; }
+  endPlayerTurn();
+}
+function meleeAttack(p, mon){
+  const pow = p.atk + p.atkBonus + p.weaponBonus;
+  const {dmg,crit} = resolveAttack(p, pow, MONSTERS[mon.key].def, gs.rng||Math.random);
+  mon.hp -= dmg;
+  SFX[crit?'crit':'hit']();
+  const mx=mon.x*cell-camX+cell/2, my=mon.y*cell-camY+cell/2;
+  spawnBurst(mx,my, crit?14:7, [C.red,'#ff8800',C.yel]);
+  grid.ripple(mx,my,crit?26:14,50);
+  logMsg(`You hit ${mon.name} for ${dmg}${crit?' (crit!)':''}.`, crit?'warn':'');
+  if(mon.hp<=0){
+    mon.alive=false;
+    gs.player.kills++;
+    gs.player.gold += MONSTERS[mon.key].xp;
+    SFX.kill();
+    spawnBurst(mx,my,20,[C.red,'#ff6600','#ffcc00']);
+    logMsg(`${cap(mon.name)} dies.`, 'good');
+    if(mon.key==='balrog'){ winGame(); }
+  }
+}
+function pickupCheck(){
+  const p=gs.player;
+  const i = gs.groundItems.findIndex(it=>it.x===p.x&&it.y===p.y);
+  if(i<0) return;
+  const item = gs.groundItems.splice(i,1)[0];
+  applyItem(item, p, emit);
+}
+function descend(){
+  SFX.descend();
+  gs.depth++;
+  if(gs.depth>MAX_DEPTH){ winGame(); return; }
+  logMsg(`You descend to depth ${gs.depth}.`, 'warn');
+  buildLevel(gs.depth);
+}
+function endPlayerTurn(){
+  refreshFOV();
+  for(const m of gs.monsters){
+    if(!m.alive) continue;
+    const ii=m.y*gs.level.w+m.x;
+    if((visMap[ii]||0) < 0.03 && Math.hypot(m.x-gs.player.x,m.y-gs.player.y) > 9) continue; // dormant far offscreen
+    monsterAct(m, gs.level, gs.player, gs.rng||Math.random, emit);
+  }
+  refreshFOV();
+  calcCamera();
+  checkPlayerDeath();
+}
+function checkPlayerDeath(){
+  if(gs.player.hp<=0){ endGame(false); }
+}
+
+// ── inventory quick-use: 'u' key / use button uses first potion, or attacks if adjacent monster ──
+function useAction(){
+  if(gs.state!==ST.PLAY) return;
+  const p=gs.player;
+  // adjacent enemy? attack it (prefer)
+  const adj = gs.monsters.find(m=>m.alive && Math.abs(m.x-p.x)<=1 && Math.abs(m.y-p.y)<=1 && !(m.x===p.x&&m.y===p.y));
+  if(adj){ meleeAttack(p, adj); endPlayerTurn(); return; }
+  // else quaff first potion
+  const potIdx = p.inventory.findIndex(it=>ITEMS[it.key].kind==='potion');
+  if(potIdx>=0){
+    const item = p.inventory.splice(potIdx,1)[0];
+    quaffPotion(item, p, emit);
+    endPlayerTurn();
+    return;
+  }
+  const scrIdx = p.inventory.findIndex(it=>ITEMS[it.key].kind==='scroll');
+  if(scrIdx>=0){
+    const item = p.inventory.splice(scrIdx,1)[0];
+    useScroll(item, p);
+    endPlayerTurn();
+    return;
+  }
+  logMsg('Nothing to use.', '');
+}
+function useScroll(item, p){
+  const sub = item.key.split('_')[1];
+  if(sub==='id'){ logMsg('The scroll crumbles to dust. Nothing happens (yet).', ''); }
+  else if(sub==='tp'){
+    const spots = gs.level.rooms;
+    const room = choice(gs.rng||Math.random>0.5?()=>Math.random():gs.rng, spots) || spots[0];
+    p.x = room.x + ((room.w/2)|0); p.y = room.y + ((room.h/2)|0);
+    logMsg('Reality folds. You are elsewhere.', 'good');
+    SFX.quaff();
+  }
+}
+
+// ── win/lose ──────────────────────────────────────────────────────────
+function winGame(){
+  gs.state = ST.WIN;
+  gs.score = gs.depth*100 + gs.player.kills*20 + gs.player.gold;
+  saveHighScore();
+  SFX.win();
+  spawnCelebration();
+}
+function endGame(won){
+  if(gs.state===ST.OVER||gs.state===ST.WIN) return;
+  gs.state = won?ST.WIN:ST.OVER;
+  gs.score = gs.depth*100 + gs.player.kills*20 + gs.player.gold;
+  saveHighScore();
+  if(!won){
+    SFX.death();
+    doShake(16,0.5);
+    const p=gs.player;
+    const cx=p.x*cell-camX+cell/2, cy=p.y*cell-camY+cell/2;
+    spawnBurst(cx,cy,50,[C.red,'#ff6600','#880022']);
+  } else {
+    spawnCelebration();
+  }
+}
+function spawnCelebration(){
+  for(let i=0;i<40;i++) setTimeout(()=>{
+    if(gs.state!==ST.WIN) return;
+    spawnBurst(Math.random()*W, Math.random()*H*0.6+HUD_H, 6, [C.grn,C.ui,C.yel,C.mag]);
+  }, i*50);
+}
+function saveHighScore(){
+  try{
+    const cur = parseInt(localStorage.getItem('underhall_hs')||'0',10);
+    if(gs.score>cur) localStorage.setItem('underhall_hs', String(gs.score));
+  }catch(e){}
+}
+function getHighScore(){ try{ return parseInt(localStorage.getItem('underhall_hs')||'0',10); }catch(e){ return 0; } }
+
+// ── start/reset ──────────────────────────────────────────────────────
+function startGame(){
+  gs = freshGS();
+  gs.state = ST.PLAY;
+  gs.seed = (Math.random()*0xffffffff)>>>0;
+  document.body.classList.add('playing');
+  buildLevel(1);
+  logMsg('You descend into Underhall.', 'warn');
+}
+function goTitle(){
+  gs = freshGS();
+  document.body.classList.remove('playing');
+  logEl.innerHTML='';
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// INPUT
+// ═══════════════════════════════════════════════════════════════════════
+window.addEventListener('keydown', e=>{
+  acUnlock();
+  if(gs.state===ST.TITLE){ if(e.code==='Space'||e.code==='Enter') startGame(); return; }
+  if(gs.state===ST.OVER||gs.state===ST.WIN){ if(e.code==='Space'||e.code==='Enter') goTitle(); return; }
+  if(gs.state!==ST.PLAY) return;
+  const k=e.key.toLowerCase();
+  const map = {
+    'arrowup':[0,-1], 'w':[0,-1], 'k':[0,-1],
+    'arrowdown':[0,1], 's':[0,1], 'j':[0,1],
+    'arrowleft':[-1,0], 'a':[-1,0], 'h':[-1,0],
+    'arrowright':[1,0], 'd':[1,0], 'l':[1,0],
+    '.':[0,0],
+  };
+  if(map[k]){ e.preventDefault(); playerTurn(map[k][0], map[k][1]); }
+  if(k==='u'||k===' '||k==='e'){ e.preventDefault(); useAction(); }
+});
+
+canvas.addEventListener('mousedown', e=>{
+  acUnlock();
+  if(gs.state===ST.TITLE){
+    if(gs.startBtn){ const b=gs.startBtn; if(e.clientX>=b.x&&e.clientX<=b.x+b.w&&e.clientY>=b.y&&e.clientY<=b.y+b.h) startGame(); }
+    return;
+  }
+  if(gs.state===ST.OVER||gs.state===ST.WIN){ goTitle(); return; }
+});
+
+document.querySelectorAll('#nui-dpad .nb').forEach(btn=>{
+  btn.addEventListener('pointerdown', e=>{
+    e.preventDefault(); acUnlock();
+    btn.classList.add('hit');
+    const dx=parseInt(btn.dataset.dx,10), dy=parseInt(btn.dataset.dy,10);
+    playerTurn(dx,dy);
+  }, {passive:false});
+  btn.addEventListener('pointerup', ()=>btn.classList.remove('hit'));
+  btn.addEventListener('pointercancel', ()=>btn.classList.remove('hit'));
+});
+document.getElementById('nb-use').addEventListener('pointerdown', e=>{
+  e.preventDefault(); acUnlock();
+  const btn=e.currentTarget; btn.classList.add('hit');
+  useAction();
+});
+document.getElementById('nb-use').addEventListener('pointerup', e=>e.currentTarget.classList.remove('hit'));
+document.getElementById('nb-wait').addEventListener('pointerdown', e=>{
+  e.preventDefault(); acUnlock();
+  const btn=e.currentTarget; btn.classList.add('hit');
+  playerTurn(0,0);
+});
+document.getElementById('nb-wait').addEventListener('pointerup', e=>e.currentTarget.classList.remove('hit'));
+
+// tap-on-canvas to move toward tapped tile (mobile convenience, one step)
+let touchStartT=0;
+canvas.addEventListener('touchstart', e=>{ acUnlock(); touchStartT=Date.now(); }, {passive:true});
+
+// ═══════════════════════════════════════════════════════════════════════
+// SCREENS
+// ═══════════════════════════════════════════════════════════════════════
+function drawTitle(){
+  const t=Date.now()/1000;
+  ctx.save();
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  const ts = Math.min(66, Math.max(30, Math.floor(W/9)));
+  ctx.globalAlpha = 0.96+Math.sin(t*0.6)*0.04;
+  ctx.font = `900 ${ts}px "Courier New", monospace`;
+  glow(C.ui,30); ctx.fillStyle=C.ui; ctx.fillText('UNDERHALL', W/2, H*0.28);
+  glow('#ff00ff',60); ctx.fillStyle=C.ui; ctx.fillText('UNDERHALL', W/2, H*0.28);
+  ctx.globalAlpha=1; noGlow();
+  ctx.font='12px "Courier New", monospace'; ctx.fillStyle=C.uiD;
+  ctx.fillText('· OBLITERATUS ·  A 12-LEVEL DESCENT', W/2, H*0.28+ts*0.62);
+
+  ctx.font='11px "Courier New", monospace'; ctx.fillStyle='rgba(0,200,255,0.5)';
+  ctx.fillText('PERMADEATH. NO STAIRS UP. TAKE THE THRONE OR DON\'T.', W/2, H*0.28+ts*0.62+22);
+
+  const hs = getHighScore();
+  ctx.font='12px "Courier New", monospace'; ctx.fillStyle=C.yel;
+  ctx.fillText(`HIGH SCORE: ${hs}`, W/2, H*0.28+ts*0.62+46);
+
+  const bw=Math.min(220,W*0.6), bh=Math.min(54,Math.max(38,H*0.07));
+  const bx=W/2-bw/2, by=H*0.56;
+  gs.startBtn={x:bx,y:by,w:bw,h:bh};
+  ctx.fillStyle='rgba(0,180,255,0.08)'; ctx.fillRect(bx,by,bw,bh);
+  glow('#00ffff',14+Math.sin(t*3.2)*6);
+  ctx.strokeStyle='#00ffff'; ctx.lineWidth=2; ctx.strokeRect(bx+0.5,by+0.5,bw-1,bh-1);
+  ctx.font='bold 20px "Courier New", monospace'; ctx.fillStyle='#00ffff';
+  ctx.fillText('DESCEND', W/2, by+bh/2);
+  noGlow();
+
+  const isMob = window.matchMedia('(pointer:coarse)').matches;
+  ctx.font='10px "Courier New", monospace'; ctx.fillStyle='rgba(0,160,255,0.32)';
+  ctx.textBaseline='bottom';
+  ctx.fillText(isMob ? 'D-PAD: MOVE  ·  ⚔: ATTACK / USE POTION  ·  WAIT: PASS TURN'
+                      : 'ARROWS/WASD: MOVE  ·  WALK INTO ENEMY: ATTACK  ·  U: USE ITEM',
+               W/2, H-14);
+  ctx.restore();
+}
+
+function drawHUD(){
+  ctx.save();
+  ctx.fillStyle='rgba(2,11,24,0.94)'; ctx.fillRect(0,0,W,HUD_H);
+  ctx.strokeStyle='rgba(0,190,255,0.16)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(0,HUD_H-0.5); ctx.lineTo(W,HUD_H-0.5); ctx.stroke();
+
+  const p=gs.player;
+  ctx.textBaseline='middle'; ctx.font='bold 13px "Courier New", monospace';
+  ctx.textAlign='left';
+
+  // HP
+  const hpPct = Math.max(0,p.hp)/p.maxHp;
+  ctx.fillStyle=C.uiD; ctx.fillText('HP', 12, HUD_H/2-10);
+  ctx.strokeStyle='rgba(0,190,255,0.3)'; ctx.strokeRect(38,HUD_H/2-18,120,12);
+  ctx.fillStyle = hpPct<0.3? C.red : C.grn;
+  glow(hpPct<0.3?C.red:C.grn, 6);
+  ctx.fillRect(39,HUD_H/2-17,118*hpPct,10);
+  noGlow();
+  ctx.fillStyle='#fff'; ctx.font='10px "Courier New", monospace';
+  ctx.fillText(`${Math.max(0,p.hp)}/${p.maxHp}`, 42, HUD_H/2-12+18);
+
+  // depth
+  ctx.textAlign='center'; ctx.font='bold 14px "Courier New", monospace';
+  glow(C.ui,8); ctx.fillStyle=C.ui;
+  ctx.fillText(`DEPTH ${gs.depth}`, W/2, HUD_H/2-9);
+  noGlow();
+  ctx.font='9px "Courier New", monospace'; ctx.fillStyle=C.uiD;
+  ctx.fillText(`${p.gold} GOLD  ·  ${p.kills} KILLS`, W/2, HUD_H/2+10);
+
+  // torch
+  ctx.textAlign='right'; ctx.font='10px "Courier New", monospace';
+  const torchPct = Math.max(0,p.torchFuel)/260;
+  ctx.fillStyle = torchPct<0.2?C.red:C.yel;
+  ctx.fillText('TORCH', W-12, HUD_H/2-10);
+  ctx.strokeStyle='rgba(255,220,0,0.3)'; ctx.strokeRect(W-132,HUD_H/2-18,100,12);
+  glow(torchPct<0.2?C.red:C.yel,6);
+  ctx.fillStyle= torchPct<0.2?C.red:C.yel;
+  ctx.fillRect(W-131,HUD_H/2-17,98*torchPct,10);
+  noGlow();
+
+  ctx.restore();
+}
+
+function drawStatus(){
+  const won = gs.state===ST.WIN;
+  const col = won?C.grn:C.red;
+  const msg = won? 'THE THRONE FALLS' : 'YOU HAVE DIED';
+  ctx.save();
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.font='900 34px "Courier New", monospace';
+  glow(col,26); ctx.fillStyle=col; ctx.fillText(msg, W/2, H*0.34);
+  noGlow();
+  ctx.font='13px "Courier New", monospace'; ctx.fillStyle=C.uiD;
+  ctx.fillText(`DEPTH REACHED: ${gs.depth}   KILLS: ${gs.player.kills}   GOLD: ${gs.player.gold}`, W/2, H*0.34+34);
+  ctx.font='bold 16px "Courier New", monospace'; ctx.fillStyle=C.yel;
+  ctx.fillText(`SCORE: ${gs.score}`, W/2, H*0.34+58);
+  const hs=getHighScore();
+  ctx.font='11px "Courier New", monospace'; ctx.fillStyle=hs===gs.score?C.grn:C.uiD;
+  ctx.fillText(hs===gs.score?'NEW HIGH SCORE':`HIGH SCORE: ${hs}`, W/2, H*0.34+78);
+  ctx.font='10px "Courier New", monospace'; ctx.fillStyle='rgba(0,200,255,0.4)';
+  ctx.fillText('TAP OR PRESS ENTER TO RETURN', W/2, H*0.34+104);
+  ctx.restore();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// MAIN LOOP
+// ═══════════════════════════════════════════════════════════════════════
+let _last=0;
+function loop(ts){
+  const dt = Math.min((ts-_last)/1000, 0.05); _last=ts;
+  grid.update(dt);
+  if(gs.shakeT>0) gs.shakeT-=dt;
+  gs.sparks = gs.sparks.filter(s=>{ s.update(dt); return !s.dead; });
+  if(gs.state===ST.PLAY && gs.player.torchFuel>0){ gs.player.torchFuel -= dt*1.0; }
+
+  ctx.save();
+  if(gs.shakeT>0){ const m=gs.shakeMag*(gs.shakeT/0.5); ctx.translate((Math.random()-0.5)*m,(Math.random()-0.5)*m); }
+  ctx.fillStyle=C.bg; ctx.fillRect(-20,-20,W+40,H+40);
+  grid.draw();
+
+  if(gs.state===ST.TITLE){
+    drawTitle();
+  } else if(gs.state===ST.PLAY){
+    calcCamera();
+    drawDungeon();
+    for(const s of gs.sparks) s.draw();
+    drawHUD();
+  } else {
+    drawDungeon();
+    for(const s of gs.sparks) s.draw();
+    drawHUD();
+    drawStatus();
+  }
+  ctx.restore();
+  requestAnimationFrame(loop);
+}
+
+resize();
+requestAnimationFrame(ts=>{ _last=ts; requestAnimationFrame(loop); });
+</script>
+</body>
+</html>
