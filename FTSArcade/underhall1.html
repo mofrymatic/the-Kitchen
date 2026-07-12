@@ -39,36 +39,15 @@ canvas{display:block;position:fixed;top:0;left:0;touch-action:none;cursor:crossh
 
 /* ── NUI (touch-only overlay) ───────────────────────────────── */
 #nui{display:none;position:fixed;bottom:0;left:0;right:0;z-index:50;
-  height:var(--nui-h,208px);pointer-events:none;
+  height:var(--nui-h,196px);pointer-events:none;
   align-items:flex-end;justify-content:space-between;
   padding:0 clamp(14px,5vw,34px) clamp(10px,2.5vh,20px);
   background:linear-gradient(to top,rgba(2,11,24,.75) 0%,transparent 100%)}
 @media(pointer:coarse){#nui{display:flex}}
 
+#nui-dpad{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);
+  gap:clamp(4px,1.2vw,8px);pointer-events:none}
 #nui-act{display:flex;flex-direction:column;align-items:center;gap:clamp(6px,1.4vh,12px);pointer-events:none}
-
-/* ── Virtual joystick (8-way snap) ─────────────────────────── */
-#joy-base{
-  --joy-sz:clamp(120px,30vw,168px);
-  pointer-events:all;touch-action:none;-webkit-tap-highlight-color:transparent;
-  position:relative;width:var(--joy-sz);height:var(--joy-sz);border-radius:50%;
-  background:rgba(2,14,32,.55);
-  border:1.5px solid rgba(0,190,255,.28);
-  box-shadow:0 0 16px rgba(0,170,255,.14),inset 0 0 16px rgba(0,160,255,.06);
-  animation:nb-appear .35s ease both;
-}
-#joy-base::before,#joy-base::after{content:'';position:absolute;background:rgba(0,190,255,.16)}
-#joy-base::before{left:50%;top:8%;bottom:8%;width:1px;transform:translateX(-50%)}
-#joy-base::after{top:50%;left:8%;right:8%;height:1px;transform:translateY(-50%)}
-#joy-knob{
-  position:absolute;left:50%;top:50%;
-  width:38%;height:38%;border-radius:50%;
-  transform:translate(-50%,-50%);
-  background:rgba(0,190,255,.14);border:1.5px solid rgba(0,210,255,.5);
-  box-shadow:0 0 14px rgba(0,200,255,.35),inset 0 0 10px rgba(0,200,255,.12);
-  transition:background .08s,border-color .08s,box-shadow .08s;
-}
-#joy-base.hit #joy-knob{background:rgba(0,220,255,.28);border-color:#00ffff;box-shadow:0 0 22px rgba(0,220,255,.6),inset 0 0 12px rgba(0,220,255,.2)}
 
 .nb{
   pointer-events:all;touch-action:none;-webkit-tap-highlight-color:transparent;
@@ -97,11 +76,15 @@ canvas{display:block;position:fixed;top:0;left:0;touch-action:none;cursor:crossh
   background:rgba(255,200,0,.14);border-color:rgba(255,220,0,.92);color:#ffee00;
   box-shadow:0 0 26px rgba(255,200,0,.62),inset 0 0 14px rgba(255,200,0,.1);}
 .nb-wait{--nb-sz:clamp(40px,9vw,54px);font-size:clamp(9px,2.2vw,12px);letter-spacing:.1em;}
+#g-c1{grid-column:2;grid-row:1}
+#g-c3{grid-column:2;grid-row:3}
+#g-c7{grid-column:1;grid-row:2}
+#g-c9{grid-column:3;grid-row:2}
+#g-c5{grid-column:2;grid-row:2}
 @media(pointer:coarse)and(orientation:landscape){
-  #nui{--nui-h:clamp(124px,26vh,160px)}
+  #nui{--nui-h:clamp(112px,24vh,148px)}
   .nb{--nb-sz:clamp(38px,8vw,50px)}
   .nb-act{--nb-sz:clamp(52px,11vw,68px)}
-  #joy-base{--joy-sz:clamp(96px,22vh,132px)}
 }
 @keyframes nb-appear{from{opacity:0;transform:translateY(14px) scale(.88)}to{opacity:1;transform:none}}
 
@@ -123,8 +106,12 @@ body.playing #log{display:block}
 <div id="log"></div>
 
 <div id="nui" role="group" aria-label="Game controls">
-  <div id="joy-base" role="group" aria-label="Movement joystick">
-    <div id="joy-knob"></div>
+  <div id="nui-dpad" role="group" aria-label="Movement">
+    <button class="nb" id="g-c7" data-dx="-1" data-dy="0"><span>◄</span></button>
+    <button class="nb" id="g-c1" data-dx="0" data-dy="-1"><span>▲</span></button>
+    <button class="nb" id="g-c5" data-dx="0" data-dy="0"><span>·</span></button>
+    <button class="nb" id="g-c9" data-dx="1" data-dy="0"><span>►</span></button>
+    <button class="nb" id="g-c3" data-dx="0" data-dy="1"><span>▼</span></button>
   </div>
   <div id="nui-act">
     <button class="nb nb-act" id="nb-use" aria-label="Use / attack"><span>⚔</span></button>
@@ -134,7 +121,7 @@ body.playing #log{display:block}
 
 <script>
 // ═══════════════════════════════════════════════════════════════════════
-//  U N D E R H A L L  ·  O B L I T E R A T U S
+//  U N D E R H A L L  ·  D E L V E
 //  A 12-level descent · turn-based glyphs, real-time glow · permadeath
 //  FishTacoStand Arcade — frymatic.us/FTSArcade/
 // ═══════════════════════════════════════════════════════════════════════
@@ -421,19 +408,11 @@ function stepToward(mon, level, player){
   const opts = Math.abs(player.x-mon.x) > Math.abs(player.y-mon.y) ? [[dx,0],[0,dy]] : [[0,dy],[dx,0]];
   for(const [ox,oy] of opts){ if(ox===0&&oy===0) continue; if(tryMove(mon, level, ox, oy)) return; }
 }
-function blockedCorner(level, x, y, dx, dy){
-  // classic roguelike rule: can't cut a diagonal through two flanking walls
-  if(dx===0||dy===0) return false;
-  const a = level.cells[level.idx(x+dx, y)]===TILE.WALL;
-  const b = level.cells[level.idx(x, y+dy)]===TILE.WALL;
-  return a && b;
-}
 function tryMove(ent, level, dx, dy){
   const nx=ent.x+dx, ny=ent.y+dy;
   if(nx<0||ny<0||nx>=level.w||ny>=level.h) return false;
   const t = level.cells[level.idx(nx,ny)];
   if(t===TILE.WALL) return false;
-  if(blockedCorner(level, ent.x, ent.y, dx, dy)) return false;
   if(occupiedBy(nx,ny)) return false;
   ent.x=nx; ent.y=ny; return true;
 }
@@ -780,7 +759,6 @@ function playerTurn(dx,dy){
   }
   const t = gs.level.cells[gs.level.idx(nx,ny)];
   if(t===TILE.WALL){ SFX.bump(); return; }
-  if(blockedCorner(gs.level, p.x, p.y, dx, dy)){ SFX.bump(); return; }
   p.x=nx; p.y=ny;
   SFX.step();
   if(t===TILE.DOOR) SFX.door();
@@ -940,14 +918,8 @@ window.addEventListener('keydown', e=>{
     'arrowleft':[-1,0], 'a':[-1,0], 'h':[-1,0],
     'arrowright':[1,0], 'd':[1,0], 'l':[1,0],
     '.':[0,0],
-    // numpad — classic roguelike 8-way (Angband convention)
-    'numpad7':[-1,-1], 'numpad8':[0,-1], 'numpad9':[1,-1],
-    'numpad4':[-1,0],  'numpad5':[0,0],  'numpad6':[1,0],
-    'numpad1':[-1,1],  'numpad2':[0,1],  'numpad3':[1,1],
   };
-  const code = e.code.toLowerCase();
-  if(map[code]){ e.preventDefault(); playerTurn(map[code][0], map[code][1]); }
-  else if(map[k]){ e.preventDefault(); playerTurn(map[k][0], map[k][1]); }
+  if(map[k]){ e.preventDefault(); playerTurn(map[k][0], map[k][1]); }
   if(k==='u'||k===' '||k==='e'){ e.preventDefault(); useAction(); }
 });
 
@@ -960,66 +932,16 @@ canvas.addEventListener('mousedown', e=>{
   if(gs.state===ST.OVER||gs.state===ST.WIN){ goTitle(); return; }
 });
 
-// ── Virtual joystick: drag out past deadzone snaps to 1-of-8, fires one
-//    turn per direction-change, must re-center (or change dir) to fire again ──
-(function(){
-  const base = document.getElementById('joy-base');
-  const knob = document.getElementById('joy-knob');
-  const DEADZONE = 0.32;   // fraction of radius before a direction registers
-  const REPEAT_MS = 190;   // holding a direction repeats the step at this interval
-  let dragging = false, originX=0, originY=0, radius=1, activeDir=null, repeatTimer=null;
-
-  function dirFromAngle(ang){
-    // 8-way snap, 0 = east, going clockwise in screen space (y-down)
-    const seg = Math.round(ang / (Math.PI/4)) & 7;
-    const table = [
-      [1,0],[1,1],[0,1],[-1,1],[-1,0],[-1,-1],[0,-1],[1,-1]
-    ];
-    return table[seg];
-  }
-  function setKnob(nx,ny){ knob.style.transform = `translate(calc(-50% + ${nx}px), calc(-50% + ${ny}px))`; }
-  function resetKnob(){ knob.style.transform = 'translate(-50%,-50%)'; }
-  function stopRepeat(){ if(repeatTimer){ clearInterval(repeatTimer); repeatTimer=null; } }
-  function fire(dir){ playerTurn(dir[0], dir[1]); }
-
-  function onDown(e){
-    acUnlock();
-    dragging = true; base.classList.add('hit');
-    const r = base.getBoundingClientRect();
-    originX = r.left + r.width/2; originY = r.top + r.height/2; radius = r.width/2;
-    activeDir = null; stopRepeat();
-    base.setPointerCapture && e.pointerId!=null && base.setPointerCapture(e.pointerId);
-  }
-  function onMove(e){
-    if(!dragging) return;
-    const dx = e.clientX - originX, dy = e.clientY - originY;
-    const dist = Math.hypot(dx,dy);
-    const clamped = Math.min(dist, radius);
-    const ang = Math.atan2(dy,dx);
-    if(dist>0){ setKnob(Math.cos(ang)*clamped*0.9, Math.sin(ang)*clamped*0.9); } else setKnob(0,0);
-
-    if(dist < radius*DEADZONE){
-      if(activeDir){ activeDir=null; stopRepeat(); }
-      return;
-    }
-    const dir = dirFromAngle(ang<0?ang+Math.PI*2:ang);
-    const key = dir[0]+','+dir[1];
-    if(!activeDir || activeDir.key!==key){
-      activeDir = {key, dir};
-      stopRepeat();
-      fire(dir);
-      repeatTimer = setInterval(()=>fire(dir), REPEAT_MS);
-    }
-  }
-  function onUp(e){
-    dragging = false; activeDir=null; stopRepeat();
-    base.classList.remove('hit'); resetKnob();
-  }
-  base.addEventListener('pointerdown', e=>{ e.preventDefault(); onDown(e); }, {passive:false});
-  window.addEventListener('pointermove', onMove, {passive:true});
-  window.addEventListener('pointerup', onUp, {passive:true});
-  window.addEventListener('pointercancel', onUp, {passive:true});
-})();
+document.querySelectorAll('#nui-dpad .nb').forEach(btn=>{
+  btn.addEventListener('pointerdown', e=>{
+    e.preventDefault(); acUnlock();
+    btn.classList.add('hit');
+    const dx=parseInt(btn.dataset.dx,10), dy=parseInt(btn.dataset.dy,10);
+    playerTurn(dx,dy);
+  }, {passive:false});
+  btn.addEventListener('pointerup', ()=>btn.classList.remove('hit'));
+  btn.addEventListener('pointercancel', ()=>btn.classList.remove('hit'));
+});
 document.getElementById('nb-use').addEventListener('pointerdown', e=>{
   e.preventDefault(); acUnlock();
   const btn=e.currentTarget; btn.classList.add('hit');
@@ -1073,8 +995,8 @@ function drawTitle(){
   const isMob = window.matchMedia('(pointer:coarse)').matches;
   ctx.font='10px "Courier New", monospace'; ctx.fillStyle='rgba(0,160,255,0.32)';
   ctx.textBaseline='bottom';
-  ctx.fillText(isMob ? 'JOYSTICK: 8-WAY MOVE  ·  ⚔: ATTACK / USE POTION  ·  WAIT: PASS TURN'
-                      : 'NUMPAD 1-9 OR ARROWS/WASD: MOVE (DIAGONALS ON NUMPAD)  ·  U: USE ITEM',
+  ctx.fillText(isMob ? 'D-PAD: MOVE  ·  ⚔: ATTACK / USE POTION  ·  WAIT: PASS TURN'
+                      : 'ARROWS/WASD: MOVE  ·  WALK INTO ENEMY: ATTACK  ·  U: USE ITEM',
                W/2, H-14);
   ctx.restore();
 }
