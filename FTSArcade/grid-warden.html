@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>GRID WARDEN — OBLITERATUS · v2</title>
+<meta name="description" content="FishTacoStand Arcade — GRID WARDEN: a tower defense cabinet built on a reactive spring-mesh field.">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;background:#020b18;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+canvas{display:block;position:fixed;top:0;left:0;touch-action:none;cursor:crosshair}
+body{font-family:'Courier New',monospace}
+
+/* ── HUD top bar (wave / hp / gold) ─────────────────────────────── */
+#hud-top{
+  display:none; position:fixed; top:0; left:0; right:0; z-index:20;
+  justify-content:center; gap:clamp(10px,3vw,28px);
+  padding:clamp(10px,2vh,16px) 10px 8px;
+  background:linear-gradient(to bottom, rgba(2,11,24,.78) 0%, transparent 100%);
+  pointer-events:none;
+}
+.hud-item{
+  font-size:clamp(11px,2.6vw,14px); letter-spacing:.08em; color:rgba(0,210,255,.65);
+  text-shadow:0 0 8px rgba(0,190,255,.35);
+}
+.hud-item b{color:#00e5ff; font-size:1.15em; margin-left:4px}
+.hud-hp b{color:#ff5577}
+.hud-gold b{color:#ffd633}
+
+/* ── Build bar (bottom, adaptive) ───────────────────────────────── */
+#build-bar{
+  display:none; position:fixed; bottom:0; left:0; right:0; z-index:20;
+  justify-content:center; align-items:center; flex-wrap:wrap;
+  gap:clamp(6px,1.6vw,12px);
+  padding:clamp(10px,2vh,16px) clamp(10px,3vw,20px);
+  background:linear-gradient(to top, rgba(2,11,24,.85) 0%, transparent 100%);
+}
+.bb-btn{
+  pointer-events:all; -webkit-tap-highlight-color:transparent;
+  -webkit-appearance:none; appearance:none; outline:none; cursor:pointer;
+  min-width:clamp(64px,15vw,92px); min-height:44px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:2px; padding:6px 10px; border-radius:10px;
+  background:rgba(2,14,32,.72); border:1.5px solid rgba(0,190,255,.3);
+  color:rgba(0,210,255,.8); font-family:'Courier New',monospace; font-weight:bold;
+  transition:background .1s,border-color .1s,box-shadow .1s,transform .08s;
+}
+.bb-tower{ border-color:color-mix(in srgb, var(--tc) 45%, transparent); color:var(--tc); }
+.bb-tower .bb-name{ font-size:clamp(10px,2.4vw,12px); letter-spacing:.1em; }
+.bb-tower .bb-cost{ font-size:clamp(11px,2.8vw,14px); color:#ffd633; }
+.bb-tower.sel, .bb-tower:active{
+  background:color-mix(in srgb, var(--tc) 18%, rgba(2,14,32,.8));
+  border-color:var(--tc); box-shadow:0 0 18px color-mix(in srgb, var(--tc) 50%, transparent);
+  transform:scale(.96);
+}
+.bb-call{ font-size:clamp(10px,2.4vw,12px); letter-spacing:.08em; color:#ffee00; border-color:rgba(255,220,0,.4); }
+.bb-call:active{ background:rgba(255,220,0,.14); box-shadow:0 0 16px rgba(255,200,0,.4); }
+.bb-call:disabled{ opacity:.4; }
+.bb-sell{ color:#ff6688; border-color:rgba(255,80,120,.45); font-size:clamp(11px,2.6vw,13px); }
+.bb-sell:active{ background:rgba(255,60,100,.16); box-shadow:0 0 16px rgba(255,60,100,.4); }
+.bb-info{ width:100%; text-align:center; font-size:11px; letter-spacing:.12em; color:rgba(200,230,255,.6); margin-bottom:2px; }
+
+/* ── Pause button ────────────────────────────────────────────────── */
+#pause-btn{
+  display:none; position:fixed; top:clamp(6px,1.5vh,12px); right:clamp(8px,2vw,16px);
+  z-index:30; align-items:center; justify-content:center;
+  width:40px; height:34px; border-radius:8px;
+  background:rgba(2,14,32,.68); border:1.5px solid rgba(0,190,255,.28);
+  color:rgba(0,210,255,.72); font-family:'Courier New',monospace;
+  font-size:13px; font-weight:bold; cursor:pointer; pointer-events:all;
+  box-shadow:0 0 10px rgba(0,170,255,.12);
+}
+#pause-btn[data-state="paused"]{ border-color:rgba(255,220,0,.5); color:#ffee00; }
+
+/* ── Hint (map screen) ───────────────────────────────────────────── */
+#hint{
+  display:none; position:fixed; bottom:22px; left:0; width:100%; text-align:center; z-index:10;
+  font-size:11px; letter-spacing:.14em; color:rgba(0,210,255,.5); pointer-events:none;
+}
+
+/* ── Results panel ───────────────────────────────────────────────── */
+#results-panel{
+  display:none; position:fixed; inset:0; z-index:40;
+  flex-direction:column; align-items:center; justify-content:center; gap:10px;
+  background:radial-gradient(circle at 50% 40%, rgba(4,20,40,.55), rgba(2,8,16,.85));
+  text-align:center; pointer-events:all;
+}
+.rp-title{ font-size:clamp(24px,6vw,38px); font-weight:bold; letter-spacing:.1em; text-shadow:0 0 20px currentColor; }
+.rp-row{ font-size:clamp(12px,3vw,15px); color:rgba(200,230,255,.75); letter-spacing:.06em; }
+.rp-row b{ color:#00e5ff; }
+.rp-hash{ font-size:10px; color:rgba(0,190,255,.4); letter-spacing:.05em; margin-top:4px; }
+.rp-btns{ display:flex; gap:12px; margin-top:16px; }
+.rp-btn{
+  pointer-events:all; cursor:pointer; -webkit-appearance:none; appearance:none; outline:none;
+  padding:12px 22px; min-height:44px; border-radius:10px;
+  background:rgba(2,14,32,.8); border:1.5px solid rgba(0,190,255,.35);
+  color:rgba(0,210,255,.85); font-family:'Courier New',monospace; font-weight:bold;
+  letter-spacing:.08em; font-size:12px;
+}
+.rp-primary{ border-color:#00e5ff; color:#00e5ff; box-shadow:0 0 16px rgba(0,220,255,.3); }
+
+@media (max-width:640px){
+  #hud-top{ gap:14px; }
+}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div id="hud-top"></div>
+<button id="pause-btn" data-state="playing">II</button>
+<div id="build-bar"></div>
+<div id="hint">TAP A NODE TO DEPLOY</div>
+<div id="results-panel"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════
+//  G R I D   W A R D E N   ·   O B L I T E R A T U S   ·   v2
+//  Free placement · Attack animations · Density-taxed economy
+// ═══════════════════════════════════════════════════════════════════════
+
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d');
+let W = 0, H = 0, dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+const clamp = (v,lo,hi)=>Math.max(lo,Math.min(hi,v));
+const lerp  = (a,b,t)=>a+(b-a)*t;
+const TAU   = Math.PI*2;
+const rnd   = (a,b)=>a+Math.random()*(b-a);
+
+// ── Palette ──────────────────────────────────────────────────────────
+const C = {
+  bg: '#020b18',
+  pulse:  { core:'#00e5ff', glow:'#0099ff' },
+  arc:    { core:'#ff44ff', glow:'#aa00ff' },
+  slow:   { core:'#ffee00', glow:'#ff9900' },
+  ePulse: { core:'#66ffcc', glow:'#00aa88' },
+  eSurge: { core:'#ff5555', glow:'#ff0033' },
+  eCascade:{core:'#ff9933', glow:'#ff4400' },
+  ui:     '#00e5ff',
+  uiDim:  'rgba(0,210,255,.55)',
+  bad:    '#ff4466',
+  gold:   '#ffd633',
+};
+
+function glow(col,blur=14){ ctx.shadowColor=col; ctx.shadowBlur=blur; }
+function noGlow(){ ctx.shadowBlur=0; }
+
+// ═══════════════════════════════════════════════════════════════════════
+//  SEEDED RNG — mulberry32. Sim consumes this exclusively, in tick order.
+// ═══════════════════════════════════════════════════════════════════════
+function mulberry32(seed){
+  let a = seed >>> 0;
+  return function(){
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function fnv1a(str){
+  let h = 0x811c9dc5;
+  for (let i=0;i<str.length;i++){
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return (h >>> 0).toString(16).padStart(8,'0');
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  MESH RENDERER — interface + Canvas2D implementation (sprite-baked,
+//  SoA physics, sleep/wake). MeshGL2 is a fenced stub for the v2 delegate
+//  build — game code only ever calls the interface below.
+// ═══════════════════════════════════════════════════════════════════════
+class MeshRenderer {
+  init(w,h){}
+  resize(w,h){}
+  ripple(x,y,mag,radius){}
+  update(dt){ return 0; }
+  draw(){}
+}
+
+class MeshGL2 extends MeshRenderer {
+  // DO NOT BUILD — v2 delegation scope. Drop-in replacement for
+  // MeshCanvas2D once gridv2 lands; must implement the same interface.
+}
+
+class MeshCanvas2D extends MeshRenderer {
+  constructor(){
+    super();
+    this.DOT_COL = '0,190,255';
+    this.BAKE_SCALE = 24; this.PAD = 3.4; this.PAD2 = this.PAD*2;
+    this.sprites = [];
+    this.cells = 46;
+    this.tiers = [ {r:2.6,a:.40}, {r:1.7,a:.24}, {r:1.1,a:.14}, {r:0.7,a:.07} ];
+    this.SUBDIV = 8;
+  }
+  _bakeSprite(tierIdx, dpr){
+    const glowRatio = [0.95,0.55,0.55,0.55][tierIdx];
+    const cssSize = this.BAKE_SCALE*this.PAD*2;
+    const size = Math.ceil(cssSize*dpr);
+    const off = document.createElement('canvas');
+    off.width = off.height = size;
+    const octx = off.getContext('2d');
+    octx.scale(dpr,dpr);
+    const c = cssSize/2;
+    octx.fillStyle = `rgb(${this.DOT_COL})`;
+    octx.shadowColor = `rgb(${this.DOT_COL})`;
+    octx.shadowBlur = this.BAKE_SCALE*glowRatio;
+    octx.beginPath(); octx.arc(c,c,this.BAKE_SCALE,0,TAU); octx.fill();
+    return off;
+  }
+  _buildSprites(dpr){ this.sprites = [0,1,2,3].map(t=>this._bakeSprite(t,dpr)); }
+  _tier(c,r){
+    const grad = n => (n % this.SUBDIV===0) ? 0 : (n % (this.SUBDIV/2)===0) ? 1 : (n % (this.SUBDIV/4)===0) ? 2 : 3;
+    return Math.max(grad(c), grad(r));
+  }
+  init(w,h,dpr){
+    this._buildSprites(dpr);
+    this.resize(w,h);
+  }
+  resize(w,h){
+    this.W=w; this.H=h;
+    this.cw = w/this.cells; this.ch = this.cw;
+    this.cols = Math.ceil(w/this.cw)+1;
+    this.rows = Math.ceil(h/this.ch)+1;
+    this.n = this.cols*this.rows;
+    this.baseX=new Float32Array(this.n); this.baseY=new Float32Array(this.n);
+    this.dispX=new Float32Array(this.n); this.dispY=new Float32Array(this.n);
+    this.velX=new Float32Array(this.n);  this.velY=new Float32Array(this.n);
+    this.tier=new Uint8Array(this.n);
+    let i=0;
+    for (let r=0;r<this.rows;r++) for (let c=0;c<this.cols;c++,i++){
+      this.baseX[i]=c*this.cw; this.baseY[i]=r*this.ch; this.tier[i]=this._tier(c,r);
+    }
+    this.asleep=false; this.sleepFrames=0;
+  }
+  ripple(wx,wy,mag,radius){
+    const cr=wx/this.cw, rr=wy/this.ch;
+    const c0=Math.max(0,Math.floor(cr-radius/this.cw)-1), c1=Math.min(this.cols-1,Math.ceil(cr+radius/this.cw)+1);
+    const r0=Math.max(0,Math.floor(rr-radius/this.ch)-1), r1=Math.min(this.rows-1,Math.ceil(rr+radius/this.ch)+1);
+    for (let r=r0;r<=r1;r++) for (let c=c0;c<=c1;c++){
+      const i=r*this.cols+c;
+      const nx=c*this.cw, ny=r*this.ch, dx=nx-wx, dy=ny-wy, d=Math.hypot(dx,dy);
+      if (d<radius && d>0){
+        const f=mag*(1-d/radius);
+        this.velX[i]+=(dx/d)*f; this.velY[i]+=(dy/d)*f;
+      }
+    }
+    this.asleep=false; this.sleepFrames=0;
+  }
+  sweep(fromY, w){
+    for (let x=0; x<w; x+=40) this.ripple(x, fromY, 14, 90);
+  }
+  update(dt){
+    const spring=8, damp=0.88, {n,dispX,dispY,velX,velY}=this;
+    let energy=0;
+    for (let i=0;i<n;i++){
+      let vx=velX[i],vy=velY[i],dx=dispX[i],dy=dispY[i];
+      vx += -dx*spring*dt; vy += -dy*spring*dt;
+      vx*=damp; vy*=damp;
+      dx += vx*dt; dy += vy*dt;
+      velX[i]=vx; velY[i]=vy; dispX[i]=dx; dispY[i]=dy;
+      energy += Math.abs(vx)+Math.abs(vy)+Math.abs(dx)+Math.abs(dy);
+    }
+    return energy;
+  }
+  draw(){
+    const {n,baseX,baseY,dispX,dispY,tier,tiers,sprites,PAD2}=this;
+    for (let ti=tiers.length-1; ti>=0; ti--){
+      const T=tiers[ti], sprite=sprites[ti];
+      for (let i=0;i<n;i++){
+        if (tier[i]!==ti) continue;
+        const dx=dispX[i], dy=dispY[i];
+        const disp=Math.hypot(dx,dy);
+        const boost=Math.min(1,disp*0.05);
+        const a=Math.min(0.85, T.a + boost*0.5);
+        const R=T.r + boost*2.2;
+        const d=R*PAD2;
+        ctx.globalAlpha=a;
+        ctx.drawImage(sprite, baseX[i]+dx-d/2, baseY[i]+dy-d/2, d, d);
+      }
+    }
+    ctx.globalAlpha=1;
+  }
+}
+
+const mesh = new MeshCanvas2D();
+
+// ═══════════════════════════════════════════════════════════════════════
+//  DATA — towers, enemies, waves
+//  Balance note (v2): free placement removes the slot scarcity that
+//  implicitly capped v1 firepower density. Two levers replace it —
+//  (1) a hard minimum spacing between towers (Field.minSpacing), and
+//  (2) an escalating per-type cost tax (towerCost) that never resets on
+//  sell. Enemy HP and the wave-clear economy were bumped ~15-20% as a
+//  first-pass counterweight. Treat these numbers as a hypothesis, not a
+//  conclusion — they're the kind of thing that wants a few played waves
+//  to retune.
+// ═══════════════════════════════════════════════════════════════════════
+const TOWER_DEFS = {
+  pulse: { name:'PULSE', cost:70,  range:110, rate:3.0, dmg:6,  rippleMag:8,  col:C.pulse, desc:'FAST · SINGLE TARGET' },
+  arc:   { name:'ARC',   cost:150, range:150, rate:0.8, dmg:22, chain:[1,0.6,0.36], rippleMag:22, col:C.arc, desc:'CHAIN LIGHTNING' },
+  slow:  { name:'SLOW',  cost:100, range:95,  rate:0,   dmg:0,  slowMul:0.55, rippleMag:4, col:C.slow, desc:'AURA · 45% SLOW' },
+};
+const COST_TAX = 0.12; // +12% per tower of that type already placed this level, never decays on sell
+
+function towerCost(type){
+  const n = S.towerCounts[type] || 0;
+  return Math.round(TOWER_DEFS[type].cost * (1 + COST_TAX*n) / 5) * 5;
+}
+
+const ENEMY_DEFS = {
+  pulse:   { name:'PULSE',   hp:24, speed:55,  bounty:8,  col:C.ePulse },
+  surge:   { name:'SURGE',   hp:15, speed:105, bounty:10, col:C.eSurge },
+  cascade: { name:'CASCADE', hp:72, speed:32,  bounty:25, col:C.eCascade, children:3 },
+};
+
+function waveHpMul(wave){ return 1 + 0.20*(wave-1); }
+
+// Programmatic wave composition per the PRD curve.
+function buildWaveSpawns(wave, rng){
+  const list = [];
+  let t = 0.4;
+  const push = (type, n, gap)=>{ for(let i=0;i<n;i++){ list.push({type, t}); t += gap + (rng()*0.3-0.15); } };
+  if (wave <= 2){
+    push('pulse', 6 + wave*2, 0.85);
+  } else if (wave <= 4){
+    push('pulse', 5, 0.8);
+    push('surge', 3 + wave, 0.6);
+  } else if (wave <= 6){
+    push('pulse', 5, 0.75);
+    push('surge', 4, 0.55);
+    push('cascade', 2 + (wave-5), 1.4);
+  } else if (wave <= 9){
+    push('surge', 6, 0.45);
+    push('cascade', 3, 1.3);
+    push('pulse', 6, 0.5);
+  } else {
+    push('surge', 8, 0.4);
+    push('pulse', 6, 0.4);
+    list.push({type:'boss', t: t+0.6});
+  }
+  list.sort((a,b)=>a.t-b.t);
+  return list;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  PATH + PLACEMENT FIELD — free placement, validated against path
+//  clearance and inter-tower minimum spacing (both derived from the
+//  play-area size, not hand-tuned pixels).
+// ═══════════════════════════════════════════════════════════════════════
+const PATH_FRAC = [
+  {x:-0.06, y:0.16}, {x:0.24, y:0.16}, {x:0.24, y:0.56},
+  {x:0.52, y:0.56}, {x:0.52, y:0.20}, {x:0.80, y:0.20},
+  {x:0.80, y:0.84}, {x:1.06, y:0.84},
+];
+
+function distToSeg(px,py,ax,ay,bx,by){
+  const dx=bx-ax, dy=by-ay, l2=dx*dx+dy*dy;
+  let t = l2>0 ? ((px-ax)*dx+(py-ay)*dy)/l2 : 0;
+  t = clamp(t,0,1);
+  const cx=ax+dx*t, cy=ay+dy*t;
+  return Math.hypot(px-cx, py-cy);
+}
+
+const Field = {
+  x0:0, y0:0, w:0, h:0,
+  pathPx: [], segLen: [], cumLen: [], totalLen: 0,
+  pathClearance: 34, minSpacing: 30,
+
+  layout(x0,y0,w,h){
+    this.x0=x0; this.y0=y0; this.w=w; this.h=h;
+    this.pathPx = PATH_FRAC.map(p => ({ x:x0+p.x*w, y:y0+p.y*h }));
+    this.segLen = []; this.cumLen=[0];
+    for (let i=0;i<this.pathPx.length-1;i++){
+      const a=this.pathPx[i], b=this.pathPx[i+1];
+      const l = Math.hypot(b.x-a.x,b.y-a.y);
+      this.segLen.push(l);
+      this.cumLen.push(this.cumLen[i]+l);
+    }
+    this.totalLen = this.cumLen[this.cumLen.length-1];
+    const m = Math.min(w,h);
+    this.pathClearance = Math.max(30, m*0.075);
+    this.minSpacing = Math.max(28, m*0.050);
+  },
+
+  posAtDistance(d){
+    d = clamp(d, 0, this.totalLen);
+    let i=0; while (i<this.segLen.length-1 && this.cumLen[i+1]<d) i++;
+    const a=this.pathPx[i], b=this.pathPx[i+1];
+    const segStart=this.cumLen[i], segL=this.segLen[i]||1;
+    const t = clamp((d-segStart)/segL, 0, 1);
+    return { x:lerp(a.x,b.x,t), y:lerp(a.y,b.y,t) };
+  },
+
+  distToPath(px,py){
+    let minD = Infinity;
+    for (let i=0;i<this.pathPx.length-1;i++){
+      const a=this.pathPx[i], b=this.pathPx[i+1];
+      minD = Math.min(minD, distToSeg(px,py,a.x,a.y,b.x,b.y));
+    }
+    return minD;
+  },
+
+  inBounds(px,py){
+    return px>=this.x0 && px<=this.x0+this.w && py>=this.y0 && py<=this.y0+this.h;
+  },
+
+  canPlace(px,py){
+    if (!this.inBounds(px,py)) return false;
+    if (this.distToPath(px,py) < this.pathClearance) return false;
+    for (const t of S.towers){
+      if (Math.hypot(t.x-px, t.y-py) < this.minSpacing) return false;
+    }
+    return true;
+  },
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+//  ENTITIES
+// ═══════════════════════════════════════════════════════════════════════
+let entityId = 0;
+
+class Enemy {
+  constructor(type, hp, boss=false){
+    this.id = entityId++;
+    this.type = type;
+    this.def = ENEMY_DEFS[type];
+    this.hp = hp; this.maxHp = hp;
+    this.progress = 0;
+    this.speed = this.def.speed;
+    this.slowT = 0;
+    this.surgeT = boss ? 0 : Math.random()*3;
+    this.boss = boss;
+    this.dead = false; this.leaked = false;
+    const p = Field.posAtDistance(0);
+    this.x = p.x; this.y = p.y;
+  }
+  effSpeed(){
+    let s = this.speed;
+    if (this.type==='surge'){
+      this.surgeT += 1/30;
+      const phase = this.surgeT % 3;
+      if (phase < 0.8) s *= 1.5;
+    }
+    if (this.slowT > 0) s *= (this.slowMul||0.55);
+    return s;
+  }
+  tick(dt){
+    if (this.dead) return;
+    const s = this.effSpeed();
+    this.progress += s*dt;
+    if (this.slowT>0) this.slowT -= dt;
+    if (this.progress >= Field.totalLen){ this.leaked = true; this.dead = true; return; }
+    const p = Field.posAtDistance(this.progress);
+    this.x=p.x; this.y=p.y;
+  }
+  hit(dmg){ this.hp -= dmg; if (this.hp<=0 && !this.dead){ this.dead=true; return true; } return false; }
+  draw(){
+    const d = this.def;
+    ctx.save();
+    glow(d.glow, this.boss?26:14);
+    ctx.fillStyle = d.col;
+    const rad = this.boss ? 16 : (this.type==='cascade' ? 11 : 7);
+    ctx.beginPath();
+    if (this.type==='surge'){
+      ctx.moveTo(this.x, this.y-rad); ctx.lineTo(this.x+rad, this.y+rad); ctx.lineTo(this.x-rad, this.y+rad);
+      ctx.closePath();
+    } else {
+      ctx.arc(this.x,this.y,rad,0,TAU);
+    }
+    ctx.fill();
+    noGlow();
+    if (this.hp < this.maxHp){
+      const bw = rad*2.4;
+      ctx.fillStyle='rgba(0,0,0,.5)'; ctx.fillRect(this.x-bw/2, this.y-rad-9, bw, 3);
+      ctx.fillStyle = this.hp/this.maxHp>0.4 ? '#66ff99' : '#ff4466';
+      ctx.fillRect(this.x-bw/2, this.y-rad-9, bw*clamp(this.hp/this.maxHp,0,1), 3);
+    }
+    if (this.slowT>0){
+      ctx.strokeStyle='rgba(255,238,0,.6)'; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.arc(this.x,this.y,rad+4,0,TAU); ctx.stroke();
+    }
+    ctx.restore();
+  }
+}
+
+class Tower {
+  constructor(x, y, type){
+    this.x = x; this.y = y; this.type = type;
+    this.def = TOWER_DEFS[type];
+    this.cd = 0;
+    this.fx = 0;
+    this.paidCost = 0;
+    this.pulseT = rnd(0,0.7); // desync aura pulses between towers
+  }
+  tick(dt, enemies, onFire){
+    const d = this.def;
+    if (this.fx>0) this.fx -= dt;
+    if (this.type==='slow'){
+      let hitAny=false;
+      for (const e of enemies){
+        if (e.dead) continue;
+        if (Math.hypot(e.x-this.x, e.y-this.y) <= d.range){
+          e.slowT = Math.max(e.slowT, 2.0); e.slowMul = d.slowMul; hitAny=true;
+        }
+      }
+      return null;
+    }
+    this.cd -= dt;
+    if (this.cd > 0) return null;
+    let best=null, bestProg=-1;
+    for (const e of enemies){
+      if (e.dead) continue;
+      if (Math.hypot(e.x-this.x, e.y-this.y) <= d.range){
+        if (e.progress > bestProg || (e.progress===bestProg && (!best || e.id<best.id))){ best=e; bestProg=e.progress; }
+      }
+    }
+    if (!best) return null;
+    this.cd = 1/d.rate;
+    this.fx = 0.12;
+    const hits = [best];
+    if (this.type==='arc'){
+      const others = enemies.filter(e=>!e.dead && e!==best && Math.hypot(e.x-best.x,e.y-best.y)<80)
+        .sort((a,b)=>Math.hypot(a.x-best.x,a.y-best.y)-Math.hypot(b.x-best.x,b.y-best.y)).slice(0,2);
+      hits.push(...others);
+    }
+    const results = hits.map((e,i)=>{
+      const mult = this.type==='arc' ? d.chain[i] : 1;
+      const killed = e.hit(d.dmg*mult);
+      return { e, killed };
+    });
+    onFire && onFire(this, results);
+    return hits;
+  }
+  draw(){
+    const d = this.def;
+    ctx.save();
+    const pulseR = 13 + (this.fx>0 ? this.fx*30 : 0);
+    glow(d.col.glow, 16);
+    ctx.fillStyle = d.col.core;
+    ctx.beginPath(); ctx.arc(this.x, this.y, pulseR, 0, TAU); ctx.fill();
+    noGlow();
+    ctx.strokeStyle='rgba(2,11,24,.9)'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.arc(this.x,this.y,pulseR,0,TAU); ctx.stroke();
+    ctx.restore();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  VISUAL EFFECTS — attack animations. Pure listeners on sim events;
+//  never read by Sim, so they can't affect determinism. Updated with
+//  real (variable) dt at render time, not the fixed sim tick.
+// ═══════════════════════════════════════════════════════════════════════
+class Spark {
+  constructor(x,y,vx,vy,col,life,size){
+    this.x=x; this.y=y; this.vx=vx; this.vy=vy; this.col=col;
+    this.life=life; this.maxLife=life; this.size=size; this.dead=false;
+  }
+  update(dt){
+    this.life -= dt;
+    if (this.life<=0){ this.dead=true; return; }
+    this.x += this.vx*dt; this.y += this.vy*dt;
+    this.vx *= 0.90; this.vy *= 0.90;
+  }
+  draw(){
+    const a = clamp(this.life/this.maxLife,0,1);
+    ctx.save(); ctx.globalAlpha=a; glow(this.col,10); ctx.fillStyle=this.col;
+    ctx.beginPath(); ctx.arc(this.x,this.y,this.size*Math.max(a,0.15),0,TAU); ctx.fill();
+    ctx.restore();
+  }
+}
+
+const FX = { sparks:[], beams:[], chains:[], rings:[] };
+
+function spawnSparks(x,y,col,n,spd,size=3){
+  for (let i=0;i<n;i++){
+    const a = rnd(0,TAU), s = rnd(spd*0.4,spd);
+    FX.sparks.push(new Spark(x,y,Math.cos(a)*s,Math.sin(a)*s,col,rnd(0.18,0.4),rnd(size*0.6,size)));
+  }
+}
+function spawnBeam(x1,y1,x2,y2,col,life=0.1){
+  FX.beams.push({x1,y1,x2,y2,col,life,maxLife:life});
+}
+function spawnChain(pts,col,life=0.16){
+  // jittered jagged path through pts for a lightning feel
+  const jagged = [];
+  for (let i=0;i<pts.length-1;i++){
+    const a=pts[i], b=pts[i+1], segs=4;
+    for (let s=0;s<segs;s++){
+      const t=s/segs;
+      const jx = (Math.random()-0.5)*10*(s>0&&s<segs?1:0);
+      const jy = (Math.random()-0.5)*10*(s>0&&s<segs?1:0);
+      jagged.push({ x:lerp(a.x,b.x,t)+jx, y:lerp(a.y,b.y,t)+jy });
+    }
+  }
+  jagged.push(pts[pts.length-1]);
+  FX.chains.push({ pts:jagged, col, life, maxLife:life });
+}
+function spawnRing(x,y,col,maxR=34,life=0.5){
+  FX.rings.push({x,y,col,life,maxLife:life,maxR});
+}
+
+function updateFX(dt){
+  for (const s of FX.sparks) s.update(dt);
+  FX.sparks = FX.sparks.filter(s=>!s.dead);
+  for (const b of FX.beams) b.life -= dt;
+  FX.beams = FX.beams.filter(b=>b.life>0);
+  for (const c of FX.chains) c.life -= dt;
+  FX.chains = FX.chains.filter(c=>c.life>0);
+  for (const r of FX.rings) r.life -= dt;
+  FX.rings = FX.rings.filter(r=>r.life>0);
+
+  if (!S.paused && S.screen==='level'){
+    for (const t of S.towers){
+      if (t.type!=='slow') continue;
+      t.pulseT += dt;
+      if (t.pulseT >= 0.7){
+        t.pulseT = 0;
+        const inRange = S.enemies.some(e=>!e.dead && Math.hypot(e.x-t.x,e.y-t.y)<=t.def.range);
+        if (inRange) spawnRing(t.x, t.y, C.slow.core, t.def.range*0.55, 0.55);
+      }
+    }
+  }
+}
+
+function drawFX(){
+  ctx.save();
+  for (const b of FX.beams){
+    const a = clamp(b.life/b.maxLife,0,1);
+    ctx.globalAlpha = a; ctx.strokeStyle = b.col; ctx.lineWidth = 2.2;
+    glow(b.col, 10);
+    ctx.beginPath(); ctx.moveTo(b.x1,b.y1); ctx.lineTo(b.x2,b.y2); ctx.stroke();
+  }
+  for (const c of FX.chains){
+    const a = clamp(c.life/c.maxLife,0,1);
+    ctx.globalAlpha = a; ctx.strokeStyle = c.col; ctx.lineWidth = 2.4;
+    glow(c.col, 14);
+    ctx.beginPath();
+    c.pts.forEach((p,i)=>{ if(i===0) ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y); });
+    ctx.stroke();
+  }
+  noGlow(); ctx.globalAlpha=1;
+  for (const r of FX.rings){
+    const t = 1 - clamp(r.life/r.maxLife,0,1);
+    const a = clamp(r.life/r.maxLife,0,1)*0.5;
+    ctx.globalAlpha=a; ctx.strokeStyle=r.col; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.arc(r.x,r.y, r.maxR*t, 0, TAU); ctx.stroke();
+  }
+  ctx.globalAlpha=1;
+  for (const s of FX.sparks) s.draw();
+  ctx.restore();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  AUDIO — synthesized, zero assets. Bus-named for fts-audio.js parity.
+// ═══════════════════════════════════════════════════════════════════════
+let _ac=null;
+const AC = ()=> _ac || (_ac = new (window.AudioContext||window.webkitAudioContext)());
+function tone(freq,type,dur,vol=0.22,sweepTo=null){
+  try{
+    const ac=AC(), o=ac.createOscillator(), g=ac.createGain();
+    o.type=type; o.connect(g); g.connect(ac.destination);
+    o.frequency.setValueAtTime(freq, ac.currentTime);
+    if (sweepTo) o.frequency.exponentialRampToValueAtTime(Math.max(20,sweepTo), ac.currentTime+dur);
+    g.gain.setValueAtTime(vol, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime+dur);
+    o.start(); o.stop(ac.currentTime+dur+0.02);
+  }catch(e){}
+}
+const SFX = {
+  pulseFire(){ tone(1800,'square',0.045,0.10); },
+  arcFire(){ tone(300,'sawtooth',0.12,0.14,1400); },
+  damage(){ tone(90,'sine',0.18,0.20,40); },
+  leak(){ tone(160,'sawtooth',0.3,0.22,60); },
+  kill(){ tone(700,'triangle',0.08,0.12,300); },
+  waveStart(){ [440,660,880].forEach((f,i)=>setTimeout(()=>tone(f,'triangle',0.14,0.14),i*70)); },
+  waveClear(){ [660,880,1320].forEach((f,i)=>setTimeout(()=>tone(f,'sine',0.18,0.16),i*90)); },
+  place(){ tone(500,'square',0.06,0.12,900); },
+  sell(){ tone(500,'square',0.08,0.12,220); },
+  invalid(){ tone(140,'square',0.08,0.14,90); },
+  gameOver(){ tone(55,'sawtooth',2.4,0.16); tone(58,'sawtooth',2.4,0.12); },
+  victory(){ [523,659,784,1047].forEach((f,i)=>setTimeout(()=>tone(f,'triangle',0.3,0.16),i*120)); },
+  ui(){ tone(700,'square',0.03,0.06); },
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+//  SIM — fixed-timestep deterministic kernel
+// ═══════════════════════════════════════════════════════════════════════
+const TICK_DT = 1/30;
+
+const S = {
+  screen: 'map',
+  seed: 0, rng: null, tick: 0,
+  eventLog: [],
+  levelId: 0,
+  hp: 20, gold: 200, wave: 0, totalWaves: 10,
+  killScore: 0, earlyBonus: 0,
+  enemies: [], towers: [],
+  towerCounts: { pulse:0, arc:0, slow:0 },
+  spawnQueue: [], waveActive: false, intermission: 0,
+  selectedTower: null, selectedPlaced: null,
+  shakeT: 0, shakeMag: 0,
+  waveMsg: '', waveMsgT: 0,
+  result: null,
+  paused: false,
+};
+
+function logEvent(type, args){ S.eventLog.push({ t:S.tick, type, ...args }); }
+function shake(mag, dur){ S.shakeMag=mag; S.shakeT=dur; }
+
+function startLevel(levelId, seed){
+  S.screen='level'; S.levelId=levelId; S.seed=seed>>>0; S.rng=mulberry32(S.seed);
+  S.tick=0; S.eventLog=[];
+  S.hp=20; S.gold=200; S.wave=0; S.killScore=0; S.earlyBonus=0;
+  S.enemies=[]; S.towers=[]; S.spawnQueue=[];
+  S.towerCounts = { pulse:0, arc:0, slow:0 };
+  S.waveActive=false; S.intermission=4.0;
+  S.selectedTower=null; S.selectedPlaced=null;
+  FX.sparks=[]; FX.beams=[]; FX.chains=[]; FX.rings=[];
+  S.result=null; S.paused=false;
+  setWaveMsg('SIGNAL DETECTED', 2);
+}
+
+function setWaveMsg(msg, dur){ S.waveMsg=msg; S.waveMsgT=dur; }
+
+function beginWave(){
+  S.wave++;
+  S.waveActive = true;
+  S.spawnQueue = buildWaveSpawns(S.wave, S.rng).map(s=>({...s}));
+  setWaveMsg(`WAVE ${S.wave} / ${S.totalWaves}`, 2);
+  SFX.waveStart();
+  mesh.sweep(Field.y0 + 20, W);
+}
+
+function callWaveEarly(){
+  if (S.waveActive || S.result) return;
+  const bonus = Math.min(50, Math.round(S.gold*0.10));
+  if (bonus>0){ S.gold += bonus; S.earlyBonus += bonus; }
+  logEvent('CALL_WAVE', { wave: S.wave+1, bonus });
+  S.intermission = 0;
+}
+
+function placeTower(x, y, type){
+  const cost = towerCost(type);
+  if (!Field.canPlace(x,y) || S.gold < cost || S.result) return false;
+  const t = new Tower(x, y, type);
+  t.paidCost = cost;
+  S.towers.push(t);
+  S.gold -= cost;
+  S.towerCounts[type] = (S.towerCounts[type]||0) + 1;
+  logEvent('PLACE', { x:Math.round(x), y:Math.round(y), type, cost });
+  mesh.ripple(x, y, 18, 100);
+  spawnRing(x, y, TOWER_DEFS[type].col.core, 40, 0.4);
+  SFX.place();
+  return true;
+}
+
+function sellTower(tower){
+  if (!tower || S.result) return;
+  const refund = Math.round(tower.paidCost*0.7);
+  S.gold += refund;
+  logEvent('SELL', { x:Math.round(tower.x), y:Math.round(tower.y), refund });
+  S.towers = S.towers.filter(t=>t!==tower);
+  mesh.ripple(tower.x, tower.y, 14, 90);
+  SFX.sell();
+}
+
+function spawnEnemy(type){
+  const mul = waveHpMul(S.wave);
+  if (type==='boss'){
+    const hp = Math.round(ENEMY_DEFS.cascade.hp*mul*6);
+    S.enemies.push(new Enemy('cascade', hp, true));
+    return;
+  }
+  const base = ENEMY_DEFS[type].hp;
+  S.enemies.push(new Enemy(type, Math.round(base*mul)));
+}
+
+function onLeak(e){
+  const dmg = e.boss ? 6 : (e.type==='cascade' ? 3 : 1);
+  S.hp -= dmg;
+  mesh.ripple(Field.pathPx[Field.pathPx.length-1].x, e.y, 70, 220);
+  shake(10, 0.35);
+  SFX.leak();
+  if (S.hp <= 0){ S.hp = 0; endLevel('lose'); }
+}
+
+function onKill(e){
+  const bounty = e.def.bounty * (e.boss?6:1);
+  S.killScore += bounty;
+  S.gold += bounty;
+  mesh.ripple(e.x, e.y, 34, 150);
+  spawnSparks(e.x, e.y, e.def.col, e.boss?18:9, e.boss?260:170, e.boss?5:3.4);
+  SFX.kill();
+  if (e.type==='cascade'){
+    const n = e.boss ? 5 : e.def.children;
+    for (let i=0;i<n;i++){
+      const mul = waveHpMul(S.wave);
+      const child = new Enemy('pulse', Math.round(ENEMY_DEFS.pulse.hp*mul*0.5));
+      child.progress = Math.max(0, e.progress - 10 - i*8);
+      const p = Field.posAtDistance(child.progress);
+      child.x=p.x; child.y=p.y;
+      S.enemies.push(child);
+    }
+  }
+}
+
+function endLevel(result){
+  S.result = result;
+  S.screen = 'results';
+  const score = S.killScore + S.hp*50 + S.gold + S.earlyBonus*2;
+  const payload = JSON.stringify({ seed:S.seed, events:S.eventLog, hp:S.hp, gold:S.gold, wave:S.wave, score });
+  const hash = fnv1a(payload);
+  S.finalScore = score;
+  S.finalHash = hash;
+  if (result==='win'){
+    const stars = S.hp>=18 ? 3 : S.hp>=15 ? 2 : 1;
+    saveProgress(S.levelId, stars, score);
+    setWaveMsg('SECTOR CLEARED', 2.5);
+    SFX.victory();
+  } else {
+    setWaveMsg('SIGNAL LOST', 2.5);
+    SFX.gameOver();
+  }
+  showResultsUI();
+}
+
+function simTick(){
+  S.tick++;
+  if (S.screen!=='level' || S.result) return;
+  if (S.waveMsgT>0) S.waveMsgT -= TICK_DT;
+  if (S.shakeT>0) S.shakeT -= TICK_DT;
+
+  if (!S.waveActive){
+    S.intermission -= TICK_DT;
+    if (S.intermission <= 0 && S.wave < S.totalWaves) beginWave();
+    return;
+  }
+
+  for (const s of S.spawnQueue) s.t -= TICK_DT;
+  while (S.spawnQueue.length && S.spawnQueue[0].t <= 0){
+    spawnEnemy(S.spawnQueue.shift().type);
+  }
+
+  for (const e of S.enemies){
+    if (e.dead) continue;
+    e.tick(TICK_DT);
+    if (e.leaked) onLeak(e);
+  }
+
+  for (const t of S.towers){
+    t.tick(TICK_DT, S.enemies, (tower, results)=>{
+      const primary = results[0];
+      if (tower.type!=='slow') mesh.ripple(tower.x, tower.y, tower.def.rippleMag, 60);
+      if (tower.type==='pulse'){
+        SFX.pulseFire();
+        spawnBeam(tower.x, tower.y, primary.e.x, primary.e.y, tower.def.col.core, 0.09);
+        spawnSparks(primary.e.x, primary.e.y, tower.def.col.core, 4, 110, 2.4);
+      } else if (tower.type==='arc'){
+        SFX.arcFire();
+        const pts = [{x:tower.x,y:tower.y}, ...results.map(r=>({x:r.e.x,y:r.e.y}))];
+        spawnChain(pts, tower.def.col.core, 0.16);
+        for (const r of results) spawnSparks(r.e.x, r.e.y, tower.def.col.core, 5, 140, 2.8);
+      }
+      if (tower.type!=='slow') SFX.damage();
+      for (const r of results) if (r.killed) onKill(r.e);
+    });
+  }
+
+  S.enemies = S.enemies.filter(e=>!e.dead);
+
+  if (S.spawnQueue.length===0 && S.enemies.length===0){
+    S.waveActive = false;
+    if (S.wave >= S.totalWaves){
+      endLevel('win');
+    } else {
+      const bonus = 35 + 4*S.wave;
+      S.gold += bonus;
+      S.intermission = 3.0;
+      setWaveMsg(`WAVE CLEAR · +${bonus}g`, 2);
+      SFX.waveClear();
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  WORLD MAP
+// ═══════════════════════════════════════════════════════════════════════
+const LEVELS = [
+  { id:0, name:'INGRESS' },
+  { id:1, name:'DEEP CHANNEL' },
+  { id:2, name:'ARC FIELD' },
+  { id:3, name:'COLD RELAY' },
+  { id:4, name:'FRACTURE LINE' },
+  { id:5, name:'CORE BREACH' },
+];
+
+function loadProgress(){
+  try { return JSON.parse(localStorage.getItem('gw_progress_v1')) || {}; } catch(e){ return {}; }
+}
+function saveProgress(levelId, stars, score){
+  const p = loadProgress();
+  const cur = p[levelId] || { stars:0, bestScore:0 };
+  p[levelId] = { stars: Math.max(cur.stars, stars), bestScore: Math.max(cur.bestScore, score) };
+  localStorage.setItem('gw_progress_v1', JSON.stringify(p));
+}
+
+let mapNodes = [];
+function layoutMap(){
+  mapNodes = [];
+  const n = LEVELS.length;
+  for (let i=0;i<n;i++){
+    const fx = 0.14 + (i/(n-1))*0.72 + Math.sin(i*1.3)*0.03;
+    const fy = 0.66 - (i/(n-1))*0.40 + Math.cos(i*0.9)*0.05;
+    mapNodes.push({ x: fx*W, y: fy*H, level: LEVELS[i] });
+  }
+}
+
+let hoveredMapNode = null;
+
+function drawMap(){
+  const progress = loadProgress();
+  ctx.save();
+  ctx.strokeStyle = 'rgba(0,190,255,.25)'; ctx.lineWidth = 2;
+  ctx.beginPath();
+  mapNodes.forEach((nd,i)=>{ if(i===0) ctx.moveTo(nd.x,nd.y); else ctx.lineTo(nd.x,nd.y); });
+  ctx.stroke();
+
+  mapNodes.forEach((nd,i)=>{
+    const lvl = nd.level;
+    const p = progress[lvl.id];
+    const unlocked = i===0 || progress[LEVELS[i-1]?.id];
+    const stars = p ? p.stars : 0;
+    ctx.save();
+    if (!unlocked){
+      glow('rgba(0,120,180,.4)', 10);
+      ctx.fillStyle = 'rgba(0,60,90,.5)';
+      ctx.beginPath(); ctx.arc(nd.x,nd.y,16,0,TAU); ctx.fill();
+      noGlow();
+      ctx.strokeStyle='rgba(0,150,220,.35)'; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.arc(nd.x,nd.y,16,0,TAU); ctx.stroke();
+    } else {
+      const pulse = 16 + Math.sin(performance.now()/500 + i)*2;
+      glow(C.ui, hoveredMapNode===nd ? 30 : 18);
+      ctx.fillStyle = stars>0 ? '#ffee00' : C.ui;
+      ctx.beginPath(); ctx.arc(nd.x,nd.y,pulse,0,TAU); ctx.fill();
+      noGlow();
+    }
+    ctx.font = '11px "Courier New",monospace';
+    ctx.textAlign='center';
+    ctx.fillStyle = unlocked ? 'rgba(200,240,255,.85)' : 'rgba(120,170,200,.4)';
+    ctx.fillText(unlocked ? lvl.name : 'SIGNAL LOST', nd.x, nd.y+34);
+    if (unlocked && stars>0){
+      ctx.fillStyle = '#ffee00'; ctx.font = '12px "Courier New",monospace';
+      ctx.fillText('★'.repeat(stars) + '☆'.repeat(3-stars), nd.x, nd.y+50);
+    }
+    ctx.restore();
+  });
+  ctx.restore();
+
+  ctx.save();
+  ctx.textAlign='center'; ctx.font='bold 22px "Courier New",monospace';
+  glow(C.ui, 14); ctx.fillStyle=C.ui;
+  ctx.fillText('GRID WARDEN', W/2, 56);
+  noGlow();
+  ctx.font='11px "Courier New",monospace'; ctx.fillStyle=C.uiDim;
+  ctx.fillText('OBLITERATUS', W/2, 76);
+  ctx.restore();
+}
+
+function mapClick(x,y){
+  for (const nd of mapNodes){
+    if (Math.hypot(x-nd.x,y-nd.y) < 26){
+      const progress = loadProgress();
+      const idx = mapNodes.indexOf(nd);
+      const unlocked = idx===0 || progress[LEVELS[idx-1]?.id];
+      if (!unlocked) return;
+      SFX.ui();
+      startLevel(nd.level.id, 1337 + nd.level.id*7919);
+      showLevelUI();
+      return;
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  DOM HUD
+// ═══════════════════════════════════════════════════════════════════════
+const hudTop = document.getElementById('hud-top');
+const buildBar = document.getElementById('build-bar');
+const pauseBtn = document.getElementById('pause-btn');
+const resultsPanel = document.getElementById('results-panel');
+const hintEl = document.getElementById('hint');
+
+function showLevelUI(){
+  hudTop.style.display='flex'; buildBar.style.display='flex'; pauseBtn.style.display='flex';
+  resultsPanel.style.display='none'; hintEl.style.display='none';
+  renderBuildBar();
+}
+function showMapUI(){
+  hudTop.style.display='none'; buildBar.style.display='none'; pauseBtn.style.display='none';
+  resultsPanel.style.display='none'; hintEl.style.display='block';
+}
+function showResultsUI(){
+  hudTop.style.display='flex'; buildBar.style.display='none'; pauseBtn.style.display='none';
+  hintEl.style.display='none';
+  const win = S.result==='win';
+  resultsPanel.style.display='flex';
+  resultsPanel.innerHTML = `
+    <div class="rp-title" style="color:${win?'#00e5ff':'#ff4466'}">${win?'SECTOR CLEARED':'SIGNAL LOST'}</div>
+    <div class="rp-row">SCORE <b>${S.finalScore}</b></div>
+    <div class="rp-row">WAVE ${S.wave} / ${S.totalWaves} &nbsp;·&nbsp; HP ${S.hp}/20</div>
+    <div class="rp-row rp-hash">VERIFY ${S.finalHash}</div>
+    <div class="rp-btns">
+      <button class="rp-btn" id="rp-retry">RETRY</button>
+      <button class="rp-btn rp-primary" id="rp-map">WORLD MAP</button>
+    </div>`;
+  document.getElementById('rp-retry').onclick = ()=>{ SFX.ui(); startLevel(S.levelId, S.seed); showLevelUI(); };
+  document.getElementById('rp-map').onclick = ()=>{ SFX.ui(); S.screen='map'; showMapUI(); };
+}
+
+function renderBuildBar(){
+  if (S.selectedPlaced){
+    const t = S.selectedPlaced;
+    const refund = Math.round(t.paidCost*0.7);
+    buildBar.innerHTML = `
+      <div class="bb-info">${TOWER_DEFS[t.type].name} DEPLOYED</div>
+      <button class="bb-btn bb-sell" id="bb-sell">SELL +${refund}g</button>
+      <button class="bb-btn" id="bb-cancel">CANCEL</button>`;
+    document.getElementById('bb-sell').onclick = ()=>{ sellTower(S.selectedPlaced); S.selectedPlaced=null; renderBuildBar(); };
+    document.getElementById('bb-cancel').onclick = ()=>{ S.selectedPlaced=null; renderBuildBar(); };
+    return;
+  }
+  buildBar.innerHTML = Object.entries(TOWER_DEFS).map(([key,d])=>`
+    <button class="bb-btn bb-tower ${S.selectedTower===key?'sel':''}" data-t="${key}" style="--tc:${d.col.core}">
+      <span class="bb-name">${d.name}</span>
+      <span class="bb-cost">${towerCost(key)}g</span>
+    </button>`).join('') + `<button class="bb-btn bb-call" id="bb-call">${S.waveActive?'WAVE ACTIVE':'CALL WAVE'}</button>`;
+  buildBar.querySelectorAll('.bb-tower').forEach(btn=>{
+    btn.onclick = ()=>{
+      SFX.ui();
+      S.selectedTower = S.selectedTower===btn.dataset.t ? null : btn.dataset.t;
+      renderBuildBar();
+    };
+  });
+  const callBtn = document.getElementById('bb-call');
+  callBtn.disabled = S.waveActive;
+  callBtn.onclick = ()=>{ if(!S.waveActive){ SFX.ui(); callWaveEarly(); renderBuildBar(); } };
+}
+
+function updateHUD(){
+  if (S.screen!=='level') return;
+  hudTop.innerHTML = `
+    <div class="hud-item">WAVE <b>${S.wave}/${S.totalWaves}</b></div>
+    <div class="hud-item hud-hp">HP <b>${S.hp}</b></div>
+    <div class="hud-item hud-gold">GOLD <b>${S.gold}</b></div>`;
+}
+
+pauseBtn.addEventListener('click', ()=>{
+  S.paused = !S.paused;
+  pauseBtn.textContent = S.paused ? '►' : 'II';
+  pauseBtn.dataset.state = S.paused ? 'paused' : 'playing';
+});
+
+// ═══════════════════════════════════════════════════════════════════════
+//  INPUT — free placement anywhere valid on the field
+// ═══════════════════════════════════════════════════════════════════════
+function findTowerNear(x,y,maxD=20){
+  let best=null, bestD=maxD;
+  for (const t of S.towers){
+    const d = Math.hypot(x-t.x,y-t.y);
+    if (d<bestD){ best=t; bestD=d; }
+  }
+  return best;
+}
+
+let pointerPos = null;
+
+function handleTap(x,y){
+  if (S.screen==='map'){ mapClick(x,y); return; }
+  if (S.screen!=='level' || S.paused) return;
+
+  const hitTower = findTowerNear(x,y);
+  if (hitTower && !S.selectedTower){
+    S.selectedPlaced = hitTower;
+    renderBuildBar();
+    return;
+  }
+  if (S.selectedTower){
+    const ok = placeTower(x, y, S.selectedTower);
+    if (ok){ S.selectedTower=null; renderBuildBar(); updateHUD(); }
+    else { SFX.invalid(); }
+    return;
+  }
+  S.selectedPlaced = null;
+  renderBuildBar();
+}
+
+canvas.addEventListener('pointerdown', e=>{
+  if (e.target !== canvas) return;
+  handleTap(e.clientX, e.clientY);
+});
+canvas.addEventListener('pointermove', e=>{
+  pointerPos = { x:e.clientX, y:e.clientY };
+  if (S.screen==='map'){
+    hoveredMapNode = null;
+    for (const nd of mapNodes) if (Math.hypot(e.clientX-nd.x,e.clientY-nd.y)<26) hoveredMapNode=nd;
+  }
+});
+canvas.addEventListener('touchstart', e=>{
+  if (e.target!==canvas) return;
+  e.preventDefault();
+  const t=e.touches[0];
+  pointerPos = { x:t.clientX, y:t.clientY };
+  handleTap(t.clientX, t.clientY);
+}, { passive:false });
+
+// ═══════════════════════════════════════════════════════════════════════
+//  RENDER — level screen entities + placement ghost
+// ═══════════════════════════════════════════════════════════════════════
+function drawPath(){
+  ctx.save();
+  ctx.strokeStyle='rgba(0,190,255,.18)'; ctx.lineWidth=Math.max(18, W*0.018);
+  ctx.lineCap='round'; ctx.lineJoin='round';
+  ctx.beginPath();
+  Field.pathPx.forEach((p,i)=>{ if(i===0) ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y); });
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawGhost(){
+  if (!S.selectedTower || !pointerPos || S.screen!=='level') return;
+  const def = TOWER_DEFS[S.selectedTower];
+  const x = pointerPos.x, y = pointerPos.y;
+  const valid = Field.canPlace(x,y);
+  ctx.save();
+  ctx.strokeStyle = valid ? def.col.core : C.bad; ctx.globalAlpha = 0.5; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.arc(x,y,def.range,0,TAU); ctx.stroke();
+  ctx.globalAlpha = valid ? 0.7 : 0.3;
+  glow(valid ? def.col.glow : C.bad, 12);
+  ctx.fillStyle = valid ? def.col.core : C.bad;
+  ctx.beginPath(); ctx.arc(x,y,10,0,TAU); ctx.fill();
+  ctx.restore();
+}
+
+function drawSelectedRange(){
+  if (!S.selectedPlaced) return;
+  const t = S.selectedPlaced, def = TOWER_DEFS[t.type];
+  ctx.save();
+  ctx.strokeStyle = def.col.core; ctx.globalAlpha=0.4; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.arc(t.x,t.y,def.range,0,TAU); ctx.stroke();
+  ctx.restore();
+}
+
+function drawWaveMsg(){
+  if (S.waveMsgT<=0) return;
+  const fa = clamp(Math.min(1,S.waveMsgT)*Math.min(1,(2.5-S.waveMsgT)*2.2), 0, 1);
+  ctx.save(); ctx.globalAlpha=fa; ctx.textAlign='center';
+  ctx.font='bold 26px "Courier New",monospace';
+  glow('#ffee00',18); ctx.fillStyle='#ffee00';
+  ctx.fillText(S.waveMsg, W/2, Field.y0>40 ? Field.y0-14 : 100);
+  ctx.restore();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  MAIN LOOP — fixed timestep sim, variable render + FX
+// ═══════════════════════════════════════════════════════════════════════
+let acc=0, lastTs=0;
+
+function resize(){
+  const newDpr = Math.min(window.devicePixelRatio||1, 2);
+  if (newDpr!==dpr){ dpr=newDpr; }
+  W = window.innerWidth; H = window.innerHeight;
+  canvas.style.width=W+'px'; canvas.style.height=H+'px';
+  canvas.width=Math.round(W*dpr); canvas.height=Math.round(H*dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+
+  if (!mesh.sprites.length) mesh.init(W,H,dpr); else mesh.resize(W,H);
+
+  const isMobile = W < 640;
+  const topMargin = isMobile ? 56 : 68;
+  const bottomMargin = isMobile ? 96 : 84;
+  Field.layout(24, topMargin, W-48, H-topMargin-bottomMargin);
+  layoutMap();
+}
+window.addEventListener('resize', resize);
+
+function loop(ts){
+  let dt = Math.min((ts-lastTs)/1000, 0.05);
+  lastTs = ts;
+  requestAnimationFrame(loop);
+
+  if (!S.paused){
+    acc += dt;
+    let guard=0;
+    while (acc >= TICK_DT && guard<6){ simTick(); acc -= TICK_DT; guard++; }
+  }
+  mesh.update(Math.min(dt,0.05));
+  updateFX(dt);
+
+  ctx.save();
+  if (S.shakeT>0){ ctx.translate((Math.random()*2-1)*S.shakeMag, (Math.random()*2-1)*S.shakeMag); }
+  ctx.fillStyle=C.bg; ctx.fillRect(-20,-20,W+40,H+40);
+  mesh.draw();
+
+  if (S.screen==='map'){
+    drawMap();
+  } else if (S.screen==='level' || S.screen==='results'){
+    drawPath();
+    for (const t of S.towers) t.draw();
+    for (const e of S.enemies) e.draw();
+    drawFX();
+    drawSelectedRange();
+    drawGhost();
+    drawWaveMsg();
+  }
+  ctx.restore();
+
+  updateHUD();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  BOOT
+// ═══════════════════════════════════════════════════════════════════════
+resize();
+showMapUI();
+requestAnimationFrame(ts=>{ lastTs=ts; requestAnimationFrame(loop); });
+
+</script>
+</body>
+</html>
