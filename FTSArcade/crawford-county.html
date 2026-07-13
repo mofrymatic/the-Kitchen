@@ -1,0 +1,1457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>CRAWFORD COUNTY — Missouri</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  :root{
+    --ink:#f4f1e8; --ink-dim:rgba(244,241,232,.62); --panel:rgba(13,18,20,.58);
+    --gold:#e8b34b; --accent:#ff7a3d;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:100%;height:100%;overflow:hidden;background:#0d1214;touch-action:none;
+    font-family:'Inter',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:var(--ink)}
+  canvas#gl{display:block;width:100%;height:100%}
+  .hud{position:fixed;pointer-events:none;user-select:none;-webkit-user-select:none;z-index:5}
+  .chip{background:var(--panel);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+    border:1px solid rgba(244,241,232,.10);border-radius:8px;padding:8px 12px}
+
+  #loc{top:14px;left:14px}
+  #locName{font-size:15px;font-weight:600;letter-spacing:.22em;text-transform:uppercase}
+  #locSub{font-size:9.5px;letter-spacing:.3em;color:var(--ink-dim);margin-top:3px;text-transform:uppercase}
+
+  #compass{top:14px;left:50%;transform:translateX(-50%);font-size:10.5px;letter-spacing:.28em;
+    color:var(--ink-dim);padding:6px 12px}
+
+  #mapWrap{top:14px;right:14px;display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+  #minimap{border-radius:8px;border:1px solid rgba(244,241,232,.10);display:block}
+  #found{font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--ink-dim)}
+  #found b{color:var(--gold);font-weight:600}
+
+  #hint{bottom:16px;left:14px;font-size:10.5px;line-height:1.7;letter-spacing:.14em;color:var(--ink-dim);
+    text-transform:uppercase;transition:opacity 1.2s ease}
+  #toast{top:64px;left:50%;transform:translateX(-50%) translateY(-8px);font-size:11px;letter-spacing:.3em;
+    text-transform:uppercase;opacity:0;transition:opacity .5s ease,transform .5s ease;text-align:center}
+  #toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+  #toast .t1{color:var(--gold);font-weight:600}
+  #toast .t2{color:var(--ink-dim);font-size:9px;margin-top:4px;letter-spacing:.34em}
+
+  #title{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;
+    justify-content:center;background:radial-gradient(120% 90% at 50% 42%,rgba(16,24,26,.28),rgba(9,13,15,.9));
+    transition:opacity 1.1s ease;text-align:center}
+  #title h1{font-size:clamp(26px,5.4vw,54px);font-weight:200;letter-spacing:.42em;margin-left:.42em}
+  #title .rule{width:min(46vw,300px);height:1px;background:rgba(244,241,232,.28);margin:20px 0}
+  #title .est{font-size:10px;letter-spacing:.5em;color:var(--ink-dim);margin-left:.5em}
+  #title .start{margin-top:44px;font-size:11px;letter-spacing:.34em;color:var(--gold)}
+  #title .press{margin-top:12px;font-size:9.5px;letter-spacing:.3em;color:var(--ink-dim);
+    animation:pulse 2.2s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:.35}50%{opacity:.9}}
+
+  #bigmapWrap{position:fixed;inset:0;z-index:15;display:none;align-items:center;justify-content:center;
+    background:rgba(9,13,15,.72);backdrop-filter:blur(4px)}
+  #bigmapWrap.on{display:flex}
+  #bigmap{border-radius:10px;border:1px solid rgba(244,241,232,.14)}
+
+  #help{position:fixed;inset:0;z-index:16;display:none;align-items:center;justify-content:center;
+    background:rgba(9,13,15,.72);backdrop-filter:blur(4px)}
+  #help.on{display:flex}
+  #help .card{min-width:270px;padding:22px 26px}
+  #help h2{font-size:11px;letter-spacing:.34em;color:var(--gold);margin-bottom:16px;font-weight:600}
+  #help table{border-collapse:collapse;font-size:11px;letter-spacing:.1em}
+  #help td{padding:4px 0;color:var(--ink-dim)}
+  #help td:first-child{color:var(--ink);padding-right:22px;font-weight:600;white-space:nowrap}
+
+  #jumpBtn{position:fixed;right:22px;bottom:26px;width:64px;height:64px;border-radius:50%;z-index:8;
+    background:var(--panel);border:1px solid rgba(244,241,232,.16);display:none;align-items:center;
+    justify-content:center;font-size:9px;letter-spacing:.22em;color:var(--ink-dim);text-transform:uppercase}
+  body.touch #jumpBtn{display:flex}
+  body.touch #hint{display:none}
+</style>
+</head>
+<body>
+<canvas id="gl"></canvas>
+
+<div id="title">
+  <h1>CRAWFORD COUNTY</h1>
+  <div class="rule"></div>
+  <div class="est">MISSOURI &nbsp;·&nbsp; EST. 1829</div>
+  <div class="start">YOU ARE IN BOURBON</div>
+  <div class="press" id="pressKey">GENERATING THE OZARKS…</div>
+</div>
+
+<div class="hud chip" id="loc"><div id="locName">BOURBON</div><div id="locSub">Crawford County · Missouri</div></div>
+<div class="hud chip" id="compass">N · 0°</div>
+<div class="hud" id="mapWrap">
+  <canvas id="minimap" width="150" height="184"></canvas>
+  <div class="chip" id="found">LANDMARKS <b>0</b> / 10</div>
+</div>
+<div class="hud" id="hint">wasd move · shift sprint · space jump<br>drag / click to look · scroll zoom<br>m map · f waymarks · t sound · h help</div>
+<div class="hud" id="toast"><div class="t1"></div><div class="t2"></div></div>
+
+<div id="bigmapWrap"><canvas id="bigmap"></canvas></div>
+<div id="help"><div class="card chip">
+  <h2>FIELD MANUAL</h2>
+  <table>
+    <tr><td>W A S D</td><td>move</td></tr>
+    <tr><td>SHIFT</td><td>sprint</td></tr>
+    <tr><td>SPACE</td><td>jump</td></tr>
+    <tr><td>MOUSE</td><td>drag or click-to-lock look · scroll zoom</td></tr>
+    <tr><td>M</td><td>county map</td></tr>
+    <tr><td>F</td><td>waymark beacons</td></tr>
+    <tr><td>T</td><td>ambience</td></tr>
+    <tr><td>R</td><td>return to Bourbon</td></tr>
+    <tr><td>H</td><td>close this</td></tr>
+  </table>
+</div></div>
+<div id="jumpBtn">JUMP</div>
+
+<script id="main">
+'use strict';
+/* ============================================================================
+   CRAWFORD COUNTY, MISSOURI — a third-person county in minimal geometry
+   single file · three.js r128 · no build step · GitHub Pages ready
+   ----------------------------------------------------------------------------
+   N-OF-1 DIALS — trial freely:
+============================================================================ */
+const CONFIG = {
+  SEED: 1829,          // county charter year; reseeds the Ozarks
+  MILE: 100,           // world units per mile (county is 24 x 30 mi)
+  RUN: 17, SPRINT: 34, // ground speeds
+  SWIM: 7,
+  CAM_DIST: 9.5,       // third-person boom
+  TREES: 8000,         // instanced flora budget (auto-halved on touch)
+  SHADOWS: 'auto',     // 'auto' | true | false
+};
+
+const IS_TOUCH = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+if (IS_TOUCH) document.body.classList.add('touch');
+
+const MILE = CONFIG.MILE;
+const W = 24 * MILE, H = 30 * MILE;          // world extents (x east, z south)
+const SEED = CONFIG.SEED;
+
+/* ---------------------------------------------------------------- utilities */
+const clamp = (v,a,b)=>v<a?a:v>b?b:v;
+const lerp  = (a,b,t)=>a+(b-a)*t;
+const sstep = (a,b,x)=>{ const t=clamp((x-a)/(b-a),0,1); return t*t*(3-2*t); };
+const lerpAngle = (a,b,t)=>{ let d=(b-a)%(Math.PI*2);
+  if(d> Math.PI) d-=Math.PI*2; if(d<-Math.PI) d+=Math.PI*2; return a+d*t; };
+const damp = (rate,dt)=>1-Math.exp(-rate*dt);
+function mulberry32(s){ return function(){ s|=0; s=s+0x6D2B79F5|0;
+  let t=Math.imul(s^s>>>15,1|s); t=t+Math.imul(t^t>>>7,61|t)^t;
+  return ((t^t>>>14)>>>0)/4294967296; }; }
+const rng = mulberry32(SEED);
+
+function hash2(x,y){ let n=x*127.1+y*311.7+SEED*0.719;
+  n=Math.sin(n)*43758.5453; return n-Math.floor(n); }
+function vnoise(x,y){
+  const xi=Math.floor(x), yi=Math.floor(y), xf=x-xi, yf=y-yi;
+  const u=xf*xf*(3-2*xf), v=yf*yf*(3-2*yf);
+  const a=hash2(xi,yi), b=hash2(xi+1,yi), c=hash2(xi,yi+1), d=hash2(xi+1,yi+1);
+  return a+(b-a)*u+(c-a)*v+(a-b-c+d)*u*v;
+}
+function fbm(x,y,oct){
+  oct=oct||5; let s=0,a=1,f=1,n=0;
+  for(let i=0;i<oct;i++){ s+=a*vnoise(x*f,y*f); n+=a; a*=0.5; f*=2.02; }
+  return s/n;
+}
+
+/* -------------------------------------------------- polylines (mile coords) */
+const MW = pts => pts.map(p=>({x:p[0]*MILE, z:p[1]*MILE}));
+
+function buildPoly(ptsW){
+  const cum=[0]; let total=0;
+  for(let i=1;i<ptsW.length;i++){
+    const dx=ptsW[i].x-ptsW[i-1].x, dz=ptsW[i].z-ptsW[i-1].z;
+    total+=Math.hypot(dx,dz); cum.push(total);
+  }
+  return { pts:ptsW, cum, total };
+}
+// closest point on polyline: returns squared-friendly {d, along}
+function closestOnPoly(poly, x, z){
+  const P=poly.pts; let bd=1e18, ba=0;
+  for(let i=0;i<P.length-1;i++){
+    const ax=P[i].x, az=P[i].z, bx=P[i+1].x, bz=P[i+1].z;
+    const abx=bx-ax, abz=bz-az, L2=abx*abx+abz*abz;
+    let t = L2>0 ? ((x-ax)*abx+(z-az)*abz)/L2 : 0;
+    t=clamp(t,0,1);
+    const px=ax+abx*t, pz=az+abz*t;
+    const d2=(x-px)*(x-px)+(z-pz)*(z-pz);
+    if(d2<bd){ bd=d2; ba=poly.cum[i]+Math.sqrt(L2)*t; }
+  }
+  return { d:Math.sqrt(bd), along:ba };
+}
+
+/* -------------------------------------------------------- county geography
+   Hand-tuned from the real map: mile coords, x east from the west line,
+   z south from the Franklin County line. Stylized, not surveyed.           */
+
+// The Meramec enters from the west near Steelville, swings NE past Onondaga,
+// exits toward Sullivan. Huzzah and Courtois come up from the south to meet it.
+const MERAMEC = buildPoly(MW([[-0.5,15.5],[2,15],[4.5,14.2],[6.5,13.6],[8.2,13.9],
+  [9.3,13.4],[10.5,12.4],[11.2,11.2],[12.0,10.0],[12.6,8.8],[13.4,7.8],[14.5,7.2],
+  [15.8,6.4],[16.8,5.6],[18.2,4.6],[19.6,3.4],[20.6,2.2],[21.4,0.8],[21.8,-0.5]]));
+const HUZZAH  = buildPoly(MW([[11.5,30.5],[11.8,28.5],[12.2,26.5],[12.4,24.5],
+  [12.8,22.5],[13.0,20.5],[13.2,18.5],[13.5,16.5],[13.8,14.8],[14.2,13.2],
+  [14.6,11.6],[14.9,10.2],[14.8,9.0],[14.5,7.25]]));
+const COURTOIS= buildPoly(MW([[16.5,30.5],[16.1,27.5],[15.6,24.5],[15.2,21.5],
+  [15.0,18.5],[15.1,15.5],[15.0,13.0],[14.92,11.2],[14.9,10.25]]));
+
+// bed elevation drops downstream (mouth = last point)
+function riverize(poly, bedMouth, drop, halfBed, valley, name){
+  poly.bedMouth=bedMouth; poly.drop=drop; poly.halfBed=halfBed;
+  poly.valley=valley; poly.name=name;
+  poly.bedAt = along => bedMouth + drop * ((poly.total-along)/poly.total);
+  poly.surfAt= along => poly.bedAt(along) + 1.6;
+  return poly;
+}
+riverize(MERAMEC, 3.0, 6.0, 13, 120, 'MERAMEC RIVER');
+{ const j = closestOnPoly(MERAMEC, HUZZAH.pts[HUZZAH.pts.length-1].x, HUZZAH.pts[HUZZAH.pts.length-1].z);
+  riverize(HUZZAH, MERAMEC.bedAt(j.along)+0.3, 5.0, 6, 70, 'HUZZAH CREEK'); }
+{ const j = closestOnPoly(HUZZAH, COURTOIS.pts[COURTOIS.pts.length-1].x, COURTOIS.pts[COURTOIS.pts.length-1].z);
+  riverize(COURTOIS, HUZZAH.bedAt(j.along)+0.3, 4.0, 6, 70, 'COURTOIS CREEK'); }
+const RIVERS=[MERAMEC,HUZZAH,COURTOIS];
+
+// Roads. I-44 cuts the north; old Route 66 hugs it through the towns;
+// the Frisco line rides between them. 19 south to Steelville & Cherryville,
+// 8 east–west through Steelville, 49 out past Dillard to Davisville.
+const RD_I44 = MW([[24.5,1.2],[21,2.0],[18.5,2.6],[17,3.0],[15,3.7],[13.2,4.35],
+  [12,4.8],[10,5.35],[8.2,5.8],[7,6.05],[5,6.5],[2.5,7.0],[-0.5,7.6]]);
+const RD_66  = MW([[24.5,1.6],[21,2.4],[18.5,3.0],[17,3.38],[15,4.05],[13.2,4.7],
+  [12,5.15],[10,5.7],[8.2,6.15],[7,6.4],[5,6.85],[2.5,7.35],[-0.5,7.95]]);
+const RD_RAIL= RD_66.map(p=>({x:p.x, z:p.z-0.18*MILE}));
+const RD_19  = MW([[7,6.4],[7.3,7.5],[7.8,9],[8.3,10.5],[8.8,12],[9,13.2],[9,14],
+  [8.7,15.5],[8.3,17.5],[7.9,19.5],[7.5,21.5],[7.2,23.2],[7,24],[6.8,26],
+  [6.6,28],[6.5,30.5]]);
+const RD_8   = MW([[-0.5,14.4],[2,14.3],[4.5,14.2],[6.5,14.1],[9,14],[11,14.5],
+  [13,15.2],[15,15.9],[17,16.4],[19.5,16.8],[22,17.1],[24.5,17.3]]);
+const RD_49  = MW([[7,24],[9.2,24.3],[11.4,25.0],[12.5,25.6],[13.8,25.0],
+  [15,24.0],[15.8,22.9],[16,22.2],[17.5,21.4],[19.5,20.6],[22,19.9],[24.5,19.3]]);
+const RD_H   = MW([[12,5.15],[12.3,6.2],[12.6,7.3],[12.85,8.2]]); // Leasburg → Onondaga
+
+const ROADS=[
+  { pts:RD_I44, half:4.6, col:0x74797f, dashes:true,  name:'I-44'  },
+  { pts:RD_66,  half:2.6, col:0x6e6a66, dashes:false, name:'RT 66' },
+  { pts:RD_19,  half:2.3, col:0x83888c, dashes:false, name:'MO 19' },
+  { pts:RD_8,   half:2.3, col:0x83888c, dashes:false, name:'MO 8'  },
+  { pts:RD_49,  half:2.3, col:0x83888c, dashes:false, name:'MO 49' },
+  { pts:RD_H,   half:1.8, col:0x8b8f92, dashes:false, name:'RTE H' },
+];
+const ROAD_POLYS = ROADS.map(r=>buildPoly(r.pts));
+const RAIL_POLY  = buildPoly(RD_RAIL);
+
+/* -------------------------------------------------------------------- towns */
+const TOWNS=[
+  { name:'BOURBON',    mx:17.0, mz:3.38, r:78, main:1, n:16 },
+  { name:'CUBA',       mx:7.0,  mz:6.40, r:95, main:1, n:22 },
+  { name:'LEASBURG',   mx:12.0, mz:5.15, r:48, main:1, n:8  },
+  { name:'STEELVILLE', mx:9.0,  mz:13.95,r:95, main:3, n:20 },
+  { name:'CHERRYVILLE',mx:7.0,  mz:24.0, r:44, main:2, n:6  },
+  { name:'DAVISVILLE', mx:16.0, mz:22.2, r:38, main:4, n:5  },
+];
+TOWNS.forEach(t=>{ t.x=t.mx*MILE; t.z=t.mz*MILE; });
+
+// terrain accents
+const BLUFF = { x:17.9*MILE, z:4.55*MILE, r:180 }; // Vilander Bluff
+const CAVEH = { x:12.95*MILE, z:8.45*MILE, r:130 }; // Onondaga hill
+
+/* ----------------------------------------------------------- height source
+   One function feeds everything: the mesh, the road ribbons, the wheels,
+   the feet. Sample it anywhere and the world agrees with itself.          */
+function terrainHeight(x,z,skipTowns){
+  const mz = z/MILE;
+  // dissected Ozark plateau, rising to the south
+  let h = 10 + 15*sstep(4,30,mz);
+  h += 46*Math.pow(fbm(x*0.0016, z*0.0016), 1.25);
+  h += 9*fbm(x*0.008+40, z*0.008-17) - 4.5;
+
+  // carve the river valleys down to their beds
+  let dMer=1e9;
+  for(let i=0;i<RIVERS.length;i++){
+    const r=RIVERS[i], c=closestOnPoly(r,x,z);
+    if(i===0) dMer=c.d;
+    if(c.d<r.valley){
+      const infl = 1 - sstep(r.halfBed, r.valley, c.d);
+      h = lerp(h, r.bedAt(c.along), Math.pow(infl,1.35));
+    }
+  }
+  // Vilander Bluff & the Onondaga hill rise just off the water
+  const db=Math.hypot(x-BLUFF.x,z-BLUFF.z);
+  if(db<BLUFF.r) h += 34*sstep(BLUFF.r,BLUFF.r*0.22,db)
+      * sstep(MERAMEC.halfBed+8, MERAMEC.halfBed+30, dMer)
+      * (0.72+0.55*fbm(x*0.02,z*0.02,3));
+  const dc=Math.hypot(x-CAVEH.x,z-CAVEH.z);
+  if(dc<CAVEH.r) h += 20*sstep(CAVEH.r,CAVEH.r*0.25,dc)
+      * sstep(MERAMEC.halfBed+8, MERAMEC.halfBed+26, dMer);
+
+  // town pads
+  if(!skipTowns) for(const t of TOWNS){
+    const d=Math.hypot(x-t.x,z-t.z);
+    if(d<t.r) h = lerp(h, t.baseH, (1-sstep(t.r*0.45,t.r,d))*0.92);
+  }
+  return h;
+}
+TOWNS.forEach(t=>{ t.baseH = terrainHeight(t.x,t.z,true); });
+
+// water lookup: {surf, d, river} when standing in/near a channel
+function waterAt(x,z){
+  let best=null;
+  for(const r of RIVERS){
+    const c=closestOnPoly(r,x,z);
+    if(c.d < r.halfBed+3){
+      const surf=r.surfAt(c.along);
+      if(!best || c.d-r.halfBed < best.d-best.river.halfBed)
+        best={ surf, d:c.d, river:r };
+    }
+  }
+  return best;
+}
+function distToRoads(x,z){
+  let bd=1e9, bw=0;
+  for(let i=0;i<ROAD_POLYS.length;i++){
+    const c=closestOnPoly(ROAD_POLYS[i],x,z);
+    if(c.d-ROADS[i].half < bd-bw){ bd=c.d; bw=ROADS[i].half; }
+  }
+  const rc=closestOnPoly(RAIL_POLY,x,z);
+  if(rc.d-2.6<bd-bw){ bd=rc.d; bw=2.6; }
+  return bd-bw; // distance beyond pavement edge
+}
+function forestMask(x,z){
+  const mz=z/MILE;
+  let f = 0.85*sstep(15.0,18.5,mz);                    // Mark Twain block
+  f += 0.7*Math.max(0, fbm(x*0.0022+11, z*0.0022+7)-0.52)*2.2; // upland patches
+  const dm=closestOnPoly(MERAMEC,x,z).d;               // riparian corridor
+  if(dm>22 && dm<150) f += 0.45*(1-sstep(90,150,dm));
+  return clamp(f,0,1);
+}
+function fieldMask(x,z){
+  const mz=z/MILE;
+  if(mz>12.5) return 0;
+  return sstep(0.56,0.66, fbm(x*0.0035+9, z*0.0035+3)) * (1-forestMask(x,z));
+}
+
+/* ------------------------------------------------------------- three setup */
+const canvas = document.getElementById('gl');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias:true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, IS_TOUCH?1.5:2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+const SHADOWS = CONFIG.SHADOWS==='auto' ? !IS_TOUCH : !!CONFIG.SHADOWS;
+if(SHADOWS){ renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap; }
+
+const scene = new THREE.Scene();
+const SKY = new THREE.Color(0xbfe0ea);
+scene.background = SKY;
+scene.fog = new THREE.FogExp2(SKY, 0.00145);
+
+const camera = new THREE.PerspectiveCamera(64, window.innerWidth/window.innerHeight, 0.3, 4500);
+
+const hemi = new THREE.HemisphereLight(0xcfe4ec, 0x7c8a6b, 0.85);
+scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xfff1dc, 1.05);
+sun.position.set(90,160,40);
+if(SHADOWS){
+  sun.castShadow=true;
+  sun.shadow.mapSize.set(2048,2048);
+  const S=115, c=sun.shadow.camera;
+  c.left=-S; c.right=S; c.top=S; c.bottom=-S; c.near=20; c.far=460;
+  sun.shadow.bias=-0.0006;
+}
+scene.add(sun); scene.add(sun.target);
+
+/* ---------------------------------------------------------------- materials */
+const matLand  = new THREE.MeshStandardMaterial({ vertexColors:true, flatShading:true, roughness:1.0, metalness:0 });
+const matBake  = new THREE.MeshStandardMaterial({ vertexColors:true, flatShading:true, roughness:0.92, metalness:0 });
+const matWater = new THREE.MeshStandardMaterial({ color:0x4f9ed6, transparent:true, opacity:0.82,
+  roughness:0.32, metalness:0, flatShading:true });
+
+/* --------------------------------------------------------------- geometry baker
+   Flat-shaded triangles into shared arrays — one draw call for the county's
+   entire built environment. */
+function Baker(){
+  this.pos=[]; this.nrm=[]; this.col=[]; this.uv=null;
+}
+Baker.prototype.tri=function(ax,ay,az,bx,by,bz,cx,cy,cz,r,g,b){
+  const ux=bx-ax,uy=by-ay,uz=bz-az, vx=cx-ax,vy=cy-ay,vz=cz-az;
+  let nx=uy*vz-uz*vy, ny=uz*vx-ux*vz, nz=ux*vy-uy*vx;
+  const l=Math.hypot(nx,ny,nz)||1; nx/=l; ny/=l; nz/=l;
+  this.pos.push(ax,ay,az,bx,by,bz,cx,cy,cz);
+  for(let i=0;i<3;i++){ this.nrm.push(nx,ny,nz); this.col.push(r,g,b); }
+};
+Baker.prototype.quad=function(a,b,c,d,col){ // CCW from outside
+  const C=new THREE.Color(col);
+  this.tri(a[0],a[1],a[2],b[0],b[1],b[2],c[0],c[1],c[2],C.r,C.g,C.b);
+  this.tri(a[0],a[1],a[2],c[0],c[1],c[2],d[0],d[1],d[2],C.r,C.g,C.b);
+};
+Baker.prototype.box=function(cx,cy,cz,sx,sy,sz,col,yaw){
+  yaw=yaw||0; const hx=sx/2,hy=sy/2,hz=sz/2, cs=Math.cos(yaw), sn=Math.sin(yaw);
+  const P=(x,y,z)=>[cx + x*cs + z*sn, cy+y, cz - x*sn + z*cs];
+  const v=[P(-hx,-hy,-hz),P(hx,-hy,-hz),P(hx,hy,-hz),P(-hx,hy,-hz),
+           P(-hx,-hy, hz),P(hx,-hy, hz),P(hx,hy, hz),P(-hx,hy, hz)];
+  this.quad(v[5],v[4],v[7],v[6],col); // +z
+  this.quad(v[0],v[1],v[2],v[3],col); // -z
+  this.quad(v[1],v[5],v[6],v[2],col); // +x
+  this.quad(v[4],v[0],v[3],v[7],col); // -x
+  this.quad(v[3],v[2],v[6],v[7],col); // top
+  this.quad(v[4],v[5],v[1],v[0],col); // bottom
+};
+Baker.prototype.prismRoof=function(cx,cy,cz,sx,sy,sz,col,yaw){ // gable along local x
+  yaw=yaw||0; const hx=sx/2,hz=sz/2, cs=Math.cos(yaw), sn=Math.sin(yaw);
+  const P=(x,y,z)=>[cx + x*cs + z*sn, cy+y, cz - x*sn + z*cs];
+  const a=P(-hx,0,-hz), b=P(hx,0,-hz), c=P(hx,0,hz), d=P(-hx,0,hz);
+  const r1=P(-hx,sy,0), r2=P(hx,sy,0);
+  this.quad(a,b,r2,r1,col); this.quad(c,d,r1,r2,col);
+  const C=new THREE.Color(col);
+  this.tri(b[0],b[1],b[2],c[0],c[1],c[2],r2[0],r2[1],r2[2],C.r,C.g,C.b);
+  this.tri(d[0],d[1],d[2],a[0],a[1],a[2],r1[0],r1[1],r1[2],C.r,C.g,C.b);
+};
+Baker.prototype.cylinder=function(cx,cy,cz,r,h,seg,col,r2){
+  r2=(r2===undefined)?r:r2; const C=new THREE.Color(col);
+  for(let i=0;i<seg;i++){
+    const a0=i/seg*Math.PI*2, a1=(i+1)/seg*Math.PI*2;
+    const x0=Math.cos(a0), z0=Math.sin(a0), x1=Math.cos(a1), z1=Math.sin(a1);
+    const b0=[cx+x0*r, cy, cz+z0*r],  b1=[cx+x1*r, cy, cz+z1*r];
+    const t0=[cx+x0*r2,cy+h,cz+z0*r2],t1=[cx+x1*r2,cy+h,cz+z1*r2];
+    this.quad(b0,b1,t1,t0,col);
+    this.tri(cx,cy+h,cz, t0[0],t0[1],t0[2], t1[0],t1[1],t1[2], C.r,C.g,C.b); // cap
+    this.tri(cx,cy,cz,   b1[0],b1[1],b1[2], b0[0],b0[1],b0[2], C.r,C.g,C.b); // base
+  }
+};
+Baker.prototype.mesh=function(material){
+  const g=new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(this.pos,3));
+  g.setAttribute('normal',   new THREE.Float32BufferAttribute(this.nrm,3));
+  g.setAttribute('color',    new THREE.Float32BufferAttribute(this.col,3));
+  if(this.uv) g.setAttribute('uv', new THREE.Float32BufferAttribute(this.uv,2));
+  return new THREE.Mesh(g, material);
+};
+
+/* --------------------------------------------------------- paths & ribbons
+   Roads sample terrainHeight, get clamped above water, then smoothed —
+   which is the entire bridge system. Grade in, span, grade out.          */
+function buildPath(ptsW, step, waterClear){
+  const src=buildPoly(ptsW), n=Math.max(2, Math.ceil(src.total/step));
+  const pts=[];
+  for(let i=0;i<=n;i++){
+    const a=src.total*i/n;
+    // locate segment
+    let s=0; while(s<src.cum.length-2 && src.cum[s+1]<a) s++;
+    const t=(a-src.cum[s])/((src.cum[s+1]-src.cum[s])||1);
+    const x=lerp(src.pts[s].x,src.pts[s+1].x,t), z=lerp(src.pts[s].z,src.pts[s+1].z,t);
+    let h=terrainHeight(x,z);
+    if(waterClear!==undefined){
+      const w=waterAt(x,z);
+      if(w) h=Math.max(h, w.surf+waterClear);
+    }
+    pts.push({x,z,h,along:a});
+  }
+  for(let pass=0;pass<3;pass++){ // gentle grades
+    for(let i=1;i<pts.length-1;i++)
+      pts[i].h = (pts[i-1].h + pts[i].h*2 + pts[i+1].h)/4;
+  }
+  for(let i=0;i<pts.length;i++){ // tangents
+    const p0=pts[Math.max(0,i-1)], p1=pts[Math.min(pts.length-1,i+1)];
+    const dx=p1.x-p0.x, dz=p1.z-p0.z, l=Math.hypot(dx,dz)||1;
+    pts[i].tx=dx/l; pts[i].tz=dz/l;
+  }
+  return { pts, total:src.total };
+}
+function sampleLUT(path, along){
+  const P=path.pts, u = ((along % path.total)+path.total)%path.total;
+  const f = u/path.total*(P.length-1), i=Math.min(P.length-2, Math.floor(f)), t=f-i;
+  const a=P[i], b=P[i+1];
+  return { x:lerp(a.x,b.x,t), z:lerp(a.z,b.z,t), h:lerp(a.h,b.h,t),
+           tx:lerp(a.tx,b.tx,t), tz:lerp(a.tz,b.tz,t) };
+}
+function bakeRibbon(baker, path, half, col, yOff){
+  const P=path.pts;
+  for(let i=0;i<P.length-1;i++){
+    const a=P[i], b=P[i+1];
+    const a0=[a.x+a.tz*half, a.h+yOff, a.z-a.tx*half];
+    const a1=[a.x-a.tz*half, a.h+yOff, a.z+a.tx*half];
+    const b0=[b.x+b.tz*half, b.h+yOff, b.z-b.tx*half];
+    const b1=[b.x-b.tz*half, b.h+yOff, b.z+b.tx*half];
+    baker.quad(a0,b0,b1,a1,col);
+  }
+}
+
+/* ------------------------------------------------------------ terrain mesh */
+const worldRoot = new THREE.Group(); scene.add(worldRoot);
+
+function buildTerrain(){
+  const sx = IS_TOUCH?150:210, sz = IS_TOUCH?188:262;
+  const geo = new THREE.PlaneGeometry(W,H,sx,sz);
+  geo.rotateX(-Math.PI/2);
+  const pos = geo.attributes.position;
+  const colors = new Float32Array(pos.count*3);
+
+  const cGrassA=new THREE.Color(0x8fbb6e), cGrassB=new THREE.Color(0xa9cc7f),
+        cFloor =new THREE.Color(0x6c9a58), cField=new THREE.Color(0xccbd72),
+        cRock  =new THREE.Color(0xbdb5a3), cSand =new THREE.Color(0xd8cfa6),
+        cBed   =new THREE.Color(0x87a184), cHigh =new THREE.Color(0xb4c489);
+  const tmp=new THREE.Color();
+
+  for(let i=0;i<pos.count;i++){
+    const x=pos.getX(i)+W/2, z=pos.getZ(i)+H/2;
+    const h=terrainHeight(x,z);
+    pos.setY(i,h);
+
+    // slope from finite differences
+    const e=6;
+    const gx=(terrainHeight(x+e,z)-terrainHeight(x-e,z))/(2*e);
+    const gz=(terrainHeight(x,z+e)-terrainHeight(x,z-e))/(2*e);
+    const slope=Math.hypot(gx,gz);
+
+    tmp.copy(cGrassA).lerp(cGrassB, fbm(x*0.006+3,z*0.006+8,3));
+    tmp.lerp(cHigh, 0.35*sstep(46,70,h));                 // dry uplands
+    tmp.lerp(cFloor, 0.55*forestMask(x,z));               // forest floor
+    tmp.lerp(cField, 0.85*fieldMask(x,z));                // north crops
+    const w=waterAt(x,z);
+    if(w){
+      if(h < w.surf-0.3) tmp.copy(cBed);
+      else if(h < w.surf+2.2 && w.d < w.river.halfBed+9) tmp.lerp(cSand,0.8);
+    } else {
+      // gravel bars along the wider valley floor
+      const dm=closestOnPoly(MERAMEC,x,z);
+      if(dm.d<MERAMEC.halfBed+9 && h<MERAMEC.surfAt(dm.along)+2.2) tmp.lerp(cSand,0.7);
+    }
+    tmp.lerp(cRock, sstep(0.95,1.65,slope));              // limestone breaks
+    colors[i*3]=tmp.r; colors[i*3+1]=tmp.g; colors[i*3+2]=tmp.b;
+  }
+  geo.setAttribute('color', new THREE.BufferAttribute(colors,3));
+  geo.computeVertexNormals();
+  const m=new THREE.Mesh(geo, matLand);
+  m.position.set(W/2,0,H/2);
+  if(SHADOWS) m.receiveShadow=true;
+  worldRoot.add(m);
+}
+
+/* ------------------------------------------------------------- water mesh */
+const WATER_PATHS={};
+function buildWater(){
+  const bk=new Baker();
+  for(const r of RIVERS){
+    const path=buildPath(r.pts, 10);
+    for(const p of path.pts) p.h = r.surfAt(p.along);   // absolute surface
+    WATER_PATHS[r.name]=path;
+    bakeRibbon(bk, path, r.halfBed+2, 0x4f9ed6, 0);
+  }
+  const m=bk.mesh(matWater);
+  worldRoot.add(m);
+}
+
+/* ------------------------------------------------------- roads, rail, dashes */
+const ROAD_PATHS=[];
+let RAIL_PATH=null;
+function buildRoads(){
+  const bk=new Baker();
+  ROADS.forEach((r,i)=>{
+    const clear = r.name==='I-44' ? 3.2 : 2.2;
+    const path=buildPath(r.pts, 6, clear);
+    ROAD_PATHS[i]=path;
+    bakeRibbon(bk, path, r.half, r.col, 0.32);
+    bakeRibbon(bk, path, r.half+0.7, 0x99a08a, 0.22);   // shoulder
+    if(r.dashes){
+      const P=path.pts;
+      for(let s=0;s<P.length-1;s+=2){
+        const a=P[s], b=P[Math.min(P.length-1,s+1)];
+        const half=0.28;
+        bk.quad(
+          [a.x+a.tz*half, a.h+0.4, a.z-a.tx*half],
+          [b.x+b.tz*half, b.h+0.4, b.z-b.tx*half],
+          [b.x-b.tz*half, b.h+0.4, b.z+b.tx*half],
+          [a.x-a.tz*half, a.h+0.4, a.z+a.tx*half], 0xf2efe4);
+      }
+    }
+  });
+  RAIL_PATH=buildPath(RD_RAIL, 6, 2.6);
+  bakeRibbon(bk, RAIL_PATH, 2.2, 0x4e463f, 0.28);        // ballast
+  bakeRibbon(bk, RAIL_PATH, 0.28, 0x2e2a26, 0.42);       // rail hint
+  const m=bk.mesh(matBake);
+  worldRoot.add(m);
+}
+
+/* ----------------------------------------------------------- sign textures */
+const SIGN_NAMES=['BOURBON','CUBA','LEASBURG','STEELVILLE','CHERRYVILLE',
+  'DAVISVILLE','ROUTE 66','ONONDAGA CAVE','DILLARD MILL','VILANDER BLUFF',
+  'MERAMEC RIVER','HUZZAH CREEK'];
+function makeSignAtlas(){
+  const cw=1024, rows=SIGN_NAMES.length, rh=64, ch=rows*rh;
+  const c=document.createElement('canvas'); c.width=cw; c.height=ch;
+  const g=c.getContext('2d');
+  g.fillStyle='#2f4a38'; g.fillRect(0,0,cw,ch);        // MoDOT green
+  g.textAlign='center'; g.textBaseline='middle';
+  SIGN_NAMES.forEach((n,i)=>{
+    const y=i*rh;
+    g.strokeStyle='rgba(244,241,232,.85)'; g.lineWidth=3;
+    g.strokeRect(8,y+7,cw-16,rh-14);
+    g.fillStyle='#f4f1e8';
+    g.font='600 34px Inter, Arial, sans-serif';
+    g.fillText(n, cw/2, y+rh/2+1);
+  });
+  const t=new THREE.CanvasTexture(c); t.anisotropy=4;
+  return { tex:t, row:(name)=>{
+    const i=SIGN_NAMES.indexOf(name);
+    return { v0:1-(i+1)/rows, v1:1-i/rows };
+  }};
+}
+const signAtlas = makeSignAtlas();
+const signBaker = new Baker(); signBaker.uv=[];
+function addSign(name, x, z, yaw, scale){
+  scale=scale||1;
+  const h=terrainHeight(x,z);
+  const wdt=8.5*scale, hgt=1.9*scale, top=3.4*scale;
+  // posts
+  const cs=Math.cos(yaw), sn=Math.sin(yaw);
+  const px=(o)=>x+cs*o, pz=(o)=>z-sn*o;
+  signBaker.uvBox=null;
+  const post=new Baker();
+  // reuse main landmark baker for posts (added later) — bake here instead:
+  signBaker.postReq = signBaker.postReq||[];
+  signBaker.postReq.push({x:px(-wdt*0.38), z:pz(-wdt*0.38), h, s:top});
+  signBaker.postReq.push({x:px( wdt*0.38), z:pz( wdt*0.38), h, s:top});
+  // panel quad (double-sided via two quads)
+  const r=signAtlas.row(name);
+  const y0=h+top-hgt, y1=h+top;
+  const a=[px(-wdt/2),y0,pz(-wdt/2)], b=[px(wdt/2),y0,pz(wdt/2)],
+        c=[px(wdt/2),y1,pz(wdt/2)],  d=[px(-wdt/2),y1,pz(-wdt/2)];
+  const white=new THREE.Color(0xffffff);
+  const q=(A,B,C,D,u0,u1)=>{
+    signBaker.tri(A[0],A[1],A[2],B[0],B[1],B[2],C[0],C[1],C[2],white.r,white.g,white.b);
+    signBaker.uv.push(u0,r.v0, u1,r.v0, u1,r.v1);
+    signBaker.tri(A[0],A[1],A[2],C[0],C[1],C[2],D[0],D[1],D[2],white.r,white.g,white.b);
+    signBaker.uv.push(u0,r.v0, u1,r.v1, u0,r.v1);
+  };
+  q(a,b,c,d,0,1);      // front
+  q(b,a,d,c,1,0);      // back (mirrored)
+}
+
+/* ---------------------------------------------------------------- towns bake
+   Each town gets a small grid oriented along its main road, a courthouse or
+   silo landmark, a few false-front storefronts, and an ENTERING sign at the
+   nearest road. Steelville gets the county seat treatment.               */
+
+const LANDMARKS=[]; // for HUD & waymarks: {name,x,z,found}
+
+function tangentAt(pathPoly, x, z){
+  const c = closestOnPoly(pathPoly, x, z);
+  let s=0; while(s<pathPoly.cum.length-2 && pathPoly.cum[s+1]<c.along) s++;
+  const t=(c.along-pathPoly.cum[s])/((pathPoly.cum[s+1]-pathPoly.cum[s])||1);
+  const a=pathPoly.pts[s], b=pathPoly.pts[s+1];
+  const dx=b.x-a.x, dz=b.z-a.z, l=Math.hypot(dx,dz)||1;
+  return { tx:dx/l, tz:dz/l, x:lerp(a.x,b.x,t), z:lerp(a.z,b.z,t), d:c.d };
+}
+
+function bakeTowns(){
+  const bk=new Baker();
+  const POST=new THREE.Color(0x9c9083);
+
+  // signs' posts (deferred from addSign)
+  const stashedPosts = [];
+  const stashPosts = ()=>{ if(signBaker.postReq){ for(const p of signBaker.postReq)
+    bk.box(p.x, p.h + p.s/2, p.z, 0.35, p.s, 0.35, 0x9c9083); signBaker.postReq=[]; } };
+
+  for(const t of TOWNS){
+    const nearest = ROAD_PATHS[t.main];
+    const road = tangentAt(buildPoly(ROADS[t.main].pts), t.x, t.z);
+    const yaw = Math.atan2(road.tz, road.tx);   // town grid aligned to road
+    const cs=Math.cos(yaw), sn=Math.sin(yaw);
+    const local=(u,v)=>({ x:t.x + u*cs - v*sn, z:t.z + u*sn + v*cs });
+
+    // road-side plaza pad
+    const padCol = 0xb5ac9a;
+    const padSize = t.r*1.4;
+    const centerH = t.baseH;
+    const p1=local(-padSize/2,-padSize/2), p2=local(padSize/2,-padSize/2),
+          p3=local(padSize/2, padSize/2), p4=local(-padSize/2, padSize/2);
+    bk.quad(
+      [p1.x, centerH+0.06, p1.z],
+      [p2.x, centerH+0.06, p2.z],
+      [p3.x, centerH+0.06, p3.z],
+      [p4.x, centerH+0.06, p4.z], padCol);
+
+    // buildings, jittered
+    const jr = mulberry32(SEED + Math.floor(t.x+t.z));
+    const rows = t.main===3 ? 3 : 2;
+    const cols = Math.ceil(t.n/rows);
+    const spacingU = 12, spacingV = 16;
+    const startU = -((cols-1)*spacingU)/2, startV = -((rows-1)*spacingV)/2 - 8;
+    let placed=0;
+    for(let rIdx=0; rIdx<rows && placed<t.n; rIdx++){
+      for(let cIdx=0; cIdx<cols && placed<t.n; cIdx++){
+        if(jr()<0.12) { continue; }
+        const uJ=(jr()-0.5)*2.5, vJ=(jr()-0.5)*2.5;
+        const u = startU + cIdx*spacingU + uJ;
+        const v = startV + rIdx*spacingV + vJ;
+        const p = local(u,v);
+        const ph = terrainHeight(p.x, p.z, true);
+        const w = 5.5 + jr()*3.2;
+        const d = 5.0 + jr()*3.0;
+        const h = 3.4 + jr()*3.6 + (rIdx===0 && t.main<=1 ? 1.2 : 0);
+        const wallCols = [0xe0d5bd, 0xcbb894, 0xb59872, 0xa8a29a, 0xd7c9a5, 0x8b6f4f];
+        const wallCol = wallCols[Math.floor(jr()*wallCols.length)];
+        const roofCol = jr()<0.55 ? 0x6d4530 : 0x4b4038;
+        bk.box(p.x, ph + h/2, p.z, w, h, d, wallCol, yaw);
+        // false-front cornice (Route 66 vernacular)
+        if(rIdx===0 && jr()<0.5)
+          bk.box(p.x, ph + h + 0.5, p.z - Math.sin(yaw)*0.02, w*1.05, 1.0, 0.4, wallCol, yaw);
+        // roof plate
+        bk.box(p.x, ph + h + 0.15, p.z, w*1.02, 0.28, d*1.02, roofCol, yaw);
+        // window slab (dark strip on the road-facing side)
+        const winY = ph + h*0.45;
+        const winW = w*0.7, winH = h*0.35;
+        // put on the -v (road-facing) face
+        const wp = local(u, v - d/2 - 0.02);
+        bk.box(wp.x, winY, wp.z, winW, winH, 0.06, 0x2a2620, yaw);
+        placed++;
+      }
+    }
+
+    // landmark
+    let lm = { x:t.x, z:t.z, name:t.name };
+    if(t.name==='STEELVILLE'){
+      // courthouse: two-story block with a clock tower
+      const ph=terrainHeight(t.x,t.z,true);
+      bk.box(t.x, ph+4.5, t.z, 14, 9, 12, 0xd6c9ac, yaw);
+      bk.box(t.x, ph+9.2, t.z, 14.5, 0.4, 12.5, 0x4b4038, yaw);
+      bk.box(t.x, ph+11.5, t.z, 4.5, 4.5, 4.5, 0xe0d5bd, yaw);
+      bk.box(t.x, ph+14, t.z, 3.5, 0.6, 3.5, 0x4b4038, yaw);
+      // white spire
+      bk.cylinder(t.x, ph+14.3, t.z, 1.4, 5.5, 8, 0xf1eadb, 0.1);
+      lm.name='STEELVILLE SQUARE';
+    } else if(t.name==='BOURBON'){
+      // The famous BOURBON water tower
+      const ph=terrainHeight(t.x+18, t.z-14, true);
+      const px=t.x+18, pz=t.z-14;
+      // four legs
+      for(let i=0;i<4;i++){
+        const ax=(i&1)?1:-1, az=(i&2)?1:-1;
+        // slanted-ish: box tall
+        bk.box(px+ax*3.6, ph+7, pz+az*3.6, 0.5, 14, 0.5, 0x4a5762);
+      }
+      // tank
+      bk.cylinder(px, ph+14, pz, 5.2, 5.2, 16, 0xd9c98a);
+      bk.cylinder(px, ph+19.2, pz, 5.2, 1.6, 16, 0xd9c98a, 0.2);
+      bk.cylinder(px, ph+20.6, pz, 0.3, 4, 6, 0x4a5762);
+      // "BOURBON" band — dark rectangle
+      bk.box(px, ph+15.6, pz-5.15, 6, 1.4, 0.06, 0x2a2620);
+      bk.box(px+5.15, ph+15.6, pz, 0.06, 1.4, 6, 0x2a2620);
+      bk.box(px, ph+15.6, pz+5.15, 6, 1.4, 0.06, 0x2a2620);
+      bk.box(px-5.15, ph+15.6, pz, 0.06, 1.4, 6, 0x2a2620);
+      lm={ name:'BOURBON WATER TOWER', x:px, z:pz };
+    } else if(t.name==='CUBA'){
+      // mural wall
+      const ph=terrainHeight(t.x-6, t.z-3, true);
+      bk.box(t.x-6, ph+4.5, t.z-3, 18, 9, 0.6, 0xd8c096, yaw);
+      // stripes suggest mural panels
+      for(let i=0;i<5;i++)
+        bk.box(t.x-6 + Math.cos(yaw)*(-8+i*4), ph+4.5, t.z-3 - Math.sin(yaw)*(-8+i*4),
+          0.25, 8.5, 0.7, [0x8a4b3a,0x2f4a38,0xc78a3a,0x7a6a52,0x445b6a][i], yaw);
+      lm={ name:'CUBA MURAL WALL', x:t.x-6, z:t.z-3 };
+    } else if(t.name==='LEASBURG'){
+      const ph=terrainHeight(t.x+8, t.z+4, true);
+      bk.cylinder(t.x+8, ph, t.z+4, 3.2, 12, 12, 0xc8b58a);
+      bk.cylinder(t.x+8, ph+12, t.z+4, 3.2, 1.5, 12, 0x4b4038, 3.6);
+      lm={ name:'LEASBURG SILO', x:t.x+8, z:t.z+4 };
+    } else if(t.name==='CHERRYVILLE'){
+      const ph=terrainHeight(t.x, t.z, true);
+      bk.box(t.x, ph+3, t.z, 8, 6, 6, 0xe0d5bd, yaw);
+      bk.prismRoof(t.x, ph+6, t.z, 8, 3, 6, 0x4b4038, yaw);
+      bk.box(t.x, ph+9.2, t.z, 0.5, 3, 0.5, 0xe0d5bd);
+      lm={ name:'CHERRYVILLE CHAPEL', x:t.x, z:t.z };
+    } else if(t.name==='DAVISVILLE'){
+      // small crossroads store
+      const ph=terrainHeight(t.x, t.z, true);
+      bk.box(t.x, ph+2.5, t.z, 10, 5, 7, 0xb08a5a, yaw);
+      bk.box(t.x, ph+5.4, t.z, 10.5, 0.6, 7.5, 0x4b4038, yaw);
+      lm={ name:'DAVISVILLE STORE', x:t.x, z:t.z };
+    }
+    LANDMARKS.push({ name:lm.name, x:lm.x, z:lm.z, found:false });
+
+    // entering-town sign, offset a bit further out along the road
+    const outX = t.x - road.tx*(t.r*0.9);
+    const outZ = t.z - road.tz*(t.r*0.9);
+    const signYaw = Math.atan2(road.tz, road.tx) + Math.PI/2;
+    addSign(t.name, outX + road.tz*(ROADS[t.main].half+3.5),
+                    outZ - road.tx*(ROADS[t.main].half+3.5), signYaw, 1);
+  }
+
+  // Route 66 sign near Cuba
+  addSign('ROUTE 66', TOWNS[1].x-30, TOWNS[1].z+18, 0, 1);
+
+  // named natural landmarks: Onondaga, Dillard, Vilander
+  const oX=CAVEH.x, oZ=CAVEH.z, oH=terrainHeight(oX,oZ);
+  // cave entrance: dark trapezoid recessed into the hillside
+  bk.box(oX, oH+2, oZ+8, 4, 4, 0.4, 0x1a1512);
+  bk.box(oX-3, oH+3.5, oZ+7.9, 0.6, 5, 0.5, 0xa89a80);
+  bk.box(oX+3, oH+3.5, oZ+7.9, 0.6, 5, 0.5, 0xa89a80);
+  bk.box(oX,   oH+6.1, oZ+7.9, 6.6, 0.6, 0.6, 0xa89a80);
+  LANDMARKS.push({ name:'ONONDAGA CAVE', x:oX, z:oZ+10, found:false });
+  addSign('ONONDAGA CAVE', oX-14, oZ+16, 0, 0.85);
+
+  // Dillard Mill — red mill on the Huzzah
+  {
+    const mx=13.9*MILE, mz=20.0*MILE;
+    const mh=terrainHeight(mx,mz,true);
+    bk.box(mx, mh+4, mz, 9, 8, 6, 0x8b3a2a);
+    bk.prismRoof(mx, mh+8, mz, 9, 3.5, 6, 0x2a2620);
+    bk.box(mx-4.6, mh+2.5, mz, 0.6, 5, 3.2, 0x4b4038);
+    LANDMARKS.push({ name:'DILLARD MILL', x:mx, z:mz, found:false });
+    addSign('DILLARD MILL', mx+8, mz+6, Math.PI/2, 0.85);
+  }
+
+  // Vilander Bluff overlook plaque
+  {
+    const vx=BLUFF.x, vz=BLUFF.z-6;
+    const vh=terrainHeight(vx,vz);
+    bk.box(vx, vh+1.2, vz, 3, 2.4, 0.6, 0x4b4038);
+    LANDMARKS.push({ name:'VILANDER BLUFF', x:vx, z:vz, found:false });
+    addSign('VILANDER BLUFF', vx-6, vz, 0, 0.75);
+  }
+
+  stashPosts();
+  const m=bk.mesh(matBake);
+  if(SHADOWS){ m.castShadow=true; m.receiveShadow=true; }
+  worldRoot.add(m);
+
+  // signs mesh (own material — atlas texture)
+  const signMat = new THREE.MeshStandardMaterial({
+    map:signAtlas.tex, vertexColors:true, roughness:0.9, metalness:0, flatShading:true, side:THREE.DoubleSide });
+  const sg=new THREE.BufferGeometry();
+  sg.setAttribute('position', new THREE.Float32BufferAttribute(signBaker.pos,3));
+  sg.setAttribute('normal',   new THREE.Float32BufferAttribute(signBaker.nrm,3));
+  sg.setAttribute('color',    new THREE.Float32BufferAttribute(signBaker.col,3));
+  sg.setAttribute('uv',       new THREE.Float32BufferAttribute(signBaker.uv,2));
+  const sm=new THREE.Mesh(sg, signMat);
+  worldRoot.add(sm);
+}
+
+/* ------------------------------------------------------------- vegetation
+   Instanced tree, one draw call. Density from forestMask, thinned near roads,
+   removed from water. */
+function buildFlora(){
+  const trunk = new THREE.CylinderGeometry(0.28, 0.4, 2.4, 5);
+  trunk.translate(0,1.2,0);
+  const canopy = new THREE.ConeGeometry(2.4, 5.5, 6);
+  canopy.translate(0,4.4,0);
+  const canopy2 = new THREE.SphereGeometry(2.2, 6, 4);
+  canopy2.translate(0,3.6,0);
+
+  const N = IS_TOUCH ? Math.floor(CONFIG.TREES*0.55) : CONFIG.TREES;
+  const trunkMat = new THREE.MeshStandardMaterial({ color:0x4b3a28, flatShading:true, roughness:1 });
+  const pineMat  = new THREE.MeshStandardMaterial({ color:0x3f6a3f, flatShading:true, roughness:1 });
+  const oakMat   = new THREE.MeshStandardMaterial({ color:0x5d824a, flatShading:true, roughness:1 });
+
+  const it = new THREE.InstancedMesh(trunk, trunkMat, N);
+  const ip = new THREE.InstancedMesh(canopy, pineMat, N);
+  const io = new THREE.InstancedMesh(canopy2, oakMat, Math.floor(N*0.55));
+  it.instanceMatrix.setUsage(THREE.StaticDrawUsage);
+  ip.instanceMatrix.setUsage(THREE.StaticDrawUsage);
+  io.instanceMatrix.setUsage(THREE.StaticDrawUsage);
+  if(SHADOWS){ it.castShadow=false; ip.castShadow=false; io.castShadow=false; }
+
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(),
+        s = new THREE.Vector3(), p = new THREE.Vector3();
+  const jr = mulberry32(SEED^0xa1b2);
+  let ti=0, po=0, oi=0;
+  const maxTries = N*8; let tries=0;
+  while((ti<N || oi<io.count) && tries<maxTries){
+    tries++;
+    const x = jr()*W, z = jr()*H;
+    const f = forestMask(x,z);
+    if(jr() > f*0.9) continue;
+    if(waterAt(x,z)) continue;
+    if(distToRoads(x,z) < 5.5) continue;
+    // stay out of town pads
+    let inTown=false;
+    for(const t of TOWNS){ if(Math.hypot(x-t.x,z-t.z)<t.r*0.85){ inTown=true; break; } }
+    if(inTown) continue;
+
+    const h = terrainHeight(x,z);
+    const scale = 0.85 + jr()*0.9;
+    p.set(x, h, z);
+    q.setFromAxisAngle(new THREE.Vector3(0,1,0), jr()*Math.PI*2);
+    s.set(scale, scale, scale);
+    m.compose(p, q, s);
+    if(ti<N){ it.setMatrixAt(ti,m); ti++; }
+    // pick canopy shape
+    if(jr()<0.55 && po<N){ ip.setMatrixAt(po,m); po++; }
+    else if(oi<io.count){ io.setMatrixAt(oi,m); oi++; }
+  }
+  it.count=ti; ip.count=po; io.count=oi;
+  it.instanceMatrix.needsUpdate=true;
+  ip.instanceMatrix.needsUpdate=true;
+  io.instanceMatrix.needsUpdate=true;
+  worldRoot.add(it); worldRoot.add(ip); worldRoot.add(io);
+
+  // fence posts along a couple field edges — cheap detail
+  const fenceMat = new THREE.MeshStandardMaterial({ color:0x6b5a44, flatShading:true, roughness:1 });
+  const fpg = new THREE.BoxGeometry(0.18, 1.2, 0.18);
+  const fp = new THREE.InstancedMesh(fpg, fenceMat, 1400);
+  let fi=0;
+  for(let k=0; k<8000 && fi<fp.count; k++){
+    const x=jr()*W, z=jr()*7*MILE;
+    if(fieldMask(x,z) < 0.6) continue;
+    if(distToRoads(x,z)<4) continue;
+    const h=terrainHeight(x,z);
+    p.set(x, h+0.6, z);
+    q.setFromAxisAngle(new THREE.Vector3(0,1,0), 0);
+    s.set(1,1,1);
+    m.compose(p,q,s); fp.setMatrixAt(fi,m); fi++;
+  }
+  fp.count=fi; fp.instanceMatrix.needsUpdate=true;
+  worldRoot.add(fp);
+}
+
+/* --------------------------------------------------------- background hills
+   A skirt of low-frequency ridges outside the county, purely visual.       */
+function buildSkirt(){
+  const bk=new Baker();
+  const R=650, seg=64;
+  for(let i=0;i<seg;i++){
+    const a0=i/seg*Math.PI*2, a1=(i+1)/seg*Math.PI*2;
+    const r0=R+80*fbm(Math.cos(a0)*2, Math.sin(a0)*2, 3);
+    const r1=R+80*fbm(Math.cos(a1)*2, Math.sin(a1)*2, 3);
+    const x0=W/2+Math.cos(a0)*r0, z0=H/2+Math.sin(a0)*r0;
+    const x1=W/2+Math.cos(a1)*r1, z1=H/2+Math.sin(a1)*r1;
+    const h=25 + 40*hash2(i,7);
+    bk.tri(W/2, 8, H/2, x1, h, z1, x0, h, z0, 0.63, 0.72, 0.62);
+  }
+  const m=bk.mesh(matBake);
+  worldRoot.add(m);
+}
+
+/* --------------------------------------------------------- character rig */
+const PLAYER = new THREE.Group();
+{
+  const skin=0xd2b48c, shirt=0xd9522e, pants=0x36414c, boot=0x2a2620, hair=0x3c2a1e;
+  function box(cx,cy,cz,sx,sy,sz,col){
+    const g=new THREE.BoxGeometry(sx,sy,sz);
+    const mat=new THREE.MeshStandardMaterial({ color:col, flatShading:true, roughness:0.9 });
+    const m=new THREE.Mesh(g,mat); m.position.set(cx,cy,cz);
+    if(SHADOWS) m.castShadow=true;
+    return m;
+  }
+  const rig=new THREE.Group();
+  const body=box(0,1.15,0, 0.55,0.85,0.32, shirt); rig.add(body);
+  const head=new THREE.Group(); head.position.set(0,1.85,0);
+  const skull=box(0,0,0,0.42,0.42,0.4, skin); head.add(skull);
+  const cap=box(0,0.24,-0.02,0.46,0.08,0.44, hair); head.add(cap);
+  rig.add(head); rig.userData.head=head;
+  const larm=new THREE.Group(); larm.position.set(-0.36,1.55,0);
+  larm.add(box(0,-0.3,0, 0.18,0.72,0.18, shirt)); rig.add(larm);
+  const rarm=new THREE.Group(); rarm.position.set( 0.36,1.55,0);
+  rarm.add(box(0,-0.3,0, 0.18,0.72,0.18, shirt)); rig.add(rarm);
+  const lleg=new THREE.Group(); lleg.position.set(-0.15,0.72,0);
+  lleg.add(box(0,-0.36,0, 0.22,0.78,0.22, pants));
+  lleg.add(box(0,-0.78,0.05,0.24,0.12,0.28, boot)); rig.add(lleg);
+  const rleg=new THREE.Group(); rleg.position.set( 0.15,0.72,0);
+  rleg.add(box(0,-0.36,0, 0.22,0.78,0.22, pants));
+  rleg.add(box(0,-0.78,0.05,0.24,0.12,0.28, boot)); rig.add(rleg);
+  PLAYER.add(rig);
+  PLAYER.userData = { rig, head, larm, rarm, lleg, rleg, body };
+}
+scene.add(PLAYER);
+
+// player state
+const P = {
+  x:TOWNS[0].x, z:TOWNS[0].z-6, y:0,
+  vy:0, yaw:0, onGround:true, inWater:false, waterSurf:0,
+  speed:0, // for anim
+};
+P.y = terrainHeight(P.x,P.z) + 0.02;
+
+/* ---------------------------------------------------------------- camera */
+const CAM = {
+  yaw:Math.PI, pitch:0.18, dist:CONFIG.CAM_DIST,
+  targetX:P.x, targetY:P.y+1.2, targetZ:P.z,
+  smoothX:P.x, smoothY:P.y+1.2, smoothZ:P.z, smoothYaw:Math.PI, smoothPitch:0.18,
+};
+
+/* --------------------------------------------------------------- controls */
+const keys=Object.create(null);
+window.addEventListener('keydown', e=>{
+  keys[e.key.toLowerCase()]=true;
+  const k=e.key.toLowerCase();
+  if(k===' ') tryJump();
+  if(k==='m'){ toggleBigMap(); e.preventDefault(); }
+  if(k==='h'){ toggleHelp(); }
+  if(k==='r'){ warpTo(TOWNS[0].x, TOWNS[0].z-6); }
+  if(k==='f'){ WAYMARKS_ON=!WAYMARKS_ON; toast(WAYMARKS_ON?'WAYMARKS ON':'WAYMARKS OFF',''); }
+  if(k==='t'){ toggleAmbience(); }
+  if(k==='escape' && document.pointerLockElement) document.exitPointerLock();
+});
+window.addEventListener('keyup', e=>{ keys[e.key.toLowerCase()]=false; });
+
+// mouse look — click-to-lock, drag as fallback
+let dragging=false, dragX=0, dragY=0, locked=false;
+canvas.addEventListener('mousedown', e=>{
+  if(e.button!==0) return;
+  dragging=true; dragX=e.clientX; dragY=e.clientY;
+});
+window.addEventListener('mouseup', ()=>{ dragging=false; });
+window.addEventListener('mousemove', e=>{
+  if(locked){
+    CAM.yaw   -= e.movementX*0.0022;
+    CAM.pitch  = clamp(CAM.pitch - e.movementY*0.0022, -0.5, 1.15);
+  } else if(dragging){
+    const dx=e.clientX-dragX, dy=e.clientY-dragY;
+    dragX=e.clientX; dragY=e.clientY;
+    CAM.yaw   -= dx*0.005;
+    CAM.pitch  = clamp(CAM.pitch - dy*0.004, -0.5, 1.15);
+  }
+});
+canvas.addEventListener('click', ()=>{
+  if(document.pointerLockElement===canvas) return;
+  if(!IS_TOUCH) canvas.requestPointerLock && canvas.requestPointerLock();
+});
+document.addEventListener('pointerlockchange', ()=>{
+  locked = document.pointerLockElement===canvas;
+});
+window.addEventListener('wheel', e=>{
+  CAM.dist = clamp(CAM.dist + Math.sign(e.deltaY)*0.7, 4, 22);
+}, {passive:true});
+
+// touch: left half joystick, right half drag look
+let tJoy=null, tLook=null;
+canvas.addEventListener('touchstart', e=>{
+  for(const t of e.changedTouches){
+    if(t.clientX < window.innerWidth/2 && !tJoy)  tJoy ={id:t.identifier, x0:t.clientX, y0:t.clientY, x:t.clientX, y:t.clientY};
+    else if(!tLook) tLook={id:t.identifier, x:t.clientX, y:t.clientY};
+  }
+}, {passive:true});
+canvas.addEventListener('touchmove', e=>{
+  for(const t of e.changedTouches){
+    if(tJoy && t.identifier===tJoy.id){ tJoy.x=t.clientX; tJoy.y=t.clientY; }
+    else if(tLook && t.identifier===tLook.id){
+      CAM.yaw  -= (t.clientX-tLook.x)*0.006;
+      CAM.pitch = clamp(CAM.pitch - (t.clientY-tLook.y)*0.005, -0.5, 1.15);
+      tLook.x=t.clientX; tLook.y=t.clientY;
+    }
+  }
+  e.preventDefault();
+}, {passive:false});
+canvas.addEventListener('touchend', e=>{
+  for(const t of e.changedTouches){
+    if(tJoy && t.identifier===tJoy.id)   tJoy=null;
+    if(tLook && t.identifier===tLook.id) tLook=null;
+  }
+}, {passive:true});
+document.getElementById('jumpBtn').addEventListener('touchstart', e=>{ tryJump(); e.preventDefault(); });
+
+function tryJump(){
+  if(P.onGround && !P.inWater){ P.vy = 9.2; P.onGround=false; }
+}
+
+/* ----------------------------------------------------------- HUD helpers */
+const locName = document.getElementById('locName');
+const locSub  = document.getElementById('locSub');
+const compass = document.getElementById('compass');
+const foundEl = document.getElementById('found');
+const toastEl = document.getElementById('toast');
+let toastT=0;
+function toast(t1,t2){
+  toastEl.querySelector('.t1').textContent=t1;
+  toastEl.querySelector('.t2').textContent=t2||'';
+  toastEl.classList.add('on'); toastT=2.4;
+}
+function updateFound(){
+  const n=LANDMARKS.filter(l=>l.found).length;
+  foundEl.innerHTML = 'LANDMARKS <b>'+n+'</b> / '+LANDMARKS.length;
+}
+
+function whereAmI(){
+  // nearest town
+  let bestT=null, bestD=1e9;
+  for(const t of TOWNS){
+    const d=Math.hypot(P.x-t.x,P.z-t.z);
+    if(d<bestD){ bestD=d; bestT=t; }
+  }
+  if(bestD < bestT.r*1.25) return { primary:bestT.name, sub:'Crawford County · Missouri' };
+  // river
+  const w=waterAt(P.x,P.z);
+  if(w) return { primary:w.river.name, sub:'Crawford County · Missouri' };
+  // near road
+  let bestR=null, bestRD=1e9;
+  for(let i=0;i<ROADS.length;i++){
+    const c=closestOnPoly(buildPoly(ROADS[i].pts), P.x,P.z);
+    const eff=c.d-ROADS[i].half;
+    if(eff<bestRD){ bestRD=eff; bestR=ROADS[i]; }
+  }
+  if(bestRD < 60) return { primary:bestR.name, sub:'Crawford County · Missouri' };
+  // else general zone
+  const mz=P.z/MILE;
+  const zone = mz<8 ? 'Meramec Uplands' : mz<15 ? 'Meramec River Hills' :
+               mz<22 ? 'Mark Twain National Forest' : 'Ozark Highlands';
+  return { primary:zone, sub:'Crawford County · Missouri' };
+}
+
+/* --------------------------------------------------------- minimap & big map */
+const mm = document.getElementById('minimap');
+const mmCtx = mm.getContext('2d');
+const bigmap = document.getElementById('bigmap');
+const bigWrap = document.getElementById('bigmapWrap');
+
+function drawMap(ctx, cw, ch, showLabels){
+  // background paper
+  ctx.fillStyle='#efe7d4'; ctx.fillRect(0,0,cw,ch);
+  const sx=cw/W, sz=ch/H;
+  // county boundary (rectangle inset for the paper feel)
+  ctx.strokeStyle='#2f2a24'; ctx.lineWidth=1.4;
+  ctx.strokeRect(2,2,cw-4,ch-4);
+
+  // forest fill
+  const step= Math.max(4, Math.floor(cw/40));
+  for(let py=0; py<ch; py+=step){
+    for(let px=0; px<cw; px+=step){
+      const wx=px/sx, wz=py/sz;
+      const f=forestMask(wx,wz);
+      if(f>0.35){
+        ctx.fillStyle = f>0.6 ? 'rgba(60,90,50,.55)' : 'rgba(120,150,90,.35)';
+        ctx.fillRect(px,py,step,step);
+      } else if(fieldMask(wx,wz)>0.35){
+        ctx.fillStyle='rgba(210,190,120,.5)';
+        ctx.fillRect(px,py,step,step);
+      }
+    }
+  }
+  // rivers
+  ctx.strokeStyle='#3a7ea9';
+  RIVERS.forEach(r=>{
+    ctx.lineWidth = r===MERAMEC?2.4:1.6;
+    ctx.beginPath();
+    r.pts.forEach((p,i)=>{ const x=p.x*sx, y=p.z*sz; i?ctx.lineTo(x,y):ctx.moveTo(x,y); });
+    ctx.stroke();
+  });
+  // roads
+  ROADS.forEach(r=>{
+    ctx.strokeStyle = r.name==='I-44'?'#5a5651':'#7a726a';
+    ctx.lineWidth = r.name==='I-44'?2.2:1.3;
+    ctx.beginPath();
+    r.pts.forEach((p,i)=>{ const x=p.x*sx, y=p.z*sz; i?ctx.lineTo(x,y):ctx.moveTo(x,y); });
+    ctx.stroke();
+  });
+  // rail
+  ctx.strokeStyle='#2f2a24'; ctx.lineWidth=0.7; ctx.setLineDash([2,3]);
+  ctx.beginPath();
+  RD_RAIL.forEach((p,i)=>{ const x=p.x*sx, y=p.z*sz; i?ctx.lineTo(x,y):ctx.moveTo(x,y); });
+  ctx.stroke(); ctx.setLineDash([]);
+  // towns
+  ctx.fillStyle='#2f2a24';
+  TOWNS.forEach(t=>{
+    const x=t.x*sx, y=t.z*sz;
+    ctx.beginPath(); ctx.arc(x,y, t.name==='STEELVILLE'?4.5:3, 0, Math.PI*2); ctx.fill();
+    if(showLabels){
+      ctx.fillStyle='#2f2a24';
+      ctx.font='600 10px Inter, Arial, sans-serif';
+      ctx.textBaseline='middle'; ctx.textAlign='left';
+      ctx.fillText(t.name, x+6, y);
+    }
+  });
+  // landmarks
+  LANDMARKS.forEach(l=>{
+    const x=l.x*sx, y=l.z*sz;
+    ctx.fillStyle = l.found ? '#e8b34b' : 'rgba(80,70,60,.6)';
+    ctx.beginPath();
+    ctx.moveTo(x, y-4); ctx.lineTo(x+3.6, y+3); ctx.lineTo(x-3.6, y+3); ctx.closePath(); ctx.fill();
+    if(showLabels){
+      ctx.fillStyle='#544a3a';
+      ctx.font='500 9px Inter, Arial, sans-serif';
+      ctx.textAlign='left';
+      ctx.fillText(l.name, x+6, y+9);
+    }
+  });
+  // player
+  const px=P.x*sx, py=P.z*sz;
+  ctx.fillStyle='#ff7a3d';
+  ctx.beginPath(); ctx.arc(px,py,3.6,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle='#ff7a3d'; ctx.lineWidth=1.4;
+  ctx.beginPath(); ctx.moveTo(px,py);
+  ctx.lineTo(px + Math.sin(P.yaw)*10, py + Math.cos(P.yaw)*10);
+  ctx.stroke();
+}
+
+let bigMapOpen=false;
+function toggleBigMap(){
+  bigMapOpen=!bigMapOpen;
+  if(bigMapOpen){
+    const s = Math.min(window.innerWidth*0.86, window.innerHeight*0.86);
+    bigmap.width = s*0.8; bigmap.height = s;
+    drawMap(bigmap.getContext('2d'), bigmap.width, bigmap.height, true);
+    bigWrap.classList.add('on');
+  } else bigWrap.classList.remove('on');
+}
+bigWrap.addEventListener('click', ()=>{ if(bigMapOpen) toggleBigMap(); });
+
+let helpOpen=false;
+function toggleHelp(){
+  helpOpen=!helpOpen;
+  document.getElementById('help').classList.toggle('on', helpOpen);
+}
+document.getElementById('help').addEventListener('click', ()=>{ toggleHelp(); });
+
+/* ------------------------------------------------------------ waymarks */
+let WAYMARKS_ON=true;
+const beacons = new THREE.Group();
+scene.add(beacons);
+const beaconGeo = new THREE.CylinderGeometry(0.15, 0.15, 20, 6);
+const beaconMat = new THREE.MeshBasicMaterial({ color:0xe8b34b, transparent:true, opacity:0.35 });
+LANDMARKS.forEach(l=>{
+  const m=new THREE.Mesh(beaconGeo, beaconMat);
+  m.position.set(l.x, terrainHeight(l.x,l.z)+10, l.z);
+  m.userData.landmark=l;
+  beacons.add(m);
+});
+
+/* --------------------------------------------------------------- ambience */
+let audioCtx=null, ambienceOn=false, ambienceNodes=null;
+function toggleAmbience(){
+  if(!audioCtx){
+    try{ audioCtx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ return; }
+  }
+  if(audioCtx.state==='suspended') audioCtx.resume();
+  if(!ambienceOn){
+    // gentle pink-ish wind + a slow tonal drone
+    const bufSize=2*audioCtx.sampleRate;
+    const noiseBuf=audioCtx.createBuffer(1,bufSize,audioCtx.sampleRate);
+    const d=noiseBuf.getChannelData(0);
+    let b0=0,b1=0,b2=0;
+    for(let i=0;i<bufSize;i++){
+      const w=Math.random()*2-1;
+      b0=0.997*b0+0.02*w; b1=0.985*b1+0.05*w; b2=0.95*b2+0.15*w;
+      d[i]=(b0+b1+b2)*0.15;
+    }
+    const noise=audioCtx.createBufferSource(); noise.buffer=noiseBuf; noise.loop=true;
+    const nf=audioCtx.createBiquadFilter(); nf.type='lowpass'; nf.frequency.value=550;
+    const ng=audioCtx.createGain(); ng.gain.value=0.05;
+    noise.connect(nf).connect(ng).connect(audioCtx.destination); noise.start();
+
+    const osc=audioCtx.createOscillator(); osc.type='sine'; osc.frequency.value=110;
+    const og=audioCtx.createGain(); og.gain.value=0.008;
+    const osc2=audioCtx.createOscillator(); osc2.type='sine'; osc2.frequency.value=164.8;
+    const og2=audioCtx.createGain(); og2.gain.value=0.006;
+    osc.connect(og).connect(audioCtx.destination); osc.start();
+    osc2.connect(og2).connect(audioCtx.destination); osc2.start();
+    ambienceNodes={noise,osc,osc2,ng,og,og2};
+    ambienceOn=true; toast('AMBIENCE ON','ozark wind');
+  } else {
+    try{
+      ambienceNodes.noise.stop(); ambienceNodes.osc.stop(); ambienceNodes.osc2.stop();
+    }catch(e){}
+    ambienceNodes=null; ambienceOn=false;
+    toast('AMBIENCE OFF','');
+  }
+}
+
+/* ------------------------------------------------------------- build order */
+buildTerrain();
+buildWater();
+buildRoads();
+bakeTowns();
+buildFlora();
+buildSkirt();
+updateFound();
+
+/* ---------------------------------------------------- warp / update loop */
+function warpTo(x,z){
+  P.x=x; P.z=z; P.y=terrainHeight(x,z)+0.02; P.vy=0;
+  toast('BOURBON', 'return to starting waypoint');
+}
+
+const clock = new THREE.Clock();
+let animTime = 0;
+
+function update(dt){
+  // input axes
+  let ix=0, iz=0;
+  if(keys['w']||keys['arrowup'])    iz-=1;
+  if(keys['s']||keys['arrowdown'])  iz+=1;
+  if(keys['a']||keys['arrowleft'])  ix-=1;
+  if(keys['d']||keys['arrowright']) ix+=1;
+  if(tJoy){
+    const dx=tJoy.x-tJoy.x0, dy=tJoy.y-tJoy.y0;
+    const L=Math.hypot(dx,dy);
+    if(L>8){ ix += dx/Math.max(L,60); iz += dy/Math.max(L,60); }
+  }
+  const inputMag = Math.min(1, Math.hypot(ix,iz));
+  if(inputMag>0){ const l=Math.hypot(ix,iz); ix/=l; iz/=l; }
+
+  const sprint = keys['shift'];
+  P.inWater=false;
+  const w = waterAt(P.x,P.z);
+  if(w && P.y < w.surf+0.3){ P.inWater=true; P.waterSurf=w.surf; }
+
+  const base = P.inWater ? CONFIG.SWIM : (sprint?CONFIG.SPRINT:CONFIG.RUN);
+  // camera-relative movement
+  const cs=Math.cos(CAM.yaw), sn=Math.sin(CAM.yaw);
+  // forward is -Z in camera frame; convert (ix,iz) → world
+  const fx=-Math.sin(CAM.yaw), fz=-Math.cos(CAM.yaw);
+  const rx= Math.cos(CAM.yaw), rz=-Math.sin(CAM.yaw);
+  let mx = (fx*(-iz) + rx*ix);
+  let mz = (fz*(-iz) + rz*ix);
+  const ml = Math.hypot(mx,mz);
+  if(ml>0){ mx/=ml; mz/=ml;
+    P.yaw = lerpAngle(P.yaw, Math.atan2(mx,mz), damp(14,dt));
+  }
+  P.speed = inputMag * base;
+
+  // step; clamp against water surface as soft wall
+  const nx = P.x + mx * P.speed * dt;
+  const nz = P.z + mz * P.speed * dt;
+  const nxClamped = clamp(nx, 2, W-2);
+  const nzClamped = clamp(nz, 2, H-2);
+  P.x = nxClamped; P.z = nzClamped;
+
+  // ground / water y
+  const groundH = terrainHeight(P.x,P.z);
+  if(P.inWater){
+    // wading: sit at (surf - 0.35) unless ground is higher
+    const targetY = Math.max(groundH, P.waterSurf-0.35);
+    P.y = lerp(P.y, targetY, damp(9,dt));
+    P.vy = 0;
+    P.onGround = true;
+  } else {
+    P.vy -= 22*dt;
+    P.y += P.vy*dt;
+    if(P.y <= groundH){ P.y=groundH; P.vy=0; P.onGround=true; }
+    else P.onGround=false;
+  }
+
+  // apply to player group
+  PLAYER.position.set(P.x, P.y, P.z);
+  PLAYER.rotation.y = P.yaw;
+
+  // simple walk / swim anim
+  animTime += dt * (P.inWater ? 3.5 : (2.0 + P.speed*0.55));
+  const rig = PLAYER.userData;
+  const walking = P.speed > 0.1;
+  const swing = walking ? Math.sin(animTime*4) * (P.inWater?0.35:0.9) : 0;
+  rig.lleg.rotation.x =  swing;
+  rig.rleg.rotation.x = -swing;
+  rig.larm.rotation.x = -swing*0.7;
+  rig.rarm.rotation.x =  swing*0.7;
+  const bob = walking ? Math.abs(Math.sin(animTime*4))*0.06 : 0;
+  rig.rig.position.y = bob;
+  rig.head.rotation.y = Math.sin(animTime*0.6)*0.05;
+
+  // camera: third-person boom with collision
+  CAM.targetX=P.x; CAM.targetY=P.y+1.35; CAM.targetZ=P.z;
+  CAM.smoothX = lerp(CAM.smoothX, CAM.targetX, damp(10,dt));
+  CAM.smoothY = lerp(CAM.smoothY, CAM.targetY, damp(10,dt));
+  CAM.smoothZ = lerp(CAM.smoothZ, CAM.targetZ, damp(10,dt));
+  CAM.smoothYaw   = lerpAngle(CAM.smoothYaw, CAM.yaw, damp(14,dt));
+  CAM.smoothPitch = lerp(CAM.smoothPitch, CAM.pitch, damp(14,dt));
+
+  const cp = CAM.smoothPitch;
+  const yaw = CAM.smoothYaw;
+  let dist = CAM.dist;
+  // collision: sample terrain along the boom, shorten if it dips under
+  const dirX = Math.sin(yaw)*Math.cos(cp);
+  const dirY = Math.sin(cp);
+  const dirZ = Math.cos(yaw)*Math.cos(cp);
+  for(let step=0; step<6; step++){
+    const cx=CAM.smoothX + dirX*dist;
+    const cy=CAM.smoothY + dirY*dist;
+    const cz=CAM.smoothZ + dirZ*dist;
+    const gh=terrainHeight(cx,cz);
+    if(cy > gh+0.6) break;
+    dist -= 1.2; if(dist<3) { dist=3; break; }
+  }
+  camera.position.set(CAM.smoothX + dirX*dist,
+                      CAM.smoothY + dirY*dist,
+                      CAM.smoothZ + dirZ*dist);
+  camera.lookAt(CAM.smoothX, CAM.smoothY, CAM.smoothZ);
+
+  // sun follows player for shadow map coverage
+  sun.position.set(P.x + 90, 160, P.z + 40);
+  sun.target.position.set(P.x, P.y, P.z);
+
+  // waymarks visibility + drift
+  beacons.visible = WAYMARKS_ON;
+  if(WAYMARKS_ON){
+    beacons.children.forEach(b=>{
+      b.rotation.y += dt*0.6;
+      const l=b.userData.landmark;
+      b.material = beaconMat; // shared
+      if(l.found){
+        // shrink and hide once collected
+        b.scale.y = Math.max(0.02, b.scale.y - dt*0.7);
+        if(b.scale.y<=0.02) b.visible=false;
+      }
+    });
+  }
+
+  // landmark discovery
+  for(const l of LANDMARKS){
+    if(l.found) continue;
+    if(Math.hypot(P.x-l.x, P.z-l.z) < 12){
+      l.found=true;
+      toast('LANDMARK FOUND', l.name);
+      updateFound();
+      const found=LANDMARKS.filter(x=>x.found).length;
+      if(found===LANDMARKS.length){
+        setTimeout(()=>toast('COUNTY COMPLETE', 'all landmarks recorded'), 2600);
+      }
+    }
+  }
+
+  // HUD text
+  const w1=whereAmI();
+  if(locName.textContent!==w1.primary){
+    locName.textContent=w1.primary; locSub.textContent=w1.sub;
+  }
+  const deg=(( -CAM.yaw*180/Math.PI ) % 360 + 360) % 360;
+  const card = ['N','NE','E','SE','S','SW','W','NW'][Math.round(deg/45)%8];
+  compass.textContent = card+' · '+Math.round(deg)+'°';
+
+  if(toastT>0){ toastT-=dt; if(toastT<=0) toastEl.classList.remove('on'); }
+
+  // minimap
+  drawMap(mmCtx, mm.width, mm.height, false);
+}
+
+/* --------------------------------------------------------- main loop */
+let started=false;
+function loop(){
+  const dt = Math.min(0.05, clock.getDelta());
+  if(started) update(dt);
+  renderer.render(scene, camera);
+  requestAnimationFrame(loop);
+}
+loop();
+
+/* --------------------------------------------------------- title dismiss */
+const titleEl = document.getElementById('title');
+const pressKey = document.getElementById('pressKey');
+// wait one frame post-first-render, then show the "press any key" prompt
+setTimeout(()=>{ pressKey.textContent = IS_TOUCH?'TAP TO ENTER':'PRESS ANY KEY OR CLICK TO ENTER'; }, 600);
+function dismissTitle(){
+  if(started) return;
+  started=true;
+  titleEl.style.opacity='0';
+  setTimeout(()=>{ titleEl.remove(); }, 1200);
+  setTimeout(()=>{
+    toast('WELCOME TO BOURBON', 'head toward the yellow beacons');
+  }, 1400);
+}
+window.addEventListener('keydown', dismissTitle, { once:false });
+window.addEventListener('click',  dismissTitle, { once:false });
+window.addEventListener('touchend', dismissTitle, { once:false });
+
+/* --------------------------------------------------------- resize */
+window.addEventListener('resize', ()=>{
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  camera.aspect = window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+});
+
+// fade the always-on hint after a few seconds
+setTimeout(()=>{ document.getElementById('hint').style.opacity='0.35'; }, 12000);
+
+// startup breadcrumb
+console.log('%cCRAWFORD COUNTY','background:#0d1214;color:#e8b34b;padding:4px 8px;letter-spacing:.3em');
+console.log('Try CONFIG at the top of the file to change SEED, TREES, MILE.');
+</script>
+</body>
+</html>
