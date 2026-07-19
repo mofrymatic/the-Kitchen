@@ -3,576 +3,398 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Automate the Painful Stuff — Robotics for Structural, Mechanical, Electrical, and Robotic Engineers</title>
+<title>Automate the Painful Stuff with Robotics — Contents</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,400;0,500;0,700;0,800;1,400;1,700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 <style>
   :root {
-    --ink: #111111;
-    --paper: #f4f1ea;
-    --rule: #111111;
-    --muted: #6a6459;
-    --accent: #a8321c;
-    --accent-dim: #d9c9b8;
-    --grid: rgba(17,17,17,0.06);
-    --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
-    --serif: 'Fraunces', 'Iowan Old Style', Georgia, serif;
-    --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+    --ink: #1a1a1a;
+    --paper: #fbfaf6;
+    --rule: #1a1a1a;
+    --muted: #6a6a6a;
+    --serif: 'Libre Baskerville', 'Iowan Old Style', Georgia, serif;
+    --sans:  'Jost', 'Futura', 'Century Gothic', sans-serif;
   }
 
   * { box-sizing: border-box; }
-
-  html, body {
-    margin: 0;
-    padding: 0;
-    background: var(--paper);
+  html, body { margin: 0; padding: 0; background: #ebe7dc; }
+  body {
+    font-family: var(--serif);
     color: var(--ink);
-    font-family: var(--sans);
-    font-size: 15px;
     line-height: 1.55;
     -webkit-font-smoothing: antialiased;
-    background-image:
-      linear-gradient(var(--grid) 1px, transparent 1px),
-      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
-    background-size: 24px 24px;
-    background-position: -1px -1px;
+    padding: 40px 16px 80px;
   }
 
+  /* Page --------------------------------------------------------------- */
   .page {
-    max-width: 1080px;
+    max-width: 720px;
     margin: 0 auto;
-    padding: 48px 40px 96px;
+    background: var(--paper);
+    padding: 72px 84px 96px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08), 0 12px 40px rgba(0,0,0,0.12);
+    position: relative;
+    min-height: 1000px;
+  }
+  .folio {
+    position: absolute;
+    bottom: 40px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-family: var(--sans);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    color: var(--muted);
+    text-transform: uppercase;
   }
 
-  /* Masthead ------------------------------------------------------------- */
-  header.masthead {
-    border-top: 3px solid var(--ink);
-    border-bottom: 1px solid var(--ink);
-    padding: 20px 0 24px;
-    margin-bottom: 40px;
-    display: grid;
-    grid-template-columns: 1fr auto;
-    align-items: end;
-    gap: 24px;
+  /* Chapter opener imitation ------------------------------------------- */
+  .opener-rule {
+    border-top: 2px solid var(--ink);
+    margin-bottom: 6px;
   }
-  .brand {
-    font-family: var(--mono);
-    font-size: 11px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
-  .brand strong { color: var(--ink); }
-  h1.title {
-    font-family: var(--serif);
-    font-weight: 800;
-    font-size: clamp(38px, 6vw, 68px);
-    line-height: 0.98;
-    letter-spacing: -0.02em;
-    margin: 8px 0 0;
-  }
-  h1.title em {
-    font-style: italic;
-    font-weight: 400;
-    color: var(--accent);
-  }
-  .subtitle {
-    font-family: var(--serif);
-    font-style: italic;
-    font-weight: 400;
-    font-size: 18px;
-    color: var(--muted);
-    margin-top: 10px;
-    max-width: 62ch;
-  }
-  .meta {
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--muted);
-    text-align: right;
-    line-height: 1.7;
-  }
-  .meta span { display: block; }
-  .meta .kv { color: var(--ink); }
-
-  /* Abstract / free-body diagram frame ---------------------------------- */
-  section.abstract {
-    display: grid;
-    grid-template-columns: 1.4fr 1fr;
-    gap: 40px;
-    margin-bottom: 56px;
-    padding-bottom: 40px;
-    border-bottom: 1px solid var(--ink);
-  }
-  .abstract h2 {
-    font-family: var(--mono);
-    font-size: 11px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin: 0 0 12px;
-  }
-  .abstract p {
-    font-family: var(--serif);
-    font-size: 17px;
-    line-height: 1.55;
-    margin: 0 0 12px;
-  }
-  .abstract .lede {
-    font-size: 20px;
-    line-height: 1.45;
-  }
-  .decision-rule {
-    background: var(--ink);
-    color: var(--paper);
-    padding: 20px 22px;
-    font-family: var(--mono);
-    font-size: 12.5px;
-    line-height: 1.7;
-  }
-  .decision-rule .h {
-    color: var(--accent-dim);
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    font-size: 10.5px;
-    margin-bottom: 12px;
-  }
-  .decision-rule .rule { display: block; margin: 4px 0; }
-  .decision-rule .op { color: var(--accent-dim); }
-  .decision-rule .verdict { color: #f1a48c; }
-
-  /* Parts + chapters ---------------------------------------------------- */
-  .part {
-    margin: 48px 0 0;
-    padding-top: 24px;
+  .opener-rule.thin {
     border-top: 1px solid var(--ink);
+    margin-top: 4px;
+    margin-bottom: 40px;
   }
-  .part-head {
-    display: grid;
-    grid-template-columns: 120px 1fr auto;
-    align-items: baseline;
-    gap: 24px;
-    margin-bottom: 20px;
+  h1.fmh {
+    font-family: var(--sans);
+    font-weight: 800;
+    font-size: 40px;
+    letter-spacing: 0.02em;
+    margin: 0;
+    line-height: 1.05;
+    text-transform: uppercase;
   }
-  .part-num {
-    font-family: var(--mono);
-    font-size: 11px;
-    letter-spacing: 0.18em;
+  .running-head {
+    font-family: var(--sans);
+    font-size: 10px;
+    letter-spacing: 0.22em;
     text-transform: uppercase;
     color: var(--muted);
-  }
-  .part-title {
-    font-family: var(--serif);
-    font-size: 26px;
-    font-weight: 600;
-    letter-spacing: -0.01em;
-    margin: 0;
-  }
-  .part-title em { font-style: italic; color: var(--muted); font-weight: 400; }
-  .part-tag {
-    font-family: var(--mono);
-    font-size: 10.5px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--accent);
-    border: 1px solid var(--accent);
-    padding: 4px 8px;
+    margin-bottom: 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
   }
 
-  .chapters { list-style: none; padding: 0; margin: 0; }
-  .chapters li {
-    display: grid;
-    grid-template-columns: 120px 1fr 1.2fr 1fr;
-    gap: 24px;
-    align-items: baseline;
-    padding: 14px 0;
-    border-bottom: 1px dotted rgba(17,17,17,0.25);
+  /* Body text ---------------------------------------------------------- */
+  p.tni {
+    text-indent: 0;
+    margin: 0 0 12px;
+    font-size: 14px;
+    line-height: 1.7;
   }
-  .chapters li:last-child { border-bottom: none; }
-  .ch-num {
-    font-family: var(--mono);
+  p.tx {
+    text-indent: 1.4em;
+    margin: 0 0 12px;
+    font-size: 14px;
+    line-height: 1.7;
+  }
+  p.tni::first-letter, .dropcap::first-letter {
+    /* subtle only — No Starch chapter openers do use large caps sometimes */
+  }
+  em.book { font-style: italic; }
+
+  /* Section heads ------------------------------------------------------ */
+  h2.h {
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: 17px;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    margin: 36px 0 14px;
+    padding-bottom: 3px;
+    border-bottom: 1px solid var(--ink);
+  }
+  h3.h1 {
+    font-family: var(--sans);
+    font-weight: 700;
+    font-style: italic;
+    font-size: 14px;
+    letter-spacing: 0.02em;
+    margin: 24px 0 10px;
+    text-transform: none;
+  }
+
+  /* Table of Contents -------------------------------------------------- */
+  .toc-part {
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink);
+    margin: 28px 0 10px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--ink);
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .toc-part .part-sub {
+    font-family: var(--serif);
+    font-style: italic;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
     font-size: 12px;
     color: var(--muted);
-    letter-spacing: 0.08em;
   }
-  .ch-num a { color: inherit; text-decoration: none; }
-  .ch-title {
-    font-family: var(--serif);
-    font-size: 18px;
-    font-weight: 600;
+
+  ol.toc {
+    list-style: none;
+    padding: 0;
+    margin: 0;
   }
-  .ch-title a {
+  ol.toc li {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    padding: 5px 0;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  ol.toc .num {
+    font-family: var(--sans);
+    font-weight: 500;
+    font-size: 12px;
+    min-width: 44px;
+    color: var(--ink);
+    letter-spacing: 0.04em;
+  }
+  ol.toc .ttl {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  ol.toc .ttl a {
     color: var(--ink);
     text-decoration: none;
     background-image: linear-gradient(var(--ink), var(--ink));
     background-repeat: no-repeat;
     background-size: 0% 1px;
     background-position: 0 100%;
-    transition: background-size 0.25s ease;
-    padding-bottom: 2px;
+    transition: background-size .25s ease;
+    padding-bottom: 1px;
   }
-  .ch-title a:hover { background-size: 100% 1px; color: var(--accent); background-image: linear-gradient(var(--accent), var(--accent)); }
-  .ch-why {
-    font-family: var(--serif);
-    font-style: italic;
-    font-size: 14.5px;
-    color: var(--muted);
-    line-height: 1.45;
+  ol.toc .ttl a:hover { background-size: 100% 1px; }
+  ol.toc .leader {
+    flex: 1;
+    border-bottom: 1px dotted #999;
+    transform: translateY(-4px);
+    margin: 0 6px;
   }
-  .ch-primitive {
-    font-family: var(--mono);
-    font-size: 11.5px;
+  ol.toc .pg {
+    font-family: var(--sans);
+    font-size: 12px;
     color: var(--ink);
-    line-height: 1.5;
-  }
-  .ch-primitive .tag {
-    display: inline-block;
-    background: var(--accent-dim);
-    padding: 1px 6px;
-    margin-right: 4px;
-    font-size: 10.5px;
+    min-width: 28px;
+    text-align: right;
     letter-spacing: 0.04em;
   }
 
-  /* Coda ---------------------------------------------------------------- */
-  .coda {
-    margin-top: 72px;
-    padding-top: 32px;
-    border-top: 3px solid var(--ink);
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 32px;
+  /* Introduction section ---------------------------------------------- */
+  .intro {
+    margin-bottom: 36px;
   }
-  .coda h3 {
-    font-family: var(--mono);
-    font-size: 11px;
+  .intro p.tni { font-size: 14.5px; }
+
+  /* Frontmatter listings ---------------------------------------------- */
+  .frontmatter {
+    margin: 0 0 16px;
+  }
+  .frontmatter li {
+    display: flex;
+    align-items: baseline;
+    padding: 4px 0;
+    font-size: 14px;
+    font-style: italic;
+  }
+  .frontmatter .num { font-style: normal; min-width: 44px; }
+  .frontmatter .leader { flex: 1; border-bottom: 1px dotted #999; transform: translateY(-4px); margin: 0 6px; }
+  .frontmatter .pg { font-family: var(--sans); font-style: normal; font-size: 12px; min-width: 28px; text-align: right; }
+
+  /* Notes / callouts --------------------------------------------------- */
+  aside.note {
+    border-left: 3px solid var(--ink);
+    padding: 8px 14px;
+    margin: 20px 0;
+    font-size: 13px;
+    line-height: 1.6;
+    background: #f4efe1;
+  }
+  aside.note .label {
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: 10px;
     letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: var(--accent);
-    margin: 0 0 10px;
-  }
-  .coda p {
-    font-family: var(--serif);
-    font-size: 14.5px;
-    line-height: 1.55;
-    margin: 0;
-    color: var(--ink);
+    display: block;
+    margin-bottom: 4px;
   }
 
-  footer.colophon {
-    margin-top: 64px;
-    padding-top: 20px;
-    border-top: 1px solid var(--ink);
-    display: flex;
-    justify-content: space-between;
-    font-family: var(--mono);
-    font-size: 10.5px;
-    color: var(--muted);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-
-  /* Responsive ---------------------------------------------------------- */
-  @media (max-width: 820px) {
-    .page { padding: 28px 20px 64px; }
-    header.masthead { grid-template-columns: 1fr; }
-    .meta { text-align: left; }
-    section.abstract { grid-template-columns: 1fr; }
-    .part-head { grid-template-columns: 1fr; gap: 6px; }
-    .part-tag { justify-self: start; }
-    .chapters li {
-      grid-template-columns: 1fr;
-      gap: 6px;
-      padding: 16px 0;
-    }
-    .ch-why, .ch-primitive { font-size: 13.5px; }
-    .coda { grid-template-columns: 1fr; }
+  /* Responsive --------------------------------------------------------- */
+  @media (max-width: 720px) {
+    body { padding: 12px 6px 40px; }
+    .page { padding: 40px 24px 72px; }
+    h1.fmh { font-size: 30px; }
+    ol.toc li { flex-wrap: wrap; }
+    ol.toc .ttl { white-space: normal; }
+    ol.toc .leader { display: none; }
+    ol.toc .pg { margin-left: auto; }
   }
 </style>
 </head>
 <body>
+
 <div class="page">
 
-  <header class="masthead">
-    <div>
-      <div class="brand"><strong>VOL. I</strong> · A FIELD MANUAL FOR PHYSICAL DELEGATION</div>
-      <h1 class="title">Automate the <em>Painful</em> Stuff</h1>
-      <div class="subtitle">Robotics for structural, mechanical, electrical, and robotic engineers — reasoned from equilibria, not from tasks.</div>
-    </div>
-    <div class="meta">
-      <span class="kv">EDITION / 0.1 DRAFT</span>
-      <span>REV / 2026.07.18</span>
-      <span>SCOPE / ENVELOPE → HOSTILE → LOAD</span>
-      <span>LICENSE / CC BY-SA 4.0</span>
-    </div>
-  </header>
+  <div class="running-head">
+    <span>Automate the Painful Stuff with Robotics</span>
+    <span>Vol. I</span>
+  </div>
 
-  <section class="abstract">
-    <div>
-      <h2>§ 0 — Free Body Diagram</h2>
-      <p class="lede">A workspace holds a human and its computing systems in equilibrium across three flows: <strong>thermal</strong>, <strong>chemical</strong>, and <strong>mechanical</strong>. Nociception is the signal that an equilibrium is being violated.</p>
-      <p>Boring work is the apprenticeship of physical skill and should stay human. Painful work — that which damages the human form faster than it can heal — is what we delegate to machines. This volume enumerates the classes of painful work an engineer can build against, in priority order: the envelope first (immune system), then hostile spaces (zero adaptation), then cumulative load (T<sub>recovery</sub> &gt; T<sub>incident</sub>).</p>
-      <p>Each chapter is scoped for engineers who will actually build the mechanism. Structural: what does it grip, and against what reaction? Mechanical: what is the duty cycle and what fails first? Electrical: what is the power budget in a place with no outlet? Robotic: what is the minimum viable replaceability — reliably enough to <em>replace</em>, not merely assist?</p>
-    </div>
-    <aside class="decision-rule" aria-label="Decision rule">
-      <div class="h">§ 0.1 · Decision Rule</div>
-      <span class="rule">let  d(damage)/dt   = D&#775;</span>
-      <span class="rule">let  d(adaptation)/dt = A&#775;</span>
-      <span class="rule">let  T_recovery, T_incident</span>
-      <span class="rule">&nbsp;</span>
-      <span class="rule"><span class="op">if</span> D&#775; &gt; A&#775;  <span class="op">or</span>  T_r &gt; T_i:</span>
-      <span class="rule">&nbsp;&nbsp;&nbsp;&nbsp;<span class="verdict">automate</span>   // deficit compounds</span>
-      <span class="rule"><span class="op">elif</span> A&#775; &gt; D&#775; <span class="op">and</span> T_r &lt; T_i:</span>
-      <span class="rule">&nbsp;&nbsp;&nbsp;&nbsp;<span class="verdict">assign human</span>  // net resilience</span>
-      <span class="rule"><span class="op">else</span>:</span>
-      <span class="rule">&nbsp;&nbsp;&nbsp;&nbsp;<span class="verdict">redesign task</span>  // MVR unmet</span>
-    </aside>
-  </section>
+  <div class="opener-rule"></div>
+  <h1 class="fmh">Contents in Detail</h1>
+  <div class="opener-rule thin"></div>
+
+  <!-- Frontmatter ---------------------------------------------------- -->
+  <ol class="toc frontmatter" start="1">
+    <li><span class="num"></span><span class="ttl"><a href="foreword.html">Foreword by the Physical World</a></span><span class="leader"></span><span class="pg">xv</span></li>
+    <li><span class="num"></span><span class="ttl"><a href="acknowledgments.html">Acknowledgments</a></span><span class="leader"></span><span class="pg">xix</span></li>
+  </ol>
+
+  <!-- Introduction --------------------------------------------------- -->
+  <h2 class="h">Introduction</h2>
+  <p class="tni">“You just replaced two months of Julys in that crawlspace.” A friend had spent the previous three summers dragging a shop-vac through a 92°F attic to chase a mildew smell down to its source. The fourth summer, a tethered rover on a spool of Cat6 mapped every truss bay with a $40 gas sensor and a thermal camera, found the leak in an afternoon, and never asked to be paid in Gatorade.</p>
+  <p class="tx">This is the counterpart to <em class="book">Automate the Boring Stuff with Python</em>. Boring work is the apprenticeship of physical skill and should stay human; painful work — that which damages the human form faster than it can heal — is what we delegate to machines. The chapters that follow enumerate those tasks, and the mechanisms an engineer can build against them.</p>
+
+  <h3 class="h1">Who Is This Book For?</h3>
+  <p class="tni">This book is written for structural, mechanical, electrical, and robotic engineers who want a defensible answer to <em class="book">what to build next</em>. It is not a survey of the state of the art, nor a catalog of commercial platforms. It is a decision procedure and twenty-six worked examples.</p>
+  <p class="tx">If you have ever finished a project and wondered whether it was worth automating in the first place, this book is for you. If you have ever built the wrong machine because the task looked tractable rather than valuable, this book is for you.</p>
+
+  <h3 class="h1">The Decision Rule</h3>
+  <p class="tni">For any candidate task, estimate the rate of damage accumulated per exposure, <em class="book">d(damage)/dt</em>; the rate of adaptation gained per exposure, <em class="book">d(adaptation)/dt</em>; the recovery time required, <em class="book">T<sub>r</sub></em>; and the interval between work cycles, <em class="book">T<sub>i</sub></em>. Automate when damage outruns adaptation, or when recovery outruns the interval. Assign the human when the reverse holds — each cycle then yields net resilience, and the work becomes training stimulus. Where neither obtains, redesign the task before building the robot.</p>
+
+  <aside class="note">
+    <span class="label">A Note on Scope</span>
+    The chapters are ordered by priority, not by difficulty. Part I — the envelope of the workspace itself — comes first because it defends the substrate on which every other kind of work is done. The robot is the immune system of the workspace, not a servant performing chores.
+  </aside>
+
+  <div class="folio">i</div>
+</div>
+
+<!-- Page 2 ------------------------------------------------------------ -->
+<div class="page" style="margin-top: 40px;">
+
+  <div class="running-head">
+    <span>Contents in Detail</span>
+    <span>ii</span>
+  </div>
 
   <!-- PART I --------------------------------------------------------- -->
-  <section class="part">
-    <div class="part-head">
-      <div class="part-num">Part I</div>
-      <h2 class="part-title">The Envelope <em>— immune system of the workspace</em></h2>
-      <div class="part-tag">Always-on daemons</div>
-    </div>
-    <ol class="chapters" start="1">
-      <li>
-        <div class="ch-num"><a href="chapter1.html">Ch. 01</a></div>
-        <div class="ch-title"><a href="chapter1.html">Thermal Stratification Mapping</a></div>
-        <div class="ch-why">Humans do not adapt to chronic hypoxic-hot sleep; cognition degrades quietly.</div>
-        <div class="ch-primitive"><span class="tag">SENSE</span>mobile IR + anemometer<br><span class="tag">ACT</span>zoned dampers</div>
-      </li>
-      <li>
-        <div class="ch-num"><a href="chapter2.html">Ch. 02</a></div>
-        <div class="ch-title"><a href="chapter2.html">Atmospheric Integrity</a></div>
-        <div class="ch-why">CO₂, CO, VOC, radon, ozone. Nociception is delayed by years; deficit compounds silently.</div>
-        <div class="ch-primitive"><span class="tag">SENSE</span>distributed gas array<br><span class="tag">INFER</span>source triangulation</div>
-      </li>
-      <li>
-        <div class="ch-num"><a href="chapter3.html">Ch. 03</a></div>
-        <div class="ch-title"><a href="chapter3.html">Bioaerosol &amp; Particulate Control</a></div>
-        <div class="ch-why">Mold spores, dander, PM2.5 wildfire ingress — chronic exposure, not an event.</div>
-        <div class="ch-primitive"><span class="tag">ACT</span>HEPA patrol<br><span class="tag">SENSE</span>ΔP envelope logging</div>
-      </li>
-      <li>
-        <div class="ch-num"><a href="chapter4.html">Ch. 04</a></div>
-        <div class="ch-title"><a href="chapter4.html">Humidity &amp; Dew-Point Regulation</a></div>
-        <div class="ch-why">Corrodes tools, seeds mold in wall cavities, drags cognition.</div>
-        <div class="ch-primitive"><span class="tag">ACT</span>zoned dehumidification<br><span class="tag">INFER</span>envelope leak model</div>
-      </li>
-      <li>
-        <div class="ch-num"><a href="chapter5.html">Ch. 05</a></div>
-        <div class="ch-title"><a href="chapter5.html">Pest &amp; Vector Surveillance</a></div>
-        <div class="ch-why">Rodents, termites, mosquitoes. Damage to structure and to sleep quality.</div>
-        <div class="ch-primitive"><span class="tag">SENSE</span>acoustic + thermal traps<br><span class="tag">CONSTRAINT</span>no poison</div>
-      </li>
-    </ol>
-  </section>
+  <div class="toc-part">
+    <span>Part I &nbsp;·&nbsp; The Envelope</span>
+    <span class="part-sub">immune system of the workspace</span>
+  </div>
+  <ol class="toc">
+    <li><span class="num">1</span><span class="ttl"><a href="chapter1.html">Thermal Stratification Mapping</a></span><span class="leader"></span><span class="pg">3</span></li>
+    <li><span class="num">2</span><span class="ttl"><a href="chapter2.html">Atmospheric Integrity</a></span><span class="leader"></span><span class="pg">17</span></li>
+    <li><span class="num">3</span><span class="ttl"><a href="chapter3.html">Bioaerosol and Particulate Control</a></span><span class="leader"></span><span class="pg">33</span></li>
+    <li><span class="num">4</span><span class="ttl"><a href="chapter4.html">Humidity and Dew-Point Regulation</a></span><span class="leader"></span><span class="pg">49</span></li>
+    <li><span class="num">5</span><span class="ttl"><a href="chapter5.html">Pest and Vector Surveillance</a></span><span class="leader"></span><span class="pg">63</span></li>
+  </ol>
 
   <!-- PART II -------------------------------------------------------- -->
-  <section class="part">
-    <div class="part-head">
-      <div class="part-num">Part II</div>
-      <h2 class="part-title">Hostile Spaces <em>— adaptation rate ≈ 0</em></h2>
-      <div class="part-tag">Tele-op or autonomy</div>
-    </div>
-    <ol class="chapters" start="6">
-      <li>
-        <div class="ch-num"><a href="chapter6.html">Ch. 06</a></div>
-        <div class="ch-title"><a href="chapter6.html">Confined Space Entry</a></div>
-        <div class="ch-why">Attic in August, crawlspace, tank, silo. O₂ depletion + thermal load, no acclimation.</div>
-        <div class="ch-primitive"><span class="tag">MECH</span>tethered crawler<br><span class="tag">SEQ</span>atmosphere-first</div>
-      </li>
-      <li>
-        <div class="ch-num"><a href="chapter7.html">Ch. 07</a></div>
-        <div class="ch-title"><a href="chapter7.html">Elevated Work</a></div>
-        <div class="ch-why">Roof, gutter, tall ladder. Failure mode is binary; T_recovery = ∞.</div>
-        <div class="ch-primitive"><span class="tag">MECH</span>drone survey<br><span class="tag">MECH</span>roof-crawling platform</div>
-      </li>
-      <li>
-        <div class="ch-num"><a href="chapter8.html">Ch. 08</a></div>
-        <div class="ch-title"><a href="chapter8.html">Flue, Duct &amp; Chimney Interior</a></div>
-        <div class="ch-why">Creosote, legacy asbestos, entrained particulate. PPE alone does not cut it.</div>
-        <div class="ch-primitive"><span class="tag">MECH</span>snake camera<br><span class="tag">EE</span>brush end-effector</div>
-      </li>
-      <li>
-        <div class="ch-num"><a href="chapter9.html">Ch. 09</a></div>
-        <div class="ch-title"><a href="chapter9.html">Sub-slab, Sewer &amp; Septic</a></div>
-        <div class="ch-why">H₂S, methane, pathogens. Acute + zoonotic risk.</div>
-        <div class="ch-primitive"><span class="tag">MECH</span>sealed-drive inspection bot</div>
-      </li>
-      <li>
-        <div class="ch-num"><a href="chapter10.html">Ch. 10</a></div>
-        <div class="ch-title"><a href="chapter10.html">Post-Fire / Post-Flood Remediation</a></div>
-        <div class="ch-why">Every human entry propagates the contamination.</div>
-        <div class="ch-primitive"><span class="tag">SEQ</span>isolation-first triage<br><span class="tag">SENSE</span>contamination mapping</div>
-      </li>
-    </ol>
-  </section>
+  <div class="toc-part">
+    <span>Part II &nbsp;·&nbsp; Hostile Spaces</span>
+    <span class="part-sub">adaptation rate ≈ 0</span>
+  </div>
+  <ol class="toc">
+    <li><span class="num">6</span><span class="ttl"><a href="chapter6.html">Confined Space Entry</a></span><span class="leader"></span><span class="pg">79</span></li>
+    <li><span class="num">7</span><span class="ttl"><a href="chapter7.html">Elevated Work</a></span><span class="leader"></span><span class="pg">95</span></li>
+    <li><span class="num">8</span><span class="ttl"><a href="chapter8.html">Flue, Duct, and Chimney Interior</a></span><span class="leader"></span><span class="pg">111</span></li>
+    <li><span class="num">9</span><span class="ttl"><a href="chapter9.html">Sub-slab, Sewer, and Septic</a></span><span class="leader"></span><span class="pg">125</span></li>
+    <li><span class="num">10</span><span class="ttl"><a href="chapter10.html">Post-Fire and Post-Flood Remediation</a></span><span class="leader"></span><span class="pg">141</span></li>
+  </ol>
 
   <!-- PART III ------------------------------------------------------- -->
-  <section class="part">
-    <div class="part-head">
-      <div class="part-num">Part III</div>
-      <h2 class="part-title">Cumulative Load <em>— T<sub>recovery</sub> &gt; T<sub>incident</sub></em></h2>
-      <div class="part-tag">Compliance control</div>
-    </div>
-    <ol class="chapters" start="11">
-      <li>
-        <div class="ch-num"><a href="chapter11.html">Ch. 11</a></div>
-        <div class="ch-title"><a href="chapter11.html">Overhead Work</a></div>
-        <div class="ch-why">Ceiling paint, drywall, high pruning. Rotator cuff has a lifetime rep budget.</div>
-        <div class="ch-primitive"><span class="tag">MECH</span>actuated boom<br><span class="tag">CTRL</span>impedance / compliance</div>
-      </li>
-      <li>
-        <div class="ch-num"><a href="chapter12.html">Ch. 12</a></div>
-        <div class="ch-title"><a href="chapter12.html">Sustained Spinal Flexion</a></div>
-        <div class="ch-why">Weeding, tiling, low shelving. Disc creep does not reverse in one cycle.</div>
-        <div class="ch-primitive"><span class="tag">MECH</span>ground-plane manipulator</div>
-      </li>
-      <li>
-        <div class="ch-num"><a href="chapter13.html">Ch. 13</a></div>
-        <div class="ch-title"><a href="chapter13.html">Hand-Arm Vibration</a></div>
-        <div class="ch-why">Chainsaw, jackhammer, tiller, grinder. HAVS is permanent.</div>
-        <div class="ch-primitive"><span class="tag">MECH</span>tool carriage (remote or auto)</div>
-      </li>
-      <li>
-        <div class="ch-num"><a href="chapter14.html">Ch. 14</a></div>
-        <div class="ch-title"><a href="chapter14.html">High-Force Pinch &amp; Grip Repetition</a></div>
-        <div class="ch-why">Pruning at harvest, deshelling, deboning. Median nerve, A1 pulley.</div>
-        <div class="ch-primitive"><span class="tag">EE</span>purpose-built (not humanoid)</div>
-      </li>
-      <li>
-        <div class="ch-num"><a href="chapter15.html">Ch. 15</a></div>
-        <div class="ch-title"><a href="chapter15.html">Kneeling &amp; Prolonged Static Load</a></div>
-        <div class="ch-why">Flooring, foundation, tile. Bursa does not heal on daily cycle.</div>
-        <div class="ch-primitive"><span class="tag">MECH</span>low-profile crawler</div>
-      </li>
-    </ol>
-  </section>
+  <div class="toc-part">
+    <span>Part III &nbsp;·&nbsp; Cumulative Load</span>
+    <span class="part-sub">T<sub>recovery</sub> &gt; T<sub>incident</sub></span>
+  </div>
+  <ol class="toc">
+    <li><span class="num">11</span><span class="ttl"><a href="chapter11.html">Overhead Work</a></span><span class="leader"></span><span class="pg">159</span></li>
+    <li><span class="num">12</span><span class="ttl"><a href="chapter12.html">Sustained Spinal Flexion</a></span><span class="leader"></span><span class="pg">175</span></li>
+    <li><span class="num">13</span><span class="ttl"><a href="chapter13.html">Hand-Arm Vibration</a></span><span class="leader"></span><span class="pg">189</span></li>
+    <li><span class="num">14</span><span class="ttl"><a href="chapter14.html">High-Force Pinch and Grip Repetition</a></span><span class="leader"></span><span class="pg">203</span></li>
+    <li><span class="num">15</span><span class="ttl"><a href="chapter15.html">Kneeling and Prolonged Static Load</a></span><span class="leader"></span><span class="pg">219</span></li>
+  </ol>
+
+  <div class="folio">ii</div>
+</div>
+
+<!-- Page 3 ------------------------------------------------------------ -->
+<div class="page" style="margin-top: 40px;">
+
+  <div class="running-head">
+    <span>iii</span>
+    <span>Contents in Detail</span>
+  </div>
 
   <!-- PART IV -------------------------------------------------------- -->
-  <section class="part">
-    <div class="part-head">
-      <div class="part-num">Part IV</div>
-      <h2 class="part-title">Coverage &amp; Perception <em>— the orchard class</em></h2>
-      <div class="part-tag">CV + planning</div>
-    </div>
-    <ol class="chapters" start="16">
-      <li>
-        <div class="ch-num"><a href="chapter16.html">Ch. 16</a></div>
-        <div class="ch-title"><a href="chapter16.html">Orchard &amp; Row-Crop Scouting</a></div>
-        <div class="ch-why">Ripeness, defect, yield estimate at harvest. The canonical example.</div>
-        <div class="ch-primitive"><span class="tag">PERCEPT</span>CV pipeline<br><span class="tag">PLAN</span>coverage &amp; return</div>
-      </li>
-      <li>
-        <div class="ch-num"><a href="chapter17.html">Ch. 17</a></div>
-        <div class="ch-title"><a href="chapter17.html">Defensible-Space &amp; Firebreak Maintenance</a></div>
-        <div class="ch-why">WUI margins. Sun + chainsaw + poison oak. High D&#775;.</div>
-        <div class="ch-primitive"><span class="tag">MECH</span>autonomous brush cutter</div>
-      </li>
-      <li>
-        <div class="ch-num"><a href="chapter18.html">Ch. 18</a></div>
-        <div class="ch-title"><a href="chapter18.html">Livestock Health Rounds</a></div>
-        <div class="ch-why">Gait lameness, IR mastitis, calf detection. The 04:00 patrol.</div>
-        <div class="ch-primitive"><span class="tag">PERCEPT</span>gait + IR<br><span class="tag">PLAN</span>patrol</div>
-      </li>
-      <li>
-        <div class="ch-num"><a href="chapter19.html">Ch. 19</a></div>
-        <div class="ch-title"><a href="chapter19.html">Perimeter &amp; Boundary Inspection</a></div>
-        <div class="ch-why">Fence integrity, invasive front, erosion channels.</div>
-        <div class="ch-primitive"><span class="tag">MECH</span>long-endurance UGV<br><span class="tag">PERCEPT</span>change detection</div>
-      </li>
-      <li>
-        <div class="ch-num"><a href="chapter20.html">Ch. 20</a></div>
-        <div class="ch-title"><a href="chapter20.html">Building Envelope Survey</a></div>
-        <div class="ch-why">Roof, flashing, siding, thermal bridges. Feeds Part I daemons.</div>
-        <div class="ch-primitive"><span class="tag">PERCEPT</span>photogrammetry + IR</div>
-      </li>
-    </ol>
-  </section>
+  <div class="toc-part">
+    <span>Part IV &nbsp;·&nbsp; Coverage and Perception</span>
+    <span class="part-sub">the orchard class</span>
+  </div>
+  <ol class="toc">
+    <li><span class="num">16</span><span class="ttl"><a href="chapter16.html">Orchard and Row-Crop Scouting</a></span><span class="leader"></span><span class="pg">237</span></li>
+    <li><span class="num">17</span><span class="ttl"><a href="chapter17.html">Defensible-Space and Firebreak Maintenance</a></span><span class="leader"></span><span class="pg">253</span></li>
+    <li><span class="num">18</span><span class="ttl"><a href="chapter18.html">Livestock Health Rounds</a></span><span class="leader"></span><span class="pg">269</span></li>
+    <li><span class="num">19</span><span class="ttl"><a href="chapter19.html">Perimeter and Boundary Inspection</a></span><span class="leader"></span><span class="pg">283</span></li>
+    <li><span class="num">20</span><span class="ttl"><a href="chapter20.html">Building Envelope Survey</a></span><span class="leader"></span><span class="pg">297</span></li>
+  </ol>
 
   <!-- PART V --------------------------------------------------------- -->
-  <section class="part">
-    <div class="part-head">
-      <div class="part-num">Part V</div>
-      <h2 class="part-title">Chemical &amp; Radiological <em>— the applicator takes the dose</em></h2>
-      <div class="part-tag">Sealed loop</div>
-    </div>
-    <ol class="chapters" start="21">
-      <li>
-        <div class="ch-num"><a href="chapter21.html">Ch. 21</a></div>
-        <div class="ch-title"><a href="chapter21.html">Agrochemical Application</a></div>
-        <div class="ch-why">The sprayer, not the sprayed, absorbs the chronic dose.</div>
-        <div class="ch-primitive"><span class="tag">MECH</span>sealed cab or micro-dose<br><span class="tag">PERCEPT</span>targeted delivery</div>
-      </li>
-      <li>
-        <div class="ch-num"><a href="chapter22.html">Ch. 22</a></div>
-        <div class="ch-title"><a href="chapter22.html">Solvent, Paint, Isocyanate Spray</a></div>
-        <div class="ch-why">PPE defers exposure; it does not eliminate it.</div>
-        <div class="ch-primitive"><span class="tag">MECH</span>booth robot<br><span class="tag">CTRL</span>flow + overspray model</div>
-      </li>
-      <li>
-        <div class="ch-num"><a href="chapter23.html">Ch. 23</a></div>
-        <div class="ch-title"><a href="chapter23.html">Sharps, Carcass &amp; Biohazard Handling</a></div>
-        <div class="ch-why">Puncture + zoonosis. Adaptation to pathogens is not a strategy.</div>
-        <div class="ch-primitive"><span class="tag">EE</span>rigid tooling manipulator</div>
-      </li>
-      <li>
-        <div class="ch-num"><a href="chapter24.html">Ch. 24</a></div>
-        <div class="ch-title"><a href="chapter24.html">Radiological, UV &amp; Laser Zones</a></div>
-        <div class="ch-why">Adaptation rate is zero by physics; recovery infinite past threshold.</div>
-        <div class="ch-primitive"><span class="tag">MECH</span>shielded remote<br><span class="tag">SENSE</span>dose telemetry</div>
-      </li>
-    </ol>
-  </section>
+  <div class="toc-part">
+    <span>Part V &nbsp;·&nbsp; Chemical and Radiological</span>
+    <span class="part-sub">the applicator takes the dose</span>
+  </div>
+  <ol class="toc">
+    <li><span class="num">21</span><span class="ttl"><a href="chapter21.html">Agrochemical Application</a></span><span class="leader"></span><span class="pg">313</span></li>
+    <li><span class="num">22</span><span class="ttl"><a href="chapter22.html">Solvent, Paint, and Isocyanate Spray</a></span><span class="leader"></span><span class="pg">327</span></li>
+    <li><span class="num">23</span><span class="ttl"><a href="chapter23.html">Sharps, Carcass, and Biohazard Handling</a></span><span class="leader"></span><span class="pg">341</span></li>
+    <li><span class="num">24</span><span class="ttl"><a href="chapter24.html">Radiological, UV, and Laser Zones</a></span><span class="leader"></span><span class="pg">355</span></li>
+  </ol>
 
   <!-- PART VI -------------------------------------------------------- -->
-  <section class="part">
-    <div class="part-head">
-      <div class="part-num">Part VI</div>
-      <h2 class="part-title">Thermal Extremes <em>— outside the human operating band</em></h2>
-      <div class="part-tag">Materials-limited</div>
-    </div>
-    <ol class="chapters" start="25">
-      <li>
-        <div class="ch-num"><a href="chapter25.html">Ch. 25</a></div>
-        <div class="ch-title"><a href="chapter25.html">Foundry, Forge &amp; Kiln Tending</a></div>
-        <div class="ch-why">IR load, cataract risk, chronic dehydration.</div>
-        <div class="ch-primitive"><span class="tag">MECH</span>high-temp manipulator<br><span class="tag">MAT</span>refractory linkages</div>
-      </li>
-      <li>
-        <div class="ch-num"><a href="chapter26.html">Ch. 26</a></div>
-        <div class="ch-title"><a href="chapter26.html">Cold Storage &amp; Cryogenic Handling</a></div>
-        <div class="ch-why">Frostbite risk; dexterity loss compounds error rate.</div>
-        <div class="ch-primitive"><span class="tag">MECH</span>cold-tolerant actuators<br><span class="tag">EE</span>heated grippers</div>
-      </li>
-    </ol>
-  </section>
+  <div class="toc-part">
+    <span>Part VI &nbsp;·&nbsp; Thermal Extremes</span>
+    <span class="part-sub">outside the human operating band</span>
+  </div>
+  <ol class="toc">
+    <li><span class="num">25</span><span class="ttl"><a href="chapter25.html">Foundry, Forge, and Kiln Tending</a></span><span class="leader"></span><span class="pg">371</span></li>
+    <li><span class="num">26</span><span class="ttl"><a href="chapter26.html">Cold Storage and Cryogenic Handling</a></span><span class="leader"></span><span class="pg">385</span></li>
+  </ol>
 
-  <!-- Coda ----------------------------------------------------------- -->
-  <section class="coda">
-    <div>
-      <h3>§ ∞.1 · Redesign First</h3>
-      <p>Minimum viable replaceability gates every automation. If cost of ownership exceeds the human's adaptation cost, or reliability falls short of full replacement, the answer is to redesign the task — jigs, geometry, task rotation — not to build a robot.</p>
-    </div>
-    <div>
-      <h3>§ ∞.2 · Ambient, not Invoked</h3>
-      <p>ATBS chapters are discrete scripts. Painful physical work is often ambient — the 03:00 spore, the daily 2° stratification. The primary deliverable of Part I is a <em>workspace daemon</em>, not a harvest bot.</p>
-    </div>
-    <div>
-      <h3>§ ∞.3 · Push the Edge</h3>
-      <p>The tractable ML problem clusters proposals in Part IV. The high-value work is manipulation-hard, Parts I–III. Build there; the field is thinner and the deficit you close is your own.</p>
-    </div>
-  </section>
+  <!-- Backmatter --------------------------------------------------- -->
+  <div class="toc-part">
+    <span>Appendices</span>
+    <span class="part-sub"></span>
+  </div>
+  <ol class="toc frontmatter">
+    <li><span class="num">A</span><span class="ttl"><a href="appendixA.html">A Reference Chapter Template</a></span><span class="leader"></span><span class="pg">399</span></li>
+    <li><span class="num">B</span><span class="ttl"><a href="appendixB.html">Cost-of-Ownership Worksheets</a></span><span class="leader"></span><span class="pg">411</span></li>
+    <li><span class="num">C</span><span class="ttl"><a href="appendixC.html">Bill-of-Materials Conventions</a></span><span class="leader"></span><span class="pg">423</span></li>
+    <li><span class="num"></span><span class="ttl"><a href="index-book.html">Index</a></span><span class="leader"></span><span class="pg">433</span></li>
+  </ol>
 
-  <footer class="colophon">
-    <span>Set in Fraunces, Inter, and JetBrains Mono</span>
-    <span>Hosted on GitHub Pages · Single-file, zero-build</span>
-  </footer>
-
+  <div class="folio">iii</div>
 </div>
+
 </body>
 </html>
