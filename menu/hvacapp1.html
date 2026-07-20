@@ -1,0 +1,1680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HVACapp — HVAC Permit Automation</title>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>HVACapp | Brazen Studios, Inc.</title>
+
+<!-- ── Primary Meta ─────────────────────────────────────────────── -->
+<meta name="description" content="Streamline your HVAC experience, pro to homeowner.">
+
+<!-- ── Favicons ─────────────────────────────────────────────────────────── -->
+<link rel="icon" type="image/png" href="b5-favicon.png">
+<link rel="shortcut icon" type="image/png" href="b5-favicon.png">
+<link rel="apple-touch-icon" href="b5-favicon.png">
+
+<!-- ── Open Graph ────────────────────────────────────────────────── -->
+<meta property="og:title" content="HVACapp">
+<meta property="og:description" content="HVACapp - Automating all the uncool parts of Heating, Ventilation, and Air Conditioning">
+<meta property="og:url" content="https://mofrymatic.github.io/the-Kitchen/menu/hvacapp.html">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://mofrymatic.github.io/the-Kitchen/menu/hvacapp_preview.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+
+<!-- ── Twitter / X Card ─────────────────────────────────────────────────── -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Tetris">
+<meta name="twitter:description" content="Classic isometric, RC Racing — track hazards, boosts, and collision action.">
+<meta name="twitter:image" content="https://frymatic.us/menu/hvacapp_preview.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #080a0c;
+    --surface: #0e1214;
+    --card: #131719;
+    --border: rgba(255,255,255,0.07);
+    --cyan: #00d4c8;
+    --cyan-dim: rgba(0, 212, 200, 0.12);
+    --cyan-glow: rgba(0, 212, 200, 0.35);
+    --orange: #ff6b2b;
+    --orange-dim: rgba(255, 107, 43, 0.12);
+    --white: #f2f4f5;
+    --muted: rgba(242, 244, 245, 0.45);
+    --muted2: rgba(242, 244, 245, 0.2);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    overflow-x: hidden;
+    cursor: default;
+  }
+
+  /* ── CANVAS PARTICLES ── */
+  #particle-canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.35;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 48px;
+    background: rgba(8,10,12,0.85);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav-logo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.35rem;
+    color: var(--white);
+    letter-spacing: -0.02em;
+  }
+  .nav-logo span { color: var(--cyan); }
+
+  .nav-links {
+    display: flex;
+    gap: 36px;
+    list-style: none;
+  }
+  .nav-links a {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 400;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--white); }
+
+  .nav-cta {
+    background: var(--cyan);
+    color: var(--black);
+    border: none;
+    padding: 10px 24px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    font-size: 0.85rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .nav-cta:hover { background: var(--white); transform: translateY(-1px); }
+
+  /* ── SECTIONS ── */
+  section { position: relative; z-index: 1; }
+
+  /* ── HERO ── */
+  #hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 140px 48px 80px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .hero-eyebrow {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    color: var(--cyan);
+    text-transform: uppercase;
+    margin-bottom: 28px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .hero-eyebrow::before {
+    content: '';
+    display: block;
+    width: 32px;
+    height: 1px;
+    background: var(--cyan);
+  }
+
+  .hero-headline {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(3.5rem, 8vw, 7.5rem);
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    margin-bottom: 40px;
+  }
+  .hero-headline .line { display: block; }
+  .hero-headline .accent { color: var(--cyan); font-style: italic; }
+  .hero-headline .orange { color: var(--orange); }
+
+  .hero-sub {
+    font-size: 1.15rem;
+    color: var(--muted);
+    max-width: 520px;
+    line-height: 1.7;
+    margin-bottom: 48px;
+  }
+  .hero-sub strong { color: var(--white); font-weight: 500; }
+
+  .hero-stats {
+    display: flex;
+    gap: 48px;
+    margin-bottom: 56px;
+    padding: 28px 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .stat-item { text-align: left; }
+  .stat-num {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2.4rem;
+    color: var(--cyan);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .stat-label {
+    font-size: 0.75rem;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .hero-cta-row {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .btn-primary {
+    background: var(--cyan);
+    color: var(--black);
+    border: none;
+    padding: 16px 36px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    font-size: 0.9rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.25s;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .btn-primary:hover {
+    background: var(--white);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px var(--cyan-glow);
+  }
+  .btn-primary svg { transition: transform 0.2s; }
+  .btn-primary:hover svg { transform: translateX(4px); }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    padding: 15px 28px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 400;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-ghost:hover { color: var(--white); border-color: rgba(255,255,255,0.25); }
+
+  /* ── TRUST TICKER ── */
+  .trust-bar {
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 0;
+    overflow: hidden;
+    position: relative;
+    z-index: 1;
+    background: var(--surface);
+  }
+  .trust-track {
+    display: flex;
+    gap: 48px;
+    animation: ticker 28s linear infinite;
+    white-space: nowrap;
+  }
+  .trust-item {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    color: var(--muted2);
+    text-transform: uppercase;
+    flex-shrink: 0;
+  }
+  .trust-item span { color: var(--cyan); margin-right: 10px; }
+  @keyframes ticker {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  /* ── SECTION SHARED ── */
+  .section-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 120px 48px;
+  }
+
+  .section-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    color: var(--cyan);
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-label::before {
+    content: '◈';
+    font-size: 0.6rem;
+  }
+
+  .section-headline {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(2.5rem, 5vw, 4.5rem);
+    line-height: 1;
+    letter-spacing: -0.02em;
+    margin-bottom: 24px;
+  }
+  .section-headline em { font-style: italic; color: var(--cyan); }
+  .section-headline .orange { color: var(--orange); }
+
+  /* ── HOW IT WORKS ── */
+  #how { background: var(--surface); }
+
+  .steps-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    margin-top: 72px;
+    border: 1px solid var(--border);
+  }
+  .step-card {
+    padding: 48px 40px;
+    border-right: 1px solid var(--border);
+    position: relative;
+    transition: background 0.3s;
+  }
+  .step-card:last-child { border-right: none; }
+  .step-card:hover { background: var(--cyan-dim); }
+
+  .step-num {
+    font-family: 'DM Serif Display', serif;
+    font-size: 4rem;
+    color: var(--cyan);
+    opacity: 0.15;
+    line-height: 1;
+    margin-bottom: 24px;
+  }
+  .step-card:hover .step-num { opacity: 0.4; }
+
+  .step-icon {
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--cyan);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+    color: var(--cyan);
+  }
+
+  .step-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.5rem;
+    margin-bottom: 12px;
+  }
+
+  .step-desc {
+    font-size: 0.9rem;
+    color: var(--muted);
+    line-height: 1.7;
+    margin-bottom: 20px;
+  }
+
+  .step-features { list-style: none; }
+  .step-features li {
+    font-size: 0.8rem;
+    color: var(--muted);
+    padding: 5px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .step-features li::before {
+    content: '→';
+    color: var(--cyan);
+    font-size: 0.75rem;
+  }
+
+  /* ── ROI CALCULATOR ── */
+  #roi { background: var(--black); }
+
+  .roi-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: start;
+    margin-top: 64px;
+  }
+
+  .slider-group { margin-bottom: 36px; }
+  .slider-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 12px;
+  }
+  .slider-label-text {
+    font-size: 0.8rem;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .slider-value {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.8rem;
+    color: var(--white);
+  }
+  .slider-unit {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--muted);
+    margin-left: 6px;
+  }
+
+  input[type=range] {
+    width: 100%;
+    height: 2px;
+    background: var(--border);
+    outline: none;
+    border: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+    position: relative;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    background: var(--cyan);
+    border: 2px solid var(--black);
+    cursor: pointer;
+    border-radius: 0;
+    box-shadow: 0 0 12px var(--cyan-glow);
+  }
+
+  .roi-results {
+    border: 1px solid var(--border);
+    padding: 48px;
+    position: sticky;
+    top: 100px;
+  }
+
+  .roi-result-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .roi-big-num {
+    font-family: 'DM Serif Display', serif;
+    font-size: 3.8rem;
+    color: var(--cyan);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .roi-big-num.orange { color: var(--orange); }
+
+  .roi-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 28px 0;
+  }
+
+  .roi-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.85rem;
+  }
+  .roi-row:last-child { border-bottom: none; }
+  .roi-row-label { color: var(--muted); }
+  .roi-row-val { font-weight: 500; color: var(--white); }
+  .roi-row-val.cyan { color: var(--cyan); }
+
+  .roi-disclaimer {
+    font-size: 0.7rem;
+    color: var(--muted2);
+    margin-top: 20px;
+    line-height: 1.5;
+  }
+
+  /* ── FEATURES ── */
+  #features { background: var(--surface); }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    margin-top: 72px;
+    background: var(--border);
+  }
+
+  .feature-card {
+    background: var(--surface);
+    padding: 36px 32px;
+    transition: background 0.3s;
+  }
+  .feature-card:hover { background: var(--card); }
+
+  .feature-icon {
+    width: 36px;
+    height: 36px;
+    color: var(--cyan);
+    margin-bottom: 16px;
+  }
+
+  .feature-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.1rem;
+    margin-bottom: 10px;
+  }
+
+  .feature-desc {
+    font-size: 0.82rem;
+    color: var(--muted);
+    line-height: 1.65;
+  }
+
+  /* ── SOCIAL PROOF ── */
+  #proof { background: var(--black); }
+
+  .testimonials-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    margin-top: 64px;
+  }
+
+  .testimonial-card {
+    border: 1px solid var(--border);
+    padding: 36px;
+    transition: border-color 0.3s, transform 0.3s;
+  }
+  .testimonial-card:hover {
+    border-color: var(--cyan);
+    transform: translateY(-4px);
+  }
+
+  .quote-mark {
+    font-family: 'DM Serif Display', serif;
+    font-size: 3rem;
+    color: var(--cyan);
+    line-height: 0.5;
+    margin-bottom: 20px;
+    opacity: 0.5;
+  }
+
+  .testimonial-text {
+    font-size: 0.9rem;
+    color: var(--muted);
+    line-height: 1.75;
+    margin-bottom: 24px;
+    font-style: italic;
+  }
+
+  .testimonial-metric {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--cyan);
+    background: var(--cyan-dim);
+    padding: 6px 12px;
+    display: inline-block;
+    margin-bottom: 20px;
+    letter-spacing: 0.08em;
+  }
+
+  .testimonial-author { font-weight: 500; font-size: 0.9rem; }
+  .testimonial-co { font-size: 0.8rem; color: var(--cyan); }
+  .testimonial-loc { font-size: 0.75rem; color: var(--muted); }
+
+  /* ── FAQ ── */
+  #faq { background: var(--surface); }
+
+  .faq-grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 80px;
+    margin-top: 64px;
+  }
+
+  .faq-sidebar {
+    position: sticky;
+    top: 100px;
+  }
+
+  .faq-sidebar-text {
+    font-size: 0.9rem;
+    color: var(--muted);
+    line-height: 1.7;
+    margin-bottom: 32px;
+  }
+
+  .faq-contact-links { display: flex; flex-direction: column; gap: 12px; }
+  .faq-contact-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.85rem;
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .faq-contact-link:hover { color: var(--cyan); }
+  .faq-contact-link svg { color: var(--cyan); }
+
+  .faq-list { display: flex; flex-direction: column; }
+
+  .faq-item {
+    border-bottom: 1px solid var(--border);
+  }
+
+  .faq-question {
+    width: 100%;
+    background: none;
+    border: none;
+    color: var(--white);
+    text-align: left;
+    padding: 24px 0;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1rem;
+    font-weight: 400;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    transition: color 0.2s;
+  }
+  .faq-question:hover { color: var(--cyan); }
+  .faq-question.open { color: var(--cyan); }
+
+  .faq-chevron {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    transition: transform 0.3s;
+    color: var(--cyan);
+  }
+  .faq-question.open .faq-chevron { transform: rotate(180deg); }
+
+  .faq-answer {
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.35s ease;
+  }
+  .faq-answer-inner {
+    padding: 0 0 24px;
+    font-size: 0.9rem;
+    color: var(--muted);
+    line-height: 1.75;
+  }
+
+  /* ── SIGNUP ── */
+  #signup {
+    background: var(--black);
+    position: relative;
+    overflow: hidden;
+  }
+  #signup::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 800px;
+    height: 800px;
+    background: radial-gradient(circle, rgba(0,212,200,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .signup-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: center;
+  }
+
+  .signup-left {}
+
+  .signup-checks { margin-top: 40px; display: flex; flex-direction: column; gap: 14px; }
+  .signup-check {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+  .signup-check::before {
+    content: '✓';
+    color: var(--cyan);
+    font-weight: 700;
+    width: 20px;
+    height: 20px;
+    background: var(--cyan-dim);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+  }
+
+  .signup-form-card {
+    border: 1px solid var(--border);
+    padding: 48px;
+    background: var(--surface);
+  }
+
+  .form-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.8rem;
+    margin-bottom: 6px;
+  }
+  .form-subtitle {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 32px;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .form-group { margin-bottom: 20px; }
+  .form-group.full { grid-column: 1 / -1; }
+
+  .form-label {
+    display: block;
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+    font-family: 'Space Mono', monospace;
+  }
+
+  .form-input, .form-select {
+    width: 100%;
+    background: var(--black);
+    border: 1px solid var(--border);
+    color: var(--white);
+    padding: 14px 16px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.2s;
+    -webkit-appearance: none;
+  }
+  .form-input:focus, .form-select:focus {
+    border-color: var(--cyan);
+    box-shadow: 0 0 0 3px var(--cyan-dim);
+  }
+  .form-input::placeholder { color: var(--muted2); }
+  .form-select option { background: var(--black); }
+
+  .form-select-wrap { position: relative; }
+  .form-select-wrap::after {
+    content: '▾';
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--cyan);
+    pointer-events: none;
+    font-size: 0.8rem;
+  }
+
+  .form-submit {
+    width: 100%;
+    background: var(--cyan);
+    color: var(--black);
+    border: none;
+    padding: 18px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.25s;
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+  .form-submit:hover {
+    background: var(--white);
+    box-shadow: 0 8px 32px var(--cyan-glow);
+  }
+  .form-submit svg { transition: transform 0.2s; }
+  .form-submit:hover svg { transform: translateX(4px); }
+
+  .form-legal {
+    font-size: 0.72rem;
+    color: var(--muted2);
+    text-align: center;
+    margin-top: 16px;
+    line-height: 1.5;
+  }
+
+  /* ── SUCCESS STATE ── */
+  .form-success {
+    display: none;
+    text-align: center;
+    padding: 40px 0;
+  }
+  .success-icon {
+    width: 56px;
+    height: 56px;
+    background: var(--cyan-dim);
+    border: 1px solid var(--cyan);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    color: var(--cyan);
+    font-size: 1.5rem;
+  }
+  .success-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.8rem;
+    margin-bottom: 10px;
+  }
+  .success-sub { font-size: 0.9rem; color: var(--muted); }
+
+  /* ── FOOTER ── */
+  footer {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 64px 48px 36px;
+    max-width: 100%;
+  }
+
+  .footer-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .footer-top {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: 48px;
+    padding-bottom: 48px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .footer-brand-name {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.5rem;
+    margin-bottom: 12px;
+  }
+  .footer-brand-name span { color: var(--cyan); }
+
+  .footer-brand-desc {
+    font-size: 0.85rem;
+    color: var(--muted);
+    line-height: 1.7;
+    max-width: 280px;
+    margin-bottom: 24px;
+  }
+
+  .footer-badges { display: flex; gap: 8px; flex-wrap: wrap; }
+  .footer-badge {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.58rem;
+    letter-spacing: 0.08em;
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .footer-col-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    margin-bottom: 20px;
+  }
+
+  .footer-links { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+  .footer-links a {
+    font-size: 0.85rem;
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .footer-links a:hover { color: var(--white); }
+
+  .footer-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 28px;
+    font-size: 0.75rem;
+    color: var(--muted2);
+  }
+
+  /* ── ANIMATIONS ── */
+  .fade-up {
+    opacity: 0;
+    transform: translateY(32px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  .fade-up.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 900px) {
+    nav { padding: 16px 24px; }
+    .nav-links { display: none; }
+    #hero, .section-inner { padding-left: 24px; padding-right: 24px; }
+    .hero-headline { font-size: clamp(2.8rem, 10vw, 4rem); }
+    .hero-stats { gap: 24px; flex-wrap: wrap; }
+    .steps-grid, .features-grid { grid-template-columns: 1fr; }
+    .step-card { border-right: none; border-bottom: 1px solid var(--border); }
+    .roi-layout, .signup-layout, .testimonials-grid { grid-template-columns: 1fr; }
+    .faq-grid { grid-template-columns: 1fr; }
+    .faq-sidebar { position: static; }
+    .footer-top { grid-template-columns: 1fr 1fr; }
+    .form-row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="particle-canvas"></canvas>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">HVAC<span>app</span></div>
+  <ul class="nav-links">
+    <li><a href="#how">How It Works</a></li>
+    <li><a href="#roi">ROI Calculator</a></li>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#faq">FAQ</a></li>
+  </ul>
+  <button class="nav-cta" onclick="scrollToSignup()">Get Early Access</button>
+</nav>
+
+<!-- HERO -->
+<section id="hero-section">
+<div id="hero">
+  <div class="hero-eyebrow">California HVAC Permit Automation · Summer 2025</div>
+  <h1 class="hero-headline">
+    <span class="line">Automate</span>
+    <span class="line">Your <em>Permits.</em></span>
+    <span class="line orange">Win This</span>
+    <span class="line">Summer.</span>
+  </h1>
+  <p class="hero-sub">
+    Join <strong>500+ California contractors</strong> who've cut permit processing from weeks to hours.
+    Peak AC season is here — don't let paperwork cost you jobs.
+  </p>
+  <div class="hero-stats">
+    <div class="stat-item">
+      <div class="stat-num">2.5hrs</div>
+      <div class="stat-label">Avg. Permit Time</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">99.7%</div>
+      <div class="stat-label">Approval Rate</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">75%</div>
+      <div class="stat-label">Time Saved</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">50+</div>
+      <div class="stat-label">CA Jurisdictions</div>
+    </div>
+  </div>
+  <div class="hero-cta-row">
+    <button class="btn-primary" onclick="scrollToSignup()">
+      Get Early Access
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M8 3l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <button class="btn-ghost" onclick="document.getElementById('how').scrollIntoView({behavior:'smooth'})">
+      See How It Works
+    </button>
+  </div>
+</div>
+</section>
+
+<!-- TRUST TICKER -->
+<div class="trust-bar">
+  <div class="trust-track" id="trust-track">
+    <span class="trust-item"><span>✓</span>CHEERS.org Partner</span>
+    <span class="trust-item"><span>✓</span>Accela Certified</span>
+    <span class="trust-item"><span>✓</span>California Licensed</span>
+    <span class="trust-item"><span>✓</span>Title 24 Compliant</span>
+    <span class="trust-item"><span>✓</span>SOC 2 Secured</span>
+    <span class="trust-item"><span>✓</span>50+ Jurisdictions</span>
+    <span class="trust-item"><span>✓</span>Los Angeles County</span>
+    <span class="trust-item"><span>✓</span>Orange County</span>
+    <span class="trust-item"><span>✓</span>San Diego County</span>
+    <span class="trust-item"><span>✓</span>Riverside County</span>
+    <span class="trust-item"><span>✓</span>CHEERS.org Partner</span>
+    <span class="trust-item"><span>✓</span>Accela Certified</span>
+    <span class="trust-item"><span>✓</span>California Licensed</span>
+    <span class="trust-item"><span>✓</span>Title 24 Compliant</span>
+    <span class="trust-item"><span>✓</span>SOC 2 Secured</span>
+    <span class="trust-item"><span>✓</span>50+ Jurisdictions</span>
+    <span class="trust-item"><span>✓</span>Los Angeles County</span>
+    <span class="trust-item"><span>✓</span>Orange County</span>
+    <span class="trust-item"><span>✓</span>San Diego County</span>
+    <span class="trust-item"><span>✓</span>Riverside County</span>
+  </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<section id="how">
+<div class="section-inner">
+  <div class="section-label">Process</div>
+  <h2 class="section-headline fade-up">Three Steps to<br><em>Permit Automation</em></h2>
+  <div class="steps-grid fade-up">
+    <div class="step-card">
+      <div class="step-num">01</div>
+      <div class="step-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      </div>
+      <div class="step-title">Submit Project Details</div>
+      <p class="step-desc">Enter specs through our mobile app or web portal. We guide you through every required field — takes under 10 minutes.</p>
+      <ul class="step-features">
+        <li>Equipment specifications</li>
+        <li>Installation location</li>
+        <li>Load calculations</li>
+        <li>Photos and diagrams</li>
+      </ul>
+    </div>
+    <div class="step-card">
+      <div class="step-num">02</div>
+      <div class="step-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      </div>
+      <div class="step-title">Automated Processing</div>
+      <p class="step-desc">Our AI verifies code compliance, fills every form, and submits directly to the jurisdiction portal — no human in the loop.</p>
+      <ul class="step-features">
+        <li>Title 24 compliance check</li>
+        <li>Automatic form filling</li>
+        <li>Document generation</li>
+        <li>Accela portal submission</li>
+      </ul>
+    </div>
+    <div class="step-card">
+      <div class="step-num">03</div>
+      <div class="step-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div class="step-title">Get Approved</div>
+      <p class="step-desc">Receive instant notifications when approved. Track status in real-time and schedule inspections automatically.</p>
+      <ul class="step-features">
+        <li>Real-time status tracking</li>
+        <li>Instant push notifications</li>
+        <li>Digital permit delivery</li>
+        <li>Auto inspection scheduling</li>
+      </ul>
+    </div>
+  </div>
+  <!-- Live Timeline Mock -->
+  <div class="hvac-timeline fade-up" style="margin-top:64px; border:1px solid var(--border); padding:40px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:28px;">
+      <span style="font-family:'Space Mono',monospace;font-size:0.65rem;letter-spacing:0.15em;color:var(--cyan);text-transform:uppercase;">Live Example — Residential AC Replacement</span>
+      <span style="font-family:'Space Mono',monospace;font-size:0.65rem;color:var(--cyan);background:var(--cyan-dim);padding:4px 12px;">APPROVED ✓</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:0;">
+      <div class="timeline-row" style="display:flex;align-items:center;gap:16px;padding:14px 0;border-bottom:1px solid var(--border);">
+        <div style="width:8px;height:8px;background:var(--cyan);flex-shrink:0;"></div>
+        <span style="font-size:0.85rem;flex:1;">9:00 AM — Project details submitted</span>
+        <span style="font-family:'Space Mono',monospace;font-size:0.65rem;color:var(--muted);">2 min</span>
+      </div>
+      <div class="timeline-row" style="display:flex;align-items:center;gap:16px;padding:14px 0;border-bottom:1px solid var(--border);">
+        <div style="width:8px;height:8px;background:var(--cyan);flex-shrink:0;"></div>
+        <span style="font-size:0.85rem;flex:1;">9:15 AM — Title 24 compliance verified</span>
+        <span style="font-family:'Space Mono',monospace;font-size:0.65rem;color:var(--muted);">Auto</span>
+      </div>
+      <div class="timeline-row" style="display:flex;align-items:center;gap:16px;padding:14px 0;border-bottom:1px solid var(--border);">
+        <div style="width:8px;height:8px;background:var(--cyan);flex-shrink:0;"></div>
+        <span style="font-size:0.85rem;flex:1;">9:30 AM — Permit submitted to jurisdiction</span>
+        <span style="font-family:'Space Mono',monospace;font-size:0.65rem;color:var(--muted);">Auto</span>
+      </div>
+      <div class="timeline-row" style="display:flex;align-items:center;gap:16px;padding:14px 0;">
+        <div style="width:8px;height:8px;background:var(--cyan);flex-shrink:0;box-shadow:0 0 8px var(--cyan);"></div>
+        <span style="font-size:0.85rem;flex:1;font-weight:500;color:var(--white);">11:45 AM — Permit approved!</span>
+        <span style="font-family:'Space Mono',monospace;font-size:0.65rem;color:var(--cyan);">2.5 hrs total</span>
+      </div>
+    </div>
+    <div style="margin-top:20px;font-size:0.8rem;color:var(--muted);">
+      <span style="color:var(--orange);">Traditional: 3–6 weeks</span>
+      <span style="margin: 0 16px;color:var(--muted2);">vs</span>
+      <span style="color:var(--cyan);">HVACapp: 2.5 hours</span>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ROI CALCULATOR -->
+<section id="roi">
+<div class="section-inner">
+  <div class="section-label">ROI Calculator</div>
+  <h2 class="section-headline fade-up">What Could Permit<br>Delays Cost You This <em>Summer?</em></h2>
+  <div class="roi-layout fade-up">
+    <!-- Sliders -->
+    <div>
+      <div class="slider-group">
+        <div class="slider-label">
+          <span class="slider-label-text">Permits per Month</span>
+          <span>
+            <span class="slider-value" id="permits-val">15</span>
+            <span class="slider-unit">permits</span>
+          </span>
+        </div>
+        <input type="range" min="1" max="100" value="15" id="permits-slider" oninput="updateROI()">
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-label">
+          <span class="slider-label-text">Revenue per Project</span>
+          <span>
+            <span class="slider-value" id="revenue-val">$8,500</span>
+            <span class="slider-unit">per job</span>
+          </span>
+        </div>
+        <input type="range" min="1000" max="50000" step="500" value="8500" id="revenue-slider" oninput="updateROI()">
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-label">
+          <span class="slider-label-text">% Projects Delayed</span>
+          <span>
+            <span class="slider-value" id="delay-val">40</span>
+            <span class="slider-unit">%</span>
+          </span>
+        </div>
+        <input type="range" min="5" max="80" value="40" id="delay-slider" oninput="updateROI()">
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-label">
+          <span class="slider-label-text">Avg Delay Duration</span>
+          <span>
+            <span class="slider-value" id="weeks-val">3</span>
+            <span class="slider-unit">weeks</span>
+          </span>
+        </div>
+        <input type="range" min="1" max="12" value="3" id="weeks-slider" oninput="updateROI()">
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div class="roi-results">
+      <div class="roi-result-label">↗ Potential Revenue Recovered</div>
+      <div class="roi-big-num" id="roi-revenue">$255,000</div>
+      <div style="font-size:0.8rem;color:var(--muted);margin-bottom:24px;">per year</div>
+
+      <div class="roi-result-label">Potential ROI with HVACapp</div>
+      <div class="roi-big-num orange" id="roi-multiple">1,280×</div>
+
+      <hr class="roi-divider">
+
+      <div class="roi-row">
+        <span class="roi-row-label">Delayed Projects / Month</span>
+        <span class="roi-row-val cyan" id="roi-delayed">6</span>
+      </div>
+      <div class="roi-row">
+        <span class="roi-row-label">Revenue at Risk / Month</span>
+        <span class="roi-row-val" id="roi-risk">$51,000</span>
+      </div>
+      <div class="roi-row">
+        <span class="roi-row-label">HVACapp Cost (Pro)</span>
+        <span class="roi-row-val">$199/mo</span>
+      </div>
+      <div class="roi-row">
+        <span class="roi-row-label">Payback Period</span>
+        <span class="roi-row-val cyan" id="roi-payback">&lt; 1 day</span>
+      </div>
+
+      <button class="btn-primary" style="margin-top:28px;width:100%;justify-content:center;" onclick="scrollToSignup()">
+        Unlock This Revenue
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M8 3l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <p class="roi-disclaimer">* Estimates are illustrative. Actual impact depends on your jurisdiction, project mix, and implementation.</p>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- FEATURES -->
+<section id="features">
+<div class="section-inner">
+  <div class="section-label">Platform</div>
+  <h2 class="section-headline fade-up">Everything You Need to<br><em>Scale This Season</em></h2>
+  <div class="features-grid fade-up">
+    <div class="feature-card">
+      <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>
+      <div class="feature-title">Auto Applications</div>
+      <p class="feature-desc">AI fills every form field and submits to Accela and other jurisdiction portals — zero manual data entry.</p>
+    </div>
+    <div class="feature-card">
+      <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      <div class="feature-title">Real-time Tracking</div>
+      <p class="feature-desc">Live status updates from submission to approval. Push notifications the moment anything changes.</p>
+    </div>
+    <div class="feature-card">
+      <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      <div class="feature-title">Code Compliance</div>
+      <p class="feature-desc">Title 24, local amendments, and energy efficiency requirements verified before every submission.</p>
+    </div>
+    <div class="feature-card">
+      <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
+      <div class="feature-title">CHEERS Integration</div>
+      <p class="feature-desc">Direct CHEERS.org connection for HERS ratings and energy compliance — automatic, no back-and-forth.</p>
+    </div>
+    <div class="feature-card">
+      <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+      <div class="feature-title">Mobile-First</div>
+      <p class="feature-desc">Submit permits from the job site. Full functionality on any device — iOS, Android, or web.</p>
+    </div>
+    <div class="feature-card">
+      <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <div class="feature-title">Auto Scheduling</div>
+      <p class="feature-desc">Inspections booked automatically on permit approval. Reminders sent to keep every project on track.</p>
+    </div>
+    <div class="feature-card">
+      <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <div class="feature-title">Analytics</div>
+      <p class="feature-desc">Track approval rates, processing times, and revenue impact across your entire permit pipeline.</p>
+    </div>
+    <div class="feature-card">
+      <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+      <div class="feature-title">Portal Integration</div>
+      <p class="feature-desc">50+ California jurisdictions connected. LA, OC, SD, Riverside — all in one dashboard.</p>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- SOCIAL PROOF -->
+<section id="proof">
+<div class="section-inner">
+  <div class="section-label">From the Field</div>
+  <h2 class="section-headline fade-up">Real Results from<br>Real <em>Contractors</em></h2>
+  <div class="testimonials-grid fade-up">
+    <div class="testimonial-card">
+      <div class="quote-mark">"</div>
+      <p class="testimonial-text">This platform completely transformed our business. We used to spend 2–3 days per week just on permit paperwork. Now it takes minutes, and we can focus on serving customers.</p>
+      <div class="testimonial-metric">↑ 40% more projects completed</div>
+      <div class="testimonial-author">Mike Rodriguez</div>
+      <div class="testimonial-co">Rodriguez HVAC Solutions</div>
+      <div class="testimonial-loc">Los Angeles, CA</div>
+    </div>
+    <div class="testimonial-card">
+      <div class="quote-mark">"</div>
+      <p class="testimonial-text">The CHEERS.org integration is a game-changer. Energy compliance used to be our biggest headache, now it's completely automated. First-time approval rate went from 60% to 99%.</p>
+      <div class="testimonial-metric">↑ 99% first-time approval rate</div>
+      <div class="testimonial-author">Sarah Chen</div>
+      <div class="testimonial-co">Bay Area Climate Control</div>
+      <div class="testimonial-loc">San Francisco, CA</div>
+    </div>
+    <div class="testimonial-card">
+      <div class="quote-mark">"</div>
+      <p class="testimonial-text">I was skeptical at first, but the results speak for themselves. We've cut permit processing time from 3 weeks to 2 hours. That's real time we can spend growing the business.</p>
+      <div class="testimonial-metric">3 weeks → 2 hours</div>
+      <div class="testimonial-author">David Thompson</div>
+      <div class="testimonial-co">Thompson Heating & Air</div>
+      <div class="testimonial-loc">San Diego, CA</div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- FAQ -->
+<section id="faq">
+<div class="section-inner">
+  <div class="faq-grid">
+    <div class="faq-sidebar fade-up">
+      <div class="section-label">FAQ</div>
+      <h2 class="section-headline" style="font-size:2.5rem;">Frequently<br>Asked <em>Questions</em></h2>
+      <p class="faq-sidebar-text" style="margin-top:20px;">Get answers about our permit automation platform and how it fits your existing workflow.</p>
+      <div class="faq-contact-links">
+        <a href="mailto:support@HVACapp.com" class="faq-contact-link">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          support@HVACapp.com
+        </a>
+        <a href="tel:+15551234567" class="faq-contact-link">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 014.5 12a19.79 19.79 0 01-3.07-8.67A2 2 0 013.44 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L7.91 8.4a16 16 0 006.29 6.29l.77-.77a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+          (555) 123-4567
+        </a>
+      </div>
+    </div>
+    <div class="faq-list fade-up" id="faq-list">
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- SIGNUP -->
+<section id="signup">
+<div class="section-inner">
+  <div class="signup-layout">
+    <div class="signup-left fade-up">
+      <div class="section-label">Early Access</div>
+      <h2 class="section-headline">Join Us.<br>Win This <em>Summer.</em></h2>
+      <p style="font-size:1rem;color:var(--muted);line-height:1.75;margin-top:20px;max-width:400px;">
+        Be among the first California contractors to automate their permit process. Early access members lock in 50% off for the first 6 months.
+      </p>
+      <div class="signup-checks">
+        <div class="signup-check">No setup fees or long-term contracts</div>
+        <div class="signup-check">Up and running in 24–48 hours</div>
+        <div class="signup-check">Free onboarding and training included</div>
+        <div class="signup-check">50% off for first 6 months — early access only</div>
+        <div class="signup-check">Cancel anytime with 30 days notice</div>
+      </div>
+      <!-- Pricing teaser -->
+      <div style="margin-top:48px;border:1px solid var(--border);padding:28px;">
+        <div style="font-family:'Space Mono',monospace;font-size:0.6rem;letter-spacing:0.15em;color:var(--cyan);text-transform:uppercase;margin-bottom:16px;">Early Access Pricing</div>
+        <div style="display:flex;gap:32px;">
+          <div>
+            <div style="font-size:0.75rem;color:var(--muted);margin-bottom:4px;">Starter</div>
+            <div style="font-family:'DM Serif Display',serif;font-size:1.8rem;color:var(--white);">$99<span style="font-size:0.8rem;color:var(--muted);font-family:'DM Sans',sans-serif;">/mo</span></div>
+            <div style="font-size:0.7rem;color:var(--muted);text-decoration:line-through;">$198</div>
+            <div style="font-size:0.7rem;color:var(--cyan);">Up to 10 permits</div>
+          </div>
+          <div style="width:1px;background:var(--border);"></div>
+          <div>
+            <div style="font-size:0.75rem;color:var(--muted);margin-bottom:4px;">Professional <span style="color:var(--cyan);font-size:0.65rem;background:var(--cyan-dim);padding:1px 6px;">Most Popular</span></div>
+            <div style="font-family:'DM Serif Display',serif;font-size:1.8rem;color:var(--white);">$199<span style="font-size:0.8rem;color:var(--muted);font-family:'DM Sans',sans-serif;">/mo</span></div>
+            <div style="font-size:0.7rem;color:var(--muted);text-decoration:line-through;">$398</div>
+            <div style="font-size:0.7rem;color:var(--cyan);">Up to 50 permits</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="signup-form-card fade-up" id="signup-form">
+      <div class="form-title">Get Early Access</div>
+      <div class="form-subtitle">Join 500+ contractors already on the platform</div>
+
+      <div id="form-fields">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">First Name</label>
+            <input class="form-input" type="text" placeholder="John" id="fname">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Last Name</label>
+            <input class="form-input" type="text" placeholder="Smith" id="lname">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Business Email</label>
+          <input class="form-input" type="email" placeholder="john@smithhvac.com" id="email">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Phone Number</label>
+          <input class="form-input" type="tel" placeholder="(555) 000-0000" id="phone">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Company Name</label>
+          <input class="form-input" type="text" placeholder="Smith HVAC Inc." id="company">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">CA Contractor License #</label>
+            <input class="form-input" type="text" placeholder="C-20 #123456" id="license">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Permits Per Month</label>
+            <div class="form-select-wrap">
+              <select class="form-select" id="permit-volume">
+                <option value="">Select range</option>
+                <option>1–5 permits</option>
+                <option>6–10 permits</option>
+                <option>11–25 permits</option>
+                <option>26–50 permits</option>
+                <option>50+ permits</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Primary Service Area</label>
+          <div class="form-select-wrap">
+            <select class="form-select" id="jurisdiction">
+              <option value="">Select county / city</option>
+              <option>Los Angeles County</option>
+              <option>Orange County</option>
+              <option>San Diego County</option>
+              <option>Riverside County</option>
+              <option>San Bernardino County</option>
+              <option>Ventura County</option>
+              <option>Bay Area / San Francisco</option>
+              <option>Sacramento Area</option>
+              <option>Other California</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Preferred Plan</label>
+          <div class="form-select-wrap">
+            <select class="form-select" id="plan">
+              <option value="">Select plan</option>
+              <option>Starter — $99/mo (up to 10 permits)</option>
+              <option>Professional — $199/mo (up to 50 permits)</option>
+              <option>Enterprise — Custom (50+ permits)</option>
+            </select>
+          </div>
+        </div>
+        <button class="form-submit" onclick="submitForm()">
+          Request Early Access
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M8 3l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <p class="form-legal">By submitting, you agree to our Terms of Service and Privacy Policy. We'll be in touch within 24 hours.</p>
+      </div>
+
+      <div class="form-success" id="form-success">
+        <div class="success-icon">✓</div>
+        <div class="success-title">You're on the list.</div>
+        <p class="success-sub">We'll reach out within 24 hours to get you set up and running before the peak of summer.</p>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div>
+        <div class="footer-brand-name">HVAC<span>app</span></div>
+        <p class="footer-brand-desc">Transforming how California HVAC contractors handle permits. Join 500+ contractors who've eliminated permit delays.</p>
+        <div class="footer-badges">
+          <span class="footer-badge">CHEERS.org Partner</span>
+          <span class="footer-badge">Accela Certified</span>
+          <span class="footer-badge">CA Licensed</span>
+          <span class="footer-badge">SOC 2</span>
+        </div>
+      </div>
+      <div>
+        <div class="footer-col-title">Platform</div>
+        <ul class="footer-links">
+          <li><a href="#features">Features</a></li>
+          <li><a href="#roi">ROI Calculator</a></li>
+          <li><a href="#signup">Pricing</a></li>
+          <li><a href="#">API Docs</a></li>
+          <li><a href="#">System Status</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-col-title">Support</div>
+        <ul class="footer-links">
+          <li><a href="#">Help Center</a></li>
+          <li><a href="#">Contact Support</a></li>
+          <li><a href="#">Training</a></li>
+          <li><a href="#">Webinars</a></li>
+          <li><a href="#">Community</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-col-title">Company</div>
+        <ul class="footer-links">
+          <li><a href="#">About</a></li>
+          <li><a href="#">Blog</a></li>
+          <li><a href="#">Careers</a></li>
+          <li><a href="#">Privacy Policy</a></li>
+          <li><a href="#">Terms of Service</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2025 HVACapp. All rights reserved. San Francisco, California.</span>
+      <span style="font-family:'Space Mono',monospace;font-size:0.6rem;color:var(--muted2);">hello@HVACapp.com · (555) 123-4567</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ── PARTICLES ──
+const canvas = document.getElementById('particle-canvas');
+const ctx = canvas.getContext('2d');
+let particles = [];
+let W, H;
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+function createParticles() {
+  particles = [];
+  const count = Math.floor(W * H / 14000);
+  for (let i = 0; i < count; i++) {
+    particles.push({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      vx: (Math.random() - 0.5) * 0.3,
+      vy: (Math.random() - 0.5) * 0.3,
+      r: Math.random() * 1.5 + 0.3,
+      alpha: Math.random() * 0.6 + 0.1
+    });
+  }
+}
+createParticles();
+window.addEventListener('resize', createParticles);
+
+function drawParticles() {
+  ctx.clearRect(0, 0, W, H);
+  const cyan = '0, 212, 200';
+
+  // Connections
+  for (let i = 0; i < particles.length; i++) {
+    for (let j = i + 1; j < particles.length; j++) {
+      const dx = particles[i].x - particles[j].x;
+      const dy = particles[i].y - particles[j].y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < 120) {
+        ctx.beginPath();
+        ctx.strokeStyle = `rgba(${cyan}, ${0.08 * (1 - dist / 120)})`;
+        ctx.lineWidth = 0.5;
+        ctx.moveTo(particles[i].x, particles[i].y);
+        ctx.lineTo(particles[j].x, particles[j].y);
+        ctx.stroke();
+      }
+    }
+  }
+
+  // Dots
+  particles.forEach(p => {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${cyan}, ${p.alpha})`;
+    ctx.fill();
+
+    p.x += p.vx;
+    p.y += p.vy;
+    if (p.x < 0 || p.x > W) p.vx *= -1;
+    if (p.y < 0 || p.y > H) p.vy *= -1;
+  });
+
+  requestAnimationFrame(drawParticles);
+}
+drawParticles();
+
+// ── ROI CALCULATOR ──
+function fmt(n) {
+  if (n >= 1000000) return '$' + (n / 1000000).toFixed(1) + 'M';
+  if (n >= 1000) return '$' + Math.round(n / 1000) + 'K';
+  return '$' + n.toLocaleString();
+}
+
+function updateROI() {
+  const permits = +document.getElementById('permits-slider').value;
+  const revenue = +document.getElementById('revenue-slider').value;
+  const delayPct = +document.getElementById('delay-slider').value;
+  const weeks = +document.getElementById('weeks-slider').value;
+
+  document.getElementById('permits-val').textContent = permits;
+  document.getElementById('revenue-val').textContent = '$' + revenue.toLocaleString();
+  document.getElementById('delay-val').textContent = delayPct;
+  document.getElementById('weeks-val').textContent = weeks;
+
+  const delayedPerMonth = Math.round(permits * delayPct / 100);
+  const riskPerMonth = delayedPerMonth * revenue * (weeks / 4);
+  const annualRecovery = riskPerMonth * 12;
+  const monthlyPlan = 199;
+  const roi = Math.round(annualRecovery / (monthlyPlan * 12));
+
+  document.getElementById('roi-delayed').textContent = delayedPerMonth;
+  document.getElementById('roi-risk').textContent = fmt(Math.round(riskPerMonth));
+  document.getElementById('roi-revenue').textContent = fmt(Math.round(annualRecovery));
+  document.getElementById('roi-multiple').textContent = roi.toLocaleString() + '×';
+
+  const paybackDays = riskPerMonth > 0 ? (monthlyPlan / riskPerMonth) * 30 : 999;
+  if (paybackDays < 1) {
+    document.getElementById('roi-payback').textContent = '< 1 day';
+  } else if (paybackDays < 7) {
+    document.getElementById('roi-payback').textContent = Math.ceil(paybackDays) + ' days';
+  } else {
+    document.getElementById('roi-payback').textContent = '< 1 month';
+  }
+}
+updateROI();
+
+// ── RANGE TRACK FILL ──
+document.querySelectorAll('input[type=range]').forEach(slider => {
+  function fill() {
+    const pct = (slider.value - slider.min) / (slider.max - slider.min) * 100;
+    slider.style.background = `linear-gradient(to right, #00d4c8 0%, #00d4c8 ${pct}%, rgba(255,255,255,0.07) ${pct}%, rgba(255,255,255,0.07) 100%)`;
+  }
+  slider.addEventListener('input', fill);
+  fill();
+});
+
+// ── FAQ ──
+const faqs = [
+  { q: 'How does the permit automation actually work?', a: 'Our AI platform takes your project specs, automatically fills all required permit forms, checks code compliance, and submits directly to the jurisdiction portal (like Accela). You enter details once — we handle everything from initial submission to approval notification.' },
+  { q: 'Which California jurisdictions do you support?', a: 'We currently support 50+ major California jurisdictions including Los Angeles County, Orange County, San Diego County, and Riverside County. We\'re continuously adding new jurisdictions based on contractor demand.' },
+  { q: 'What types of HVAC permits can you automate?', a: 'Most residential and commercial HVAC permits: system replacements, new installations, ductwork modifications, and equipment upgrades. We handle both mechanical and required electrical permits, plus CHEERS.org integration for HERS ratings.' },
+  { q: 'How much does it cost?', a: 'Starter is $99/month (up to 10 permits), Professional is $199/month (up to 50 permits). Early access members get 50% off for the first 6 months. No setup fees, no long-term contracts.' },
+  { q: 'What if a permit gets rejected?', a: 'With our 99.7% approval rate, rejections are rare. But if it happens, we automatically analyze the rejection reason, make corrections, and resubmit at no additional cost.' },
+  { q: 'How long does setup take?', a: 'Most contractors are up and running within 24–48 hours. Our onboarding team handles account setup, license verification, and your first permit submission.' },
+  { q: 'Do I need to change my current workflow?', a: 'Not significantly. You can submit from our mobile app on-site or the web portal from your office. We integrate with popular contractor management software.' },
+  { q: 'Is my business data secure?', a: 'Yes. Bank-level encryption, SOC 2 compliant, and we never share your information with third parties. Your data is completely secure and private.' },
+  { q: 'Can I cancel anytime?', a: 'Yes. No long-term contracts. Cancel with 30 days notice at any time. Most contractors see immediate ROI and choose to stay.' }
+];
+
+const faqList = document.getElementById('faq-list');
+faqs.forEach((faq, i) => {
+  const item = document.createElement('div');
+  item.className = 'faq-item';
+  item.innerHTML = `
+    <button class="faq-question${i === 0 ? ' open' : ''}" onclick="toggleFAQ(this)">
+      <span>${faq.q}</span>
+      <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+    <div class="faq-answer" style="max-height:${i === 0 ? '300px' : '0'}">
+      <div class="faq-answer-inner">${faq.a}</div>
+    </div>
+  `;
+  faqList.appendChild(item);
+});
+
+function toggleFAQ(btn) {
+  const answer = btn.nextElementSibling;
+  const isOpen = btn.classList.contains('open');
+  btn.classList.toggle('open', !isOpen);
+  answer.style.maxHeight = isOpen ? '0' : '300px';
+}
+
+// ── FORM ──
+function submitForm() {
+  const email = document.getElementById('email').value;
+  const fname = document.getElementById('fname').value;
+  if (!fname || !email) {
+    document.getElementById('email').focus();
+    document.getElementById('email').style.borderColor = '#ff6b2b';
+    setTimeout(() => document.getElementById('email').style.borderColor = '', 2000);
+    return;
+  }
+
+  // In production: POST to your auth/signup server here
+  // fetch('/api/early-access', { method: 'POST', body: JSON.stringify({...}) })
+
+  document.getElementById('form-fields').style.display = 'none';
+  document.getElementById('form-success').style.display = 'block';
+}
+
+// ── SCROLL ANIMATIONS ──
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+// ── SCROLL TO SIGNUP ──
+function scrollToSignup() {
+  document.getElementById('signup').scrollIntoView({ behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
