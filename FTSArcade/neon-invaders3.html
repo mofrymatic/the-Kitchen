@@ -344,52 +344,7 @@ const BOSS_SPRITES = [
   [[0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0],[0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0],[0,1,1,1,0,0,1,1,1,1,0,0,1,1,1,0],[1,1,0,1,1,1,1,1,1,1,1,1,1,0,1,1],[1,0,1,0,1,0,1,1,1,1,0,1,0,1,0,1],[1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1],[1,0,1,1,0,1,1,1,1,1,1,0,1,1,0,1],[0,1,1,1,1,0,1,1,1,1,0,1,1,1,1,0],[0,0,1,1,1,1,1,0,0,1,1,1,1,1,0,0],[0,0,0,1,0,1,0,1,1,0,1,0,1,0,0,0]],
 ];
 const BOSS_NAMES  = ['THE SAUCER','SPIDER CRAB','THE SKULL','DREAD DRAGON','THE MOTHERSHIP'];
-
-// ── BOSS SPEC ────────────────────────────────────────────────────────────────
-// Each boss now owns an attack pattern, a size, and a cadence. HP alone was
-// never the difficulty curve — a longer healthbar on identical behavior just
-// makes the same fight take longer. The pattern is the fight.
-//
-// px      : sprite cell size. 3 was the old value for everything; bosses now
-//           physically grow across the run (bigger target, but bigger threat).
-// hp      : raised across the board to account for the player's new tools.
-// pattern : which attack script runs. See bossAttack().
-// cadence : ms between attack cycles at full HP. Enrage cuts this.
-// moveMs  : ms between horizontal steps. Lower = faster slide.
-// step    : px per horizontal step.
-const BOSS = [
-  { name:'THE SAUCER',     px:4, hp:55,  pattern:'aimed',  cadence:1100, moveMs:110, step:8,  col:'#f83800' },
-  { name:'SPIDER CRAB',    px:4, hp:75,  pattern:'adds',   cadence:1250, moveMs:95,  step:9,  col:'#00d8d8' },
-  { name:'THE SKULL',      px:5, hp:100, pattern:'beam',   cadence:1500, moveMs:85,  step:10, col:'#f800f8' },
-  { name:'DREAD DRAGON',   px:5, hp:130, pattern:'spiral', cadence:900,  moveMs:75,  step:11, col:'#fca044' },
-  { name:'THE MOTHERSHIP', px:6, hp:165, pattern:'all',    cadence:850,  moveMs:70,  step:12, col:'#7b00d4' },
-];
-const BOSS_HP = BOSS.map(b => b.hp);
-
-// Sprites are 16 wide x 10 tall in cells; these derive the pixel hitbox.
-const bossW = i => 16 * BOSS[i].px;
-const bossH = i => 10 * BOSS[i].px;
-
-// ── Enrage ───────────────────────────────────────────────────────────────────
-// Below this HP fraction the boss visibly turns on you: color shifts hot,
-// movement and fire rate spike, and the transition punches the screen. This is
-// the cheapest way to make a fight feel dangerous exactly when the player
-// thinks they've won.
-const ENRAGE_AT = 0.35;
-const ENRAGE_COL = '#ff2200';
-const enraged = bo => bo.hp / BOSS_HP[bo.idx] <= ENRAGE_AT;
-
-// ── Weak point ───────────────────────────────────────────────────────────────
-// Center-mass core. Hits here deal 3x. Rewards players who hold the center
-// lane and eat more risk instead of plinking safely from the wings.
-const WEAK_MUL = 3;
-
-// ── Punish window ────────────────────────────────────────────────────────────
-// After every heavy attack the boss is exposed for this long: it stops moving,
-// stops shooting, and takes 2x. This is the "something back" — the fight has a
-// rhythm you can learn and exploit rather than a wall you out-tank.
-const PUNISH_MS  = 900;
-const PUNISH_MUL = 2;
+const BOSS_HP     = [8, 12, 16, 20, 30];
 
 const WAVE_PALETTES = [
   ['#f83800','#f83800','#0058f8','#0058f8','#00a800'],
@@ -398,14 +353,7 @@ const WAVE_PALETTES = [
   ['#004058','#004058','#e40058','#e40058','#fca044'],
   ['#0078f8','#0078f8','#f85898','#f85898','#b8f818'],
 ];
-const BOSS_COLORS = BOSS.map(b => b.col);
-const BOSS_TAGLINE = [
-  'IT TRACKS YOUR MOVEMENT',
-  'IT DOES NOT COME ALONE',
-  'IT CUTS THROUGH EVERYTHING',
-  'IT FILLS THE SKY',
-  'IT HAS LEARNED ALL OF THEM',
-];
+const BOSS_COLORS = ['#f83800','#00d8d8','#f800f8','#fca044','#7b00d4'];
 function getPalette(w) { return WAVE_PALETTES[(w - 1) % WAVE_PALETTES.length]; }
 
 // ── grid ──────────────────────────────────────────────────────────────────────
@@ -592,7 +540,6 @@ function init(persist) {
     bullets: [], abullets: [], keys: {}, score, lives, wave,
     phase: 'announce', announceTimer: 2400, shootCD: 0,
     boss: null, flash: false, flashTimer: 0,
-    minions: [], beams: [], enrageFlash: 0, critFlash: 0,
     nameEntry: { name: '' }, time: 0 };
   layoutAliens(); updateHUD(); prewarmWave(wave);
 }
@@ -640,25 +587,11 @@ function update(dt) {
   if (ph === 'namentry' || ph === 'over' || ph === 'win') return;
 
   S.shootCD = Math.max(0, S.shootCD - dt);
-  // Boss patterns demand real repositioning; base speed was tuned for a
-  // slow-marching alien block and can't clear a sweeping beam in time.
-  const mv = S.phase === 'boss' ? 6.6 : 5;
-  if (S.keys['ArrowLeft']  || S.keys['a']) S.px = Math.max(0, S.px - mv);
-  if (S.keys['ArrowRight'] || S.keys['d']) S.px = Math.min(W - 36, S.px + mv);
+  if (S.keys['ArrowLeft']  || S.keys['a']) S.px = Math.max(0, S.px - 5);
+  if (S.keys['ArrowRight'] || S.keys['d']) S.px = Math.min(W - 36, S.px + 5);
   if ((S.keys[' '] || S.keys['ArrowUp']) && S.shootCD <= 0) {
-    // Boss fights unlock a faster cadence and a twin shot. The bosses got a
-    // lot meaner; the player gets real firepower back rather than just being
-    // asked to dodge more. This is the "something back."
-    const inBoss = S.phase === 'boss';
-    if (inBoss) {
-      S.bullets.push({ x: S.px + 7,  y: S.py - 4, w: 3, h: 10, spd: 8, trail: [] });
-      S.bullets.push({ x: S.px + 22, y: S.py - 4, w: 3, h: 10, spd: 8, trail: [] });
-      S.shootCD = 190;
-    } else {
-      S.bullets.push({ x: S.px + 14, y: S.py - 4, w: 3, h: 10, spd: 7, trail: [] });
-      S.shootCD = 280;
-    }
-    ripple(S.px + 16, S.py, 1);
+    S.bullets.push({ x: S.px + 14, y: S.py - 4, w: 3, h: 10, spd: 7, trail: [] });
+    S.shootCD = 280; ripple(S.px + 16, S.py, 1);
   }
 
   if (ph === 'play') {
@@ -721,55 +654,14 @@ function update(dt) {
   }
 
   if (ph === 'boss' && S.boss) {
-    const bo = S.boss, idx = bo.idx, spec = BOSS[idx];
-    const BW = bossW(idx), BH = bossH(idx);
-    const rage = enraged(bo);
-
-    // Enrage transition — fires once, and it should feel like a threat.
-    if (rage && !bo.wasEnraged) {
-      bo.wasEnraged = true;
-      addShake(16);
-      spawnRing(bo.x + BW / 2, bo.y + BH / 2, ENRAGE_COL, 30, 6);
-      ripple(bo.x + BW / 2, bo.y + BH / 2, 10);
-      S.enrageFlash = 700;
-    }
-    if (S.enrageFlash > 0) S.enrageFlash -= dt;
-
-    // ── Player bullets vs boss ───────────────────────────────────────────
-    // Damage is no longer flat. Weak point (center core) multiplies, and the
-    // punish window after a heavy attack multiplies again. Stacked, a core hit
-    // during a punish window is 6x — that's the aggression payoff.
-    const vulnerable = bo.state !== 'entry';
-    // Weak point is a HORIZONTAL band only. Player bullets travel upward and
-    // are consumed on first overlap — i.e. always at the boss's bottom edge —
-    // so any vertically-inset core box is geometrically unreachable and the
-    // crit could never fire. Gating on x alone makes "hold the centre lane"
-    // the actual skill expression, which is what we wanted anyway.
-    const wpX0 = bo.x + BW * 0.34, wpX1 = bo.x + BW * 0.66;
-
+    const bo = S.boss, idx = S.wave - 1;
     S.bullets = S.bullets.filter(b => {
       b.trail.unshift({ x: b.x, y: b.y }); if (b.trail.length > PERF.bulletTrail) b.trail.pop();
       b.y -= b.spd; if (b.y < 0) return false;
-      // S.boss guard: twin shots mean two bullets can land in the same filter
-      // pass, and the second would re-enter bossDefeated() on a null boss.
-      if (S.boss && vulnerable && b.x < bo.x + BW && b.x + b.w > bo.x && b.y < bo.y + BH && b.y + b.h > bo.y) {
-        const core = b.x + b.w > wpX0 && b.x < wpX1;
-        // Twin shot fires two bullets that land on the SAME frame, so a naive
-        // crit multiplier gets applied twice per trigger pull — 2 x 3 = 6 dmg,
-        // which deleted a 14 HP boss in two pulls. Crit is per-pull, not
-        // per-bullet, so each bullet carries half of it.
-        let dmg = 1;
-        if (core) dmg *= WEAK_MUL / 2;
-        if (bo.state === 'punish') dmg *= PUNISH_MUL;
-        bo.hp -= dmg;
-        S.score += 50 * dmg; updateHUD();
-        S.flash = true; S.flashTimer = 80;
-        const hitCol = core ? '#ffffff' : BOSS_COLORS[idx];
-        spawnParticles(b.x + 1, b.y, hitCol, core ? 20 : 10, core ? 5 : 3.5);
-        if (core) { spawnRing(b.x, b.y, '#ffee00', 8, 3); S.critFlash = 220; }
-        ripple(b.x, b.y, core ? 4 : 2); addShake(core ? 8 : 5);
-        if (bo.hp <= 0) { bossDefeated(); return false; }
-        return false;
+      if (b.x < bo.x + 48 && b.x + b.w > bo.x && b.y < bo.y + 30 && b.y + b.h > bo.y) {
+        bo.hp--; S.score += 50; updateHUD(); S.flash = true; S.flashTimer = 80;
+        spawnParticles(b.x + 1, b.y, BOSS_COLORS[idx], 10, 3.5); ripple(b.x, b.y, 2); addShake(5);
+        if (bo.hp <= 0) { bossDefeated(); return false; } return false;
       }
       for (const bl of S.bunkers) {
         if (!bl.alive) continue;
@@ -777,53 +669,23 @@ function update(dt) {
       }
       return true;
     });
-    if (!S.boss) return;   // bossDefeated() cleared it
-    if (S.critFlash > 0) S.critFlash -= dt;
-
-    // ── State machine ────────────────────────────────────────────────────
-    bo.stateTimer -= dt;
-    if (bo.state === 'entry') {
-      bo.y += 0.11 * dt;                      // descend into position
-      if (bo.y >= 40) { bo.y = 40; bo.state = 'active'; bo.shootTimer = spec.cadence * 0.5; addShake(10); }
-    } else {
-      // Movement — frozen during telegraph and punish, so both read clearly.
-      if (bo.state === 'active') {
-        bo.moveTimer += dt;
-        const moveMs = rage ? spec.moveMs * 0.6 : spec.moveMs;
-        const step = rage ? spec.step * 1.4 : spec.step;
-        if (bo.moveTimer > moveMs) {
-          bo.moveTimer = 0;
-          bo.x += bo.dir * step;
-          if (bo.x <= 10) { bo.x = 10; bo.dir = 1; bo.y += 8; }
-          if (bo.x + BW >= W - 10) { bo.x = W - 10 - BW; bo.dir = -1; bo.y += 8; }
-        }
-        bo.shootTimer -= dt;
-        if (bo.shootTimer <= 0) {
-          bo.state = 'telegraph';
-          bo.stateTimer = rage ? 320 : 480;   // windup tell
-          bo.telegraphKind = pickPattern(bo, spec);
-        }
-      } else if (bo.state === 'telegraph' && bo.stateTimer <= 0) {
-        bossAttack(bo, spec, bo.telegraphKind, rage);
-        bo.state = 'punish';
-        bo.stateTimer = rage ? PUNISH_MS * 0.65 : PUNISH_MS;
-      } else if (bo.state === 'punish' && bo.stateTimer <= 0) {
-        bo.state = 'active';
-        bo.shootTimer = rage ? spec.cadence * 0.55 : spec.cadence;
+    bo.moveTimer += dt;
+    const bspd = Math.max(40, 120 - (BOSS_HP[idx] - bo.hp) * 5);
+    if (bo.moveTimer > bspd) { bo.moveTimer = 0; bo.x += bo.dir * 8; if (bo.x <= 10 || bo.x + 48 >= W - 10) { bo.dir *= -1; bo.y += 12; } }
+    if (bo.y + 30 >= S.py) { triggerGameOver(); return; }
+    if (S.flashTimer > 0) { S.flashTimer -= dt; if (S.flashTimer <= 0) S.flash = false; }
+    bo.shootTimer += dt;
+    const shots = 1 + Math.floor((BOSS_HP[idx] - bo.hp) / (BOSS_HP[idx] / 3));
+    if (bo.shootTimer > Math.max(350, 1200 - S.wave * 100)) {
+      bo.shootTimer = 0;
+      for (let i = 0; i < shots; i++) {
+        const spread = (i - (shots - 1) / 2) * 14;
+        S.abullets.push({ x: bo.x + 24 + spread, y: bo.y + 30, w: 4, h: 12, spd: 4 + S.wave * 0.5, trail: [] });
       }
     }
-
-    if (bo.y + BH >= S.py) { triggerGameOver(); return; }
-    if (S.flashTimer > 0) { S.flashTimer -= dt; if (S.flashTimer <= 0) S.flash = false; }
-
-    updateMinions(dt);
-    updateBeams(dt);
-
     S.abullets = S.abullets.filter(b => {
       b.trail.unshift({ x: b.x, y: b.y }); if (b.trail.length > PERF.aBulletTrail) b.trail.pop();
-      // Boss bullets can now carry velocity on both axes (aimed / spiral shots).
-      b.x += (b.vx || 0); b.y += (b.vy !== undefined ? b.vy : b.spd);
-      if (b.y > H || b.y < -20 || b.x < -20 || b.x > W + 20) return false;
+      b.y += b.spd; if (b.y > H) return false;
       if (b.x < S.px + S.pw && b.x + b.w > S.px && b.y < S.py + S.ph && b.y + b.h > S.py) { playerHit(); return false; }
       for (const bl of S.bunkers) {
         if (!bl.alive) continue;
@@ -834,162 +696,14 @@ function update(dt) {
   }
 }
 
-// ── ATTACK PATTERNS ──────────────────────────────────────────────────────────
-// The Mothership cycles every other boss's pattern; everyone else has one.
-function pickPattern(bo, spec) {
-  if (spec.pattern !== 'all') return spec.pattern;
-  const cycle = ['aimed', 'adds', 'beam', 'spiral'];
-  return cycle[bo.subPattern++ % cycle.length];
-}
-
-function bossAttack(bo, spec, kind, rage) {
-  const idx = bo.idx, BW = bossW(idx), BH = bossH(idx);
-  const cx = bo.x + BW / 2, cy = bo.y + BH;
-  const spd = 4 + S.wave * 0.4 + (rage ? 1.2 : 0);
-  addShake(rage ? 7 : 4);
-  ripple(cx, cy, 3);
-
-  if (kind === 'aimed') {
-    // Leads the player's position. Standing still is now a mistake.
-    const n = rage ? 5 : 3;
-    for (let i = 0; i < n; i++) {
-      const tx = S.px + S.pw / 2, ty = S.py;
-      const spreadAng = (i - (n - 1) / 2) * 0.20;
-      let ang = Math.atan2(ty - cy, tx - cx) + spreadAng;
-      S.abullets.push({ x: cx - 2, y: cy, w: 4, h: 12,
-        vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd, trail: [] });
-    }
-  } else if (kind === 'adds') {
-    // Escorts. Cap so the screen never becomes unreadable.
-    const cap = rage ? 5 : 3;
-    const want = rage ? 3 : 2;
-    for (let i = 0; i < want && S.minions.length < cap; i++)
-      spawnMinion(bo.x + (i ? BW - 27 : 0), bo.y + BH);
-    // ...plus a token volley so 'adds' isn't a free window
-    for (let i = -1; i <= 1; i++)
-      S.abullets.push({ x: cx + i * 16, y: cy, w: 4, h: 12, vx: 0, vy: spd, trail: [] });
-  } else if (kind === 'beam') {
-    // Sweeping laser with a telegraph preview, then a lethal sweep.
-    const n = rage ? 2 : 1;
-    for (let i = 0; i < n; i++) {
-      S.beams.push({
-        x: i === 0 ? cx : (bo.dir > 0 ? 60 : W - 60),
-        hw: 9, phase: 'tell', t: 520, fireMs: rage ? 1100 : 900,
-        vx: (i === 0 ? bo.dir : -bo.dir) * (rage ? 3.1 : 2.2),
-        col: BOSS_COLORS[idx],
-      });
-    }
-  } else if (kind === 'spiral') {
-    // Rotating barrage. Readable if you track the rotation, lethal if not.
-    const arms = rage ? 12 : 9;
-    bo.spiralAng += 0.55;
-    for (let i = 0; i < arms; i++) {
-      const ang = bo.spiralAng + (i / arms) * Math.PI * 2;
-      // lower hemisphere only — no shots the player physically cannot see coming
-      const vy = Math.sin(ang) * spd;
-      if (vy < 0.15) continue;
-      S.abullets.push({ x: cx - 2, y: cy - 6, w: 4, h: 10,
-        vx: Math.cos(ang) * spd, vy, trail: [] });
-    }
-  }
-}
-
-function spawnBoss() {
-  const idx = S.wave - 1, spec = BOSS[idx];
-  S.boss = {
-    idx,
-    x: W / 2 - bossW(idx) / 2,
-    y: -bossH(idx) - 10,     // starts off-screen; descends during 'entry'
-    dir: 1, hp: spec.hp,
-    moveTimer: 0, shootTimer: 0,
-    state: 'entry',          // entry -> active -> (telegraph -> fire -> punish) -> active
-    stateTimer: 0,
-    wasEnraged: false,
-    beamX: 0, beamDir: 1,    // sweeping laser
-    spiralAng: 0,            // rotating barrage
-    subPattern: 0,           // Mothership cycling
-  };
-  S.minions = [];
-  S.beams = [];
-  S.bullets = []; S.abullets = [];
-}
-
-// ── Minions (Spider Crab adds) ───────────────────────────────────────────────
-function spawnMinion(bx, by) {
-  S.minions.push({
-    x: bx, y: by, vx: (Math.random() < 0.5 ? -1 : 1) * (1.1 + Math.random() * 0.6),
-    vy: 0.45 + Math.random() * 0.35, hp: 2, shootTimer: 600 + Math.random() * 800,
-    row: 2, col: 0,
-  });
-}
-
-function updateMinions(dt) {
-  const f = dt / 16;
-  let w = 0;
-  for (let i = 0; i < S.minions.length; i++) {
-    const m = S.minions[i];
-    m.x += m.vx * f; m.y += m.vy * f;
-    if (m.x <= 6 || m.x + 27 >= W - 6) m.vx *= -1;
-    if (m.y > H - 120) m.vy = -Math.abs(m.vy);
-    if (m.y < 60) m.vy = Math.abs(m.vy);
-    m.shootTimer -= dt;
-    if (m.shootTimer <= 0) {
-      m.shootTimer = 900 + Math.random() * 900;
-      S.abullets.push({ x: m.x + 12, y: m.y + 24, w: 4, h: 12, spd: 4.2, trail: [] });
-    }
-    // player bullet collision
-    for (let j = 0; j < S.bullets.length; j++) {
-      const b = S.bullets[j];
-      if (b.x < m.x + 27 && b.x + b.w > m.x && b.y < m.y + 24 && b.y + b.h > m.y) {
-        m.hp--; S.bullets.splice(j, 1); j--;
-        spawnParticles(m.x + 13, m.y + 12, '#00d8d8', 8, 3);
-        if (m.hp <= 0) {
-          S.score += 25; updateHUD();
-          spawnRing(m.x + 13, m.y + 12, '#00d8d8', 10, 3.5);
-          ripple(m.x + 13, m.y + 12, 3); addShake(3);
-          m.dead = true;
-        }
-        break;
-      }
-    }
-    // body-check the player
-    if (!m.dead && m.x < S.px + S.pw && m.x + 27 > S.px && m.y < S.py + S.ph && m.y + 24 > S.py) {
-      m.dead = true; playerHit();
-    }
-    if (!m.dead) S.minions[w++] = m;
-  }
-  S.minions.length = w;
-}
-
-// ── Beams (Skull sweeping laser) ─────────────────────────────────────────────
-// A beam has a telegraph phase (thin preview line, no damage) then a fire
-// phase (thick, lethal). The tell is the whole point: scary but readable.
-function updateBeams(dt) {
-  let w = 0;
-  for (let i = 0; i < S.beams.length; i++) {
-    const bm = S.beams[i];
-    bm.t -= dt;
-    if (bm.phase === 'tell' && bm.t <= 0) { bm.phase = 'fire'; bm.t = bm.fireMs; addShake(6); }
-    else if (bm.phase === 'fire') {
-      bm.x += bm.vx * (dt / 16);
-      // lethal only during fire
-      if (S.px + S.pw > bm.x - bm.hw && S.px < bm.x + bm.hw) playerHit();
-      if (bm.t <= 0) bm.dead = true;
-    }
-    if (!bm.dead) S.beams[w++] = bm;
-  }
-  S.beams.length = w;
-}
+function spawnBoss() { S.boss = { x: W / 2 - 24, y: 40, dir: 1, hp: BOSS_HP[S.wave - 1], moveTimer: 0, shootTimer: 0 }; S.bullets = []; S.abullets = []; }
 function triggerBoss() { S.phase = 'bossannounce'; S.announceTimer = 2400; S.bullets = []; S.abullets = []; }
 function bossDefeated() {
-  const idx = S.boss.idx, BW = bossW(idx), BH = bossH(idx);
-  const bx = S.boss.x + BW / 2, by = S.boss.y + BH / 2;
+  const idx = S.wave - 1, bx = S.boss.x + 24, by = S.boss.y + 15;
   spawnRing(bx, by, BOSS_COLORS[idx], 40, 6);
-  spawnRing(bx, by, '#ffffff', 24, 9);
-  for (let i = 0; i < 5; i++)
-    spawnParticles(S.boss.x + Math.random() * BW, S.boss.y + Math.random() * BH, BOSS_COLORS[idx], 25, 7);
-  ripple(bx, by, 14); addShake(22);
-  S.boss = null; S.bullets = []; S.abullets = []; S.minions = []; S.beams = [];
+  for (let i = 0; i < 4; i++) spawnParticles(S.boss.x + Math.random() * 48, S.boss.y + Math.random() * 30, BOSS_COLORS[idx], 25, 7);
+  ripple(bx, by, 12); addShake(18);
+  S.boss = null; S.bullets = []; S.abullets = [];
   if (S.wave >= MAX_WAVES) { triggerWin(); return; }
   S.wave++;
   S.phase = 'announce'; S.announceTimer = 2400; updateHUD();
@@ -1072,10 +786,9 @@ function getBossSprite(idx, color, flash) {
   const key = 'b|' + idx + (flash ? 'F' : color);
   let s = spriteCache.get(key);
   if (!s) {
-    const px = BOSS[idx].px;
     s = flash
-      ? bakeSprite(BOSS_SPRITES[idx], px, '#ffffff', 26, 0)   // flash frame: solid white, no inner pass
-      : bakeSprite(BOSS_SPRITES[idx], px, color, 26, 0.65);
+      ? bakeSprite(BOSS_SPRITES[idx], 3, '#ffffff', 22, 0)   // flash frame: solid white, no inner pass
+      : bakeSprite(BOSS_SPRITES[idx], 3, color, 22, 0.65);
     spriteCache.set(key, s);
   }
   return s;
@@ -1085,9 +798,7 @@ function prewarmWave(w) {
   const pal = getPalette(w);
   for (let r = 0; r < ROWS; r++) for (let f = 0; f < 2; f++) getAlienSprite(ROW_TYPES[r], f, pal[r]);
   const idx = (w - 1) % BOSS_COLORS.length;
-  getBossSprite(idx, BOSS_COLORS[idx], false);
-  getBossSprite(idx, BOSS_COLORS[idx], true);
-  getBossSprite(idx, ENRAGE_COL, false);   // enrage palette, baked ahead of the transition
+  getBossSprite(idx, BOSS_COLORS[idx], false); getBossSprite(idx, BOSS_COLORS[idx], true);
 }
 
 function glowSprite(type, frame, x, y, px, color) {
@@ -1115,9 +826,7 @@ function draw() {
   const pal = getPalette(S.wave); const [sx, sy] = getShake();
   ctx.fillStyle = '#000010'; ctx.fillRect(0, 0, W, H);
   let gc;
-  // The whole arena reacts to enrage — mesh included.
-  if (S.phase === 'boss' && S.boss && enraged(S.boss)) gc = ENRAGE_COL;
-  else if (S.phase === 'boss' || S.phase === 'bossannounce') gc = BOSS_COLORS[S.wave - 1];
+  if (S.phase === 'boss' || S.phase === 'bossannounce') gc = BOSS_COLORS[S.wave - 1];
   else { const t = S.time / 3000; gc = `hsl(${185 + Math.sin(t) * 20},100%,45%)`; }
   drawGrid(gc);
 
@@ -1143,109 +852,17 @@ function draw() {
     ctx.restore();
   }
 
-  // ── minions (drawn under the boss) ──
-  if (S.minions && S.minions.length) {
-    ctx.save();
-    for (const m of S.minions) {
-      ctx.globalAlpha = 0.9;
-      glowSprite('B', (S.time / 200 | 0) % 2, m.x, m.y, 3, '#00d8d8');
-    }
-    ctx.restore();
-  }
-
-  // ── beams ──
-  // Telegraph draws a thin, semi-transparent preview so the player can read
-  // the incoming sweep. Fire draws the lethal column. The tell IS the fairness.
-  if (S.beams && S.beams.length) {
-    ctx.save();
-    for (const bm of S.beams) {
-      if (bm.phase === 'tell') {
-        const blink = 0.25 + 0.35 * Math.abs(Math.sin(S.time / 60));
-        ctx.globalAlpha = blink; ctx.fillStyle = bm.col;
-        ctx.shadowColor = bm.col; ctx.shadowBlur = 12;
-        ctx.fillRect(bm.x - 1.5, 0, 3, H);
-      } else {
-        ctx.globalAlpha = 0.85; ctx.fillStyle = bm.col;
-        ctx.shadowColor = bm.col; ctx.shadowBlur = 26;
-        ctx.fillRect(bm.x - bm.hw, 0, bm.hw * 2, H);
-        ctx.globalAlpha = 1; ctx.fillStyle = '#ffffff'; ctx.shadowBlur = 10;
-        ctx.fillRect(bm.x - bm.hw * 0.32, 0, bm.hw * 0.64, H);
-      }
-    }
-    ctx.restore();
-  }
-
   // boss
   if (S.boss && S.phase === 'boss') {
-    const bo = S.boss, idx = bo.idx;
-    const BW = bossW(idx), BH = bossH(idx);
-    const rage = enraged(bo);
-    const bodyCol = rage ? ENRAGE_COL : BOSS_COLORS[idx];
-
-    // Telegraph: the boss swells and glows white-hot just before it attacks.
-    let pulse = 0.8 + 0.2 * Math.sin(S.time / 180);
-    if (bo.state === 'telegraph') pulse = 0.72 + 0.28 * Math.abs(Math.sin(S.time / 45));
-    if (rage) pulse = Math.min(1, pulse + 0.12);
-
-    ctx.save();
-    ctx.globalAlpha = bo.state === 'entry' ? 0.85 : pulse;
-    glowBoss(idx, bo.x, bo.y, BOSS[idx].px, bodyCol, S.flash || bo.state === 'telegraph');
-    ctx.restore();
-
-    // Punish window marker — a visible "hit me now" ring. This is the reward
-    // signal for the aggression the player is being asked to take on.
-    if (bo.state === 'punish') {
-      const t = 0.45 + 0.35 * Math.sin(S.time / 90);
-      ctx.save(); ctx.globalAlpha = t;
-      ctx.strokeStyle = '#ffee00'; ctx.lineWidth = 2;
-      ctx.shadowColor = '#ffee00'; ctx.shadowBlur = 14;
-      ctx.strokeRect(bo.x - 4, bo.y - 4, BW + 8, BH + 8);
-      ctx.restore();
-    }
-
-    // Weak point indicator — only visible while vulnerable, so the player
-    // learns where to aim without it cluttering the entry animation.
-    // Drawn on the UNDERSIDE, because that's where shots actually land. The
-    // indicator has to match the real hitbox or it teaches the wrong lesson.
-    if (bo.state !== 'entry') {
-      const wx = bo.x + BW * 0.34, ww = BW * 0.32, wy = bo.y + BH;
-      const cf = S.critFlash > 0 ? 1 : 0.35 + 0.20 * Math.sin(S.time / 130);
-      ctx.save(); ctx.globalAlpha = cf;
-      ctx.strokeStyle = S.critFlash > 0 ? '#ffffff' : '#ffee00'; ctx.lineWidth = 2;
-      ctx.shadowColor = '#ffee00'; ctx.shadowBlur = 12;
-      ctx.beginPath();
-      ctx.moveTo(wx, wy + 3); ctx.lineTo(wx + ww, wy + 3);
-      // downward ticks marking the lane edges
-      ctx.moveTo(wx, wy + 3); ctx.lineTo(wx, wy + 9);
-      ctx.moveTo(wx + ww, wy + 3); ctx.lineTo(wx + ww, wy + 9);
-      ctx.stroke();
-      ctx.restore();
-    }
-
-    // ── health bar ──
-    const bW = 220, bH2 = 9, bx = (W - bW) / 2 - sx, by = 12 - sy;
-    ctx.save();
-    ctx.fillStyle = '#0a0a1a'; ctx.fillRect(bx, by, bW, bH2);
-    const frac = Math.max(0, bo.hp / BOSS_HP[idx]);
-    const bc = rage ? ENRAGE_COL : frac > 0.6 ? BOSS_COLORS[idx] : frac > 0.35 ? '#fca044' : '#f83800';
-    ctx.shadowColor = bc; ctx.shadowBlur = rage ? 16 : 8; ctx.fillStyle = bc;
-    ctx.fillRect(bx, by, Math.round(bW * frac), bH2);
-    // enrage threshold notch — tells the player where the fight gets worse
-    const ex = bx + bW * ENRAGE_AT;
-    ctx.shadowBlur = 0; ctx.fillStyle = 'rgba(255,255,255,0.55)';
-    ctx.fillRect(ex - 1, by - 2, 2, bH2 + 4);
-    ctx.strokeStyle = '#222244'; ctx.lineWidth = 1; ctx.strokeRect(bx, by, bW, bH2);
+    const bo = S.boss, idx = S.wave - 1, pulse = 0.8 + 0.2 * Math.sin(S.time / 180);
+    ctx.save(); ctx.globalAlpha = pulse; glowBoss(idx, bo.x, bo.y, 3, BOSS_COLORS[idx], S.flash); ctx.restore();
+    const bW = 180, bH = 8, bx = (W - bW) / 2 - sx, by = 12 - sy;
+    ctx.save(); ctx.fillStyle = '#0a0a1a'; ctx.fillRect(bx, by, bW, bH);
+    const frac = bo.hp / BOSS_HP[idx], bc = frac > 0.5 ? BOSS_COLORS[idx] : frac > 0.25 ? '#fca044' : '#f83800';
+    ctx.shadowColor = bc; ctx.shadowBlur = 8; ctx.fillStyle = bc; ctx.fillRect(bx, by, Math.round(bW * frac), bH);
+    ctx.strokeStyle = '#222244'; ctx.lineWidth = 1; ctx.strokeRect(bx, by, bW, bH);
     ctx.fillStyle = '#fff'; ctx.font = '10px monospace'; ctx.textAlign = 'center';
-    ctx.fillText(BOSS_NAMES[idx] + (rage ? '  ·  ENRAGED' : ''), W / 2, by + bH2 + 13);
-    ctx.restore();
-  }
-
-  // Enrage screen-flash — brief red wash on the transition.
-  if (S.enrageFlash > 0) {
-    ctx.save();
-    ctx.globalAlpha = Math.min(0.4, S.enrageFlash / 700 * 0.4);
-    ctx.fillStyle = ENRAGE_COL; ctx.fillRect(0, 0, W, H);
-    ctx.restore();
+    ctx.fillText(BOSS_NAMES[idx], W / 2, by + bH + 13); ctx.restore();
   }
 
   // player
@@ -1321,14 +938,7 @@ function draw() {
     glowText('WARNING', W / 2, H / 2 - 36, 36, BOSS_COLORS[idx], a);
     glowText(BOSS_NAMES[idx], W / 2, H / 2 + 12, 28, BOSS_COLORS[idx], a);
     ctx.save(); ctx.globalAlpha = a * 0.65; ctx.fillStyle = '#ccccee'; ctx.font = '14px monospace'; ctx.textAlign = 'center';
-    ctx.fillText('APPROACHES', W / 2, H / 2 + 42);
-    // Name the threat. Telling the player what's coming is free intimidation
-    // and it front-loads the pattern they're about to have to learn.
-    ctx.globalAlpha = a * 0.5; ctx.fillStyle = BOSS_COLORS[idx]; ctx.font = '11px monospace';
-    ctx.fillText(BOSS_TAGLINE[idx], W / 2, H / 2 + 66);
-    ctx.globalAlpha = a * 0.38; ctx.fillStyle = '#889'; ctx.font = '10px monospace';
-    ctx.fillText('AIM FOR THE CORE', W / 2, H / 2 + 86);
-    ctx.restore();
+    ctx.fillText('APPROACHES', W / 2, H / 2 + 42); ctx.restore();
   }
   if (S.phase === 'over' || S.phase === 'win') {
     ctx.fillStyle = 'rgba(0,0,18,0.76)'; ctx.fillRect(0, 0, W, H);
