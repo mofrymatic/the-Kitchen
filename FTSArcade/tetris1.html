@@ -452,31 +452,12 @@ function canPlace(piece, dx, dy, newRot) {
 }
 
 function lockPiece() {
-  // Never lock a second piece while a clear is still resolving.
-  if (!gs.current || gs.clearFlash.length>0) return;
-
   const cells = currentCells(gs.current);
   const pieceCol = PIECES[gs.current.key].col;
   const pieceGlow = PIECES[gs.current.key].glow;
 
-  // Top-out: any cell above the board means the stack has breached the ceiling.
-  if (cells.some(([,r]) => r < 0)) {
-    for (const [c,r] of cells) {
-      if (r>=0) gs.board[r][c] = { col: pieceCol, glow: pieceGlow };
-    }
-    gs.current = null;
-    gs.state = 'gameover';
-    if (gs.score > gs.highScore) {
-      gs.highScore = gs.score;
-      localStorage.setItem('tetris_ob_hi', gs.highScore);
-    }
-    SFX.gameOver();
-    spawnGameOverEffect();
-    return;
-  }
-
   for (const [c,r] of cells) {
-    gs.board[r][c] = { col: pieceCol, glow: pieceGlow };
+    if (r>=0) gs.board[r][c] = { col: pieceCol, glow: pieceGlow };
   }
   SFX.land();
 
@@ -507,11 +488,6 @@ function checkLines() {
   }
   if (full.length===0) { spawnNext(); return; }
 
-  // Detach the piece: it is now part of the board. Leaving it attached lets a
-  // queued input move a piece that no longer exists and desync the board.
-  gs.current = null;
-  gs.lockOnFloor = false;
-  gs.lockTimer = 0;
   gs.clearFlash = full;
   gs.clearTimer = 0.38;
   [SFX.clear1, SFX.clear2, SFX.clear3, SFX.clear4][Math.min(full.length,4)-1]();
@@ -572,15 +548,13 @@ function triggerLineClearEffect(rows) {
 }
 
 function clearLines() {
-  // Recompute against the live board rather than trusting cached indices.
-  // Any row that is genuinely full gets removed; survivors keep their order.
-  const survivors = gs.board.filter(row => !row.every(c => c !== null));
-  const n = ROWS - survivors.length;
-  while (survivors.length < ROWS) survivors.unshift(Array(COLS).fill(null));
-  gs.board = survivors;
+  const full = gs.clearFlash;
+  const n = full.length;
+  for (const r of full.slice().reverse()) {
+    gs.board.splice(r, 1);
+    gs.board.unshift(Array(COLS).fill(null));
+  }
   gs.clearFlash = [];
-
-  if (n === 0) { spawnNext(); return; }
 
   const pts = [0,100,300,500,800][n] * gs.level;
   gs.score += pts;
@@ -621,7 +595,7 @@ let dasDir=0, dasTimer=0, arrTimer=0;
 const DAS=0.16, ARR=0.04;
 
 function tryMove(dx, dy) {
-  if (!gs.current||gs.state!=='playing'||gs.paused||gs.clearFlash.length>0) return false;
+  if (!gs.current||gs.state!=='playing'||gs.paused) return false;
   if (canPlace(gs.current,dx,dy)) {
     gs.current.x+=dx; gs.current.y+=dy;
     if(dx!==0) SFX.move();
@@ -633,7 +607,7 @@ function tryMove(dx, dy) {
 }
 
 function tryRotate(dir) {
-  if (!gs.current||gs.state!=='playing'||gs.paused||gs.clearFlash.length>0) return;
+  if (!gs.current||gs.state!=='playing'||gs.paused) return;
   const piece = gs.current;
   const nRots = PIECES[piece.key].shapes.length;
   const newRot = ((piece.rot + dir) % nRots + nRots) % nRots;
@@ -662,11 +636,8 @@ function hardDrop() {
     const px=BOARD_X+(c+0.5)*CELL, py=BOARD_Y+(r+0.5)*CELL;
     for(let i=0;i<3;i++) particles.push(new Spark(px,py,rnd(-40,40),rnd(-80,-10),col,rnd(0.2,0.5),rnd(3,6)));
   }
-  // Lock synchronously. Deferring to the next frame left a window in which a
-  // queued move/rotate could reset the lock timer and float the piece free.
-  gs.lockTimer=0;
-  gs.lockOnFloor=false;
-  lockPiece();
+  gs.lockTimer=gs.lockDelay; // force immediate lock
+  gs.lockOnFloor=true;
 }
 
 function ghostY() {
@@ -997,7 +968,7 @@ function loop(ts) {
     if(gs.clearFlash.length>0) {
       gs.clearTimer-=dt;
       if(gs.clearTimer<=0) clearLines();
-    } else if (gs.current) {
+    } else {
       // DAS
       const leftDown=keys['ArrowLeft']||keys['nb-left'];
       const rightDown=keys['ArrowRight']||keys['nb-right'];
@@ -1028,18 +999,12 @@ function loop(ts) {
         }
       }
 
-      // Lock delay — re-verify the piece is still grounded before locking.
-      // (A lateral move or rotation may have slid it over a gap.)
+      // Lock delay
       if(gs.lockOnFloor) {
-        if(canPlace(gs.current,0,1)) {
-          gs.lockOnFloor=false;
-          gs.lockTimer=0;
-        } else {
-          gs.lockTimer+=dt;
-          if(gs.lockTimer>=gs.lockDelay) {
-            gs.lockTimer=0; gs.lockOnFloor=false;
-            lockPiece();
-          }
+        gs.lockTimer+=dt;
+        if(gs.lockTimer>=gs.lockDelay) {
+          gs.lockTimer=0; gs.lockOnFloor=false;
+          lockPiece();
         }
       }
     }
