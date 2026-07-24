@@ -221,25 +221,6 @@ const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/
               || ('ontouchstart' in window)
               || navigator.maxTouchPoints > 0;
 
-// ── PERF TIER ────────────────────────────────────────────────────────────────
-// One switch drives every cost decision below. Desktop keeps the original
-// look; mobile trades invisible detail (trail length, particle count, extra
-// glow passes) for frame budget. Nothing gameplay-affecting changes.
-const LOW = isMobile;
-const SOCIAL_PREVIEW = false;   // flip true on desktop to regenerate og image
-
-const PERF = {
-  gridCols:      LOW ? 19 : 31,
-  gridRows:      LOW ? 16 : 26,
-  partMul:       LOW ? 0.45 : 1,
-  partCap:       LOW ? 140 : 500,
-  partTrail:     LOW ? 0 : 7,
-  bulletTrail:   LOW ? 4 : 9,
-  aBulletTrail:  LOW ? 3 : 6,
-  gridShadow:    LOW ? 0 : 5,
-  maxDpr:        LOW ? 2 : 2,
-};
-
 // ── DYNAMIC ASSET GENERATION ─────────────────────────────────────────────────
 function generateBranding() {
   // 1. Create Favicon (32x32)
@@ -260,10 +241,6 @@ function generateBranding() {
   document.head.appendChild(link);
 
   // 2. Create Social Preview (1200x630)
-  // MOBILE: skipped entirely. 756k px of shadowBlur'd fillRect at boot is a
-  // multi-hundred-ms hitch on integrated/mobile GPUs, and the artifact is
-  // thrown away — it's a build-time asset generator, not a runtime need.
-  if (isMobile || !SOCIAL_PREVIEW) return;
   // Un-comment the appendChild line below to see/save the image for hosting.
   const ogCanvas = document.createElement('canvas');
   ogCanvas.width = 1200; ogCanvas.height = 630;
@@ -357,115 +334,57 @@ const BOSS_COLORS = ['#f83800','#00d8d8','#f800f8','#fca044','#7b00d4'];
 function getPalette(w) { return WAVE_PALETTES[(w - 1) % WAVE_PALETTES.length]; }
 
 // ── grid ──────────────────────────────────────────────────────────────────────
-// Structure-of-Arrays, same layout fts-mesh-v2 will upload straight to a VBO.
-// Desktop 31x26 = 806 nodes. Mobile 19x16 = 304 nodes (~2.6x less work per
-// frame in BOTH the spring integrator and the stroke path).
-const GCOLS = PERF.gridCols, GROWS = PERF.gridRows;
-const GSW = W / (GCOLS - 1), GSH = H / (GROWS - 1);
-const GN = GCOLS * GROWS;
-const gOX = new Float32Array(GN), gOY = new Float32Array(GN);
-const gX  = new Float32Array(GN), gY  = new Float32Array(GN);
-const gVX = new Float32Array(GN), gVY = new Float32Array(GN);
-for (let r = 0, i = 0; r < GROWS; r++)
-  for (let c = 0; c < GCOLS; c++, i++) {
-    gOX[i] = gX[i] = c * GSW;
-    gOY[i] = gY[i] = r * GSH;
-  }
-
-// Sleep detection: when the mesh has settled we skip the integrator entirely.
-// We can't skip drawGrid (the mesh is always visible) but the settled node
-// positions are identical to origin, so we stroke a cached static path.
-let gridEnergy = 1, gridAsleep = false, staticPath = null;
-
-function buildStaticPath() {
-  const p = new Path2D();
-  for (let r = 0; r < GROWS; r++) {
-    p.moveTo(gOX[r * GCOLS], gOY[r * GCOLS]);
-    for (let c = 1; c < GCOLS; c++) { const i = r * GCOLS + c; p.lineTo(gOX[i], gOY[i]); }
-  }
-  for (let c = 0; c < GCOLS; c++) {
-    p.moveTo(gOX[c], gOY[c]);
-    for (let r = 1; r < GROWS; r++) { const i = r * GCOLS + c; p.lineTo(gOX[i], gOY[i]); }
-  }
-  return p;
-}
-staticPath = buildStaticPath();
+const GCOLS = 31, GROWS = 26, GSW = W / (GCOLS - 1), GSH = H / (GROWS - 1);
+let grid = [];
+for (let r = 0; r < GROWS; r++)
+  for (let c = 0; c < GCOLS; c++)
+    grid.push({ ox: c * GSW, oy: r * GSH, x: c * GSW, y: r * GSH, vx: 0, vy: 0 });
 
 function updateGrid(dt) {
-  if (gridAsleep) return;
   const k = 0.065, d = 0.87, f = dt / 16;
-  let e = 0;
-  for (let i = 0; i < GN; i++) {
-    const vx = (gVX[i] + (gOX[i] - gX[i]) * k) * d;
-    const vy = (gVY[i] + (gOY[i] - gY[i]) * k) * d;
-    gVX[i] = vx; gVY[i] = vy;
-    gX[i] += vx * f; gY[i] += vy * f;
-    e += Math.abs(vx) + Math.abs(vy);
-  }
-  gridEnergy = e;
-  if (e < 0.04 * GN) {           // settled — snap to origin and sleep
-    gX.set(gOX); gY.set(gOY); gVX.fill(0); gVY.fill(0);
-    gridAsleep = true;
+  for (const p of grid) {
+    p.vx = (p.vx + (p.ox - p.x) * k) * d;
+    p.vy = (p.vy + (p.oy - p.y) * k) * d;
+    p.x += p.vx * f; p.y += p.vy * f;
   }
 }
-
-const R_RAD = 220;
 function ripple(wx, wy, str) {
-  gridAsleep = false;
-  // Only touch nodes inside the radius instead of scanning all GN every call.
-  const c0 = Math.max(0, Math.floor((wx - R_RAD) / GSW));
-  const c1 = Math.min(GCOLS - 1, Math.ceil((wx + R_RAD) / GSW));
-  const r0 = Math.max(0, Math.floor((wy - R_RAD) / GSH));
-  const r1 = Math.min(GROWS - 1, Math.ceil((wy + R_RAD) / GSH));
-  for (let r = r0; r <= r1; r++) {
-    const base = r * GCOLS;
-    for (let c = c0; c <= c1; c++) {
-      const i = base + c;
-      const dx = gOX[i] - wx, dy = gOY[i] - wy;
-      const d2 = dx * dx + dy * dy;
-      if (d2 < 25 || d2 > R_RAD * R_RAD) continue;   // squared compare, no sqrt in the reject path
-      const d = Math.sqrt(d2);
-      const f = str * (1 - d / R_RAD) / (d < 12 ? 12 : d);
-      gVX[i] -= dx * f; gVY[i] -= dy * f;
-    }
+  for (const p of grid) {
+    const dx = p.ox - wx, dy = p.oy - wy, d = Math.sqrt(dx * dx + dy * dy);
+    if (d < 5 || d > 220) continue;
+    const f = str * (1 - d / 220) / Math.max(d, 12);
+    p.vx -= dx * f; p.vy -= dy * f;
   }
 }
-
 function drawGrid(gc) {
-  ctx.save();
-  ctx.lineWidth = 0.75; ctx.strokeStyle = gc; ctx.globalAlpha = 0.35;
-  if (PERF.gridShadow) { ctx.shadowColor = gc; ctx.shadowBlur = PERF.gridShadow; }
-  if (gridAsleep) {
-    // Settled: one cached Path2D, two stroke calls' worth of geometry in one.
-    ctx.stroke(staticPath);
-  } else {
-    for (let r = 0; r < GROWS; r++) {
-      const base = r * GCOLS;
-      ctx.beginPath(); ctx.moveTo(gX[base], gY[base]);
-      for (let c = 1; c < GCOLS; c++) { const i = base + c; ctx.lineTo(gX[i], gY[i]); }
-      ctx.stroke();
-    }
+  ctx.save(); ctx.lineWidth = 0.75; ctx.strokeStyle = gc; ctx.shadowColor = gc;
+  ctx.shadowBlur = 5; ctx.globalAlpha = 0.35;
+  for (let r = 0; r < GROWS; r++) {
+    ctx.beginPath();
     for (let c = 0; c < GCOLS; c++) {
-      ctx.beginPath(); ctx.moveTo(gX[c], gY[c]);
-      for (let r = 1; r < GROWS; r++) { const i = r * GCOLS + c; ctx.lineTo(gX[i], gY[i]); }
-      ctx.stroke();
+      const p = grid[r * GCOLS + c]; c ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y);
     }
+    ctx.stroke();
+  }
+  for (let c = 0; c < GCOLS; c++) {
+    ctx.beginPath();
+    for (let r = 0; r < GROWS; r++) {
+      const p = grid[r * GCOLS + c]; r ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y);
+    }
+    ctx.stroke();
   }
   ctx.restore();
 }
 
 // ── particles ─────────────────────────────────────────────────────────────────
 let particles = [];
-const P_TRAIL = PERF.partTrail;
 function spawnParticles(x, y, col, n, spd) {
-  n = Math.max(3, Math.round(n * PERF.partMul));
   for (let i = 0; i < n; i++) {
     const a = Math.random() * Math.PI * 2, s = spd * (0.25 + Math.random() * 0.75);
     particles.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 1, decay: 0.022 + Math.random() * 0.022, col, sz: 1.5 + Math.random() * 3, trail: [] });
   }
 }
 function spawnRing(x, y, col, n, spd) {
-  n = Math.max(6, Math.round(n * PERF.partMul));
   for (let i = 0; i < n; i++) {
     const a = (i / n) * Math.PI * 2, s = spd * (0.8 + Math.random() * 0.4);
     particles.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 1, decay: 0.014, col, sz: 2 + Math.random() * 2, trail: [] });
@@ -473,39 +392,26 @@ function spawnRing(x, y, col, n, spd) {
 }
 function updateParticles(dt) {
   const f = dt / 16;
-  // In-place compaction — the old code allocated a fresh array (and often a
-  // second sliced one) every frame, feeding the GC during exactly the moments
-  // the frame budget is tightest.
-  let w = 0;
-  for (let i = 0; i < particles.length; i++) {
-    const p = particles[i];
-    if (P_TRAIL) { p.trail.unshift({ x: p.x, y: p.y }); if (p.trail.length > P_TRAIL) p.trail.pop(); }
+  for (const p of particles) {
+    p.trail.unshift({ x: p.x, y: p.y }); if (p.trail.length > 7) p.trail.pop();
     p.x += p.vx * f; p.y += p.vy * f; p.vx *= 0.965; p.vy *= 0.965; p.life -= p.decay * f;
-    if (p.life > 0) particles[w++] = p;
   }
-  particles.length = w;
-  if (w > PERF.partCap) particles.splice(0, w - PERF.partCap);
+  particles = particles.filter(p => p.life > 0);
+  if (particles.length > 500) particles = particles.slice(-500);
 }
 function drawParticles() {
-  if (!particles.length) return;
-  // One save/restore for the whole batch, not one per particle. State is set
-  // once; only globalAlpha and shadowColor vary per particle.
-  ctx.save();
-  ctx.fillStyle = '#ffffff';
-  for (let i = 0; i < particles.length; i++) {
-    const p = particles[i], a = p.life * p.life;
-    if (P_TRAIL && p.trail.length > 1) {
+  for (const p of particles) {
+    const a = p.life * p.life;
+    ctx.save();
+    if (p.trail.length > 1) {
       ctx.globalAlpha = a * 0.4; ctx.strokeStyle = p.col; ctx.shadowColor = p.col;
       ctx.shadowBlur = 8; ctx.lineWidth = p.sz * 0.55;
-      ctx.beginPath(); ctx.moveTo(p.x, p.y);
-      for (let t = 0; t < p.trail.length; t++) ctx.lineTo(p.trail[t].x, p.trail[t].y);
-      ctx.stroke();
-      ctx.fillStyle = '#ffffff';
+      ctx.beginPath(); ctx.moveTo(p.x, p.y); p.trail.forEach(t => ctx.lineTo(t.x, t.y)); ctx.stroke();
     }
-    ctx.globalAlpha = a; ctx.shadowColor = p.col; ctx.shadowBlur = LOW ? 8 : 16;
-    ctx.fillRect(p.x - p.sz / 2, p.y - p.sz / 2, p.sz, p.sz);
+    ctx.globalAlpha = a; ctx.shadowColor = p.col; ctx.shadowBlur = 16;
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(p.x - p.sz / 2, p.y - p.sz / 2, p.sz, p.sz);
+    ctx.restore();
   }
-  ctx.restore();
 }
 
 let shakeAmt = 0;
@@ -541,46 +447,22 @@ function init(persist) {
     phase: 'announce', announceTimer: 2400, shootCD: 0,
     boss: null, flash: false, flashTimer: 0,
     nameEntry: { name: '' }, time: 0 };
-  layoutAliens(); updateHUD(); prewarmWave(wave);
+  layoutAliens(); updateHUD();
 }
 function layoutAliens() { for (const a of S.aliens) { a.x = 40 + a.col * 48; a.y = 80 + a.row * 40; } }
-// ~55 aliens x ~1500 bunker blocks = 82k AABB tests on every alien step.
-// Aliens only reach the bunker band late in a wave, so reject on the y-range
-// first: until then this costs one comparison per alien instead of 1500.
-const BUNKER_Y0 = 380, BUNKER_Y1 = 380 + 18 * 3;
 function alienBodyVsBunkers() {
-  for (const a of S.aliens) {
-    if (!a.alive) continue;
-    if (a.y + 24 < BUNKER_Y0 || a.y > BUNKER_Y1) continue;
-    for (const b of S.bunkers) {
-      if (!b.alive) continue;
+  for (const a of S.aliens) { if (!a.alive) continue;
+    for (const b of S.bunkers) { if (!b.alive) continue;
       if (a.x < b.x + 3 && a.x + 27 > b.x && a.y < b.y + 3 && a.y + 24 > b.y) b.alive = false;
     }
   }
 }
 
-const aliveBuf = new Array(ROWS * COLS);
-
 let lastT = 0;
-function tick(ts) {
-  requestAnimationFrame(tick);
-  // First real frame: lastT is 0, so dt would be the full page-load timestamp.
-  // Clamped to 50 already, but seed it properly so wave 1 doesn't start mid-step.
-  if (!lastT) { lastT = ts; return; }
-  const dt = Math.min(ts - lastT, 50); lastT = ts;
-  update(dt); draw();
-}
-
-// Dead bunker blocks were kept in the array forever, so every bullet still
-// walked all ~1500 entries to find the ~800 that remain. Compact once a frame.
-function pruneBunkers() {
-  const b = S.bunkers; let w = 0;
-  for (let i = 0; i < b.length; i++) if (b[i].alive) b[w++] = b[i];
-  b.length = w;
-}
+function tick(ts) { requestAnimationFrame(tick); const dt = Math.min(ts - lastT, 50); lastT = ts; update(dt); draw(); }
 
 function update(dt) {
-  S.time += dt; updateGrid(dt); updateParticles(dt); pruneBunkers();
+  S.time += dt; updateGrid(dt); updateParticles(dt);
   const ph = S.phase;
   if (ph === 'announce') { S.announceTimer -= dt; if (S.announceTimer <= 0) S.phase = 'play'; return; }
   if (ph === 'bossannounce') { S.announceTimer -= dt; if (S.announceTimer <= 0) { S.phase = 'boss'; spawnBoss(); } return; }
@@ -596,7 +478,7 @@ function update(dt) {
 
   if (ph === 'play') {
     S.bullets = S.bullets.filter(b => {
-      b.trail.unshift({ x: b.x, y: b.y }); if (b.trail.length > PERF.bulletTrail) b.trail.pop();
+      b.trail.unshift({ x: b.x, y: b.y }); if (b.trail.length > 9) b.trail.pop();
       b.y -= b.spd; if (b.y < 0) return false;
       for (const a of S.aliens) {
         if (!a.alive) continue;
@@ -616,32 +498,24 @@ function update(dt) {
       return true;
     });
 
-    // Reused scratch buffer — .filter() here allocated a 55-element array
-    // every frame, plus a Set + 2 more arrays on every alien shot.
-    let aliveN = 0;
-    for (const a of S.aliens) if (a.alive) aliveBuf[aliveN++] = a;
-
+    const alive = S.aliens.filter(a => a.alive);
     S.alienTimer += dt;
     if (S.alienTimer >= S.alienInterval) {
       S.alienTimer = 0; let hitEdge = false;
-      for (let i = 0; i < aliveN; i++) { const a = aliveBuf[i]; a.x += S.alienDx * S.alienDir; if (a.x <= 10 || a.x + 27 >= W - 10) hitEdge = true; }
-      if (hitEdge) { S.alienDir *= -1; for (let i = 0; i < aliveN; i++) aliveBuf[i].y += S.alienDy; }
-      S.alienInterval = Math.max(100, 800 - (S.aliens.length - aliveN) * 12 - (S.wave - 1) * 60);
+      for (const a of alive) { a.x += S.alienDx * S.alienDir; if (a.x <= 10 || a.x + 27 >= W - 10) hitEdge = true; }
+      if (hitEdge) { S.alienDir *= -1; for (const a of alive) a.y += S.alienDy; }
+      S.alienInterval = Math.max(100, 800 - (S.aliens.length - alive.length) * 12 - (S.wave - 1) * 60);
       alienBodyVsBunkers();
     }
-    if (aliveN && Math.random() < 0.002 * dt / 16 * aliveN / 10 + 0.001) {
-      // Pick a random live alien, then walk to the lowest one in its column.
-      // Statistically equivalent to the old set-of-columns pick, zero allocs.
-      const seed = aliveBuf[Math.floor(Math.random() * aliveN)];
-      let shooter = seed;
-      for (let i = 0; i < aliveN; i++) {
-        const a = aliveBuf[i];
-        if (a.col === seed.col && a.row > shooter.row) shooter = a;
-      }
+    if (alive.length && Math.random() < 0.002 * dt / 16 * alive.length / 10 + 0.001) {
+      const cols = [...new Set(alive.map(a => a.col))];
+      const col = cols[Math.floor(Math.random() * cols.length)];
+      const inCol = alive.filter(a => a.col === col);
+      const shooter = inCol.reduce((m, a) => a.row > m.row ? a : m, inCol[0]);
       S.abullets.push({ x: shooter.x + 12, y: shooter.y + 24, w: 4, h: 12, spd: 4, trail: [] });
     }
     S.abullets = S.abullets.filter(b => {
-      b.trail.unshift({ x: b.x, y: b.y }); if (b.trail.length > PERF.aBulletTrail) b.trail.pop();
+      b.trail.unshift({ x: b.x, y: b.y }); if (b.trail.length > 6) b.trail.pop();
       b.y += b.spd; if (b.y > H) return false;
       if (b.x < S.px + S.pw && b.x + b.w > S.px && b.y < S.py + S.ph && b.y + b.h > S.py) { playerHit(); return false; }
       for (const bl of S.bunkers) {
@@ -650,13 +524,13 @@ function update(dt) {
       }
       return true;
     });
-    for (let i = 0; i < aliveN; i++) if (aliveBuf[i].y + 24 >= S.py) { triggerGameOver(); return; }
+    for (const a of alive) if (a.y + 24 >= S.py) { triggerGameOver(); return; }
   }
 
   if (ph === 'boss' && S.boss) {
     const bo = S.boss, idx = S.wave - 1;
     S.bullets = S.bullets.filter(b => {
-      b.trail.unshift({ x: b.x, y: b.y }); if (b.trail.length > PERF.bulletTrail) b.trail.pop();
+      b.trail.unshift({ x: b.x, y: b.y }); if (b.trail.length > 9) b.trail.pop();
       b.y -= b.spd; if (b.y < 0) return false;
       if (b.x < bo.x + 48 && b.x + b.w > bo.x && b.y < bo.y + 30 && b.y + b.h > bo.y) {
         bo.hp--; S.score += 50; updateHUD(); S.flash = true; S.flashTimer = 80;
@@ -684,7 +558,7 @@ function update(dt) {
       }
     }
     S.abullets = S.abullets.filter(b => {
-      b.trail.unshift({ x: b.x, y: b.y }); if (b.trail.length > PERF.aBulletTrail) b.trail.pop();
+      b.trail.unshift({ x: b.x, y: b.y }); if (b.trail.length > 6) b.trail.pop();
       b.y += b.spd; if (b.y > H) return false;
       if (b.x < S.px + S.pw && b.x + b.w > S.px && b.y < S.py + S.ph && b.y + b.h > S.py) { playerHit(); return false; }
       for (const bl of S.bunkers) {
@@ -729,16 +603,10 @@ function checkHS() {
     if (isMobile && window._mobileNameEntry) window._mobileNameEntry.show();
   }
 }
-// Cached element refs + dirty-check. updateHUD fires on every alien kill and
-// every boss hit; innerHTML on a text-shadowed element forces style recalc.
-const elScore = document.getElementById('score-el');
-const elLives = document.getElementById('lives-el');
-const elWave  = document.getElementById('wave-el');
-let hudScore = -1, hudLives = -1, hudWave = -1;
 function updateHUD() {
-  if (S.score !== hudScore) { hudScore = S.score; elScore.textContent = 'SCORE: ' + S.score; }
-  if (S.lives !== hudLives) { hudLives = S.lives; elLives.textContent = '▶ '.repeat(Math.max(0, S.lives)).trim(); }
-  if (S.wave  !== hudWave)  { hudWave  = S.wave;  elWave.textContent  = 'WAVE: ' + S.wave + '/' + MAX_WAVES; }
+  document.getElementById('score-el').textContent = 'SCORE: ' + S.score;
+  document.getElementById('lives-el').innerHTML = '▶ '.repeat(Math.max(0, S.lives)).trim() || '';
+  document.getElementById('wave-el').textContent = 'WAVE: ' + S.wave + '/' + MAX_WAVES;
 }
 
 // ── animated sprite renderer ──────────────────────────────────────────────────
@@ -747,65 +615,25 @@ function alienFrame(a) {
   const phase = S.time / ANIM_PERIOD + a.col * COL_PHASE + a.row * ROW_PHASE;
   return Math.floor(phase) % 2;
 }
-// ── SPRITE CACHE ──────────────────────────────────────────────────────────────
-// Was: ~72 shadowBlur'd fillRects per alien, x2 passes, x55 aliens = ~8000
-// blurred rect fills every single frame. shadowBlur is the single most
-// expensive 2D op there is and it was being paid per-pixel-per-frame.
-//
-// Now: each (type, frame, color) combo is rasterized ONCE into an offscreen
-// canvas with the blur baked in. The hot path is one drawImage per alien.
-// Cache key includes color because the palette rotates per wave — 5 palettes
-// x 3 types x 2 frames is a bounded 30-ish entries, built lazily on first use.
-const PAD = 8;                 // margin so the glow halo isn't clipped
-const spriteCache = new Map();
-
-function bakeSprite(grid, px, color, blur, coreAlpha) {
-  const cols = grid[0].length, rows = grid.length;
-  const w = cols * px + PAD * 2, h = rows * px + PAD * 2;
-  const off = document.createElement('canvas');
-  off.width = w; off.height = h;
-  const o = off.getContext('2d');
-  o.shadowColor = color; o.shadowBlur = blur; o.fillStyle = color;
-  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++)
-    if (grid[r][c]) o.fillRect(PAD + c * px, PAD + r * px, px, px);
-  o.shadowBlur = blur * 0.22;
-  o.fillStyle = coreAlpha === 1 ? '#ffffff' : `rgba(255,255,255,${coreAlpha})`;
-  const ip = Math.max(1, px - 2);
-  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++)
-    if (grid[r][c]) o.fillRect(PAD + c * px + 1, PAD + r * px + 1, ip, ip);
-  return off;
-}
-
-function getAlienSprite(type, frame, color) {
-  const key = 'a|' + type + frame + color;
-  let s = spriteCache.get(key);
-  if (!s) { s = bakeSprite(SPRITE_FRAMES[type][frame], 3, color, 18, 1); spriteCache.set(key, s); }
-  return s;
-}
-function getBossSprite(idx, color, flash) {
-  const key = 'b|' + idx + (flash ? 'F' : color);
-  let s = spriteCache.get(key);
-  if (!s) {
-    s = flash
-      ? bakeSprite(BOSS_SPRITES[idx], 3, '#ffffff', 22, 0)   // flash frame: solid white, no inner pass
-      : bakeSprite(BOSS_SPRITES[idx], 3, color, 22, 0.65);
-    spriteCache.set(key, s);
-  }
-  return s;
-}
-// Warm the cache for a wave so the first frame after an announce doesn't hitch.
-function prewarmWave(w) {
-  const pal = getPalette(w);
-  for (let r = 0; r < ROWS; r++) for (let f = 0; f < 2; f++) getAlienSprite(ROW_TYPES[r], f, pal[r]);
-  const idx = (w - 1) % BOSS_COLORS.length;
-  getBossSprite(idx, BOSS_COLORS[idx], false); getBossSprite(idx, BOSS_COLORS[idx], true);
-}
-
 function glowSprite(type, frame, x, y, px, color) {
-  ctx.drawImage(getAlienSprite(type, frame, color), x - PAD, y - PAD);
+  const s = SPRITE_FRAMES[type][frame];
+  ctx.save(); ctx.shadowColor = color; ctx.shadowBlur = 18; ctx.fillStyle = color;
+  for (let r = 0; r < s.length; r++) for (let c = 0; c < s[r].length; c++) if (s[r][c]) ctx.fillRect(x + c * px, y + r * px, px, px);
+  ctx.restore();
+  ctx.save(); ctx.fillStyle = '#ffffff'; ctx.shadowColor = color; ctx.shadowBlur = 4;
+  for (let r = 0; r < s.length; r++) for (let c = 0; c < s[r].length; c++) if (s[r][c]) ctx.fillRect(x + c * px + 1, y + r * px + 1, Math.max(1, px - 2), Math.max(1, px - 2));
+  ctx.restore();
 }
 function glowBoss(idx, x, y, px, color, flash) {
-  ctx.drawImage(getBossSprite(idx, color, flash), x - PAD, y - PAD);
+  const s = BOSS_SPRITES[idx], dc = flash ? '#ffffff' : color;
+  ctx.save(); ctx.shadowColor = dc; ctx.shadowBlur = 22; ctx.fillStyle = dc;
+  for (let r = 0; r < s.length; r++) for (let c = 0; c < s[r].length; c++) if (s[r][c]) ctx.fillRect(x + c * px, y + r * px, px, px);
+  ctx.restore();
+  if (!flash) {
+    ctx.save(); ctx.fillStyle = 'rgba(255,255,255,0.65)';
+    for (let r = 0; r < s.length; r++) for (let c = 0; c < s[r].length; c++) if (s[r][c]) ctx.fillRect(x + c * px + 1, y + r * px + 1, Math.max(1, px - 2), Math.max(1, px - 2));
+    ctx.restore();
+  }
 }
 function glowText(txt, x, y, sz, col, alpha) {
   ctx.save(); ctx.globalAlpha = alpha || 1; ctx.font = 'bold ' + sz + 'px monospace';
@@ -813,13 +641,6 @@ function glowText(txt, x, y, sz, col, alpha) {
   ctx.shadowBlur = 10; ctx.fillStyle = '#ffffff'; ctx.globalAlpha = (alpha || 1) * 0.9; ctx.fillText(txt, x, y);
   ctx.restore();
 }
-
-// Vignette is geometrically static — built once, not 60x/sec.
-const VIGNETTE = (() => {
-  const g = ctx.createRadialGradient(W / 2, H / 2, H * 0.28, W / 2, H / 2, H * 0.82);
-  g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,20,0.72)');
-  return g;
-})();
 
 // ── draw ──────────────────────────────────────────────────────────────────────
 function draw() {
@@ -832,24 +653,21 @@ function draw() {
 
   ctx.save(); ctx.translate(sx, sy);
 
-  // bunkers — ~1500 blocks. Was 1500 separate shadowBlur'd fillRect calls.
-  // Now: accumulate every live block into ONE path, fill once. The glow is
-  // resolved by the compositor a single time instead of 1500 times.
+  // bunkers
   ctx.save(); ctx.shadowColor = '#58d854'; ctx.shadowBlur = 7; ctx.fillStyle = '#58d854';
-  ctx.beginPath();
-  for (const bl of S.bunkers) if (bl.alive) ctx.rect(bl.x, bl.y, 3, 3);
-  ctx.fill();
+  for (const bl of S.bunkers) if (bl.alive) ctx.fillRect(bl.x, bl.y, 3, 3);
   ctx.restore();
 
   // aliens
   if (S.phase === 'play' || S.phase === 'bossannounce') {
-    ctx.save();
     for (const a of S.aliens) {
       if (!a.alive) continue;
-      ctx.globalAlpha = 0.82 + 0.18 * Math.sin(S.time / 260 + a.col * 0.35 + a.row * 0.22);
-      glowSprite(ROW_TYPES[a.row], alienFrame(a), a.x, a.y, 3, pal[a.row]);
+      const frame = alienFrame(a);
+      const pulse = 0.82 + 0.18 * Math.sin(S.time / 260 + a.col * 0.35 + a.row * 0.22);
+      ctx.save(); ctx.globalAlpha = pulse;
+      glowSprite(ROW_TYPES[a.row], frame, a.x, a.y, 3, pal[a.row]);
+      ctx.restore();
     }
-    ctx.restore();
   }
 
   // boss
@@ -875,52 +693,35 @@ function draw() {
   ctx.fillRect(S.px + 6, S.py + 5, 20, 4); ctx.fillRect(S.px + 14, S.py + 1, 4, 4);
   ctx.restore();
 
-  // player bullets — trails batched into one path, bodies into another.
-  if (S.bullets.length) {
-    ctx.save();
-    ctx.strokeStyle = 'rgba(0,200,255,0.3)'; ctx.lineWidth = 2;
-    ctx.shadowColor = '#00d8d8'; ctx.shadowBlur = 10;
-    ctx.beginPath();
-    for (const b of S.bullets) {
-      if (b.trail.length < 2) continue;
-      ctx.moveTo(b.x + 1, b.y);
-      for (let t = 0; t < b.trail.length; t++) ctx.lineTo(b.trail[t].x + 1, b.trail[t].y);
+  // player bullets
+  for (const b of S.bullets) {
+    if (b.trail.length > 1) {
+      ctx.save(); ctx.strokeStyle = 'rgba(0,200,255,0.3)'; ctx.lineWidth = 2;
+      ctx.shadowColor = '#00d8d8'; ctx.shadowBlur = 10;
+      ctx.beginPath(); ctx.moveTo(b.x + 1, b.y); b.trail.forEach(t => ctx.lineTo(t.x + 1, t.y)); ctx.stroke(); ctx.restore();
     }
-    ctx.stroke();
-    ctx.shadowBlur = 16; ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    for (const b of S.bullets) ctx.rect(b.x, b.y, b.w, b.h);
-    ctx.fill();
-    ctx.restore();
+    ctx.save(); ctx.shadowColor = '#00d8d8'; ctx.shadowBlur = 16; ctx.fillStyle = '#ffffff';
+    ctx.fillRect(b.x, b.y, b.w, b.h); ctx.restore();
   }
 
   // alien bullets
-  if (S.abullets.length) {
-    ctx.save();
-    ctx.strokeStyle = 'rgba(248,88,0,0.3)'; ctx.lineWidth = 2;
-    ctx.shadowColor = '#f85800'; ctx.shadowBlur = 10;
-    ctx.beginPath();
-    for (const b of S.abullets) {
-      if (b.trail.length < 2) continue;
-      ctx.moveTo(b.x + 2, b.y);
-      for (let t = 0; t < b.trail.length; t++) ctx.lineTo(b.trail[t].x + 2, b.trail[t].y);
+  for (const b of S.abullets) {
+    if (b.trail.length > 1) {
+      ctx.save(); ctx.strokeStyle = 'rgba(248,88,0,0.3)'; ctx.lineWidth = 2;
+      ctx.shadowColor = '#f85800'; ctx.shadowBlur = 10;
+      ctx.beginPath(); ctx.moveTo(b.x + 2, b.y); b.trail.forEach(t => ctx.lineTo(t.x + 2, t.y)); ctx.stroke(); ctx.restore();
     }
-    ctx.stroke();
-    ctx.shadowBlur = 14; ctx.fillStyle = '#f88800';
-    ctx.beginPath();
-    for (const b of S.abullets) {
-      ctx.rect(b.x, b.y, b.w, 4);
-      ctx.rect(b.x + (b.y % 8 < 4 ? 2 : -2), b.y + 4, b.w, 4);
-      ctx.rect(b.x, b.y + 8, b.w, 4);
-    }
-    ctx.fill();
+    ctx.save(); ctx.shadowColor = '#f85800'; ctx.shadowBlur = 14; ctx.fillStyle = '#f88800';
+    ctx.fillRect(b.x, b.y, b.w, 4); ctx.fillRect(b.x + (b.y % 8 < 4 ? 2 : -2), b.y + 4, b.w, 4); ctx.fillRect(b.x, b.y + 8, b.w, 4);
     ctx.restore();
   }
 
   drawParticles();
   ctx.save(); ctx.shadowColor = '#58d854'; ctx.shadowBlur = 10; ctx.fillStyle = '#38a820';
   ctx.fillRect(0, H - 6, W, 2); ctx.restore();
-  ctx.fillStyle = VIGNETTE; ctx.fillRect(0, 0, W, H);
+  const vg = ctx.createRadialGradient(W / 2, H / 2, H * 0.28, W / 2, H / 2, H * 0.82);
+  vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,20,0.72)');
+  ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
   ctx.restore();
 
   // overlays
@@ -993,12 +794,6 @@ window.addEventListener('keydown', e => {
   if ([' ', 'ArrowLeft', 'ArrowRight', 'ArrowUp'].includes(e.key)) e.preventDefault();
 });
 window.addEventListener('keyup', e => { if (S.phase !== 'namentry') S.keys[e.key] = false; });
-
-// Returning from a backgrounded tab: reset the clock so the first frame back
-// isn't a giant dt (mobile browsers park RAF aggressively on lock/app-switch).
-document.addEventListener('visibilitychange', () => {
-  if (!document.hidden) { lastT = 0; gridAsleep = false; }
-});
 
 init(false);
 requestAnimationFrame(tick);
