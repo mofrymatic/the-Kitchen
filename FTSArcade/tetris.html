@@ -185,7 +185,7 @@ function resize() {
   const maxH  = H - nuiH - 16;
   const maxW  = W;
   CELL        = Math.min(Math.floor(maxH / ROWS), Math.floor(maxW * 0.55 / COLS));
-  CELL        = Math.max(CELL, 18);
+  CELL        = Math.max(CELL, Math.round(18 / PIXEL_SCALE));
   BOARD_W     = CELL * COLS;
   BOARD_H     = CELL * ROWS;
   BOARD_X     = Math.floor((W - BOARD_W) / 2);
@@ -1320,8 +1320,8 @@ function setupNUI() {
 })();
 
 // ── Go ─────────────────────────────────────────────────────────────────
-resize();
 setupNUI();
+resize();
 requestAnimationFrame(ts=>{ lastTs=ts; requestAnimationFrame(loop); });
 </script>
 </body>
