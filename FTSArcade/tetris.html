@@ -197,7 +197,7 @@ function resize() {
   // would have allowed. Decoupled, height wins the fit on typical portrait
   // phones; the width-based cap below is what still protects unusually
   // wide/short viewports where width remains the tighter constraint.
-  const hudW        = clamp(100 / PIXEL_SCALE, 60 / PIXEL_SCALE, W * 0.4);
+  const hudW        = clamp(70 / PIXEL_SCALE, 52 / PIXEL_SCALE, W * 0.34);
   const cellByHeight = Math.floor((H - nuiH - bottomGap) / ROWS);
   const cellByWidth  = Math.floor((W - gutter * 2 - hudW) / COLS);
   CELL = Math.max(Math.min(cellByHeight, cellByWidth), minCell);
@@ -478,6 +478,40 @@ class Shockwave {
 
 // ── Game state ─────────────────────────────────────────────────────────
 let gs = {};
+
+// Title-screen options. Live outside `gs` deliberately — initGS() rebuilds
+// `gs` from scratch on every startGame(), which would otherwise wipe the
+// player's selection right before it gets used. Persisted the same way
+// the high score is, so the choice survives a page reload too.
+const LEVEL_MIN=1, LEVEL_MAX=15, HEIGHT_MIN=0, HEIGHT_MAX=8;
+let titleLevel  = clamp(parseInt(localStorage.getItem('tetris_ob_level')  ||'1'), LEVEL_MIN,  LEVEL_MAX);
+let titleHeight = clamp(parseInt(localStorage.getItem('tetris_ob_height') ||'0'), HEIGHT_MIN, HEIGHT_MAX);
+function adjustStartLevel(d) {
+  titleLevel = clamp(titleLevel+d, LEVEL_MIN, LEVEL_MAX);
+  localStorage.setItem('tetris_ob_level', titleLevel);
+  SFX.move();
+}
+function adjustStartHeight(d) {
+  titleHeight = clamp(titleHeight+d, HEIGHT_MIN, HEIGHT_MAX);
+  localStorage.setItem('tetris_ob_height', titleHeight);
+  SFX.move();
+}
+// Classic "Type B" style handicap: fill the bottom `height` rows with
+// junk blocks, each row missing exactly one random column so nothing
+// starts pre-cleared and nothing starts as an instant top-out.
+function applyStartHeight(height) {
+  if (!height) return;
+  const startRow = ROWS - height;
+  for (let r=startRow; r<ROWS; r++) {
+    const gapCol = rndInt(0, COLS-1);
+    for (let c=0; c<COLS; c++) {
+      if (c===gapCol) continue;
+      const key = PIECE_KEYS[rndInt(0, PIECE_KEYS.length-1)];
+      gs.board[r][c] = { col: PIECES[key].col, glow: PIECES[key].glow };
+    }
+  }
+}
+
 function initGS() {
   gs = {
     state: 'title',   // title | playing | paused | gameover
@@ -787,7 +821,15 @@ const keys = {};
 window.addEventListener('keydown', e => {
   keys[e.code] = true;
   if (['Space','ArrowLeft','ArrowRight','ArrowDown','ArrowUp'].includes(e.code)) e.preventDefault();
-  if (gs.state==='title' || gs.state==='gameover') { if(['Space','Enter'].includes(e.code)) startGame(); return; }
+  if (gs.state==='title') {
+    if (e.code==='ArrowLeft')  adjustStartLevel(-1);
+    if (e.code==='ArrowRight') adjustStartLevel(1);
+    if (e.code==='ArrowUp')    adjustStartHeight(1);
+    if (e.code==='ArrowDown')  adjustStartHeight(-1);
+    if (['Space','Enter'].includes(e.code)) startGame();
+    return;
+  }
+  if (gs.state==='gameover') { if(['Space','Enter'].includes(e.code)) startGame(); return; }
   if (e.code==='KeyP'||e.code==='Escape') togglePause();
   if (gs.paused||gs.clearFlash.length>0) return;
   if (e.code==='ArrowLeft')  tryMove(-1,0);
@@ -872,6 +914,8 @@ function ghostY() {
 function startGame() {
   try { AC().resume(); } catch(e){}
   initGS();
+  gs.level = titleLevel;
+  applyStartHeight(titleHeight);
   gs.state = 'playing';
   spawnNext();
 }
@@ -903,33 +947,34 @@ function spawnGameOverEffect() {
 }
 
 // ── Draw helpers ──────────────────────────────────────────────────────
-function drawCell(c, r, col, glo, alpha=1, flash=false) {
-  const px = BOARD_X + c*CELL;
-  const py = BOARD_Y + r*CELL;
+function drawBlock(px, py, size, col, glo, alpha=1, flash=false) {
   const pad = 1;
   ctx.save();
   ctx.globalAlpha = alpha;
   if (flash) {
-    ctx.shadowColor='#ffffff'; ctx.shadowBlur=CELL*1.2;
+    ctx.shadowColor='#ffffff'; ctx.shadowBlur=size*1.2;
     ctx.fillStyle='#ffffff';
   } else {
-    ctx.shadowColor=glo; ctx.shadowBlur=CELL*0.55;
+    ctx.shadowColor=glo; ctx.shadowBlur=size*0.55;
     // Gradient fill for depth
-    const grad = ctx.createLinearGradient(px+pad,py+pad,px+pad,py+CELL-pad);
+    const grad = ctx.createLinearGradient(px+pad,py+pad,px+pad,py+size-pad);
     grad.addColorStop(0, lighten(col,0.35));
     grad.addColorStop(0.5, col);
     grad.addColorStop(1, darken(col,0.35));
     ctx.fillStyle=grad;
   }
-  ctx.fillRect(px+pad,py+pad,CELL-pad*2,CELL-pad*2);
+  ctx.fillRect(px+pad,py+pad,size-pad*2,size-pad*2);
   // Highlight edge
   if(!flash) {
     ctx.globalAlpha=alpha*0.5;
     ctx.strokeStyle=lighten(col,0.55);
     ctx.lineWidth=1;
-    ctx.strokeRect(px+pad+0.5,py+pad+0.5,CELL-pad*2-1,CELL-pad*2-1);
+    ctx.strokeRect(px+pad+0.5,py+pad+0.5,size-pad*2-1,size-pad*2-1);
   }
   ctx.restore();
+}
+function drawCell(c, r, col, glo, alpha=1, flash=false) {
+  drawBlock(BOARD_X + c*CELL, BOARD_Y + r*CELL, CELL, col, glo, alpha, flash);
 }
 
 function lighten(hex, amt) {
@@ -1039,20 +1084,30 @@ function drawHUD() {
     ctx.fillText(txt, x, y);
   };
 
-  // ── NEXT ×3 — anchored to the top of the column ─────────────────────
+  // ── NEXT ×3 — top half of the column ─────────────────────────────────
   // As in resize(): every clamp() bound below is a real-screen legibility
   // floor/ceiling, so it gets the same /PIXEL_SCALE treatment as minCell
   // and the NUI height — otherwise a PIXEL_SCALE>1 quietly doubles what
   // was meant to be an absolute minimum, same bug as the CELL floor.
-  const previewCell = clamp(Math.min(CELL*0.6, infoW/4.3), 10/PIXEL_SCALE, 20/PIXEL_SCALE);
-  const slotH        = previewCell*2.5;
-  const topPad       = clamp(CELL*0.5, 8/PIXEL_SCALE, 16/PIXEL_SCALE);
-  const nextLabelFs  = clamp(CELL*0.4, 10/PIXEL_SCALE, 14/PIXEL_SCALE);
+  const colTop    = BOARD_Y;
+  const colBottom = BOARD_Y + BOARD_H;
+  const halfH     = (colBottom - colTop) / 2;
 
-  let py = BOARD_Y + topPad;
+  const topPad      = clamp(CELL*0.5, 8/PIXEL_SCALE, 16/PIXEL_SCALE);
+  const nextLabelFs = clamp(CELL*0.4, 10/PIXEL_SCALE, 14/PIXEL_SCALE);
+
+  let py = colTop + topPad;
   ctx.font=`bold ${nextLabelFs}px "Courier New",monospace`;
   label('NEXT', infoX, py + nextLabelFs);
   py += nextLabelFs + clamp(CELL*0.25, 5/PIXEL_SCALE, 9/PIXEL_SCALE);
+
+  // Three slots evenly fill whatever's left of the top half. previewCell
+  // is capped by BOTH the per-slot height budget and the column width —
+  // width is the usual limiter (a 4-wide I-piece has to fit infoW), so the
+  // extra vertical room mostly becomes breathing room between slots rather
+  // than oversized icons blowing past the column.
+  const slotH = (colTop + halfH - py) / 3;
+  const previewCell = clamp(Math.min(slotH/2.2, infoW/4.3), 10/PIXEL_SCALE, 22/PIXEL_SCALE);
 
   for (let i=0;i<3;i++) {
     const key = gs.nextQueue && gs.nextQueue[i];
@@ -1061,30 +1116,20 @@ function drawHUD() {
     const shape = np.shapes[0];
     const minC=Math.min(...shape.map(([c])=>c));
     const minR=Math.min(...shape.map(([,r])=>r));
-    const slotY = py + i*slotH;
+    const slotY = py + i*slotH + (slotH-previewCell*2)/2;   // center each piece within its slot
     const a = i===0 ? 1 : 0.5;   // the up-next piece reads brightest; the queue behind it dims
     for (const [dc,dr] of shape) {
       const cx=infoX+(dc-minC)*previewCell;
       const cy=slotY+(dr-minR)*previewCell;
-      ctx.save();
-      ctx.globalAlpha=a;
-      ctx.shadowColor=np.glow; ctx.shadowBlur=previewCell*0.6*a;
-      const grad=ctx.createLinearGradient(cx,cy,cx,cy+previewCell-2);
-      grad.addColorStop(0,lighten(np.col,0.3));
-      grad.addColorStop(1,darken(np.col,0.3));
-      ctx.fillStyle=grad;
-      ctx.fillRect(cx+1,cy+1,previewCell-2,previewCell-2);
-      ctx.restore();
+      drawBlock(cx, cy, previewCell, np.col, np.glow, a);
     }
   }
-  const nextBottom = py + 3*slotH;
 
-  // ── SCORE / LINES / LEVEL / BEST — space-distributed from the bottom
-  //    of the NEXT preview down to the bottom of the (now full-height)
-  //    board, instead of stacked at a fixed increment from the top. ────
-  const boardBottom = BOARD_Y + BOARD_H;
-  const bandTop = nextBottom + clamp(CELL*0.5, 8/PIXEL_SCALE, 16/PIXEL_SCALE);
-  const bandH   = Math.max(0, boardBottom - bandTop);
+  // ── SCORE / LINES / LEVEL / BEST — bottom half of the column,
+  //    space-distributed, sized down and capped so it can never demand
+  //    more width than the column actually has. ───────────────────────
+  const bandTop = colTop + halfH;
+  const bandH   = Math.max(0, colBottom - bandTop);
   const rowsInfo = [
     ['SCORE', gs.score.toString().padStart(7,'0'), '#00ffee'],
     ['LINES', gs.lines.toString(), '#ffee00'],
@@ -1092,8 +1137,8 @@ function drawHUD() {
     ['BEST',  gs.highScore.toString().padStart(7,'0'), 'rgba(255,255,255,0.4)'],
   ];
   const rowH      = bandH / rowsInfo.length;
-  const labelFont = clamp(rowH*0.24, 10/PIXEL_SCALE, 18/PIXEL_SCALE);
-  const valueFont = clamp(Math.min(rowH*0.4, infoW/4.2), 13/PIXEL_SCALE, 32/PIXEL_SCALE);
+  const labelFont = clamp(rowH*0.2, 9/PIXEL_SCALE, 13/PIXEL_SCALE);
+  const valueFont = clamp(Math.min(rowH*0.3, infoW/4.8), 11/PIXEL_SCALE, 20/PIXEL_SCALE);
 
   rowsInfo.forEach(([lab,val,col], i) => {
     const cy = bandTop + rowH*i;
@@ -1140,12 +1185,24 @@ function drawTitle() {
   ctx.fillStyle='rgba(60,200,255,0.8)';
   ctx.fillText('FTS ARCADE  ·  FREE FOREVER', cx, cy+clamp(H*0.04,12,32));
 
+  // ── Starting options ─────────────────────────────────────────────────
+  const optY   = cy+clamp(H*0.09,26,60);
+  const optGap = clamp(H*0.045,14,30);
+  ctx.font = `bold ${clamp(W*0.024,10,16)}px "Courier New",monospace`;
+  ctx.shadowBlur=6; ctx.shadowColor='rgba(255,255,255,0.5)'; ctx.fillStyle='rgba(220,240,255,0.85)';
+  ctx.fillText(`◄  LEVEL: ${titleLevel}  ►`, cx, optY);
+  ctx.fillText(`◄  HEIGHT: ${titleHeight}  ►`, cx, optY+optGap);
+
+  ctx.font=`${clamp(W*0.018,8,12)}px "Courier New",monospace`;
+  ctx.shadowBlur=0; ctx.fillStyle='rgba(140,180,220,0.55)';
+  ctx.fillText(nuiActive ? 'LEFT/RIGHT: LEVEL   ROTATE/DROP: HEIGHT' : 'ARROW KEYS TO ADJUST', cx, optY+optGap*1.9);
+
   const pulse = 0.6+0.4*Math.sin(Date.now()*0.003);
   ctx.globalAlpha=pulse;
   ctx.font=`${clamp(W*0.025,10,17)}px "Courier New",monospace`;
   ctx.shadowColor='#ffffff'; ctx.shadowBlur=12;
   ctx.fillStyle='#ffffff';
-  ctx.fillText(nuiActive?'TAP TO START':'PRESS SPACE TO START', cx, cy+clamp(H*0.12,28,65));
+  ctx.fillText(nuiActive?'TAP BOARD TO START':'PRESS SPACE TO START', cx, optY+optGap*1.9+clamp(H*0.055,16,38));
 
   ctx.restore();
 }
@@ -1314,12 +1371,27 @@ function setupNUI() {
   const btnRelease = {
     'nb-down': () => { keys['nb-down']=false; },
   };
+  // On the title screen only, LEFT/RIGHT/ROTATE/DROP adjust the starting
+  // options instead of jumping straight into a game. SLAM has no title-
+  // screen mapping and falls through to startGame(), same as any button
+  // still does on the gameover screen — that flow is unchanged.
+  const titleActions = {
+    'nb-left':   () => adjustStartLevel(-1),
+    'nb-right':  () => adjustStartLevel(1),
+    'nb-rotate': () => adjustStartHeight(1),
+    'nb-down':   () => adjustStartHeight(-1),
+  };
 
   for(const [id, fn] of Object.entries(btnActions)) {
     const el=document.getElementById(id); if(!el) continue;
     el.addEventListener('pointerdown',e=>{
       e.preventDefault(); el.setPointerCapture(e.pointerId);
       el.classList.add('hit');
+      if (gs.state==='title') {
+        const titleFn = titleActions[id];
+        if (titleFn) { titleFn(); return; }
+        startGame(); return;
+      }
       if(gs.state!=='playing') { startGame(); return; }
       fn();
     },{passive:false});
