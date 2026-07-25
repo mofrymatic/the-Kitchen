@@ -35,21 +35,7 @@
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 html,body{width:100%;height:100%;background:#050810;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
-canvas{display:block;position:fixed;top:0;left:0;touch-action:none;image-rendering:pixelated;image-rendering:crisp-edges}
-
-/* ── CRT chrome (Obliteratus) ─────────────────────────────────────────
-   Ported from neon-invaders.html's low-native-res + nearest-neighbor
-   aesthetic. Scanlines + vignette are a STATIC CSS overlay — zero canvas
-   cost, zero per-frame JS — composited once by the browser and left
-   alone, in keeping with "Canvas 2D is the bottleneck, don't feed it
-   more work than gameplay needs." The actual chunky-pixel look comes
-   from a reduced-resolution backbuffer (see PIXEL_SCALE in the script). */
-#crt{
-  position:fixed;inset:0;z-index:5;pointer-events:none;
-  background:
-    repeating-linear-gradient(rgba(0,0,0,0) 0px,rgba(0,0,0,0) 1px,rgba(0,0,0,.16) 2px,rgba(0,0,0,.16) 3px),
-    radial-gradient(ellipse at center,rgba(0,0,0,0) 55%,rgba(0,0,0,.55) 100%);
-}
+canvas{display:block;position:fixed;top:0;left:0;touch-action:none}
 
 /* ── NUI (touch only) ─────────────────────────────────────────── */
 #nui,#nui-pause{display:none}
@@ -122,7 +108,6 @@ canvas{display:block;position:fixed;top:0;left:0;touch-action:none;image-renderi
 </head>
 <body>
 <canvas id="c"></canvas>
-<div id="crt"></div>
 
 <div id="nui" aria-label="Game controls" role="group">
   <div id="nui-move" role="group" aria-label="Movement">
@@ -148,22 +133,8 @@ canvas{display:block;position:fixed;top:0;left:0;touch-action:none;image-renderi
 //  FTS Arcade · Open Source · Free Forever
 // ═══════════════════════════════════════════════════════════════════════
 
-// ── Display canvas (real DOM element — receives input, holds the final
-//    pixelated composite) vs. backbuffer (offscreen, reduced-resolution,
-//    the target every existing draw call below still writes to via `ctx`).
-// PIXEL_SCALE: how many real screen px each backbuffer px becomes. 1 =
-// original crisp full-res rendering (pre-CRT-pass). 2–3 = chunky retro
-// block look, same trick neon-invaders gets from its fixed low native
-// resolution, adapted here for a full-screen adaptive board. Lower internal
-// resolution also means fewer pixels for the GPU/compositor to push per
-// frame — worth remembering if a machine is choking on shadowBlur-heavy
-// canvas 2D content (see kid packet notes on the Firefox/CachyOS report).
-const PIXEL_SCALE = 2;
-
-const dispCanvas = document.getElementById('c');
-const dispCtx    = dispCanvas.getContext('2d');
-const canvas     = document.createElement('canvas'); // backbuffer — never inserted into the DOM
-const ctx        = canvas.getContext('2d');
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d');
 let W, H, BOARD_X, BOARD_Y, CELL, BOARD_W, BOARD_H;
 let nuiActive = false;
 
@@ -172,16 +143,10 @@ const COLS = 10;
 const ROWS = 20;
 
 function resize() {
-  const winW = window.innerWidth, winH = window.innerHeight;
-  dispCanvas.width  = winW;
-  dispCanvas.height = winH;
-  W = canvas.width  = Math.round(winW / PIXEL_SCALE);
-  H = canvas.height = Math.round(winH / PIXEL_SCALE);
-  // Fit board to screen: leave room for side panels + touch NUI.
-  // 190/PIXEL_SCALE because the touch NUI bar is a real DOM element sized
-  // in true screen px — it's the one constant here anchored to the real
-  // window rather than the backbuffer's own (self-consistent) coordinate space.
-  const nuiH  = nuiActive ? Math.min(190 / PIXEL_SCALE, H * 0.26) : 0;
+  W = canvas.width  = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  // Fit board to screen: leave room for side panels + touch NUI
+  const nuiH  = nuiActive ? Math.min(190, H * 0.26) : 0;
   const maxH  = H - nuiH - 16;
   const maxW  = W;
   CELL        = Math.min(Math.floor(maxH / ROWS), Math.floor(maxW * 0.55 / COLS));
@@ -1223,15 +1188,6 @@ function loop(ts) {
   if(gs.state==='gameover') drawGameOver();
   if(gs.state==='playing'&&gs.paused) drawPause();
 
-  // ── CRT pass ─────────────────────────────────────────────────────────
-  // One drawImage, nearest-neighbor: the whole reduced-res backbuffer
-  // scaled up onto the real, input-receiving canvas. This is the entire
-  // "pixelated" effect — everything above this line is untouched original
-  // gameplay rendering, just aimed at a smaller buffer.
-  dispCtx.imageSmoothingEnabled = false;
-  dispCtx.clearRect(0, 0, dispCanvas.width, dispCanvas.height);
-  dispCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, dispCanvas.width, dispCanvas.height);
-
   requestAnimationFrame(loop);
 }
 
@@ -1297,16 +1253,16 @@ function setupNUI() {
   pb.addEventListener('pointerup',e=>{e.preventDefault();pb.classList.remove('hit');},{passive:false});
   pb.addEventListener('pointercancel',()=>pb.classList.remove('hit'),{passive:false});
 
-  dispCanvas.addEventListener('pointerdown',()=>{ if(gs.state!=='playing') startGame(); },{passive:true});
+  canvas.addEventListener('pointerdown',()=>{ if(gs.state!=='playing') startGame(); },{passive:true});
 }
 
 // ── Swipe gestures ────────────────────────────────────────────────────
 (function setupSwipe(){
   let sx,sy,t0;
-  dispCanvas.addEventListener('touchstart',e=>{
+  canvas.addEventListener('touchstart',e=>{
     const t=e.touches[0]; sx=t.clientX; sy=t.clientY; t0=Date.now();
   },{passive:true});
-  dispCanvas.addEventListener('touchend',e=>{
+  canvas.addEventListener('touchend',e=>{
     if(!e.changedTouches.length||gs.state!=='playing'||gs.paused) return;
     const t=e.changedTouches[0];
     const dx=t.clientX-sx, dy=t.clientY-sy, dur=(Date.now()-t0)/1000;
