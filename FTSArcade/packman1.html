@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>POSTAL PACKMAN</title>
+  
+  <meta name="description" content="POSTAL PACMAN — Deliver letters, collect boxes, and outrun envelope ghosts in this neon arcade adventure." />
+  <!-- ── Primary Meta ─────────────────────────────────────────────────────── -->
+ 
+  <!-- ── Favicons ─────────────────────────────────────────────────────────── -->
+  <link rel="icon" type="image/png" href="fts-favicon.png">
+  <link rel="shortcut icon" type="image/png" href="fts-favicon.png">
+  <link rel="apple-touch-icon" href="fts-favicon.png">
+
+  <!-- ── Open Graph (Facebook, Discord, iMessage, etc.) ────────────────────── -->
+  <meta property="og:title" content="FishTacoStand Arcade">
+  <meta property="og:description" content="Step up to the FishTacoStand Arcade: a retro cabinet hub for Neon Invaders, Astroids, Cave Racer, RED EYE, Packman, Tetris, and more.">
+  <meta property="og:url" content="https://frymatic.us/FTSArcade/packman.html">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="FishTacoStand Arcade">
+
+  <meta property="og:image" content="https://frymatic.us/FTSArcade/FishTacoStand.png">
+  <meta property="og:image:alt" content="FishTacoStand Arcade cabinet menu with clickable retro games.">
+  <meta property="og:image:type" content="image/png">
+
+  <!-- ── Twitter / X Card ─────────────────────────────────────────────────── -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="FishTacoStand Arcade">
+  <meta name="twitter:description" content="A retro arcade hub serving Neon Invaders, Astroids, Cave Racer, RED EYE, Packman, Tetris, and more.">
+  <meta name="twitter:image" content="https://frymatic.us/FTSArcade/FishTacoStand.png">
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #0a0a14;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: 'Courier New', monospace;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+      image-rendering: pixelated;
+      border: 3px solid #1a1a2e;
+      box-shadow: 0 0 60px rgba(255, 170, 0, 0.15);
+      background: #000010;
+    }
+    #ui {
+      font-size: 14px;
+      display: flex;
+      gap: 40px;
+      margin-bottom: 8px;
+      width: 700px;
+      justify-content: space-between;
+    }
+    #ui span {
+      text-shadow: 0 0 20px currentColor;
+      letter-spacing: 3px;
+      font-weight: bold;
+    }
+    #score-el { color: #ffaa00; }
+    #lives-el { color: #ff00ff; }
+    #level-el { color: #00d8ff; text-align: right; }
+    .title {
+      font-size: 42px;
+      font-weight: bold;
+      color: #ffaa00;
+      text-shadow: 0 0 30px #ffaa00, 0 0 60px #ffaa00;
+      letter-spacing: 8px;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+    .subtitle {
+      font-size: 13px;
+      color: #00d8ff;
+      text-shadow: 0 0 15px #00d8ff;
+      letter-spacing: 2px;
+      margin-bottom: 18px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<div class="title">📮 POSTAL PACMAN</div>
+<div class="subtitle">DELIVER THE MAIL • DODGE THE ENVELOPES</div>
+
+<div id="ui">
+  <span id="score-el">SCORE: 0</span>
+  <span id="lives-el">📦 📦 📦</span>
+  <span id="level-el">ROUTE: 1/5</span>
+</div>
+<canvas id="c" width="700" height="700"></canvas>
+
+<script>
+// ══════════════════════════════════════════════════════════════════════════════
+// POSTAL PACMAN - Neon Arcade Game
+// ══════════════════════════════════════════════════════════════════════════════
+
+const C = document.getElementById('c');
+const ctx = C.getContext('2d');
+const W = 700, H = 700;
+const CELL = 25;
+const COLS = 28, ROWS = 28;
+
+// ── COLOR PALETTES ────────────────────────────────────────────────────────────
+const PALETTES = [
+  { name: 'Downtown Route', dot: '#ffaa00', box: '#ff00ff', ghost: '#00d8ff', wall: '#ff6600' },
+  { name: 'Express Lane', dot: '#00ff88', box: '#ff4444', ghost: '#ffaa00', wall: '#00d8ff' },
+  { name: 'Airmail Circuit', dot: '#ff00ff', box: '#00ffff', ghost: '#ffaa00', wall: '#ff0088' },
+  { name: 'Priority Path', dot: '#00d8ff', box: '#ffaa00', ghost: '#ff00ff', wall: '#00ff88' },
+  { name: 'Special Delivery', dot: '#ffff00', box: '#ff0088', ghost: '#00ffaa', wall: '#ff00ff' }
+];
+
+// ── MAZE TEMPLATES ────────────────────────────────────────────────────────────
+const MAZES = [
+  // Level 1 - Classic layout
+  [
+    "############################",
+    "#............##............#",
+    "#.####.#####.##.#####.####.#",
+    "#B####.#####.##.#####.####B#",
+    "#.####.#####.##.#####.####.#",
+    "#..........................#",
+    "#.####.##.########.##.####.#",
+    "#.####.##.########.##.####.#",
+    "#......##....##....##......#",
+    "######.##### ## #####.######",
+    "     #.##### ## #####.#     ",
+    "     #.##          ##.#     ",
+    "     #.## ###--### ##.#     ",
+    "######.## #      # ##.######",
+    "      .   #      #   .      ",
+    "######.## #      # ##.######",
+    "     #.## ######## ##.#     ",
+    "     #.##          ##.#     ",
+    "     #.## ######## ##.#     ",
+    "######.## ######## ##.######",
+    "#............##............#",
+    "#.####.#####.##.#####.####.#",
+    "#.####.#####.##.#####.####.#",
+    "#B..##.......  .......##..B#",
+    "###.##.##.########.##.##.###",
+    "###.##.##.########.##.##.###",
+    "#......##....##....##......#",
+    "############################"
+  ],
+  // Level 2 - More open
+  [
+    "############################",
+    "#..........................#",
+    "#.####.####.##.####.####.#",
+    "#B####.####.##.####.####B#",
+    "#......####.##.####......#",
+    "######......##......######",
+    "     #.####.##.####.#     ",
+    "     #.####.##.####.#     ",
+    "######.####.##.####.######",
+    "#..........    ..........#",
+    "#.###.####.##.####.###.#",
+    "#.###.####.##.####.###.#",
+    "#.....####.##.####.....#",
+    "####.......##.......####",
+    "    .#####.##.#####.    ",
+    "####.#####.##.#####.####",
+    "#..........##..........#",
+    "#.####.###.##.###.####.#",
+    "#.####.###.##.###.####.#",
+    "#B####.###.##.###.####B#",
+    "######.............######",
+    "     #.###.##.###.#     ",
+    "     #.###.##.###.#     ",
+    "######.###.##.###.######",
+    "#..........##..........#",
+    "#.###################.#",
+    "#......................#",
+    "############################"
+  ],
+  // Level 3 - Diagonal emphasis
+  [
+    "############################",
+    "#............##............#",
+    "#.###.######.##.######.###.#",
+    "#B###........##........###B#",
+    "#.....#####.####.#####.....#",
+    "#####.#####.####.#####.#####",
+    "    #.......####.......#    ",
+    "    #.#####.####.#####.#    ",
+    "#####.#####.####.#####.#####",
+    "#...........    ...........#",
+    "#.###.#####.##.#####.###.#",
+    "#.###.......##.......###.#",
+    "#.....#####.##.#####.....#",
+    "####.#######.##.#######.####",
+    "   ..#######.##.#######..   ",
+    "####.#######.##.#######.####",
+    "#...........##...........#",
+    "#.####.####.##.####.####.#",
+    "#.####.####.##.####.####.#",
+    "#B......................#B#",
+    "#####.##.########.##.#####",
+    "    #.##.########.##.#    ",
+    "    #.##....##....##.#    ",
+    "#####.#####.##.#####.#####",
+    "#...........##...........#",
+    "#.###################.#",
+    "#......................#",
+    "############################"
+  ],
+  // Level 4 - Complex corridors
+  [
+    "############################",
+    "#..........................#",
+    "#.##.#####.####.#####.##.#",
+    "#B##.#####.####.#####.##B#",
+    "#....#####.####.#####....#",
+    "###........####........###",
+    "  #.######.####.######.#  ",
+    "  #.######.####.######.#  ",
+    "###.######.####.######.###",
+    "#..........    ..........#",
+    "#.####.##.######.##.####.#",
+    "#.####.##........##.####.#",
+    "#......###.####.###......#",
+    "####.##....####....##.####",
+    "   ..#####.####.#####..   ",
+    "####.#####.####.#####.####",
+    "#..........####..........#",
+    "#.####.###.####.###.####.#",
+    "#.####.###.####.###.####.#",
+    "#B........................B#",
+    "#####.####.####.####.#####",
+    "    #.####.####.####.#    ",
+    "    #......####......#    ",
+    "#####.#####.##.#####.#####",
+    "#..........    ..........#",
+    "#.######################.#",
+    "#......................#",
+    "############################"
+  ],
+  // Level 5 - Final challenge
+  [
+    "############################",
+    "#............##............#",
+    "#.####.#####.##.#####.####.#",
+    "#B####.#####.##.#####.####B#",
+    "#......#####.##.#####......#",
+    "######......    ......######",
+    "     #.####.##.####.#     ",
+    "     #.####.##.####.#     ",
+    "######.####.##.####.######",
+    "#..........    ..........#",
+    "#.###.#####.##.#####.###.#",
+    "#.###.#####.##.#####.###.#",
+    "#.....#####.##.#####.....#",
+    "####.#######.##.#######.####",
+    "   ..#######.##.#######..   ",
+    "####.#######.##.#######.####",
+    "#..........    ..........#",
+    "#.####.####.##.####.####.#",
+    "#.####.####.##.####.####.#",
+    "#B..##......##......##..B#",
+    "###.##.###.####.###.##.###",
+    "###.##.###.####.###.##.###",
+    "#......##....##....##......#",
+    "#.#####.##.######.##.#####.#",
+    "#.#####.##.######.##.#####.#",
+    "#.#####..............#####.#",
+    "#......................#",
+    "############################"
+  ]
+];
+
+// ── POSTAL LETTERS FOR DOTS ──────────────────────────────────────────────────
+const POSTAL_WORDS = ['MAIL', 'POST', 'STAMP', 'SEND', 'LETTER', 'BOX', 'ROUTE', 'ZIP', 'DELIVER'];
+const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+
+// ── GAME STATE ────────────────────────────────────────────────────────────────
+let S = {
+  level: 1,
+  score: 0,
+  lives: 3,
+  phase: 'ready', // ready, play, dead, levelup, gameover, win
+  time: 0,
+  phaseTimer: 0,
+  
+  player: { x: 0, y: 0, dir: 0, nextDir: 0, speed: 2.5, mouth: 0 },
+  ghosts: [],
+  dots: [],
+  powerBoxes: [],
+  walls: [],
+  
+  powerMode: false,
+  powerTimer: 0,
+  ghostScore: 200,
+  
+  keys: {},
+  palette: PALETTES[0]
+};
+
+// ── HIGH SCORES ───────────────────────────────────────────────────────────────
+function getScores() {
+  const s = localStorage.getItem('postalPacmanScores');
+  return s ? JSON.parse(s) : [];
+}
+function saveScore(entry) {
+  const scores = getScores();
+  scores.push(entry);
+  scores.sort((a, b) => b.score - a.score);
+  localStorage.setItem('postalPacmanScores', JSON.stringify(scores.slice(0, 5)));
+}
+function isHighScore() {
+  const scores = getScores();
+  return scores.length < 5 || S.score > scores[scores.length - 1].score;
+}
+
+// ── INITIALIZATION ────────────────────────────────────────────────────────────
+function init() {
+  S.palette = PALETTES[(S.level - 1) % PALETTES.length];
+  S.dots = [];
+  S.powerBoxes = [];
+  S.walls = [];
+  S.ghosts = [];
+  
+  const maze = MAZES[(S.level - 1) % MAZES.length];
+  
+  // Parse maze
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const ch = maze[r] && maze[r][c] ? maze[r][c] : ' ';
+      const x = c * CELL;
+      const y = r * CELL;
+      
+      if (ch === '#') {
+        S.walls.push({ x, y });
+      } else if (ch === '.') {
+        const letter = LETTERS[Math.floor(Math.random() * LETTERS.length)];
+        S.dots.push({ x: x + CELL/2, y: y + CELL/2, letter, collected: false });
+      } else if (ch === 'B') {
+        S.powerBoxes.push({ x: x + CELL/2, y: y + CELL/2, collected: false });
+      }
+    }
+  }
+  
+  // Position player at bottom center
+  S.player.x = 14 * CELL;
+  S.player.y = 23 * CELL;
+  S.player.dir = 0;
+  S.player.nextDir = 0;
+  
+  // Create ghosts - 4 envelope ghosts
+  const ghostColors = ['#ff0044', '#00ffff', '#ffaa00', '#ff00ff'];
+  const ghostNames = ['Speedy', 'Blinky', 'Pinky', 'Clyde'];
+  const startY = 13 * CELL;
+  for (let i = 0; i < 4; i++) {
+    S.ghosts.push({
+      x: (12 + i * 2) * CELL,
+      y: startY,
+      color: ghostColors[i],
+      name: ghostNames[i],
+      dir: Math.floor(Math.random() * 4),
+      speed: 1.5 + S.level * 0.2,
+      scared: false,
+      dead: false,
+      mode: 'scatter'
+    });
+  }
+  
+  S.phase = 'ready';
+  S.phaseTimer = 0;
+  S.powerMode = false;
+  S.powerTimer = 0;
+}
+
+// ── COLLISION DETECTION ───────────────────────────────────────────────────────
+function canMove(x, y, dir) {
+  const dirs = [[0,-1], [1,0], [0,1], [-1,0]]; // up, right, down, left
+  const [dx, dy] = dirs[dir];
+  const nx = x + dx * CELL/2;
+  const ny = y + dy * CELL/2;
+  
+  // Check walls
+  for (const w of S.walls) {
+    if (Math.abs(nx - w.x - CELL/2) < CELL/2 && 
+        Math.abs(ny - w.y - CELL/2) < CELL/2) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function snapToGrid(pos) {
+  return Math.round(pos / CELL) * CELL;
+}
+
+function isAligned(pos) {
+  return Math.abs(pos - snapToGrid(pos)) < 2;
+}
+
+// ── UPDATE ────────────────────────────────────────────────────────────────────
+function update(dt) {
+  S.time += dt;
+  S.phaseTimer += dt;
+  
+  if (S.phase === 'ready') {
+    if (S.phaseTimer > 2000) {
+      S.phase = 'play';
+      S.phaseTimer = 0;
+    }
+    return;
+  }
+  
+  if (S.phase === 'levelup') {
+    if (S.phaseTimer > 2500) {
+      S.level++;
+      if (S.level > 5) {
+        S.phase = 'win';
+      } else {
+        init();
+      }
+    }
+    return;
+  }
+  
+  if (S.phase === 'dead') {
+    if (S.phaseTimer > 2000) {
+      S.lives--;
+      if (S.lives <= 0) {
+        S.phase = 'gameover';
+        S.phaseTimer = 0;
+      } else {
+        // Reset positions
+        S.player.x = 14 * CELL;
+        S.player.y = 23 * CELL;
+        S.player.dir = 0;
+        S.player.nextDir = 0;
+        S.ghosts.forEach((g, i) => {
+          g.x = (12 + i * 2) * CELL;
+          g.y = 13 * CELL;
+          g.scared = false;
+          g.dead = false;
+        });
+        S.phase = 'play';
+        S.phaseTimer = 0;
+        S.powerMode = false;
+      }
+    }
+    return;
+  }
+  
+  if (S.phase !== 'play') return;
+  
+  // Power mode timer
+  if (S.powerMode) {
+    S.powerTimer -= dt;
+    if (S.powerTimer <= 0) {
+      S.powerMode = false;
+      S.ghosts.forEach(g => {
+        if (!g.dead) g.scared = false;
+      });
+      S.ghostScore = 200;
+    }
+  }
+  
+  // Update player
+  const p = S.player;
+  p.mouth = (p.mouth + dt * 0.01) % 1;
+  
+  // Handle turning
+  if (S.keys['ArrowUp']) p.nextDir = 0;
+  if (S.keys['ArrowRight']) p.nextDir = 1;
+  if (S.keys['ArrowDown']) p.nextDir = 2;
+  if (S.keys['ArrowLeft']) p.nextDir = 3;
+  
+  // Try to turn if aligned
+  if (isAligned(p.x) && isAligned(p.y)) {
+    if (canMove(p.x, p.y, p.nextDir)) {
+      p.dir = p.nextDir;
+    }
+  }
+  
+  // Move
+  if (canMove(p.x, p.y, p.dir)) {
+    const dirs = [[0,-1], [1,0], [0,1], [-1,0]];
+    const [dx, dy] = dirs[p.dir];
+    p.x += dx * p.speed;
+    p.y += dy * p.speed;
+  }
+  
+  // Wrap around
+  if (p.x < 0) p.x = W - CELL;
+  if (p.x >= W) p.x = 0;
+  
+  // Collect dots
+  for (const d of S.dots) {
+    if (!d.collected && Math.hypot(p.x - d.x, p.y - d.y) < CELL/2) {
+      d.collected = true;
+      S.score += 10;
+    }
+  }
+  
+  // Collect power boxes
+  for (const b of S.powerBoxes) {
+    if (!b.collected && Math.hypot(p.x - b.x, p.y - b.y) < CELL/2) {
+      b.collected = true;
+      S.score += 50;
+      S.powerMode = true;
+      S.powerTimer = 6000;
+      S.ghostScore = 200;
+      S.ghosts.forEach(g => {
+        if (!g.dead) {
+          g.scared = true;
+          g.dir = (g.dir + 2) % 4; // Reverse direction
+        }
+      });
+    }
+  }
+  
+  // Check level complete
+  if (S.dots.every(d => d.collected) && S.powerBoxes.every(b => b.collected)) {
+    S.phase = 'levelup';
+    S.phaseTimer = 0;
+    return;
+  }
+  
+  // Update ghosts
+  for (const g of S.ghosts) {
+    if (g.dead) continue;
+    
+    // Simple AI - random movement with some target seeking
+    if (isAligned(g.x) && isAligned(g.y)) {
+      const possibleDirs = [];
+      for (let d = 0; d < 4; d++) {
+        if (d !== (g.dir + 2) % 4 && canMove(g.x, g.y, d)) {
+          possibleDirs.push(d);
+        }
+      }
+      
+      if (possibleDirs.length > 0) {
+        if (g.scared) {
+          // Run away from player
+          const dx = g.x - p.x;
+          const dy = g.y - p.y;
+          let bestDir = possibleDirs[0];
+          let bestDist = -Infinity;
+          
+          for (const d of possibleDirs) {
+            const dirs = [[0,-1], [1,0], [0,1], [-1,0]];
+            const [ddx, ddy] = dirs[d];
+            const dist = dx * ddx + dy * ddy;
+            if (dist > bestDist) {
+              bestDist = dist;
+              bestDir = d;
+            }
+          }
+          g.dir = bestDir;
+        } else {
+          // Chase player 70% of the time
+          if (Math.random() < 0.7) {
+            const dx = p.x - g.x;
+            const dy = p.y - g.y;
+            let bestDir = possibleDirs[0];
+            let bestDist = Infinity;
+            
+            for (const d of possibleDirs) {
+              const dirs = [[0,-1], [1,0], [0,1], [-1,0]];
+              const [ddx, ddy] = dirs[d];
+              const nx = g.x + ddx * CELL;
+              const ny = g.y + ddy * CELL;
+              const dist = Math.hypot(nx - p.x, ny - p.y);
+              if (dist < bestDist) {
+                bestDist = dist;
+                bestDir = d;
+              }
+            }
+            g.dir = bestDir;
+          } else {
+            g.dir = possibleDirs[Math.floor(Math.random() * possibleDirs.length)];
+          }
+        }
+      }
+    }
+    
+    // Move ghost
+    const dirs = [[0,-1], [1,0], [0,1], [-1,0]];
+    const [dx, dy] = dirs[g.dir];
+    const speed = g.scared ? g.speed * 0.5 : g.speed;
+    g.x += dx * speed;
+    g.y += dy * speed;
+    
+    // Wrap
+    if (g.x < 0) g.x = W - CELL;
+    if (g.x >= W) g.x = 0;
+    
+    // Collision with player
+    if (Math.hypot(g.x - p.x, g.y - p.y) < CELL * 0.8) {
+      if (g.scared) {
+        g.dead = true;
+        S.score += S.ghostScore;
+        S.ghostScore *= 2;
+      } else {
+        S.phase = 'dead';
+        S.phaseTimer = 0;
+      }
+    }
+  }
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+function drawGlow(color, blur = 20) {
+  ctx.shadowColor = color;
+  ctx.shadowBlur = blur;
+}
+
+function glowText(text, x, y, size, color, alpha = 1) {
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.font = `bold ${size}px 'Courier New', monospace`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  
+  // Outer glow
+  drawGlow(color, 30);
+  ctx.fillStyle = color;
+  ctx.fillText(text, x, y);
+  
+  // Inner highlight
+  drawGlow(color, 10);
+  ctx.fillStyle = '#ffffff';
+  ctx.globalAlpha = alpha * 0.8;
+  ctx.fillText(text, x, y);
+  
+  ctx.restore();
+}
+
+function render() {
+  // Background
+  ctx.fillStyle = '#000010';
+  ctx.fillRect(0, 0, W, H);
+  
+  // Grid effect
+  ctx.save();
+  ctx.strokeStyle = 'rgba(100, 100, 255, 0.03)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < COLS; i++) {
+    ctx.beginPath();
+    ctx.moveTo(i * CELL, 0);
+    ctx.lineTo(i * CELL, H);
+    ctx.stroke();
+  }
+  for (let i = 0; i < ROWS; i++) {
+    ctx.beginPath();
+    ctx.moveTo(0, i * CELL);
+    ctx.lineTo(W, i * CELL);
+    ctx.stroke();
+  }
+  ctx.restore();
+  
+  // Walls
+  ctx.save();
+  drawGlow(S.palette.wall, 8);
+  ctx.fillStyle = S.palette.wall;
+  for (const w of S.walls) {
+    ctx.fillRect(w.x + 2, w.y + 2, CELL - 4, CELL - 4);
+  }
+  ctx.restore();
+  
+  // Dots (letters)
+  ctx.save();
+  for (const d of S.dots) {
+    if (d.collected) continue;
+    const pulse = 0.7 + 0.3 * Math.sin(S.time / 200 + d.x + d.y);
+    ctx.globalAlpha = pulse;
+    drawGlow(S.palette.dot, 12);
+    ctx.fillStyle = S.palette.dot;
+    ctx.font = 'bold 10px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(d.letter, d.x, d.y);
+  }
+  ctx.restore();
+  
+  // Power boxes
+  ctx.save();
+  for (const b of S.powerBoxes) {
+    if (b.collected) continue;
+    const pulse = 0.8 + 0.2 * Math.sin(S.time / 150);
+    ctx.globalAlpha = pulse;
+    drawGlow(S.palette.box, 20);
+    ctx.fillStyle = S.palette.box;
+    ctx.font = 'bold 18px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('📦', b.x, b.y);
+  }
+  ctx.restore();
+  
+  // Ghosts (envelopes)
+  ctx.save();
+  for (const g of S.ghosts) {
+    if (g.dead) continue;
+    
+    const glow = g.scared ? '#ffffff' : g.color;
+    const fillColor = g.scared ? '#4444ff' : g.color;
+    
+    drawGlow(glow, g.scared ? 25 : 15);
+    ctx.fillStyle = fillColor;
+    
+    // Envelope body
+    const gx = g.x;
+    const gy = g.y;
+    const sz = CELL * 0.8;
+    
+    ctx.fillRect(gx - sz/2, gy - sz/3, sz, sz * 0.7);
+    
+    // Envelope flap
+    ctx.beginPath();
+    ctx.moveTo(gx - sz/2, gy - sz/3);
+    ctx.lineTo(gx, gy);
+    ctx.lineTo(gx + sz/2, gy - sz/3);
+    ctx.fill();
+    
+    // Eyes
+    if (!g.scared) {
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(gx - sz/4, gy - sz/6, sz/6, sz/6);
+      ctx.fillRect(gx + sz/12, gy - sz/6, sz/6, sz/6);
+    } else {
+      // Scared eyes
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(gx - sz/4, gy - sz/6, sz/8, sz/8);
+      ctx.fillRect(gx + sz/8, gy - sz/6, sz/8, sz/8);
+    }
+  }
+  ctx.restore();
+  
+  // Player (mail carrier)
+  const p = S.player;
+  const mouthAngle = Math.abs(Math.sin(p.mouth * Math.PI)) * 0.4;
+  
+  ctx.save();
+  ctx.translate(p.x, p.y);
+  ctx.rotate((p.dir * Math.PI) / 2);
+  
+  // Glow
+  drawGlow('#ffff00', 20);
+  
+  // Body
+  ctx.fillStyle = '#ffff00';
+  ctx.beginPath();
+  ctx.arc(0, 0, CELL * 0.45, mouthAngle, Math.PI * 2 - mouthAngle);
+  ctx.lineTo(0, 0);
+  ctx.fill();
+  
+  // Eye
+  ctx.fillStyle = '#000000';
+  ctx.fillRect(-CELL/8, -CELL/4, CELL/6, CELL/6);
+  
+  // Highlight
+  drawGlow('#ffff00', 5);
+  ctx.fillStyle = '#ffffff';
+  ctx.globalAlpha = 0.6;
+  ctx.beginPath();
+  ctx.arc(-CELL/8, -CELL/8, CELL/4, 0, Math.PI * 2);
+  ctx.fill();
+  
+  ctx.restore();
+  
+  // Overlays
+  if (S.phase === 'ready') {
+    const alpha = Math.min(1, S.phaseTimer / 500);
+    ctx.fillStyle = `rgba(0, 0, 20, ${0.7 * alpha})`;
+    ctx.fillRect(0, 0, W, H);
+    glowText('ROUTE ' + S.level, W/2, H/2 - 30, 40, S.palette.dot, alpha);
+    glowText(S.palette.name, W/2, H/2 + 20, 20, S.palette.box, alpha * 0.8);
+    glowText('USE ARROWS TO MOVE', W/2, H/2 + 60, 14, S.palette.ghost, alpha * 0.6);
+  }
+  
+  if (S.phase === 'levelup') {
+    const alpha = Math.min(1, S.phaseTimer / 500);
+    ctx.fillStyle = `rgba(0, 0, 20, ${0.7 * alpha})`;
+    ctx.fillRect(0, 0, W, H);
+    glowText('ROUTE COMPLETE!', W/2, H/2 - 20, 36, S.palette.box, alpha);
+    glowText('NEXT DELIVERY...', W/2, H/2 + 30, 18, S.palette.dot, alpha * 0.7);
+  }
+  
+  if (S.phase === 'dead') {
+    const alpha = Math.min(1, S.phaseTimer / 500);
+    glowText('MAIL LOST!', W/2, H/2, 32, '#ff0044', alpha);
+  }
+  
+  if (S.phase === 'gameover') {
+    ctx.fillStyle = 'rgba(0, 0, 20, 0.85)';
+    ctx.fillRect(0, 0, W, H);
+    glowText('DELIVERY FAILED', W/2, H/2 - 80, 40, '#ff0044');
+    
+    ctx.save();
+    ctx.fillStyle = '#aaccee';
+    ctx.font = '16px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(`FINAL SCORE: ${S.score}  •  ROUTE: ${S.level}/5`, W/2, H/2 - 30);
+    ctx.restore();
+    
+    drawScoreTable(H/2 + 20);
+    
+    ctx.save();
+    ctx.fillStyle = '#667788';
+    ctx.font = '14px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('Press R to restart', W/2, H - 40);
+    ctx.restore();
+  }
+  
+  if (S.phase === 'win') {
+    ctx.fillStyle = 'rgba(0, 0, 20, 0.85)';
+    ctx.fillRect(0, 0, W, H);
+    glowText('ALL ROUTES COMPLETE!', W/2, H/2 - 80, 36, '#00ff88');
+    
+    ctx.save();
+    ctx.fillStyle = '#aaccee';
+    ctx.font = '16px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(`FINAL SCORE: ${S.score}`, W/2, H/2 - 30);
+    ctx.restore();
+    
+    drawScoreTable(H/2 + 20);
+    
+    ctx.save();
+    ctx.fillStyle = '#667788';
+    ctx.font = '14px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('Press R to restart', W/2, H - 40);
+    ctx.restore();
+  }
+  
+  // Power mode indicator
+  if (S.powerMode && S.phase === 'play') {
+    const timeLeft = Math.ceil(S.powerTimer / 1000);
+    const flash = Math.sin(S.time / 100) > 0;
+    if (flash) {
+      glowText(`POWER MODE: ${timeLeft}s`, W/2, 30, 16, S.palette.box, 0.8);
+    }
+  }
+}
+
+function drawScoreTable(y) {
+  const scores = getScores();
+  if (scores.length === 0) return;
+  
+  glowText('HIGH SCORES', W/2, y, 18, '#ffaa00', 0.9);
+  
+  const colors = ['#ffaa00', '#ff00ff', '#00d8ff', '#00ff88', '#ff6600'];
+  scores.forEach((entry, i) => {
+    ctx.save();
+    ctx.fillStyle = colors[i] || '#667788';
+    ctx.font = '14px monospace';
+    ctx.textAlign = 'center';
+    ctx.globalAlpha = 0.85;
+    const text = `${i+1}. ${entry.name.padEnd(6)} ${String(entry.score).padStart(6)}  R${entry.level}`;
+    ctx.fillText(text, W/2, y + 30 + i * 22);
+    ctx.restore();
+  });
+}
+
+// ── UI UPDATE ─────────────────────────────────────────────────────────────────
+function updateUI() {
+  document.getElementById('score-el').textContent = `SCORE: ${S.score}`;
+  document.getElementById('lives-el').textContent = '📦 '.repeat(S.lives).trim();
+  document.getElementById('level-el').textContent = `ROUTE: ${S.level}/5`;
+}
+
+// ── GAME LOOP ─────────────────────────────────────────────────────────────────
+let lastTime = 0;
+function tick(time) {
+  const dt = time - lastTime;
+  lastTime = time;
+  
+  update(dt);
+  render();
+  updateUI();
+  
+  requestAnimationFrame(tick);
+}
+
+// ── INPUT ─────────────────────────────────────────────────────────────────────
+window.addEventListener('keydown', e => {
+  S.keys[e.key] = true;
+  
+  if ((e.key === 'r' || e.key === 'R') && (S.phase === 'gameover' || S.phase === 'win')) {
+    // Check if high score
+    if (isHighScore()) {
+      const name = prompt('NEW HIGH SCORE! Enter your name (3 chars):') || 'AAA';
+      saveScore({ name: name.slice(0, 3).toUpperCase(), score: S.score, level: S.level });
+    }
+    S.score = 0;
+    S.lives = 3;
+    S.level = 1;
+    init();
+  }
+  
+  if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', ' '].includes(e.key)) {
+    e.preventDefault();
+  }
+});
+
+window.addEventListener('keyup', e => {
+  S.keys[e.key] = false;
+});
+
+// ── START ─────────────────────────────────────────────────────────────────────
+init();
+requestAnimationFrame(tick);
+</script>
+
+</body>
+</html>
