@@ -204,8 +204,16 @@ function resize() {
 
   BOARD_W = CELL * COLS;
   BOARD_H = CELL * ROWS;
-  BOARD_X = gutter;
   BOARD_Y = 0;
+
+  // Center the board+HUD block as a unit when the fit leaves leftover
+  // width — on a wide desktop window, CELL gets capped by height long
+  // before it runs out of width, so pinning BOARD_X to a small fixed
+  // gutter left the whole thing stranded against the left edge. On
+  // phones the width term is usually already the binding constraint, so
+  // there's no leftover here and this is a no-op.
+  const contentW = BOARD_W + gutter + hudW;
+  BOARD_X = Math.max(gutter, Math.floor((W - contentW) / 2));
 
   HUD_X = BOARD_X + BOARD_W + gutter;
   HUD_W = Math.min(hudW, W - HUD_X - gutter);
