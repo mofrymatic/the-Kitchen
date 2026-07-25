@@ -164,7 +164,7 @@ const dispCanvas = document.getElementById('c');
 const dispCtx    = dispCanvas.getContext('2d');
 const canvas     = document.createElement('canvas'); // backbuffer — never inserted into the DOM
 const ctx        = canvas.getContext('2d');
-let W, H, BOARD_X, BOARD_Y, CELL, BOARD_W, BOARD_H;
+let W, H, BOARD_X, BOARD_Y, CELL, BOARD_W, BOARD_H, HUD_X, HUD_W;
 let nuiActive = false;
 
 // ── Board config ──────────────────────────────────────────────────────
@@ -177,19 +177,39 @@ function resize() {
   dispCanvas.height = winH;
   W = canvas.width  = Math.round(winW / PIXEL_SCALE);
   H = canvas.height = Math.round(winH / PIXEL_SCALE);
-  // Fit board to screen: leave room for side panels + touch NUI.
-  // 190/PIXEL_SCALE because the touch NUI bar is a real DOM element sized
-  // in true screen px — it's the one constant here anchored to the real
-  // window rather than the backbuffer's own (self-consistent) coordinate space.
-  const nuiH  = nuiActive ? Math.min(190 / PIXEL_SCALE, H * 0.26) : 0;
-  const maxH  = H - nuiH - 16;
-  const maxW  = W;
-  CELL        = Math.min(Math.floor(maxH / ROWS), Math.floor(maxW * 0.55 / COLS));
-  CELL        = Math.max(CELL, Math.round(18 / PIXEL_SCALE));
-  BOARD_W     = CELL * COLS;
-  BOARD_H     = CELL * ROWS;
-  BOARD_X     = Math.floor((W - BOARD_W) / 2);
-  BOARD_Y     = Math.floor((H - nuiH - BOARD_H) / 2);
+
+  // 190/PIXEL_SCALE, minCell, and the gutters below are all real-screen-px
+  // constants — they get divided by PIXEL_SCALE for the same reason the
+  // touch-NUI height does: they're anchored to the physical device, not to
+  // whatever internal resolution the backbuffer happens to be running at.
+  const nuiH      = nuiActive ? Math.min(190 / PIXEL_SCALE, H * 0.26) : 0;
+  const minCell   = Math.round(18 / PIXEL_SCALE);
+  const bottomGap = Math.max(2, Math.round(6 / PIXEL_SCALE));   // breathing room above the NUI zone, not a dead zone
+  const gutter    = Math.max(2, Math.round(8 / PIXEL_SCALE));
+
+  // The board now owns the full screen height — flush to the true top
+  // (open well, no ceiling — see drawBoard), filling down to just above
+  // the touch controls instead of floating centered with margins on every
+  // side. HUD_W is a near-fixed target (sized for a 7-char readout + a
+  // 4-wide piece icon) rather than proportional to CELL — tying it to CELL
+  // meant a bigger cell demanded a wider column, which shrank the board's
+  // width budget, which capped CELL below what the available height alone
+  // would have allowed. Decoupled, height wins the fit on typical portrait
+  // phones; the width-based cap below is what still protects unusually
+  // wide/short viewports where width remains the tighter constraint.
+  const hudW        = clamp(100 / PIXEL_SCALE, 60 / PIXEL_SCALE, W * 0.4);
+  const cellByHeight = Math.floor((H - nuiH - bottomGap) / ROWS);
+  const cellByWidth  = Math.floor((W - gutter * 2 - hudW) / COLS);
+  CELL = Math.max(Math.min(cellByHeight, cellByWidth), minCell);
+
+  BOARD_W = CELL * COLS;
+  BOARD_H = CELL * ROWS;
+  BOARD_X = gutter;
+  BOARD_Y = 0;
+
+  HUD_X = BOARD_X + BOARD_W + gutter;
+  HUD_W = Math.min(hudW, W - HUD_X - gutter);
+
   grid.init();
 }
 window.addEventListener('resize', resize);
@@ -455,7 +475,7 @@ function initGS() {
     state: 'title',   // title | playing | paused | gameover
     board: Array.from({length:ROWS},()=>Array(COLS).fill(null)),
     current: null,   // {key, rot, x, y}
-    next: null,
+    nextQueue: [],   // 3-deep lookahead, index 0 spawns next
     score: 0,
     lines: 0,
     level: 1,
@@ -475,6 +495,7 @@ function initGS() {
     highScore: parseInt(localStorage.getItem('tetris_ob_hi')||'0'),
   };
   nextBag(); nextBag();
+  gs.nextQueue = [pickPiece(), pickPiece(), pickPiece()];
 }
 initGS();
 
@@ -494,8 +515,9 @@ function spawnPiece(key) {
 }
 
 function spawnNext() {
-  gs.current = spawnPiece(gs.next || pickPiece());
-  gs.next     = pickPiece();
+  if (!gs.nextQueue.length) gs.nextQueue.push(pickPiece());
+  gs.current = spawnPiece(gs.nextQueue.shift());
+  gs.nextQueue.push(pickPiece());
   gs.lastActionRotate = false;
   gs.dropTimer = 0;
   gs.lockTimer = 0;
@@ -842,8 +864,6 @@ function ghostY() {
 function startGame() {
   try { AC().resume(); } catch(e){}
   initGS();
-  nextBag();
-  gs.next = pickPiece();
   gs.state = 'playing';
   spawnNext();
 }
@@ -934,16 +954,22 @@ function drawBoard() {
     ctx.lineTo(BOARD_X+c*CELL,BOARD_Y+BOARD_H);
     ctx.stroke();
   }
-  for(let r=0;r<=ROWS;r++) {
+  for(let r=1;r<=ROWS;r++) {
     ctx.beginPath();
     ctx.moveTo(BOARD_X,BOARD_Y+r*CELL);
     ctx.lineTo(BOARD_X+BOARD_W,BOARD_Y+r*CELL);
     ctx.stroke();
   }
-  // Board border glow
+  // Border glow — left, bottom, right only. No top stroke: the well reads
+  // as open, feeding down from off-screen, rather than a closed box.
   ctx.shadowColor='rgba(60,180,255,0.4)'; ctx.shadowBlur=12;
   ctx.strokeStyle='rgba(60,180,255,0.35)'; ctx.lineWidth=1.5;
-  ctx.strokeRect(BOARD_X,BOARD_Y,BOARD_W,BOARD_H);
+  ctx.beginPath();
+  ctx.moveTo(BOARD_X,BOARD_Y);
+  ctx.lineTo(BOARD_X,BOARD_Y+BOARD_H);
+  ctx.lineTo(BOARD_X+BOARD_W,BOARD_Y+BOARD_H);
+  ctx.lineTo(BOARD_X+BOARD_W,BOARD_Y);
+  ctx.stroke();
   ctx.restore();
 
   // Locked cells
@@ -988,11 +1014,10 @@ function drawBoard() {
 }
 
 function drawHUD() {
-  const infoX = BOARD_X + BOARD_W + clamp(CELL*0.6, 8, 22);
-  const infoW = Math.min(W - infoX - 8, CELL*4.5);
+  const infoX = HUD_X;
+  const infoW = HUD_W;
 
   ctx.save();
-  ctx.font=`bold ${clamp(CELL*0.45,11,16)}px "Courier New",monospace`;
   ctx.textAlign='left';
 
   const label = (txt, x, y) => {
@@ -1006,36 +1031,36 @@ function drawHUD() {
     ctx.fillText(txt, x, y);
   };
 
-  const lh = clamp(CELL*0.7, 18, 26);
-  let iy = BOARD_Y + lh;
+  // ── NEXT ×3 — anchored to the top of the column ─────────────────────
+  // As in resize(): every clamp() bound below is a real-screen legibility
+  // floor/ceiling, so it gets the same /PIXEL_SCALE treatment as minCell
+  // and the NUI height — otherwise a PIXEL_SCALE>1 quietly doubles what
+  // was meant to be an absolute minimum, same bug as the CELL floor.
+  const previewCell = clamp(Math.min(CELL*0.6, infoW/4.3), 10/PIXEL_SCALE, 20/PIXEL_SCALE);
+  const slotH        = previewCell*2.5;
+  const topPad       = clamp(CELL*0.5, 8/PIXEL_SCALE, 16/PIXEL_SCALE);
+  const nextLabelFs  = clamp(CELL*0.4, 10/PIXEL_SCALE, 14/PIXEL_SCALE);
 
-  label('SCORE', infoX, iy); iy+=lh;
-  value(gs.score.toString().padStart(7,'0'), infoX, iy, '#00ffee'); iy+=lh*1.4;
+  let py = BOARD_Y + topPad;
+  ctx.font=`bold ${nextLabelFs}px "Courier New",monospace`;
+  label('NEXT', infoX, py + nextLabelFs);
+  py += nextLabelFs + clamp(CELL*0.25, 5/PIXEL_SCALE, 9/PIXEL_SCALE);
 
-  label('LINES', infoX, iy); iy+=lh;
-  value(gs.lines.toString(), infoX, iy, '#ffee00'); iy+=lh*1.4;
-
-  label('LEVEL', infoX, iy); iy+=lh;
-  value(gs.level.toString(), infoX, iy, '#ff88ff'); iy+=lh*1.4;
-
-  label('BEST', infoX, iy); iy+=lh;
-  value(gs.highScore.toString().padStart(7,'0'), infoX, iy, 'rgba(255,255,255,0.4)'); iy+=lh*2;
-
-  // Next piece preview
-  label('NEXT', infoX, iy); iy+=lh*0.8;
-  if(gs.next) {
-    const np = PIECES[gs.next];
+  for (let i=0;i<3;i++) {
+    const key = gs.nextQueue && gs.nextQueue[i];
+    if (!key) continue;
+    const np = PIECES[key];
     const shape = np.shapes[0];
     const minC=Math.min(...shape.map(([c])=>c));
-    const maxC=Math.max(...shape.map(([c])=>c));
     const minR=Math.min(...shape.map(([,r])=>r));
-    const previewCell=clamp(CELL*0.7,12,22);
-    const px=infoX;
-    for(const [dc,dr] of shape) {
-      const cx=px+(dc-minC)*previewCell;
-      const cy=iy+(dr-minR)*previewCell;
+    const slotY = py + i*slotH;
+    const a = i===0 ? 1 : 0.5;   // the up-next piece reads brightest; the queue behind it dims
+    for (const [dc,dr] of shape) {
+      const cx=infoX+(dc-minC)*previewCell;
+      const cy=slotY+(dr-minR)*previewCell;
       ctx.save();
-      ctx.shadowColor=np.glow; ctx.shadowBlur=previewCell*0.6;
+      ctx.globalAlpha=a;
+      ctx.shadowColor=np.glow; ctx.shadowBlur=previewCell*0.6*a;
       const grad=ctx.createLinearGradient(cx,cy,cx,cy+previewCell-2);
       grad.addColorStop(0,lighten(np.col,0.3));
       grad.addColorStop(1,darken(np.col,0.3));
@@ -1044,6 +1069,31 @@ function drawHUD() {
       ctx.restore();
     }
   }
+  const nextBottom = py + 3*slotH;
+
+  // ── SCORE / LINES / LEVEL / BEST — space-distributed from the bottom
+  //    of the NEXT preview down to the bottom of the (now full-height)
+  //    board, instead of stacked at a fixed increment from the top. ────
+  const boardBottom = BOARD_Y + BOARD_H;
+  const bandTop = nextBottom + clamp(CELL*0.5, 8/PIXEL_SCALE, 16/PIXEL_SCALE);
+  const bandH   = Math.max(0, boardBottom - bandTop);
+  const rowsInfo = [
+    ['SCORE', gs.score.toString().padStart(7,'0'), '#00ffee'],
+    ['LINES', gs.lines.toString(), '#ffee00'],
+    ['LEVEL', gs.level.toString(), '#ff88ff'],
+    ['BEST',  gs.highScore.toString().padStart(7,'0'), 'rgba(255,255,255,0.4)'],
+  ];
+  const rowH      = bandH / rowsInfo.length;
+  const labelFont = clamp(rowH*0.24, 10/PIXEL_SCALE, 18/PIXEL_SCALE);
+  const valueFont = clamp(Math.min(rowH*0.4, infoW/4.2), 13/PIXEL_SCALE, 32/PIXEL_SCALE);
+
+  rowsInfo.forEach(([lab,val,col], i) => {
+    const cy = bandTop + rowH*i;
+    ctx.font=`bold ${labelFont}px "Courier New",monospace`;
+    label(lab, infoX, cy+labelFont);
+    ctx.font=`bold ${valueFont}px "Courier New",monospace`;
+    value(val, infoX, cy+labelFont+valueFont*0.95, col);
+  });
 
   ctx.restore();
 
