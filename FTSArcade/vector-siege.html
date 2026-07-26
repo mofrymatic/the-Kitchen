@@ -3,32 +3,31 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>VECTOR SIEGE · OBLITERATUS</title>
+<title>VECTOR SIEGE · CITY AEGIS</title>
 
-<!-- ── Primary Meta ─────────────────────────────────────────────────────── -->
-<meta name="description" content="Vector Seige — Command the missiles. Save the cities." />
+<!-- ── Primary Meta ─────────────────────────────────────────────────── -->
+<meta name="description" content="FishTacoStand Arcade — Vector Siege City Aegis. Neon logic. City defense, imperative." />
 
-<!-- ── Favicons ─────────────────────────────────────────────────────────── -->
+<!-- ── Favicons ─────────────────────────────────────────────────────── -->
 <link rel="icon" type="image/png" href="fts-favicon.png">
 <link rel="shortcut icon" type="image/png" href="fts-favicon.png">
 <link rel="apple-touch-icon" href="fts-favicon.png">
 
-<!-- ── Open Graph (Facebook, Discord, iMessage, etc.) ────────────────────── -->
-<meta property="og:title" content="FishTacoStand Arcade">
-<meta property="og:description" content="Vector Seige — Command the missiles. Save the cities.">
-<meta property="og:url" content="https://frymatic.us/FTSArcade/vector-seige.html">
+<!-- ── Open Graph ────────────────────────────────────────────────────── -->
+<meta property="og:title" content="Vector Siege · City Aegis">
+<meta property="og:description" content="Vector Siege · City Aegis">
+<meta property="og:url" content="https://frymatic.us/FTSArcade/vector-siege.html">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Vector Seige">
-
-<meta property="og:image" content="https://frymatic.us/FTSArcade/vector_seige_preview.png">
-<meta property="og:image:alt" content="Command the missiles. Save the cities.">
+<meta property="og:site_name" content="Vector Siege · City Aegis">
+<meta property="og:image" content="https://frymatic.us/FTSArcade/vector_siege_preview.png">
+<meta property="og:image:alt" content="Vector Siege Arcade cabinet.">
 <meta property="og:image:type" content="image/png">
 
-<!-- ── Twitter / X Card ─────────────────────────────────────────────────── -->
+<!-- ── Twitter / X Card ─────────────────────────────────────────────── -->
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Vector Seige">
-<meta name="twitter:description" content="Command the missiles. Save the cities.">
-<meta name="twitter:image" content="https://frymatic.us/FTSArcade/vector_seige_preview.png">
+<meta name="twitter:title" content="Vector Seige · City Aegis">
+<meta name="twitter:description" content="Neon logic. City defense, imperative.">
+<meta name="twitter:image" content="https://frymatic.us/FTSArcade/vector_siege_preview.png">
 
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
@@ -47,6 +46,7 @@ canvas{display:block;position:fixed;top:0;left:0;cursor:crosshair}
   font-family:'Courier New',monospace;font-size:9px;color:rgba(0,160,255,.35);letter-spacing:.1em}
 
 .overlay{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;
+  pointer-events:none;
   background:rgba(2,11,24,.72);backdrop-filter:blur(2px)}
 .overlay.hidden{display:none}
 .panel{border:1px solid rgba(0,210,255,.4);background:rgba(2,14,32,.85);
@@ -202,6 +202,7 @@ function buildGlowSprites() {
 function drawGlow(kind, x, y, radiusPx, alpha) {
   const spr = glowSprites[kind];
   const d = radiusPx * 2;
+  if (!spr || d <= 0 || alpha <= 0) return;
   ctx.globalAlpha = alpha;
   ctx.drawImage(spr, x - d / 2, y - d / 2, d, d);
   ctx.globalAlpha = 1;
@@ -334,12 +335,11 @@ function layoutStructures() {
   cities.forEach(c => c.x = c.xf * W);
 }
 
-let enemyMissiles = [];   // {x0,y0,x1,y1,progress,speed,mirvDone,target,isChild}
+let enemyMissiles = [];   // {x0,y0,x1,y1,progress,dur,mirvArmed,mirvAt,isChild}
 let interceptors = [];    // {x0,y0,x1,y1,progress,speed,silo}
 let explosions = [];      // {x,y,age,life,maxR,kind,lethal}
 
 let spawnQueue = [];      // remaining missiles to introduce this wave (by sim-time offset)
-let waveMissilesTotal = 0, waveMissilesResolved = 0;
 
 const SIM_STEP = 1 / 30;
 const ENEMY_BASE_SPEED = 90;   // px/s at wave 1
@@ -355,8 +355,11 @@ function waveConfig(w) {
   };
 }
 
+let waveStartSimTime = 0;
+
 function startWave(w) {
   wave = w;
+  waveStartSimTime = simTime;
   document.getElementById('waveVal').textContent = wave;
   silos.forEach(s => { if (s.alive) { s.ammo = s.maxAmmo; } });
   updateAmmoHUD();
@@ -367,8 +370,6 @@ function startWave(w) {
     t += 0.35 + rng() * 0.9;
     spawnQueue.push({ at: t, speed: cfg.speed, canMirv: cfg.mirv });
   }
-  waveMissilesTotal = cfg.count;
-  waveMissilesResolved = 0;
   state = STATE.PLAYING;
   logEvent('WAVE_START', { wave: w, seed: runSeed });
 }
@@ -393,12 +394,8 @@ function spawnEnemyMissile(speed, canMirv, fromX, fromY, forcedTargetX) {
     progress: 0, speed, dur: dist / speed,
     mirvArmed: canMirv && rng() < MIRV_CHANCE,
     mirvAt: 0.4 + rng() * 0.25,
-    mirvDone: false, isChild: fromX != null,
+    isChild: fromX != null,
   });
-}
-
-function resolveEnemyMissile() {
-  waveMissilesResolved++;
 }
 
 function fireInterceptor(tx, ty) {
@@ -439,7 +436,9 @@ function updateCityHUD() {
 }
 
 function spawnExplosion(x, y, kind) {
-  explosions.push({ x, y, age: 0, growLife: 0.22, holdLife: 0.28, shrinkLife: 0.24, maxR: 46, kind });
+  explosions.push({ x, y, age: 0, curR: 0, lethal: false,
+    growLife: 0.22, holdLife: 0.28, shrinkLife: 0.24, maxR: 46, kind });
+  playBoom();
 }
 
 function damageStructureAt(target) {
@@ -472,7 +471,7 @@ function damageStructureAt(target) {
 
 function triggerGameOver() {
   state = STATE.GAME_OVER;
-  if (score > highScore) { highScore = score; localStorage.setItem('vectorSiege_highScore', String(highScore)); }
+  if (score > highScore) { highScore = score; storageSet('vectorSiege_highScore', String(highScore)); }
   document.getElementById('finalScore').textContent = 'SCORE ' + score;
   document.getElementById('hiScoreLine').textContent = 'HIGH SCORE ' + highScore;
   document.getElementById('hiVal').textContent = highScore;
@@ -529,7 +528,7 @@ function simStep(dt) {
     const m = enemyMissiles[i];
     m.progress += dt / m.dur;
 
-    if (m.mirvArmed && !m.mirvDone && m.progress >= m.mirvAt) {
+    if (m.mirvArmed && m.progress >= m.mirvAt) {
       // Parent warhead is replaced by its children, not additive to them —
       // otherwise one MIRV-armed missile becomes three threats instead of two.
       const hx = m.x0 + (m.x1 - m.x0) * m.progress;
@@ -539,19 +538,24 @@ function simStep(dt) {
         spawnEnemyMissile(m.speed * 1.05, false, hx, hy, spreadTarget);
       }
       enemyMissiles.splice(i, 1);
-      resolveEnemyMissile();
       continue;
     }
 
     if (m.progress >= 1) {
+      // Only a living structure within HIT_RADIUS takes the hit. Without
+      // the radius check a MIRV child landing in open ground would
+      // destroy whatever city happened to be nearest, however far away.
       const hx = m.x1;
-      const target = [...cities, ...silos].reduce((best, s) => {
+      const HIT_RADIUS = 26;
+      let best = null;
+      for (const s of [...cities, ...silos]) {
+        if (!s.alive) continue;
         const d = Math.abs(s.x - hx);
-        return (!best || d < best.d) ? { s, d } : best;
-      }, null);
-      if (target && (target.s.alive !== false)) damageStructureAt(target.s);
+        if (d <= HIT_RADIUS && (!best || d < best.d)) best = { s, d };
+      }
+      if (best) damageStructureAt(best.s);
+      else { spawnExplosion(hx, groundY, 'hostile'); grid.ripple(hx, groundY, 18, 110); }
       enemyMissiles.splice(i, 1);
-      resolveEnemyMissile();
       continue;
     }
 
@@ -562,8 +566,7 @@ function simStep(dt) {
       if (!e.lethal) continue;
       if (Math.hypot(hx - e.x, hy - e.y) < e.curR) {
         enemyMissiles.splice(i, 1);
-        resolveEnemyMissile();
-        score += m.isChild ? 15 : 25;
+          score += m.isChild ? 15 : 25;
         document.getElementById('scoreVal').textContent = score;
         grid.ripple(hx, hy, 14, 90);
         logEvent('KILL', { x: hx, y: hy, child: !!m.isChild });
@@ -599,9 +602,7 @@ function simStep(dt) {
   checkWaveClear();
 }
 
-let waveStartSimTime = 0;
-const _origStartWave = startWave;
-startWave = function(w) { waveStartSimTime = simTime; _origStartWave(w); };
+// (waveStartSimTime is set inside startWave() — see its definition above.)
 
 // ── Render ───────────────────────────────────────────────────────────
 let pointerX = -1000, pointerY = -1000;
@@ -710,12 +711,18 @@ window.addEventListener('resize', resize);
 // ── Audio — procedural, zero external assets, gated on first gesture ─
 let actx = null, noiseBuf = null;
 function ensureAudio() {
-  if (actx) return;
-  actx = new (window.AudioContext || window.webkitAudioContext)();
-  const len = actx.sampleRate * 0.5;
-  noiseBuf = actx.createBuffer(1, len, actx.sampleRate);
-  const d = noiseBuf.getChannelData(0);
-  for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+  if (!actx) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return; // no Web Audio — game stays fully playable, silently
+    actx = new AC();
+    const len = Math.floor(actx.sampleRate * 0.5);
+    noiseBuf = actx.createBuffer(1, len, actx.sampleRate);
+    const d = noiseBuf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+  }
+  // iOS Safari hands back a suspended context even when constructed
+  // inside a user gesture; resume() must be called explicitly.
+  if (actx.state === 'suspended') actx.resume();
 }
 function playLaunch() {
   if (!actx) return;
@@ -760,18 +767,24 @@ function playFanfare() {
     o.start(actx.currentTime + i * 0.12); o.stop(actx.currentTime + i * 0.12 + 0.32);
   });
 }
-// Explosions trigger playBoom() via the same hook interceptor/enemy impacts use.
-const _origSpawnExplosion = spawnExplosion;
-spawnExplosion = function(x, y, kind) { _origSpawnExplosion(x, y, kind); playBoom(); };
+// (spawnExplosion calls playBoom() directly — see its definition above.)
 
 // ── Input ────────────────────────────────────────────────────────────
-canvas.addEventListener('pointermove', e => { pointerX = e.clientX; pointerY = e.clientY; });
-canvas.addEventListener('pointerdown', e => {
+// Listeners live on `window`, NOT on the canvas. The overlay panels are
+// full-screen fixed divs stacked above the canvas; a canvas-bound
+// listener never sees a tap while any overlay is up, which made the
+// title screen impossible to dismiss. window-level + pointer-events:none
+// on .overlay is belt-and-braces so this can't regress.
+window.addEventListener('pointermove', e => { pointerX = e.clientX; pointerY = e.clientY; });
+window.addEventListener('pointerdown', e => {
   pointerX = e.clientX; pointerY = e.clientY;
   ensureAudio();
-  if (state === STATE.TITLE) { beginGame(); return; }
-  if (state === STATE.GAME_OVER) { beginGame(); return; }
-  if (state === STATE.PLAYING) fireInterceptor(e.clientX, e.clientY);
+  if (state === STATE.TITLE || state === STATE.GAME_OVER) { beginGame(); return; }
+  if (state === STATE.PLAYING) {
+    // Clamp above the ground line — detonating inside the earth is a
+    // wasted round the player didn't mean to spend.
+    fireInterceptor(e.clientX, Math.min(e.clientY, groundY - 12));
+  }
 });
 window.addEventListener('keydown', e => {
   if (e.key === '1') preferredSilo = 0;
@@ -793,8 +806,22 @@ function beginGame() {
   startWave(1);
 }
 
+// ── Safe storage ─────────────────────────────────────────────────────
+// localStorage THROWS (SecurityError) in a sandboxed cross-origin iframe
+// and in some private-browsing modes. The shell mounts cabinets in
+// exactly that kind of iframe, so an unguarded access here takes the
+// whole boot sequence down with it. Dry-run principle: missing
+// capability degrades to a no-op, never a breakage.
+function storageGet(key, fallback) {
+  try { const v = localStorage.getItem(key); return v === null ? fallback : v; }
+  catch (e) { return fallback; }
+}
+function storageSet(key, value) {
+  try { localStorage.setItem(key, value); } catch (e) { /* no-op */ }
+}
+
 // ── Boot ─────────────────────────────────────────────────────────────
-highScore = parseInt(localStorage.getItem('vectorSiege_highScore') || '0', 10);
+highScore = parseInt(storageGet('vectorSiege_highScore', '0'), 10) || 0;
 document.getElementById('hiVal').textContent = highScore;
 buildStructures();
 buildGlowSprites();
