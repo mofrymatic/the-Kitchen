@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>VECTOR SIEGE · OBLITERATUS</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;background:#020b18;overflow:hidden;touch-action:none;user-select:none}
+canvas{display:block;position:fixed;top:0;left:0;cursor:crosshair}
+#hud{position:fixed;top:0;left:0;width:100%;z-index:10;pointer-events:none;
+  font-family:'Courier New',monospace;color:rgba(0,210,255,.85);letter-spacing:.08em;
+  display:flex;justify-content:space-between;padding:12px 16px;font-size:13px;text-shadow:0 0 6px rgba(0,180,255,.5)}
+#hud .block{display:flex;flex-direction:column;gap:2px}
+#hud .label{font-size:9px;color:rgba(0,180,255,.5);letter-spacing:.16em}
+#ammoRow{display:flex;gap:14px;margin-top:2px}
+#ammoRow span{color:rgba(120,255,190,.85)}
+#cities{position:fixed;bottom:6px;left:0;width:100%;text-align:center;z-index:10;pointer-events:none;
+  font-family:'Courier New',monospace;font-size:11px;letter-spacing:.3em;color:rgba(255,120,90,.7)}
+#seedTag{position:fixed;bottom:6px;right:10px;z-index:10;pointer-events:none;
+  font-family:'Courier New',monospace;font-size:9px;color:rgba(0,160,255,.35);letter-spacing:.1em}
+
+.overlay{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;
+  background:rgba(2,11,24,.72);backdrop-filter:blur(2px)}
+.overlay.hidden{display:none}
+.panel{border:1px solid rgba(0,210,255,.4);background:rgba(2,14,32,.85);
+  box-shadow:0 0 30px rgba(0,190,255,.25),inset 0 0 20px rgba(0,190,255,.06);
+  padding:32px 40px;text-align:center;font-family:'Courier New',monospace;color:#bdf3ff;
+  border-radius:4px;max-width:420px}
+.panel h1{font-size:22px;letter-spacing:.2em;color:#00e5ff;text-shadow:0 0 12px rgba(0,220,255,.6);margin-bottom:14px}
+.panel p{font-size:12px;line-height:1.7;letter-spacing:.04em;color:rgba(180,230,255,.75);margin-bottom:6px}
+.panel .big{font-size:15px;color:#ffee00;text-shadow:0 0 10px rgba(255,220,0,.5);margin:10px 0}
+.panel .tap{margin-top:18px;font-size:12px;color:rgba(0,255,180,.85);letter-spacing:.14em;
+  animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div id="hud">
+  <div class="block">
+    <span class="label">SCORE</span>
+    <span id="scoreVal">0</span>
+  </div>
+  <div class="block" style="text-align:center">
+    <span class="label">WAVE</span>
+    <span id="waveVal">1</span>
+    <div id="ammoRow"><span id="a0">10</span><span id="a1">10</span><span id="a2">10</span></div>
+  </div>
+  <div class="block" style="text-align:right">
+    <span class="label">HIGH SCORE</span>
+    <span id="hiVal">0</span>
+  </div>
+</div>
+<div id="cities">● ● ● ● ● ●</div>
+<div id="seedTag">SEED —</div>
+
+<div class="overlay" id="titleOverlay">
+  <div class="panel">
+    <h1>VECTOR SIEGE</h1>
+    <p>Six cities. Three batteries. The sky is falling in straight lines.</p>
+    <p>Tap / click to detonate an interceptor at that point.</p>
+    <p>Keys 1 / 2 / 3 force a specific battery (left / mid / right) if it still has ammo.</p>
+    <div class="tap" id="startPrompt">TAP TO BEGIN</div>
+  </div>
+</div>
+
+<div class="overlay hidden" id="waveOverlay">
+  <div class="panel">
+    <h1 id="waveHeadline">WAVE 1 CLEAR</h1>
+    <p id="waveTally">+0 city bonus · +0 ammo bonus</p>
+    <div class="big" id="waveNext">WAVE 2 INBOUND</div>
+  </div>
+</div>
+
+<div class="overlay hidden" id="overOverlay">
+  <div class="panel">
+    <h1>ALL CITIES LOST</h1>
+    <p class="big" id="finalScore">SCORE 0</p>
+    <p id="hiScoreLine">HIGH SCORE 0</p>
+    <div class="tap">TAP TO RETRY</div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════
+//  VECTOR SIEGE · OBLITERATUS — Missile Command variant
+//
+//  Architecture notes (read before touching):
+//   - Canvas 2D throughout, on purpose. Entity counts here (a few dozen
+//     lines/circles max) never approach the dot-grid's thousands of
+//     nodes, and that file already proved Canvas 2D idles at 0% CPU —
+//     there's no compute bottleneck for Wasm/WebGPU to solve. See
+//     dotgrid_v1_optimized.html for the sibling case this reasoning
+//     comes from.
+//   - Glow sprites are baked ONCE (shadowBlur paid once) then scaled via
+//     drawImage per frame — identical trick to the dot-grid file, just
+//     applied to explosions instead of mesh nodes.
+//   - Simulation runs on a fixed 30Hz step with a seeded PRNG
+//     (mulberry32), decoupled from the render/RAF loop — same pattern
+//     as grid-warden's deterministic kernel, kept consistent on
+//     purpose so a future score-authority server can replay any run
+//     from (seed, input log) alone.
+//   - BRIDGE STUB: reportToShell() below is DRY-RUN ONLY. It does not
+//     postMessage anything yet — I don't have fts-shell-v1.2.html's
+//     actual bridge message schema in front of me, and guessing field
+//     names would be worse than leaving it stubbed. Confirm the
+//     contract, then wire the real postMessage call in. Standalone
+//     play (this file opened directly) works fully without it.
+// ═══════════════════════════════════════════════════════════════════════
+
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d');
+
+let W = 0, H = 0, groundY = 0;
+let dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+// ── Seeded RNG (mulberry32) — same generator as grid-warden ─────────
+function mulberry32(a) {
+  return function() {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+let runSeed = 0, rng = mulberry32(1);
+function newRun() {
+  runSeed = (Date.now() ^ 0x9E3779B9 ^ (Math.random() * 0xFFFFFFFF)) >>> 0;
+  rng = mulberry32(runSeed);
+  document.getElementById('seedTag').textContent = 'SEED ' + runSeed.toString(16).toUpperCase();
+}
+
+// Reserved for a future score-authority digest — event log is kept but
+// not transmitted anywhere yet. Structure matches the "protocol fields
+// reserved from day one" principle rather than being wired live.
+let eventLog = [];
+function logEvent(type, data) { eventLog.push({ t: simTime, type, ...data }); }
+
+// ── Bridge stub (dry-run) ────────────────────────────────────────────
+function reportToShell(payload) {
+  if (window.parent !== window) {
+    console.log('[BRIDGE STUB — dry run, not sent] would postMessage:', payload,
+      '\n  -> confirm message schema against fts-shell-v1.2.html before enabling.');
+  }
+}
+
+// ── Glow sprite cache — bake once, scale via drawImage every frame ──
+const GLOW_SCALE = 64; // bitmap px per unit radius
+let glowSprites = {};
+function bakeGlow(colorRgb, dprLocal) {
+  const size = Math.ceil(GLOW_SCALE * 2 * dprLocal);
+  const off = document.createElement('canvas');
+  off.width = off.height = size;
+  const o = off.getContext('2d');
+  o.scale(dprLocal, dprLocal);
+  const c = GLOW_SCALE;
+  const g = o.createRadialGradient(c, c, 0, c, c, GLOW_SCALE * 0.85);
+  g.addColorStop(0, `rgba(${colorRgb},1)`);
+  g.addColorStop(0.35, `rgba(${colorRgb},.75)`);
+  g.addColorStop(1, `rgba(${colorRgb},0)`);
+  o.fillStyle = g;
+  o.beginPath();
+  o.arc(c, c, GLOW_SCALE * 0.85, 0, Math.PI * 2);
+  o.fill();
+  return off;
+}
+function buildGlowSprites() {
+  glowSprites = {
+    hostile:   bakeGlow('255,90,60', dpr),   // enemy explosions
+    friendly:  bakeGlow('90,255,190', dpr),  // interceptor detonation
+    cityLoss:  bakeGlow('255,40,40', dpr),   // city destroyed flash
+  };
+}
+function drawGlow(kind, x, y, radiusPx, alpha) {
+  const spr = glowSprites[kind];
+  const d = radiusPx * 2;
+  ctx.globalAlpha = alpha;
+  ctx.drawImage(spr, x - d / 2, y - d / 2, d, d);
+  ctx.globalAlpha = 1;
+}
+
+// ── Background spring-mesh dot grid (trimmed) ───────────────────────
+// Same SoA layout + tier-sprite technique as dotgrid_v1_optimized.html,
+// reduced cell density since this canvas also renders gameplay.
+const DOT_COL = '0,120,190';
+let dotSprites = [];
+function bakeDotSprite(glowRatio, dprLocal) {
+  const BAKE = 20, PAD = 3.2;
+  const size = Math.ceil(BAKE * PAD * 2 * dprLocal);
+  const off = document.createElement('canvas');
+  off.width = off.height = size;
+  const o = off.getContext('2d');
+  o.scale(dprLocal, dprLocal);
+  const c = BAKE * PAD;
+  o.fillStyle = `rgb(${DOT_COL})`;
+  o.shadowColor = `rgb(${DOT_COL})`;
+  o.shadowBlur = BAKE * glowRatio;
+  o.beginPath();
+  o.arc(c, c, BAKE, 0, Math.PI * 2);
+  o.fill();
+  return off;
+}
+function buildDotSprites() { dotSprites = [0.9, 0.5].map(r => bakeDotSprite(r, dpr)); }
+
+const grid = {
+  cells: 30, cw: 0, ch: 0, cols: 0, rows: 0, n: 0,
+  baseX: null, baseY: null, dispX: null, dispY: null, velX: null, velY: null, major: null,
+
+  init() {
+    this.cw = W / this.cells;
+    this.ch = this.cw;
+    this.cols = Math.ceil(W / this.cw) + 1;
+    this.rows = Math.ceil(H / this.ch) + 1;
+    this.n = this.cols * this.rows;
+    this.baseX = new Float32Array(this.n);
+    this.baseY = new Float32Array(this.n);
+    this.dispX = new Float32Array(this.n);
+    this.dispY = new Float32Array(this.n);
+    this.velX  = new Float32Array(this.n);
+    this.velY  = new Float32Array(this.n);
+    this.major = new Uint8Array(this.n);
+    let i = 0;
+    for (let r = 0; r < this.rows; r++)
+      for (let c = 0; c < this.cols; c++, i++) {
+        this.baseX[i] = c * this.cw;
+        this.baseY[i] = r * this.ch;
+        this.major[i] = (c % 4 === 0 && r % 4 === 0) ? 1 : 0;
+      }
+  },
+
+  ripple(wx, wy, mag, radius) {
+    const cr = wx / this.cw, rr = wy / this.ch;
+    const c0 = Math.max(0, Math.floor(cr - radius / this.cw) - 1);
+    const c1 = Math.min(this.cols - 1, Math.ceil(cr + radius / this.cw) + 1);
+    const r0 = Math.max(0, Math.floor(rr - radius / this.ch) - 1);
+    const r1 = Math.min(this.rows - 1, Math.ceil(rr + radius / this.ch) + 1);
+    for (let r = r0; r <= r1; r++)
+      for (let c = c0; c <= c1; c++) {
+        const i = r * this.cols + c;
+        const nx = c * this.cw, ny = r * this.ch;
+        const dx = nx - wx, dy = ny - wy, d = Math.hypot(dx, dy);
+        if (d < radius && d > 0) {
+          const f = mag * (1 - d / radius);
+          this.velX[i] += (dx / d) * f;
+          this.velY[i] += (dy / d) * f;
+        }
+      }
+  },
+
+  update(dt) {
+    const spring = 8, damp = 0.88;
+    const { n, dispX, dispY, velX, velY } = this;
+    for (let i = 0; i < n; i++) {
+      let vx = velX[i], vy = velY[i], dx = dispX[i], dy = dispY[i];
+      vx += -dx * spring * dt; vy += -dy * spring * dt;
+      vx *= damp; vy *= damp;
+      dx += vx * dt; dy += vy * dt;
+      velX[i] = vx; velY[i] = vy; dispX[i] = dx; dispY[i] = dy;
+    }
+  },
+
+  draw() {
+    const { n, baseX, baseY, dispX, dispY, major } = this;
+    for (let pass = 1; pass >= 0; pass--) {
+      const sprite = dotSprites[pass];
+      const baseA = pass ? 0.4 : 0.16;
+      const baseR = pass ? 2.2 : 1.2;
+      for (let i = 0; i < n; i++) {
+        if (major[i] !== pass) continue;
+        const dx = dispX[i], dy = dispY[i];
+        const disp = Math.hypot(dx, dy);
+        const boost = Math.min(1, disp * 0.05);
+        ctx.globalAlpha = Math.min(0.7, baseA + boost * 0.4);
+        const R = (baseR + boost * 2) * 6.4;
+        ctx.drawImage(sprite, baseX[i] + dx - R / 2, baseY[i] + dy - R / 2, R, R);
+      }
+    }
+    ctx.globalAlpha = 1;
+  },
+};
+
+// ── Game state ───────────────────────────────────────────────────────
+const STATE = { TITLE: 0, PLAYING: 1, WAVE_CLEAR: 2, GAME_OVER: 3 };
+let state = STATE.TITLE;
+let score = 0, wave = 1, highScore = 0;
+let simTime = 0;
+let waveClearTimer = 0;
+
+const SILO_COUNT = 3, CITY_COUNT = 6;
+let silos = [];   // {xf, x, ammo, maxAmmo, alive}
+let cities = [];  // {xf, x, alive}
+
+function buildStructures() {
+  // 9 evenly-spaced slots: silo, city, city ×3 — classic base/city rhythm.
+  const slots = 9, x0 = 0.07, x1 = 0.93;
+  const step = (x1 - x0) / (slots - 1);
+  silos = []; cities = [];
+  for (let i = 0; i < slots; i++) {
+    const xf = x0 + step * i;
+    if (i % 3 === 0) silos.push({ xf, x: 0, ammo: 10, maxAmmo: 10, alive: true });
+    else cities.push({ xf, x: 0, alive: true });
+  }
+}
+function layoutStructures() {
+  silos.forEach(s => s.x = s.xf * W);
+  cities.forEach(c => c.x = c.xf * W);
+}
+
+let enemyMissiles = [];   // {x0,y0,x1,y1,progress,speed,mirvDone,target,isChild}
+let interceptors = [];    // {x0,y0,x1,y1,progress,speed,silo}
+let explosions = [];      // {x,y,age,life,maxR,kind,lethal}
+
+let spawnQueue = [];      // remaining missiles to introduce this wave (by sim-time offset)
+let waveMissilesTotal = 0, waveMissilesResolved = 0;
+
+const SIM_STEP = 1 / 30;
+const ENEMY_BASE_SPEED = 90;   // px/s at wave 1
+const INTERCEPTOR_SPEED = 480; // px/s, fast and decisive
+const MIRV_WAVE_START = 3;
+const MIRV_CHANCE = 0.35;
+
+function waveConfig(w) {
+  return {
+    count: Math.min(16, 5 + w * 2),
+    speed: ENEMY_BASE_SPEED * (1 + (w - 1) * 0.12),
+    mirv: w >= MIRV_WAVE_START,
+  };
+}
+
+function startWave(w) {
+  wave = w;
+  document.getElementById('waveVal').textContent = wave;
+  silos.forEach(s => { if (s.alive) { s.ammo = s.maxAmmo; } });
+  updateAmmoHUD();
+  const cfg = waveConfig(w);
+  spawnQueue = [];
+  let t = 0.6;
+  for (let i = 0; i < cfg.count; i++) {
+    t += 0.35 + rng() * 0.9;
+    spawnQueue.push({ at: t, speed: cfg.speed, canMirv: cfg.mirv });
+  }
+  waveMissilesTotal = cfg.count;
+  waveMissilesResolved = 0;
+  state = STATE.PLAYING;
+  logEvent('WAVE_START', { wave: w, seed: runSeed });
+}
+
+function aliveCities() { return cities.filter(c => c.alive).length; }
+function aliveSilos() { return silos.filter(s => s.alive); }
+
+function pickTargetStructure() {
+  const pool = [...cities.filter(c => c.alive), ...aliveSilos()];
+  if (pool.length === 0) return null;
+  return pool[Math.floor(rng() * pool.length)];
+}
+
+function spawnEnemyMissile(speed, canMirv, fromX, fromY, forcedTargetX) {
+  const target = forcedTargetX != null ? { x: forcedTargetX } : pickTargetStructure();
+  if (!target) return;
+  const x0 = fromX != null ? fromX : rng() * W;
+  const y0 = fromY != null ? fromY : 0;
+  const dist = Math.hypot(target.x - x0, groundY - y0);
+  enemyMissiles.push({
+    x0, y0, x1: target.x, y1: groundY,
+    progress: 0, speed, dur: dist / speed,
+    mirvArmed: canMirv && rng() < MIRV_CHANCE,
+    mirvAt: 0.4 + rng() * 0.25,
+    mirvDone: false, isChild: fromX != null,
+  });
+}
+
+function resolveEnemyMissile() {
+  waveMissilesResolved++;
+}
+
+function fireInterceptor(tx, ty) {
+  if (state !== STATE.PLAYING) return;
+  const usable = aliveSilos().filter(s => s.ammo > 0);
+  if (usable.length === 0) return;
+  let chosen = null;
+  if (preferredSilo != null) {
+    const p = silos[preferredSilo];
+    if (p && p.alive && p.ammo > 0) chosen = p;
+  }
+  if (!chosen) {
+    chosen = usable.reduce((best, s) =>
+      (Math.abs(s.x - tx) < Math.abs(best.x - tx)) ? s : best, usable[0]);
+  }
+  chosen.ammo--;
+  updateAmmoHUD();
+  const d2 = Math.hypot(tx - chosen.x, ty - groundY);
+  interceptors.push({
+    x0: chosen.x, y0: groundY, x1: tx, y1: ty,
+    progress: 0, dur: Math.max(0.12, d2 / INTERCEPTOR_SPEED),
+  });
+  playLaunch();
+  logEvent('LAUNCH', { x: tx, y: ty });
+}
+
+function updateAmmoHUD() {
+  [0, 1, 2].forEach(i => {
+    const el = document.getElementById('a' + i);
+    const s = silos[i];
+    el.textContent = s.alive ? s.ammo : '×';
+    el.style.opacity = s.alive ? 1 : 0.3;
+  });
+}
+function updateCityHUD() {
+  const dots = cities.map(c => c.alive ? '●' : '·').join(' ');
+  document.getElementById('cities').textContent = dots;
+}
+
+function spawnExplosion(x, y, kind) {
+  explosions.push({ x, y, age: 0, growLife: 0.22, holdLife: 0.28, shrinkLife: 0.24, maxR: 46, kind });
+}
+
+function damageStructureAt(target) {
+  if (!target) return;
+  if (target.maxAmmo !== undefined) { // silo
+    if (target.alive) {
+      target.alive = false;
+      spawnExplosion(target.x, groundY, 'cityLoss');
+      grid.ripple(target.x, groundY, 40, 200);
+      playAlarm();
+      updateAmmoHUD();
+      logEvent('SILO_LOST', { x: target.x });
+      if (aliveSilos().length === 0) {
+        // No batteries left — can't intercept anything further.
+        setTimeout(() => { if (state === STATE.PLAYING) triggerGameOver(); }, 1200);
+      }
+    }
+  } else { // city
+    if (target.alive) {
+      target.alive = false;
+      spawnExplosion(target.x, groundY, 'cityLoss');
+      grid.ripple(target.x, groundY, 40, 200);
+      playAlarm();
+      updateCityHUD();
+      logEvent('CITY_LOST', { x: target.x });
+      if (aliveCities() === 0) triggerGameOver();
+    }
+  }
+}
+
+function triggerGameOver() {
+  state = STATE.GAME_OVER;
+  if (score > highScore) { highScore = score; localStorage.setItem('vectorSiege_highScore', String(highScore)); }
+  document.getElementById('finalScore').textContent = 'SCORE ' + score;
+  document.getElementById('hiScoreLine').textContent = 'HIGH SCORE ' + highScore;
+  document.getElementById('hiVal').textContent = highScore;
+  document.getElementById('overOverlay').classList.remove('hidden');
+  reportToShell({ type: 'SCORE_REPORT', game: 'vector-siege', score, wave, seed: runSeed });
+  logEvent('GAME_OVER', { score });
+}
+
+function checkWaveClear() {
+  if (state !== STATE.PLAYING) return;
+  if (spawnQueue.length === 0 && enemyMissiles.length === 0 &&
+      interceptors.length === 0 && explosions.length === 0) {
+    const cityBonus = aliveCities() * 100;
+    const ammoBonus = aliveSilos().reduce((a, s) => a + s.ammo, 0) * 5;
+    score += cityBonus + ammoBonus;
+    document.getElementById('scoreVal').textContent = score;
+    document.getElementById('waveHeadline').textContent = 'WAVE ' + wave + ' CLEAR';
+    document.getElementById('waveTally').textContent =
+      `+${cityBonus} city bonus · +${ammoBonus} ammo bonus`;
+    document.getElementById('waveNext').textContent = 'WAVE ' + (wave + 1) + ' INBOUND';
+    document.getElementById('waveOverlay').classList.remove('hidden');
+    state = STATE.WAVE_CLEAR;
+    waveClearTimer = 2.2;
+    playFanfare();
+  }
+}
+
+// ── Fixed-step simulation ────────────────────────────────────────────
+function simStep(dt) {
+  simTime += dt;
+
+  if (state === STATE.WAVE_CLEAR) {
+    waveClearTimer -= dt;
+    if (waveClearTimer <= 0) {
+      document.getElementById('waveOverlay').classList.add('hidden');
+      startWave(wave + 1);
+    }
+    grid.update(dt);
+    return;
+  }
+  if (state !== STATE.PLAYING) { grid.update(dt); return; }
+
+  // Spawn queued missiles whose time has come.
+  for (let i = spawnQueue.length - 1; i >= 0; i--) {
+    if (simTime >= spawnQueue[i].at + waveStartSimTime) {
+      const q = spawnQueue[i];
+      spawnEnemyMissile(q.speed, q.canMirv);
+      spawnQueue.splice(i, 1);
+    }
+  }
+
+  // Advance enemy missiles.
+  for (let i = enemyMissiles.length - 1; i >= 0; i--) {
+    const m = enemyMissiles[i];
+    m.progress += dt / m.dur;
+
+    if (m.mirvArmed && !m.mirvDone && m.progress >= m.mirvAt) {
+      // Parent warhead is replaced by its children, not additive to them —
+      // otherwise one MIRV-armed missile becomes three threats instead of two.
+      const hx = m.x0 + (m.x1 - m.x0) * m.progress;
+      const hy = m.y0 + (m.y1 - m.y0) * m.progress;
+      for (let k = 0; k < 2; k++) {
+        const spreadTarget = m.x1 + (rng() - 0.5) * 90;
+        spawnEnemyMissile(m.speed * 1.05, false, hx, hy, spreadTarget);
+      }
+      enemyMissiles.splice(i, 1);
+      resolveEnemyMissile();
+      continue;
+    }
+
+    if (m.progress >= 1) {
+      const hx = m.x1;
+      const target = [...cities, ...silos].reduce((best, s) => {
+        const d = Math.abs(s.x - hx);
+        return (!best || d < best.d) ? { s, d } : best;
+      }, null);
+      if (target && (target.s.alive !== false)) damageStructureAt(target.s);
+      enemyMissiles.splice(i, 1);
+      resolveEnemyMissile();
+      continue;
+    }
+
+    // Check against live explosions.
+    const hx = m.x0 + (m.x1 - m.x0) * m.progress;
+    const hy = m.y0 + (m.y1 - m.y0) * m.progress;
+    for (const e of explosions) {
+      if (!e.lethal) continue;
+      if (Math.hypot(hx - e.x, hy - e.y) < e.curR) {
+        enemyMissiles.splice(i, 1);
+        resolveEnemyMissile();
+        score += m.isChild ? 15 : 25;
+        document.getElementById('scoreVal').textContent = score;
+        grid.ripple(hx, hy, 14, 90);
+        logEvent('KILL', { x: hx, y: hy, child: !!m.isChild });
+        break;
+      }
+    }
+  }
+
+  // Advance interceptors.
+  for (let i = interceptors.length - 1; i >= 0; i--) {
+    const p = interceptors[i];
+    p.progress += dt / p.dur;
+    if (p.progress >= 1) {
+      spawnExplosion(p.x1, p.y1, 'friendly');
+      grid.ripple(p.x1, p.y1, 22, 130);
+      interceptors.splice(i, 1);
+    }
+  }
+
+  // Advance explosions.
+  for (let i = explosions.length - 1; i >= 0; i--) {
+    const e = explosions[i];
+    e.age += dt;
+    const total = e.growLife + e.holdLife + e.shrinkLife;
+    if (e.age >= total) { explosions.splice(i, 1); continue; }
+    if (e.age < e.growLife) e.curR = e.maxR * (e.age / e.growLife);
+    else if (e.age < e.growLife + e.holdLife) e.curR = e.maxR;
+    else e.curR = e.maxR * (1 - (e.age - e.growLife - e.holdLife) / e.shrinkLife);
+    e.lethal = e.age < e.growLife + e.holdLife;
+  }
+
+  grid.update(dt);
+  checkWaveClear();
+}
+
+let waveStartSimTime = 0;
+const _origStartWave = startWave;
+startWave = function(w) { waveStartSimTime = simTime; _origStartWave(w); };
+
+// ── Render ───────────────────────────────────────────────────────────
+let pointerX = -1000, pointerY = -1000;
+let preferredSilo = null;
+
+function drawGround() {
+  ctx.strokeStyle = 'rgba(255,70,90,.55)';
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(0, groundY); ctx.lineTo(W, groundY); ctx.stroke();
+}
+
+function drawSilos() {
+  for (const s of silos) {
+    ctx.globalAlpha = s.alive ? 1 : 0.25;
+    ctx.strokeStyle = s.alive ? 'rgba(90,255,190,.9)' : 'rgba(120,120,130,.6)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(s.x - 14, groundY);
+    ctx.lineTo(s.x, groundY - 20);
+    ctx.lineTo(s.x + 14, groundY);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawCities() {
+  for (const c of cities) {
+    ctx.globalAlpha = c.alive ? 1 : 0.2;
+    ctx.strokeStyle = c.alive ? 'rgba(0,210,255,.85)' : 'rgba(120,120,130,.5)';
+    ctx.lineWidth = 1.6;
+    ctx.strokeRect(c.x - 10, groundY - 12, 8, 12);
+    ctx.strokeRect(c.x - 1, groundY - 18, 8, 18);
+    ctx.strokeRect(c.x + 8, groundY - 9, 7, 9);
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawTrail(x0, y0, x1, y1, progress, colorRgb) {
+  const hx = x0 + (x1 - x0) * progress, hy = y0 + (y1 - y0) * progress;
+  const g = ctx.createLinearGradient(x0, y0, hx, hy);
+  g.addColorStop(0, `rgba(${colorRgb},0)`);
+  g.addColorStop(1, `rgba(${colorRgb},.95)`);
+  ctx.strokeStyle = g;
+  ctx.lineWidth = 1.6;
+  ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(hx, hy); ctx.stroke();
+  ctx.fillStyle = `rgba(${colorRgb},1)`;
+  ctx.beginPath(); ctx.arc(hx, hy, 2, 0, Math.PI * 2); ctx.fill();
+}
+
+function drawCrosshair() {
+  if (pointerX < 0) return;
+  ctx.strokeStyle = 'rgba(0,255,220,.6)';
+  ctx.lineWidth = 1;
+  const r = 9;
+  ctx.beginPath();
+  ctx.moveTo(pointerX - r, pointerY); ctx.lineTo(pointerX - 3, pointerY);
+  ctx.moveTo(pointerX + 3, pointerY); ctx.lineTo(pointerX + r, pointerY);
+  ctx.moveTo(pointerX, pointerY - r); ctx.lineTo(pointerX, pointerY - 3);
+  ctx.moveTo(pointerX, pointerY + 3); ctx.lineTo(pointerX, pointerY + r);
+  ctx.stroke();
+}
+
+function render() {
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#020b18';
+  ctx.fillRect(0, 0, W, H);
+
+  grid.draw();
+  drawGround();
+  drawSilos();
+  drawCities();
+
+  for (const m of enemyMissiles) drawTrail(m.x0, m.y0, m.x1, m.y1, Math.min(1, m.progress), '255,90,60');
+  for (const p of interceptors) drawTrail(p.x0, p.y0, p.x1, p.y1, Math.min(1, p.progress), '90,255,190');
+  for (const e of explosions) drawGlow(e.kind, e.x, e.y, e.curR ?? 1, Math.min(1, 1.1 - e.age / (e.growLife + e.holdLife + e.shrinkLife)));
+
+  if (state === STATE.PLAYING) drawCrosshair();
+}
+
+// ── Main loop (fixed-step sim + render) ─────────────────────────────
+let rafId = null, _last = 0, _acc = 0;
+function loop(ts) {
+  if (_last === 0) _last = ts;
+  let dt = Math.min((ts - _last) / 1000, 0.1);
+  _last = ts;
+  _acc += dt;
+  while (_acc >= SIM_STEP) { simStep(SIM_STEP); _acc -= SIM_STEP; }
+  render();
+  rafId = requestAnimationFrame(loop);
+}
+
+// ── Resize / DPR ─────────────────────────────────────────────────────
+function resize() {
+  const newDpr = Math.min(window.devicePixelRatio || 1, 2);
+  if (newDpr !== dpr) { dpr = newDpr; buildGlowSprites(); buildDotSprites(); }
+  W = window.innerWidth; H = window.innerHeight;
+  groundY = H * 0.84;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  grid.init();
+  layoutStructures();
+}
+window.addEventListener('resize', resize);
+
+// ── Audio — procedural, zero external assets, gated on first gesture ─
+let actx = null, noiseBuf = null;
+function ensureAudio() {
+  if (actx) return;
+  actx = new (window.AudioContext || window.webkitAudioContext)();
+  const len = actx.sampleRate * 0.5;
+  noiseBuf = actx.createBuffer(1, len, actx.sampleRate);
+  const d = noiseBuf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+}
+function playLaunch() {
+  if (!actx) return;
+  const o = actx.createOscillator(), g = actx.createGain();
+  o.type = 'sine'; o.frequency.setValueAtTime(520, actx.currentTime);
+  o.frequency.exponentialRampToValueAtTime(140, actx.currentTime + 0.22);
+  g.gain.setValueAtTime(0.18, actx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + 0.24);
+  o.connect(g); g.connect(actx.destination);
+  o.start(); o.stop(actx.currentTime + 0.25);
+}
+function playBoom() {
+  if (!actx) return;
+  const src = actx.createBufferSource(); src.buffer = noiseBuf;
+  const filt = actx.createBiquadFilter(); filt.type = 'lowpass';
+  filt.frequency.setValueAtTime(900, actx.currentTime);
+  filt.frequency.exponentialRampToValueAtTime(80, actx.currentTime + 0.4);
+  const g = actx.createGain();
+  g.gain.setValueAtTime(0.35, actx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + 0.45);
+  src.connect(filt); filt.connect(g); g.connect(actx.destination);
+  src.start(); src.stop(actx.currentTime + 0.45);
+}
+function playAlarm() {
+  if (!actx) return;
+  const o = actx.createOscillator(), g = actx.createGain();
+  o.type = 'square'; o.frequency.setValueAtTime(220, actx.currentTime);
+  g.gain.setValueAtTime(0.12, actx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + 0.5);
+  o.connect(g); g.connect(actx.destination);
+  o.start(); o.stop(actx.currentTime + 0.5);
+}
+function playFanfare() {
+  if (!actx) return;
+  [440, 550, 660].forEach((f, i) => {
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = 'triangle'; o.frequency.setValueAtTime(f, actx.currentTime + i * 0.12);
+    g.gain.setValueAtTime(0.001, actx.currentTime + i * 0.12);
+    g.gain.linearRampToValueAtTime(0.15, actx.currentTime + i * 0.12 + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + i * 0.12 + 0.3);
+    o.connect(g); g.connect(actx.destination);
+    o.start(actx.currentTime + i * 0.12); o.stop(actx.currentTime + i * 0.12 + 0.32);
+  });
+}
+// Explosions trigger playBoom() via the same hook interceptor/enemy impacts use.
+const _origSpawnExplosion = spawnExplosion;
+spawnExplosion = function(x, y, kind) { _origSpawnExplosion(x, y, kind); playBoom(); };
+
+// ── Input ────────────────────────────────────────────────────────────
+canvas.addEventListener('pointermove', e => { pointerX = e.clientX; pointerY = e.clientY; });
+canvas.addEventListener('pointerdown', e => {
+  pointerX = e.clientX; pointerY = e.clientY;
+  ensureAudio();
+  if (state === STATE.TITLE) { beginGame(); return; }
+  if (state === STATE.GAME_OVER) { beginGame(); return; }
+  if (state === STATE.PLAYING) fireInterceptor(e.clientX, e.clientY);
+});
+window.addEventListener('keydown', e => {
+  if (e.key === '1') preferredSilo = 0;
+  else if (e.key === '2') preferredSilo = 1;
+  else if (e.key === '3') preferredSilo = 2;
+  else if (e.key === '0') preferredSilo = null;
+});
+
+function beginGame() {
+  document.getElementById('titleOverlay').classList.add('hidden');
+  document.getElementById('overOverlay').classList.add('hidden');
+  score = 0; document.getElementById('scoreVal').textContent = 0;
+  buildStructures(); layoutStructures();
+  updateAmmoHUD(); updateCityHUD();
+  enemyMissiles = []; interceptors = []; explosions = []; spawnQueue = [];
+  eventLog = [];
+  newRun();
+  logEvent('RUN_START', { seed: runSeed });
+  startWave(1);
+}
+
+// ── Boot ─────────────────────────────────────────────────────────────
+highScore = parseInt(localStorage.getItem('vectorSiege_highScore') || '0', 10);
+document.getElementById('hiVal').textContent = highScore;
+buildStructures();
+buildGlowSprites();
+buildDotSprites();
+resize();
+rafId = requestAnimationFrame(loop);
+</script>
+</body>
+</html>
