@@ -3,60 +3,35 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Opalescent Amethyst–Obsidian Crystal</title>
+<title>Opalescent Amethyst-Obsidian Crystal - Inscribed Sigil Core</title>
 <style>
-  :root {
-    color-scheme: dark;
-    background: #020104;
-  }
-
+  :root { color-scheme: dark; background: #020104; }
   * { box-sizing: border-box; }
-
   html, body {
-    width: 100%;
-    height: 100%;
-    margin: 0;
-    overflow: hidden;
+    width: 100%; height: 100%; margin: 0; overflow: hidden;
     background:
-      radial-gradient(circle at 50% 43%, rgba(73, 26, 112, 0.18), transparent 32%),
+      radial-gradient(circle at 50% 44%, rgba(73, 26, 112, 0.20), transparent 34%),
       radial-gradient(ellipse at 50% 46%, #0c0616 0%, #050208 58%, #000 100%);
   }
-
   #crystal-canvas {
-    display: block;
-    width: 100%;
-    height: 100%;
-    cursor: grab;
-    touch-action: none;
+    display: block; width: 100%; height: 100%;
+    cursor: grab; touch-action: none;
   }
-
   #crystal-canvas.dragging { cursor: grabbing; }
-
   .hint {
-    position: fixed;
-    left: 50%;
-    bottom: 18px;
-    transform: translateX(-50%);
+    position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
     padding: 7px 11px;
-    border: 1px solid rgba(222, 194, 255, 0.15);
-    border-radius: 999px;
-    color: rgba(237, 220, 255, 0.56);
-    background: rgba(8, 3, 13, 0.42);
+    border: 1px solid rgba(222, 194, 255, 0.15); border-radius: 999px;
+    color: rgba(237, 220, 255, 0.56); background: rgba(8, 3, 13, 0.42);
     font: 500 11px/1.2 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    backdrop-filter: blur(8px);
-    pointer-events: none;
-    user-select: none;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    backdrop-filter: blur(8px); pointer-events: none; user-select: none;
   }
-
-  @media (prefers-reduced-motion: reduce) {
-    .hint { display: none; }
-  }
+  @media (prefers-reduced-motion: reduce) { .hint { display: none; } }
 </style>
 </head>
 <body>
-<canvas id="crystal-canvas" aria-label="Interactive opalescent amethyst and obsidian crystal"></canvas>
+<canvas id="crystal-canvas" aria-label="Interactive opalescent amethyst and obsidian crystal with an inscribed glowing sigil core"></canvas>
 <div class="hint">Drag to rotate</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -67,55 +42,72 @@
   const canvas = document.getElementById("crystal-canvas");
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  // ---------------------------------------------------------------------------
-  // Renderer, scene, camera
-  // ---------------------------------------------------------------------------
-  const renderer = new THREE.WebGLRenderer({
-    canvas,
-    antialias: true,
-    alpha: true,
-    powerPreference: "high-performance"
-  });
+  // ===========================================================================
+  // SIGIL OUTLINE  -  flattened directly from opencoven.svg bezier paths.
+  // Normalised to y-up, height 2.0, centred on its bounding box.
+  // { o: outer ring, h: [ hole rings ] }
+  // ===========================================================================
+  const SIGIL = [{o:[[-0.8367,0.7505],[-0.8493,0.6497],[-0.8504,0.6065],[-0.8494,0.5661],[-0.8450,0.5280],[-0.8382,0.4903],[-0.8291,0.4542],[-0.8177,0.4196],[-0.8038,0.3863],[-0.7855,0.3509],[-0.7642,0.3165],[-0.7418,0.2863],[-0.7142,0.2550],[-0.6870,0.2290],[-0.6526,0.2017],[-0.6406,0.1936],[-0.6339,0.1909],[-0.6142,0.2469],[-0.6096,0.2651],[-0.6524,0.3022],[-0.6869,0.3402],[-0.7043,0.3638],[-0.7181,0.3856],[-0.7415,0.4318],[-0.7590,0.4809],[-0.7662,0.5101],[-0.7708,0.5361],[-0.7749,0.5967],[-0.7744,0.6289],[-0.7723,0.6440],[-0.7597,0.6402],[-0.6932,0.6128],[-0.6110,0.5760],[-0.5507,0.5447],[-0.4904,0.5078],[-0.4501,0.5782]],h:[]},{o:[[0.8372,0.7503],[0.4515,0.5773],[0.4916,0.5086],[0.5501,0.5449],[0.5914,0.5666],[0.6849,0.6081],[0.7745,0.6447],[0.7760,0.5827],[0.7714,0.5340],[0.7604,0.4831],[0.7420,0.4312],[0.7168,0.3828],[0.6875,0.3409],[0.6526,0.3025],[0.6093,0.2646],[0.6347,0.1903],[0.6479,0.1981],[0.6731,0.2170],[0.7115,0.2516],[0.7456,0.2901],[0.7733,0.3291],[0.7986,0.3744],[0.8179,0.4193],[0.8334,0.4688],[0.8435,0.5186],[0.8493,0.5705],[0.8504,0.6272],[0.8464,0.6828]],h:[]},{o:[[-0.0014,1.0000],[-0.0643,0.9433],[-0.1295,0.8812],[-0.1860,0.8222],[-0.2373,0.7651],[-0.2691,0.7270],[-0.3187,0.6629],[-0.3580,0.6077],[-0.3939,0.5520],[-0.4205,0.5076],[-0.4585,0.4359],[-0.4757,0.4013],[-0.5094,0.3248],[-0.5340,0.2607],[-0.5550,0.1991],[-0.5821,0.1116],[-0.6130,0.0005],[-0.6367,-0.0785],[-0.6487,-0.1136],[-0.6637,-0.1485],[-0.6776,-0.1750],[-0.6931,-0.2004],[-0.7265,-0.2444],[-0.7652,-0.2834],[-0.8130,-0.3203],[-0.8155,-0.3235],[-0.7127,-0.3730],[-0.6409,-0.4153],[-0.6034,-0.4404],[-0.5606,-0.4717],[-0.5211,-0.5031],[-0.4819,-0.5368],[-0.4403,-0.5754],[-0.3989,-0.6166],[-0.3198,-0.7040],[-0.2631,-0.7734],[-0.1837,-0.8865],[-0.1889,-0.8703],[-0.2186,-0.8020],[-0.2669,-0.7025],[-0.3091,-0.6288],[-0.3588,-0.5525],[-0.4128,-0.4794],[-0.4691,-0.4131],[-0.5252,-0.3558],[-0.5925,-0.2961],[-0.5733,-0.2569],[-0.5589,-0.2235],[-0.4835,-0.0224],[-0.4464,0.0652],[-0.4210,0.1185],[-0.3937,0.1696],[-0.3447,0.2512],[-0.3107,0.2999],[-0.2603,0.3647],[-0.2121,0.4201],[-0.1774,0.4567],[-0.1195,0.5128],[-0.0372,0.5849],[-0.0041,0.6099],[0.0001,0.6112],[0.0050,0.6098],[0.0311,0.5906],[0.0939,0.5371],[0.1470,0.4874],[0.1981,0.4357],[0.2629,0.3621],[0.2963,0.3193],[0.3427,0.2535],[0.3913,0.1753],[0.4262,0.1097],[0.4484,0.0633],[0.4929,-0.0424],[0.5551,-0.2128],[0.5737,-0.2558],[0.5939,-0.2958],[0.5283,-0.3536],[0.4639,-0.4190],[0.4340,-0.4532],[0.3988,-0.4972],[0.3565,-0.5554],[0.3004,-0.6421],[0.2604,-0.7133],[0.2125,-0.8134],[0.1858,-0.8780],[0.1830,-0.8856],[0.1842,-0.8865],[0.2128,-0.8420],[0.2352,-0.8106],[0.3144,-0.7106],[0.3830,-0.6337],[0.4727,-0.5436],[0.5637,-0.4685],[0.6264,-0.4242],[0.7170,-0.3698],[0.7726,-0.3423],[0.8154,-0.3235],[0.7652,-0.2841],[0.7230,-0.2421],[0.6873,-0.1956],[0.6580,-0.1414],[0.6305,-0.0669],[0.6200,-0.0320],[0.6161,-0.0115],[0.6105,0.0035],[0.6038,0.0324],[0.5989,0.0440],[0.5916,0.0771],[0.5575,0.1928],[0.5460,0.2281],[0.5178,0.3050],[0.4931,0.3640],[0.4578,0.4380],[0.4248,0.5003],[0.3836,0.5691],[0.3397,0.6352],[0.2940,0.6970],[0.2441,0.7584],[0.1892,0.8203],[0.1130,0.8995],[0.0100,0.9936],[0.0030,0.9990]],h:[]},{o:[[-0.0030,0.4819],[-0.0379,0.3731],[-0.0582,0.3157],[-0.0802,0.2631],[-0.1301,0.1574],[-0.1381,0.1355],[-0.1427,0.1157],[-0.1447,0.0755],[-0.1436,0.0634],[-0.1394,0.0458],[-0.1342,0.0318],[-0.1257,0.0150],[-0.1016,-0.0191],[-0.0957,-0.0298],[-0.0890,-0.0493],[-0.0844,-0.0754],[-0.0838,-0.1031],[-0.0873,-0.1297],[-0.0979,-0.1713],[-0.1104,-0.2003],[-0.1238,-0.2226],[-0.1350,-0.2373],[-0.1403,-0.2413],[-0.1430,-0.2414],[-0.1493,-0.2382],[-0.1833,-0.2102],[-0.1976,-0.1939],[-0.2097,-0.1768],[-0.2228,-0.1483],[-0.2269,-0.1294],[-0.2282,-0.1087],[-0.2259,-0.0870],[-0.2223,-0.0726],[-0.2122,-0.0514],[-0.2244,-0.0548],[-0.2476,-0.0671],[-0.2507,-0.0673],[-0.2525,-0.0656],[-0.2556,-0.0447],[-0.2564,-0.0058],[-0.2556,0.0157],[-0.2518,0.0412],[-0.2380,0.1125],[-0.2110,0.1804],[-0.2104,0.1859],[-0.2466,0.1470],[-0.2785,0.1037],[-0.3020,0.0616],[-0.3195,0.0213],[-0.3332,-0.0241],[-0.3390,-0.0668],[-0.3396,-0.1070],[-0.3356,-0.1505],[-0.3292,-0.1807],[-0.3152,-0.2193],[-0.3026,-0.2429],[-0.2849,-0.2689],[-0.2692,-0.2873],[-0.2467,-0.3090],[-0.2250,-0.3267],[-0.1814,-0.3579],[-0.1626,-0.3747],[-0.1456,-0.3970],[-0.1380,-0.4094],[-0.1300,-0.4277],[0.1284,-0.4279],[0.1470,-0.3945],[0.1607,-0.3763],[0.1726,-0.3649],[0.2069,-0.3368],[0.2149,-0.3330],[0.2282,-0.3238],[0.2690,-0.2867],[0.2884,-0.2638],[0.3089,-0.2313],[0.3184,-0.2106],[0.3255,-0.1902],[0.3358,-0.1442],[0.3396,-0.0999],[0.3370,-0.0555],[0.3331,-0.0396],[0.3304,-0.0183],[0.3237,0.0062],[0.3101,0.0420],[0.2942,0.0753],[0.2765,0.1048],[0.2529,0.1369],[0.2362,0.1568],[0.2094,0.1841],[0.2084,0.1834],[0.2225,0.1514],[0.2335,0.1197],[0.2425,0.0863],[0.2485,0.0565],[0.2548,-0.0034],[0.2540,-0.0379],[0.2513,-0.0620],[0.2491,-0.0682],[0.2301,-0.0577],[0.2113,-0.0497],[0.2224,-0.0801],[0.2262,-0.1092],[0.2229,-0.1381],[0.2132,-0.1658],[0.2009,-0.1886],[0.1792,-0.2122],[0.1570,-0.2318],[0.1430,-0.2411],[0.1373,-0.2404],[0.1311,-0.2346],[0.1058,-0.1937],[0.0952,-0.1657],[0.0848,-0.1199],[0.0838,-0.0742],[0.0854,-0.0602],[0.0937,-0.0323],[0.1007,-0.0195],[0.1263,0.0149],[0.1345,0.0307],[0.1392,0.0439],[0.1424,0.0577],[0.1444,0.0766],[0.1444,0.0999],[0.1424,0.1173],[0.1379,0.1352],[0.1303,0.1556],[0.0850,0.2534],[0.0594,0.3154],[0.0363,0.3800],[0.0012,0.4885]],h:[[[0.0030,0.2441],[0.0650,0.0934],[0.0626,0.0930],[0.0396,0.1010],[0.0401,-0.1633],[0.0459,-0.1979],[0.0554,-0.2298],[0.0668,-0.2551],[0.0863,-0.2836],[0.0481,-0.3229],[0.0321,-0.3430],[0.0143,-0.3781],[0.0028,-0.4122],[-0.0011,-0.4161],[-0.0163,-0.3724],[-0.0274,-0.3508],[-0.0479,-0.3243],[-0.0852,-0.2848],[-0.0660,-0.2512],[-0.0522,-0.2187],[-0.0452,-0.1881],[-0.0415,-0.1491],[-0.0394,-0.0751],[-0.0389,0.0994],[-0.0498,0.0979],[-0.0631,0.0930],[-0.0642,0.0952],[-0.0003,0.2493]]]},{o:[[-0.1801,-0.4723],[-0.1361,-0.5048],[-0.1224,-0.5203],[-0.1137,-0.5336],[-0.1077,-0.5474],[-0.1051,-0.5608],[-0.1067,-0.5735],[-0.1135,-0.5911],[-0.0811,-0.6065],[-0.0655,-0.6160],[-0.0467,-0.6325],[-0.0334,-0.6497],[-0.0344,-0.6517],[-0.0617,-0.6444],[-0.0706,-0.6439],[-0.0601,-0.7082],[-0.0322,-0.8510],[-0.0068,-0.9709],[-0.0007,-0.9958],[0.0016,-1.0000],[0.0324,-0.8503],[0.0722,-0.6423],[0.0378,-0.6513],[0.0355,-0.6511],[0.0357,-0.6487],[0.0474,-0.6329],[0.0675,-0.6149],[0.0856,-0.6041],[0.1137,-0.5904],[0.1076,-0.5752],[0.1055,-0.5629],[0.1072,-0.5500],[0.1149,-0.5325],[0.1250,-0.5181],[0.1388,-0.5037],[0.1567,-0.4887],[0.1878,-0.4666],[-0.0312,-0.4642],[-0.1639,-0.4639],[-0.1879,-0.4650]],h:[]}];
 
+  // ===========================================================================
+  // Crystal proportions.  Hexagonal prism band + two hexagonal pyramid caps,
+  // built as ONE continuous fused surface.
+  // ===========================================================================
+  const R      = 1.30;   // hexagon circumradius
+  const BAND_H = 0.80;   // half-height of the straight prism band
+  const CAP_H  = 1.75;   // height of each pyramid cap
+  const FILL   = 0.90;   // how much of the maximum inscribed size the sigil uses
+
+  // ===========================================================================
+  // Renderer / scene / camera
+  // ===========================================================================
+  const renderer = new THREE.WebGLRenderer({
+    canvas, antialias: true, alpha: true, powerPreference: "high-performance"
+  });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.outputEncoding = THREE.sRGBEncoding;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.18;
+  renderer.toneMappingExposure = 1.16;
   renderer.physicallyCorrectLights = true;
+  renderer.sortObjects = true;
 
   const scene = new THREE.Scene();
-
   const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 100);
   camera.position.set(0, 0.05, 8.6);
 
   const world = new THREE.Group();
   scene.add(world);
 
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
   // Lighting
-  // ---------------------------------------------------------------------------
-  scene.add(new THREE.HemisphereLight(0x9c68d8, 0x050107, 0.54));
+  // ===========================================================================
+  scene.add(new THREE.HemisphereLight(0x9c68d8, 0x050107, 0.46));
 
-  const key = new THREE.PointLight(0xffffff, 24, 20, 2);
+  const key = new THREE.PointLight(0xffffff, 22, 20, 2);
   key.position.set(4.2, 5.0, 5.5);
   scene.add(key);
 
-  const violet = new THREE.PointLight(0xa14cff, 30, 18, 2);
+  const violet = new THREE.PointLight(0xa14cff, 26, 18, 2);
   violet.position.set(-4.5, 0.5, 3.2);
   scene.add(violet);
 
-  const blueRim = new THREE.PointLight(0x4976ff, 18, 16, 2);
+  const blueRim = new THREE.PointLight(0x4976ff, 16, 16, 2);
   blueRim.position.set(2.0, -4.0, -3.5);
   scene.add(blueRim);
 
-  const warmOpal = new THREE.PointLight(0xff9cdd, 13, 12, 2);
+  const warmOpal = new THREE.PointLight(0xff9cdd, 12, 12, 2);
   warmOpal.position.set(-1.2, 3.0, -3.0);
   scene.add(warmOpal);
 
-  // ---------------------------------------------------------------------------
-  // Glow texture
-  // ---------------------------------------------------------------------------
-  function makeGlowTexture(inner, middle) {
+  // The sigil itself is the light source inside the stone.
+  const sigilLight = new THREE.PointLight(0xf4e6ff, 16, 9, 2);
+  sigilLight.position.set(0, 0, 0);
+  world.add(sigilLight);
+
+  // ===========================================================================
+  // Glow sprite helper
+  // ===========================================================================
+  function makeGlowTexture(inner, middle, outer) {
     const size = 512;
     const c = document.createElement("canvas");
     c.width = c.height = size;
@@ -123,7 +115,7 @@
     const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
     g.addColorStop(0.00, inner);
     g.addColorStop(0.22, middle);
-    g.addColorStop(0.58, "rgba(108, 31, 172, 0.11)");
+    g.addColorStop(0.58, outer);
     g.addColorStop(1.00, "rgba(42, 6, 70, 0)");
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, size, size);
@@ -133,51 +125,31 @@
   }
 
   const aura = new THREE.Sprite(new THREE.SpriteMaterial({
-    map: makeGlowTexture("rgba(241,214,255,0.82)", "rgba(170,78,255,0.30)"),
-    color: 0xffffff,
-    blending: THREE.AdditiveBlending,
-    depthWrite: false,
-    transparent: true,
-    opacity: 0.78
+    map: makeGlowTexture("rgba(241,214,255,0.70)", "rgba(170,78,255,0.26)", "rgba(108,31,172,0.10)"),
+    blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0.66
   }));
-  aura.scale.set(7.5, 7.5, 1);
+  aura.scale.set(7.6, 7.6, 1);
   scene.add(aura);
 
-  const coreHalo = new THREE.Sprite(new THREE.SpriteMaterial({
-    map: makeGlowTexture("rgba(255,239,255,0.92)", "rgba(178,99,255,0.38)"),
-    blending: THREE.AdditiveBlending,
-    depthWrite: false,
-    transparent: true,
-    opacity: 0.75
-  }));
-  coreHalo.scale.set(2.5, 2.5, 1);
-  world.add(coreHalo);
-
-  // ---------------------------------------------------------------------------
-  // Geometry: exactly 12 exterior faces
-  // Four rectangular prism faces + four top triangles + four bottom triangles.
-  // This matches a square prism with square pyramids mounted to top and bottom.
-  // ---------------------------------------------------------------------------
-  function buildTwelveFaceCrystal(width = 1.62, bandHeight = 1.72, capHeight = 1.68) {
-    const h = bandHeight / 2;
-    const r = width / 2;
-
-    // Rotate 45 degrees so the front view reads as a faceted crystal rather than a box.
-    const ring = [];
-    for (let i = 0; i < 4; i++) {
-      const a = Math.PI / 4 + i * Math.PI / 2;
-      ring.push(new THREE.Vector3(Math.cos(a) * r * Math.SQRT2, 0, Math.sin(a) * r * Math.SQRT2));
+  // ===========================================================================
+  // FUSED HEXAGONAL CRYSTAL
+  // 6 side quads + 6 upper pyramid faces + 6 lower pyramid faces, emitted as a
+  // single non-indexed buffer so the surface is continuous (no seam meshes).
+  // ===========================================================================
+  function buildHexCrystal(radius, bandHalf, capHeight) {
+    const ringTop = [];
+    const ringBottom = [];
+    for (let i = 0; i < 6; i++) {
+      const a = i * Math.PI / 3;                       // vertex on +X
+      const x = Math.cos(a) * radius;
+      const z = Math.sin(a) * radius;
+      ringTop.push(new THREE.Vector3(x,  bandHalf, z));
+      ringBottom.push(new THREE.Vector3(x, -bandHalf, z));
     }
+    const apexTop    = new THREE.Vector3(0,  bandHalf + capHeight, 0);
+    const apexBottom = new THREE.Vector3(0, -bandHalf - capHeight, 0);
 
-    const top = ring.map(v => new THREE.Vector3(v.x, h, v.z));
-    const bottom = ring.map(v => new THREE.Vector3(v.x, -h, v.z));
-    const apexTop = new THREE.Vector3(0, h + capHeight, 0);
-    const apexBottom = new THREE.Vector3(0, -h - capHeight, 0);
-
-    const positions = [];
-    const zones = [];
-    const faceIds = [];
-
+    const positions = [], zones = [], faceIds = [];
     function tri(a, b, c, zone, faceId) {
       [a, b, c].forEach(v => positions.push(v.x, v.y, v.z));
       zones.push(zone, zone, zone);
@@ -185,62 +157,64 @@
     }
 
     let faceId = 0;
-    for (let i = 0; i < 4; i++) {
-      const n = (i + 1) % 4;
-
-      // One rectangular face represented by two triangles.
-      tri(bottom[i], top[i], top[n], 0, faceId);
-      tri(bottom[i], top[n], bottom[n], 0, faceId);
+    for (let i = 0; i < 6; i++) {
+      const n = (i + 1) % 6;
+      // prism wall (two triangles, one facet)
+      tri(ringBottom[i], ringTop[i], ringTop[n], 0, faceId);
+      tri(ringBottom[i], ringTop[n], ringBottom[n], 0, faceId);
       faceId++;
-
-      tri(top[i], apexTop, top[n], 1, faceId++);
-      tri(bottom[i], bottom[n], apexBottom, -1, faceId++);
+      // upper pyramid facet
+      tri(ringTop[i], apexTop, ringTop[n], 1, faceId++);
+      // lower pyramid facet
+      tri(ringBottom[i], ringBottom[n], apexBottom, -1, faceId++);
     }
 
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
-    geometry.setAttribute("aZone", new THREE.Float32BufferAttribute(zones, 1));
-    geometry.setAttribute("aFaceId", new THREE.Float32BufferAttribute(faceIds, 1));
-    geometry.computeVertexNormals();
-    geometry.computeBoundingSphere();
-    return geometry;
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+    g.setAttribute("aZone",    new THREE.Float32BufferAttribute(zones, 1));
+    g.setAttribute("aFaceId",  new THREE.Float32BufferAttribute(faceIds, 1));
+    g.computeVertexNormals();
+    g.computeBoundingSphere();
+    return g;
   }
 
-  const crystalGeometry = buildTwelveFaceCrystal();
+  const crystalGeometry = buildHexCrystal(R, BAND_H, CAP_H);
 
-  // ---------------------------------------------------------------------------
-  // Outer shell shader: amethyst + obsidian + moving opal fire
-  // ---------------------------------------------------------------------------
-  const shellMaterial = new THREE.MeshPhysicalMaterial({
-    color: 0xffffff,
-    roughness: 0.09,
-    metalness: 0.0,
-    transmission: 0.74,
-    thickness: 2.25,
-    ior: 1.58,
-    clearcoat: 1.0,
-    clearcoatRoughness: 0.06,
-    transparent: true,
-    opacity: 0.96,
-    side: THREE.DoubleSide,
-    emissive: 0x160522,
-    emissiveIntensity: 0.34
-  });
+  // ===========================================================================
+  // Shell material - opalescent amethyst / obsidian, now noticeably denser so
+  // the sigil's white light is tinted by the purple and black whorls.
+  // ===========================================================================
+  function makeShellMaterial(side) {
+    const m = new THREE.MeshPhysicalMaterial({
+      color: 0xffffff,
+      roughness: 0.10,
+      metalness: 0.0,
+      transmission: 0.42,      // was 0.74 - denser stone, stronger tint
+      thickness: 2.6,
+      ior: 1.62,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.06,
+      transparent: true,
+      opacity: 0.995,
+      side: side,
+      depthWrite: false,
+      emissive: 0x190727,
+      emissiveIntensity: 0.30
+    });
 
-  shellMaterial.onBeforeCompile = shader => {
-    shader.uniforms.uTime = { value: 0 };
-    shader.uniforms.uGlow = { value: 1 };
+    m.onBeforeCompile = shader => {
+      shader.uniforms.uTime = { value: 0 };
+      shader.uniforms.uGlow = { value: 1 };
 
-    shader.vertexShader = `
-      attribute float aZone;
-      attribute float aFaceId;
-      varying float vZone;
-      varying float vFaceId;
-      varying vec3 vLocalPosition;
-    ` + shader.vertexShader;
+      shader.vertexShader = `
+        attribute float aZone;
+        attribute float aFaceId;
+        varying float vZone;
+        varying float vFaceId;
+        varying vec3 vLocalPosition;
+      ` + shader.vertexShader;
 
-    shader.vertexShader = shader.vertexShader
-      .replace(
+      shader.vertexShader = shader.vertexShader.replace(
         "#include <begin_vertex>",
         `
           #include <begin_vertex>
@@ -250,189 +224,349 @@
         `
       );
 
-    shader.fragmentShader = `
-      uniform float uTime;
-      uniform float uGlow;
-      varying float vZone;
-      varying float vFaceId;
-      varying vec3 vLocalPosition;
+      shader.fragmentShader = `
+        uniform float uTime;
+        uniform float uGlow;
+        varying float vZone;
+        varying float vFaceId;
+        varying vec3 vLocalPosition;
 
-      float hash31(vec3 p) {
-        p = fract(p * 0.1031);
-        p += dot(p, p.yzx + 33.33);
-        return fract((p.x + p.y) * p.z);
-      }
-
-      float noise3(vec3 p) {
-        vec3 i = floor(p);
-        vec3 f = fract(p);
-        f = f * f * (3.0 - 2.0 * f);
-
-        return mix(
-          mix(
-            mix(hash31(i + vec3(0,0,0)), hash31(i + vec3(1,0,0)), f.x),
-            mix(hash31(i + vec3(0,1,0)), hash31(i + vec3(1,1,0)), f.x),
-            f.y
-          ),
-          mix(
-            mix(hash31(i + vec3(0,0,1)), hash31(i + vec3(1,0,1)), f.x),
-            mix(hash31(i + vec3(0,1,1)), hash31(i + vec3(1,1,1)), f.x),
-            f.y
-          ),
-          f.z
-        );
-      }
-
-      float fbm(vec3 p) {
-        float value = 0.0;
-        float amplitude = 0.5;
-        for (int i = 0; i < 4; i++) {
-          value += noise3(p) * amplitude;
-          p *= 2.03;
-          amplitude *= 0.5;
+        float hash31(vec3 p) {
+          p = fract(p * 0.1031);
+          p += dot(p, p.yzx + 33.33);
+          return fract((p.x + p.y) * p.z);
         }
-        return value;
+        float noise3(vec3 p) {
+          vec3 i = floor(p), f = fract(p);
+          f = f * f * (3.0 - 2.0 * f);
+          return mix(
+            mix(mix(hash31(i+vec3(0,0,0)), hash31(i+vec3(1,0,0)), f.x),
+                mix(hash31(i+vec3(0,1,0)), hash31(i+vec3(1,1,0)), f.x), f.y),
+            mix(mix(hash31(i+vec3(0,0,1)), hash31(i+vec3(1,0,1)), f.x),
+                mix(hash31(i+vec3(0,1,1)), hash31(i+vec3(1,1,1)), f.x), f.y),
+            f.z);
+        }
+        float fbm(vec3 p) {
+          float v = 0.0, a = 0.5;
+          for (int i = 0; i < 4; i++) { v += noise3(p) * a; p *= 2.03; a *= 0.5; }
+          return v;
+        }
+      ` + shader.fragmentShader;
+
+      // ---- stone colour + whorl density -------------------------------------
+      shader.fragmentShader = shader.fragmentShader.replace(
+        "#include <color_fragment>",
+        `
+          #include <color_fragment>
+
+          vec3 obsidian    = vec3(0.008, 0.005, 0.016);
+          vec3 blackViolet = vec3(0.043, 0.010, 0.078);
+          vec3 amethyst    = vec3(0.36,  0.062, 0.76);
+          vec3 lavender    = vec3(0.72,  0.39,  1.0);
+
+          float marble = fbm(vLocalPosition * 2.15 + vec3(vFaceId * 0.37));
+          float vein = smoothstep(0.56, 0.76, abs(sin(
+            vLocalPosition.y * 4.5 + vLocalPosition.x * 3.2 + marble * 7.0)));
+
+          float heightBlend = smoothstep(-2.45, 2.4, vLocalPosition.y);
+          float zoneBias = vZone > 0.5 ? 0.70
+                         : (vZone < -0.5 ? 0.14 : 0.36 + marble * 0.30);
+
+          float amethystMix = clamp(zoneBias + heightBlend * 0.17 + marble * 0.18, 0.0, 1.0);
+          vec3 stone = mix(obsidian, amethyst, amethystMix);
+          stone = mix(stone, blackViolet, smoothstep(0.28, 0.62, 1.0 - marble) * 0.52);
+          stone = mix(stone, lavender, vein * 0.16);
+
+          diffuseColor.rgb *= stone;
+
+          // Dark whorls sit denser than the bright amethyst ones, so the light
+          // leaving the core is filtered unevenly - purple and black marbling.
+          float whorlDensity = 1.0 - amethystMix;
+          diffuseColor.a = clamp(diffuseColor.a * (0.80 + whorlDensity * 0.28), 0.0, 1.0);
+        `
+      );
+
+      // ---- opalescent fresnel fire ------------------------------------------
+      shader.fragmentShader = shader.fragmentShader.replace(
+        "#include <emissivemap_fragment>",
+        `
+          #include <emissivemap_fragment>
+
+          vec3 V = normalize(vViewPosition);
+          vec3 N = normalize(normal);
+          float fresnel = pow(1.0 - abs(dot(N, V)), 2.25);
+
+          float phase = fresnel * 8.0 + vLocalPosition.y * 0.72
+                      + vFaceId * 0.43 + uTime * 0.42;
+
+          vec3 opal = 0.5 + 0.5 * cos(phase + vec3(0.0, 2.094, 4.188));
+          opal = mix(opal, vec3(0.78, 0.45, 1.0), 0.44);
+
+          float internal = pow(max(0.0, 1.0 - length(vLocalPosition.xz) * 0.53), 2.0);
+          internal *= 0.32 + 0.68 * smoothstep(-2.3, 0.75, vLocalPosition.y);
+
+          totalEmissiveRadiance += opal * fresnel * 0.38;
+          totalEmissiveRadiance += vec3(0.42, 0.11, 0.80) * internal * 0.22 * uGlow;
+        `
+      );
+
+      m.userData.shader = shader;
+    };
+    return m;
+  }
+
+  // Back faces first, then the sigil, then front faces: correct layering for a
+  // transparent enclosure around a solid core.
+  const shellBackMaterial  = makeShellMaterial(THREE.BackSide);
+  const shellFrontMaterial = makeShellMaterial(THREE.FrontSide);
+
+  const shellBack = new THREE.Mesh(crystalGeometry, shellBackMaterial);
+  shellBack.renderOrder = 0;
+  world.add(shellBack);
+
+  const shellFront = new THREE.Mesh(crystalGeometry, shellFrontMaterial);
+  shellFront.renderOrder = 20;
+  world.add(shellFront);
+
+  // ===========================================================================
+  // SIGIL - extruded, chamfered, and capped on both ends (solid, not hollow)
+  // ===========================================================================
+  function buildSigilShapes(data) {
+    return data.map(entry => {
+      let outer = entry.o.map(p => new THREE.Vector2(p[0], p[1]));
+      if (THREE.ShapeUtils.isClockWise(outer)) outer = outer.reverse();
+      const shape = new THREE.Shape(outer);
+      entry.h.forEach(ring => {
+        let hole = ring.map(p => new THREE.Vector2(p[0], p[1]));
+        if (!THREE.ShapeUtils.isClockWise(hole)) hole = hole.reverse();
+        shape.holes.push(new THREE.Path(hole));
+      });
+      return shape;
+    });
+  }
+
+  const sigilGeometry = new THREE.ExtrudeGeometry(buildSigilShapes(SIGIL), {
+    depth: 0.22,
+    steps: 1,
+    bevelEnabled: true,      // bevel on => ExtrudeGeometry emits both end caps
+    bevelThickness: 0.040,
+    bevelSize: 0.030,
+    bevelOffset: 0,
+    bevelSegments: 4,
+    curveSegments: 1
+  });
+  sigilGeometry.center();
+  sigilGeometry.computeBoundingBox();
+
+  // ---------------------------------------------------------------------------
+  // Exact inscription solve.
+  //
+  // The crystal is the intersection of 18 half-spaces (6 prism walls, 6 upper
+  // pyramid facets, 6 lower pyramid facets), each of the form  L(p) <= c  with
+  // c > 0, so the solid is convex and contains the origin.  For a vertex p the
+  // largest admissible uniform scale is  min over planes of  c / L(p)  where
+  // L(p) > 0.  Taking the min across every vertex gives the exact largest scale
+  // at which the whole sigil is strictly inside the stone - no guesswork.
+  // ---------------------------------------------------------------------------
+  function maxInscribedScale(geometry, radius, bandHalf, capHeight, offsetY) {
+    const apothem = radius * Math.cos(Math.PI / 6);
+    const normals = [];
+    for (let k = 0; k < 6; k++) {
+      const a = Math.PI / 6 + k * Math.PI / 3;   // face normals sit between vertices
+      normals.push([Math.cos(a), Math.sin(a)]);
+    }
+    const pos = geometry.attributes.position;
+    const slope = capHeight / apothem;
+    const capLimit = bandHalf + capHeight;
+    let s = Infinity;
+
+    for (let i = 0; i < pos.count; i++) {
+      const x = pos.getX(i);
+      const y = pos.getY(i) + offsetY;
+      const z = pos.getZ(i);
+      for (let k = 0; k < 6; k++) {
+        const d = x * normals[k][0] + z * normals[k][1];
+        if (d > 1e-12) s = Math.min(s, apothem / d);          // prism wall
+        let L = slope * d + y;
+        if (L > 1e-12) s = Math.min(s, capLimit / L);          // upper pyramid
+        L = slope * d - y;
+        if (L > 1e-12) s = Math.min(s, capLimit / L);          // lower pyramid
       }
-    ` + shader.fragmentShader;
+    }
+    return s;
+  }
 
-    shader.fragmentShader = shader.fragmentShader.replace(
-      "#include <color_fragment>",
-      `
-        #include <color_fragment>
+  // The sigil's widest points are the two ear tips, which sit above centre.
+  // Dropping it slightly lets them clear the waist instead of the taper.
+  const SIGIL_OFFSET_Y = -0.22;
+  const maxScale = maxInscribedScale(sigilGeometry, R, BAND_H, CAP_H, SIGIL_OFFSET_Y);
+  const sigilScale = maxScale * FILL;
 
-        vec3 obsidian = vec3(0.012, 0.008, 0.022);
-        vec3 blackViolet = vec3(0.055, 0.014, 0.095);
-        vec3 amethyst = vec3(0.39, 0.075, 0.78);
-        vec3 lavender = vec3(0.75, 0.42, 1.0);
+  // ===========================================================================
+  // Sigil materials
+  //   caps  -> white arcade core, hot centre with a saturated violet halo
+  //   bevel -> moissanite-grade gem response with dispersion fire
+  // Moissanite: n = 2.65, dispersion 0.104.  three.js r128 clamps the material
+  // `ior` property at 2.3333, so the true n = 2.65 response (F0 = 0.204) and the
+  // per-channel dispersion are driven from the shader instead.
+  // ===========================================================================
+  const MOISSANITE_N  = 2.65;
+  const MOISSANITE_F0 = Math.pow((MOISSANITE_N - 1) / (MOISSANITE_N + 1), 2); // 0.2044
 
-        float marble = fbm(vLocalPosition * 2.15 + vec3(vFaceId * 0.37));
-        float vein = smoothstep(0.56, 0.76, abs(sin(
-          vLocalPosition.y * 4.5 +
-          vLocalPosition.x * 3.2 +
-          marble * 7.0
-        )));
+  function addGemShader(material, opts) {
+    material.onBeforeCompile = shader => {
+      shader.uniforms.uTime = { value: 0 };
+      shader.uniforms.uF0 = { value: MOISSANITE_F0 };
+      shader.uniforms.uCore = { value: opts.core };
+      shader.uniforms.uFire = { value: opts.fire };
 
-        float heightBlend = smoothstep(-2.45, 2.4, vLocalPosition.y);
-        float zoneBias = vZone > 0.5
-          ? 0.72
-          : (vZone < -0.5 ? 0.16 : 0.38 + marble * 0.30);
+      shader.vertexShader = "varying vec3 vLocal;\n" + shader.vertexShader;
+      shader.vertexShader = shader.vertexShader.replace(
+        "#include <begin_vertex>",
+        "#include <begin_vertex>\n  vLocal = position;"
+      );
 
-        float amethystMix = clamp(zoneBias + heightBlend * 0.17 + marble * 0.18, 0.0, 1.0);
-        vec3 stone = mix(obsidian, amethyst, amethystMix);
-        stone = mix(stone, blackViolet, smoothstep(0.28, 0.62, 1.0 - marble) * 0.48);
-        stone = mix(stone, lavender, vein * 0.18);
+      shader.fragmentShader = `
+        uniform float uTime;
+        uniform float uF0;
+        uniform float uCore;
+        uniform float uFire;
+        varying vec3 vLocal;
+      ` + shader.fragmentShader;
 
-        diffuseColor.rgb *= stone;
-      `
-    );
-
-    shader.fragmentShader = shader.fragmentShader.replace(
-      "#include <emissivemap_fragment>",
-      `
+      shader.fragmentShader = shader.fragmentShader.replace(
+        "#include <emissivemap_fragment>",
+        `
         #include <emissivemap_fragment>
 
         vec3 V = normalize(vViewPosition);
         vec3 N = normalize(normal);
-        float fresnel = pow(1.0 - abs(dot(N, V)), 2.25);
+        float cosT = clamp(abs(dot(N, V)), 0.0, 1.0);
 
-        float phase = fresnel * 8.0
-          + vLocalPosition.y * 0.72
-          + vFaceId * 0.43
-          + uTime * 0.42;
+        // Schlick with F0 taken from n = 2.65 rather than the clamped property.
+        float schlick = pow(1.0 - cosT, 5.0);
+        float F = uF0 + (1.0 - uF0) * schlick;
 
-        vec3 opal = 0.5 + 0.5 * cos(phase + vec3(0.0, 2.094, 4.188));
-        opal = mix(opal, vec3(0.78, 0.45, 1.0), 0.42);
+        // Dispersion 0.104: red and blue reflect at slightly different angles,
+        // which is what throws moissanite's rainbow fire off a chamfer.
+        float disp = 0.104 * uFire;
+        vec3 Frgb = vec3(
+          uF0 * (1.0 - disp) + (1.0 - uF0) * pow(1.0 - cosT * (1.0 + disp * 0.5), 5.0),
+          F,
+          uF0 * (1.0 + disp) + (1.0 - uF0) * pow(1.0 - cosT * (1.0 - disp * 0.5), 5.0)
+        );
+        Frgb = clamp(Frgb, 0.0, 1.6);
 
-        float internal = pow(max(0.0, 1.0 - length(vLocalPosition.xz) * 0.53), 2.0);
-        internal *= 0.32 + 0.68 * smoothstep(-2.3, 0.75, vLocalPosition.y);
+        vec3 spectral = 0.5 + 0.5 * cos(
+          uTime * 0.55 + vLocal.y * 3.4 + cosT * 5.0 + vec3(0.0, 2.094, 4.188));
+        spectral = mix(vec3(1.0), spectral, 0.55 * uFire);
 
-        totalEmissiveRadiance += opal * fresnel * 0.42;
-        totalEmissiveRadiance += vec3(0.48, 0.12, 0.88) * internal * 0.25 * uGlow;
-      `
-    );
+        // Arcade core: a flat white bed of light with a violet bloom riding the
+        // silhouette, the way a neon marquee reads against a dark cabinet.
+        float rim = pow(1.0 - cosT, 2.0);
+        totalEmissiveRadiance += vec3(1.0, 0.97, 1.0) * uCore;
+        totalEmissiveRadiance += vec3(0.86, 0.52, 1.0) * rim * uCore * 0.55;
+        totalEmissiveRadiance += spectral * Frgb * uFire * 0.85;
+        `
+      );
+      material.userData.shader = shader;
+    };
+  }
 
-    shellMaterial.userData.shader = shader;
-  };
-
-  const shell = new THREE.Mesh(crystalGeometry, shellMaterial);
-  world.add(shell);
-
-  // ---------------------------------------------------------------------------
-  // Inner luminous crystal core, visible through the shell
-  // ---------------------------------------------------------------------------
-  const coreGeometry = crystalGeometry.clone();
-  const coreMaterial = new THREE.MeshBasicMaterial({
-    color: 0xb25cff,
-    transparent: true,
-    opacity: 0.17,
-    blending: THREE.AdditiveBlending,
-    depthWrite: false,
-    side: THREE.BackSide
+  // Front + back caps
+  const sigilCapMaterial = new THREE.MeshPhysicalMaterial({
+    color: 0xf7ecff,
+    emissive: 0xffffff,
+    emissiveIntensity: 0.55,
+    roughness: 0.14,
+    metalness: 0.0,
+    clearcoat: 1.0,
+    clearcoatRoughness: 0.05,
+    transparent: false,       // solid: this is what removes the hollow read
+    opacity: 1.0,
+    side: THREE.FrontSide
   });
+  sigilCapMaterial.ior = MOISSANITE_N;   // saturates r128's clamp at 2.3333
+  addGemShader(sigilCapMaterial, { core: 0.90, fire: 0.35 });
 
-  const core = new THREE.Mesh(coreGeometry, coreMaterial);
-  core.scale.set(0.79, 0.88, 0.79);
-  world.add(core);
+  // Extruded walls + chamfer
+  const sigilBevelMaterial = new THREE.MeshPhysicalMaterial({
+    color: 0xe6d2ff,
+    emissive: 0xb98cff,
+    emissiveIntensity: 0.30,
+    roughness: 0.07,
+    metalness: 0.0,
+    clearcoat: 1.0,
+    clearcoatRoughness: 0.03,
+    transparent: false,
+    opacity: 1.0,
+    side: THREE.FrontSide
+  });
+  sigilBevelMaterial.ior = MOISSANITE_N;
+  addGemShader(sigilBevelMaterial, { core: 0.30, fire: 1.0 });
 
-  // Narrow white-violet energy spindle.
-  const spindle = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.055, 0.11, 3.35, 12, 1, true),
+  const sigilCore = new THREE.Group();
+  sigilCore.position.y = SIGIL_OFFSET_Y * sigilScale;
+  world.add(sigilCore);
+
+  // ExtrudeGeometry group order is [caps, sides] repeated per shape, so
+  // materialIndex 0 = caps and 1 = walls.
+  const sigilMesh = new THREE.Mesh(sigilGeometry, [sigilCapMaterial, sigilBevelMaterial]);
+  sigilMesh.scale.setScalar(sigilScale);
+  sigilMesh.renderOrder = 10;
+  sigilCore.add(sigilMesh);
+
+  // Soft bloom shell, kept just inside the fit so it cannot break the stone.
+  const sigilBloom = new THREE.Mesh(
+    sigilGeometry,
     new THREE.MeshBasicMaterial({
-      color: 0xf4dbff,
+      color: 0xf3e2ff,
       transparent: true,
-      opacity: 0.22,
+      opacity: 0.10,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
-      side: THREE.DoubleSide
+      side: THREE.BackSide
     })
   );
-  world.add(spindle);
+  sigilBloom.scale.setScalar(sigilScale * 1.035);
+  sigilBloom.renderOrder = 9;
+  sigilCore.add(sigilBloom);
 
-  // ---------------------------------------------------------------------------
-  // Facet edges
-  // ---------------------------------------------------------------------------
+  const sigilHalo = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: makeGlowTexture("rgba(255,252,255,0.95)", "rgba(206,140,255,0.34)", "rgba(120,40,190,0.10)"),
+    blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0.62
+  }));
+  sigilHalo.scale.set(2.5 * sigilScale, 2.9 * sigilScale, 1);
+  sigilHalo.renderOrder = 8;
+  sigilCore.add(sigilHalo);
+
+  // ===========================================================================
+  // Facet lines on the fused shell
+  // ===========================================================================
   const edgeGeometry = new THREE.EdgesGeometry(crystalGeometry, 1);
-  const edges = new THREE.LineSegments(
-    edgeGeometry,
-    new THREE.LineBasicMaterial({
-      color: 0xe8ceff,
-      transparent: true,
-      opacity: 0.72,
-      blending: THREE.AdditiveBlending
-    })
-  );
+  const edges = new THREE.LineSegments(edgeGeometry, new THREE.LineBasicMaterial({
+    color: 0xe8ceff, transparent: true, opacity: 0.66, blending: THREE.AdditiveBlending
+  }));
+  edges.renderOrder = 21;
   world.add(edges);
-
-  // A second, darker edge pass keeps the silhouette legible on bright backgrounds.
-  const darkEdges = new THREE.LineSegments(
-    edgeGeometry,
-    new THREE.LineBasicMaterial({
-      color: 0x170621,
-      transparent: true,
-      opacity: 0.32
-    })
-  );
-  darkEdges.scale.setScalar(1.006);
-  world.add(darkEdges);
 
   world.scale.setScalar(1.03);
   world.rotation.x = -0.05;
   world.rotation.y = 0.48;
 
-  // ---------------------------------------------------------------------------
-  // Sparse orbiting tetrahedra and elliptical paths
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
+  // Orbiting tetrahedra
+  // ===========================================================================
   const orbitGroup = new THREE.Group();
   scene.add(orbitGroup);
 
   const orbitSpecs = [
-    { radius: 2.75, tiltX: 1.05, tiltZ: 0.08, speed: 0.42, phase: 0.0, size: 0.14 },
-    { radius: 3.05, tiltX: 1.08, tiltZ: 1.03, speed: -0.31, phase: 2.1, size: 0.11 },
-    { radius: 2.55, tiltX: 1.10, tiltZ: -1.02, speed: 0.53, phase: 4.0, size: 0.09 }
+    { radius: 2.75, tiltX: 1.05, tiltZ:  0.08, speed:  0.42, phase: 0.0, size: 0.14 },
+    { radius: 3.05, tiltX: 1.08, tiltZ:  1.03, speed: -0.31, phase: 2.1, size: 0.11 },
+    { radius: 2.55, tiltX: 1.10, tiltZ: -1.02, speed:  0.53, phase: 4.0, size: 0.09 }
   ];
 
   const orbiting = [];
-
   orbitSpecs.forEach(spec => {
     const pivot = new THREE.Group();
     pivot.rotation.x = spec.tiltX;
@@ -444,140 +578,118 @@
       const a = i / 128 * Math.PI * 2;
       pts.push(new THREE.Vector3(Math.cos(a) * spec.radius, 0, Math.sin(a) * spec.radius));
     }
-
     pivot.add(new THREE.LineLoop(
       new THREE.BufferGeometry().setFromPoints(pts),
-      new THREE.LineBasicMaterial({
-        color: 0x9d72d5,
-        transparent: true,
-        opacity: 0.17
-      })
+      new THREE.LineBasicMaterial({ color: 0x9d72d5, transparent: true, opacity: 0.17 })
     ));
 
     const tetra = new THREE.Mesh(
       new THREE.TetrahedronGeometry(spec.size, 0),
       new THREE.MeshStandardMaterial({
-        color: 0xeedbff,
-        emissive: 0x8d35d9,
-        emissiveIntensity: 1.25,
-        roughness: 0.2,
-        metalness: 0.05
+        color: 0xeedbff, emissive: 0x8d35d9, emissiveIntensity: 1.25,
+        roughness: 0.2, metalness: 0.05
       })
     );
     pivot.add(tetra);
-
-    orbiting.push({ ...spec, pivot, tetra });
+    orbiting.push(Object.assign({}, spec, { pivot, tetra }));
   });
 
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
   // Interaction
-  // ---------------------------------------------------------------------------
-  let dragging = false;
-  let lastX = 0;
-  let lastY = 0;
-  let angularX = 0;
-  let angularY = 0;
-  let targetX = world.rotation.x;
-  let targetY = world.rotation.y;
-  let pointerNX = 0;
-  let pointerNY = 0;
+  // ===========================================================================
+  let dragging = false, lastX = 0, lastY = 0;
+  let angularX = 0, angularY = 0;
+  let targetX = world.rotation.x, targetY = world.rotation.y;
+  let pointerNX = 0, pointerNY = 0;
 
-  function pointerDown(e) {
+  canvas.addEventListener("pointerdown", e => {
     dragging = true;
     canvas.classList.add("dragging");
-    lastX = e.clientX;
-    lastY = e.clientY;
-    angularX = 0;
-    angularY = 0;
-    canvas.setPointerCapture?.(e.pointerId);
-  }
+    lastX = e.clientX; lastY = e.clientY;
+    angularX = angularY = 0;
+    if (canvas.setPointerCapture) canvas.setPointerCapture(e.pointerId);
+  });
 
-  function pointerMove(e) {
+  canvas.addEventListener("pointermove", e => {
     const rect = canvas.getBoundingClientRect();
     pointerNX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
     pointerNY = ((e.clientY - rect.top) / rect.height) * 2 - 1;
-
     if (!dragging) return;
-
-    const dx = e.clientX - lastX;
-    const dy = e.clientY - lastY;
-    lastX = e.clientX;
-    lastY = e.clientY;
-
+    const dx = e.clientX - lastX, dy = e.clientY - lastY;
+    lastX = e.clientX; lastY = e.clientY;
     angularY = dx * 0.0075;
     angularX = dy * 0.0065;
-
     targetY += angularY;
     targetX = THREE.MathUtils.clamp(targetX + angularX, -0.68, 0.68);
-  }
+  });
 
-  function pointerUp() {
-    dragging = false;
-    canvas.classList.remove("dragging");
-  }
-
-  canvas.addEventListener("pointerdown", pointerDown);
-  canvas.addEventListener("pointermove", pointerMove);
+  function pointerUp() { dragging = false; canvas.classList.remove("dragging"); }
   window.addEventListener("pointerup", pointerUp);
   window.addEventListener("pointercancel", pointerUp);
 
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
   // Resize
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
   function resize() {
-    const width = canvas.clientWidth || window.innerWidth;
-    const height = canvas.clientHeight || window.innerHeight;
-    renderer.setSize(width, height, false);
-    camera.aspect = width / height;
+    const w = canvas.clientWidth || window.innerWidth;
+    const h = canvas.clientHeight || window.innerHeight;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
     camera.updateProjectionMatrix();
-
-    // Keep the crystal comfortably framed on narrow screens.
-    camera.position.z = width < height * 0.75 ? 10.1 : 8.6;
+    camera.position.z = w < h * 0.75 ? 10.1 : 8.6;
   }
-
   window.addEventListener("resize", resize, { passive: true });
   resize();
 
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
   // Animation
-  // ---------------------------------------------------------------------------
+  // ===========================================================================
   const clock = new THREE.Clock();
   let elapsed = 0;
 
   function animate() {
     requestAnimationFrame(animate);
-
     const dt = Math.min(clock.getDelta(), 0.05);
     elapsed += dt;
 
     if (!dragging && !reduceMotion) {
-      targetY += dt * 0.085;
-      targetY += angularY;
+      targetY += dt * 0.085 + angularY;
       targetX = THREE.MathUtils.clamp(targetX + angularX, -0.68, 0.68);
       angularY *= 0.93;
       angularX *= 0.91;
     }
 
-    const hoverX = dragging || reduceMotion ? 0 : -pointerNY * 0.10;
-    const hoverY = dragging || reduceMotion ? 0 : pointerNX * 0.13;
-
+    const hoverX = (dragging || reduceMotion) ? 0 : -pointerNY * 0.10;
+    const hoverY = (dragging || reduceMotion) ? 0 :  pointerNX * 0.13;
     world.rotation.x += ((targetX + hoverX) - world.rotation.x) * 0.09;
     world.rotation.y += ((targetY + hoverY) - world.rotation.y) * 0.09;
 
-    const pulse = reduceMotion ? 1 : 1 + Math.sin(elapsed * 1.35) * 0.045;
-    core.scale.set(0.79 * pulse, 0.88 * pulse, 0.79 * pulse);
-    coreMaterial.opacity = 0.16 + (reduceMotion ? 0 : Math.sin(elapsed * 1.55) * 0.025);
-    spindle.material.opacity = 0.19 + (reduceMotion ? 0 : Math.sin(elapsed * 1.8 + 0.8) * 0.045);
-    aura.material.opacity = 0.70 + (reduceMotion ? 0 : Math.sin(elapsed * 0.95) * 0.07);
-    coreHalo.material.opacity = 0.70 + (reduceMotion ? 0 : Math.sin(elapsed * 1.42) * 0.09);
+    aura.material.opacity = 0.60 + (reduceMotion ? 0 : Math.sin(elapsed * 0.95) * 0.06);
+    sigilHalo.material.opacity = 0.56 + (reduceMotion ? 0 : Math.sin(elapsed * 1.9 + 0.3) * 0.07);
 
-    shellMaterial.emissiveIntensity = 0.32 + (reduceMotion ? 0 : Math.sin(elapsed * 1.3) * 0.055);
+    // Breathing stays strictly inside the inscribed fit: peak is FILL * 1.012,
+    // still below 1.0 of maxScale, so the sigil can never pierce the shell.
+    const breathe = reduceMotion ? 1 : 1 + Math.sin(elapsed * 1.55) * 0.012;
+    sigilMesh.scale.setScalar(sigilScale * breathe);
+    sigilBloom.scale.setScalar(sigilScale * 1.035 * breathe);
 
-    if (shellMaterial.userData.shader) {
-      shellMaterial.userData.shader.uniforms.uTime.value = elapsed;
-      shellMaterial.userData.shader.uniforms.uGlow.value =
-        1.0 + (reduceMotion ? 0 : Math.sin(elapsed * 1.2) * 0.12);
-    }
+    sigilCapMaterial.emissiveIntensity   = 0.55 + (reduceMotion ? 0 : Math.sin(elapsed * 1.65) * 0.10);
+    sigilBevelMaterial.emissiveIntensity = 0.30 + (reduceMotion ? 0 : Math.sin(elapsed * 1.42 + 0.4) * 0.06);
+
+    [sigilCapMaterial, sigilBevelMaterial].forEach(m => {
+      if (m.userData.shader) m.userData.shader.uniforms.uTime.value = elapsed;
+    });
+
+    [shellBackMaterial, shellFrontMaterial].forEach(m => {
+      m.emissiveIntensity = 0.30 + (reduceMotion ? 0 : Math.sin(elapsed * 1.3) * 0.05);
+      if (m.userData.shader) {
+        m.userData.shader.uniforms.uTime.value = elapsed;
+        m.userData.shader.uniforms.uGlow.value =
+          1.0 + (reduceMotion ? 0 : Math.sin(elapsed * 1.2) * 0.12);
+      }
+    });
+
+    sigilLight.intensity = 15 + (reduceMotion ? 0 : Math.sin(elapsed * 1.8) * 1.8);
 
     orbiting.forEach(o => {
       const a = elapsed * o.speed + o.phase;
