@@ -34,18 +34,8 @@
 
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-html,body{width:100%;height:100%;background:#050810;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+html,body{width:100%;height:100%;background:#020b18;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
 canvas{display:block;position:fixed;top:0;left:0;touch-action:none;cursor:crosshair}
-
-/* ── CRT chrome (Obliteratus) ─────────────────────────────────────────
-   Ported verbatim from tetris.html — static CSS overlay, zero canvas
-   cost, zero per-frame JS. Composited once by the browser and left alone. */
-#crt{
-  position:fixed;inset:0;z-index:5;pointer-events:none;
-  background:
-    repeating-linear-gradient(rgba(0,0,0,0) 0px,rgba(0,0,0,0) 1px,rgba(0,0,0,.16) 2px,rgba(0,0,0,.16) 3px),
-    radial-gradient(ellipse at center,rgba(0,0,0,0) 55%,rgba(0,0,0,.55) 100%);
-}
 
 /* ── NUI (touch-only overlay) ───────────────────────────────── */
 #nui{display:none;position:fixed;bottom:clamp(12px,3vh,24px);right:clamp(14px,4vw,28px);
@@ -85,7 +75,6 @@ canvas{display:block;position:fixed;top:0;left:0;touch-action:none;cursor:crossh
 </head>
 <body>
 <canvas id="c"></canvas>
-<div id="crt"></div>
 
 <div id="nui" role="group" aria-label="Game controls">
   <button class="nb" id="nb-flag" aria-label="Toggle flag mode" aria-pressed="false">
@@ -115,7 +104,7 @@ window.addEventListener('resize', resize);
 
 // ── Palette ───────────────────────────────────────────────────────────
 const C = {
-  bg:      '#050810',
+  bg:      '#020b18',
   covCell: '#031b30',
   hovCell: '#073a5a',
   revCell: '#010d1b',
@@ -182,59 +171,77 @@ const SFX = {
                     setTimeout(() => tone(f,'sine',0.3,0.18), i*108)),
 };
 
-// ── Grid background — ported verbatim from tetris.html ─────────────────
-// Static dots + wave-driven brightness, not the older spring-mesh lattice
-// (that version lives on in Asteroids/dotgrid-v1 for now). Matching
-// tetris.html's specific implementation is the point of this pass — zero
-// spring physics, zero per-frame allocation, same visual signature.
-const TAU = Math.PI * 2;
+// ── Spring-mesh grid (shared arcade DNA — same as Astroids·Stockpile Steward) ─
 const grid = {
-  spacing: 38,
-  cols: 0, rows: 0,
-  waves: [],   // [{x,y,r,maxR,alpha}]
+  cells: 52, nodes: [], cw: 0, ch: 0, cols: 0, rows: 0,
 
   init() {
-    this.cols = Math.ceil(W / this.spacing) + 2;
-    this.rows = Math.ceil(H / this.spacing) + 2;
+    this.cw   = W / this.cells;
+    this.ch   = this.cw;
+    this.cols = Math.ceil(W / this.cw) + 1;
+    this.rows = Math.ceil(H / this.ch) + 1;
+    this.nodes = [];
+    for (let r = 0; r < this.rows; r++) {
+      this.nodes[r] = [];
+      for (let c = 0; c < this.cols; c++)
+        this.nodes[r][c] = { dx: 0, dy: 0, vx: 0, vy: 0 };
+    }
   },
 
-  // Called on mine detonation — pushes a ring outward from impact point
+  // Called on mine detonation — distorts mesh outward from impact point
   ripple(wx, wy, mag, radius) {
-    this.waves.push({ x: wx, y: wy, r: 0, maxR: radius, alpha: Math.min(1, mag / 600) });
+    const cr = wx / this.cw, rr = wy / this.ch;
+    const c0 = Math.max(0, Math.floor(cr - radius / this.cw) - 1);
+    const c1 = Math.min(this.cols - 1, Math.ceil(cr + radius / this.cw) + 1);
+    const r0 = Math.max(0, Math.floor(rr - radius / this.ch) - 1);
+    const r1 = Math.min(this.rows - 1, Math.ceil(rr + radius / this.ch) + 1);
+    for (let r = r0; r <= r1; r++)
+      for (let c = c0; c <= c1; c++) {
+        const nx = c * this.cw, ny = r * this.ch;
+        const dx = nx - wx, dy = ny - wy, d = Math.hypot(dx, dy);
+        if (d < radius && d > 0) {
+          const f = mag * (1 - d / radius);
+          this.nodes[r][c].vx += (dx / d) * f;
+          this.nodes[r][c].vy += (dy / d) * f;
+        }
+      }
   },
 
   update(dt) {
-    const speed = 320;
-    for (let i = this.waves.length - 1; i >= 0; i--) {
-      const w = this.waves[i];
-      w.r += speed * dt;
-      w.alpha -= dt * 1.1;
-      if (w.alpha <= 0 || w.r > w.maxR * 1.4) this.waves.splice(i, 1);
-    }
+    const spring = 8, damp = 0.88;
+    for (let r = 0; r < this.rows; r++)
+      for (let c = 0; c < this.cols; c++) {
+        const n = this.nodes[r][c];
+        n.vx += -n.dx * spring * dt; n.vy += -n.dy * spring * dt;
+        n.vx *= damp; n.vy *= damp;
+        n.dx += n.vx * dt; n.dy += n.vy * dt;
+      }
   },
 
   draw() {
-    ctx.save();
-    for (let r = 0; r < this.rows; r++) {
-      for (let c = 0; c < this.cols; c++) {
-        const px = c * this.spacing - this.spacing;
-        const py = r * this.spacing - this.spacing;
-        let bright = 0.06;
-        for (const w of this.waves) {
-          const d = Math.hypot(px - w.x, py - w.y);
-          const ring = Math.abs(d - w.r);
-          if (ring < 28) {
-            const falloff = (1 - ring / 28) * w.alpha;
-            bright += falloff * 0.55;
-          }
-        }
-        bright = Math.max(0, Math.min(0.8, bright));
-        ctx.fillStyle = `rgba(50,160,255,${bright})`;
+    ctx.save(); ctx.lineWidth = 0.8;
+    // Horizontal segments
+    for (let r = 0; r < this.rows; r++)
+      for (let c = 0; c < this.cols - 1; c++) {
+        const n0 = this.nodes[r][c], n1 = this.nodes[r][c + 1];
+        const d  = Math.hypot(n0.dx, n0.dy) + Math.hypot(n1.dx, n1.dy);
+        ctx.strokeStyle = `rgba(0,190,255,${Math.min(0.22, 0.06 + d * 0.015)})`;
         ctx.beginPath();
-        ctx.arc(px, py, 1.2, 0, TAU);
-        ctx.fill();
+        ctx.moveTo(c     * this.cw + n0.dx, r * this.ch + n0.dy);
+        ctx.lineTo((c+1) * this.cw + n1.dx, r * this.ch + n1.dy);
+        ctx.stroke();
       }
-    }
+    // Vertical segments
+    for (let c = 0; c < this.cols; c++)
+      for (let r = 0; r < this.rows - 1; r++) {
+        const n0 = this.nodes[r][c], n1 = this.nodes[r + 1][c];
+        const d  = Math.hypot(n0.dx, n0.dy) + Math.hypot(n1.dx, n1.dy);
+        ctx.strokeStyle = `rgba(0,190,255,${Math.min(0.22, 0.06 + d * 0.015)})`;
+        ctx.beginPath();
+        ctx.moveTo(c * this.cw + n0.dx, r       * this.ch + n0.dy);
+        ctx.lineTo(c * this.cw + n1.dx, (r + 1) * this.ch + n1.dy);
+        ctx.stroke();
+      }
     ctx.restore();
   },
 };
@@ -926,21 +933,8 @@ function drawTitle() {
   glow(C.ui, 30);     ctx.fillStyle = C.ui;     ctx.fillText('MINESWEEPER', W/2, titleY);
   glow('#ff00ff', 62); ctx.fillStyle = C.ui;    ctx.fillText('MINESWEEPER', W/2, titleY);
   ctx.globalAlpha = 1; noGlow();
-  // Brand line — matches tetris.html's OBLITERATUS treatment exactly
-  ctx.font = `bold ${Math.max(10, Math.floor(ts * 0.24))}px "Courier New", monospace`;
-  ctx.shadowColor = '#8866ff'; ctx.shadowBlur = 16;
-  ctx.fillStyle = '#8866ff';
-  ctx.fillText('O B L I T E R A T U S', W/2, titleY + ts * 0.62);
-
-  noGlow();
   ctx.font = `11px "Courier New", monospace`; ctx.fillStyle = C.uiD;
-  ctx.fillText('· STOCKPILE STEWARD ·', W/2, titleY + ts * 0.92);
-
-  // FTS Arcade tagline — matches tetris.html's tagline treatment exactly
-  ctx.font = `${Math.max(9, Math.floor(ts * 0.2))}px "Courier New", monospace`;
-  ctx.shadowBlur = 8; ctx.shadowColor = 'rgba(60,200,255,0.6)';
-  ctx.fillStyle = 'rgba(60,200,255,0.8)';
-  ctx.fillText('FTS ARCADE  ·  FREE FOREVER', W/2, titleY + ts * 1.18);
+  ctx.fillText('· STOCKPILE STEWARD ·', W/2, titleY + ts * 0.66);
   ctx.restore();
 
   // ── Difficulty buttons
@@ -949,7 +943,7 @@ function drawTitle() {
   const btnGp = Math.min(10, Math.floor(avH * 0.022));
   const keys  = Object.keys(DIFFS);
   const totBH = keys.length * (btnH + btnGp);
-  const startY = HUD_H + avH * 0.16 + ts * 1.18 + Math.max(24, avH * 0.06);
+  const startY = HUD_H + avH * 0.38;
 
   gs.diffBtns = {};
   keys.forEach((key, i) => {
