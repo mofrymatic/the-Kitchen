@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Opalescent Amethyst–Obsidian Crystal</title>
+<style>
+  :root {
+    color-scheme: dark;
+    background: #020104;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at 50% 43%, rgba(73, 26, 112, 0.18), transparent 32%),
+      radial-gradient(ellipse at 50% 46%, #0c0616 0%, #050208 58%, #000 100%);
+  }
+
+  #crystal-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    cursor: grab;
+    touch-action: none;
+  }
+
+  #crystal-canvas.dragging { cursor: grabbing; }
+
+  .hint {
+    position: fixed;
+    left: 50%;
+    bottom: 18px;
+    transform: translateX(-50%);
+    padding: 7px 11px;
+    border: 1px solid rgba(222, 194, 255, 0.15);
+    border-radius: 999px;
+    color: rgba(237, 220, 255, 0.56);
+    background: rgba(8, 3, 13, 0.42);
+    font: 500 11px/1.2 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    backdrop-filter: blur(8px);
+    pointer-events: none;
+    user-select: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hint { display: none; }
+  }
+</style>
+</head>
+<body>
+<canvas id="crystal-canvas" aria-label="Interactive opalescent amethyst and obsidian crystal"></canvas>
+<div class="hint">Drag to rotate</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(() => {
+  "use strict";
+
+  const canvas = document.getElementById("crystal-canvas");
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // ---------------------------------------------------------------------------
+  // Renderer, scene, camera
+  // ---------------------------------------------------------------------------
+  const renderer = new THREE.WebGLRenderer({
+    canvas,
+    antialias: true,
+    alpha: true,
+    powerPreference: "high-performance"
+  });
+
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.18;
+  renderer.physicallyCorrectLights = true;
+
+  const scene = new THREE.Scene();
+
+  const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 100);
+  camera.position.set(0, 0.05, 8.6);
+
+  const world = new THREE.Group();
+  scene.add(world);
+
+  // ---------------------------------------------------------------------------
+  // Lighting
+  // ---------------------------------------------------------------------------
+  scene.add(new THREE.HemisphereLight(0x9c68d8, 0x050107, 0.54));
+
+  const key = new THREE.PointLight(0xffffff, 24, 20, 2);
+  key.position.set(4.2, 5.0, 5.5);
+  scene.add(key);
+
+  const violet = new THREE.PointLight(0xa14cff, 30, 18, 2);
+  violet.position.set(-4.5, 0.5, 3.2);
+  scene.add(violet);
+
+  const blueRim = new THREE.PointLight(0x4976ff, 18, 16, 2);
+  blueRim.position.set(2.0, -4.0, -3.5);
+  scene.add(blueRim);
+
+  const warmOpal = new THREE.PointLight(0xff9cdd, 13, 12, 2);
+  warmOpal.position.set(-1.2, 3.0, -3.0);
+  scene.add(warmOpal);
+
+  // ---------------------------------------------------------------------------
+  // Glow texture
+  // ---------------------------------------------------------------------------
+  function makeGlowTexture(inner, middle) {
+    const size = 512;
+    const c = document.createElement("canvas");
+    c.width = c.height = size;
+    const ctx = c.getContext("2d");
+    const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+    g.addColorStop(0.00, inner);
+    g.addColorStop(0.22, middle);
+    g.addColorStop(0.58, "rgba(108, 31, 172, 0.11)");
+    g.addColorStop(1.00, "rgba(42, 6, 70, 0)");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, size, size);
+    const tex = new THREE.CanvasTexture(c);
+    tex.encoding = THREE.sRGBEncoding;
+    return tex;
+  }
+
+  const aura = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: makeGlowTexture("rgba(241,214,255,0.82)", "rgba(170,78,255,0.30)"),
+    color: 0xffffff,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    transparent: true,
+    opacity: 0.78
+  }));
+  aura.scale.set(7.5, 7.5, 1);
+  scene.add(aura);
+
+  const coreHalo = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: makeGlowTexture("rgba(255,239,255,0.92)", "rgba(178,99,255,0.38)"),
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    transparent: true,
+    opacity: 0.75
+  }));
+  coreHalo.scale.set(2.5, 2.5, 1);
+  world.add(coreHalo);
+
+  // ---------------------------------------------------------------------------
+  // Geometry: exactly 12 exterior faces
+  // Four rectangular prism faces + four top triangles + four bottom triangles.
+  // This matches a square prism with square pyramids mounted to top and bottom.
+  // ---------------------------------------------------------------------------
+  function buildTwelveFaceCrystal(width = 1.62, bandHeight = 1.72, capHeight = 1.68) {
+    const h = bandHeight / 2;
+    const r = width / 2;
+
+    // Rotate 45 degrees so the front view reads as a faceted crystal rather than a box.
+    const ring = [];
+    for (let i = 0; i < 4; i++) {
+      const a = Math.PI / 4 + i * Math.PI / 2;
+      ring.push(new THREE.Vector3(Math.cos(a) * r * Math.SQRT2, 0, Math.sin(a) * r * Math.SQRT2));
+    }
+
+    const top = ring.map(v => new THREE.Vector3(v.x, h, v.z));
+    const bottom = ring.map(v => new THREE.Vector3(v.x, -h, v.z));
+    const apexTop = new THREE.Vector3(0, h + capHeight, 0);
+    const apexBottom = new THREE.Vector3(0, -h - capHeight, 0);
+
+    const positions = [];
+    const zones = [];
+    const faceIds = [];
+
+    function tri(a, b, c, zone, faceId) {
+      [a, b, c].forEach(v => positions.push(v.x, v.y, v.z));
+      zones.push(zone, zone, zone);
+      faceIds.push(faceId, faceId, faceId);
+    }
+
+    let faceId = 0;
+    for (let i = 0; i < 4; i++) {
+      const n = (i + 1) % 4;
+
+      // One rectangular face represented by two triangles.
+      tri(bottom[i], top[i], top[n], 0, faceId);
+      tri(bottom[i], top[n], bottom[n], 0, faceId);
+      faceId++;
+
+      tri(top[i], apexTop, top[n], 1, faceId++);
+      tri(bottom[i], bottom[n], apexBottom, -1, faceId++);
+    }
+
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+    geometry.setAttribute("aZone", new THREE.Float32BufferAttribute(zones, 1));
+    geometry.setAttribute("aFaceId", new THREE.Float32BufferAttribute(faceIds, 1));
+    geometry.computeVertexNormals();
+    geometry.computeBoundingSphere();
+    return geometry;
+  }
+
+  const crystalGeometry = buildTwelveFaceCrystal();
+
+  // ---------------------------------------------------------------------------
+  // Outer shell shader: amethyst + obsidian + moving opal fire
+  // ---------------------------------------------------------------------------
+  const shellMaterial = new THREE.MeshPhysicalMaterial({
+    color: 0xffffff,
+    roughness: 0.09,
+    metalness: 0.0,
+    transmission: 0.74,
+    thickness: 2.25,
+    ior: 1.58,
+    clearcoat: 1.0,
+    clearcoatRoughness: 0.06,
+    transparent: true,
+    opacity: 0.96,
+    side: THREE.DoubleSide,
+    emissive: 0x160522,
+    emissiveIntensity: 0.34
+  });
+
+  shellMaterial.onBeforeCompile = shader => {
+    shader.uniforms.uTime = { value: 0 };
+    shader.uniforms.uGlow = { value: 1 };
+
+    shader.vertexShader = `
+      attribute float aZone;
+      attribute float aFaceId;
+      varying float vZone;
+      varying float vFaceId;
+      varying vec3 vLocalPosition;
+    ` + shader.vertexShader;
+
+    shader.vertexShader = shader.vertexShader
+      .replace(
+        "#include <begin_vertex>",
+        `
+          #include <begin_vertex>
+          vZone = aZone;
+          vFaceId = aFaceId;
+          vLocalPosition = position;
+        `
+      );
+
+    shader.fragmentShader = `
+      uniform float uTime;
+      uniform float uGlow;
+      varying float vZone;
+      varying float vFaceId;
+      varying vec3 vLocalPosition;
+
+      float hash31(vec3 p) {
+        p = fract(p * 0.1031);
+        p += dot(p, p.yzx + 33.33);
+        return fract((p.x + p.y) * p.z);
+      }
+
+      float noise3(vec3 p) {
+        vec3 i = floor(p);
+        vec3 f = fract(p);
+        f = f * f * (3.0 - 2.0 * f);
+
+        return mix(
+          mix(
+            mix(hash31(i + vec3(0,0,0)), hash31(i + vec3(1,0,0)), f.x),
+            mix(hash31(i + vec3(0,1,0)), hash31(i + vec3(1,1,0)), f.x),
+            f.y
+          ),
+          mix(
+            mix(hash31(i + vec3(0,0,1)), hash31(i + vec3(1,0,1)), f.x),
+            mix(hash31(i + vec3(0,1,1)), hash31(i + vec3(1,1,1)), f.x),
+            f.y
+          ),
+          f.z
+        );
+      }
+
+      float fbm(vec3 p) {
+        float value = 0.0;
+        float amplitude = 0.5;
+        for (int i = 0; i < 4; i++) {
+          value += noise3(p) * amplitude;
+          p *= 2.03;
+          amplitude *= 0.5;
+        }
+        return value;
+      }
+    ` + shader.fragmentShader;
+
+    shader.fragmentShader = shader.fragmentShader.replace(
+      "#include <color_fragment>",
+      `
+        #include <color_fragment>
+
+        vec3 obsidian = vec3(0.012, 0.008, 0.022);
+        vec3 blackViolet = vec3(0.055, 0.014, 0.095);
+        vec3 amethyst = vec3(0.39, 0.075, 0.78);
+        vec3 lavender = vec3(0.75, 0.42, 1.0);
+
+        float marble = fbm(vLocalPosition * 2.15 + vec3(vFaceId * 0.37));
+        float vein = smoothstep(0.56, 0.76, abs(sin(
+          vLocalPosition.y * 4.5 +
+          vLocalPosition.x * 3.2 +
+          marble * 7.0
+        )));
+
+        float heightBlend = smoothstep(-2.45, 2.4, vLocalPosition.y);
+        float zoneBias = vZone > 0.5
+          ? 0.72
+          : (vZone < -0.5 ? 0.16 : 0.38 + marble * 0.30);
+
+        float amethystMix = clamp(zoneBias + heightBlend * 0.17 + marble * 0.18, 0.0, 1.0);
+        vec3 stone = mix(obsidian, amethyst, amethystMix);
+        stone = mix(stone, blackViolet, smoothstep(0.28, 0.62, 1.0 - marble) * 0.48);
+        stone = mix(stone, lavender, vein * 0.18);
+
+        diffuseColor.rgb *= stone;
+      `
+    );
+
+    shader.fragmentShader = shader.fragmentShader.replace(
+      "#include <emissivemap_fragment>",
+      `
+        #include <emissivemap_fragment>
+
+        vec3 V = normalize(vViewPosition);
+        vec3 N = normalize(normal);
+        float fresnel = pow(1.0 - abs(dot(N, V)), 2.25);
+
+        float phase = fresnel * 8.0
+          + vLocalPosition.y * 0.72
+          + vFaceId * 0.43
+          + uTime * 0.42;
+
+        vec3 opal = 0.5 + 0.5 * cos(phase + vec3(0.0, 2.094, 4.188));
+        opal = mix(opal, vec3(0.78, 0.45, 1.0), 0.42);
+
+        float internal = pow(max(0.0, 1.0 - length(vLocalPosition.xz) * 0.53), 2.0);
+        internal *= 0.32 + 0.68 * smoothstep(-2.3, 0.75, vLocalPosition.y);
+
+        totalEmissiveRadiance += opal * fresnel * 0.42;
+        totalEmissiveRadiance += vec3(0.48, 0.12, 0.88) * internal * 0.25 * uGlow;
+      `
+    );
+
+    shellMaterial.userData.shader = shader;
+  };
+
+  const shell = new THREE.Mesh(crystalGeometry, shellMaterial);
+  world.add(shell);
+
+  // ---------------------------------------------------------------------------
+  // Inner luminous crystal core, visible through the shell
+  // ---------------------------------------------------------------------------
+  const coreGeometry = crystalGeometry.clone();
+  const coreMaterial = new THREE.MeshBasicMaterial({
+    color: 0xb25cff,
+    transparent: true,
+    opacity: 0.17,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    side: THREE.BackSide
+  });
+
+  const core = new THREE.Mesh(coreGeometry, coreMaterial);
+  core.scale.set(0.79, 0.88, 0.79);
+  world.add(core);
+
+  // Narrow white-violet energy spindle.
+  const spindle = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.055, 0.11, 3.35, 12, 1, true),
+    new THREE.MeshBasicMaterial({
+      color: 0xf4dbff,
+      transparent: true,
+      opacity: 0.22,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      side: THREE.DoubleSide
+    })
+  );
+  world.add(spindle);
+
+  // ---------------------------------------------------------------------------
+  // Facet edges
+  // ---------------------------------------------------------------------------
+  const edgeGeometry = new THREE.EdgesGeometry(crystalGeometry, 1);
+  const edges = new THREE.LineSegments(
+    edgeGeometry,
+    new THREE.LineBasicMaterial({
+      color: 0xe8ceff,
+      transparent: true,
+      opacity: 0.72,
+      blending: THREE.AdditiveBlending
+    })
+  );
+  world.add(edges);
+
+  // A second, darker edge pass keeps the silhouette legible on bright backgrounds.
+  const darkEdges = new THREE.LineSegments(
+    edgeGeometry,
+    new THREE.LineBasicMaterial({
+      color: 0x170621,
+      transparent: true,
+      opacity: 0.32
+    })
+  );
+  darkEdges.scale.setScalar(1.006);
+  world.add(darkEdges);
+
+  world.scale.setScalar(1.03);
+  world.rotation.x = -0.05;
+  world.rotation.y = 0.48;
+
+  // ---------------------------------------------------------------------------
+  // Sparse orbiting tetrahedra and elliptical paths
+  // ---------------------------------------------------------------------------
+  const orbitGroup = new THREE.Group();
+  scene.add(orbitGroup);
+
+  const orbitSpecs = [
+    { radius: 2.75, tiltX: 1.05, tiltZ: 0.08, speed: 0.42, phase: 0.0, size: 0.14 },
+    { radius: 3.05, tiltX: 1.08, tiltZ: 1.03, speed: -0.31, phase: 2.1, size: 0.11 },
+    { radius: 2.55, tiltX: 1.10, tiltZ: -1.02, speed: 0.53, phase: 4.0, size: 0.09 }
+  ];
+
+  const orbiting = [];
+
+  orbitSpecs.forEach(spec => {
+    const pivot = new THREE.Group();
+    pivot.rotation.x = spec.tiltX;
+    pivot.rotation.z = spec.tiltZ;
+    orbitGroup.add(pivot);
+
+    const pts = [];
+    for (let i = 0; i < 128; i++) {
+      const a = i / 128 * Math.PI * 2;
+      pts.push(new THREE.Vector3(Math.cos(a) * spec.radius, 0, Math.sin(a) * spec.radius));
+    }
+
+    pivot.add(new THREE.LineLoop(
+      new THREE.BufferGeometry().setFromPoints(pts),
+      new THREE.LineBasicMaterial({
+        color: 0x9d72d5,
+        transparent: true,
+        opacity: 0.17
+      })
+    ));
+
+    const tetra = new THREE.Mesh(
+      new THREE.TetrahedronGeometry(spec.size, 0),
+      new THREE.MeshStandardMaterial({
+        color: 0xeedbff,
+        emissive: 0x8d35d9,
+        emissiveIntensity: 1.25,
+        roughness: 0.2,
+        metalness: 0.05
+      })
+    );
+    pivot.add(tetra);
+
+    orbiting.push({ ...spec, pivot, tetra });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Interaction
+  // ---------------------------------------------------------------------------
+  let dragging = false;
+  let lastX = 0;
+  let lastY = 0;
+  let angularX = 0;
+  let angularY = 0;
+  let targetX = world.rotation.x;
+  let targetY = world.rotation.y;
+  let pointerNX = 0;
+  let pointerNY = 0;
+
+  function pointerDown(e) {
+    dragging = true;
+    canvas.classList.add("dragging");
+    lastX = e.clientX;
+    lastY = e.clientY;
+    angularX = 0;
+    angularY = 0;
+    canvas.setPointerCapture?.(e.pointerId);
+  }
+
+  function pointerMove(e) {
+    const rect = canvas.getBoundingClientRect();
+    pointerNX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    pointerNY = ((e.clientY - rect.top) / rect.height) * 2 - 1;
+
+    if (!dragging) return;
+
+    const dx = e.clientX - lastX;
+    const dy = e.clientY - lastY;
+    lastX = e.clientX;
+    lastY = e.clientY;
+
+    angularY = dx * 0.0075;
+    angularX = dy * 0.0065;
+
+    targetY += angularY;
+    targetX = THREE.MathUtils.clamp(targetX + angularX, -0.68, 0.68);
+  }
+
+  function pointerUp() {
+    dragging = false;
+    canvas.classList.remove("dragging");
+  }
+
+  canvas.addEventListener("pointerdown", pointerDown);
+  canvas.addEventListener("pointermove", pointerMove);
+  window.addEventListener("pointerup", pointerUp);
+  window.addEventListener("pointercancel", pointerUp);
+
+  // ---------------------------------------------------------------------------
+  // Resize
+  // ---------------------------------------------------------------------------
+  function resize() {
+    const width = canvas.clientWidth || window.innerWidth;
+    const height = canvas.clientHeight || window.innerHeight;
+    renderer.setSize(width, height, false);
+    camera.aspect = width / height;
+    camera.updateProjectionMatrix();
+
+    // Keep the crystal comfortably framed on narrow screens.
+    camera.position.z = width < height * 0.75 ? 10.1 : 8.6;
+  }
+
+  window.addEventListener("resize", resize, { passive: true });
+  resize();
+
+  // ---------------------------------------------------------------------------
+  // Animation
+  // ---------------------------------------------------------------------------
+  const clock = new THREE.Clock();
+  let elapsed = 0;
+
+  function animate() {
+    requestAnimationFrame(animate);
+
+    const dt = Math.min(clock.getDelta(), 0.05);
+    elapsed += dt;
+
+    if (!dragging && !reduceMotion) {
+      targetY += dt * 0.085;
+      targetY += angularY;
+      targetX = THREE.MathUtils.clamp(targetX + angularX, -0.68, 0.68);
+      angularY *= 0.93;
+      angularX *= 0.91;
+    }
+
+    const hoverX = dragging || reduceMotion ? 0 : -pointerNY * 0.10;
+    const hoverY = dragging || reduceMotion ? 0 : pointerNX * 0.13;
+
+    world.rotation.x += ((targetX + hoverX) - world.rotation.x) * 0.09;
+    world.rotation.y += ((targetY + hoverY) - world.rotation.y) * 0.09;
+
+    const pulse = reduceMotion ? 1 : 1 + Math.sin(elapsed * 1.35) * 0.045;
+    core.scale.set(0.79 * pulse, 0.88 * pulse, 0.79 * pulse);
+    coreMaterial.opacity = 0.16 + (reduceMotion ? 0 : Math.sin(elapsed * 1.55) * 0.025);
+    spindle.material.opacity = 0.19 + (reduceMotion ? 0 : Math.sin(elapsed * 1.8 + 0.8) * 0.045);
+    aura.material.opacity = 0.70 + (reduceMotion ? 0 : Math.sin(elapsed * 0.95) * 0.07);
+    coreHalo.material.opacity = 0.70 + (reduceMotion ? 0 : Math.sin(elapsed * 1.42) * 0.09);
+
+    shellMaterial.emissiveIntensity = 0.32 + (reduceMotion ? 0 : Math.sin(elapsed * 1.3) * 0.055);
+
+    if (shellMaterial.userData.shader) {
+      shellMaterial.userData.shader.uniforms.uTime.value = elapsed;
+      shellMaterial.userData.shader.uniforms.uGlow.value =
+        1.0 + (reduceMotion ? 0 : Math.sin(elapsed * 1.2) * 0.12);
+    }
+
+    orbiting.forEach(o => {
+      const a = elapsed * o.speed + o.phase;
+      o.tetra.position.set(Math.cos(a) * o.radius, 0, Math.sin(a) * o.radius);
+      if (!reduceMotion) {
+        o.tetra.rotation.x += dt * 1.2;
+        o.tetra.rotation.y += dt * 0.9;
+      }
+    });
+
+    renderer.render(scene, camera);
+  }
+
+  animate();
+})();
+</script>
+</body>
+</html>
