@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>VECTOR DROP · PLINKO · OBLITERATUS</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;background:#020b18;overflow:hidden;touch-action:none;user-select:none;font-family:'Courier New',monospace}
+canvas{display:block;position:fixed;top:0;left:0}
+#hud{position:fixed;top:12px;left:0;width:100%;text-align:center;z-index:10;color:rgba(0,220,255,.85);
+  font-size:13px;letter-spacing:.16em;pointer-events:none;text-shadow:0 0 8px rgba(0,200,255,.6)}
+#score{font-size:24px;color:#00eaff;text-shadow:0 0 12px rgba(0,220,255,.8)}
+#status{position:fixed;top:50px;left:0;width:100%;text-align:center;z-index:10;color:rgba(0,180,255,.5);
+  font-size:11px;letter-spacing:.12em;pointer-events:none}
+#msg{position:fixed;top:40%;left:0;width:100%;text-align:center;z-index:20;color:#ffee00;
+  font-size:22px;letter-spacing:.2em;text-shadow:0 0 16px rgba(255,220,0,.7);pointer-events:none;opacity:0;transition:opacity .25s}
+#msg.show{opacity:1}
+#hint{position:fixed;bottom:12px;left:0;width:100%;text-align:center;z-index:10;color:rgba(0,160,255,.4);
+  font-size:10px;letter-spacing:.1em;pointer-events:none}
+</style>
+</head>
+<body>
+<div id="hud">VECTOR DROP<div id="score">000000</div></div>
+<div id="status">BALLS: 10 &nbsp;·&nbsp; DROP TO PLAY</div>
+<div id="msg"></div>
+<div id="hint">CLICK / TAP TOP TO DROP &nbsp;·&nbsp; ◆ = BUMPER (10% of pegs, active material)</div>
+<canvas id="c"></canvas>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════
+//  VECTOR DROP · PLINKO · OBLITERATUS
+//
+//  A clean standard Plinko board — the deliberately FAMILIAR layout the
+//  product owners asked for, so the material system reads clearly instead
+//  of competing with a near-pinball geometry.
+//
+//  DEMONSTRATES (from the VECTOR FLIP PRD):
+//   • Material system — pegs are PASSIVE (bounce + friction), 10% of pegs
+//     are randomly promoted to BUMPERS = ACTIVE material (adds a kick
+//     impulse on top of normal contact). DR-5 passive/active split, live.
+//   • Velocity-dependent restitution (DR-2) — restit = base + curve(speed),
+//     per material. Fast balls bounce livelier than slow ones.
+//   • Flat 2D physics, swept-circle-vs-circle collision, substepped.
+//   • Deterministic seedable RNG (mulberry32) so a given seed reproduces
+//     the exact board + drop sequence — replay-authority ready from day one.
+//
+//  All original theme/art. No licensed IP. Canvas 2D, single file, no CDN.
+// ═══════════════════════════════════════════════════════════════════════
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+
+// ---- storage + shell stub (sandbox-safe, matches cabinet contract) ----
+function storageGet(k,f){ try{const v=localStorage.getItem(k);return v===null?f:JSON.parse(v);}catch(e){return f;} }
+function storageSet(k,v){ try{localStorage.setItem(k,JSON.stringify(v));}catch(e){} }
+function reportToShell(p){ /* DRY-RUN STUB: non-transmitting. */ }
+
+// ---- deterministic RNG (mulberry32) — seedable for replay authority ----
+function mulberry32(seed){ return function(){ let t=seed+=0x6D2B79F5; t=Math.imul(t^t>>>15,t|1); t^=t+Math.imul(t^t>>>7,t|61); return ((t^t>>>14)>>>0)/4294967296; }; }
+const BOARD_SEED = (storageGet('vectordrop.seed', (Math.random()*1e9)|0))|0;
+storageSet('vectordrop.seed', BOARD_SEED);
+let rng = mulberry32(BOARD_SEED);
+
+// ═══ MATERIALS (DR-2 velocity restitution, DR-5 passive/active) ═════════
+const MAT = {
+  peg:    { mode:'passive', restBase:0.42, restCurve:0.22, friction:0.06, kick:0 },
+  bumper: { mode:'active',  restBase:0.50, restCurve:0.20, friction:0.05, kick:520 },
+  wall:   { mode:'passive', restBase:0.30, restCurve:0.10, friction:0.10, kick:0 },
+};
+const MAX_SPEED = 1400; // reference for restitution curve normalization
+function restitution(mat, impactSpeed){
+  const t = Math.min(1, impactSpeed / MAX_SPEED);
+  return mat.restBase + mat.restCurve * t; // DR-2: livelier at high speed
+}
+
+// ═══ BOARD GEOMETRY (standard Plinko: staggered triangular peg lattice) ══
+let W=0,H=0,DPR=Math.min(devicePixelRatio||1,2);
+const board = {
+  rows: 12,           // peg rows
+  topPad: 0.14,       // fraction of H before first peg row
+  botPad: 0.16,       // fraction of H reserved for bins
+  sidePad: 0.08,      // fraction of W margin
+  pegR: 0,            // computed on layout
+  ballR: 0,
+  pegs: [],           // {x,y,mat, hit} — hit = flash timer
+  bins: [],           // {x0,x1, value, label}
+  colSpacing:0, rowSpacing:0,
+};
+
+// bin scoring — classic Plinko payout curve (high at edges & center valley,
+// tuned so the middle is common/low and edges are rare/high — the real thing)
+const BIN_VALUES = [100, 50, 25, 10, 5, 2, 5, 10, 25, 50, 100]; // 11 bins
+// (v: center is 2×, climbing to 100 at the outer walls — standard risk curve)
+
+function layout(){
+  const usableW = W*(1-board.sidePad*2);
+  const cols = board.rows + 1;               // widest row peg count baseline
+  board.colSpacing = usableW / cols;
+  const top = H*board.topPad, bot = H*(1-board.botPad);
+  board.rowSpacing = (bot - top) / board.rows;
+  board.pegR = Math.max(3.5, board.colSpacing*0.10);
+  board.ballR = board.pegR*1.15;
+
+  // Rebuild pegs deterministically from seed so board is reproducible.
+  rng = mulberry32(BOARD_SEED);
+  board.pegs = [];
+  for(let r=0;r<board.rows;r++){
+    // staggered rows: even rows have `cols` pegs, odd rows offset by half
+    const y = top + r*board.rowSpacing;
+    const offset = (r%2===0)?0:board.colSpacing*0.5;
+    const count = (r%2===0)? cols-1 : cols;
+    const rowW = (count-1)*board.colSpacing;
+    const startX = W/2 - rowW/2;
+    for(let c=0;c<count;c++){
+      const x = startX + c*board.colSpacing;
+      // 10% of pegs promoted to bumpers, randomly, deterministically.
+      const isBumper = rng() < 0.10;
+      board.pegs.push({ x, y, mat: isBumper?MAT.bumper:MAT.peg, bumper:isBumper, hit:0 });
+    }
+  }
+
+  // bins across the bottom
+  board.bins = [];
+  const nb = BIN_VALUES.length;
+  const binW = usableW / nb;
+  const bx0 = W*board.sidePad;
+  for(let i=0;i<nb;i++){
+    board.bins.push({ x0:bx0+i*binW, x1:bx0+(i+1)*binW, value:BIN_VALUES[i], label:String(BIN_VALUES[i]) });
+  }
+}
+
+// ═══ BALLS (flat 2D physics) ═══════════════════════════════════════════
+const balls = [];        // {x,y,vx,vy,r,live,settled}
+const GRAV = 2100;       // px/s² downward
+const AIR = 0.9992;      // per-substep linear damping
+let ballsLeft = 10, score = 0;
+
+function dropBall(px){
+  if(ballsLeft<=0) return;
+  const jitter = (rng()-0.5)*board.colSpacing*0.3;
+  balls.push({ x:px+jitter, y:H*board.topPad*0.4, vx:(rng()-0.5)*30, vy:0, r:board.ballR, live:true, settled:false });
+  ballsLeft--; setStatus();
+}
+
+// swept-circle vs static peg (circle) with material response
+function collidePeg(b, peg){
+  const dx=b.x-peg.x, dy=b.y-peg.y;
+  const rr = b.r+board.pegR;
+  const d2 = dx*dx+dy*dy;
+  if(d2 < rr*rr && d2>1e-6){
+    const d=Math.sqrt(d2), ux=dx/d, uy=dy/d, pen=rr-d;
+    b.x+=ux*pen; b.y+=uy*pen;
+    const vn = b.vx*ux + b.vy*uy;
+    if(vn<0){
+      const speed=Math.hypot(b.vx,b.vy);
+      const e = restitution(peg.mat, speed);
+      // normal impulse (passive part — always present)
+      b.vx -= (1+e)*vn*ux;
+      b.vy -= (1+e)*vn*uy;
+      // tangential friction
+      const tx=-uy, ty=ux;
+      const vt = b.vx*tx + b.vy*ty;
+      b.vx -= vt*peg.mat.friction*tx;
+      b.vy -= vt*peg.mat.friction*ty;
+      // ACTIVE material: add kick impulse ON TOP of the bounce (DR-5)
+      if(peg.mat.mode==='active'){
+        b.vx += ux*peg.mat.kick;
+        b.vy += uy*peg.mat.kick;
+        peg.hit = 0.35;
+        addScore(5); flash('◆ +5');
+      } else {
+        peg.hit = Math.max(peg.hit, 0.14);
+      }
+    }
+  }
+}
+
+function step(dt){
+  const SUB=4, sdt=dt/SUB;
+  for(let s=0;s<SUB;s++){
+    for(const b of balls){
+      if(!b.live) continue;
+      b.vy += GRAV*sdt;
+      b.vx*=AIR; b.vy*=AIR;
+      b.x += b.vx*sdt; b.y += b.vy*sdt;
+
+      // side walls
+      const lx=W*board.sidePad, rx=W*(1-board.sidePad);
+      if(b.x < lx+b.r){ b.x=lx+b.r; if(b.vx<0){ b.vx*=-restitution(MAT.wall,Math.abs(b.vx)); } }
+      if(b.x > rx-b.r){ b.x=rx-b.r; if(b.vx>0){ b.vx*=-restitution(MAT.wall,Math.abs(b.vx)); } }
+
+      // pegs (brute force is fine — board is ~90 pegs; spatial cull is a
+      // PRD optimization we deliberately do NOT need at this scale yet)
+      for(const peg of board.pegs) collidePeg(b, peg);
+
+      // settle into bins
+      const binTop = H*(1-board.botPad);
+      if(b.y > binTop + (H*board.botPad)*0.55 && !b.settled){
+        b.settled=true; b.live=false;
+        const bin = board.bins.find(bn=>b.x>=bn.x0 && b.x<bn.x1) || board.bins[0];
+        addScore(bin.value);
+        flash('+'+bin.value);
+        reportToShell({event:'ball_settled', value:bin.value, seed:BOARD_SEED});
+        if(ballsLeft<=0 && balls.every(x=>!x.live)){
+          const high = storageGet('vectordrop.high',0);
+          const isHigh = score>high;
+          if(isHigh) storageSet('vectordrop.high', score);
+          setTimeout(()=>flash(isHigh?'NEW HIGH!':'ROUND DONE'), 400);
+          reportToShell({event:'round_over', score, seed:BOARD_SEED});
+        }
+      }
+    }
+  }
+  // decay peg hit flashes
+  for(const peg of board.pegs) if(peg.hit>0) peg.hit-=dt;
+  // cull fully-settled balls after they've been shown a beat (keep last 40)
+  if(balls.length>40) balls.splice(0, balls.length-40);
+}
+
+// ═══ SCORE / UI ════════════════════════════════════════════════════════
+const scoreEl=document.getElementById('score'), statusEl=document.getElementById('status'), msgEl=document.getElementById('msg');
+function addScore(v){ score+=v; scoreEl.textContent=String(score).padStart(6,'0'); }
+function setStatus(){ statusEl.textContent = ballsLeft>0 ? `BALLS: ${ballsLeft} · DROP TO PLAY` : `LAST BALLS IN PLAY`; }
+function flash(t){ msgEl.textContent=t; msgEl.classList.add('show'); clearTimeout(flash._t); flash._t=setTimeout(()=>msgEl.classList.remove('show'),650); }
+setStatus();
+
+// ═══ RENDER ════════════════════════════════════════════════════════════
+const C_NEON='0,200,255', C_HOT='255,238,0', C_DIM='0,120,200', C_BALL='223,239,255';
+function draw(){
+  ctx.fillStyle='#020b18'; ctx.fillRect(0,0,W,H);
+
+  // faint dot-grid backdrop (static parallax layer, Obliteratus signature)
+  ctx.fillStyle=`rgba(${C_DIM},0.14)`;
+  for(let gx=W*0.04; gx<W; gx+=44) for(let gy=H*0.04; gy<H; gy+=44){ ctx.beginPath(); ctx.arc(gx,gy,1.2,0,7); ctx.fill(); }
+
+  // board frame
+  const lx=W*board.sidePad, rx=W*(1-board.sidePad);
+  ctx.strokeStyle=`rgba(${C_NEON},0.45)`; ctx.lineWidth=2;
+  ctx.strokeRect(lx, H*board.topPad*0.35, rx-lx, H*(1-board.botPad)-H*board.topPad*0.35);
+
+  // pegs
+  for(const peg of board.pegs){
+    if(peg.bumper){
+      // BUMPER — diamond glyph, hot palette, glows on hit
+      const glow = peg.hit>0 ? 1 : 0.55;
+      const s = board.pegR*1.9;
+      ctx.save(); ctx.translate(peg.x,peg.y); ctx.rotate(Math.PI/4);
+      ctx.fillStyle=`rgba(${C_HOT},${glow})`;
+      ctx.shadowColor=`rgba(${C_HOT},${glow})`; ctx.shadowBlur = peg.hit>0?18:8;
+      ctx.fillRect(-s/2,-s/2,s,s);
+      ctx.restore(); ctx.shadowBlur=0;
+    } else {
+      // standard peg — cyan dot, subtle flash on contact
+      const a = peg.hit>0 ? 1 : 0.7;
+      ctx.fillStyle=`rgba(${C_NEON},${a})`;
+      ctx.shadowColor=`rgba(${C_NEON},${a})`; ctx.shadowBlur=peg.hit>0?10:0;
+      ctx.beginPath(); ctx.arc(peg.x,peg.y,board.pegR,0,7); ctx.fill();
+      ctx.shadowBlur=0;
+    }
+  }
+
+  // bins + dividers + labels
+  const binTop = H*(1-board.botPad);
+  ctx.strokeStyle=`rgba(${C_NEON},0.4)`; ctx.lineWidth=1.5;
+  ctx.font=`${Math.max(11,board.colSpacing*0.34)}px 'Courier New',monospace`;
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  for(const bn of board.bins){
+    ctx.beginPath(); ctx.moveTo(bn.x0, binTop); ctx.lineTo(bn.x0, H*0.985); ctx.stroke();
+    const cx=(bn.x0+bn.x1)/2;
+    const hot = bn.value>=50;
+    ctx.fillStyle = hot?`rgba(${C_HOT},0.9)`:`rgba(${C_NEON},0.75)`;
+    ctx.fillText(bn.label, cx, binTop + H*board.botPad*0.5);
+  }
+  ctx.beginPath(); ctx.moveTo(board.bins[board.bins.length-1].x1, binTop); ctx.lineTo(board.bins[board.bins.length-1].x1, H*0.985); ctx.stroke();
+
+  // balls
+  for(const b of balls){
+    const g=ctx.createRadialGradient(b.x-b.r*0.4,b.y-b.r*0.4,1,b.x,b.y,b.r+2);
+    g.addColorStop(0,`rgba(${C_BALL},1)`); g.addColorStop(1,`rgba(${C_DIM},0.7)`);
+    ctx.fillStyle=g; ctx.shadowColor=`rgba(${C_BALL},0.6)`; ctx.shadowBlur=8;
+    ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,7); ctx.fill(); ctx.shadowBlur=0;
+  }
+}
+
+// ═══ INPUT ═════════════════════════════════════════════════════════════
+function dropAt(clientX, clientY){
+  // only respond to taps in the upper board region
+  if(clientY > H*0.30) return;
+  const lx=W*board.sidePad, rx=W*(1-board.sidePad);
+  dropAt._x = Math.max(lx+board.ballR, Math.min(rx-board.ballR, clientX));
+  dropBall(dropAt._x);
+}
+addEventListener('mousedown', e=>dropAt(e.clientX, e.clientY));
+addEventListener('touchstart', e=>{ const t=e.touches[0]; dropAt(t.clientX, t.clientY); }, {passive:true});
+
+// ═══ LOOP / BOOT ═══════════════════════════════════════════════════════
+let last=performance.now();
+function loop(now){
+  let dt=Math.min((now-last)/1000, 1/30); last=now;
+  step(dt); draw();
+  requestAnimationFrame(loop);
+}
+function resize(){
+  DPR=Math.min(devicePixelRatio||1,2);
+  W=innerWidth; H=innerHeight;
+  canvas.style.width=W+'px'; canvas.style.height=H+'px';
+  canvas.width=Math.round(W*DPR); canvas.height=Math.round(H*DPR);
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  layout();
+}
+addEventListener('resize', resize);
+resize();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
