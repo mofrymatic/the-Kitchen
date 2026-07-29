@@ -314,13 +314,11 @@
         /* Menu header bar */
         .menu-header {
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
-            margin-bottom: 2%;
+            margin-bottom: 3.5%;
             position: relative;
-            gap: 1.4%;
         }
 
         .menu-title {
@@ -330,68 +328,15 @@
             letter-spacing: 3px;
         }
 
-        .menu-legend {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 3.2%;
-            font-size: clamp(3px, 0.55vh, 4.6px);
-            letter-spacing: 1px;
-            color: rgba(255,255,255,0.32);
-        }
-        .menu-legend span { display: inline-flex; align-items: center; gap: 0.4em; white-space: nowrap; }
-        .menu-legend i {
-            width: 5px; height: 5px; border-radius: 50%; display: inline-block;
-            box-shadow: 0 0 4px currentColor;
-        }
-        .legend-live  i { background: var(--neon-green);  color: var(--neon-green); }
-        .legend-tag   i { background: var(--neon-blue);   color: var(--neon-blue); }
-        .legend-build i { background: var(--neon-orange); color: var(--neon-orange); }
-
         /* ── GAME GRID ──────────────────────────────────────────── */
-        .game-grid-wrap {
-            position: relative;
-            flex: 1;
-            min-height: 0;
-            overflow: hidden;
-        }
-        .game-grid-wrap::before,
-        .game-grid-wrap::after {
-            content: '';
-            position: absolute; left: 0; right: 6px;
-            height: 8%;
-            pointer-events: none;
-            z-index: 6;
-        }
-        .game-grid-wrap::before {
-            top: 0;
-            background: linear-gradient(to bottom, #04040e 0%, rgba(4,4,14,0) 100%);
-        }
-        .game-grid-wrap::after {
-            bottom: 0;
-            background: linear-gradient(to top, #04040e 0%, rgba(4,4,14,0) 100%);
-        }
-
         .game-grid {
-            position: absolute; inset: 0;
-            overflow-y: auto;
-            overflow-x: hidden;
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            grid-auto-rows: min-content;
-            align-content: start;
-            gap: 4.5% 3.5%;
-            padding: 1% 4px 4% 0;
-            -webkit-overflow-scrolling: touch;
+            grid-template-rows: repeat(2, 1fr);
+            gap: 3.5%;
+            flex: 1;
+            min-height: 0;
         }
-        .game-grid::-webkit-scrollbar { width: 4px; }
-        .game-grid::-webkit-scrollbar-track { background: transparent; }
-        .game-grid::-webkit-scrollbar-thumb {
-            background: rgba(0,217,255,0.35);
-            border-radius: 2px;
-        }
-        .game-grid::-webkit-scrollbar-thumb:hover { background: rgba(0,217,255,0.6); }
-        .game-grid { scrollbar-width: thin; scrollbar-color: rgba(0,217,255,0.4) transparent; }
 
         /* ── BASE TILE ──────────────────────────────────────────── */
         .game-tile {
@@ -404,37 +349,31 @@
             overflow: hidden;
             text-decoration: none;
             cursor: pointer;
-            aspect-ratio: 1 / 0.92;
             /* staggered entry */
             opacity: 0;
         }
 
         /* Stagger animation trigger class */
-        .game-tile.entering {
-            animation: tileIn 0.32s ease forwards;
-            animation-delay: calc(var(--i, 0) * 0.045s);
-        }
+        .game-tile.entering { animation: tileIn 0.32s ease forwards; }
+
+        .game-tile:nth-child(1).entering { animation-delay: 0.04s; }
+        .game-tile:nth-child(2).entering { animation-delay: 0.09s; }
+        .game-tile:nth-child(3).entering { animation-delay: 0.14s; }
+        .game-tile:nth-child(4).entering { animation-delay: 0.19s; }
+        .game-tile:nth-child(5).entering { animation-delay: 0.24s; }
+        .game-tile:nth-child(6).entering { animation-delay: 0.29s; }
 
         @keyframes tileIn {
             0%   { opacity: 0; transform: scale(0.92) translateY(6px); }
             100% { opacity: 1; transform: scale(1)    translateY(0); }
         }
 
-        .game-tile:not(.locked):hover {
+        .game-tile:not(.disabled):hover {
             transform: scale(1.05);
             z-index: 2;
         }
 
-        /* ── LOCKED (coming soon / under construction) ─────────── */
-        .game-tile.locked { cursor: default; }
-        .game-tile.locked .tile-icon { opacity: 0.3; filter: grayscale(0.4); }
-        .game-tile.locked .tile-name { opacity: 0.45; }
-        .game-tile.locked:hover { transform: none; }
-        .lock-glyph {
-            position: absolute; top: 6%; right: 8%;
-            font-size: clamp(6px, 1.3vh, 10px);
-            opacity: 0.55; z-index: 3;
-        }
+        .game-tile.disabled { cursor: default; }
 
         /* ── TILE COLOUR THEMES ─────────────────────────────────── */
         .tile-tetris {
@@ -497,39 +436,6 @@
             box-shadow: inset 0 0 20px rgba(255,190,11,0.17), 0 0 14px rgba(255,190,11,0.32);
         }
 
-        /* ── NEW CABINET THEMES ──────────────────────────────────── */
-        .tile-minesweeper   { border-color: #14e0c4; background: linear-gradient(155deg, rgba(20,224,196,0.12) 0%, rgba(4,4,14,0.9) 70%); box-shadow: inset 0 0 12px rgba(20,224,196,0.07), 0 0 5px rgba(20,224,196,0.12); transition: box-shadow 0.15s ease, transform 0.12s ease; }
-        .tile-minesweeper:hover   { box-shadow: inset 0 0 20px rgba(20,224,196,0.17), 0 0 14px rgba(20,224,196,0.32); }
-
-        .tile-vector-squadron { border-color: #7dd3fc; background: linear-gradient(155deg, rgba(125,211,252,0.10) 0%, rgba(4,4,14,0.9) 70%); box-shadow: inset 0 0 10px rgba(125,211,252,0.05), 0 0 4px rgba(125,211,252,0.08); }
-
-        .tile-rc-racer      { border-color: #ff4d9d; background: linear-gradient(155deg, rgba(255,77,157,0.10) 0%, rgba(4,4,14,0.9) 70%); box-shadow: inset 0 0 10px rgba(255,77,157,0.05), 0 0 4px rgba(255,77,157,0.08); }
-
-        .tile-packman       { border-color: #ffd700; background: linear-gradient(155deg, rgba(255,215,0,0.12) 0%, rgba(4,4,14,0.9) 70%); box-shadow: inset 0 0 12px rgba(255,215,0,0.07), 0 0 5px rgba(255,215,0,0.12); transition: box-shadow 0.15s ease, transform 0.12s ease; }
-        .tile-packman:hover { box-shadow: inset 0 0 20px rgba(255,215,0,0.17), 0 0 14px rgba(255,215,0,0.32); }
-
-        .tile-hexpuzzle     { border-color: #22d3ee; background: linear-gradient(155deg, rgba(34,211,238,0.10) 0%, rgba(4,4,14,0.9) 70%); box-shadow: inset 0 0 10px rgba(34,211,238,0.05), 0 0 4px rgba(34,211,238,0.08); }
-
-        .tile-redeye-proto  { border-color: #ff5c8a; background: linear-gradient(155deg, rgba(255,92,138,0.12) 0%, rgba(4,4,14,0.9) 70%); box-shadow: inset 0 0 12px rgba(255,92,138,0.07), 0 0 5px rgba(255,92,138,0.12); transition: box-shadow 0.15s ease, transform 0.12s ease; }
-        .tile-redeye-proto:hover { box-shadow: inset 0 0 20px rgba(255,92,138,0.17), 0 0 14px rgba(255,92,138,0.32); }
-
-        .tile-vector-siege  { border-color: #ff2d55; background: linear-gradient(155deg, rgba(255,45,85,0.12) 0%, rgba(4,4,14,0.9) 70%); box-shadow: inset 0 0 12px rgba(255,45,85,0.07), 0 0 5px rgba(255,45,85,0.12); transition: box-shadow 0.15s ease, transform 0.12s ease; }
-        .tile-vector-siege:hover { box-shadow: inset 0 0 20px rgba(255,45,85,0.17), 0 0 14px rgba(255,45,85,0.32); }
-
-        .tile-ref-pinball   { border-color: #c084fc; background: linear-gradient(155deg, rgba(192,132,252,0.10) 0%, rgba(4,4,14,0.9) 70%); box-shadow: inset 0 0 10px rgba(192,132,252,0.05), 0 0 4px rgba(192,132,252,0.08); }
-
-        .tile-plinko        { border-color: #94a3b8; background: linear-gradient(155deg, rgba(148,163,184,0.12) 0%, rgba(4,4,14,0.9) 70%); box-shadow: inset 0 0 12px rgba(148,163,184,0.07), 0 0 5px rgba(148,163,184,0.12); transition: box-shadow 0.15s ease, transform 0.12s ease; }
-        .tile-plinko:hover  { box-shadow: inset 0 0 20px rgba(148,163,184,0.17), 0 0 14px rgba(148,163,184,0.32); }
-
-        .tile-excitebike    { border-color: #fb7185; background: linear-gradient(155deg, rgba(251,113,133,0.12) 0%, rgba(4,4,14,0.9) 70%); box-shadow: inset 0 0 12px rgba(251,113,133,0.07), 0 0 5px rgba(251,113,133,0.12); transition: box-shadow 0.15s ease, transform 0.12s ease; }
-        .tile-excitebike:hover { box-shadow: inset 0 0 20px rgba(251,113,133,0.17), 0 0 14px rgba(251,113,133,0.32); }
-
-        .tile-crawford      { border-color: #4ade80; background: linear-gradient(155deg, rgba(74,222,128,0.12) 0%, rgba(4,4,14,0.9) 70%); box-shadow: inset 0 0 12px rgba(74,222,128,0.07), 0 0 5px rgba(74,222,128,0.12); transition: box-shadow 0.15s ease, transform 0.12s ease; }
-        .tile-crawford:hover { box-shadow: inset 0 0 20px rgba(74,222,128,0.17), 0 0 14px rgba(74,222,128,0.32); }
-
-        .tile-grid-warden   { border-color: #34d399; background: linear-gradient(155deg, rgba(52,211,153,0.12) 0%, rgba(4,4,14,0.9) 70%); box-shadow: inset 0 0 12px rgba(52,211,153,0.07), 0 0 5px rgba(52,211,153,0.12); transition: box-shadow 0.15s ease, transform 0.12s ease; }
-        .tile-grid-warden:hover { box-shadow: inset 0 0 20px rgba(52,211,153,0.17), 0 0 14px rgba(52,211,153,0.32); }
-
 
         /* ── TILE CONTENT ───────────────────────────────────────── */
         .tile-icon {
@@ -569,35 +475,6 @@
             background: rgba(168,85,247,0.18);
             color: var(--neon-purple);
             text-shadow: 0 0 6px var(--neon-purple);
-        }
-
-        .badge-construction {
-            background-color: rgba(245,158,11,0.20);
-            background-image: repeating-linear-gradient(
-                45deg,
-                rgba(245,158,11,0.22) 0px, rgba(245,158,11,0.22) 4px,
-                rgba(0,0,0,0.22) 4px, rgba(0,0,0,0.22) 8px
-            );
-            color: #ffcc66;
-            text-shadow: 0 0 6px #f59e0b;
-        }
-
-        .badge-alpha {
-            background: rgba(148,163,184,0.18);
-            color: #cbd5e1;
-            text-shadow: 0 0 6px rgba(148,163,184,0.8);
-        }
-
-        .badge-beta {
-            background: rgba(52,211,153,0.18);
-            color: #6ee7b7;
-            text-shadow: 0 0 6px #34d399;
-        }
-
-        .badge-proto {
-            background: rgba(255,92,138,0.18);
-            color: #ff9db8;
-            text-shadow: 0 0 6px #ff5c8a;
         }
 
         /* ── MENU FOOTER ────────────────────────────────────────── */
@@ -778,107 +655,54 @@
                 <div class="screen-menu" id="screenMenu">
 
                     <div class="menu-header">
-                        <span class="menu-title">── SELECT GAME · 18 CABINETS ──</span>
-                        <div class="menu-legend">
-                            <span class="legend-live"><i></i>LIVE</span>
-                            <span class="legend-tag"><i></i>ALPHA/BETA/PROTO</span>
-                            <span class="legend-build"><i></i>BUILDING</span>
-                        </div>
+                        <span class="menu-title">── SELECT GAME ──</span>
                     </div>
 
-                    <div class="game-grid-wrap">
                     <div class="game-grid" id="gameGrid">
 
-                        <!-- 1 · Minesweeper -->
-                        <a class="game-tile tile-minesweeper" style="--i:0" href="minesweeper.html" data-game="minesweeper">
+                        <!-- 1 · Tetris  (COMING SOON) -->
+                        <a class="game-tile tile-tetris" href="tetris.html" data-game="tetris">
                             <svg class="tile-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-                                <rect x="1" y="1" width="9" height="9" rx="0.5" fill="rgba(20,224,196,0.10)" stroke="#14e0c4" stroke-width="1"/>
-                                <rect x="11.5" y="1" width="9" height="9" rx="0.5" fill="rgba(20,224,196,0.10)" stroke="#14e0c4" stroke-width="1"/>
-                                <rect x="22" y="1" width="9" height="9" rx="0.5" fill="rgba(20,224,196,0.10)" stroke="#14e0c4" stroke-width="1"/>
-                                <rect x="1" y="11.5" width="9" height="9" rx="0.5" fill="#0a2e29" stroke="#14e0c4" stroke-width="1"/>
-                                <rect x="11.5" y="11.5" width="9" height="9" rx="0.5" fill="rgba(20,224,196,0.10)" stroke="#14e0c4" stroke-width="1"/>
-                                <rect x="22" y="11.5" width="9" height="9" rx="0.5" fill="#0a2e29" stroke="#14e0c4" stroke-width="1"/>
-                                <rect x="1" y="22" width="9" height="9" rx="0.5" fill="rgba(20,224,196,0.10)" stroke="#14e0c4" stroke-width="1"/>
-                                <rect x="11.5" y="22" width="9" height="9" rx="0.5" fill="#0a2e29" stroke="#14e0c4" stroke-width="1"/>
-                                <rect x="22" y="22" width="9" height="9" rx="0.5" fill="rgba(20,224,196,0.10)" stroke="#14e0c4" stroke-width="1"/>
-                                <path d="M5.5,13 L5.5,19.5" stroke="#ff0040" stroke-width="0.9"/>
-                                <path d="M5.5,13.5 L9,15 L5.5,16.5 Z" fill="#ff0040"/>
-                                <text x="16" y="19" font-family="'Courier New',monospace" font-size="6" font-weight="bold" text-anchor="middle" fill="#14e0c4">2</text>
-                                <text x="26.5" y="29" font-family="'Courier New',monospace" font-size="6" font-weight="bold" text-anchor="middle" fill="#14e0c4">1</text>
-                            </svg>
-                            <span class="tile-name">MINESWEEPER</span>
-                            <span class="tile-sub">CLEAR THE FIELD</span>
-                        </a>
-
-                        <!-- 2 · Tetris -->
-                        <a class="game-tile tile-tetris" style="--i:1" href="tetris.html" data-game="tetris">
-                            <svg class="tile-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+                                <!-- Bottom row -->
                                 <rect x="0" y="21" width="6" height="6" rx="0.5" fill="#f87171"/>
                                 <rect x="6" y="21" width="6" height="6" rx="0.5" fill="#fde68a"/>
                                 <rect x="12" y="21" width="6" height="6" rx="0.5" fill="#34d399"/>
                                 <rect x="18" y="21" width="6" height="6" rx="0.5" fill="#a78bfa"/>
                                 <rect x="24" y="21" width="6" height="6" rx="0.5" fill="#f87171"/>
+                                <!-- Middle row -->
                                 <rect x="0" y="15" width="6" height="6" rx="0.5" fill="#fde68a"/>
                                 <rect x="6" y="15" width="6" height="6" rx="0.5" fill="#34d399"/>
                                 <rect x="18" y="15" width="6" height="6" rx="0.5" fill="#a78bfa"/>
                                 <rect x="24" y="15" width="6" height="6" rx="0.5" fill="#fde68a"/>
+                                <!-- Top partial row -->
                                 <rect x="12" y="9" width="6" height="6" rx="0.5" fill="#f87171"/>
                                 <rect x="12" y="3" width="6" height="6" rx="0.5" fill="#a78bfa"/>
+                                <!-- gap lines for pixel feel -->
                                 <line x1="0" y1="27" x2="30" y2="27" stroke="#04040e" stroke-width="0.4"/>
                                 <line x1="0" y1="21" x2="30" y2="21" stroke="#04040e" stroke-width="0.4"/>
                                 <line x1="6" y1="15" x2="6" y2="27" stroke="#04040e" stroke-width="0.4"/>
                                 <line x1="12" y1="9" x2="12" y2="27" stroke="#04040e" stroke-width="0.4"/>
                             </svg>
-                            <span class="tile-name">TETRIS<br>OBLITERATUS</span>
+                            <span class="tile-name">TETRIS</span>
                             <span class="tile-sub">CLASSIC</span>
+                            <div class="tile-badge badge-soon">SOON</div>
                         </a>
 
-                        <!-- 3 · Vector Squadron (COMING SOON) -->
-                        <a class="game-tile tile-vector-squadron locked" style="--i:2" href="vector-squadron.html" data-game="vector-squadron">
-                            <span class="lock-glyph">🔒</span>
+                        <!-- 2 · Astroids -->
+                        <a class="game-tile tile-astroids" href="astroids.html" data-game="astroids">
                             <svg class="tile-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-                                <polygon points="16,2 20,14 16,11 12,14" fill="none" stroke="#7dd3fc" stroke-width="1.4"/>
-                                <polygon points="6,16 10,26 6,23.5 2,26" fill="none" stroke="#7dd3fc" stroke-width="1.2" opacity="0.75"/>
-                                <polygon points="26,16 30,26 26,23.5 22,26" fill="none" stroke="#7dd3fc" stroke-width="1.2" opacity="0.75"/>
-                            </svg>
-                            <span class="tile-name">VECTOR<br>SQUADRON</span>
-                            <span class="tile-sub">WING FORMATION</span>
-                            <div class="tile-badge badge-soon">COMING SOON</div>
-                        </a>
-
-                        <!-- 4 · Neon Invaders (UNDER CONSTRUCTION) -->
-                        <a class="game-tile tile-neon-invaders locked" style="--i:3" href="neon-invaders.html" data-game="neon-invaders">
-                            <span class="lock-glyph">🔒</span>
-                            <svg class="tile-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-                                <rect x="1"  y="1" width="4" height="4" rx="0.5" fill="#00ff88"/>
-                                <rect x="8"  y="1" width="4" height="4" rx="0.5" fill="#00ff88"/>
-                                <rect x="15" y="1" width="4" height="4" rx="0.5" fill="#00ff88"/>
-                                <rect x="22" y="1" width="4" height="4" rx="0.5" fill="#00ff88"/>
-                                <rect x="1"  y="8" width="5" height="5" rx="0.5" fill="#00ff88" opacity="0.85"/>
-                                <rect x="8"  y="8" width="5" height="5" rx="0.5" fill="#00ff88" opacity="0.85"/>
-                                <rect x="15" y="8" width="5" height="5" rx="0.5" fill="#00ff88" opacity="0.85"/>
-                                <rect x="22" y="8" width="5" height="5" rx="0.5" fill="#00ff88" opacity="0.85"/>
-                                <rect x="4"  y="15" width="6" height="6" rx="0.5" fill="#00ff88" opacity="0.7"/>
-                                <rect x="13" y="15" width="6" height="6" rx="0.5" fill="#00ff88" opacity="0.7"/>
-                                <polygon points="16,23 20,30 12,30" fill="#00ff88"/>
-                                <rect x="15" y="19" width="2" height="3" fill="#ffffff" opacity="0.9"/>
-                            </svg>
-                            <span class="tile-name">NEON<br>INVADERS</span>
-                            <span class="tile-sub">SHOOT 'EM UP</span>
-                            <div class="tile-badge badge-construction">BUILDING</div>
-                        </a>
-
-                        <!-- 5 · Astroids -->
-                        <a class="game-tile tile-astroids" style="--i:4" href="Astroids.html" data-game="astroids">
-                            <svg class="tile-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+                                <!-- Stars -->
                                 <rect x="2"  y="4"  width="1" height="1" fill="#00d9ff" opacity="0.5"/>
                                 <rect x="20" y="2"  width="1" height="1" fill="#00d9ff" opacity="0.5"/>
                                 <rect x="28" y="10" width="1" height="1" fill="#00d9ff" opacity="0.4"/>
                                 <rect x="6"  y="24" width="1" height="1" fill="#00d9ff" opacity="0.4"/>
                                 <rect x="26" y="27" width="1" height="1" fill="#00d9ff" opacity="0.4"/>
+                                <!-- Spaceship -->
                                 <polygon points="16,3 21,25 16,20 11,25" fill="none" stroke="#00d9ff" stroke-width="1.6"/>
+                                <!-- Engine flames -->
                                 <line x1="13.5" y1="21" x2="12" y2="29" stroke="#ff006e" stroke-width="1.4" opacity="0.9"/>
                                 <line x1="18.5" y1="21" x2="20" y2="29" stroke="#ff006e" stroke-width="1.4" opacity="0.9"/>
+                                <!-- Asteroids -->
                                 <path d="M3,11 L7,9 L11,11 L10,15 L7,16 L3,14 Z" fill="none" stroke="#00d9ff" stroke-width="1.2" opacity="0.8"/>
                                 <path d="M21,19 L25,18 L28,20 L27,23 L24,24 L21,22 Z" fill="none" stroke="#00d9ff" stroke-width="1" opacity="0.65"/>
                             </svg>
@@ -886,14 +710,37 @@
                             <span class="tile-sub">VECTOR BLAST</span>
                         </a>
 
-                        <!-- 6 · Red Eye -->
-                        <a class="game-tile tile-red-eye" style="--i:5" href="redeye-hud.html" data-game="red-eye">
+                        <!-- 3 · Cave Racer -->
+                        <a class="game-tile tile-cave-racer" href="cave-racer.html" data-game="cave-racer">
                             <svg class="tile-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+                                <!-- Cave walls -->
+                                <path d="M0,0 L0,32 L7,32 L5,21 L8,14 L4,7 L8,0 Z" fill="rgba(245,158,11,0.12)"/>
+                                <path d="M0,0 L8,0 L4,7 L8,14 L5,21 L7,32 L0,32 Z" fill="none" stroke="#f59e0b" stroke-width="1.6"/>
+                                <path d="M32,0 L32,32 L25,32 L27,21 L24,14 L28,7 L24,0 Z" fill="rgba(245,158,11,0.12)"/>
+                                <path d="M32,0 L24,0 L28,7 L24,14 L27,21 L25,32 L32,32 Z" fill="none" stroke="#f59e0b" stroke-width="1.6"/>
+                                <!-- Spaceship -->
+                                <polygon points="16,10 21,22 16,18.5 11,22" fill="#f59e0b"/>
+                                <!-- Exhaust -->
+                                <line x1="14" y1="20" x2="12.5" y2="28" stroke="#fb923c" stroke-width="1.6" opacity="0.9"/>
+                                <line x1="18" y1="20" x2="19.5" y2="28" stroke="#fb923c" stroke-width="1.6" opacity="0.9"/>
+                            </svg>
+                            <span class="tile-name">CAVE<br>RACER</span>
+                            <span class="tile-sub">SURVIVE & RACE</span>
+                        </a>
+
+                        <!-- 4 · Red Eye -->
+                        <a class="game-tile tile-red-eye" href="redeye-hud.html" data-game="red-eye">
+                            <svg class="tile-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+                                <!-- Eye whites / outer -->
                                 <path d="M2,16 Q16,3 30,16 Q16,29 2,16 Z"
                                       fill="rgba(255,0,64,0.07)" stroke="#ff0040" stroke-width="1.6"/>
+                                <!-- Iris ring -->
                                 <circle cx="16" cy="16" r="5.5" fill="rgba(255,0,64,0.14)" stroke="#ff0040" stroke-width="1.3"/>
+                                <!-- Pupil -->
                                 <circle cx="16" cy="16" r="2.6" fill="#ff0040"/>
+                                <!-- Specular glint -->
                                 <circle cx="13.5" cy="13.5" r="1" fill="rgba(255,255,255,0.55)"/>
+                                <!-- Lash lines -->
                                 <line x1="16" y1="4.5" x2="16" y2="7"   stroke="#ff0040" stroke-width="1" opacity="0.45"/>
                                 <line x1="16" y1="25"  x2="16" y2="27.5" stroke="#ff0040" stroke-width="1" opacity="0.45"/>
                                 <line x1="4.5" y1="16" x2="7"  y2="16"  stroke="#ff0040" stroke-width="1" opacity="0.45"/>
@@ -903,88 +750,49 @@
                             <span class="tile-sub">STEALTH ACTION</span>
                         </a>
 
-                        <!-- 7 · Cave Race -->
-                        <a class="game-tile tile-cave-racer" style="--i:6" href="cave-race.html" data-game="cave-race">
+                        <!-- 5 · Neon Invaders -->
+                        <a class="game-tile tile-neon-invaders" href="neon-invaders.html" data-game="neon-invaders">
                             <svg class="tile-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M0,0 L0,32 L7,32 L5,21 L8,14 L4,7 L8,0 Z" fill="rgba(245,158,11,0.12)"/>
-                                <path d="M0,0 L8,0 L4,7 L8,14 L5,21 L7,32 L0,32 Z" fill="none" stroke="#f59e0b" stroke-width="1.6"/>
-                                <path d="M32,0 L32,32 L25,32 L27,21 L24,14 L28,7 L24,0 Z" fill="rgba(245,158,11,0.12)"/>
-                                <path d="M32,0 L24,0 L28,7 L24,14 L27,21 L25,32 L32,32 Z" fill="none" stroke="#f59e0b" stroke-width="1.6"/>
-                                <polygon points="16,10 21,22 16,18.5 11,22" fill="#f59e0b"/>
-                                <line x1="14" y1="20" x2="12.5" y2="28" stroke="#fb923c" stroke-width="1.6" opacity="0.9"/>
-                                <line x1="18" y1="20" x2="19.5" y2="28" stroke="#fb923c" stroke-width="1.6" opacity="0.9"/>
+                                <!-- Top row (small) -->
+                                <rect x="1"  y="1" width="4" height="4" rx="0.5" fill="#00ff88"/>
+                                <rect x="8"  y="1" width="4" height="4" rx="0.5" fill="#00ff88"/>
+                                <rect x="15" y="1" width="4" height="4" rx="0.5" fill="#00ff88"/>
+                                <rect x="22" y="1" width="4" height="4" rx="0.5" fill="#00ff88"/>
+                                <!-- Middle row -->
+                                <rect x="1"  y="8" width="5" height="5" rx="0.5" fill="#00ff88" opacity="0.85"/>
+                                <rect x="8"  y="8" width="5" height="5" rx="0.5" fill="#00ff88" opacity="0.85"/>
+                                <rect x="15" y="8" width="5" height="5" rx="0.5" fill="#00ff88" opacity="0.85"/>
+                                <rect x="22" y="8" width="5" height="5" rx="0.5" fill="#00ff88" opacity="0.85"/>
+                                <!-- Bottom row (large) -->
+                                <rect x="4"  y="15" width="6" height="6" rx="0.5" fill="#00ff88" opacity="0.7"/>
+                                <rect x="13" y="15" width="6" height="6" rx="0.5" fill="#00ff88" opacity="0.7"/>
+                                <!-- Cannon -->
+                                <polygon points="16,23 20,30 12,30" fill="#00ff88"/>
+                                <!-- Bullet -->
+                                <rect x="15" y="19" width="2" height="3" fill="#ffffff" opacity="0.9"/>
                             </svg>
-                            <span class="tile-name">CAVE<br>RACE</span>
-                            <span class="tile-sub">SURVIVE & RACE</span>
+                            <span class="tile-name">NEON<br>INVADERS</span>
+                            <span class="tile-sub">SHOOT 'EM UP</span>
                         </a>
 
-                        <!-- 8 · RC Racer (COMING SOON) -->
-                        <a class="game-tile tile-rc-racer locked" style="--i:7" href="rc-racer.html" data-game="rc-racer">
-                            <span class="lock-glyph">🔒</span>
+                        <!-- 6 · Underhall -->
+                        <a class="game-tile tile-underhall" href="underhall.html" data-game="underhall">
                             <svg class="tile-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-                                <rect x="8" y="4" width="16" height="24" rx="6" fill="none" stroke="#ff4d9d" stroke-width="1.4"/>
-                                <rect x="11" y="8" width="10" height="6" rx="1.5" fill="rgba(255,77,157,0.18)" stroke="#ff4d9d" stroke-width="1"/>
-                                <rect x="4" y="9" width="4" height="5" rx="1" fill="#ff4d9d" opacity="0.8"/>
-                                <rect x="24" y="9" width="4" height="5" rx="1" fill="#ff4d9d" opacity="0.8"/>
-                                <rect x="4" y="19" width="4" height="5" rx="1" fill="#ff4d9d" opacity="0.8"/>
-                                <rect x="24" y="19" width="4" height="5" rx="1" fill="#ff4d9d" opacity="0.8"/>
-                            </svg>
-                            <span class="tile-name">RC RACER</span>
-                            <span class="tile-sub">3RD-PARTY CHASSIS</span>
-                            <div class="tile-badge badge-soon">COMING SOON</div>
-                        </a>
-
-                        <!-- 9 · Packman -->
-                        <a class="game-tile tile-packman" style="--i:8" href="packman.html" data-game="packman">
-                            <svg class="tile-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M16,16 L28,9 A13,13 0 1 0 28,23 Z" fill="#ffd700"/>
-                                <circle cx="13" cy="9.5" r="1.6" fill="#1a1a05"/>
-                                <circle cx="4" cy="16" r="1.4" fill="#ffd700" opacity="0.75"/>
-                                <circle cx="9" cy="16" r="1.4" fill="#ffd700" opacity="0.75"/>
-                            </svg>
-                            <span class="tile-name">POSTAL<br>PACKMAN</span>
-                            <span class="tile-sub">DELIVER THE DOTS</span>
-                        </a>
-
-                        <!-- 10 · Hex Puzzle (UNDER CONSTRUCTION) -->
-                        <a class="game-tile tile-hexpuzzle locked" style="--i:9" href="hexpuzzle.html" data-game="hexpuzzle">
-                            <span class="lock-glyph">🔒</span>
-                            <svg class="tile-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-                                <polygon points="16,2.5 21.6,5.75 21.6,12.25 16,15.5 10.4,12.25 10.4,5.75" fill="rgba(34,211,238,0.10)" stroke="#22d3ee" stroke-width="1.2"/>
-                                <polygon points="9,12.5 14.6,15.75 14.6,22.25 9,25.5 3.4,22.25 3.4,15.75" fill="rgba(34,211,238,0.10)" stroke="#22d3ee" stroke-width="1.2"/>
-                                <polygon points="23,12.5 28.6,15.75 28.6,22.25 23,25.5 17.4,22.25 17.4,15.75" fill="rgba(34,211,238,0.10)" stroke="#22d3ee" stroke-width="1.2"/>
-                            </svg>
-                            <span class="tile-name">HEX<br>PUZZLE</span>
-                            <span class="tile-sub">3RD-PARTY · TILES</span>
-                            <div class="tile-badge badge-construction">BUILDING</div>
-                        </a>
-
-                        <!-- 11 · Red Eye — WebGL Prototype -->
-                        <a class="game-tile tile-redeye-proto" style="--i:10" href="red_eye_webgl_prototype.html" data-game="redeye-proto">
-                            <svg class="tile-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M2,16 Q16,3 30,16 Q16,29 2,16 Z" fill="none" stroke="#ff5c8a" stroke-width="1.2" stroke-dasharray="2.2 2"/>
-                                <circle cx="16" cy="16" r="5.5" fill="none" stroke="#ff5c8a" stroke-width="1" stroke-dasharray="1.6 1.6"/>
-                                <circle cx="16" cy="16" r="1.6" fill="#ff5c8a"/>
-                                <path d="M6,10 L4,7 M26,10 L28,7" stroke="#ff5c8a" stroke-width="1" opacity="0.5"/>
-                            </svg>
-                            <span class="tile-name">RED EYE<br>WEBGL</span>
-                            <span class="tile-sub">RENDER PROTOTYPE</span>
-                            <div class="tile-badge badge-proto">PROTOTYPE</div>
-                        </a>
-
-                        <!-- 12 · Underhall -->
-                        <a class="game-tile tile-underhall" style="--i:11" href="underhall.html" data-game="underhall">
-                            <svg class="tile-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+                                <!-- Stone archway -->
                                 <path d="M4,31 L4,13 Q4,3 16,3 Q28,3 28,13 L28,31"
                                       fill="none" stroke="#ffbe0b" stroke-width="1.6" opacity="0.55"/>
+                                <!-- Brick courses on the jambs -->
                                 <line x1="4" y1="18" x2="4" y2="18" stroke="#ffbe0b" stroke-width="0.5" opacity="0.3"/>
                                 <line x1="2" y1="24" x2="6" y2="24" stroke="#ffbe0b" stroke-width="0.8" opacity="0.28"/>
                                 <line x1="26" y1="24" x2="30" y2="24" stroke="#ffbe0b" stroke-width="0.8" opacity="0.28"/>
                                 <line x1="2" y1="18" x2="6" y2="18" stroke="#ffbe0b" stroke-width="0.8" opacity="0.22"/>
                                 <line x1="26" y1="18" x2="30" y2="18" stroke="#ffbe0b" stroke-width="0.8" opacity="0.22"/>
+                                <!-- Floor line -->
                                 <line x1="3" y1="31" x2="29" y2="31" stroke="#ffbe0b" stroke-width="1" opacity="0.3"/>
+                                <!-- Twin wall torches -->
                                 <path d="M5.5,10 Q6.5,6.5 5.5,3.5 Q8.3,5.5 7.7,9 Q7.2,10.8 5.5,10 Z" fill="#ffbe0b" opacity="0.85"/>
                                 <path d="M26.5,10 Q27.5,6.5 26.5,3.5 Q29.3,5.5 28.7,9 Q28.2,10.8 26.5,10 Z" fill="#ffbe0b" opacity="0.85"/>
+                                <!-- Roguelike player glyph -->
                                 <text x="16" y="24" font-family="'Courier New', monospace" font-size="15"
                                       font-weight="bold" text-anchor="middle" fill="#ffbe0b">@</text>
                             </svg>
@@ -992,85 +800,7 @@
                             <span class="tile-sub">ROGUELIKE DEPTHS</span>
                         </a>
 
-                        <!-- 13 · Vector Siege -->
-                        <a class="game-tile tile-vector-siege" style="--i:12" href="vector-siege.html" data-game="vector-siege">
-                            <svg class="tile-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-                                <circle cx="16" cy="16" r="9" fill="none" stroke="#ff2d55" stroke-width="1.3"/>
-                                <circle cx="16" cy="16" r="3" fill="none" stroke="#ff2d55" stroke-width="1.1"/>
-                                <line x1="16" y1="1" x2="16" y2="7" stroke="#ff2d55" stroke-width="1.3"/>
-                                <line x1="16" y1="25" x2="16" y2="31" stroke="#ff2d55" stroke-width="1.3"/>
-                                <line x1="1" y1="16" x2="7" y2="16" stroke="#ff2d55" stroke-width="1.3"/>
-                                <line x1="25" y1="16" x2="31" y2="16" stroke="#ff2d55" stroke-width="1.3"/>
-                                <line x1="4" y1="28" x2="14" y2="18" stroke="#ff9db8" stroke-width="1.4"/>
-                            </svg>
-                            <span class="tile-name">VECTOR<br>SIEGE</span>
-                            <span class="tile-sub">MISSILE DEFENSE</span>
-                        </a>
-
-                        <!-- 14 · Ref Pinball (COMING SOON) -->
-                        <a class="game-tile tile-ref-pinball locked" style="--i:13" href="ref-pinball.html" data-game="ref-pinball">
-                            <span class="lock-glyph">🔒</span>
-                            <svg class="tile-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-                                <rect x="3" y="1" width="26" height="30" rx="3" fill="none" stroke="#c084fc" stroke-width="1" opacity="0.4"/>
-                                <circle cx="16" cy="7" r="2.4" fill="#c084fc"/>
-                                <path d="M4,26 L11,23 L11,26 Z" fill="none" stroke="#c084fc" stroke-width="1.3"/>
-                                <path d="M28,26 L21,23 L21,26 Z" fill="none" stroke="#c084fc" stroke-width="1.3"/>
-                            </svg>
-                            <span class="tile-name">REF<br>PINBALL</span>
-                            <span class="tile-sub">SILVERBALL</span>
-                            <div class="tile-badge badge-soon">COMING SOON</div>
-                        </a>
-
-                        <!-- 15 · Plinko -->
-                        <a class="game-tile tile-plinko" style="--i:14" href="plinko.html" data-game="plinko">
-                            <svg class="tile-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-                                <circle cx="16" cy="3" r="1.6" fill="#e2e8f0"/>
-                                <circle cx="12" cy="10" r="1" fill="#94a3b8"/><circle cx="20" cy="10" r="1" fill="#94a3b8"/>
-                                <circle cx="8" cy="17" r="1" fill="#94a3b8"/><circle cx="16" cy="17" r="1" fill="#94a3b8"/><circle cx="24" cy="17" r="1" fill="#94a3b8"/>
-                                <circle cx="4" cy="24" r="1" fill="#94a3b8"/><circle cx="12" cy="24" r="1" fill="#94a3b8"/><circle cx="20" cy="24" r="1" fill="#94a3b8"/><circle cx="28" cy="24" r="1" fill="#94a3b8"/>
-                            </svg>
-                            <span class="tile-name">PLINKO</span>
-                            <span class="tile-sub">DROP & CHANCE</span>
-                            <div class="tile-badge badge-alpha">ALPHA</div>
-                        </a>
-
-                        <!-- 16 · Excitebike -->
-                        <a class="game-tile tile-excitebike" style="--i:15" href="excitebike.html" data-game="excitebike">
-                            <svg class="tile-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-                                <circle cx="7" cy="25" r="4.5" fill="none" stroke="#fb7185" stroke-width="1.4"/>
-                                <circle cx="25" cy="25" r="4.5" fill="none" stroke="#fb7185" stroke-width="1.4"/>
-                                <path d="M7,25 L14,14 L20,14 L25,25 M14,14 L11,9 L17,9 M17,9 L20,14" fill="none" stroke="#fb7185" stroke-width="1.4" stroke-linejoin="round"/>
-                            </svg>
-                            <span class="tile-name">EXCITEBIKE</span>
-                            <span class="tile-sub">DIRT TRACK</span>
-                        </a>
-
-                        <!-- 17 · Crawford County -->
-                        <a class="game-tile tile-crawford" style="--i:16" href="crawford-county.html" data-game="crawford-county">
-                            <svg class="tile-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M0,22 Q8,12 16,22 Q24,12 32,22 L32,32 L0,32 Z" fill="rgba(74,222,128,0.14)" stroke="#4ade80" stroke-width="1.2"/>
-                                <path d="M14,32 L18,20 L22,32" fill="none" stroke="#4ade80" stroke-width="1" opacity="0.5"/>
-                                <circle cx="24" cy="7" r="3" fill="none" stroke="#4ade80" stroke-width="1.2" opacity="0.7"/>
-                            </svg>
-                            <span class="tile-name">CRAWFORD<br>COUNTY</span>
-                            <span class="tile-sub">OPEN ROAD</span>
-                        </a>
-
-                        <!-- 18 · Grid Warden -->
-                        <a class="game-tile tile-grid-warden" style="--i:17" href="grid-warden.html" data-game="grid-warden">
-                            <svg class="tile-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-                                <polygon points="10,6 22,6 26,10 26,22 14,22 10,18" fill="none" stroke="#34d399" stroke-width="1.3"/>
-                                <polygon points="10,6 14,10 14,22" fill="none" stroke="#34d399" stroke-width="1.1" opacity="0.6"/>
-                                <line x1="14" y1="10" x2="26" y2="10" stroke="#34d399" stroke-width="1.1" opacity="0.6"/>
-                                <line x1="10" y1="6" x2="14" y2="10" stroke="#34d399" stroke-width="1.1" opacity="0.6"/>
-                            </svg>
-                            <span class="tile-name">GRID<br>WARDEN</span>
-                            <span class="tile-sub">SECTOR DEFENSE</span>
-                            <div class="tile-badge badge-beta">ß BETA</div>
-                        </a>
-
                     </div><!-- /.game-grid -->
-                    </div><!-- /.game-grid-wrap -->
 
                     <div class="menu-footer">
                         <span class="menu-back" id="menuBack">◄ EXIT ARCADE</span>
@@ -1258,8 +988,7 @@
         if (!tile) return;
         wake();
 
-        if (tile.classList.contains('locked')) {
-            e.preventDefault(); // cabinet isn't wired up yet — don't navigate
+        if (tile.dataset.game === 'tetris') {
             sfx.denied();
             // Shake the tile
             tile.style.transition = 'transform 0.08s ease';
