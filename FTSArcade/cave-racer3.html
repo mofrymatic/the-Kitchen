@@ -96,20 +96,7 @@
       text-shadow:0 0 8px rgba(0,220,255,.3);
     }
     #help b{color:#fff;font-weight:700}
-    #touchControls{display:none}
-    .touchButton{
-      appearance:none;border:1px solid rgba(255,48,89,.55);border-radius:16px;background:linear-gradient(180deg,rgba(27,8,33,.96),rgba(4,3,12,.98));
-      color:#fff;font:800 16px/1 "Courier New",monospace;letter-spacing:.08em;min-height:68px;box-shadow:inset 0 0 20px rgba(255,28,116,.12),0 0 20px rgba(0,0,0,.45);touch-action:manipulation
-    }
-    .touchButton small{display:block;margin-top:8px;color:rgba(210,230,255,.62);font-size:10px}
     @media(max-width:600px){#help{gap:8px;bottom:5px;letter-spacing:.02em}#help span:last-child{display:none}}
-    @media(orientation:portrait) and (pointer:coarse){
-      body{display:flex;flex-direction:column;justify-content:center;gap:12px;padding:env(safe-area-inset-top) 10px env(safe-area-inset-bottom)}
-      #shell{width:100%;max-width:100%;height:auto;aspect-ratio:16/9;border-radius:10px}
-      #touchControls{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;max-width:680px}
-      #help{display:none}
-    }
-    @media(orientation:landscape) and (pointer:coarse){#touchControls{display:none}#help{display:none}}
   </style>
 </head>
 <body>
@@ -119,16 +106,12 @@
     <div id="glass"></div>
     <div id="bezel"></div>
     <div id="help" aria-hidden="true">
-      <span><b>Z / ↑</b> HOP</span>
+      <span><b>Z / ↑</b> THRUST</span>
       <span><b>X / SPACE</b> HYPERFLOW</span>
       <span><b>P</b> PAUSE</span>
       <span><b>R</b> RESTART</span>
     </div>
   </main>
-  <section id="touchControls" aria-label="Touch controls">
-    <button class="touchButton" id="hopButton" type="button">HOP<small>LEFT SIDE</small></button>
-    <button class="touchButton" id="boostButton" type="button">BOOST<small>RIGHT SIDE</small></button>
-  </section>
 
 <script>
 (() => {
@@ -137,11 +120,10 @@
   // Reduced-resolution backbuffer + CSS nearest-neighbor scaling provides the
   // cabinet-like CRT pixel treatment while keeping fill-rate and blur costs low.
   const canvas = document.getElementById('game');
-  const ctx = canvas.getContext('2d', {alpha:false, desynchronized:true}) || canvas.getContext('2d', {alpha:false});
-  const W=960,H=540,TAU=Math.PI*2;
-  let renderScale=.5, quality=1, frameEMA=16.7, qualityTimer=0;
+  const ctx = canvas.getContext('2d', {alpha:false,desynchronized:true});
+  const W=960,H=540,SCALE=.5,TAU=Math.PI*2;
   const BASE_SPEED=760,MAX_CRUISE=1120,BOOST_MULT=1.95;
-  const BOOST_DRAIN=34,BOOST_RECHARGE=18,HOP_IMPULSE=-315,HOP_COOLDOWN=.12;
+  const BOOST_DRAIN=34,BOOST_RECHARGE=16;
   const PLAYER_R=12,WAVE_DISTANCE=11800,SEG=12;
   const GRID_SPACING=24,GRID_COLS=Math.ceil(W/GRID_SPACING)+3,GRID_ROWS=Math.ceil(H/GRID_SPACING)+2,GRID_SPAN=GRID_COLS*GRID_SPACING;
   const MAX_SPARKS=220,MAX_TRAIL=110,MAX_RINGS=28;
@@ -163,7 +145,7 @@
     phase:'start',paused:false,time:0,distance:0,score:0,highScore:loadHighScore(),wave:1,lives:3,
     speed:BASE_SPEED,targetSpeed:BASE_SPEED,playerX:W*.235,playerY:H*.5,playerVY:0,
     pitch:0,pitchVel:0,inputLift:0,boost:100,boosting:false,boostLock:0,invulnerable:0,
-    nearMiss:0,combo:1,comboTimer:0,hopCooldown:0
+    nearMiss:0,combo:1,comboTimer:0
   };
 
   function loadHighScore(){try{return Number(localStorage.getItem('caveRacerV3HighScore')||0)}catch(_){return 0}}
@@ -175,16 +157,8 @@
   function palette(){return PALETTES[(state.wave-1)%PALETTES.length]}
 
   function configureCanvas(){
-    canvas.width=Math.round(W*renderScale);canvas.height=Math.round(H*renderScale);
-    ctx.setTransform(renderScale,0,0,renderScale,0,0);ctx.imageSmoothingEnabled=false;
-  }
-  function tuneQuality(dt){
-    frameEMA=frameEMA*.94+dt*1000*.06;qualityTimer+=dt;
-    if(qualityTimer<1.25)return;qualityTimer=0;
-    let next=renderScale;
-    if(frameEMA>24)next=Math.max(.34,renderScale-.08);
-    else if(frameEMA<17.4)next=Math.min(.68,renderScale+.04);
-    if(Math.abs(next-renderScale)>.01){renderScale=next;quality=clamp((renderScale-.34)/.34,.35,1);configureCanvas()}
+    canvas.width=Math.round(W*SCALE);canvas.height=Math.round(H*SCALE);
+    ctx.setTransform(SCALE,0,0,SCALE,0,0);ctx.imageSmoothingEnabled=false;
   }
 
   function caveAt(screenX){
@@ -203,8 +177,8 @@
   function buildCave(){
     const samples=[];
     for(let x=-SEG*2;x<=W+SEG*2;x+=SEG){const c=caveAt(x);samples.push({x,top:c.top,bottom:c.bottom})}
-    const top=new Path2D();top.moveTo(samples[0].x,0);for(const p of samples)top.lineTo(p.x,p.top);top.lineTo(samples[samples.length-1].x,0);top.closePath();
-    const bottom=new Path2D();bottom.moveTo(samples[0].x,H);for(const p of samples)bottom.lineTo(p.x,p.bottom);bottom.lineTo(samples[samples.length-1].x,H);bottom.closePath();
+    const top=new Path2D();top.moveTo(samples[0].x,0);for(const p of samples)top.lineTo(p.x,p.top);top.lineTo(samples.at(-1).x,0);top.closePath();
+    const bottom=new Path2D();bottom.moveTo(samples[0].x,H);for(const p of samples)bottom.lineTo(p.x,p.bottom);bottom.lineTo(samples.at(-1).x,H);bottom.closePath();
     return{samples,top,bottom};
   }
 
@@ -357,7 +331,7 @@
     const drawPass=(width,alpha,color,blur)=>{
       ctx.save();ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle=color;ctx.globalAlpha=alpha;ctx.lineWidth=width;ctx.shadowColor=color;ctx.shadowBlur=blur;ctx.beginPath();ctx.moveTo(points[0].x,points[0].y);
       for(let i=1;i<points.length-1;i++){const a=points[i],b=points[i+1],mx=(a.x+b.x)*.5,my=(a.y+b.y)*.5;ctx.quadraticCurveTo(a.x,a.y,mx,my)}
-      const z=points[points.length-1];ctx.lineTo(z.x,z.y);ctx.stroke();ctx.restore();
+      const z=points.at(-1);ctx.lineTo(z.x,z.y);ctx.stroke();ctx.restore();
     };
     drawPass(state.boosting?25:13,state.boosting?.13:.08,p.wallA,22);
     drawPass(state.boosting?9:5,state.boosting?.44:.28,p.grid,15);
@@ -372,22 +346,13 @@
     ctx.beginPath();ctx.arc(7,-8,6.5,0,TAU);ctx.fill();ctx.stroke();ctx.strokeStyle='#fff';ctx.globalAlpha=a*.82;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(8,-10);ctx.lineTo(12,-8.4);ctx.stroke();
     ctx.globalAlpha=a*(state.boosting?.98:.58);ctx.fillStyle='#fff';ctx.shadowColor=p.grid;ctx.shadowBlur=state.boosting?25:13;ctx.beginPath();ctx.arc(-2,0,state.boosting?3.4:2.2,0,TAU);ctx.fill();ctx.restore();
   }
-
-  function drawPortal(p){
-    const cx=W*.72,cy=H*.5;ctx.save();ctx.translate(cx,cy);ctx.globalCompositeOperation='lighter';
-    const pulse=.88+Math.sin(state.time*.004)*.08;
-    for(let i=7;i>=0;i--){const t=i/7,rx=(58+i*24)*pulse,ry=(38+i*14)*pulse;ctx.globalAlpha=.06+(1-t)*.08;ctx.strokeStyle=i%2?p.wallA:p.grid;ctx.shadowColor=ctx.strokeStyle;ctx.shadowBlur=12;ctx.lineWidth=1.2+(7-i)*.16;ctx.beginPath();ctx.ellipse(0,0,rx,ry,0,0,TAU);ctx.stroke()}
-    ctx.globalAlpha=.18;ctx.strokeStyle=p.grid;ctx.lineWidth=.75;for(let a=0;a<16;a++){const ang=a/16*TAU;ctx.beginPath();ctx.moveTo(Math.cos(ang)*28,Math.sin(ang)*18);ctx.lineTo(Math.cos(ang)*220,Math.sin(ang)*132);ctx.stroke()}
-    ctx.restore();ctx.globalCompositeOperation='source-over';
-  }
-
   function drawPlayer(p){
     if(state.boosting)for(let i=6;i>=1;i--)drawPlayerAt(state.playerX-i*17,state.playerY-state.playerVY*.004*i,state.pitch,p,.028+(7-i)*.017,1-i*.022);
     if(state.invulnerable>0&&Math.floor(state.time/70)%2===0)return;drawPlayerAt(state.playerX,state.playerY,state.pitch,p,1,state.boosting?1.08:1);
   }
 
   function startGame(){
-    Object.assign(state,{phase:'play',paused:false,time:0,distance:0,score:0,wave:1,lives:3,speed:BASE_SPEED,targetSpeed:BASE_SPEED,playerX:W*.235,playerY:H*.5,playerVY:0,pitch:0,pitchVel:0,inputLift:0,boost:100,boosting:false,boostLock:0,invulnerable:0,nearMiss:0,combo:1,comboTimer:0,hopCooldown:0});
+    Object.assign(state,{phase:'play',paused:false,time:0,distance:0,score:0,wave:1,lives:3,speed:BASE_SPEED,targetSpeed:BASE_SPEED,playerX:W*.235,playerY:H*.5,playerVY:0,pitch:0,pitchVel:0,inputLift:0,boost:100,boosting:false,boostLock:0,invulnerable:0,nearMiss:0,combo:1,comboTimer:0});
     shake=hitFlash=boostFlash=0;sparks.length=rings.length=0;initGrid();resetTrail();
   }
   function endGame(){state.phase='over';state.boosting=false;if(state.score>state.highScore){state.highScore=Math.floor(state.score);saveHighScore(state.highScore)}}
@@ -398,8 +363,8 @@
   function update(dt){
     state.time+=dt*1000;updateStars(dt);updateSparks(dt);updateRings(dt);hitFlash=Math.max(0,hitFlash-dt*3.7);boostFlash=Math.max(0,boostFlash-dt*2.8);shake*=Math.pow(.06,dt);
     if(state.phase!=='play'||state.paused){updateGrid(dt);return}
-    state.invulnerable=Math.max(0,state.invulnerable-dt);state.boostLock=Math.max(0,state.boostLock-dt);state.hopCooldown=Math.max(0,state.hopCooldown-dt);
-    const wantsBoost=keys.Space||keys.KeyX||touchMode('boost');
+    state.invulnerable=Math.max(0,state.invulnerable-dt);state.boostLock=Math.max(0,state.boostLock-dt);
+    const thrust=keys.ArrowUp||keys.KeyW||keys.KeyZ||touchMode('thrust'),dive=keys.ArrowDown||keys.KeyS,wantsBoost=keys.Space||keys.KeyX||touchMode('boost');
     const canBoost=wantsBoost&&state.boost>.5&&state.boostLock<=0;
     if(canBoost&&!state.boosting){boostFlash=1;shake=Math.max(shake,8);spawnSpark(state.playerX-18,state.playerY,palette().grid,26,1.5);spawnRing(state.playerX-8,state.playerY,palette().grid,1.5)}
     state.boosting=canBoost;
@@ -407,17 +372,18 @@
     const cruise=Math.min(MAX_CRUISE,BASE_SPEED+state.distance*.00145);state.targetSpeed=cruise*(state.boosting?BOOST_MULT:1);state.speed=lerp(state.speed,state.targetSpeed,1-Math.pow(state.boosting?.00018:.012,dt));
     state.playerX=lerp(state.playerX,state.boosting?W*.35:W*.235,1-Math.pow(.008,dt));
 
-    // Hop-and-boost handling: no continuous angling channel. The flyer keeps a
-    // stable forward silhouette while vertical motion follows a compact arcade arc.
-    const gravity=720;
-    state.playerVY+=gravity*dt;
-    state.playerVY*=Math.pow(.91,dt*60);state.playerVY=clamp(state.playerVY,-430,610);state.playerY+=state.playerVY*dt;
-    state.pitch=0;state.pitchVel=0;state.inputLift=0;
+    // A smoothed thrust channel and damped pitch produce the more fluid,
+    // luminous trajectory seen in the motion reference without sacrificing control.
+    const targetLift=thrust?-1:dive?1:0;state.inputLift=lerp(state.inputLift,targetLift,1-Math.pow(.0008,dt));
+    const gravity=560,control=state.inputLift<0?1320:state.inputLift>0?970:0;
+    state.playerVY+=(gravity+(state.inputLift<0?-control:state.inputLift>0?control:0))*dt;
+    state.playerVY*=Math.pow(.875,dt*60);state.playerVY=clamp(state.playerVY,-535,575);state.playerY+=state.playerVY*dt;
+    const pitchTarget=clamp(state.playerVY/680,-.36,.36);state.pitchVel+=(pitchTarget-state.pitch)*24*dt;state.pitchVel*=Math.pow(.68,dt*60);state.pitch+=state.pitchVel*dt*60;
 
     state.distance+=state.speed*dt;recordTrail();updateGrid(dt);state.wave=1+Math.floor(state.distance/WAVE_DISTANCE);state.score+=state.speed*dt*(state.boosting?.25:.115)*state.combo;
     const c=caveAt(state.playerX),ct=state.playerY-PLAYER_R-c.top,cb=c.bottom-(state.playerY+PLAYER_R),clearance=Math.min(ct,cb);
     if(clearance<0)hitWall(c);else if(clearance<25){state.nearMiss=Math.min(1,state.nearMiss+dt*5);state.comboTimer+=dt;if(state.comboTimer>.52){state.combo=Math.min(5,state.combo+.25);state.comboTimer=0}if(Math.random()<dt*24)spawnSpark(state.playerX+2,ct<cb?c.top:c.bottom,palette().edge,1,.7)}else{state.nearMiss=Math.max(0,state.nearMiss-dt*2.5);state.comboTimer=Math.max(0,state.comboTimer-dt);if(state.comboTimer<=0)state.combo=lerp(state.combo,1,1-Math.pow(.34,dt))}
-    const rate=(state.boosting?100:32)*quality;if(Math.random()<rate*dt)spawnSpark(state.playerX-16,state.playerY+(Math.random()-.5)*11,palette().grid,state.boosting?2:1,state.boosting?1.22:.58);
+    const rate=state.boosting?100:32;if(Math.random()<rate*dt)spawnSpark(state.playerX-16,state.playerY+(Math.random()-.5)*11,palette().grid,state.boosting?2:1,state.boosting?1.22:.58);
     if(state.boosting&&Math.random()<dt*12)spawnRing(state.playerX-28,state.playerY,palette().grid,.38);
   }
 
@@ -448,43 +414,36 @@
     if(state.paused){ctx.font='800 54px "Courier New",monospace';ctx.fillStyle=p.hud;ctx.shadowColor=p.hud;ctx.shadowBlur=25;ctx.fillText('PAUSED',W/2,H/2-12);ctx.font='700 14px "Courier New",monospace';ctx.fillStyle='#fff';ctx.fillText('P / ESC TO RESUME',W/2,H/2+46);ctx.restore();return}
     const title=state.phase==='over'?'OBLITERATED':'CAVE RACER';const grad=ctx.createLinearGradient(W*.3,0,W*.7,0);grad.addColorStop(0,p.grid);grad.addColorStop(.48,'#fff');grad.addColorStop(.52,p.hud);grad.addColorStop(1,p.wallA);ctx.font='900 68px "Courier New",monospace';ctx.fillStyle=grad;ctx.shadowColor=p.hud;ctx.shadowBlur=28;ctx.fillText(title,W/2,H/2-78);
     ctx.font='700 13px "Courier New",monospace';ctx.fillStyle=p.hud;ctx.shadowBlur=8;ctx.fillText('FTS ARCADE  //  BRAZEN',W/2,H/2-23);ctx.font='700 16px "Courier New",monospace';ctx.fillStyle='#fff';ctx.fillText(state.phase==='over'?`SCORE ${Math.floor(state.score)}  ·  WAVE ${state.wave}`:'FULL THROTTLE. NO LIMITS.',W/2,H/2+14);
-    ctx.font='600 13px "Courier New",monospace';ctx.fillStyle='rgba(203,229,245,.78)';ctx.shadowBlur=0;ctx.fillText('Z / ↑ HOP     X / SPACE BOOST',W/2,H/2+51);ctx.fillText('LEFT TAP HOPS. RIGHT TAP BOOSTS. KEEP THE LINE CLEAN.',W/2,H/2+78);
+    ctx.font='600 13px "Courier New",monospace';ctx.fillStyle='rgba(203,229,245,.78)';ctx.shadowBlur=0;ctx.fillText('Z / ↑ THRUST     X / SPACE HYPERFLOW',W/2,H/2+51);ctx.fillText('The untouched grid enters ahead. Your flight path tears it open behind you.',W/2,H/2+78);
     const pulse=.55+Math.sin(state.time*.0045)*.35;ctx.globalAlpha=pulse;ctx.fillStyle=p.hud;ctx.shadowColor=p.hud;ctx.shadowBlur=15;ctx.fillText(state.phase==='over'?'PRESS R OR TAP TO RUN AGAIN':'PRESS ANY CONTROL OR TAP TO BEGIN',W/2,H/2+123);ctx.restore();
   }
 
   function draw(){
     const p=palette(),c=buildCave(),sx=shake>.1?(Math.random()-.5)*shake:0,sy=shake>.1?(Math.random()-.5)*shake*.6:0;
-    ctx.fillStyle='#020208';ctx.fillRect(0,0,W,H);ctx.save();ctx.translate(sx,sy);drawSpeedLines(p);drawGrid(p);drawPortal(p);drawRibbon(p);drawCave(c,p);drawRings();drawSparks();drawPlayer(p);
+    ctx.fillStyle='#020208';ctx.fillRect(0,0,W,H);ctx.save();ctx.translate(sx,sy);drawSpeedLines(p);drawGrid(p);drawRibbon(p);drawCave(c,p);drawRings();drawSparks();drawPlayer(p);
     if(state.nearMiss>.02){ctx.fillStyle=rgba(p.edge,state.nearMiss*.075);ctx.fillRect(0,0,W,H)}ctx.restore();
     if(boostFlash>0){const g=ctx.createRadialGradient(state.playerX,state.playerY,8,state.playerX,state.playerY,330);g.addColorStop(0,rgba(p.grid,boostFlash*.22));g.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=g;ctx.fillRect(0,0,W,H)}
     if(hitFlash>0){ctx.fillStyle=`rgba(255,35,20,${hitFlash*.24})`;ctx.fillRect(0,0,W,H)}drawHud(p);drawOverlay(p);
   }
 
   function touchMode(m){for(const v of touches.values())if(v===m)return true;return false}
-  function pointerMode(clientX){const r=canvas.getBoundingClientRect(),x=(clientX-r.left)/r.width;return x<.5?'hop':'boost'}
-  function hop(){begin();if(state.phase==='play'&&!state.paused&&state.hopCooldown<=0){state.playerVY=HOP_IMPULSE;state.hopCooldown=HOP_COOLDOWN;spawnRing(state.playerX-6,state.playerY,palette().grid,.25);spawnSpark(state.playerX-10,state.playerY+8,palette().grid,5,.45)}}
+  function pointerMode(clientX){const r=canvas.getBoundingClientRect(),x=(clientX-r.left)/r.width;return x<.56?'thrust':'boost'}
   function begin(){if(state.phase!=='play')startGame()}
   function togglePause(){if(state.phase!=='play')return;state.paused=!state.paused;lastTime=performance.now()}
 
   window.addEventListener('keydown',e=>{
-    if(['ArrowUp','Space'].includes(e.code))e.preventDefault();
+    if(['ArrowUp','ArrowDown','Space'].includes(e.code))e.preventDefault();
     if(e.code==='KeyR'){startGame();return}
     if((e.code==='KeyP'||e.code==='Escape')&&!pauseLatch){pauseLatch=true;togglePause();return}
-    if(['ArrowUp','KeyW','KeyZ'].includes(e.code)&&!keys[e.code])hop();
-    keys[e.code]=true;if(['KeyX','Space'].includes(e.code))begin();
+    keys[e.code]=true;if(['ArrowUp','ArrowDown','KeyW','KeyS','KeyZ','KeyX','Space'].includes(e.code))begin();
   },{passive:false});
   window.addEventListener('keyup',e=>{keys[e.code]=false;if(e.code==='KeyP'||e.code==='Escape')pauseLatch=false});
-  canvas.addEventListener('pointerdown',e=>{e.preventDefault();try{canvas.setPointerCapture(e.pointerId)}catch(_){}const mode=pointerMode(e.clientX);if(mode==='hop'){hop();touches.set(e.pointerId,'hop-used')}else{touches.set(e.pointerId,'boost');begin()}});
-  canvas.addEventListener('pointermove',e=>{if(touches.get(e.pointerId)==='boost'&&pointerMode(e.clientX)!=='boost')touches.delete(e.pointerId)});
+  canvas.addEventListener('pointerdown',e=>{e.preventDefault();canvas.setPointerCapture(e.pointerId);touches.set(e.pointerId,pointerMode(e.clientX));begin()});
+  canvas.addEventListener('pointermove',e=>{if(touches.has(e.pointerId))touches.set(e.pointerId,pointerMode(e.clientX))});
   const endPointer=e=>touches.delete(e.pointerId);canvas.addEventListener('pointerup',endPointer);canvas.addEventListener('pointercancel',endPointer);canvas.addEventListener('contextmenu',e=>e.preventDefault());
-  const hopButton=document.getElementById('hopButton'),boostButton=document.getElementById('boostButton');
-  hopButton.addEventListener('pointerdown',e=>{e.preventDefault();hop()});
-  boostButton.addEventListener('pointerdown',e=>{e.preventDefault();touches.set('boostButton','boost');begin()});
-  const releaseBoost=()=>touches.delete('boostButton');boostButton.addEventListener('pointerup',releaseBoost);boostButton.addEventListener('pointercancel',releaseBoost);boostButton.addEventListener('pointerleave',releaseBoost);
   document.addEventListener('visibilitychange',()=>{lastTime=performance.now();for(const k of Object.keys(keys))keys[k]=false;touches.clear();if(document.hidden&&state.phase==='play')state.paused=true});
 
-  function frame(now){const dt=Math.min(.033,Math.max(0,(now-lastTime)/1000));lastTime=now;tuneQuality(dt);update(dt);draw();requestAnimationFrame(frame)}
-  if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches){renderScale=.42;quality=.55}
+  function frame(now){const dt=Math.min(.033,Math.max(0,(now-lastTime)/1000));lastTime=now;update(dt);draw();requestAnimationFrame(frame)}
   configureCanvas();initGrid();initStars();resetTrail();requestAnimationFrame(frame);
 })();
 </script>
