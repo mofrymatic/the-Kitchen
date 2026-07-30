@@ -1,810 +1,1120 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>CAVE RACER</title>
-
-  <!-- ── Primary Meta ─────────────────────────────────────────────────────── -->
-    <meta name="description" content="Cave Racer - An endless runner. Keep your ship away from the ceiling and off the floor. Keep flying!" />
-
-    <!-- ── Favicons ─────────────────────────────────────────────────────────── -->
-    <link rel="icon" type="image/png" href="fts-favicon.png">
-    <link rel="shortcut icon" type="image/png" href="fts-favicon.png">
-    <link rel="apple-touch-icon" href="fts-favicon.png">
-
-    <!-- ── Open Graph (Facebook, Discord, iMessage, etc.) ────────────────────── -->
-    <meta property="og:title" content="FishTacoStand Arcade">
-    <meta property="og:description" content="Stay away from the walls!">
-    <meta property="og:url" content="https://frymatic.us/FTSArcade/cave-racer.html">
-    <meta property="og:type" content="website">
-    <meta property="og:site_name" content="Cave Racer">
-
-    <meta property="og:image" content="https://frymatic.us/FTSArcade/cave_racer_preview.png">
-    <meta property="og:image:alt" content="Cave Racer. The walls are closing in!">
-    <meta property="og:image:type" content="image/png">
-
-    <!-- ── Twitter / X Card ─────────────────────────────────────────────────── -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="FishTacoStand Arcade">
-    <meta name="twitter:description" content="Cave Racer. The walls are closing in!">
-    <meta name="twitter:image" content="https://frymatic.us/FTSArcade/cave_racer_preview.png">
-
-
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <meta name="theme-color" content="#03040d">
+  <meta name="description" content="Cave Racer CRT Turbo - a white-knuckle neon endless runner through a living dot-grid cave.">
+  <title>Cave Racer · CRT Turbo</title>
   <style>
-    body {
+    :root {
+      color-scheme: dark;
+      --cyan: #21e9ff;
+      --magenta: #ff2ca8;
+      --green: #50ff63;
+      --ink: #03040d;
+      --panel: #080a17;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
       margin: 0;
-      background: #000010;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 50% 35%, rgba(28, 23, 75, .42), transparent 52%),
+        #02030a;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      touch-action: none;
+      user-select: none;
+    }
+    body {
+      display: grid;
+      place-items: center;
+    }
+    .shell {
+      width: min(100vw, 177.777vh);
+      aspect-ratio: 16 / 9;
+      position: relative;
+      overflow: hidden;
+      background: #02030a;
+      border: 1px solid rgba(77, 232, 255, .23);
+      box-shadow: 0 0 80px rgba(0, 213, 255, .11);
     }
     canvas {
+      width: 100%;
+      height: 100%;
       display: block;
       image-rendering: pixelated;
-      border: 2px solid #1a1a2e;
-      box-shadow: 0 0 50px rgba(0, 216, 216, 0.1);
-      max-width: 100%;
-      touch-action: none;
+      image-rendering: crisp-edges;
+      background: #02030a;
     }
-    #ui {
-      font-family: monospace;
-      font-size: 13px;
+    .help {
+      position: absolute;
+      left: 50%;
+      bottom: 12px;
+      transform: translateX(-50%);
+      z-index: 3;
       display: flex;
-      gap: 32px;
-      margin-bottom: 6px;
-      width: 600px;
-      max-width: 100%;
+      gap: 16px;
+      align-items: center;
+      color: rgba(185, 229, 255, .72);
+      font-size: clamp(9px, 1.15vw, 13px);
+      letter-spacing: .08em;
+      text-shadow: 0 0 12px rgba(0, 216, 255, .35);
+      pointer-events: none;
+      white-space: nowrap;
     }
-    #ui span {
-      flex: 1;
-      text-shadow: 0 0 15px currentColor;
-      letter-spacing: 2px;
-      font-weight: bold;
+    .help b { color: #fff; font-weight: 700; }
+    .scanlines,
+    .glass {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 2;
     }
-    #score-el { color: #00d8d8; }
-    #lives-el  { color: #f800f8; text-align: center; }
-    #wave-el   { color: #7b5fff; text-align: right; }
+    .scanlines {
+      opacity: .42;
+      background:
+        repeating-linear-gradient(
+          to bottom,
+          rgba(255,255,255,.025) 0,
+          rgba(255,255,255,.025) 1px,
+          rgba(0,0,0,.28) 1px,
+          rgba(0,0,0,.28) 3px,
+          transparent 3px,
+          transparent 5px
+        );
+      mix-blend-mode: multiply;
+    }
+    .glass {
+      background:
+        repeating-linear-gradient(
+          to right,
+          rgba(255,45,120,.032) 0,
+          rgba(255,45,120,.032) 1px,
+          rgba(40,245,255,.025) 1px,
+          rgba(40,245,255,.025) 2px,
+          transparent 2px,
+          transparent 4px
+        ),
+        linear-gradient(115deg, rgba(255,255,255,.055), transparent 18%, transparent 73%, rgba(255,255,255,.025)),
+        radial-gradient(ellipse at center, transparent 46%, rgba(0,0,0,.52) 100%);
+    }
+    @media (max-width: 560px) {
+      .help { bottom: 7px; gap: 9px; letter-spacing: .03em; }
+    }
   </style>
 </head>
 <body>
-<div id="ui">
-  <span id="score-el">SCORE: 0</span>
-  <span id="lives-el">▶ ▶ ▶</span>
-  <span id="wave-el">WAVE: 1</span>
-</div>
-<canvas id="c" width="600" height="480"></canvas>
+  <main class="shell" aria-label="Cave Racer arcade game">
+    <canvas id="game" width="480" height="270"></canvas>
+    <div class="help" aria-hidden="true">
+      <span><b>Z / UP</b> THRUST</span>
+      <span><b>X / SPACE</b> BOOST</span>
+      <span><b>R</b> RESTART</span>
+      <span><b>CRT</b> 480×270</span>
+    </div>
+    <div class="scanlines"></div>
+    <div class="glass"></div>
+  </main>
+
 <script>
+(() => {
+  'use strict';
 
-// ── CONSTANTS ─────────────────────────────────────────────────────────────────
-const C = document.getElementById('c'), ctx = C.getContext('2d');
-const W = 600, H = 480;
-const SEG      = 3;      // pixels per cave segment column
-const WAVE_LEN = 700;    // segments per wave
-const BASE_H   = 0.30;   // cave opening half-height as fraction of H at wave start
-const MIN_H    = 36;     // minimum half-height in pixels (tightest squeeze)
-const IFRAMES  = 115;    // invincibility frames after a hit (at 60fps)
-const MAX_PART = 12;     // particle cap (kept sparse per spec)
-const BASE_SPD = 1.9;    // starting scroll speed
-const MAX_SPD  = 6.8;    // terminal scroll speed
-const SHIP_COL = 0.22;   // ship screen-X as fraction of W
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
+  // Logical coordinates remain 960x540, but the actual backbuffer is half-size.
+  // CSS nearest-neighbor scaling supplies the chunky CRT treatment at one quarter
+  // of the fill-rate of a full-resolution canvas.
+  const W = 960;
+  const H = 540;
+  const RENDER_SCALE = 0.5;
+  const TAU = Math.PI * 2;
+  const SEG = 12;
+  const PLAYER_R = 12;
+  const WAVE_DISTANCE = 11000;
+  const BASE_SPEED = 712.5;       // exactly 2.5x the former cruise speed
+  const MAX_CRUISE = 1075;       // exactly 2.5x the former terminal cruise
+  const BOOST_MULT = 1.95;
+  const BOOST_DRAIN = 37;
+  const BOOST_RECHARGE = 15;
+  const PALETTES = [
+    { wallA: '#ff2c88', wallB: '#ff5c18', edge: '#ffcf4a', grid: '#25e8ff' },
+    { wallA: '#b72cff', wallB: '#ff276d', edge: '#ff7ee8', grid: '#55a8ff' },
+    { wallA: '#ff4738', wallB: '#ffbd25', edge: '#fff36d', grid: '#31ffd2' },
+    { wallA: '#6050ff', wallB: '#fd1ca8', edge: '#8efcff', grid: '#2ec5ff' },
+    { wallA: '#04bdf0', wallB: '#9b2cff', edge: '#6effff', grid: '#4ef3bc' },
+    { wallA: '#ff267d', wallB: '#e74916', edge: '#ffc443', grid: '#6d9dff' }
+  ];
 
-// Per-wave palette: wall colour, then grid colour (reuses NI's wave colours)
-const WAVE_COLORS = [
-  '#f83800','#f800f8','#7b00d4','#e40058',
-  '#0078f8','#00d8d8','#f8b800','#58d854',
-];
-function waveColor(w) { return WAVE_COLORS[(w - 1) % WAVE_COLORS.length]; }
+  function loadHighScore() {
+    try { return Number(localStorage.getItem('caveRacerHighScore') || 0); }
+    catch (_) { return 0; }
+  }
+  function saveHighScore(value) {
+    try { localStorage.setItem('caveRacerHighScore', String(value)); }
+    catch (_) { /* Storage is optional in local-file and privacy modes. */ }
+  }
 
-// ── DOT-GRID (ported from DOT-GRID · OBLITERATUS v1 — sprite-cached) ─────────
-// Same spring-mesh physics contract as the old line grid (ripple(wx,wy,str)
-// still takes a world point + strength), but rendered as a tiered, glowing
-// dot mesh instead of stroked lines. Sprites are baked ONCE per wave colour
-// (there are only 8 in WAVE_COLORS) so the per-frame cost is drawImage +
-// globalAlpha — no shadowBlur math while the race is actually happening.
-const GCOLS = 31, GROWS = 26, GSW = W / (GCOLS - 1), GSH = H / (GROWS - 1);
-const GSUBDIV = 5; // GCOLS-1=30, GROWS-1=25 — both divide cleanly by 5
-const DOT_TIERS = [
-  { r: 2.2, a: 0.14, glow: 0.95 }, // major
-  { r: 1.5, a: 0.08, glow: 0.55 }, // half
-  { r: 1.0, a: 0.045, glow: 0.55 }, // quarter
-  { r: 0.6, a: 0.02, glow: 0.55 }, // eighth
-];
-function dotTier(c, r) {
-  const grad = n => {
-    if (n % GSUBDIV === 0) return 0;
-    if (n % Math.ceil(GSUBDIV / 2) === 0) return 1;
-    return (n % 2 === 0) ? 2 : 3;
+  const keys = Object.create(null);
+  const touches = new Map();
+  let lastTime = performance.now();
+  let shake = 0;
+  let hitFlash = 0;
+  let boostFlash = 0;
+  let stars = [];
+  let sparks = [];
+  let afterimages = [];
+  const wakeTrail = [];
+  const WAKE_SAMPLE_STEP = 10;
+  const WAKE_MAX_SAMPLES = 96;
+  let lastWakeWorldX = -Infinity;
+
+  const state = {
+    phase: 'start',
+    time: 0,
+    distance: 0,
+    score: 0,
+    highScore: loadHighScore(),
+    wave: 1,
+    lives: 3,
+    speed: BASE_SPEED,
+    targetSpeed: BASE_SPEED,
+    playerX: W * 0.235,
+    playerY: H * 0.5,
+    playerVY: 0,
+    boost: 100,
+    boostHeld: false,
+    boosting: false,
+    boostLock: 0,
+    invulnerable: 0,
+    nearMiss: 0,
+    combo: 1,
+    comboTimer: 0
   };
-  return Math.max(grad(c), grad(r));
-}
 
-let grid = [];
-for (let r = 0; r < GROWS; r++)
-  for (let c = 0; c < GCOLS; c++)
-    grid.push({ ox: c * GSW, oy: r * GSH, x: c * GSW, y: r * GSH, vx: 0, vy: 0, tier: dotTier(c, r) });
-
-const GRID_SPAN = W + 2 * GSW; // wrap width — anchors recycle off the left edge back onto the right
-
-function updateGrid(dt) {
-  const k = 0.065, d = 0.87, f = dt / 16;
-  const scroll = (S.phase === 'play' ? S.spd : 0) * f; // anchors drift left with the cave
-  for (const p of grid) {
-    p.ox -= scroll;
-    if (p.ox < -GSW) { p.ox += GRID_SPAN; p.x += GRID_SPAN; } // shift x too — no visual snap
-    p.vx = (p.vx + (p.ox - p.x) * k) * d;
-    p.vy = (p.vy + (p.oy - p.y) * k) * d;
-    p.x += p.vx * f; p.y += p.vy * f;
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function smoothstep(a, b, x) {
+    const t = clamp((x - a) / (b - a), 0, 1);
+    return t * t * (3 - 2 * t);
   }
-}
-function ripple(wx, wy, str) {
-  for (const p of grid) {
-    const dx = p.ox - wx, dy = p.oy - wy, dist = Math.sqrt(dx * dx + dy * dy);
-    if (dist < 5 || dist > 220) continue;
-    const f = str * (1 - dist / 220) / Math.max(dist, 12);
-    p.vx -= dx * f; p.vy -= dy * f;
+  function hexToRgba(hex, alpha) {
+    const value = parseInt(hex.slice(1), 16);
+    const r = (value >> 16) & 255;
+    const g = (value >> 8) & 255;
+    const b = value & 255;
+    return `rgba(${r},${g},${b},${alpha})`;
   }
-}
 
-// Sprite cache: one bitmap per (wave colour, tier). Baked once at load —
-// shadowBlur is paid 32 times total, never during the race. The bitmap is
-// baked at high resolution for crispness but DRAWN much smaller — that
-// mismatch (drawing near-full bake size) was the bug behind the giant
-// blobby wash: dots need to be a few pixels across, not ~140px.
-const DOT_BAKE_SCALE = 22, DOT_PAD = 3.2;
-function bakeDotSprite(colorHex, tierIdx) {
-  const T = DOT_TIERS[tierIdx];
-  const cssSize = DOT_BAKE_SCALE * DOT_PAD * 2;
-  const off = document.createElement('canvas');
-  off.width = off.height = Math.ceil(cssSize);
-  const octx = off.getContext('2d');
-  const c = cssSize / 2;
-  octx.fillStyle = colorHex;
-  octx.shadowColor = colorHex;
-  octx.shadowBlur = DOT_BAKE_SCALE * T.glow;
-  octx.beginPath();
-  octx.arc(c, c, DOT_BAKE_SCALE * T.r, 0, Math.PI * 2);
-  octx.fill();
-  return off;
-}
-const dotSprites = WAVE_COLORS.map(col => DOT_TIERS.map((_, ti) => bakeDotSprite(col, ti)));
+  function configureCanvas() {
+    canvas.width = Math.round(W * RENDER_SCALE);
+    canvas.height = Math.round(H * RENDER_SCALE);
+    ctx.setTransform(RENDER_SCALE, 0, 0, RENDER_SCALE, 0, 0);
+    ctx.imageSmoothingEnabled = false;
+  }
 
-// Actual on-screen diameter per tier, in world pixels — independent of the
-// (much larger) bake resolution above.
-const DOT_DRAW_D = [16, 10, 6.5, 4];
-function drawGrid(gc) {
-  const wi = (S.wave - 1) % WAVE_COLORS.length;
-  const sprites = dotSprites[wi];
-  for (let ti = DOT_TIERS.length - 1; ti >= 0; ti--) {
-    const T = DOT_TIERS[ti], sprite = sprites[ti], baseD = DOT_DRAW_D[ti];
-    for (const p of grid) {
-      if (p.tier !== ti) continue;
-      if (p.x < -baseD || p.x > W + baseD) continue; // off-screen during wrap
-      const dx = p.x - p.ox, dy = p.y - p.oy;
-      const disp = Math.hypot(dx, dy);
-      const boost = Math.min(1, disp * 0.05);
-      const a = Math.min(0.92, T.a + boost * 0.68);
-      const d = baseD * (0.85 + boost * 0.5);
-      ctx.globalAlpha = a;
-      ctx.drawImage(sprite, p.x - d / 2, p.y - d / 2, d, d);
+  function currentPalette() {
+    return PALETTES[(state.wave - 1) % PALETTES.length];
+  }
+
+  function caveAt(screenX) {
+    const wx = state.distance + screenX;
+    const difficulty = Math.min(62, state.distance / 16500 * 38 + (state.wave - 1) * 2.4);
+    const center = H * 0.5
+      + Math.sin(wx * 0.00205 + 0.7) * (54 + difficulty * 0.19)
+      + Math.sin(wx * 0.0067 + 2.1) * 24
+      + Math.sin(wx * 0.00062 + 4.5) * 22;
+    const squeeze = (Math.sin(wx * 0.00123 - 0.8) * 0.5 + 0.5);
+    const pulse = Math.pow(squeeze, 2.6) * (48 + difficulty * 0.18);
+    const half = clamp(172 - difficulty - pulse + Math.sin(wx * 0.0043) * 11, 78, 184);
+    return { top: center - half, bottom: center + half, center, half };
+  }
+
+  function buildCavePaths() {
+    const samples = [];
+    for (let x = -SEG * 2; x <= W + SEG * 2; x += SEG) {
+      const c = caveAt(x);
+      samples.push({ x, top: c.top, bottom: c.bottom });
     }
-  }
-  ctx.globalAlpha = 1;
-}
-
-// ── SCREEN SHAKE (ported 1:1 from Neon Invaders) ─────────────────────────────
-let worldScroll = 0; // total forward-scrolled distance during play — drives wall texture flow
-let shakeAmt = 0;
-function addShake(v) { shakeAmt = Math.min(shakeAmt + v, 20); }
-function getShake() {
-  shakeAmt *= 0.86;
-  return shakeAmt < 0.1 ? [0, 0] : [(Math.random() - .5) * shakeAmt, (Math.random() - .5) * shakeAmt];
-}
-
-// ── PARTICLES (adapted from NI — square + trail style, bouncy off cave walls) ─
-let particles = [];
-
-function spawnParticles(x, y, col, n, spd) {
-  for (let i = 0; i < n; i++) {
-    if (particles.length >= MAX_PART) break;
-    const a = Math.random() * Math.PI * 2, s = spd * (0.3 + Math.random() * 0.7);
-    particles.push({
-      x, y,
-      vx: Math.cos(a) * s, vy: Math.sin(a) * s,
-      life: 1, decay: 0.011 + Math.random() * 0.016,
-      col, sz: 2 + Math.random() * 2.5, trail: [],
-      rest: 0.84 + Math.random() * 0.10,   // restitution (high = more bounce)
-    });
-  }
-}
-
-// ── ENGINE SPARKS (straight-backward streaks — reads as speed, not impact) ───
-// Distinct from `particles`: no gravity, no wall bounce, no random scatter.
-// They shoot almost due-left at (scroll speed + kick) and drag a long trail,
-// so the faster the ship goes the longer and denser the streak behind it.
-const MAX_SPARKS = 26;
-let sparks = [];
-
-function spawnSpark(x, y) {
-  if (sparks.length >= MAX_SPARKS) sparks.shift();
-  const kick = 3.2 + Math.random() * 2.4;
-  sparks.push({
-    x, y,
-    vx: -(S.spd * 1.35 + kick),
-    vy: (Math.random() - 0.5) * 0.6,
-    life: 1, decay: 0.022 + Math.random() * 0.02,
-    sz: 1.4 + Math.random() * 1.3,
-    trail: [],
-  });
-}
-
-function updateSparks(dt) {
-  const f = dt / 16;
-  for (const p of sparks) {
-    p.trail.unshift({ x: p.x, y: p.y });
-    if (p.trail.length > 14) p.trail.pop();   // long tail = "going fast" cue
-    p.x += p.vx * f;
-    p.y += p.vy * f;
-    p.vx *= 0.985;
-    p.life -= p.decay * f;
-  }
-  sparks = sparks.filter(p => p.life > 0);
-}
-
-function drawSparks() {
-  const eg = 0.5 + 0.5 * Math.sin(S.time / 70); // same engine pulse as the ship glow
-  const col = `rgb(${Math.round(140 + eg * 90)},${Math.round(210 + eg * 45)},255)`;
-  ctx.save();
-  ctx.lineCap = 'round';
-  for (const p of sparks) {
-    const a = p.life * p.life;
-    if (p.trail.length > 1) {
-      ctx.globalAlpha = a * 0.55;
-      ctx.strokeStyle = col;
-      ctx.shadowColor = col;
-      ctx.shadowBlur = 10;
-      ctx.lineWidth = p.sz * (0.4 + a * 0.6);
-      ctx.beginPath();
-      ctx.moveTo(p.x, p.y);
-      p.trail.forEach(t => ctx.lineTo(t.x, t.y));
-      ctx.stroke();
-    }
-    ctx.globalAlpha = a;
-    ctx.shadowColor = '#ffffff';
-    ctx.shadowBlur = 12;
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, p.sz * 0.5, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.restore();
-  ctx.globalAlpha = 1;
-}
-
-function segAtX(x) {
-  for (let i = 0; i < segs.length - 1; i++)
-    if (segs[i].sx <= x && segs[i + 1].sx > x) return segs[i];
-  return null;
-}
-
-function updateParticles(dt) {
-  const f = dt / 16;
-  for (const p of particles) {
-    p.trail.unshift({ x: p.x, y: p.y });
-    if (p.trail.length > 7) p.trail.pop();
-    p.vy += 0.13 * f;              // gravity
-    p.x  += p.vx * f;
-    p.y  += p.vy * f;
-    p.vx *= 0.975; p.vy *= 0.975; // air drag
-    p.life -= p.decay * f;
-
-    // Bounce off cave walls — key behaviour from spec
-    const sg = segAtX(p.x);
-    if (sg) {
-      if (p.y < sg.ty + p.sz * 0.5) { p.y = sg.ty + p.sz * 0.5; p.vy =  Math.abs(p.vy) * p.rest; }
-      if (p.y > sg.by - p.sz * 0.5) { p.y = sg.by - p.sz * 0.5; p.vy = -Math.abs(p.vy) * p.rest; }
-    }
-    // Screen edge fallback
-    if (p.y < p.sz * 0.5)      { p.y = p.sz * 0.5;      p.vy =  Math.abs(p.vy) * p.rest; }
-    if (p.y > H - p.sz * 0.5)  { p.y = H - p.sz * 0.5;  p.vy = -Math.abs(p.vy) * p.rest; }
-  }
-  particles = particles.filter(p => p.life > 0);
-  if (particles.length > MAX_PART) particles = particles.slice(-MAX_PART);
-}
-
-function drawParticles() {
-  for (const p of particles) {
-    const a = p.life * p.life;
-    ctx.save();
-    if (p.trail.length > 1) {
-      ctx.globalAlpha = a * 0.4; ctx.strokeStyle = p.col;
-      ctx.shadowColor = p.col; ctx.shadowBlur = 8; ctx.lineWidth = p.sz * 0.55;
-      ctx.beginPath(); ctx.moveTo(p.x, p.y);
-      p.trail.forEach(t => ctx.lineTo(t.x, t.y));
-      ctx.stroke();
-    }
-    ctx.globalAlpha = a; ctx.shadowColor = p.col; ctx.shadowBlur = 16;
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(p.x - p.sz / 2, p.y - p.sz / 2, p.sz, p.sz);
-    ctx.restore();
-  }
-}
-
-// ── CAVE GENERATION ───────────────────────────────────────────────────────────
-let segs = [];       // { sx, ty, by }  — screen-x, top-y, bot-y
-let segIdx  = 0;     // global absolute segment counter (never resets)
-let waveSeg = 0;     // segments into the current wave (resets at WAVE_LEN)
-let waveP, nextP;    // current / next sine patterns
-
-function mkPat() {
-  return {
-    f1: 0.005 + Math.random() * 0.008,
-    a1: 0.09  + Math.random() * 0.12,
-    f2: 0.018 + Math.random() * 0.020,
-    a2: 0.03  + Math.random() * 0.07,
-    p1: Math.random() * Math.PI * 2,
-    p2: Math.random() * Math.PI * 2,
-  };
-}
-
-function caveCentre(idx, wt) {
-  const p = waveP, n = nextP;
-  const c1 = H * .5 + H * p.a1 * Math.sin(p.f1 * idx + p.p1)
-                     + H * p.a2 * Math.sin(p.f2 * idx + p.p2);
-  // Cross-fade to next pattern in the final 15% of a wave
-  if (wt > 0.85) {
-    const bl = (wt - 0.85) / 0.15;
-    const c2 = H * .5 + H * n.a1 * Math.sin(n.f1 * idx + n.p1)
-                       + H * n.a2 * Math.sin(n.f2 * idx + n.p2);
-    return c1 * (1 - bl) + c2 * bl;
-  }
-  return c1;
-}
-
-function caveHalfW(wt) {
-  // sin(π·t) envelope: fully open at t=0 and t=1, tightest at t=0.5
-  const maxSq = Math.min(0.28 + (S.wave - 1) * 0.055, 0.80);
-  return Math.max(MIN_H, H * BASE_H * (1 - maxSq * Math.sin(Math.PI * wt)));
-}
-
-function genSeg(sx) {
-  const wt = waveSeg / WAVE_LEN;
-  const c  = caveCentre(segIdx, wt);
-  const hw = caveHalfW(wt);
-  segs.push({ sx, ty: c - hw, by: c + hw });
-  segIdx++; waveSeg++;
-
-  if (waveSeg >= WAVE_LEN) {
-    // Wave complete — open walls, new colour, new pattern
-    waveSeg = 0;
-    S.wave++;
-    waveP  = nextP;
-    nextP  = mkPat();
-    S.waveFlash = 90;
-    S.score += 150;   // wave-completion bonus
-    ripple(W / 2, H / 2, 14);
-    addShake(6);
-    updateHUD();
-  }
-}
-
-function initCave() {
-  segs = []; segIdx = 0; waveSeg = 0;
-  const needed = Math.ceil(W / SEG) + 28;
-  for (let i = 0; i < needed; i++) genSeg(i * SEG);
-}
-
-// ── SHIP (pixel-art, pointing right — same renderer as NI sprites) ────────────
-const SHIP_PX = [
-  [0,0,0,0,0,0,0,0,0,1,0,0],
-  [0,0,0,0,0,0,0,1,1,1,1,0],
-  [1,1,1,1,1,1,1,1,1,1,1,1],
-  [1,1,1,1,1,1,1,1,1,1,1,1],
-  [0,0,0,0,0,0,0,1,1,1,1,0],
-  [0,0,0,0,0,0,0,0,0,1,0,0],
-];
-const SPX = 3;                         // pixel size (matches NI's alien px=3)
-const SW  = SHIP_PX[0].length * SPX;  // 36 px
-const SH  = SHIP_PX.length    * SPX;  // 18 px
-
-// ── GLOW TEXT (ported 1:1 from Neon Invaders) ─────────────────────────────────
-function glowText(txt, x, y, sz, col, alpha) {
-  ctx.save(); ctx.globalAlpha = alpha || 1;
-  ctx.font = 'bold ' + sz + 'px monospace';
-  ctx.textAlign = 'center'; ctx.shadowColor = col; ctx.shadowBlur = 32;
-  ctx.fillStyle = col; ctx.fillText(txt, x, y);
-  ctx.shadowBlur = 10; ctx.fillStyle = '#ffffff';
-  ctx.globalAlpha = (alpha || 1) * 0.9; ctx.fillText(txt, x, y);
-  ctx.restore();
-}
-
-// ── STATE ─────────────────────────────────────────────────────────────────────
-let S = {};
-
-function initState() {
-  S = {
-    phase:        'start',
-    shipY:        H / 2,
-    vy:           0,
-    shipX:        Math.round(W * SHIP_COL),
-    lives:        3,
-    wave:         1,
-    score:        0,
-    spd:          BASE_SPD,
-    time:         0,
-    inv:          0,          // invincibility countdown (frames)
-    waveFlash:    0,          // wave-transition overlay timer
-    flashOverlay: 0,          // red hit-flash timer
-    hudTimer:     0,          // throttle DOM updates
-    keys:         {},
-    tUp:          false,
-    tDown:        false,
-  };
-  waveP  = mkPat();
-  nextP  = mkPat();
-  particles = [];
-  sparks = [];
-  worldScroll = 0;
-  initCave();
-  updateHUD();
-}
-
-function startGame() {
-  particles = [];
-  sparks = [];
-  worldScroll = 0;
-  S.phase        = 'play';
-  S.shipY        = H / 2;
-  S.vy           = 0;
-  S.lives        = 3;
-  S.wave         = 1;
-  S.score        = 0;
-  S.spd          = BASE_SPD;
-  S.time         = 0;
-  S.inv          = 0;
-  S.waveFlash    = 0;
-  S.flashOverlay = 0;
-  S.hudTimer     = 0;
-  waveP  = mkPat();
-  nextP  = mkPat();
-  segs = []; segIdx = 0; waveSeg = 0;
-  initCave();
-  updateHUD();
-}
-
-function updateHUD() {
-  document.getElementById('score-el').textContent = 'SCORE: ' + S.score;
-  const lv = '▶ '.repeat(Math.max(0, S.lives)).trim() || '—';
-  document.getElementById('lives-el').innerHTML = lv;
-  document.getElementById('wave-el').textContent = 'WAVE: ' + S.wave;
-}
-
-// ── UPDATE ────────────────────────────────────────────────────────────────────
-function update(dt) {
-  S.time += dt;
-  updateGrid(dt);
-  updateParticles(dt);
-  updateSparks(dt);
-  if (S.phase !== 'play') return;
-
-  const f = dt / 16;
-
-  // Accelerate gently
-  S.spd = Math.min(S.spd + 0.00007 * dt, MAX_SPD);
-  worldScroll += S.spd * f;
-
-  // Score accrues with speed
-  S.score += Math.round(S.spd * dt * 0.045);
-  S.hudTimer += dt;
-  if (S.hudTimer > 250) { updateHUD(); S.hudTimer = 0; }
-
-  // Ship physics
-  const GRAV   = 0.13, ACC = 0.50, MAX_VY = 7.0;
-  const goUp   = S.keys['ArrowUp']   || S.keys['w'] || S.keys['W'] || S.tUp;
-  const goDown = S.keys['ArrowDown'] || S.keys['s'] || S.keys['S'] || S.tDown;
-
-  if      (goUp)   S.vy -= ACC * f;
-  else if (goDown) S.vy += ACC * f;
-  else { S.vy += GRAV * f; S.vy *= Math.pow(0.88, f); }
-
-  S.vy    = Math.max(-MAX_VY, Math.min(MAX_VY, S.vy));
-  S.shipY = Math.max(SH / 2 + 2, Math.min(H - SH / 2 - 2, S.shipY + S.vy * f));
-
-  // Continuous wake — the dot-grid stays dark at rest; this is what lights
-  // it up around the ship, growing brighter/wider the faster or harder it's
-  // maneuvering (mirrors the cape/spark speed cues, just in the mesh).
-  const wakeStr = (0.9 + Math.abs(S.vy) * 0.55 + (S.spd - BASE_SPD) * 0.35) * f;
-  ripple(S.shipX - SW * 0.15, S.shipY, wakeStr);
-
-  // Scroll cave
-  for (const s of segs) s.sx -= S.spd * f;
-  while (segs.length && segs[0].sx < -SEG * 3)  segs.shift();
-  while (segs.length < Math.ceil(W / SEG) + 28) {
-    genSeg(segs.length ? segs[segs.length - 1].sx + SEG : 0);
-  }
-
-  // Collision (with invincibility window)
-  if (S.inv <= 0) {
-    const sg = segAtX(S.shipX);
-    if (sg) {
-      const hb = SH * 0.42;
-      if (S.shipY - hb < sg.ty || S.shipY + hb > sg.by) {
-        S.lives--;
-        S.inv          = IFRAMES;
-        S.flashOverlay = 28;
-        spawnParticles(S.shipX, S.shipY, waveColor(S.wave), 9, 4.5);
-        ripple(S.shipX, S.shipY, 7);
-        addShake(13);
-        updateHUD();
-        if (S.lives <= 0) { S.phase = 'over'; updateHUD(); return; }
-      }
-    }
-  } else {
-    S.inv -= f;
-  }
-
-  if (S.waveFlash    > 0) S.waveFlash    -= f;
-  if (S.flashOverlay > 0) S.flashOverlay -= f;
-
-  // Engine sparks — rate AND count scale with current speed, so the trail
-  // visibly thickens/lengthens as the run accelerates toward MAX_SPD.
-  const spdT = (S.spd - BASE_SPD) / (MAX_SPD - BASE_SPD); // 0..1
-  const sparkChance = 0.45 + spdT * 0.45;
-  if (Math.random() < sparkChance) {
-    const n = 1 + (Math.random() < spdT ? 1 : 0);
-    for (let i = 0; i < n; i++) {
-      const ex = S.shipX - SW * 0.5 - 2;
-      const ey = S.shipY + (Math.random() - 0.5) * SH * 0.5;
-      spawnSpark(ex, ey);
-    }
-  }
-  // Near-wall sparks when gap is narrow
-  const sg2 = segAtX(S.shipX);
-  if (sg2) {
-    const gap = (sg2.by - sg2.ty);
-    if (gap < H * 0.22 && Math.random() < 0.06) {
-      const col = waveColor(S.wave);
-      const wallY = (S.shipY < (sg2.ty + sg2.by) / 2) ? sg2.ty : sg2.by;
-      spawnParticles(S.shipX + (Math.random() - 0.5) * 20, wallY, col, 1, 1.5);
-    }
-  }
-}
-
-// ── DRAW ──────────────────────────────────────────────────────────────────────
-function draw() {
-  const wc     = waveColor(S.wave);
-  const [sx, sy] = getShake();
-
-  // Background
-  ctx.fillStyle = '#000010'; ctx.fillRect(0, 0, W, H);
-  drawGrid(wc);
-
-  ctx.save(); ctx.translate(sx, sy);
-
-  // Hit flash
-  if (S.flashOverlay > 0) {
-    ctx.save();
-    ctx.fillStyle = `rgba(255,40,0,${Math.min(S.flashOverlay / 28, 1) * 0.32})`;
-    ctx.fillRect(0, 0, W, H);
-    ctx.restore();
-  }
-
-  // ── Cave walls ─────────────────────────────────────────────────────────────
-  if (segs.length > 1) {
-    const f = segs[0], l = segs[segs.length - 1];
 
     const topPath = new Path2D();
-    topPath.moveTo(f.sx - SEG * 2, 0);
-    for (const s of segs) topPath.lineTo(s.sx, s.ty);
-    topPath.lineTo(l.sx + SEG * 2, 0);
+    topPath.moveTo(samples[0].x, 0);
+    for (const p of samples) topPath.lineTo(p.x, p.top);
+    topPath.lineTo(samples[samples.length - 1].x, 0);
     topPath.closePath();
 
-    const botPath = new Path2D();
-    botPath.moveTo(f.sx - SEG * 2, H);
-    for (const s of segs) botPath.lineTo(s.sx, s.by);
-    botPath.lineTo(l.sx + SEG * 2, H);
-    botPath.closePath();
+    const bottomPath = new Path2D();
+    bottomPath.moveTo(samples[0].x, H);
+    for (const p of samples) bottomPath.lineTo(p.x, p.bottom);
+    bottomPath.lineTo(samples[samples.length - 1].x, H);
+    bottomPath.closePath();
 
-    // Base rock, then a bright wave-colour tint on top — flat dark navy read
-    // as "not really colored" at a glance, this reads as brightly colored
-    // rock without going fully opaque/flat like a solid fill would.
-    ctx.fillStyle = '#040e18';
-    ctx.fill(topPath); ctx.fill(botPath);
-    ctx.globalAlpha = 0.4; ctx.fillStyle = wc;
-    ctx.fill(topPath); ctx.fill(botPath);
+    return { samples, topPath, bottomPath };
+  }
+
+  const GRID_SPACING = 24;
+  const GRID_COLS = Math.ceil(W / GRID_SPACING) + 3;
+  const GRID_ROWS = Math.ceil(H / GRID_SPACING) + 2;
+  const GRID_SPAN = GRID_COLS * GRID_SPACING;
+  const grid = [];
+
+  function initGrid() {
+    grid.length = 0;
+    for (let r = 0; r < GRID_ROWS; r++) {
+      for (let c = 0; c < GRID_COLS; c++) {
+        const ax = (c - 1) * GRID_SPACING;
+        const ay = r * GRID_SPACING;
+        grid.push({ c, r, ax, ay, x: ax, y: ay, vx: 0, vy: 0, energy: 0 });
+      }
+    }
+  }
+
+  function resetGridNode(p) {
+    p.x = p.ax;
+    p.y = p.ay;
+    p.vx = 0;
+    p.vy = 0;
+    p.energy = 0;
+  }
+
+  function resetWakeTrail() {
+    wakeTrail.length = 0;
+    const worldX = state.distance + state.playerX;
+    wakeTrail.push({ worldX, y: state.playerY, vy: state.playerVY, boost: 0 });
+    lastWakeWorldX = worldX;
+  }
+
+  function recordWakeSample() {
+    const worldX = state.distance + state.playerX;
+    if (worldX - lastWakeWorldX < WAKE_SAMPLE_STEP) return;
+    wakeTrail.push({
+      worldX,
+      y: state.playerY,
+      vy: state.playerVY,
+      boost: state.boosting ? 1 : 0
+    });
+    lastWakeWorldX = worldX;
+    if (wakeTrail.length > WAKE_MAX_SAMPLES) wakeTrail.shift();
+  }
+
+  function wakeSampleAt(worldX) {
+    const n = wakeTrail.length;
+    if (!n || worldX < wakeTrail[0].worldX || worldX > wakeTrail[n - 1].worldX) return null;
+    let lo = 0, hi = n - 1;
+    while (hi - lo > 1) {
+      const mid = (lo + hi) >> 1;
+      if (wakeTrail[mid].worldX <= worldX) lo = mid;
+      else hi = mid;
+    }
+    const a = wakeTrail[lo], b = wakeTrail[hi];
+    const span = Math.max(1, b.worldX - a.worldX);
+    const t = clamp((worldX - a.worldX) / span, 0, 1);
+    return {
+      y: lerp(a.y, b.y, t),
+      vy: lerp(a.vy, b.vy, t),
+      boost: lerp(a.boost, b.boost, t)
+    };
+  }
+
+  function applyWake(dt) {
+    const wakeLength = state.boosting ? 520 : 360;
+    const baseRadius = state.boosting ? 72 : 54;
+    const maxRadius = state.boosting ? 182 : 132;
+    const force = (state.boosting ? 330 : 168) * dt;
+    const playerWorldX = state.distance + state.playerX;
+
+    for (const p of grid) {
+      const nodeWorldX = state.distance + p.ax;
+      const dx = playerWorldX - nodeWorldX;
+      if (dx <= 5 || dx > wakeLength) continue;
+
+      const sample = wakeSampleAt(nodeWorldX);
+      const wakeY = sample ? sample.y : state.playerY;
+      const sampleVY = sample ? sample.vy : state.playerVY;
+      const sampleBoost = sample ? sample.boost : (state.boosting ? 1 : 0);
+      const coneRadius = lerp(baseRadius, maxRadius, Math.pow(dx / wakeLength, 0.72));
+      const dy = p.ay - wakeY;
+      const ay = Math.abs(dy);
+      if (ay > coneRadius) continue;
+
+      const tail = Math.pow(1 - dx / wakeLength, 0.58);
+      const radial = Math.pow(1 - ay / coneRadius, 1.18);
+      const shell = Math.exp(-Math.pow((ay - coneRadius * 0.56) / Math.max(10, coneRadius * 0.23), 2));
+      const core = Math.exp(-Math.pow(ay / Math.max(10, coneRadius * 0.28), 2));
+      const f = force * tail * (radial * 0.72 + shell * 0.78 + core * 0.28) * (1 + sampleBoost * 0.32);
+      const sign = dy === 0 ? (p.r % 2 ? 1 : -1) : Math.sign(dy);
+      const vortex = Math.sin(dx * 0.052 - state.time * 0.009 + sampleVY * 0.008) * f * 0.34;
+
+      // A fast body displaces the mesh laterally, then fans it outward along
+      // the exact route the flyer occupied when it passed this world position.
+      p.vx -= f * (1.18 + dx / wakeLength * 1.35);
+      p.vy += sign * f * (1.62 + shell * 0.62) + vortex;
+      p.vy += sampleVY * dt * tail * 0.22;
+      p.energy = Math.min(1.5, p.energy + f * 0.052);
+    }
+  }
+
+  function updateGrid(dt) {
+    const scroll = state.phase === 'play' ? state.speed * dt : 0;
+    const spring = 20;
+    const damping = Math.pow(0.82, dt * 60);
+
+    for (const p of grid) {
+      p.ax -= scroll;
+      if (p.ax < -GRID_SPACING * 1.5) {
+        p.ax += GRID_SPAN;
+        p.x += GRID_SPAN;
+        resetGridNode(p);
+      }
+
+      p.vx += (p.ax - p.x) * spring * dt;
+      p.vy += (p.ay - p.y) * spring * dt;
+      p.vx *= damping;
+      p.vy *= damping;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.energy *= Math.pow(0.9, dt * 60);
+
+      // The untouched field ahead remains pristine; all deformation is causal
+      // and confined to the flyer's recorded wake.
+      if (p.ax > state.playerX + 7) {
+        p.x = lerp(p.x, p.ax, 1 - Math.pow(0.03, dt));
+        p.y = lerp(p.y, p.ay, 1 - Math.pow(0.03, dt));
+        p.vx *= 0.22;
+        p.vy *= 0.22;
+        p.energy *= 0.45;
+      }
+    }
+
+    if (state.phase === 'play') applyWake(dt);
+  }
+
+  function gridNode(c, r) {
+    const cc = (c + GRID_COLS) % GRID_COLS;
+    return grid[r * GRID_COLS + cc];
+  }
+
+  function drawGrid(palette) {
+    ctx.save();
+    ctx.lineWidth = 0.65;
+
+    // Connections make the spring deformation legible while the dot lattice stays primary.
+    ctx.strokeStyle = hexToRgba(palette.grid, 0.11);
+    ctx.beginPath();
+    for (let r = 0; r < GRID_ROWS; r++) {
+      for (let c = 0; c < GRID_COLS - 1; c++) {
+        const a = gridNode(c, r);
+        const b = gridNode(c + 1, r);
+        if (Math.abs(a.x - b.x) > GRID_SPACING * 2.5) continue;
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+      }
+    }
+    for (let c = 0; c < GRID_COLS; c++) {
+      for (let r = 0; r < GRID_ROWS - 1; r++) {
+        const a = gridNode(c, r);
+        const b = gridNode(c, r + 1);
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+      }
+    }
+    ctx.stroke();
+
+    for (const p of grid) {
+      if (p.x < -20 || p.x > W + 20 || p.y < -20 || p.y > H + 20) continue;
+      const major = p.c % 5 === 0 && p.r % 5 === 0;
+      const mid = !major && (p.c % 2 === 0 || p.r % 2 === 0);
+      const baseR = major ? 2.35 : mid ? 1.45 : 0.85;
+      const disp = Math.hypot(p.x - p.ax, p.y - p.ay);
+      const e = clamp(disp / 24 + p.energy, 0, 1.25);
+      const radius = baseR * (1 + e * 1.18);
+      const alpha = (major ? 0.58 : mid ? 0.31 : 0.17) + e * 0.56;
+
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = palette.grid;
+      if (e > 0.12 || major) {
+        ctx.shadowColor = palette.grid;
+        ctx.shadowBlur = 4 + e * 10;
+      } else {
+        ctx.shadowBlur = 0;
+      }
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, radius, 0, TAU);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
+  function drawWallTexture(path, samples, isTop, palette) {
+    ctx.save();
+    ctx.clip(path);
+
+    const gradient = ctx.createLinearGradient(0, isTop ? 0 : H, 0, isTop ? H * 0.5 : H * 0.5);
+    gradient.addColorStop(0, '#09010f');
+    gradient.addColorStop(0.33, palette.wallB);
+    gradient.addColorStop(0.82, palette.wallA);
+    gradient.addColorStop(1, '#16051d');
+    ctx.globalAlpha = 0.82;
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, W, H);
     ctx.globalAlpha = 1;
 
-    // Scrolling diagonal texture — hazard-vein stripes clipped to the wall
-    // shape, offset by worldScroll so they flow past at the cave's speed.
-    function veinStripes(path, y0, y1) {
-      ctx.save();
-      ctx.clip(path);
-      ctx.strokeStyle = '#ffffff';
-      ctx.globalAlpha = 0.10;
-      ctx.lineWidth = 3;
-      const spacing = 28, span = W + (y1 - y0) + spacing * 2;
-      const off = ((worldScroll * 1.3) % spacing + spacing) % spacing;
-      for (let i = -spacing; i < span; i += spacing) {
-        const sx = i - off;
-        ctx.beginPath();
-        ctx.moveTo(sx, y1);
-        ctx.lineTo(sx + (y1 - y0), y0);
-        ctx.stroke();
-      }
-      ctx.restore();
-    }
-    veinStripes(topPath, 0, H * 0.5);
-    veinStripes(botPath, H * 0.5, H);
-
-    // Neon edge — three-pass glow (same technique as NI's glowSprite)
-    function strokeEdge(yFn) {
+    const flow = state.distance * (state.boosting ? 1.9 : 1.15);
+    const contourCount = state.boosting ? 18 : 13;
+    for (let band = 0; band < contourCount; band++) {
+      const inset = 8 + band * 9.5;
+      const phase = band * 0.8 + flow * (0.0055 + band * 0.00012);
+      const hot = band % 4 === 0;
       ctx.beginPath();
-      ctx.moveTo(f.sx, yFn(f));
-      for (const s of segs) ctx.lineTo(s.sx, yFn(s));
+      for (let i = 0; i < samples.length; i++) {
+        const p = samples[i];
+        const ripple = Math.sin((p.x + flow * 0.55) * 0.026 + phase) * (3.5 + band * 0.11);
+        const y = isTop ? p.top - inset - ripple : p.bottom + inset + ripple;
+        if (i === 0) ctx.moveTo(p.x, y);
+        else ctx.lineTo(p.x, y);
+      }
+      ctx.strokeStyle = hot ? palette.edge : (band % 2 ? palette.wallA : palette.wallB);
+      ctx.globalAlpha = hot ? 0.48 : 0.23;
+      ctx.lineWidth = hot ? 2.2 : 1.15;
+      ctx.shadowColor = hot ? palette.edge : palette.wallA;
+      ctx.shadowBlur = hot ? 9 : 3;
       ctx.stroke();
     }
-    ctx.save();
-    ctx.shadowColor = wc;
 
-    ctx.shadowBlur = 22; ctx.strokeStyle = wc + '44'; ctx.lineWidth = 9;
-    strokeEdge(s => s.ty); strokeEdge(s => s.by);
-
-    ctx.shadowBlur = 14; ctx.strokeStyle = wc; ctx.lineWidth = 2;
-    strokeEdge(s => s.ty); strokeEdge(s => s.by);
-
-    ctx.shadowBlur = 5; ctx.strokeStyle = 'rgba(255,255,255,0.72)'; ctx.lineWidth = 0.8;
-    strokeEdge(s => s.ty); strokeEdge(s => s.by);
+    // Fast, directional fibers. They remain flat and side-scrolling rather than perspective rays.
+    const streakGap = state.boosting ? 20 : 34;
+    const offset = -((flow * 1.65) % streakGap);
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = state.boosting ? 0.24 : 0.13;
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = state.boosting ? 1.6 : 1;
+    for (let x = offset - 120; x < W + 120; x += streakGap) {
+      ctx.beginPath();
+      const y0 = isTop ? 12 : H - 12;
+      const y1 = isTop ? H * 0.56 : H * 0.44;
+      ctx.moveTo(x, y0);
+      ctx.lineTo(x + (state.boosting ? 150 : 92), y1);
+      ctx.stroke();
+    }
 
     ctx.restore();
   }
 
-  // Particles (above walls, below ship)
-  drawParticles();
-  drawSparks();
+  function drawCave(cave, palette) {
+    ctx.fillStyle = '#100416';
+    ctx.fill(cave.topPath);
+    ctx.fill(cave.bottomPath);
 
-  // ── Ship ───────────────────────────────────────────────────────────────────
-  const flicker = S.inv > 0 && Math.floor(S.time / 80) % 2 === 0;
-  if (!flicker && S.phase !== 'start') {
-    const eg  = 0.5 + 0.5 * Math.sin(S.time / 70);   // engine pulse
-    const scol = `rgb(0,${Math.round(120 + eg * 100)},248)`;
-    const shx  = Math.round(S.shipX - SW / 2);
-    const shy  = Math.round(S.shipY - SH / 2);
+    drawWallTexture(cave.topPath, cave.samples, true, palette);
+    drawWallTexture(cave.bottomPath, cave.samples, false, palette);
 
-    // Cape — attached just below the head (the nose-tip point), coloured to
-    // match the cave walls. Drawn first so the body overlaps the seam and it
-    // reads as trailing out from beneath the head, streaming back with speed
-    // and banking with vertical velocity.
-    const flutter    = Math.sin(S.time / 110) * 4 + S.vy * 1.1;
-    const capeAX      = shx + 8 * SPX;
-    const capeAY      = shy + 1 * SPX;
-    const capeLen      = 15 + (S.spd - BASE_SPD) * 1.6 + Math.min(8, Math.abs(S.vy) * 2);
+    const drawEdge = (key) => {
+      ctx.beginPath();
+      for (let i = 0; i < cave.samples.length; i++) {
+        const p = cave.samples[i];
+        const y = p[key];
+        if (i === 0) ctx.moveTo(p.x, y);
+        else ctx.lineTo(p.x, y);
+      }
+    };
+
     ctx.save();
-    ctx.globalAlpha = 0.85;
-    ctx.shadowColor = wc;
-    ctx.shadowBlur  = 12;
-    ctx.fillStyle   = wc;
+    ctx.lineCap = 'round';
+    for (const key of ['top', 'bottom']) {
+      ctx.shadowColor = palette.wallA;
+      ctx.shadowBlur = 28;
+      ctx.strokeStyle = hexToRgba(palette.wallA, 0.36);
+      ctx.lineWidth = 12;
+      drawEdge(key);
+      ctx.stroke();
+
+      ctx.shadowColor = palette.edge;
+      ctx.shadowBlur = 15;
+      ctx.strokeStyle = palette.edge;
+      ctx.lineWidth = 2.6;
+      drawEdge(key);
+      ctx.stroke();
+
+      ctx.shadowBlur = 4;
+      ctx.strokeStyle = 'rgba(255,255,255,.78)';
+      ctx.lineWidth = 0.9;
+      drawEdge(key);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function initStars() {
+    stars = Array.from({ length: 78 }, (_, i) => ({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      speed: 0.18 + Math.random() * 0.85,
+      len: 5 + Math.random() * 28,
+      a: 0.08 + Math.random() * 0.28,
+      seed: i * 9.71
+    }));
+  }
+
+  function updateStars(dt) {
+    const m = state.phase === 'play' ? state.speed : 70;
+    for (const s of stars) {
+      s.x -= m * s.speed * dt;
+      if (s.x < -s.len - 30) {
+        s.x = W + Math.random() * 120;
+        s.y = Math.random() * H;
+      }
+    }
+  }
+
+  function drawSpeedLines(palette) {
+    ctx.save();
+    ctx.lineCap = 'round';
+    const boost = state.boosting ? 1 : 0;
+    for (const s of stars) {
+      const speedGain = clamp(state.speed / BASE_SPEED, 1, 2.1);
+      const dx = s.len * speedGain * (1.35 + boost * 5.2) * (0.55 + s.speed);
+      const fadeAhead = s.x > state.playerX + 45 ? 0.32 : 1;
+      ctx.globalAlpha = s.a * (0.55 + boost * 1.4) * fadeAhead;
+      ctx.strokeStyle = s.speed > 0.62 ? palette.grid : '#ffffff';
+      ctx.lineWidth = 0.7 + s.speed * 1.25 + boost * 0.9;
+      ctx.beginPath();
+      ctx.moveTo(s.x, s.y);
+      ctx.lineTo(s.x - dx, s.y + Math.sin(s.seed + state.time * 0.001) * 1.2);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function spawnSpark(x, y, color, amount, power = 1) {
+    for (let i = 0; i < amount; i++) {
+      if (sparks.length > 180) sparks.shift();
+      sparks.push({
+        x, y,
+        vx: -(90 + Math.random() * 420) * power,
+        vy: (Math.random() - 0.5) * 180 * power,
+        life: 0.38 + Math.random() * 0.5,
+        maxLife: 0.8,
+        color,
+        size: 0.8 + Math.random() * 2.2
+      });
+    }
+  }
+
+  function updateSparks(dt) {
+    for (const p of sparks) {
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vx *= Math.pow(0.985, dt * 60);
+      p.vy *= Math.pow(0.97, dt * 60);
+      p.life -= dt;
+    }
+    sparks = sparks.filter(p => p.life > 0);
+  }
+
+  function drawSparks() {
+    ctx.save();
+    ctx.lineCap = 'round';
+    for (const p of sparks) {
+      const a = clamp(p.life / p.maxLife, 0, 1);
+      ctx.globalAlpha = a;
+      ctx.strokeStyle = p.color;
+      ctx.shadowColor = p.color;
+      ctx.shadowBlur = 8;
+      ctx.lineWidth = p.size;
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y);
+      ctx.lineTo(p.x - p.vx * 0.045, p.y - p.vy * 0.045);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function playerShapePath() {
+    const p = new Path2D();
+    // Torso and leading arm.
+    p.moveTo(-7, -7);
+    p.quadraticCurveTo(3, -9, 14, -4);
+    p.lineTo(27, -1.5);
+    p.quadraticCurveTo(32, 0, 27, 2.5);
+    p.lineTo(13, 4);
+    p.quadraticCurveTo(5, 9, -5, 7);
+    p.closePath();
+    // Legs.
+    p.moveTo(-3, 4);
+    p.lineTo(-18, 11);
+    p.lineTo(-7, 1);
+    p.closePath();
+    p.moveTo(-7, 1);
+    p.lineTo(-21, 4);
+    p.lineTo(-9, -3);
+    p.closePath();
+    return p;
+  }
+
+  function drawCape(localTime, palette, alpha = 1, lengthScale = 1) {
+    const flutter = Math.sin(localTime * 0.015) * 5 + Math.sin(localTime * 0.031) * 2;
+    const len = (state.boosting ? 78 : 50) * lengthScale;
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = '#05050b';
+    ctx.strokeStyle = palette.wallA;
+    ctx.lineWidth = 1.4;
+    ctx.shadowColor = palette.wallA;
+    ctx.shadowBlur = 11;
     ctx.beginPath();
-    ctx.moveTo(capeAX, capeAY);
-    ctx.lineTo(capeAX - capeLen, capeAY + 7 + flutter);
-    ctx.lineTo(capeAX - capeLen * 0.6, capeAY + 12 + flutter * 0.5);
-    ctx.lineTo(capeAX - 2, capeAY + SPX * 3);
+    ctx.moveTo(-5, -7);
+    ctx.bezierCurveTo(-24, -20, -40, -7 + flutter, -len, -10 + flutter * 0.4);
+    ctx.lineTo(-len * 0.88, 7 + flutter * 0.15);
+    ctx.bezierCurveTo(-42, 16, -21, 10, -4, 6);
     ctx.closePath();
     ctx.fill();
-    ctx.restore();
+    ctx.stroke();
+  }
 
+  function drawPlayerAt(x, y, angle, palette, alpha = 1, scale = 1) {
     ctx.save();
-    ctx.shadowColor = `rgba(0,${Math.round(120 + eg * 100)},248,${0.5 + eg * 0.4})`;
-    ctx.shadowBlur  = 18 + eg * 12;
-    ctx.fillStyle   = scol;
-    for (let r = 0; r < SHIP_PX.length; r++)
-      for (let c = 0; c < SHIP_PX[r].length; c++)
-        if (SHIP_PX[r][c]) ctx.fillRect(shx + c * SPX, shy + r * SPX, SPX, SPX);
-    // White highlight (same as NI sprite renderer)
-    ctx.shadowBlur = 5; ctx.fillStyle = 'rgba(255,255,255,0.85)';
-    for (let r = 0; r < SHIP_PX.length; r++)
-      for (let c = 0; c < SHIP_PX[r].length; c++)
-        if (SHIP_PX[r][c])
-          ctx.fillRect(shx + c * SPX + 1, shy + r * SPX + 1,
-                       Math.max(1, SPX - 2), Math.max(1, SPX - 2));
+    ctx.translate(x, y);
+    ctx.rotate(angle);
+    ctx.scale(scale, scale);
+
+    drawCape(state.time, palette, alpha, 1);
+
+    const body = playerShapePath();
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = '#03040a';
+    ctx.strokeStyle = palette.grid;
+    ctx.lineWidth = 1.6;
+    ctx.shadowColor = palette.grid;
+    ctx.shadowBlur = state.boosting ? 18 : 10;
+    ctx.fill(body);
+    ctx.stroke(body);
+
+    // Head and visor.
+    ctx.beginPath();
+    ctx.arc(7, -8, 6.5, 0, TAU);
+    ctx.fill();
+    ctx.stroke();
+    ctx.strokeStyle = '#ffffff';
+    ctx.globalAlpha = alpha * 0.8;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(8, -10);
+    ctx.lineTo(12, -8.5);
+    ctx.stroke();
+
+    // Compact core glow.
+    ctx.globalAlpha = alpha * (state.boosting ? 0.95 : 0.55);
+    ctx.fillStyle = '#ffffff';
+    ctx.shadowColor = palette.grid;
+    ctx.shadowBlur = state.boosting ? 24 : 12;
+    ctx.beginPath();
+    ctx.arc(-2, 0, state.boosting ? 3.3 : 2.1, 0, TAU);
+    ctx.fill();
+
     ctx.restore();
   }
 
-  // Radial vignette (ported 1:1 from NI)
-  const vg = ctx.createRadialGradient(W / 2, H / 2, H * 0.28, W / 2, H / 2, H * 0.82);
-  vg.addColorStop(0, 'rgba(0,0,0,0)');
-  vg.addColorStop(1, 'rgba(0,0,20,0.72)');
-  ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+  function drawPlayer(palette) {
+    const angle = clamp(state.playerVY / 760, -0.32, 0.32);
 
-  ctx.restore(); // end shake translate
+    if (state.boosting) {
+      for (let i = 5; i >= 1; i--) {
+        drawPlayerAt(
+          state.playerX - i * 18,
+          state.playerY - state.playerVY * 0.004 * i,
+          angle,
+          palette,
+          0.035 + (6 - i) * 0.018,
+          1 - i * 0.025
+        );
+      }
+    }
 
-  // ── Wave-transition flash overlay ──────────────────────────────────────────
-  if (S.waveFlash > 0) {
-    const a = Math.min(1, S.waveFlash / 90);
+    if (state.invulnerable > 0 && Math.floor(state.time / 70) % 2 === 0) return;
+    drawPlayerAt(state.playerX, state.playerY, angle, palette, 1, state.boosting ? 1.08 : 1);
+  }
+
+  function startGame() {
+    state.phase = 'play';
+    state.time = 0;
+    state.distance = 0;
+    state.score = 0;
+    state.wave = 1;
+    state.lives = 3;
+    state.speed = BASE_SPEED;
+    state.targetSpeed = BASE_SPEED;
+    state.playerX = W * 0.235;
+    state.playerY = H * 0.5;
+    state.playerVY = 0;
+    state.boost = 100;
+    state.boostHeld = false;
+    state.boosting = false;
+    state.boostLock = 0;
+    state.invulnerable = 0;
+    state.nearMiss = 0;
+    state.combo = 1;
+    state.comboTimer = 0;
+    shake = 0;
+    hitFlash = 0;
+    boostFlash = 0;
+    sparks.length = 0;
+    initGrid();
+    resetWakeTrail();
+  }
+
+  function endGame() {
+    state.phase = 'over';
+    state.boosting = false;
+    if (state.score > state.highScore) {
+      state.highScore = Math.floor(state.score);
+      saveHighScore(state.highScore);
+    }
+  }
+
+  function hitWall(cave) {
+    if (state.invulnerable > 0) return;
+    state.lives -= 1;
+    state.invulnerable = 1.25;
+    state.playerVY *= -0.42;
+    state.playerY = clamp(state.playerY, cave.top + PLAYER_R + 9, cave.bottom - PLAYER_R - 9);
+    state.boost = Math.max(0, state.boost - 24);
+    state.boosting = false;
+    state.boostLock = 0.5;
+    state.combo = 1;
+    state.comboTimer = 0;
+    hitFlash = 1;
+    shake = Math.max(shake, 18);
+    spawnSpark(state.playerX, state.playerY, currentPalette().edge, 34, 1.3);
+    if (state.lives <= 0) endGame();
+  }
+
+  function update(dt) {
+    state.time += dt * 1000;
+    updateStars(dt);
+    updateSparks(dt);
+
+    hitFlash = Math.max(0, hitFlash - dt * 3.6);
+    boostFlash = Math.max(0, boostFlash - dt * 2.8);
+    shake *= Math.pow(0.065, dt);
+
+    if (state.phase !== 'play') {
+      updateGrid(dt);
+      return;
+    }
+
+    state.invulnerable = Math.max(0, state.invulnerable - dt);
+    state.boostLock = Math.max(0, state.boostLock - dt);
+
+    const thrust = keys.ArrowUp || keys.KeyW || keys.KeyZ || touchMode('thrust');
+    const dive = keys.ArrowDown || keys.KeyS;
+    const wantsBoost = keys.Space || keys.KeyX || touchMode('boost');
+    state.boostHeld = wantsBoost;
+
+    const canBoost = wantsBoost && state.boost > 0.5 && state.boostLock <= 0;
+    if (canBoost && !state.boosting) {
+      boostFlash = 1;
+      shake = Math.max(shake, 7);
+      spawnSpark(state.playerX - 18, state.playerY, currentPalette().grid, 22, 1.5);
+    }
+    state.boosting = canBoost;
+
+    if (state.boosting) {
+      state.boost = Math.max(0, state.boost - BOOST_DRAIN * dt);
+      if (state.boost <= 0.01) {
+        state.boosting = false;
+        state.boostLock = 0.7;
+      }
+    } else {
+      state.boost = Math.min(100, state.boost + BOOST_RECHARGE * dt);
+    }
+
+    const cruise = Math.min(MAX_CRUISE, BASE_SPEED + state.distance * 0.00145);
+    state.targetSpeed = cruise * (state.boosting ? BOOST_MULT : 1);
+    const speedEase = 1 - Math.pow(state.boosting ? 0.0002 : 0.012, dt);
+    state.speed = lerp(state.speed, state.targetSpeed, speedEase);
+
+    const playerTargetX = state.boosting ? W * 0.345 : W * 0.235;
+    state.playerX = lerp(state.playerX, playerTargetX, 1 - Math.pow(0.008, dt));
+
+    const gravity = 590;
+    const thrustAcc = -1280;
+    const diveAcc = 980;
+    if (thrust) state.playerVY += thrustAcc * dt;
+    else state.playerVY += gravity * dt;
+    if (dive) state.playerVY += diveAcc * dt;
+    state.playerVY *= Math.pow(0.86, dt * 60);
+    state.playerVY = clamp(state.playerVY, -520, 560);
+    state.playerY += state.playerVY * dt;
+
+    state.distance += state.speed * dt;
+    recordWakeSample();
+    updateGrid(dt);
+    state.wave = 1 + Math.floor(state.distance / WAVE_DISTANCE);
+    state.score += state.speed * dt * (state.boosting ? 0.24 : 0.11) * state.combo;
+
+    const cave = caveAt(state.playerX);
+    const clearanceTop = state.playerY - PLAYER_R - cave.top;
+    const clearanceBottom = cave.bottom - (state.playerY + PLAYER_R);
+    const clearance = Math.min(clearanceTop, clearanceBottom);
+
+    if (clearance < 0) {
+      hitWall(cave);
+    } else if (clearance < 24) {
+      state.nearMiss = Math.min(1, state.nearMiss + dt * 5);
+      state.comboTimer += dt;
+      if (state.comboTimer > 0.55) {
+        state.combo = Math.min(4, state.combo + 0.25);
+        state.comboTimer = 0;
+      }
+      if (Math.random() < dt * 22) {
+        const y = clearanceTop < clearanceBottom ? cave.top : cave.bottom;
+        spawnSpark(state.playerX + 2, y, currentPalette().edge, 1, 0.65);
+      }
+    } else {
+      state.nearMiss = Math.max(0, state.nearMiss - dt * 2.5);
+      state.comboTimer = Math.max(0, state.comboTimer - dt);
+      if (state.comboTimer <= 0) state.combo = lerp(state.combo, 1, 1 - Math.pow(0.35, dt));
+    }
+
+    const sparkRate = state.boosting ? 82 : 28;
+    if (Math.random() < sparkRate * dt) {
+      spawnSpark(
+        state.playerX - 15,
+        state.playerY + (Math.random() - 0.5) * 10,
+        currentPalette().grid,
+        state.boosting ? 2 : 1,
+        state.boosting ? 1.2 : 0.55
+      );
+    }
+  }
+
+  function drawHud(palette) {
     ctx.save();
-    ctx.fillStyle = `rgba(0,0,18,${0.58 * a})`; ctx.fillRect(0, 0, W, H);
-    ctx.restore();
-    glowText('WAVE ' + S.wave, W / 2, H / 2 - 10, 50, waveColor(S.wave), a);
-    ctx.save();
-    ctx.globalAlpha = a * 0.72; ctx.fillStyle = '#aaccee';
-    ctx.font = '15px monospace'; ctx.textAlign = 'center';
-    const taglines = ['DEEPER…','FASTER…','TIGHTER…','HOLD ON…','NO BRAKES…','SURVIVE.','SERIOUSLY?','YOU GOT THIS'];
-    ctx.fillText(taglines[(S.wave - 1) % taglines.length], W / 2, H / 2 + 44);
+    ctx.textBaseline = 'top';
+    ctx.font = '700 22px ui-monospace, monospace';
+    ctx.shadowBlur = 12;
+
+    ctx.textAlign = 'left';
+    ctx.fillStyle = palette.grid;
+    ctx.shadowColor = palette.grid;
+    ctx.fillText(`SCORE: ${String(Math.floor(state.score)).padStart(6, '0')}`, 26, 19);
+
+    ctx.font = '600 11px ui-monospace, monospace';
+    ctx.globalAlpha = 0.74;
+    ctx.fillText(`HI: ${String(Math.floor(state.highScore)).padStart(6, '0')}`, 28, 48);
+
+    ctx.globalAlpha = 1;
+    ctx.textAlign = 'center';
+    ctx.font = '700 16px ui-monospace, monospace';
+    ctx.fillStyle = state.boosting ? '#ffffff' : '#50ff63';
+    ctx.shadowColor = '#50ff63';
+    ctx.fillText(state.boosting ? '>>>> HYPERFLOW >>>>' : '>>>> CRUISE >>>>', W / 2, 20);
+
+    ctx.font = '600 11px ui-monospace, monospace';
+    ctx.globalAlpha = 0.77;
+    ctx.fillText(`${Math.round(state.speed * 5.6)} KM/H  ·  CRT 240p`, W / 2, 47);
+
+    ctx.globalAlpha = 1;
+    ctx.textAlign = 'right';
+    ctx.font = '700 22px ui-monospace, monospace';
+    ctx.fillStyle = palette.wallA;
+    ctx.shadowColor = palette.wallA;
+    ctx.fillText(`WAVE: ${String(state.wave).padStart(2, '0')}`, W - 26, 19);
+
+    ctx.font = '600 11px ui-monospace, monospace';
+    ctx.globalAlpha = 0.74;
+    ctx.fillText(`FLOW x${state.combo.toFixed(1)}`, W - 28, 48);
+
+    // Lives.
+    ctx.globalAlpha = 1;
+    ctx.textAlign = 'left';
+    ctx.font = '700 21px ui-monospace, monospace';
+    ctx.fillStyle = palette.wallA;
+    ctx.shadowColor = palette.wallA;
+    ctx.fillText('A'.repeat(Math.max(0, state.lives)).split('').join('  '), 27, H - 47);
+
+    // Boost meter.
+    const bx = W * 0.53;
+    const by = H - 39;
+    const bw = W * 0.38;
+    const bh = 11;
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = hexToRgba(palette.wallA, 0.75);
+    ctx.lineWidth = 1;
+    ctx.strokeRect(bx, by, bw, bh);
+    const grad = ctx.createLinearGradient(bx, 0, bx + bw, 0);
+    grad.addColorStop(0, palette.grid);
+    grad.addColorStop(1, palette.wallA);
+    ctx.fillStyle = grad;
+    ctx.fillRect(bx + 2, by + 2, (bw - 4) * state.boost / 100, bh - 4);
+    ctx.textAlign = 'right';
+    ctx.font = '700 11px ui-monospace, monospace';
+    ctx.fillStyle = '#ffffff';
+    ctx.shadowColor = palette.wallA;
+    ctx.shadowBlur = 8;
+    ctx.fillText(`BOOST ${Math.round(state.boost)}%`, bx - 10, by - 2);
+
     ctx.restore();
   }
 
-  // ── Phase overlays ─────────────────────────────────────────────────────────
-  ctx.textAlign = 'center';
+  function drawOverlay(palette) {
+    if (state.phase === 'play') return;
 
-  if (S.phase === 'start') {
-    ctx.fillStyle = 'rgba(0,0,18,0.72)'; ctx.fillRect(0, 0, W, H);
-    glowText('CAVE RACER', W / 2, H / 2 - 50, 54, '#00d8d8', 1);
     ctx.save();
-    ctx.fillStyle = '#aaccee'; ctx.font = '14px monospace'; ctx.textAlign = 'center';
-    ctx.fillText('↑ ↓  ARROW KEYS', W / 2, H / 2 + 8);
-    ctx.fillStyle = '#556677'; ctx.font = '12px monospace';
-    ctx.fillText('TAP LEFT HALF  ·  TAP RIGHT HALF  ·  DRAG', W / 2, H / 2 + 30);
-    ctx.restore();
-    const pulse = 0.55 + 0.45 * Math.sin(S.time / 420);
-    ctx.save(); ctx.globalAlpha = pulse; ctx.fillStyle = '#f800f8';
-    ctx.font = '13px monospace'; ctx.textAlign = 'center';
-    ctx.shadowColor = '#f800f8'; ctx.shadowBlur = 12;
-    ctx.fillText('PRESS ANY KEY OR TAP TO BEGIN', W / 2, H / 2 + 66);
+    ctx.fillStyle = 'rgba(1,2,10,.76)';
+    ctx.fillRect(0, 0, W, H);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    ctx.font = '800 62px ui-monospace, monospace';
+    ctx.fillStyle = palette.grid;
+    ctx.shadowColor = palette.grid;
+    ctx.shadowBlur = 28;
+    ctx.fillText(state.phase === 'over' ? 'OBLITERATED' : 'CAVE RACER', W / 2, H / 2 - 72);
+
+    ctx.font = '700 16px ui-monospace, monospace';
+    ctx.fillStyle = '#ffffff';
+    ctx.shadowBlur = 10;
+    ctx.fillText(
+      state.phase === 'over'
+        ? `SCORE ${Math.floor(state.score)}  -  WAVE ${state.wave}`
+        : 'A 2D SPRING-MESH ENDLESS RUNNER',
+      W / 2,
+      H / 2 - 12
+    );
+
+    ctx.font = '600 14px ui-monospace, monospace';
+    ctx.fillStyle = 'rgba(200,232,255,.78)';
+    ctx.shadowBlur = 0;
+    ctx.fillText('Z / UP: THRUST     X / SPACE: TEMPORARY BOOST', W / 2, H / 2 + 31);
+    ctx.fillText('The intact mesh arrives from ahead; your recorded flight path tears it open behind you.', W / 2, H / 2 + 57);
+
+    const pulse = 0.55 + Math.sin(state.time * 0.0045) * 0.35;
+    ctx.globalAlpha = pulse;
+    ctx.fillStyle = palette.wallA;
+    ctx.shadowColor = palette.wallA;
+    ctx.shadowBlur = 15;
+    ctx.fillText(state.phase === 'over' ? 'PRESS R OR TAP TO RUN AGAIN' : 'PRESS ANY CONTROL OR TAP TO BEGIN', W / 2, H / 2 + 107);
     ctx.restore();
   }
 
-  if (S.phase === 'over') {
-    ctx.fillStyle = 'rgba(0,0,18,0.76)'; ctx.fillRect(0, 0, W, H);
-    glowText('OBLITERATED', W / 2, H / 2 - 66, 40, '#f83800', 1);
+  function draw() {
+    const palette = currentPalette();
+    const cave = buildCavePaths();
+    const shakeX = shake > 0.1 ? (Math.random() - 0.5) * shake : 0;
+    const shakeY = shake > 0.1 ? (Math.random() - 0.5) * shake * 0.6 : 0;
+
+    ctx.fillStyle = '#02030a';
+    ctx.fillRect(0, 0, W, H);
+
     ctx.save();
-    ctx.fillStyle = '#aaccee'; ctx.font = '14px monospace'; ctx.textAlign = 'center';
-    ctx.fillText('SCORE: ' + S.score + '   WAVE: ' + S.wave, W / 2, H / 2 - 18);
-    ctx.fillStyle = '#445566'; ctx.font = '12px monospace';
-    ctx.fillText('press  R  or tap to race again', W / 2, H / 2 + 24);
+    ctx.translate(shakeX, shakeY);
+    drawSpeedLines(palette);
+    drawGrid(palette);
+    drawCave(cave, palette);
+    drawSparks();
+    drawPlayer(palette);
+
+    if (state.nearMiss > 0.02) {
+      ctx.fillStyle = hexToRgba(palette.edge, state.nearMiss * 0.08);
+      ctx.fillRect(0, 0, W, H);
+    }
+
     ctx.restore();
+
+    if (boostFlash > 0) {
+      const grad = ctx.createRadialGradient(state.playerX, state.playerY, 10, state.playerX, state.playerY, 310);
+      grad.addColorStop(0, hexToRgba(palette.grid, boostFlash * 0.22));
+      grad.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    if (hitFlash > 0) {
+      ctx.fillStyle = `rgba(255,45,20,${hitFlash * 0.24})`;
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    drawHud(palette);
+    drawOverlay(palette);
   }
-}
 
-// ── INPUT ─────────────────────────────────────────────────────────────────────
-window.addEventListener('keydown', e => {
-  S.keys[e.key] = true;
-  if (e.key === 'r' || e.key === 'R') { startGame(); return; }
-  if (S.phase !== 'play') startGame();
-  if (['ArrowUp','ArrowDown',' '].includes(e.key)) e.preventDefault();
-});
-window.addEventListener('keyup', e => { S.keys[e.key] = false; });
-
-function readTouches(e) {
-  S.tUp = false; S.tDown = false;
-  const rect = C.getBoundingClientRect(), scaleX = W / rect.width;
-  for (const t of e.touches) {
-    const tx = (t.clientX - rect.left) * scaleX;
-    if (tx < W / 2) S.tUp = true; else S.tDown = true;
+  function touchMode(mode) {
+    for (const value of touches.values()) {
+      if (value === mode) return true;
+    }
+    return false;
   }
-}
-C.addEventListener('touchstart',  e => {
-  e.preventDefault();
-  if (S.phase !== 'play') { startGame(); return; }
-  readTouches(e);
-}, { passive: false });
-C.addEventListener('touchmove',   e => { e.preventDefault(); readTouches(e); }, { passive: false });
-C.addEventListener('touchend',    e => { e.preventDefault(); readTouches(e); }, { passive: false });
-C.addEventListener('touchcancel', e => { e.preventDefault(); readTouches(e); }, { passive: false });
 
-// ── MAIN LOOP ─────────────────────────────────────────────────────────────────
-let lastT = 0;
-function tick(ts) {
-  requestAnimationFrame(tick);
-  const dt = Math.min(ts - lastT, 50);
-  lastT = ts;
-  update(dt);
-  draw();
-}
+  function pointerToMode(clientX) {
+    const rect = canvas.getBoundingClientRect();
+    const x = (clientX - rect.left) / rect.width;
+    return x < 0.56 ? 'thrust' : 'boost';
+  }
 
-initState();
-requestAnimationFrame(tick);
+  function beginFromInput() {
+    if (state.phase !== 'play') startGame();
+  }
 
+  window.addEventListener('keydown', (event) => {
+    if (['ArrowUp', 'ArrowDown', 'Space'].includes(event.code)) event.preventDefault();
+    if (event.code === 'KeyR') {
+      startGame();
+      return;
+    }
+    keys[event.code] = true;
+    if (['ArrowUp', 'ArrowDown', 'KeyW', 'KeyS', 'KeyZ', 'KeyX', 'Space'].includes(event.code)) {
+      beginFromInput();
+    }
+  }, { passive: false });
+
+  window.addEventListener('keyup', (event) => {
+    keys[event.code] = false;
+  });
+
+  canvas.addEventListener('pointerdown', (event) => {
+    event.preventDefault();
+    canvas.setPointerCapture(event.pointerId);
+    touches.set(event.pointerId, pointerToMode(event.clientX));
+    beginFromInput();
+  });
+
+  canvas.addEventListener('pointermove', (event) => {
+    if (!touches.has(event.pointerId)) return;
+    touches.set(event.pointerId, pointerToMode(event.clientX));
+  });
+
+  const endPointer = (event) => {
+    touches.delete(event.pointerId);
+  };
+  canvas.addEventListener('pointerup', endPointer);
+  canvas.addEventListener('pointercancel', endPointer);
+  canvas.addEventListener('contextmenu', (event) => event.preventDefault());
+
+  document.addEventListener('visibilitychange', () => {
+    lastTime = performance.now();
+    for (const key of Object.keys(keys)) keys[key] = false;
+    touches.clear();
+  });
+
+  function frame(now) {
+    const dt = Math.min(0.033, Math.max(0, (now - lastTime) / 1000));
+    lastTime = now;
+    update(dt);
+    draw();
+    requestAnimationFrame(frame);
+  }
+
+  configureCanvas();
+  initGrid();
+  initStars();
+  resetWakeTrail();
+  requestAnimationFrame(frame);
+})();
 </script>
 </body>
 </html>
