@@ -98,42 +98,16 @@ const WAVE_COLORS = [
 ];
 function waveColor(w) { return WAVE_COLORS[(w - 1) % WAVE_COLORS.length]; }
 
-// ── DOT-GRID (ported from DOT-GRID · OBLITERATUS v1 — sprite-cached) ─────────
-// Same spring-mesh physics contract as the old line grid (ripple(wx,wy,str)
-// still takes a world point + strength), but rendered as a tiered, glowing
-// dot mesh instead of stroked lines. Sprites are baked ONCE per wave colour
-// (there are only 8 in WAVE_COLORS) so the per-frame cost is drawImage +
-// globalAlpha — no shadowBlur math while the race is actually happening.
+// ── DEFORMABLE GRID (ported 1:1 from Neon Invaders) ──────────────────────────
 const GCOLS = 31, GROWS = 26, GSW = W / (GCOLS - 1), GSH = H / (GROWS - 1);
-const GSUBDIV = 5; // GCOLS-1=30, GROWS-1=25 — both divide cleanly by 5
-const DOT_TIERS = [
-  { r: 2.2, a: 0.14, glow: 0.95 }, // major
-  { r: 1.5, a: 0.08, glow: 0.55 }, // half
-  { r: 1.0, a: 0.045, glow: 0.55 }, // quarter
-  { r: 0.6, a: 0.02, glow: 0.55 }, // eighth
-];
-function dotTier(c, r) {
-  const grad = n => {
-    if (n % GSUBDIV === 0) return 0;
-    if (n % Math.ceil(GSUBDIV / 2) === 0) return 1;
-    return (n % 2 === 0) ? 2 : 3;
-  };
-  return Math.max(grad(c), grad(r));
-}
-
 let grid = [];
 for (let r = 0; r < GROWS; r++)
   for (let c = 0; c < GCOLS; c++)
-    grid.push({ ox: c * GSW, oy: r * GSH, x: c * GSW, y: r * GSH, vx: 0, vy: 0, tier: dotTier(c, r) });
-
-const GRID_SPAN = W + 2 * GSW; // wrap width — anchors recycle off the left edge back onto the right
+    grid.push({ ox: c * GSW, oy: r * GSH, x: c * GSW, y: r * GSH, vx: 0, vy: 0 });
 
 function updateGrid(dt) {
   const k = 0.065, d = 0.87, f = dt / 16;
-  const scroll = (S.phase === 'play' ? S.spd : 0) * f; // anchors drift left with the cave
   for (const p of grid) {
-    p.ox -= scroll;
-    if (p.ox < -GSW) { p.ox += GRID_SPAN; p.x += GRID_SPAN; } // shift x too — no visual snap
     p.vx = (p.vx + (p.ox - p.x) * k) * d;
     p.vy = (p.vy + (p.oy - p.y) * k) * d;
     p.x += p.vx * f; p.y += p.vy * f;
@@ -147,55 +121,28 @@ function ripple(wx, wy, str) {
     p.vx -= dx * f; p.vy -= dy * f;
   }
 }
-
-// Sprite cache: one bitmap per (wave colour, tier). Baked once at load —
-// shadowBlur is paid 32 times total, never during the race. The bitmap is
-// baked at high resolution for crispness but DRAWN much smaller — that
-// mismatch (drawing near-full bake size) was the bug behind the giant
-// blobby wash: dots need to be a few pixels across, not ~140px.
-const DOT_BAKE_SCALE = 22, DOT_PAD = 3.2;
-function bakeDotSprite(colorHex, tierIdx) {
-  const T = DOT_TIERS[tierIdx];
-  const cssSize = DOT_BAKE_SCALE * DOT_PAD * 2;
-  const off = document.createElement('canvas');
-  off.width = off.height = Math.ceil(cssSize);
-  const octx = off.getContext('2d');
-  const c = cssSize / 2;
-  octx.fillStyle = colorHex;
-  octx.shadowColor = colorHex;
-  octx.shadowBlur = DOT_BAKE_SCALE * T.glow;
-  octx.beginPath();
-  octx.arc(c, c, DOT_BAKE_SCALE * T.r, 0, Math.PI * 2);
-  octx.fill();
-  return off;
-}
-const dotSprites = WAVE_COLORS.map(col => DOT_TIERS.map((_, ti) => bakeDotSprite(col, ti)));
-
-// Actual on-screen diameter per tier, in world pixels — independent of the
-// (much larger) bake resolution above.
-const DOT_DRAW_D = [16, 10, 6.5, 4];
 function drawGrid(gc) {
-  const wi = (S.wave - 1) % WAVE_COLORS.length;
-  const sprites = dotSprites[wi];
-  for (let ti = DOT_TIERS.length - 1; ti >= 0; ti--) {
-    const T = DOT_TIERS[ti], sprite = sprites[ti], baseD = DOT_DRAW_D[ti];
-    for (const p of grid) {
-      if (p.tier !== ti) continue;
-      if (p.x < -baseD || p.x > W + baseD) continue; // off-screen during wrap
-      const dx = p.x - p.ox, dy = p.y - p.oy;
-      const disp = Math.hypot(dx, dy);
-      const boost = Math.min(1, disp * 0.05);
-      const a = Math.min(0.92, T.a + boost * 0.68);
-      const d = baseD * (0.85 + boost * 0.5);
-      ctx.globalAlpha = a;
-      ctx.drawImage(sprite, p.x - d / 2, p.y - d / 2, d, d);
+  ctx.save();
+  ctx.lineWidth = 0.75; ctx.strokeStyle = gc; ctx.shadowColor = gc;
+  ctx.shadowBlur = 5; ctx.globalAlpha = 0.35;
+  for (let r = 0; r < GROWS; r++) {
+    ctx.beginPath();
+    for (let c = 0; c < GCOLS; c++) {
+      const p = grid[r * GCOLS + c]; c ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y);
     }
+    ctx.stroke();
   }
-  ctx.globalAlpha = 1;
+  for (let c = 0; c < GCOLS; c++) {
+    ctx.beginPath();
+    for (let r = 0; r < GROWS; r++) {
+      const p = grid[r * GCOLS + c]; r ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y);
+    }
+    ctx.stroke();
+  }
+  ctx.restore();
 }
 
 // ── SCREEN SHAKE (ported 1:1 from Neon Invaders) ─────────────────────────────
-let worldScroll = 0; // total forward-scrolled distance during play — drives wall texture flow
 let shakeAmt = 0;
 function addShake(v) { shakeAmt = Math.min(shakeAmt + v, 20); }
 function getShake() {
@@ -218,69 +165,6 @@ function spawnParticles(x, y, col, n, spd) {
       rest: 0.84 + Math.random() * 0.10,   // restitution (high = more bounce)
     });
   }
-}
-
-// ── ENGINE SPARKS (straight-backward streaks — reads as speed, not impact) ───
-// Distinct from `particles`: no gravity, no wall bounce, no random scatter.
-// They shoot almost due-left at (scroll speed + kick) and drag a long trail,
-// so the faster the ship goes the longer and denser the streak behind it.
-const MAX_SPARKS = 26;
-let sparks = [];
-
-function spawnSpark(x, y) {
-  if (sparks.length >= MAX_SPARKS) sparks.shift();
-  const kick = 3.2 + Math.random() * 2.4;
-  sparks.push({
-    x, y,
-    vx: -(S.spd * 1.35 + kick),
-    vy: (Math.random() - 0.5) * 0.6,
-    life: 1, decay: 0.022 + Math.random() * 0.02,
-    sz: 1.4 + Math.random() * 1.3,
-    trail: [],
-  });
-}
-
-function updateSparks(dt) {
-  const f = dt / 16;
-  for (const p of sparks) {
-    p.trail.unshift({ x: p.x, y: p.y });
-    if (p.trail.length > 14) p.trail.pop();   // long tail = "going fast" cue
-    p.x += p.vx * f;
-    p.y += p.vy * f;
-    p.vx *= 0.985;
-    p.life -= p.decay * f;
-  }
-  sparks = sparks.filter(p => p.life > 0);
-}
-
-function drawSparks() {
-  const eg = 0.5 + 0.5 * Math.sin(S.time / 70); // same engine pulse as the ship glow
-  const col = `rgb(${Math.round(140 + eg * 90)},${Math.round(210 + eg * 45)},255)`;
-  ctx.save();
-  ctx.lineCap = 'round';
-  for (const p of sparks) {
-    const a = p.life * p.life;
-    if (p.trail.length > 1) {
-      ctx.globalAlpha = a * 0.55;
-      ctx.strokeStyle = col;
-      ctx.shadowColor = col;
-      ctx.shadowBlur = 10;
-      ctx.lineWidth = p.sz * (0.4 + a * 0.6);
-      ctx.beginPath();
-      ctx.moveTo(p.x, p.y);
-      p.trail.forEach(t => ctx.lineTo(t.x, t.y));
-      ctx.stroke();
-    }
-    ctx.globalAlpha = a;
-    ctx.shadowColor = '#ffffff';
-    ctx.shadowBlur = 12;
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, p.sz * 0.5, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.restore();
-  ctx.globalAlpha = 1;
 }
 
 function segAtX(x) {
@@ -445,16 +329,12 @@ function initState() {
   waveP  = mkPat();
   nextP  = mkPat();
   particles = [];
-  sparks = [];
-  worldScroll = 0;
   initCave();
   updateHUD();
 }
 
 function startGame() {
   particles = [];
-  sparks = [];
-  worldScroll = 0;
   S.phase        = 'play';
   S.shipY        = H / 2;
   S.vy           = 0;
@@ -486,14 +366,12 @@ function update(dt) {
   S.time += dt;
   updateGrid(dt);
   updateParticles(dt);
-  updateSparks(dt);
   if (S.phase !== 'play') return;
 
   const f = dt / 16;
 
   // Accelerate gently
   S.spd = Math.min(S.spd + 0.00007 * dt, MAX_SPD);
-  worldScroll += S.spd * f;
 
   // Score accrues with speed
   S.score += Math.round(S.spd * dt * 0.045);
@@ -511,12 +389,6 @@ function update(dt) {
 
   S.vy    = Math.max(-MAX_VY, Math.min(MAX_VY, S.vy));
   S.shipY = Math.max(SH / 2 + 2, Math.min(H - SH / 2 - 2, S.shipY + S.vy * f));
-
-  // Continuous wake — the dot-grid stays dark at rest; this is what lights
-  // it up around the ship, growing brighter/wider the faster or harder it's
-  // maneuvering (mirrors the cape/spark speed cues, just in the mesh).
-  const wakeStr = (0.9 + Math.abs(S.vy) * 0.55 + (S.spd - BASE_SPD) * 0.35) * f;
-  ripple(S.shipX - SW * 0.15, S.shipY, wakeStr);
 
   // Scroll cave
   for (const s of segs) s.sx -= S.spd * f;
@@ -548,17 +420,11 @@ function update(dt) {
   if (S.waveFlash    > 0) S.waveFlash    -= f;
   if (S.flashOverlay > 0) S.flashOverlay -= f;
 
-  // Engine sparks — rate AND count scale with current speed, so the trail
-  // visibly thickens/lengthens as the run accelerates toward MAX_SPD.
-  const spdT = (S.spd - BASE_SPD) / (MAX_SPD - BASE_SPD); // 0..1
-  const sparkChance = 0.45 + spdT * 0.45;
-  if (Math.random() < sparkChance) {
-    const n = 1 + (Math.random() < spdT ? 1 : 0);
-    for (let i = 0; i < n; i++) {
-      const ex = S.shipX - SW * 0.5 - 2;
-      const ey = S.shipY + (Math.random() - 0.5) * SH * 0.5;
-      spawnSpark(ex, ey);
-    }
+  // Engine exhaust — sparse (spec: ~15% chance per frame at 60fps)
+  if (Math.random() < 0.15) {
+    const ex = S.shipX - SW * 0.5 - 2;
+    const ey = S.shipY + (Math.random() - 0.5) * SH * 0.45;
+    spawnParticles(ex, ey, '#0078f8', 1, 2.0);
   }
   // Near-wall sparks when gap is narrow
   const sg2 = segAtX(S.shipX);
@@ -595,48 +461,21 @@ function draw() {
   if (segs.length > 1) {
     const f = segs[0], l = segs[segs.length - 1];
 
-    const topPath = new Path2D();
-    topPath.moveTo(f.sx - SEG * 2, 0);
-    for (const s of segs) topPath.lineTo(s.sx, s.ty);
-    topPath.lineTo(l.sx + SEG * 2, 0);
-    topPath.closePath();
-
-    const botPath = new Path2D();
-    botPath.moveTo(f.sx - SEG * 2, H);
-    for (const s of segs) botPath.lineTo(s.sx, s.by);
-    botPath.lineTo(l.sx + SEG * 2, H);
-    botPath.closePath();
-
-    // Base rock, then a bright wave-colour tint on top — flat dark navy read
-    // as "not really colored" at a glance, this reads as brightly colored
-    // rock without going fully opaque/flat like a solid fill would.
     ctx.fillStyle = '#040e18';
-    ctx.fill(topPath); ctx.fill(botPath);
-    ctx.globalAlpha = 0.4; ctx.fillStyle = wc;
-    ctx.fill(topPath); ctx.fill(botPath);
-    ctx.globalAlpha = 1;
 
-    // Scrolling diagonal texture — hazard-vein stripes clipped to the wall
-    // shape, offset by worldScroll so they flow past at the cave's speed.
-    function veinStripes(path, y0, y1) {
-      ctx.save();
-      ctx.clip(path);
-      ctx.strokeStyle = '#ffffff';
-      ctx.globalAlpha = 0.10;
-      ctx.lineWidth = 3;
-      const spacing = 28, span = W + (y1 - y0) + spacing * 2;
-      const off = ((worldScroll * 1.3) % spacing + spacing) % spacing;
-      for (let i = -spacing; i < span; i += spacing) {
-        const sx = i - off;
-        ctx.beginPath();
-        ctx.moveTo(sx, y1);
-        ctx.lineTo(sx + (y1 - y0), y0);
-        ctx.stroke();
-      }
-      ctx.restore();
-    }
-    veinStripes(topPath, 0, H * 0.5);
-    veinStripes(botPath, H * 0.5, H);
+    // Top wall fill
+    ctx.beginPath();
+    ctx.moveTo(f.sx - SEG * 2, 0);
+    for (const s of segs) ctx.lineTo(s.sx, s.ty);
+    ctx.lineTo(l.sx + SEG * 2, 0);
+    ctx.closePath(); ctx.fill();
+
+    // Bottom wall fill
+    ctx.beginPath();
+    ctx.moveTo(f.sx - SEG * 2, H);
+    for (const s of segs) ctx.lineTo(s.sx, s.by);
+    ctx.lineTo(l.sx + SEG * 2, H);
+    ctx.closePath(); ctx.fill();
 
     // Neon edge — three-pass glow (same technique as NI's glowSprite)
     function strokeEdge(yFn) {
@@ -662,7 +501,6 @@ function draw() {
 
   // Particles (above walls, below ship)
   drawParticles();
-  drawSparks();
 
   // ── Ship ───────────────────────────────────────────────────────────────────
   const flicker = S.inv > 0 && Math.floor(S.time / 80) % 2 === 0;
@@ -671,29 +509,6 @@ function draw() {
     const scol = `rgb(0,${Math.round(120 + eg * 100)},248)`;
     const shx  = Math.round(S.shipX - SW / 2);
     const shy  = Math.round(S.shipY - SH / 2);
-
-    // Cape — attached just below the head (the nose-tip point), coloured to
-    // match the cave walls. Drawn first so the body overlaps the seam and it
-    // reads as trailing out from beneath the head, streaming back with speed
-    // and banking with vertical velocity.
-    const flutter    = Math.sin(S.time / 110) * 4 + S.vy * 1.1;
-    const capeAX      = shx + 8 * SPX;
-    const capeAY      = shy + 1 * SPX;
-    const capeLen      = 15 + (S.spd - BASE_SPD) * 1.6 + Math.min(8, Math.abs(S.vy) * 2);
-    ctx.save();
-    ctx.globalAlpha = 0.85;
-    ctx.shadowColor = wc;
-    ctx.shadowBlur  = 12;
-    ctx.fillStyle   = wc;
-    ctx.beginPath();
-    ctx.moveTo(capeAX, capeAY);
-    ctx.lineTo(capeAX - capeLen, capeAY + 7 + flutter);
-    ctx.lineTo(capeAX - capeLen * 0.6, capeAY + 12 + flutter * 0.5);
-    ctx.lineTo(capeAX - 2, capeAY + SPX * 3);
-    ctx.closePath();
-    ctx.fill();
-    ctx.restore();
-
     ctx.save();
     ctx.shadowColor = `rgba(0,${Math.round(120 + eg * 100)},248,${0.5 + eg * 0.4})`;
     ctx.shadowBlur  = 18 + eg * 12;
