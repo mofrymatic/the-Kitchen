@@ -2,1118 +2,449 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-  <meta name="theme-color" content="#03040d">
-  <meta name="description" content="Cave Racer CRT Turbo - a white-knuckle neon endless runner through a living dot-grid cave.">
-  <title>Cave Racer · CRT Turbo</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <meta name="theme-color" content="#050108">
+  <meta name="color-scheme" content="dark">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <title>Cave Racer · FTS Arcade</title>
+  <meta name="description" content="Cave Racer is a white-knuckle neon endless runner from FTS Arcade. Thread a caped flyer through a living techno cavern and tear the dot-grid open behind you.">
+  <link rel="canonical" href="https://frymatic.us/FTSArcade/cave-racer.html">
+  <link rel="icon" type="image/png" href="fts-favicon.png">
+  <link rel="shortcut icon" type="image/png" href="fts-favicon.png">
+  <link rel="apple-touch-icon" href="fts-favicon.png">
+
+  <meta property="og:title" content="Cave Racer · FTS Arcade">
+  <meta property="og:description" content="Full throttle. No limits. Fly the caped crusader through a living neon techno cavern.">
+  <meta property="og:url" content="https://frymatic.us/FTSArcade/cave-racer.html">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="FTS Arcade">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:image" content="https://frymatic.us/FTSArcade/cave_racer_preview.png">
+  <meta property="og:image:secure_url" content="https://frymatic.us/FTSArcade/cave_racer_preview.png">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1672">
+  <meta property="og:image:height" content="941">
+  <meta property="og:image:alt" content="Cave Racer arcade cabinet with a caped flyer blasting through a neon techno cavern.">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Cave Racer · FTS Arcade">
+  <meta name="twitter:description" content="Full throttle. No limits. Tear open the living grid behind you.">
+  <meta name="twitter:image" content="https://frymatic.us/FTSArcade/cave_racer_preview.png">
+  <meta name="twitter:image:alt" content="Cave Racer arcade cabinet with a caped flyer blasting through a neon techno cavern.">
+
   <style>
-    :root {
-      color-scheme: dark;
-      --cyan: #21e9ff;
-      --magenta: #ff2ca8;
-      --green: #50ff63;
-      --ink: #03040d;
-      --panel: #080a17;
+    :root{
+      color-scheme:dark;
+      --red:#ff2745;
+      --cyan:#20eaff;
+      --magenta:#ff28b7;
+      --ink:#03040a;
     }
-    * { box-sizing: border-box; }
-    html, body {
-      width: 100%;
-      height: 100%;
-      margin: 0;
-      overflow: hidden;
+    *,*::before,*::after{box-sizing:border-box}
+    html,body{width:100%;height:100%;margin:0;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;background:#020208}
+    body{
+      display:grid;
+      place-items:center;
       background:
-        radial-gradient(circle at 50% 35%, rgba(28, 23, 75, .42), transparent 52%),
-        #02030a;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      touch-action: none;
-      user-select: none;
+        radial-gradient(circle at 50% 42%,rgba(57,13,88,.34),transparent 48%),
+        linear-gradient(120deg,rgba(255,20,75,.045),transparent 30%,rgba(0,200,255,.035) 70%,transparent),
+        #020208;
+      font-family:"Courier New",ui-monospace,monospace;
     }
-    body {
-      display: grid;
-      place-items: center;
+    #shell{
+      position:relative;
+      width:min(100vw,177.7778vh);
+      aspect-ratio:16/9;
+      overflow:hidden;
+      background:#020208;
+      border:1px solid rgba(255,49,79,.34);
+      box-shadow:0 0 90px rgba(255,20,80,.08),0 0 60px rgba(0,225,255,.06),inset 0 0 30px rgba(0,0,0,.8);
     }
-    .shell {
-      width: min(100vw, 177.777vh);
-      aspect-ratio: 16 / 9;
-      position: relative;
-      overflow: hidden;
-      background: #02030a;
-      border: 1px solid rgba(77, 232, 255, .23);
-      box-shadow: 0 0 80px rgba(0, 213, 255, .11);
+    canvas{
+      width:100%;height:100%;display:block;
+      image-rendering:pixelated;
+      image-rendering:crisp-edges;
+      background:#020208;
+      cursor:crosshair;
     }
-    canvas {
-      width: 100%;
-      height: 100%;
-      display: block;
-      image-rendering: pixelated;
-      image-rendering: crisp-edges;
-      background: #02030a;
-    }
-    .help {
-      position: absolute;
-      left: 50%;
-      bottom: 12px;
-      transform: translateX(-50%);
-      z-index: 3;
-      display: flex;
-      gap: 16px;
-      align-items: center;
-      color: rgba(185, 229, 255, .72);
-      font-size: clamp(9px, 1.15vw, 13px);
-      letter-spacing: .08em;
-      text-shadow: 0 0 12px rgba(0, 216, 255, .35);
-      pointer-events: none;
-      white-space: nowrap;
-    }
-    .help b { color: #fff; font-weight: 700; }
-    .scanlines,
-    .glass {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      z-index: 2;
-    }
-    .scanlines {
-      opacity: .42;
+    #crt,#glass,#bezel{position:absolute;inset:0;pointer-events:none}
+    #crt{
+      z-index:5;
+      opacity:.56;
       background:
-        repeating-linear-gradient(
-          to bottom,
-          rgba(255,255,255,.025) 0,
-          rgba(255,255,255,.025) 1px,
-          rgba(0,0,0,.28) 1px,
-          rgba(0,0,0,.28) 3px,
-          transparent 3px,
-          transparent 5px
-        );
-      mix-blend-mode: multiply;
+        repeating-linear-gradient(to bottom,rgba(255,255,255,.025) 0,rgba(255,255,255,.025) 1px,rgba(0,0,0,.26) 1px,rgba(0,0,0,.26) 3px,transparent 3px,transparent 5px),
+        repeating-linear-gradient(to right,rgba(255,30,90,.025) 0,rgba(255,30,90,.025) 1px,rgba(0,235,255,.018) 1px,rgba(0,235,255,.018) 2px,transparent 2px,transparent 4px);
+      mix-blend-mode:multiply;
     }
-    .glass {
+    #glass{
+      z-index:6;
       background:
-        repeating-linear-gradient(
-          to right,
-          rgba(255,45,120,.032) 0,
-          rgba(255,45,120,.032) 1px,
-          rgba(40,245,255,.025) 1px,
-          rgba(40,245,255,.025) 2px,
-          transparent 2px,
-          transparent 4px
-        ),
-        linear-gradient(115deg, rgba(255,255,255,.055), transparent 18%, transparent 73%, rgba(255,255,255,.025)),
-        radial-gradient(ellipse at center, transparent 46%, rgba(0,0,0,.52) 100%);
+        linear-gradient(112deg,rgba(255,255,255,.05),transparent 17%,transparent 72%,rgba(255,255,255,.022)),
+        radial-gradient(ellipse at center,transparent 49%,rgba(0,0,0,.56) 100%);
     }
-    @media (max-width: 560px) {
-      .help { bottom: 7px; gap: 9px; letter-spacing: .03em; }
+    #bezel{
+      z-index:7;
+      box-shadow:inset 0 0 0 2px rgba(26,2,8,.88),inset 0 0 0 3px rgba(255,40,72,.14),inset 0 0 48px rgba(0,0,0,.72);
     }
+    #help{
+      position:absolute;left:50%;bottom:8px;transform:translateX(-50%);z-index:9;
+      display:flex;gap:18px;align-items:center;white-space:nowrap;pointer-events:none;
+      color:rgba(196,226,245,.58);font-size:clamp(8px,1vw,12px);letter-spacing:.08em;
+      text-shadow:0 0 8px rgba(0,220,255,.3);
+    }
+    #help b{color:#fff;font-weight:700}
+    @media(max-width:600px){#help{gap:8px;bottom:5px;letter-spacing:.02em}#help span:last-child{display:none}}
   </style>
 </head>
 <body>
-  <main class="shell" aria-label="Cave Racer arcade game">
+  <main id="shell" aria-label="Cave Racer arcade game">
     <canvas id="game" width="480" height="270"></canvas>
-    <div class="help" aria-hidden="true">
-      <span><b>Z / UP</b> THRUST</span>
-      <span><b>X / SPACE</b> BOOST</span>
+    <div id="crt"></div>
+    <div id="glass"></div>
+    <div id="bezel"></div>
+    <div id="help" aria-hidden="true">
+      <span><b>Z / ↑</b> THRUST</span>
+      <span><b>X / SPACE</b> HYPERFLOW</span>
+      <span><b>P</b> PAUSE</span>
       <span><b>R</b> RESTART</span>
-      <span><b>CRT</b> 480×270</span>
     </div>
-    <div class="scanlines"></div>
-    <div class="glass"></div>
   </main>
 
 <script>
 (() => {
   'use strict';
 
+  // Reduced-resolution backbuffer + CSS nearest-neighbor scaling provides the
+  // cabinet-like CRT pixel treatment while keeping fill-rate and blur costs low.
   const canvas = document.getElementById('game');
-  const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
-  // Logical coordinates remain 960x540, but the actual backbuffer is half-size.
-  // CSS nearest-neighbor scaling supplies the chunky CRT treatment at one quarter
-  // of the fill-rate of a full-resolution canvas.
-  const W = 960;
-  const H = 540;
-  const RENDER_SCALE = 0.5;
-  const TAU = Math.PI * 2;
-  const SEG = 12;
-  const PLAYER_R = 12;
-  const WAVE_DISTANCE = 11000;
-  const BASE_SPEED = 712.5;       // exactly 2.5x the former cruise speed
-  const MAX_CRUISE = 1075;       // exactly 2.5x the former terminal cruise
-  const BOOST_MULT = 1.95;
-  const BOOST_DRAIN = 37;
-  const BOOST_RECHARGE = 15;
-  const PALETTES = [
-    { wallA: '#ff2c88', wallB: '#ff5c18', edge: '#ffcf4a', grid: '#25e8ff' },
-    { wallA: '#b72cff', wallB: '#ff276d', edge: '#ff7ee8', grid: '#55a8ff' },
-    { wallA: '#ff4738', wallB: '#ffbd25', edge: '#fff36d', grid: '#31ffd2' },
-    { wallA: '#6050ff', wallB: '#fd1ca8', edge: '#8efcff', grid: '#2ec5ff' },
-    { wallA: '#04bdf0', wallB: '#9b2cff', edge: '#6effff', grid: '#4ef3bc' },
-    { wallA: '#ff267d', wallB: '#e74916', edge: '#ffc443', grid: '#6d9dff' }
+  const ctx = canvas.getContext('2d', {alpha:false,desynchronized:true});
+  const W=960,H=540,SCALE=.5,TAU=Math.PI*2;
+  const BASE_SPEED=760,MAX_CRUISE=1120,BOOST_MULT=1.95;
+  const BOOST_DRAIN=34,BOOST_RECHARGE=16;
+  const PLAYER_R=12,WAVE_DISTANCE=11800,SEG=12;
+  const GRID_SPACING=24,GRID_COLS=Math.ceil(W/GRID_SPACING)+3,GRID_ROWS=Math.ceil(H/GRID_SPACING)+2,GRID_SPAN=GRID_COLS*GRID_SPACING;
+  const MAX_SPARKS=220,MAX_TRAIL=110,MAX_RINGS=28;
+
+  const PALETTES=[
+    {wallA:'#ff1f78',wallB:'#ff5024',edge:'#ffd15c',grid:'#20eaff',hud:'#ff294b'},
+    {wallA:'#dd20ff',wallB:'#ff205e',edge:'#ff91ee',grid:'#41a9ff',hud:'#ff345e'},
+    {wallA:'#ff3e32',wallB:'#ff9a16',edge:'#fff06b',grid:'#32ffd2',hud:'#ff293f'},
+    {wallA:'#7150ff',wallB:'#ff1cb1',edge:'#93fbff',grid:'#28cfff',hud:'#ff2c66'}
   ];
 
-  function loadHighScore() {
-    try { return Number(localStorage.getItem('caveRacerHighScore') || 0); }
-    catch (_) { return 0; }
-  }
-  function saveHighScore(value) {
-    try { localStorage.setItem('caveRacerHighScore', String(value)); }
-    catch (_) { /* Storage is optional in local-file and privacy modes. */ }
-  }
+  const keys=Object.create(null),touches=new Map();
+  const grid=[],sparks=[],rings=[];
+  const trail=Array.from({length:MAX_TRAIL},()=>({worldX:0,y:H/2,vy:0,boost:0,valid:false}));
+  let trailHead=0,trailCount=0,lastTrailWorldX=-1e9;
+  let stars=[],lastTime=performance.now(),shake=0,hitFlash=0,boostFlash=0,pauseLatch=false;
 
-  const keys = Object.create(null);
-  const touches = new Map();
-  let lastTime = performance.now();
-  let shake = 0;
-  let hitFlash = 0;
-  let boostFlash = 0;
-  let stars = [];
-  let sparks = [];
-  let afterimages = [];
-  const wakeTrail = [];
-  const WAKE_SAMPLE_STEP = 10;
-  const WAKE_MAX_SAMPLES = 96;
-  let lastWakeWorldX = -Infinity;
-
-  const state = {
-    phase: 'start',
-    time: 0,
-    distance: 0,
-    score: 0,
-    highScore: loadHighScore(),
-    wave: 1,
-    lives: 3,
-    speed: BASE_SPEED,
-    targetSpeed: BASE_SPEED,
-    playerX: W * 0.235,
-    playerY: H * 0.5,
-    playerVY: 0,
-    boost: 100,
-    boostHeld: false,
-    boosting: false,
-    boostLock: 0,
-    invulnerable: 0,
-    nearMiss: 0,
-    combo: 1,
-    comboTimer: 0
+  const state={
+    phase:'start',paused:false,time:0,distance:0,score:0,highScore:loadHighScore(),wave:1,lives:3,
+    speed:BASE_SPEED,targetSpeed:BASE_SPEED,playerX:W*.235,playerY:H*.5,playerVY:0,
+    pitch:0,pitchVel:0,inputLift:0,boost:100,boosting:false,boostLock:0,invulnerable:0,
+    nearMiss:0,combo:1,comboTimer:0
   };
 
-  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
-  function lerp(a, b, t) { return a + (b - a) * t; }
-  function smoothstep(a, b, x) {
-    const t = clamp((x - a) / (b - a), 0, 1);
-    return t * t * (3 - 2 * t);
-  }
-  function hexToRgba(hex, alpha) {
-    const value = parseInt(hex.slice(1), 16);
-    const r = (value >> 16) & 255;
-    const g = (value >> 8) & 255;
-    const b = value & 255;
-    return `rgba(${r},${g},${b},${alpha})`;
+  function loadHighScore(){try{return Number(localStorage.getItem('caveRacerV3HighScore')||0)}catch(_){return 0}}
+  function saveHighScore(v){try{localStorage.setItem('caveRacerV3HighScore',String(v))}catch(_){}}
+  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+  const lerp=(a,b,t)=>a+(b-a)*t;
+  const smoothstep=(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t)};
+  function rgba(hex,a){const n=parseInt(hex.slice(1),16);return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`}
+  function palette(){return PALETTES[(state.wave-1)%PALETTES.length]}
+
+  function configureCanvas(){
+    canvas.width=Math.round(W*SCALE);canvas.height=Math.round(H*SCALE);
+    ctx.setTransform(SCALE,0,0,SCALE,0,0);ctx.imageSmoothingEnabled=false;
   }
 
-  function configureCanvas() {
-    canvas.width = Math.round(W * RENDER_SCALE);
-    canvas.height = Math.round(H * RENDER_SCALE);
-    ctx.setTransform(RENDER_SCALE, 0, 0, RENDER_SCALE, 0, 0);
-    ctx.imageSmoothingEnabled = false;
+  function caveAt(screenX){
+    const wx=state.distance+screenX;
+    const difficulty=Math.min(67,state.distance/17000*38+(state.wave-1)*2.7);
+    const center=H*.5
+      +Math.sin(wx*.00185+.7)*(56+difficulty*.18)
+      +Math.sin(wx*.0064+2.2)*23
+      +Math.sin(wx*.00058+4.7)*24;
+    const squeeze=Math.sin(wx*.00118-.8)*.5+.5;
+    const pulse=Math.pow(squeeze,2.7)*(48+difficulty*.21);
+    const half=clamp(176-difficulty-pulse+Math.sin(wx*.0041)*10,76,188);
+    return{top:center-half,bottom:center+half,center,half};
   }
 
-  function currentPalette() {
-    return PALETTES[(state.wave - 1) % PALETTES.length];
+  function buildCave(){
+    const samples=[];
+    for(let x=-SEG*2;x<=W+SEG*2;x+=SEG){const c=caveAt(x);samples.push({x,top:c.top,bottom:c.bottom})}
+    const top=new Path2D();top.moveTo(samples[0].x,0);for(const p of samples)top.lineTo(p.x,p.top);top.lineTo(samples.at(-1).x,0);top.closePath();
+    const bottom=new Path2D();bottom.moveTo(samples[0].x,H);for(const p of samples)bottom.lineTo(p.x,p.bottom);bottom.lineTo(samples.at(-1).x,H);bottom.closePath();
+    return{samples,top,bottom};
   }
 
-  function caveAt(screenX) {
-    const wx = state.distance + screenX;
-    const difficulty = Math.min(62, state.distance / 16500 * 38 + (state.wave - 1) * 2.4);
-    const center = H * 0.5
-      + Math.sin(wx * 0.00205 + 0.7) * (54 + difficulty * 0.19)
-      + Math.sin(wx * 0.0067 + 2.1) * 24
-      + Math.sin(wx * 0.00062 + 4.5) * 22;
-    const squeeze = (Math.sin(wx * 0.00123 - 0.8) * 0.5 + 0.5);
-    const pulse = Math.pow(squeeze, 2.6) * (48 + difficulty * 0.18);
-    const half = clamp(172 - difficulty - pulse + Math.sin(wx * 0.0043) * 11, 78, 184);
-    return { top: center - half, bottom: center + half, center, half };
-  }
-
-  function buildCavePaths() {
-    const samples = [];
-    for (let x = -SEG * 2; x <= W + SEG * 2; x += SEG) {
-      const c = caveAt(x);
-      samples.push({ x, top: c.top, bottom: c.bottom });
+  function initGrid(){
+    grid.length=0;
+    for(let r=0;r<GRID_ROWS;r++)for(let c=0;c<GRID_COLS;c++){
+      const ax=(c-1)*GRID_SPACING,ay=r*GRID_SPACING;
+      grid.push({c,r,ax,ay,x:ax,y:ay,vx:0,vy:0,energy:0});
     }
+  }
+  function resetNode(p){p.x=p.ax;p.y=p.ay;p.vx=p.vy=p.energy=0}
 
-    const topPath = new Path2D();
-    topPath.moveTo(samples[0].x, 0);
-    for (const p of samples) topPath.lineTo(p.x, p.top);
-    topPath.lineTo(samples[samples.length - 1].x, 0);
-    topPath.closePath();
-
-    const bottomPath = new Path2D();
-    bottomPath.moveTo(samples[0].x, H);
-    for (const p of samples) bottomPath.lineTo(p.x, p.bottom);
-    bottomPath.lineTo(samples[samples.length - 1].x, H);
-    bottomPath.closePath();
-
-    return { samples, topPath, bottomPath };
+  function resetTrail(){trailHead=trailCount=0;lastTrailWorldX=-1e9;recordTrail(true)}
+  function recordTrail(force=false){
+    const worldX=state.distance+state.playerX;
+    if(!force&&worldX-lastTrailWorldX<8)return;
+    const t=trail[trailHead];t.worldX=worldX;t.y=state.playerY;t.vy=state.playerVY;t.boost=state.boosting?1:0;t.valid=true;
+    trailHead=(trailHead+1)%MAX_TRAIL;trailCount=Math.min(MAX_TRAIL,trailCount+1);lastTrailWorldX=worldX;
+  }
+  function trailPoint(indexFromOldest){
+    const start=(trailHead-trailCount+MAX_TRAIL)%MAX_TRAIL;
+    return trail[(start+indexFromOldest)%MAX_TRAIL];
+  }
+  function trailSample(worldX){
+    if(trailCount<2)return null;
+    const first=trailPoint(0),last=trailPoint(trailCount-1);
+    if(worldX<first.worldX||worldX>last.worldX)return null;
+    let lo=0,hi=trailCount-1;
+    while(hi-lo>1){const m=(lo+hi)>>1;if(trailPoint(m).worldX<=worldX)lo=m;else hi=m}
+    const a=trailPoint(lo),b=trailPoint(hi),span=Math.max(1,b.worldX-a.worldX),t=clamp((worldX-a.worldX)/span,0,1);
+    return{y:lerp(a.y,b.y,t),vy:lerp(a.vy,b.vy,t),boost:lerp(a.boost,b.boost,t)};
   }
 
-  const GRID_SPACING = 24;
-  const GRID_COLS = Math.ceil(W / GRID_SPACING) + 3;
-  const GRID_ROWS = Math.ceil(H / GRID_SPACING) + 2;
-  const GRID_SPAN = GRID_COLS * GRID_SPACING;
-  const grid = [];
+  function applyWake(dt){
+    const wakeLength=state.boosting?610:420;
+    const baseRadius=state.boosting?78:58,maxRadius=state.boosting?205:148;
+    const baseForce=(state.boosting?390:210)*dt;
+    const playerWorldX=state.distance+state.playerX;
+    for(const p of grid){
+      const nodeWorldX=state.distance+p.ax,dx=playerWorldX-nodeWorldX;
+      if(dx<=4||dx>wakeLength)continue;
+      const s=trailSample(nodeWorldX);if(!s)continue;
+      const cone=lerp(baseRadius,maxRadius,Math.pow(dx/wakeLength,.68));
+      const dy=p.ay-s.y,ad=Math.abs(dy);if(ad>cone)continue;
+      const tail=Math.pow(1-dx/wakeLength,.48),radial=Math.pow(1-ad/cone,1.08);
+      const shell=Math.exp(-Math.pow((ad-cone*.55)/Math.max(10,cone*.22),2));
+      const core=Math.exp(-Math.pow(ad/Math.max(10,cone*.24),2));
+      const wave=Math.sin(dx*.055-state.time*.011+s.vy*.006+p.r*.38);
+      const f=baseForce*tail*(radial*.74+shell*.92+core*.34)*(1+s.boost*.36);
+      const sign=dy===0?(p.r&1?1:-1):Math.sign(dy);
+      p.vx-=f*(1.3+dx/wakeLength*1.6);
+      p.vy+=sign*f*(1.8+shell*.72)+wave*f*.42+s.vy*dt*tail*.28;
+      p.energy=Math.min(1.8,p.energy+f*.058);
+    }
+  }
 
-  function initGrid() {
-    grid.length = 0;
-    for (let r = 0; r < GRID_ROWS; r++) {
-      for (let c = 0; c < GRID_COLS; c++) {
-        const ax = (c - 1) * GRID_SPACING;
-        const ay = r * GRID_SPACING;
-        grid.push({ c, r, ax, ay, x: ax, y: ay, vx: 0, vy: 0, energy: 0 });
+  function updateGrid(dt){
+    const scroll=state.phase==='play'&&!state.paused?state.speed*dt:0;
+    const spring=22,damp=Math.pow(.815,dt*60);
+    for(const p of grid){
+      p.ax-=scroll;
+      if(p.ax<-GRID_SPACING*1.5){p.ax+=GRID_SPAN;p.x+=GRID_SPAN;resetNode(p)}
+      p.vx+=(p.ax-p.x)*spring*dt;p.vy+=(p.ay-p.y)*spring*dt;
+      p.vx*=damp;p.vy*=damp;p.x+=p.vx*dt;p.y+=p.vy*dt;p.energy*=Math.pow(.89,dt*60);
+      // Preserve causality: the field ahead of the player is always intact.
+      if(p.ax>state.playerX+8){
+        const snap=1-Math.pow(.018,dt);p.x=lerp(p.x,p.ax,snap);p.y=lerp(p.y,p.ay,snap);p.vx*=.15;p.vy*=.15;p.energy*=.3;
       }
     }
+    if(state.phase==='play'&&!state.paused)applyWake(dt);
   }
 
-  function resetGridNode(p) {
-    p.x = p.ax;
-    p.y = p.ay;
-    p.vx = 0;
-    p.vy = 0;
-    p.energy = 0;
-  }
-
-  function resetWakeTrail() {
-    wakeTrail.length = 0;
-    const worldX = state.distance + state.playerX;
-    wakeTrail.push({ worldX, y: state.playerY, vy: state.playerVY, boost: 0 });
-    lastWakeWorldX = worldX;
-  }
-
-  function recordWakeSample() {
-    const worldX = state.distance + state.playerX;
-    if (worldX - lastWakeWorldX < WAKE_SAMPLE_STEP) return;
-    wakeTrail.push({
-      worldX,
-      y: state.playerY,
-      vy: state.playerVY,
-      boost: state.boosting ? 1 : 0
-    });
-    lastWakeWorldX = worldX;
-    if (wakeTrail.length > WAKE_MAX_SAMPLES) wakeTrail.shift();
-  }
-
-  function wakeSampleAt(worldX) {
-    const n = wakeTrail.length;
-    if (!n || worldX < wakeTrail[0].worldX || worldX > wakeTrail[n - 1].worldX) return null;
-    let lo = 0, hi = n - 1;
-    while (hi - lo > 1) {
-      const mid = (lo + hi) >> 1;
-      if (wakeTrail[mid].worldX <= worldX) lo = mid;
-      else hi = mid;
+  const node=(c,r)=>grid[r*GRID_COLS+((c+GRID_COLS)%GRID_COLS)];
+  function drawGrid(p){
+    ctx.save();ctx.lineWidth=.65;ctx.strokeStyle=rgba(p.grid,.12);ctx.beginPath();
+    for(let r=0;r<GRID_ROWS;r++)for(let c=0;c<GRID_COLS-1;c++){const a=node(c,r),b=node(c+1,r);if(Math.abs(a.x-b.x)>GRID_SPACING*2.5)continue;ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y)}
+    for(let c=0;c<GRID_COLS;c++)for(let r=0;r<GRID_ROWS-1;r++){const a=node(c,r),b=node(c,r+1);ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y)}
+    ctx.stroke();
+    for(const q of grid){
+      if(q.x<-20||q.x>W+20||q.y<-20||q.y>H+20)continue;
+      const major=q.c%5===0&&q.r%5===0,mid=!major&&(q.c%2===0||q.r%2===0),base=major?2.35:mid?1.42:.8;
+      const disp=Math.hypot(q.x-q.ax,q.y-q.ay),e=clamp(disp/22+q.energy,0,1.45);
+      ctx.globalAlpha=(major?.58:mid?.3:.15)+e*.58;ctx.fillStyle=p.grid;ctx.shadowColor=p.grid;ctx.shadowBlur=e>.1||major?4+e*11:0;
+      ctx.beginPath();ctx.arc(q.x,q.y,base*(1+e*1.2),0,TAU);ctx.fill();
     }
-    const a = wakeTrail[lo], b = wakeTrail[hi];
-    const span = Math.max(1, b.worldX - a.worldX);
-    const t = clamp((worldX - a.worldX) / span, 0, 1);
-    return {
-      y: lerp(a.y, b.y, t),
-      vy: lerp(a.vy, b.vy, t),
-      boost: lerp(a.boost, b.boost, t)
+    ctx.restore();
+  }
+
+  function drawWallTexture(path,samples,isTop,p){
+    ctx.save();ctx.clip(path);
+    const g=ctx.createLinearGradient(0,isTop?0:H,0,H*.5);g.addColorStop(0,'#08010d');g.addColorStop(.28,p.wallB);g.addColorStop(.78,p.wallA);g.addColorStop(1,'#18051c');
+    ctx.globalAlpha=.86;ctx.fillStyle=g;ctx.fillRect(0,0,W,H);ctx.globalAlpha=1;
+    const flow=state.distance*(state.boosting?2.05:1.25),bands=state.boosting?19:14;
+    for(let b=0;b<bands;b++){
+      const inset=7+b*9.2,phase=b*.81+flow*(.0056+b*.00012),hot=b%4===0;
+      ctx.beginPath();
+      for(let i=0;i<samples.length;i++){const s=samples[i],rip=Math.sin((s.x+flow*.58)*.027+phase)*(3.4+b*.1),y=isTop?s.top-inset-rip:s.bottom+inset+rip;if(i===0)ctx.moveTo(s.x,y);else ctx.lineTo(s.x,y)}
+      ctx.strokeStyle=hot?p.edge:(b&1?p.wallA:p.wallB);ctx.globalAlpha=hot?.56:.25;ctx.lineWidth=hot?2.1:1.1;ctx.shadowColor=hot?p.edge:p.wallA;ctx.shadowBlur=hot?10:3;ctx.stroke();
+    }
+    // Cabinet-preview-inspired faceted techno fragments embedded in the rock.
+    ctx.shadowBlur=0;ctx.globalAlpha=.18;ctx.strokeStyle=p.grid;ctx.lineWidth=.8;
+    const cell=72,off=-((state.distance*.68)%cell);
+    for(let x=off-cell;x<W+cell;x+=cell){
+      const phase=(x/cell|0)*1.73,stateY=isTop?42+Math.sin(phase+state.time*.0004)*26:H-42-Math.sin(phase+state.time*.0004)*26;
+      ctx.beginPath();ctx.moveTo(x,stateY);ctx.lineTo(x+18,stateY+(isTop?16:-16));ctx.lineTo(x+42,stateY+(isTop?5:-5));ctx.lineTo(x+58,stateY+(isTop?25:-25));ctx.stroke();
+    }
+    const gap=state.boosting?18:31,offset=-((flow*1.7)%gap);ctx.globalAlpha=state.boosting?.24:.12;ctx.strokeStyle='#fff';ctx.lineWidth=state.boosting?1.5:.9;
+    for(let x=offset-140;x<W+140;x+=gap){ctx.beginPath();ctx.moveTo(x,isTop?10:H-10);ctx.lineTo(x+(state.boosting?170:100),isTop?H*.55:H*.45);ctx.stroke()}
+    ctx.restore();
+  }
+
+  function drawCave(c,p){
+    ctx.fillStyle='#100315';ctx.fill(c.top);ctx.fill(c.bottom);
+    drawWallTexture(c.top,c.samples,true,p);drawWallTexture(c.bottom,c.samples,false,p);
+    const edge=(key)=>{ctx.beginPath();for(let i=0;i<c.samples.length;i++){const s=c.samples[i],y=s[key];i?ctx.lineTo(s.x,y):ctx.moveTo(s.x,y)}};
+    ctx.save();ctx.lineCap='round';
+    for(const key of ['top','bottom']){
+      ctx.shadowColor=p.wallA;ctx.shadowBlur=30;ctx.strokeStyle=rgba(p.wallA,.38);ctx.lineWidth=13;edge(key);ctx.stroke();
+      ctx.shadowColor=p.edge;ctx.shadowBlur=15;ctx.strokeStyle=p.edge;ctx.lineWidth=2.6;edge(key);ctx.stroke();
+      ctx.shadowBlur=4;ctx.strokeStyle='rgba(255,255,255,.8)';ctx.lineWidth=.85;edge(key);ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function initStars(){stars=Array.from({length:96},(_,i)=>({x:Math.random()*W,y:Math.random()*H,speed:.15+Math.random()*.92,len:5+Math.random()*31,a:.06+Math.random()*.3,seed:i*7.31}))}
+  function updateStars(dt){const m=state.phase==='play'&&!state.paused?state.speed:80;for(const s of stars){s.x-=m*s.speed*dt;if(s.x<-s.len-40){s.x=W+Math.random()*150;s.y=Math.random()*H}}}
+  function drawSpeedLines(p){
+    ctx.save();ctx.lineCap='round';const boost=state.boosting?1:0,gain=clamp(state.speed/BASE_SPEED,1,2.4);
+    for(const s of stars){const dx=s.len*gain*(1.25+boost*5.6)*(.5+s.speed),fade=s.x>state.playerX+55?.26:1;ctx.globalAlpha=s.a*(.52+boost*1.45)*fade;ctx.strokeStyle=s.speed>.58?p.grid:'#fff';ctx.lineWidth=.65+s.speed*1.2+boost*.9;ctx.beginPath();ctx.moveTo(s.x,s.y);ctx.lineTo(s.x-dx,s.y+Math.sin(s.seed+state.time*.0012)*1.4);ctx.stroke()}
+    ctx.restore();
+  }
+
+  function spawnSpark(x,y,color,n,power=1){
+    for(let i=0;i<n;i++){if(sparks.length>=MAX_SPARKS)sparks.shift();sparks.push({x,y,vx:-(90+Math.random()*500)*power,vy:(Math.random()-.5)*220*power,life:.3+Math.random()*.62,max:.92,color,size:.7+Math.random()*2.3})}
+  }
+  function updateSparks(dt){for(let i=sparks.length-1;i>=0;i--){const s=sparks[i];s.x+=s.vx*dt;s.y+=s.vy*dt;s.vx*=Math.pow(.984,dt*60);s.vy*=Math.pow(.968,dt*60);s.life-=dt;if(s.life<=0)sparks.splice(i,1)}}
+  function drawSparks(){ctx.save();ctx.lineCap='round';for(const s of sparks){const a=clamp(s.life/s.max,0,1);ctx.globalAlpha=a;ctx.strokeStyle=s.color;ctx.shadowColor=s.color;ctx.shadowBlur=8;ctx.lineWidth=s.size;ctx.beginPath();ctx.moveTo(s.x,s.y);ctx.lineTo(s.x-s.vx*.045,s.y-s.vy*.045);ctx.stroke()}ctx.restore()}
+
+  function spawnRing(x,y,color,power=1){
+    if(rings.length>=MAX_RINGS)rings.shift();rings.push({x,y,r:5,max:110+power*100,life:1,color,power});
+  }
+  function updateRings(dt){for(let i=rings.length-1;i>=0;i--){const r=rings[i];r.r+=(180+r.power*170)*dt;r.life-=dt*(1.4+r.power*.25);r.x-=state.speed*dt*.16;if(r.life<=0||r.r>r.max)rings.splice(i,1)}}
+  function drawRings(){ctx.save();for(const r of rings){ctx.globalAlpha=clamp(r.life,0,1)*.38;ctx.strokeStyle=r.color;ctx.shadowColor=r.color;ctx.shadowBlur=13;ctx.lineWidth=1.2+r.power;ctx.beginPath();ctx.ellipse(r.x,r.y,r.r*1.45,r.r*.62,0,0,TAU);ctx.stroke()}ctx.restore()}
+
+  function drawRibbon(p){
+    if(trailCount<3)return;
+    const points=[];
+    for(let i=0;i<trailCount;i++){const t=trailPoint(i),x=t.worldX-state.distance;if(x<-160||x>state.playerX+8)continue;points.push({x,y:t.y,b:t.boost})}
+    if(points.length<3)return;
+    const drawPass=(width,alpha,color,blur)=>{
+      ctx.save();ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle=color;ctx.globalAlpha=alpha;ctx.lineWidth=width;ctx.shadowColor=color;ctx.shadowBlur=blur;ctx.beginPath();ctx.moveTo(points[0].x,points[0].y);
+      for(let i=1;i<points.length-1;i++){const a=points[i],b=points[i+1],mx=(a.x+b.x)*.5,my=(a.y+b.y)*.5;ctx.quadraticCurveTo(a.x,a.y,mx,my)}
+      const z=points.at(-1);ctx.lineTo(z.x,z.y);ctx.stroke();ctx.restore();
     };
+    drawPass(state.boosting?25:13,state.boosting?.13:.08,p.wallA,22);
+    drawPass(state.boosting?9:5,state.boosting?.44:.28,p.grid,15);
+    drawPass(state.boosting?2.3:1.2,state.boosting?.86:.55,'#fff',7);
   }
 
-  function applyWake(dt) {
-    const wakeLength = state.boosting ? 520 : 360;
-    const baseRadius = state.boosting ? 72 : 54;
-    const maxRadius = state.boosting ? 182 : 132;
-    const force = (state.boosting ? 330 : 168) * dt;
-    const playerWorldX = state.distance + state.playerX;
-
-    for (const p of grid) {
-      const nodeWorldX = state.distance + p.ax;
-      const dx = playerWorldX - nodeWorldX;
-      if (dx <= 5 || dx > wakeLength) continue;
-
-      const sample = wakeSampleAt(nodeWorldX);
-      const wakeY = sample ? sample.y : state.playerY;
-      const sampleVY = sample ? sample.vy : state.playerVY;
-      const sampleBoost = sample ? sample.boost : (state.boosting ? 1 : 0);
-      const coneRadius = lerp(baseRadius, maxRadius, Math.pow(dx / wakeLength, 0.72));
-      const dy = p.ay - wakeY;
-      const ay = Math.abs(dy);
-      if (ay > coneRadius) continue;
-
-      const tail = Math.pow(1 - dx / wakeLength, 0.58);
-      const radial = Math.pow(1 - ay / coneRadius, 1.18);
-      const shell = Math.exp(-Math.pow((ay - coneRadius * 0.56) / Math.max(10, coneRadius * 0.23), 2));
-      const core = Math.exp(-Math.pow(ay / Math.max(10, coneRadius * 0.28), 2));
-      const f = force * tail * (radial * 0.72 + shell * 0.78 + core * 0.28) * (1 + sampleBoost * 0.32);
-      const sign = dy === 0 ? (p.r % 2 ? 1 : -1) : Math.sign(dy);
-      const vortex = Math.sin(dx * 0.052 - state.time * 0.009 + sampleVY * 0.008) * f * 0.34;
-
-      // A fast body displaces the mesh laterally, then fans it outward along
-      // the exact route the flyer occupied when it passed this world position.
-      p.vx -= f * (1.18 + dx / wakeLength * 1.35);
-      p.vy += sign * f * (1.62 + shell * 0.62) + vortex;
-      p.vy += sampleVY * dt * tail * 0.22;
-      p.energy = Math.min(1.5, p.energy + f * 0.052);
-    }
+  function playerPath(){const q=new Path2D();q.moveTo(-7,-7);q.quadraticCurveTo(3,-9,14,-4);q.lineTo(28,-1.5);q.quadraticCurveTo(34,0,28,2.5);q.lineTo(13,4);q.quadraticCurveTo(5,9,-5,7);q.closePath();q.moveTo(-3,4);q.lineTo(-19,11);q.lineTo(-7,1);q.closePath();q.moveTo(-7,1);q.lineTo(-22,4);q.lineTo(-9,-3);q.closePath();return q}
+  function drawCape(t,p,a=1,scale=1){const flutter=Math.sin(t*.015)*5+Math.sin(t*.032)*2,len=(state.boosting?84:54)*scale;ctx.globalAlpha=a;ctx.fillStyle='#03040a';ctx.strokeStyle=p.wallA;ctx.lineWidth=1.4;ctx.shadowColor=p.wallA;ctx.shadowBlur=12;ctx.beginPath();ctx.moveTo(-5,-7);ctx.bezierCurveTo(-25,-21,-42,-8+flutter,-len,-10+flutter*.4);ctx.lineTo(-len*.87,8+flutter*.16);ctx.bezierCurveTo(-44,17,-22,10,-4,6);ctx.closePath();ctx.fill();ctx.stroke()}
+  function drawPlayerAt(x,y,angle,p,a=1,scale=1){
+    ctx.save();ctx.translate(x,y);ctx.rotate(angle);ctx.scale(scale,scale);drawCape(state.time,p,a,1);
+    const body=playerPath();ctx.globalAlpha=a;ctx.fillStyle='#02030a';ctx.strokeStyle=p.grid;ctx.lineWidth=1.6;ctx.shadowColor=p.grid;ctx.shadowBlur=state.boosting?19:11;ctx.fill(body);ctx.stroke(body);
+    ctx.beginPath();ctx.arc(7,-8,6.5,0,TAU);ctx.fill();ctx.stroke();ctx.strokeStyle='#fff';ctx.globalAlpha=a*.82;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(8,-10);ctx.lineTo(12,-8.4);ctx.stroke();
+    ctx.globalAlpha=a*(state.boosting?.98:.58);ctx.fillStyle='#fff';ctx.shadowColor=p.grid;ctx.shadowBlur=state.boosting?25:13;ctx.beginPath();ctx.arc(-2,0,state.boosting?3.4:2.2,0,TAU);ctx.fill();ctx.restore();
+  }
+  function drawPlayer(p){
+    if(state.boosting)for(let i=6;i>=1;i--)drawPlayerAt(state.playerX-i*17,state.playerY-state.playerVY*.004*i,state.pitch,p,.028+(7-i)*.017,1-i*.022);
+    if(state.invulnerable>0&&Math.floor(state.time/70)%2===0)return;drawPlayerAt(state.playerX,state.playerY,state.pitch,p,1,state.boosting?1.08:1);
   }
 
-  function updateGrid(dt) {
-    const scroll = state.phase === 'play' ? state.speed * dt : 0;
-    const spring = 20;
-    const damping = Math.pow(0.82, dt * 60);
-
-    for (const p of grid) {
-      p.ax -= scroll;
-      if (p.ax < -GRID_SPACING * 1.5) {
-        p.ax += GRID_SPAN;
-        p.x += GRID_SPAN;
-        resetGridNode(p);
-      }
-
-      p.vx += (p.ax - p.x) * spring * dt;
-      p.vy += (p.ay - p.y) * spring * dt;
-      p.vx *= damping;
-      p.vy *= damping;
-      p.x += p.vx * dt;
-      p.y += p.vy * dt;
-      p.energy *= Math.pow(0.9, dt * 60);
-
-      // The untouched field ahead remains pristine; all deformation is causal
-      // and confined to the flyer's recorded wake.
-      if (p.ax > state.playerX + 7) {
-        p.x = lerp(p.x, p.ax, 1 - Math.pow(0.03, dt));
-        p.y = lerp(p.y, p.ay, 1 - Math.pow(0.03, dt));
-        p.vx *= 0.22;
-        p.vy *= 0.22;
-        p.energy *= 0.45;
-      }
-    }
-
-    if (state.phase === 'play') applyWake(dt);
+  function startGame(){
+    Object.assign(state,{phase:'play',paused:false,time:0,distance:0,score:0,wave:1,lives:3,speed:BASE_SPEED,targetSpeed:BASE_SPEED,playerX:W*.235,playerY:H*.5,playerVY:0,pitch:0,pitchVel:0,inputLift:0,boost:100,boosting:false,boostLock:0,invulnerable:0,nearMiss:0,combo:1,comboTimer:0});
+    shake=hitFlash=boostFlash=0;sparks.length=rings.length=0;initGrid();resetTrail();
+  }
+  function endGame(){state.phase='over';state.boosting=false;if(state.score>state.highScore){state.highScore=Math.floor(state.score);saveHighScore(state.highScore)}}
+  function hitWall(c){
+    if(state.invulnerable>0)return;state.lives--;state.invulnerable=1.18;state.playerVY*=-.42;state.playerY=clamp(state.playerY,c.top+PLAYER_R+9,c.bottom-PLAYER_R-9);state.boost=Math.max(0,state.boost-25);state.boosting=false;state.boostLock=.52;state.combo=1;state.comboTimer=0;hitFlash=1;shake=Math.max(shake,19);spawnSpark(state.playerX,state.playerY,palette().edge,38,1.35);spawnRing(state.playerX,state.playerY,palette().hud,1.2);if(state.lives<=0)endGame();
   }
 
-  function gridNode(c, r) {
-    const cc = (c + GRID_COLS) % GRID_COLS;
-    return grid[r * GRID_COLS + cc];
+  function update(dt){
+    state.time+=dt*1000;updateStars(dt);updateSparks(dt);updateRings(dt);hitFlash=Math.max(0,hitFlash-dt*3.7);boostFlash=Math.max(0,boostFlash-dt*2.8);shake*=Math.pow(.06,dt);
+    if(state.phase!=='play'||state.paused){updateGrid(dt);return}
+    state.invulnerable=Math.max(0,state.invulnerable-dt);state.boostLock=Math.max(0,state.boostLock-dt);
+    const thrust=keys.ArrowUp||keys.KeyW||keys.KeyZ||touchMode('thrust'),dive=keys.ArrowDown||keys.KeyS,wantsBoost=keys.Space||keys.KeyX||touchMode('boost');
+    const canBoost=wantsBoost&&state.boost>.5&&state.boostLock<=0;
+    if(canBoost&&!state.boosting){boostFlash=1;shake=Math.max(shake,8);spawnSpark(state.playerX-18,state.playerY,palette().grid,26,1.5);spawnRing(state.playerX-8,state.playerY,palette().grid,1.5)}
+    state.boosting=canBoost;
+    if(state.boosting){state.boost=Math.max(0,state.boost-BOOST_DRAIN*dt);if(state.boost<=.01){state.boosting=false;state.boostLock=.72}}else state.boost=Math.min(100,state.boost+BOOST_RECHARGE*dt);
+    const cruise=Math.min(MAX_CRUISE,BASE_SPEED+state.distance*.00145);state.targetSpeed=cruise*(state.boosting?BOOST_MULT:1);state.speed=lerp(state.speed,state.targetSpeed,1-Math.pow(state.boosting?.00018:.012,dt));
+    state.playerX=lerp(state.playerX,state.boosting?W*.35:W*.235,1-Math.pow(.008,dt));
+
+    // A smoothed thrust channel and damped pitch produce the more fluid,
+    // luminous trajectory seen in the motion reference without sacrificing control.
+    const targetLift=thrust?-1:dive?1:0;state.inputLift=lerp(state.inputLift,targetLift,1-Math.pow(.0008,dt));
+    const gravity=560,control=state.inputLift<0?1320:state.inputLift>0?970:0;
+    state.playerVY+=(gravity+(state.inputLift<0?-control:state.inputLift>0?control:0))*dt;
+    state.playerVY*=Math.pow(.875,dt*60);state.playerVY=clamp(state.playerVY,-535,575);state.playerY+=state.playerVY*dt;
+    const pitchTarget=clamp(state.playerVY/680,-.36,.36);state.pitchVel+=(pitchTarget-state.pitch)*24*dt;state.pitchVel*=Math.pow(.68,dt*60);state.pitch+=state.pitchVel*dt*60;
+
+    state.distance+=state.speed*dt;recordTrail();updateGrid(dt);state.wave=1+Math.floor(state.distance/WAVE_DISTANCE);state.score+=state.speed*dt*(state.boosting?.25:.115)*state.combo;
+    const c=caveAt(state.playerX),ct=state.playerY-PLAYER_R-c.top,cb=c.bottom-(state.playerY+PLAYER_R),clearance=Math.min(ct,cb);
+    if(clearance<0)hitWall(c);else if(clearance<25){state.nearMiss=Math.min(1,state.nearMiss+dt*5);state.comboTimer+=dt;if(state.comboTimer>.52){state.combo=Math.min(5,state.combo+.25);state.comboTimer=0}if(Math.random()<dt*24)spawnSpark(state.playerX+2,ct<cb?c.top:c.bottom,palette().edge,1,.7)}else{state.nearMiss=Math.max(0,state.nearMiss-dt*2.5);state.comboTimer=Math.max(0,state.comboTimer-dt);if(state.comboTimer<=0)state.combo=lerp(state.combo,1,1-Math.pow(.34,dt))}
+    const rate=state.boosting?100:32;if(Math.random()<rate*dt)spawnSpark(state.playerX-16,state.playerY+(Math.random()-.5)*11,palette().grid,state.boosting?2:1,state.boosting?1.22:.58);
+    if(state.boosting&&Math.random()<dt*12)spawnRing(state.playerX-28,state.playerY,palette().grid,.38);
   }
 
-  function drawGrid(palette) {
-    ctx.save();
-    ctx.lineWidth = 0.65;
-
-    // Connections make the spring deformation legible while the dot lattice stays primary.
-    ctx.strokeStyle = hexToRgba(palette.grid, 0.11);
-    ctx.beginPath();
-    for (let r = 0; r < GRID_ROWS; r++) {
-      for (let c = 0; c < GRID_COLS - 1; c++) {
-        const a = gridNode(c, r);
-        const b = gridNode(c + 1, r);
-        if (Math.abs(a.x - b.x) > GRID_SPACING * 2.5) continue;
-        ctx.moveTo(a.x, a.y);
-        ctx.lineTo(b.x, b.y);
-      }
-    }
-    for (let c = 0; c < GRID_COLS; c++) {
-      for (let r = 0; r < GRID_ROWS - 1; r++) {
-        const a = gridNode(c, r);
-        const b = gridNode(c, r + 1);
-        ctx.moveTo(a.x, a.y);
-        ctx.lineTo(b.x, b.y);
-      }
-    }
-    ctx.stroke();
-
-    for (const p of grid) {
-      if (p.x < -20 || p.x > W + 20 || p.y < -20 || p.y > H + 20) continue;
-      const major = p.c % 5 === 0 && p.r % 5 === 0;
-      const mid = !major && (p.c % 2 === 0 || p.r % 2 === 0);
-      const baseR = major ? 2.35 : mid ? 1.45 : 0.85;
-      const disp = Math.hypot(p.x - p.ax, p.y - p.ay);
-      const e = clamp(disp / 24 + p.energy, 0, 1.25);
-      const radius = baseR * (1 + e * 1.18);
-      const alpha = (major ? 0.58 : mid ? 0.31 : 0.17) + e * 0.56;
-
-      ctx.globalAlpha = alpha;
-      ctx.fillStyle = palette.grid;
-      if (e > 0.12 || major) {
-        ctx.shadowColor = palette.grid;
-        ctx.shadowBlur = 4 + e * 10;
-      } else {
-        ctx.shadowBlur = 0;
-      }
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, radius, 0, TAU);
-      ctx.fill();
-    }
-
-    ctx.restore();
+  function cyberFrame(p){
+    ctx.save();ctx.strokeStyle=rgba(p.hud,.75);ctx.shadowColor=p.hud;ctx.shadowBlur=7;ctx.lineWidth=1.2;ctx.beginPath();
+    const m=14,c=34;ctx.moveTo(m+c,m);ctx.lineTo(W-m-c,m);ctx.lineTo(W-m,m+c);ctx.lineTo(W-m,H-m-c);ctx.lineTo(W-m-c,H-m);ctx.moveTo(m+c,H-m);ctx.lineTo(m,H-m-c);ctx.lineTo(m,m+c);ctx.lineTo(m+c,m);ctx.stroke();
+    ctx.globalAlpha=.42;ctx.lineWidth=.7;for(let i=0;i<5;i++){const x=31+i*12;ctx.beginPath();ctx.moveTo(x,70);ctx.lineTo(x+7,70);ctx.stroke();ctx.beginPath();ctx.moveTo(W-x,70);ctx.lineTo(W-x-7,70);ctx.stroke()}
+    // Subtle RED EYE targeting reticle.
+    ctx.translate(W*.5,H*.5);ctx.globalAlpha=.22;ctx.strokeStyle=p.hud;ctx.beginPath();ctx.arc(0,0,26,0,TAU);ctx.arc(0,0,7,0,TAU);ctx.moveTo(-42,0);ctx.lineTo(-15,0);ctx.moveTo(42,0);ctx.lineTo(15,0);ctx.moveTo(0,-42);ctx.lineTo(0,-15);ctx.moveTo(0,42);ctx.lineTo(0,15);ctx.stroke();ctx.restore();
   }
 
-  function drawWallTexture(path, samples, isTop, palette) {
-    ctx.save();
-    ctx.clip(path);
+  function drawHud(p){
+    ctx.save();ctx.textBaseline='top';ctx.shadowBlur=10;
+    ctx.textAlign='left';ctx.fillStyle=p.hud;ctx.shadowColor=p.hud;ctx.font='700 10px "Courier New",monospace';ctx.fillText('FTS',26,20);ctx.fillStyle=p.grid;ctx.fillText('ARCADE',26,31);
+    ctx.font='700 12px "Courier New",monospace';ctx.fillStyle=p.hud;ctx.fillText('SPEED',26,59);ctx.font='700 25px "Courier New",monospace';ctx.fillStyle='#fff';ctx.fillText(String(Math.round(state.speed*5.6)).padStart(4,'0'),26,73);ctx.font='700 10px "Courier New",monospace';ctx.fillStyle=p.hud;ctx.fillText('KM/H',27,101);
+    ctx.font='700 16px "Courier New",monospace';ctx.fillStyle=p.grid;ctx.shadowColor=p.grid;ctx.fillText(`SCORE ${String(Math.floor(state.score)).padStart(7,'0')}`,26,126);ctx.globalAlpha=.62;ctx.font='700 10px "Courier New",monospace';ctx.fillText(`BEST ${String(Math.floor(state.highScore)).padStart(7,'0')}`,27,148);
 
-    const gradient = ctx.createLinearGradient(0, isTop ? 0 : H, 0, isTop ? H * 0.5 : H * 0.5);
-    gradient.addColorStop(0, '#09010f');
-    gradient.addColorStop(0.33, palette.wallB);
-    gradient.addColorStop(0.82, palette.wallA);
-    gradient.addColorStop(1, '#16051d');
-    ctx.globalAlpha = 0.82;
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, W, H);
-    ctx.globalAlpha = 1;
+    ctx.globalAlpha=1;ctx.textAlign='right';ctx.fillStyle=p.hud;ctx.shadowColor=p.hud;ctx.font='700 13px "Courier New",monospace';ctx.fillText('BRAZEN',W-26,20);ctx.font='700 10px "Courier New",monospace';ctx.fillText('FULL THROTTLE',W-26,39);ctx.font='700 11px "Courier New",monospace';ctx.fillText('WAVE',W-26,63);ctx.font='700 27px "Courier New",monospace';ctx.fillStyle='#fff';ctx.fillText(String(state.wave).padStart(2,'0'),W-26,77);ctx.font='700 10px "Courier New",monospace';ctx.fillStyle=p.hud;ctx.fillText(`FLOW x${state.combo.toFixed(1)}`,W-26,113);
 
-    const flow = state.distance * (state.boosting ? 1.9 : 1.15);
-    const contourCount = state.boosting ? 18 : 13;
-    for (let band = 0; band < contourCount; band++) {
-      const inset = 8 + band * 9.5;
-      const phase = band * 0.8 + flow * (0.0055 + band * 0.00012);
-      const hot = band % 4 === 0;
-      ctx.beginPath();
-      for (let i = 0; i < samples.length; i++) {
-        const p = samples[i];
-        const ripple = Math.sin((p.x + flow * 0.55) * 0.026 + phase) * (3.5 + band * 0.11);
-        const y = isTop ? p.top - inset - ripple : p.bottom + inset + ripple;
-        if (i === 0) ctx.moveTo(p.x, y);
-        else ctx.lineTo(p.x, y);
-      }
-      ctx.strokeStyle = hot ? palette.edge : (band % 2 ? palette.wallA : palette.wallB);
-      ctx.globalAlpha = hot ? 0.48 : 0.23;
-      ctx.lineWidth = hot ? 2.2 : 1.15;
-      ctx.shadowColor = hot ? palette.edge : palette.wallA;
-      ctx.shadowBlur = hot ? 9 : 3;
-      ctx.stroke();
-    }
-
-    // Fast, directional fibers. They remain flat and side-scrolling rather than perspective rays.
-    const streakGap = state.boosting ? 20 : 34;
-    const offset = -((flow * 1.65) % streakGap);
-    ctx.shadowBlur = 0;
-    ctx.globalAlpha = state.boosting ? 0.24 : 0.13;
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = state.boosting ? 1.6 : 1;
-    for (let x = offset - 120; x < W + 120; x += streakGap) {
-      ctx.beginPath();
-      const y0 = isTop ? 12 : H - 12;
-      const y1 = isTop ? H * 0.56 : H * 0.44;
-      ctx.moveTo(x, y0);
-      ctx.lineTo(x + (state.boosting ? 150 : 92), y1);
-      ctx.stroke();
-    }
-
-    ctx.restore();
+    const bx=25,by=H-47,bw=250,bh=13;ctx.textAlign='left';ctx.font='700 10px "Courier New",monospace';ctx.fillStyle=p.hud;ctx.fillText('BOOST',bx,by-16);ctx.shadowBlur=0;ctx.strokeStyle=rgba(p.hud,.8);ctx.strokeRect(bx,by,bw,bh);const g=ctx.createLinearGradient(bx,0,bx+bw,0);g.addColorStop(0,p.grid);g.addColorStop(1,p.wallA);ctx.fillStyle=g;ctx.fillRect(bx+2,by+2,(bw-4)*state.boost/100,bh-4);
+    const integrity=Math.max(0,Math.round(state.lives/3*100));ctx.textAlign='right';ctx.font='700 10px "Courier New",monospace';ctx.fillStyle=p.hud;ctx.fillText('INTEGRITY',W-26,by-16);ctx.font='700 18px "Courier New",monospace';ctx.fillStyle='#fff';ctx.shadowColor=p.hud;ctx.shadowBlur=8;ctx.fillText(`${integrity}%`,W-26,by-1);
+    ctx.textAlign='center';ctx.font='700 13px "Courier New",monospace';ctx.fillStyle=state.boosting?'#fff':'#53ff64';ctx.shadowColor=state.boosting?p.grid:'#53ff64';ctx.fillText(state.boosting?'>>>> HYPERFLOW >>>>':'>>>> CRUISE >>>>',W/2,20);
+    cyberFrame(p);ctx.restore();
   }
 
-  function drawCave(cave, palette) {
-    ctx.fillStyle = '#100416';
-    ctx.fill(cave.topPath);
-    ctx.fill(cave.bottomPath);
-
-    drawWallTexture(cave.topPath, cave.samples, true, palette);
-    drawWallTexture(cave.bottomPath, cave.samples, false, palette);
-
-    const drawEdge = (key) => {
-      ctx.beginPath();
-      for (let i = 0; i < cave.samples.length; i++) {
-        const p = cave.samples[i];
-        const y = p[key];
-        if (i === 0) ctx.moveTo(p.x, y);
-        else ctx.lineTo(p.x, y);
-      }
-    };
-
-    ctx.save();
-    ctx.lineCap = 'round';
-    for (const key of ['top', 'bottom']) {
-      ctx.shadowColor = palette.wallA;
-      ctx.shadowBlur = 28;
-      ctx.strokeStyle = hexToRgba(palette.wallA, 0.36);
-      ctx.lineWidth = 12;
-      drawEdge(key);
-      ctx.stroke();
-
-      ctx.shadowColor = palette.edge;
-      ctx.shadowBlur = 15;
-      ctx.strokeStyle = palette.edge;
-      ctx.lineWidth = 2.6;
-      drawEdge(key);
-      ctx.stroke();
-
-      ctx.shadowBlur = 4;
-      ctx.strokeStyle = 'rgba(255,255,255,.78)';
-      ctx.lineWidth = 0.9;
-      drawEdge(key);
-      ctx.stroke();
-    }
-    ctx.restore();
+  function drawOverlay(p){
+    if(state.phase==='play'&&!state.paused)return;ctx.save();ctx.fillStyle='rgba(1,2,8,.79)';ctx.fillRect(0,0,W,H);ctx.textAlign='center';ctx.textBaseline='middle';
+    if(state.paused){ctx.font='800 54px "Courier New",monospace';ctx.fillStyle=p.hud;ctx.shadowColor=p.hud;ctx.shadowBlur=25;ctx.fillText('PAUSED',W/2,H/2-12);ctx.font='700 14px "Courier New",monospace';ctx.fillStyle='#fff';ctx.fillText('P / ESC TO RESUME',W/2,H/2+46);ctx.restore();return}
+    const title=state.phase==='over'?'OBLITERATED':'CAVE RACER';const grad=ctx.createLinearGradient(W*.3,0,W*.7,0);grad.addColorStop(0,p.grid);grad.addColorStop(.48,'#fff');grad.addColorStop(.52,p.hud);grad.addColorStop(1,p.wallA);ctx.font='900 68px "Courier New",monospace';ctx.fillStyle=grad;ctx.shadowColor=p.hud;ctx.shadowBlur=28;ctx.fillText(title,W/2,H/2-78);
+    ctx.font='700 13px "Courier New",monospace';ctx.fillStyle=p.hud;ctx.shadowBlur=8;ctx.fillText('FTS ARCADE  //  BRAZEN',W/2,H/2-23);ctx.font='700 16px "Courier New",monospace';ctx.fillStyle='#fff';ctx.fillText(state.phase==='over'?`SCORE ${Math.floor(state.score)}  ·  WAVE ${state.wave}`:'FULL THROTTLE. NO LIMITS.',W/2,H/2+14);
+    ctx.font='600 13px "Courier New",monospace';ctx.fillStyle='rgba(203,229,245,.78)';ctx.shadowBlur=0;ctx.fillText('Z / ↑ THRUST     X / SPACE HYPERFLOW',W/2,H/2+51);ctx.fillText('The untouched grid enters ahead. Your flight path tears it open behind you.',W/2,H/2+78);
+    const pulse=.55+Math.sin(state.time*.0045)*.35;ctx.globalAlpha=pulse;ctx.fillStyle=p.hud;ctx.shadowColor=p.hud;ctx.shadowBlur=15;ctx.fillText(state.phase==='over'?'PRESS R OR TAP TO RUN AGAIN':'PRESS ANY CONTROL OR TAP TO BEGIN',W/2,H/2+123);ctx.restore();
   }
 
-  function initStars() {
-    stars = Array.from({ length: 78 }, (_, i) => ({
-      x: Math.random() * W,
-      y: Math.random() * H,
-      speed: 0.18 + Math.random() * 0.85,
-      len: 5 + Math.random() * 28,
-      a: 0.08 + Math.random() * 0.28,
-      seed: i * 9.71
-    }));
+  function draw(){
+    const p=palette(),c=buildCave(),sx=shake>.1?(Math.random()-.5)*shake:0,sy=shake>.1?(Math.random()-.5)*shake*.6:0;
+    ctx.fillStyle='#020208';ctx.fillRect(0,0,W,H);ctx.save();ctx.translate(sx,sy);drawSpeedLines(p);drawGrid(p);drawRibbon(p);drawCave(c,p);drawRings();drawSparks();drawPlayer(p);
+    if(state.nearMiss>.02){ctx.fillStyle=rgba(p.edge,state.nearMiss*.075);ctx.fillRect(0,0,W,H)}ctx.restore();
+    if(boostFlash>0){const g=ctx.createRadialGradient(state.playerX,state.playerY,8,state.playerX,state.playerY,330);g.addColorStop(0,rgba(p.grid,boostFlash*.22));g.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=g;ctx.fillRect(0,0,W,H)}
+    if(hitFlash>0){ctx.fillStyle=`rgba(255,35,20,${hitFlash*.24})`;ctx.fillRect(0,0,W,H)}drawHud(p);drawOverlay(p);
   }
 
-  function updateStars(dt) {
-    const m = state.phase === 'play' ? state.speed : 70;
-    for (const s of stars) {
-      s.x -= m * s.speed * dt;
-      if (s.x < -s.len - 30) {
-        s.x = W + Math.random() * 120;
-        s.y = Math.random() * H;
-      }
-    }
-  }
-
-  function drawSpeedLines(palette) {
-    ctx.save();
-    ctx.lineCap = 'round';
-    const boost = state.boosting ? 1 : 0;
-    for (const s of stars) {
-      const speedGain = clamp(state.speed / BASE_SPEED, 1, 2.1);
-      const dx = s.len * speedGain * (1.35 + boost * 5.2) * (0.55 + s.speed);
-      const fadeAhead = s.x > state.playerX + 45 ? 0.32 : 1;
-      ctx.globalAlpha = s.a * (0.55 + boost * 1.4) * fadeAhead;
-      ctx.strokeStyle = s.speed > 0.62 ? palette.grid : '#ffffff';
-      ctx.lineWidth = 0.7 + s.speed * 1.25 + boost * 0.9;
-      ctx.beginPath();
-      ctx.moveTo(s.x, s.y);
-      ctx.lineTo(s.x - dx, s.y + Math.sin(s.seed + state.time * 0.001) * 1.2);
-      ctx.stroke();
-    }
-    ctx.restore();
-  }
-
-  function spawnSpark(x, y, color, amount, power = 1) {
-    for (let i = 0; i < amount; i++) {
-      if (sparks.length > 180) sparks.shift();
-      sparks.push({
-        x, y,
-        vx: -(90 + Math.random() * 420) * power,
-        vy: (Math.random() - 0.5) * 180 * power,
-        life: 0.38 + Math.random() * 0.5,
-        maxLife: 0.8,
-        color,
-        size: 0.8 + Math.random() * 2.2
-      });
-    }
-  }
-
-  function updateSparks(dt) {
-    for (const p of sparks) {
-      p.x += p.vx * dt;
-      p.y += p.vy * dt;
-      p.vx *= Math.pow(0.985, dt * 60);
-      p.vy *= Math.pow(0.97, dt * 60);
-      p.life -= dt;
-    }
-    sparks = sparks.filter(p => p.life > 0);
-  }
-
-  function drawSparks() {
-    ctx.save();
-    ctx.lineCap = 'round';
-    for (const p of sparks) {
-      const a = clamp(p.life / p.maxLife, 0, 1);
-      ctx.globalAlpha = a;
-      ctx.strokeStyle = p.color;
-      ctx.shadowColor = p.color;
-      ctx.shadowBlur = 8;
-      ctx.lineWidth = p.size;
-      ctx.beginPath();
-      ctx.moveTo(p.x, p.y);
-      ctx.lineTo(p.x - p.vx * 0.045, p.y - p.vy * 0.045);
-      ctx.stroke();
-    }
-    ctx.restore();
-  }
-
-  function playerShapePath() {
-    const p = new Path2D();
-    // Torso and leading arm.
-    p.moveTo(-7, -7);
-    p.quadraticCurveTo(3, -9, 14, -4);
-    p.lineTo(27, -1.5);
-    p.quadraticCurveTo(32, 0, 27, 2.5);
-    p.lineTo(13, 4);
-    p.quadraticCurveTo(5, 9, -5, 7);
-    p.closePath();
-    // Legs.
-    p.moveTo(-3, 4);
-    p.lineTo(-18, 11);
-    p.lineTo(-7, 1);
-    p.closePath();
-    p.moveTo(-7, 1);
-    p.lineTo(-21, 4);
-    p.lineTo(-9, -3);
-    p.closePath();
-    return p;
-  }
-
-  function drawCape(localTime, palette, alpha = 1, lengthScale = 1) {
-    const flutter = Math.sin(localTime * 0.015) * 5 + Math.sin(localTime * 0.031) * 2;
-    const len = (state.boosting ? 78 : 50) * lengthScale;
-    ctx.globalAlpha = alpha;
-    ctx.fillStyle = '#05050b';
-    ctx.strokeStyle = palette.wallA;
-    ctx.lineWidth = 1.4;
-    ctx.shadowColor = palette.wallA;
-    ctx.shadowBlur = 11;
-    ctx.beginPath();
-    ctx.moveTo(-5, -7);
-    ctx.bezierCurveTo(-24, -20, -40, -7 + flutter, -len, -10 + flutter * 0.4);
-    ctx.lineTo(-len * 0.88, 7 + flutter * 0.15);
-    ctx.bezierCurveTo(-42, 16, -21, 10, -4, 6);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-  }
-
-  function drawPlayerAt(x, y, angle, palette, alpha = 1, scale = 1) {
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(angle);
-    ctx.scale(scale, scale);
-
-    drawCape(state.time, palette, alpha, 1);
-
-    const body = playerShapePath();
-    ctx.globalAlpha = alpha;
-    ctx.fillStyle = '#03040a';
-    ctx.strokeStyle = palette.grid;
-    ctx.lineWidth = 1.6;
-    ctx.shadowColor = palette.grid;
-    ctx.shadowBlur = state.boosting ? 18 : 10;
-    ctx.fill(body);
-    ctx.stroke(body);
-
-    // Head and visor.
-    ctx.beginPath();
-    ctx.arc(7, -8, 6.5, 0, TAU);
-    ctx.fill();
-    ctx.stroke();
-    ctx.strokeStyle = '#ffffff';
-    ctx.globalAlpha = alpha * 0.8;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(8, -10);
-    ctx.lineTo(12, -8.5);
-    ctx.stroke();
-
-    // Compact core glow.
-    ctx.globalAlpha = alpha * (state.boosting ? 0.95 : 0.55);
-    ctx.fillStyle = '#ffffff';
-    ctx.shadowColor = palette.grid;
-    ctx.shadowBlur = state.boosting ? 24 : 12;
-    ctx.beginPath();
-    ctx.arc(-2, 0, state.boosting ? 3.3 : 2.1, 0, TAU);
-    ctx.fill();
-
-    ctx.restore();
-  }
-
-  function drawPlayer(palette) {
-    const angle = clamp(state.playerVY / 760, -0.32, 0.32);
-
-    if (state.boosting) {
-      for (let i = 5; i >= 1; i--) {
-        drawPlayerAt(
-          state.playerX - i * 18,
-          state.playerY - state.playerVY * 0.004 * i,
-          angle,
-          palette,
-          0.035 + (6 - i) * 0.018,
-          1 - i * 0.025
-        );
-      }
-    }
-
-    if (state.invulnerable > 0 && Math.floor(state.time / 70) % 2 === 0) return;
-    drawPlayerAt(state.playerX, state.playerY, angle, palette, 1, state.boosting ? 1.08 : 1);
-  }
-
-  function startGame() {
-    state.phase = 'play';
-    state.time = 0;
-    state.distance = 0;
-    state.score = 0;
-    state.wave = 1;
-    state.lives = 3;
-    state.speed = BASE_SPEED;
-    state.targetSpeed = BASE_SPEED;
-    state.playerX = W * 0.235;
-    state.playerY = H * 0.5;
-    state.playerVY = 0;
-    state.boost = 100;
-    state.boostHeld = false;
-    state.boosting = false;
-    state.boostLock = 0;
-    state.invulnerable = 0;
-    state.nearMiss = 0;
-    state.combo = 1;
-    state.comboTimer = 0;
-    shake = 0;
-    hitFlash = 0;
-    boostFlash = 0;
-    sparks.length = 0;
-    initGrid();
-    resetWakeTrail();
-  }
-
-  function endGame() {
-    state.phase = 'over';
-    state.boosting = false;
-    if (state.score > state.highScore) {
-      state.highScore = Math.floor(state.score);
-      saveHighScore(state.highScore);
-    }
-  }
-
-  function hitWall(cave) {
-    if (state.invulnerable > 0) return;
-    state.lives -= 1;
-    state.invulnerable = 1.25;
-    state.playerVY *= -0.42;
-    state.playerY = clamp(state.playerY, cave.top + PLAYER_R + 9, cave.bottom - PLAYER_R - 9);
-    state.boost = Math.max(0, state.boost - 24);
-    state.boosting = false;
-    state.boostLock = 0.5;
-    state.combo = 1;
-    state.comboTimer = 0;
-    hitFlash = 1;
-    shake = Math.max(shake, 18);
-    spawnSpark(state.playerX, state.playerY, currentPalette().edge, 34, 1.3);
-    if (state.lives <= 0) endGame();
-  }
-
-  function update(dt) {
-    state.time += dt * 1000;
-    updateStars(dt);
-    updateSparks(dt);
-
-    hitFlash = Math.max(0, hitFlash - dt * 3.6);
-    boostFlash = Math.max(0, boostFlash - dt * 2.8);
-    shake *= Math.pow(0.065, dt);
-
-    if (state.phase !== 'play') {
-      updateGrid(dt);
-      return;
-    }
-
-    state.invulnerable = Math.max(0, state.invulnerable - dt);
-    state.boostLock = Math.max(0, state.boostLock - dt);
-
-    const thrust = keys.ArrowUp || keys.KeyW || keys.KeyZ || touchMode('thrust');
-    const dive = keys.ArrowDown || keys.KeyS;
-    const wantsBoost = keys.Space || keys.KeyX || touchMode('boost');
-    state.boostHeld = wantsBoost;
-
-    const canBoost = wantsBoost && state.boost > 0.5 && state.boostLock <= 0;
-    if (canBoost && !state.boosting) {
-      boostFlash = 1;
-      shake = Math.max(shake, 7);
-      spawnSpark(state.playerX - 18, state.playerY, currentPalette().grid, 22, 1.5);
-    }
-    state.boosting = canBoost;
-
-    if (state.boosting) {
-      state.boost = Math.max(0, state.boost - BOOST_DRAIN * dt);
-      if (state.boost <= 0.01) {
-        state.boosting = false;
-        state.boostLock = 0.7;
-      }
-    } else {
-      state.boost = Math.min(100, state.boost + BOOST_RECHARGE * dt);
-    }
-
-    const cruise = Math.min(MAX_CRUISE, BASE_SPEED + state.distance * 0.00145);
-    state.targetSpeed = cruise * (state.boosting ? BOOST_MULT : 1);
-    const speedEase = 1 - Math.pow(state.boosting ? 0.0002 : 0.012, dt);
-    state.speed = lerp(state.speed, state.targetSpeed, speedEase);
-
-    const playerTargetX = state.boosting ? W * 0.345 : W * 0.235;
-    state.playerX = lerp(state.playerX, playerTargetX, 1 - Math.pow(0.008, dt));
-
-    const gravity = 590;
-    const thrustAcc = -1280;
-    const diveAcc = 980;
-    if (thrust) state.playerVY += thrustAcc * dt;
-    else state.playerVY += gravity * dt;
-    if (dive) state.playerVY += diveAcc * dt;
-    state.playerVY *= Math.pow(0.86, dt * 60);
-    state.playerVY = clamp(state.playerVY, -520, 560);
-    state.playerY += state.playerVY * dt;
-
-    state.distance += state.speed * dt;
-    recordWakeSample();
-    updateGrid(dt);
-    state.wave = 1 + Math.floor(state.distance / WAVE_DISTANCE);
-    state.score += state.speed * dt * (state.boosting ? 0.24 : 0.11) * state.combo;
-
-    const cave = caveAt(state.playerX);
-    const clearanceTop = state.playerY - PLAYER_R - cave.top;
-    const clearanceBottom = cave.bottom - (state.playerY + PLAYER_R);
-    const clearance = Math.min(clearanceTop, clearanceBottom);
-
-    if (clearance < 0) {
-      hitWall(cave);
-    } else if (clearance < 24) {
-      state.nearMiss = Math.min(1, state.nearMiss + dt * 5);
-      state.comboTimer += dt;
-      if (state.comboTimer > 0.55) {
-        state.combo = Math.min(4, state.combo + 0.25);
-        state.comboTimer = 0;
-      }
-      if (Math.random() < dt * 22) {
-        const y = clearanceTop < clearanceBottom ? cave.top : cave.bottom;
-        spawnSpark(state.playerX + 2, y, currentPalette().edge, 1, 0.65);
-      }
-    } else {
-      state.nearMiss = Math.max(0, state.nearMiss - dt * 2.5);
-      state.comboTimer = Math.max(0, state.comboTimer - dt);
-      if (state.comboTimer <= 0) state.combo = lerp(state.combo, 1, 1 - Math.pow(0.35, dt));
-    }
-
-    const sparkRate = state.boosting ? 82 : 28;
-    if (Math.random() < sparkRate * dt) {
-      spawnSpark(
-        state.playerX - 15,
-        state.playerY + (Math.random() - 0.5) * 10,
-        currentPalette().grid,
-        state.boosting ? 2 : 1,
-        state.boosting ? 1.2 : 0.55
-      );
-    }
-  }
-
-  function drawHud(palette) {
-    ctx.save();
-    ctx.textBaseline = 'top';
-    ctx.font = '700 22px ui-monospace, monospace';
-    ctx.shadowBlur = 12;
-
-    ctx.textAlign = 'left';
-    ctx.fillStyle = palette.grid;
-    ctx.shadowColor = palette.grid;
-    ctx.fillText(`SCORE: ${String(Math.floor(state.score)).padStart(6, '0')}`, 26, 19);
-
-    ctx.font = '600 11px ui-monospace, monospace';
-    ctx.globalAlpha = 0.74;
-    ctx.fillText(`HI: ${String(Math.floor(state.highScore)).padStart(6, '0')}`, 28, 48);
-
-    ctx.globalAlpha = 1;
-    ctx.textAlign = 'center';
-    ctx.font = '700 16px ui-monospace, monospace';
-    ctx.fillStyle = state.boosting ? '#ffffff' : '#50ff63';
-    ctx.shadowColor = '#50ff63';
-    ctx.fillText(state.boosting ? '>>>> HYPERFLOW >>>>' : '>>>> CRUISE >>>>', W / 2, 20);
-
-    ctx.font = '600 11px ui-monospace, monospace';
-    ctx.globalAlpha = 0.77;
-    ctx.fillText(`${Math.round(state.speed * 5.6)} KM/H  ·  CRT 240p`, W / 2, 47);
-
-    ctx.globalAlpha = 1;
-    ctx.textAlign = 'right';
-    ctx.font = '700 22px ui-monospace, monospace';
-    ctx.fillStyle = palette.wallA;
-    ctx.shadowColor = palette.wallA;
-    ctx.fillText(`WAVE: ${String(state.wave).padStart(2, '0')}`, W - 26, 19);
-
-    ctx.font = '600 11px ui-monospace, monospace';
-    ctx.globalAlpha = 0.74;
-    ctx.fillText(`FLOW x${state.combo.toFixed(1)}`, W - 28, 48);
-
-    // Lives.
-    ctx.globalAlpha = 1;
-    ctx.textAlign = 'left';
-    ctx.font = '700 21px ui-monospace, monospace';
-    ctx.fillStyle = palette.wallA;
-    ctx.shadowColor = palette.wallA;
-    ctx.fillText('A'.repeat(Math.max(0, state.lives)).split('').join('  '), 27, H - 47);
-
-    // Boost meter.
-    const bx = W * 0.53;
-    const by = H - 39;
-    const bw = W * 0.38;
-    const bh = 11;
-    ctx.shadowBlur = 0;
-    ctx.globalAlpha = 1;
-    ctx.strokeStyle = hexToRgba(palette.wallA, 0.75);
-    ctx.lineWidth = 1;
-    ctx.strokeRect(bx, by, bw, bh);
-    const grad = ctx.createLinearGradient(bx, 0, bx + bw, 0);
-    grad.addColorStop(0, palette.grid);
-    grad.addColorStop(1, palette.wallA);
-    ctx.fillStyle = grad;
-    ctx.fillRect(bx + 2, by + 2, (bw - 4) * state.boost / 100, bh - 4);
-    ctx.textAlign = 'right';
-    ctx.font = '700 11px ui-monospace, monospace';
-    ctx.fillStyle = '#ffffff';
-    ctx.shadowColor = palette.wallA;
-    ctx.shadowBlur = 8;
-    ctx.fillText(`BOOST ${Math.round(state.boost)}%`, bx - 10, by - 2);
-
-    ctx.restore();
-  }
-
-  function drawOverlay(palette) {
-    if (state.phase === 'play') return;
-
-    ctx.save();
-    ctx.fillStyle = 'rgba(1,2,10,.76)';
-    ctx.fillRect(0, 0, W, H);
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-
-    ctx.font = '800 62px ui-monospace, monospace';
-    ctx.fillStyle = palette.grid;
-    ctx.shadowColor = palette.grid;
-    ctx.shadowBlur = 28;
-    ctx.fillText(state.phase === 'over' ? 'OBLITERATED' : 'CAVE RACER', W / 2, H / 2 - 72);
-
-    ctx.font = '700 16px ui-monospace, monospace';
-    ctx.fillStyle = '#ffffff';
-    ctx.shadowBlur = 10;
-    ctx.fillText(
-      state.phase === 'over'
-        ? `SCORE ${Math.floor(state.score)}  -  WAVE ${state.wave}`
-        : 'A 2D SPRING-MESH ENDLESS RUNNER',
-      W / 2,
-      H / 2 - 12
-    );
-
-    ctx.font = '600 14px ui-monospace, monospace';
-    ctx.fillStyle = 'rgba(200,232,255,.78)';
-    ctx.shadowBlur = 0;
-    ctx.fillText('Z / UP: THRUST     X / SPACE: TEMPORARY BOOST', W / 2, H / 2 + 31);
-    ctx.fillText('The intact mesh arrives from ahead; your recorded flight path tears it open behind you.', W / 2, H / 2 + 57);
-
-    const pulse = 0.55 + Math.sin(state.time * 0.0045) * 0.35;
-    ctx.globalAlpha = pulse;
-    ctx.fillStyle = palette.wallA;
-    ctx.shadowColor = palette.wallA;
-    ctx.shadowBlur = 15;
-    ctx.fillText(state.phase === 'over' ? 'PRESS R OR TAP TO RUN AGAIN' : 'PRESS ANY CONTROL OR TAP TO BEGIN', W / 2, H / 2 + 107);
-    ctx.restore();
-  }
-
-  function draw() {
-    const palette = currentPalette();
-    const cave = buildCavePaths();
-    const shakeX = shake > 0.1 ? (Math.random() - 0.5) * shake : 0;
-    const shakeY = shake > 0.1 ? (Math.random() - 0.5) * shake * 0.6 : 0;
-
-    ctx.fillStyle = '#02030a';
-    ctx.fillRect(0, 0, W, H);
-
-    ctx.save();
-    ctx.translate(shakeX, shakeY);
-    drawSpeedLines(palette);
-    drawGrid(palette);
-    drawCave(cave, palette);
-    drawSparks();
-    drawPlayer(palette);
-
-    if (state.nearMiss > 0.02) {
-      ctx.fillStyle = hexToRgba(palette.edge, state.nearMiss * 0.08);
-      ctx.fillRect(0, 0, W, H);
-    }
-
-    ctx.restore();
-
-    if (boostFlash > 0) {
-      const grad = ctx.createRadialGradient(state.playerX, state.playerY, 10, state.playerX, state.playerY, 310);
-      grad.addColorStop(0, hexToRgba(palette.grid, boostFlash * 0.22));
-      grad.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, W, H);
-    }
-
-    if (hitFlash > 0) {
-      ctx.fillStyle = `rgba(255,45,20,${hitFlash * 0.24})`;
-      ctx.fillRect(0, 0, W, H);
-    }
-
-    drawHud(palette);
-    drawOverlay(palette);
-  }
-
-  function touchMode(mode) {
-    for (const value of touches.values()) {
-      if (value === mode) return true;
-    }
-    return false;
-  }
-
-  function pointerToMode(clientX) {
-    const rect = canvas.getBoundingClientRect();
-    const x = (clientX - rect.left) / rect.width;
-    return x < 0.56 ? 'thrust' : 'boost';
-  }
-
-  function beginFromInput() {
-    if (state.phase !== 'play') startGame();
-  }
-
-  window.addEventListener('keydown', (event) => {
-    if (['ArrowUp', 'ArrowDown', 'Space'].includes(event.code)) event.preventDefault();
-    if (event.code === 'KeyR') {
-      startGame();
-      return;
-    }
-    keys[event.code] = true;
-    if (['ArrowUp', 'ArrowDown', 'KeyW', 'KeyS', 'KeyZ', 'KeyX', 'Space'].includes(event.code)) {
-      beginFromInput();
-    }
-  }, { passive: false });
-
-  window.addEventListener('keyup', (event) => {
-    keys[event.code] = false;
-  });
-
-  canvas.addEventListener('pointerdown', (event) => {
-    event.preventDefault();
-    canvas.setPointerCapture(event.pointerId);
-    touches.set(event.pointerId, pointerToMode(event.clientX));
-    beginFromInput();
-  });
-
-  canvas.addEventListener('pointermove', (event) => {
-    if (!touches.has(event.pointerId)) return;
-    touches.set(event.pointerId, pointerToMode(event.clientX));
-  });
-
-  const endPointer = (event) => {
-    touches.delete(event.pointerId);
-  };
-  canvas.addEventListener('pointerup', endPointer);
-  canvas.addEventListener('pointercancel', endPointer);
-  canvas.addEventListener('contextmenu', (event) => event.preventDefault());
-
-  document.addEventListener('visibilitychange', () => {
-    lastTime = performance.now();
-    for (const key of Object.keys(keys)) keys[key] = false;
-    touches.clear();
-  });
-
-  function frame(now) {
-    const dt = Math.min(0.033, Math.max(0, (now - lastTime) / 1000));
-    lastTime = now;
-    update(dt);
-    draw();
-    requestAnimationFrame(frame);
-  }
-
-  configureCanvas();
-  initGrid();
-  initStars();
-  resetWakeTrail();
-  requestAnimationFrame(frame);
+  function touchMode(m){for(const v of touches.values())if(v===m)return true;return false}
+  function pointerMode(clientX){const r=canvas.getBoundingClientRect(),x=(clientX-r.left)/r.width;return x<.56?'thrust':'boost'}
+  function begin(){if(state.phase!=='play')startGame()}
+  function togglePause(){if(state.phase!=='play')return;state.paused=!state.paused;lastTime=performance.now()}
+
+  window.addEventListener('keydown',e=>{
+    if(['ArrowUp','ArrowDown','Space'].includes(e.code))e.preventDefault();
+    if(e.code==='KeyR'){startGame();return}
+    if((e.code==='KeyP'||e.code==='Escape')&&!pauseLatch){pauseLatch=true;togglePause();return}
+    keys[e.code]=true;if(['ArrowUp','ArrowDown','KeyW','KeyS','KeyZ','KeyX','Space'].includes(e.code))begin();
+  },{passive:false});
+  window.addEventListener('keyup',e=>{keys[e.code]=false;if(e.code==='KeyP'||e.code==='Escape')pauseLatch=false});
+  canvas.addEventListener('pointerdown',e=>{e.preventDefault();canvas.setPointerCapture(e.pointerId);touches.set(e.pointerId,pointerMode(e.clientX));begin()});
+  canvas.addEventListener('pointermove',e=>{if(touches.has(e.pointerId))touches.set(e.pointerId,pointerMode(e.clientX))});
+  const endPointer=e=>touches.delete(e.pointerId);canvas.addEventListener('pointerup',endPointer);canvas.addEventListener('pointercancel',endPointer);canvas.addEventListener('contextmenu',e=>e.preventDefault());
+  document.addEventListener('visibilitychange',()=>{lastTime=performance.now();for(const k of Object.keys(keys))keys[k]=false;touches.clear();if(document.hidden&&state.phase==='play')state.paused=true});
+
+  function frame(now){const dt=Math.min(.033,Math.max(0,(now-lastTime)/1000));lastTime=now;update(dt);draw();requestAnimationFrame(frame)}
+  configureCanvas();initGrid();initStars();resetTrail();requestAnimationFrame(frame);
 })();
 </script>
 </body>
