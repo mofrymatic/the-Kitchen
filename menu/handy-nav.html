@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HandyNav — Enterprise Service Procurement</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --corporate-navy: #0F172A;
+    --corporate-blue: #2563EB;
+    --corporate-slate: #64748B;
+    --corporate-light: #F8FAFC;
+    --corporate-border: #E2E8F0;
+    --corporate-white: #FFFFFF;
+    
+    --ff-sans: 'Inter', sans-serif;
+    --ff-serif: 'Playfair Display', serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--corporate-light);
+    color: var(--corporate-navy);
+    font-family: var(--ff-sans);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---------- Header ---------- */
+  header {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 60px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--corporate-border);
+  }
+  .brand-name {
+    font-family: var(--ff-serif);
+    font-size: 22px; font-weight: 700;
+    color: var(--corporate-navy);
+    letter-spacing: -0.02em;
+  }
+  .brand-name span { color: var(--corporate-blue); }
+  .header-nav { display: flex; gap: 32px; font-size: 13px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
+  .header-nav a { color: var(--corporate-slate); text-decoration: none; transition: color 0.2s; }
+  .header-nav a:hover { color: var(--corporate-navy); }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    padding: 160px 60px 80px;
+    max-width: 1200px; margin: 0 auto;
+  }
+  .hero-eyebrow {
+    font-size: 12px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.1em; color: var(--corporate-blue);
+    margin-bottom: 16px; display: flex; align-items: center; gap: 12px;
+  }
+  .hero-eyebrow::before { content: ''; width: 40px; height: 2px; background: var(--corporate-blue); }
+  .hero-title {
+    font-family: var(--ff-serif); font-size: 56px; font-weight: 700;
+    line-height: 1.1; margin-bottom: 24px; color: var(--corporate-navy);
+  }
+  .hero-desc {
+    font-size: 18px; color: var(--corporate-slate);
+    max-width: 600px; margin-bottom: 40px;
+  }
+
+  /* ---------- Configurator ---------- */
+  .section-container { max-width: 1200px; margin: 0 auto; padding: 40px 60px 100px; }
+  .config-shell {
+    display: grid; grid-template-columns: 1.8fr 1fr; gap: 60px; align-items: start;
+  }
+  
+  .config-list { display: flex; flex-direction: column; gap: 16px; }
+  .config-item {
+    display: grid; grid-template-columns: 24px 1fr auto; gap: 20px; align-items: start;
+    padding: 32px; background: var(--corporate-white);
+    border: 1px solid var(--corporate-border); border-radius: 4px;
+    cursor: pointer; transition: all 0.2s ease;
+  }
+  .config-item:hover { border-color: #cbd5e1; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+  .config-item.active {
+    border-color: var(--corporate-blue);
+    background: #F0F5FF;
+  }
+  .config-check {
+    width: 24px; height: 24px; border: 2px solid var(--corporate-slate); border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    color: transparent; transition: all 0.2s;
+  }
+  .config-item.active .config-check {
+    background: var(--corporate-blue); border-color: var(--corporate-blue); color: white;
+  }
+  .config-check::after { content: '✓'; font-size: 14px; font-weight: bold; }
+  
+  .config-name {
+    font-family: var(--ff-serif); font-size: 20px; font-weight: 600;
+    color: var(--corporate-navy); margin-bottom: 8px;
+  }
+  .config-desc { font-size: 15px; color: var(--corporate-slate); line-height: 1.5; }
+  .config-price { font-weight: 600; font-size: 20px; color: var(--corporate-navy); }
+
+  /* ---------- Summary Card ---------- */
+  .summary-card {
+    position: sticky; top: 120px;
+    background: var(--corporate-navy); color: var(--corporate-white);
+    padding: 40px; border-radius: 4px;
+  }
+  .summary-kicker {
+    font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.1em; color: #94A3B8; margin-bottom: 8px;
+  }
+  .summary-total {
+    font-family: var(--ff-serif); font-size: 48px; font-weight: 700;
+    margin-bottom: 32px;
+  }
+  .summary-line {
+    display: flex; justify-content: space-between;
+    border-top: 1px solid #334155; padding: 16px 0;
+    font-size: 14px; color: #CBD5E1;
+  }
+  .summary-line:last-of-type { border-bottom: 1px solid #334155; margin-bottom: 32px; }
+  .summary-line strong { color: var(--corporate-white); font-weight: 500; }
+  
+  .btn-primary {
+    display: block; width: 100%; text-align: center;
+    background: var(--corporate-blue); color: white;
+    padding: 16px 24px; font-size: 14px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    border: none; border-radius: 4px; cursor: pointer; transition: background 0.2s;
+    text-decoration: none; margin-bottom: 12px;
+  }
+  .btn-primary:hover { background: #1D4ED8; }
+  .btn-secondary {
+    display: block; width: 100%; text-align: center;
+    background: transparent; color: white;
+    padding: 14px 24px; font-size: 14px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    border: 1px solid #475569; border-radius: 4px; cursor: pointer; transition: background 0.2s;
+  }
+  .btn-secondary:hover { background: #1E293B; }
+
+  /* ---------- Printable SOW ---------- */
+  .sow-preview {
+    display: none; /* Hidden on web, visible on print */
+    background: white; padding: 40px; color: black; font-family: 'Times New Roman', serif;
+  }
+
+  @media print {
+    body { background: white !important; }
+    header, .hero, .config-shell, .no-print { display: none !important; }
+    .sow-preview { display: block !important; padding: 0 !important; }
+    .sow-header { border-bottom: 2px solid black; padding-bottom: 20px; margin-bottom: 40px; }
+    .sow-header h1 { font-size: 24px; margin-bottom: 8px; text-transform: uppercase; }
+    .sow-table { width: 100%; border-collapse: collapse; margin-bottom: 40px; }
+    .sow-table th, .sow-table td { border-bottom: 1px solid #ccc; padding: 12px 0; text-align: left; }
+    .sow-table th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: #555; }
+    .sow-table td:last-child, .sow-table th:last-child { text-align: right; }
+    .signature-block { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 80px; }
+    .sig-line { border-top: 1px solid black; padding-top: 8px; font-size: 14px; }
+  }
+
+  @media (max-width: 1024px) {
+    .config-shell { grid-template-columns: 1fr; }
+    .summary-card { position: static; margin-top: 40px; }
+    .hero { padding: 120px 40px 60px; }
+    .section-container { padding: 20px 40px 80px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="no-print">
+  <div class="brand-name">Handy<span>Nav</span></div>
+  <nav class="header-nav">
+    <a href="#configure">Scope Configuration</a>
+    <a href="#export">Procurement</a>
+  </nav>
+</header>
+
+<section class="hero no-print">
+  <div class="hero-eyebrow">Enterprise Facilities Management</div>
+  <h1 class="hero-title">Predictable Quality.<br>Itemized Execution.</h1>
+  <p class="hero-desc">
+    Select the scope of work below to instantly generate a formal Statement of Work. All engagements operate on transparent, flat-fee billing with guaranteed SLA response times.
+  </p>
+</section>
+
+<section class="section-container no-print" id="configure">
+  <div class="config-shell">
+    
+    <div class="config-list" id="config-list">
+      <!-- Item 1 -->
+      <div class="config-item active" data-price="950" data-name="Executive Suite Pre-Winter Audit & Remediation">
+        <div class="config-check"></div>
+        <div>
+          <h3 class="config-name">Executive Suite Pre-Winter Audit & Remediation</h3>
+          <p class="config-desc">Comprehensive envelope inspection, HVAC filter replacement, weatherstripping assessment, and minor caulking for up to 5,000 sq ft of corporate space.</p>
+        </div>
+        <div class="config-price">$950</div>
+      </div>
+      
+      <!-- Item 2 -->
+      <div class="config-item" data-price="1200" data-name="Quarterly Preventative Retainer">
+        <div class="config-check"></div>
+        <div>
+          <h3 class="config-name">Quarterly Preventative Retainer (Q1)</h3>
+          <p class="config-desc">Priority on-call status for plumbing shutoffs, electrical load balancing, and drywall/fixture repairs. Includes up to 10 hours of on-site labor per quarter.</p>
+        </div>
+        <div class="config-price">$1,200</div>
+      </div>
+
+      <!-- Item 3 -->
+      <div class="config-item" data-price="2500" data-name="Custom Millwork & Fixture Retrofitting">
+        <div class="config-check"></div>
+        <div>
+          <h3 class="config-name">Custom Millwork & Fixture Retrofitting</h3>
+          <p class="config-desc">Fabrication, adjustment, and secure mounting of high-end office fixtures, acoustic paneling, and presentation displays.</p>
+        </div>
+        <div class="config-price">$2,500</div>
+      </div>
+    </div>
+
+    <!-- Summary Card -->
+    <div class="summary-card" id="export">
+      <div class="summary-kicker">Estimated Engagement Total</div>
+      <div class="summary-total" id="display-total">$950</div>
+      
+      <div id="summary-lines">
+        <!-- Injected via JS -->
+      </div>
+      
+      <div style="margin-top: 32px;">
+        <button class="btn-primary" onclick="generatePDF()">1. Generate SOW (PDF)</button>
+        <button class="btn-secondary" onclick="initiateCoordination()">2. Schedule Wire & Zoom</button>
+      </div>
+    </div>
+    
+  </div>
+</section>
+
+<!-- SOW Print Template -->
+<div class="sow-preview" id="sow-preview">
+  <div class="sow-header">
+    <h1>Statement of Work (SOW)</h1>
+    <p><strong>Vendor:</strong> HandyNav Facilities Services</p>
+    <p><strong>Date Generated:</strong> <span id="print-date"></span></p>
+  </div>
+  
+  <p style="margin-bottom: 24px;">This Statement of Work outlines the approved services, deliverables, and associated fees. Work will commence upon execution of this document and receipt of the initial wire transfer.</p>
+  
+  <table class="sow-table">
+    <thead>
+      <tr>
+        <th>Approved Scope Item</th>
+        <th>Fee (USD)</th>
+      </tr>
+    </thead>
+    <tbody id="sow-table-body">
+      <!-- Injected via JS -->
+    </tbody>
+    <tfoot>
+      <tr>
+        <th style="padding-top: 24px; font-size: 16px;">Total Authorized</th>
+        <th style="padding-top: 24px; font-size: 16px; color: black;" id="sow-total">$950</th>
+      </tr>
+    </tfoot>
+  </table>
+
+  <div class="signature-block">
+    <div>
+      <div class="sig-line">Client Authorized Signature & Date</div>
+    </div>
+    <div>
+      <div class="sig-line">HandyNav Representative & Date</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // State management
+  const items = document.querySelectorAll('.config-item');
+  let selectedItems = [{ name: 'Executive Suite Pre-Winter Audit & Remediation', price: 950 }];
+
+  function formatCurrency(num) {
+    return '$' + num.toLocaleString('en-US');
+  }
+
+  function updateDOM() {
+    let total = 0;
+    const summaryLines = document.getElementById('summary-lines');
+    const tableBody = document.getElementById('sow-table-body');
+    
+    summaryLines.innerHTML = '';
+    tableBody.innerHTML = '';
+
+    selectedItems.forEach(item => {
+      total += item.price;
+      
+      // Update sidebar summary
+      summaryLines.innerHTML += `
+        <div class="summary-line">
+          <span>${item.name}</span>
+          <strong>${formatCurrency(item.price)}</strong>
+        </div>
+      `;
+      
+      // Update print SOW
+      tableBody.innerHTML += `
+        <tr>
+          <td>${item.name}</td>
+          <td>${formatCurrency(item.price)}</td>
+        </tr>
+      `;
+    });
+
+    document.getElementById('display-total').innerText = formatCurrency(total);
+    document.getElementById('sow-total').innerText = formatCurrency(total);
+    document.getElementById('print-date').innerText = new Date().toLocaleDateString();
+  }
+
+  // Click listeners for configurator
+  items.forEach(item => {
+    item.addEventListener('click', () => {
+      item.classList.toggle('active');
+      
+      const itemName = item.getAttribute('data-name');
+      const itemPrice = parseInt(item.getAttribute('data-price'));
+      
+      if (item.classList.contains('active')) {
+        selectedItems.push({ name: itemName, price: itemPrice });
+      } else {
+        selectedItems = selectedItems.filter(i => i.name !== itemName);
+      }
+      updateDOM();
+    });
+  });
+
+  // Action 1: Print to PDF
+  function generatePDF() {
+    window.print();
+  }
+
+  // Action 2: Trigger Email for Zoom/Wire
+  function initiateCoordination() {
+    let total = selectedItems.reduce((acc, curr) => acc + curr.price, 0);
+    
+    let subject = encodeURIComponent("HandyNav Engagement: Next Steps & Coordination");
+    
+    let bodyText = "Hello HandyNav team,\n\n";
+    bodyText += "I have reviewed and selected the following scope of work:\n\n";
+    selectedItems.forEach(i => {
+      bodyText += `- ${i.name} (${formatCurrency(i.price)})\n`;
+    });
+    bodyText += `\nTotal: ${formatCurrency(total)}\n\n`;
+    bodyText += "Please reply with your availability for a brief Zoom onboarding call, as well as the wire transfer instructions to secure the schedule.\n\n";
+    bodyText += "Best regards,\n[Your Name/Title]";
+
+    window.location.href = `mailto:hello@handynav.com?subject=${subject}&body=${encodeURIComponent(bodyText)}`;
+  }
+
+  // Initial load
+  updateDOM();
+</script>
+
+</body>
+</html>
