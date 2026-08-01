@@ -760,19 +760,19 @@
                 → cabinet-closeup.png in the same directory.
            ═══════════════════════════════════════════════════════════ */
 
-        /* Cabinet zoom — transform-origin targets the screen region */
+        /* Cabinet zoom — gentle push-in before closeup crossfades over */
         .cabinet-wrapper {
-            transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1);
             transform-origin: 50% 34%;
         }
-        .cabinet-wrapper.zoomed { transform: scale(2.6); }
+        .cabinet-wrapper.zoomed { transform: scale(1.4); }
 
         /* Full-screen close-up overlay */
         #closeup-layer {
             position: fixed; inset: 0;
             z-index: 200;
             opacity: 0; pointer-events: none;
-            transition: opacity 0.48s ease;
+            transition: opacity 0.40s ease;
         }
         #closeup-layer.visible {
             opacity: 1; pointer-events: all;
@@ -1250,10 +1250,11 @@
 
     let menuOpen = false;
 
-    /* ── Close-up CRT positioning ────────────────────────────────────
-       Fractional coordinates of the CRT bezel within the 1088×976
-       source image. Adjust if the menu doesn't land on the screen.   */
-    const CRT = { left: 0.175, top: 0.253, right: 0.812, bottom: 0.723 };
+    // Fractional coordinates of the CRT bezel within the 1088×976 source image.
+    // Calibrated from live screenshot at 1456×816 (cover scale=1.338, offY=-245):
+    //   left   x≈247px  → col 185  (0.170)   right  x≈1248px → col 932  (0.857)
+    //   top    y≈62px   → row 229  (0.235)   bottom y≈787px  → row 771  (0.790)
+    const CRT = { left: 0.170, top: 0.235, right: 0.857, bottom: 0.790 };
 
     function positionCloseupScreen() {
         const natW = closeupBgImg.naturalWidth  || 1088;
@@ -1265,10 +1266,29 @@
         const rendW = natW * scale, rendH = natH * scale;
         const offX  = (vpW - rendW) / 2, offY = (vpH - rendH) / 2;
 
-        closeupScreen.style.left   = (offX + CRT.left  * rendW) + 'px';
-        closeupScreen.style.top    = (offY + CRT.top   * rendH) + 'px';
-        closeupScreen.style.width  = ((CRT.right - CRT.left) * rendW) + 'px';
-        closeupScreen.style.height = ((CRT.bottom - CRT.top) * rendH) + 'px';
+        const crtL = offX + CRT.left  * rendW;
+        const crtT = offY + CRT.top   * rendH;
+        const crtR = offX + CRT.right * rendW;
+        const crtB = offY + CRT.bottom * rendH;
+
+        // On portrait-mobile the cover crop removes the CRT horizontally.
+        // Detect and fall back to a centred fullscreen-ish menu instead.
+        const onScreen = crtL > -vpW * 0.15 && crtR < vpW * 1.15
+                      && crtT >  0            && crtB < vpH;
+
+        if (onScreen) {
+            closeupScreen.style.left   = crtL + 'px';
+            closeupScreen.style.top    = crtT + 'px';
+            closeupScreen.style.width  = (crtR - crtL) + 'px';
+            closeupScreen.style.height = (crtB - crtT) + 'px';
+        } else {
+            // Portrait/narrow fallback: center menu with safe padding
+            const pad = 16;
+            closeupScreen.style.left   = pad + 'px';
+            closeupScreen.style.top    = pad + 'px';
+            closeupScreen.style.width  = (vpW - pad * 2) + 'px';
+            closeupScreen.style.height = (vpH - pad * 2) + 'px';
+        }
     }
 
     // Keep CRT region correct on resize (portrait ↔ landscape flips etc.)
@@ -1292,7 +1312,7 @@
         cabinetWrapper.classList.add('zoomed');
 
         // Phase 2 – close-up photo crossfades over the zoomed cabinet
-        setTimeout(() => closeupLayer.classList.add('visible'), 180);
+        setTimeout(() => closeupLayer.classList.add('visible'), 100);
 
         // Fade the idle screen out immediately
         idle.style.transition = 'opacity 0.25s ease';
