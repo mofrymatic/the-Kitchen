@@ -810,6 +810,17 @@
             );
             pointer-events: none; z-index: 31;
         }
+
+        /* Volume control anchored inside the CRT in close-up mode.
+           Higher specificity (ID+class) overrides the base ID-only rules. */
+        #edge-volume.in-cabinet {
+            border-radius: 10px;
+            border-right: 1px solid rgba(255,0,110,0.3);
+        }
+        #edge-volume.in-cabinet:hover,
+        #edge-volume.in-cabinet.open {
+            border-color: rgba(255,0,110,0.7);
+        }
     </style>
 </head>
 <body>
@@ -1292,7 +1303,35 @@
     }
 
     // Keep CRT region correct on resize (portrait ↔ landscape flips etc.)
-    window.addEventListener('resize', () => { if (menuOpen) positionCloseupScreen(); });
+    window.addEventListener('resize', () => {
+        if (menuOpen) { positionCloseupScreen(); enterCabinetVolumeMode(); }
+    });
+
+
+    /* ══════════════════════════════════════════════════════════════
+       VOLUME CONTROL — CABINET MODE HELPERS
+       Reposition #edge-volume inside the CRT on open; restore on close.
+       ══════════════════════════════════════════════════════════════ */
+    function enterCabinetVolumeMode() {
+        // #closeup-screen has been positioned — read its rect for placement.
+        const r   = closeupScreen.getBoundingClientRect();
+        const pad = 10;
+        const edV = document.getElementById('edge-volume');
+        edV.style.right     = Math.max(0, window.innerWidth  - r.right  + pad) + 'px';
+        edV.style.bottom    = Math.max(0, window.innerHeight - r.bottom + pad) + 'px';
+        edV.style.top       = 'auto';
+        edV.style.transform = 'none';
+        edV.classList.add('in-cabinet');
+    }
+
+    function exitCabinetVolumeMode() {
+        const edV = document.getElementById('edge-volume');
+        edV.style.right     = '';
+        edV.style.bottom    = '';
+        edV.style.top       = '';
+        edV.style.transform = '';
+        edV.classList.remove('in-cabinet');
+    }
 
 
     /* ══════════════════════════════════════════════════════════════
@@ -1325,6 +1364,8 @@
             // Compute CRT rect and re-parent the menu element into it
             positionCloseupScreen();
             closeupScreen.appendChild(menu);
+            gameGrid.scrollTop = 0;       // always start at top of game list
+            enterCabinetVolumeMode();     // park volume control inside the CRT
 
             // Re-trigger stagger animation on tiles
             tiles.forEach(t => t.classList.remove('entering'));
@@ -1340,6 +1381,7 @@
         if (!menuOpen) return;
         menuOpen = false;
         wake(); sfx.exit();
+        exitCabinetVolumeMode();          // restore volume to browser edge
 
         // Menu fade-out
         menu.classList.remove('active');
