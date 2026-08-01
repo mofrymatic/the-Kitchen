@@ -53,7 +53,9 @@
         }
 
         html, body {
-            width: 100%; height: 100%;
+            width: 100%;
+            height: 100vh;   /* fallback for older browsers */
+            height: 100dvh;  /* tracks iOS Safari's collapsing toolbar correctly */
             overflow: hidden;
             background: var(--dark-bg);
             font-family: 'Press Start 2P', monospace;
@@ -770,6 +772,9 @@
         /* Full-screen close-up overlay */
         #closeup-layer {
             position: fixed; inset: 0;
+            width: 100vw;
+            height: 100vh;   /* fallback */
+            height: 100dvh;  /* tracks iOS Safari's collapsing toolbar correctly */
             z-index: 200;
             opacity: 0; pointer-events: none;
             transition: opacity 0.40s ease;
@@ -809,6 +814,21 @@
                 transparent 55%, rgba(0,0,0,0.5) 100%
             );
             pointer-events: none; z-index: 31;
+        }
+
+        /* Portrait/narrow fallback: the source photo doesn't have a usable
+           CRT crop at this aspect, so darken the backdrop hard and give the
+           menu box its own bezel — it becomes the visual "screen" instead
+           of trying to sit inside a mismatched photo crop. */
+        #closeup-layer.fallback-mode #closeup-bg-img {
+            filter: brightness(0.22) saturate(0.7) blur(2px);
+        }
+        #closeup-screen.fallback-framed {
+            border: 1px solid rgba(0,190,255,0.35);
+            border-radius: 10px;
+            box-shadow: 0 0 0 1px rgba(0,0,0,0.6),
+                        0 20px 60px rgba(0,0,0,0.7),
+                        0 0 40px rgba(0,190,255,0.08);
         }
 
         /* Volume control anchored inside the CRT in close-up mode.
@@ -1270,7 +1290,12 @@
     function positionCloseupScreen() {
         const natW = closeupBgImg.naturalWidth  || 1088;
         const natH = closeupBgImg.naturalHeight || 976;
-        const vpW  = window.innerWidth, vpH = window.innerHeight;
+
+        // visualViewport tracks iOS Safari's collapsing toolbar accurately;
+        // window.innerWidth/Height can lag behind during the show/hide animation.
+        const vv   = window.visualViewport;
+        const vpW  = vv ? vv.width  : window.innerWidth;
+        const vpH  = vv ? vv.height : window.innerHeight;
 
         // Replicate object-fit: cover math (centered)
         const scale = Math.max(vpW / natW, vpH / natH);
@@ -1292,20 +1317,33 @@
             closeupScreen.style.top    = crtT + 'px';
             closeupScreen.style.width  = (crtR - crtL) + 'px';
             closeupScreen.style.height = (crtB - crtT) + 'px';
+            closeupLayer.classList.remove('fallback-mode');
+            closeupScreen.classList.remove('fallback-framed');
         } else {
-            // Portrait/narrow fallback: center menu with safe padding
+            // Portrait/narrow fallback: the photo has no usable CRT crop at
+            // this aspect ratio. Give the box its own bezel/shadow and
+            // darken the backdrop so it reads as "the screen" on its own.
             const pad = 16;
             closeupScreen.style.left   = pad + 'px';
             closeupScreen.style.top    = pad + 'px';
             closeupScreen.style.width  = (vpW - pad * 2) + 'px';
             closeupScreen.style.height = (vpH - pad * 2) + 'px';
+            closeupLayer.classList.add('fallback-mode');
+            closeupScreen.classList.add('fallback-framed');
         }
     }
 
     // Keep CRT region correct on resize (portrait ↔ landscape flips etc.)
+    // visualViewport.resize catches iOS toolbar show/hide; window resize
+    // catches everything else (orientation change, actual window resize).
     window.addEventListener('resize', () => {
         if (menuOpen) { positionCloseupScreen(); enterCabinetVolumeMode(); }
     });
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', () => {
+            if (menuOpen) { positionCloseupScreen(); enterCabinetVolumeMode(); }
+        });
+    }
 
 
     /* ══════════════════════════════════════════════════════════════
@@ -1373,7 +1411,12 @@
             tiles.forEach(t => t.classList.add('entering'));
 
             menu.classList.add('active');
-            keyHint.classList.remove('hidden');
+            // Suppress the page-level "ESC" keyboard hint in the portrait
+            // fallback — it's redundant with the menu's own in-box exit
+            // line and was bleeding through as duplicate text on mobile.
+            if (!closeupLayer.classList.contains('fallback-mode')) {
+                keyHint.classList.remove('hidden');
+            }
         }, 520);
     }
 
