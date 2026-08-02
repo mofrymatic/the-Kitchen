@@ -36,8 +36,6 @@
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 html,body{width:100%;height:100%;background:#050810;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
 canvas{display:block;position:fixed;top:0;left:0;touch-action:none;image-rendering:pixelated;image-rendering:crisp-edges}
-#c{z-index:1}
-#hud{position:fixed;inset:0;z-index:6;pointer-events:none;image-rendering:auto}
 
 /* ── CRT chrome (Obliteratus) ─────────────────────────────────────────
    Ported from neon-invaders.html's low-native-res + nearest-neighbor
@@ -77,7 +75,7 @@ canvas{display:block;position:fixed;top:0;left:0;touch-action:none;image-renderi
   border-radius:12px;background:rgba(5,10,24,.70);
   border:1.5px solid rgba(80,200,255,.25);
   box-shadow:0 0 12px rgba(60,180,255,.10),inset 0 0 10px rgba(60,160,255,.04);
-  color:rgba(80,210,255,.70);font-family:ui-monospace,'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+  color:rgba(80,210,255,.70);font-family:'Courier New',monospace;
   font-weight:bold;font-size:clamp(18px,5vw,28px);
   animation:nb-appear .4s ease both;
   transition:background .06s,border-color .06s,box-shadow .06s,color .06s,transform .06s;
@@ -127,7 +125,7 @@ canvas{display:block;position:fixed;top:0;left:0;touch-action:none;image-renderi
   align-items:center;justify-content:center;
   width:44px;height:36px;border-radius:8px;
   background:rgba(5,12,28,.70);border:1.5px solid rgba(80,190,255,.28);
-  color:rgba(80,210,255,.72);font-family:ui-monospace,'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+  color:rgba(80,210,255,.72);font-family:'Courier New',monospace;
   font-size:13px;font-weight:bold;letter-spacing:2px;
   box-shadow:0 0 10px rgba(60,170,255,.12);
   transition:background .06s,border-color .06s,box-shadow .06s;
@@ -145,7 +143,6 @@ canvas{display:block;position:fixed;top:0;left:0;touch-action:none;image-renderi
 <body>
 <canvas id="c"></canvas>
 <div id="crt"></div>
-<canvas id="hud" aria-hidden="true"></canvas>
 
 <div id="nui" aria-label="Game controls" role="group">
   <div id="nui-move" role="group" aria-label="Movement">
@@ -186,8 +183,6 @@ const PIXEL_SCALE = 2;
 
 const dispCanvas = document.getElementById('c');
 const dispCtx    = dispCanvas.getContext('2d');
-const hudCanvas  = document.getElementById('hud');
-const hud        = hudCanvas.getContext('2d', {alpha:true});
 const canvas     = document.createElement('canvas'); // backbuffer — never inserted into the DOM
 const ctx        = canvas.getContext('2d');
 let W, H, BOARD_X, BOARD_Y, CELL, BOARD_W, BOARD_H, HUD_X, HUD_W;
@@ -204,15 +199,6 @@ function resize() {
   W = canvas.width  = Math.round(winW / PIXEL_SCALE);
   H = canvas.height = Math.round(winH / PIXEL_SCALE);
 
-  // Cave Racer-style dual-canvas composition: gameplay remains deliberately
-  // chunky in the reduced backbuffer, while typography is drawn once at the
-  // display's native resolution. This prevents scanlines and nearest-neighbor
-  // scaling from destroying counters, labels, and overlay copy.
-  hudCanvas.width = winW;
-  hudCanvas.height = winH;
-  hud.setTransform(winW / W, 0, 0, winH / H, 0, 0);
-  hud.imageSmoothingEnabled = true;
-
   // 190/PIXEL_SCALE, minCell, and the gutters below are all real-screen-px
   // constants — they get divided by PIXEL_SCALE for the same reason the
   // touch-NUI height does: they're anchored to the physical device, not to
@@ -220,7 +206,7 @@ function resize() {
   const nuiH      = nuiActive ? Math.min(190 / PIXEL_SCALE, H * 0.26) : 0;
   const minCell   = Math.round(18 / PIXEL_SCALE);
   const bottomGap = Math.max(2, Math.round(6 / PIXEL_SCALE));   // breathing room above the NUI zone, not a dead zone
-  const gutter    = Math.max(3, Math.round(12 / PIXEL_SCALE));
+  const gutter    = Math.max(2, Math.round(8 / PIXEL_SCALE));
 
   // The board now owns the full screen height — flush to the true top
   // (open well, no ceiling — see drawBoard), filling down to just above
@@ -232,7 +218,7 @@ function resize() {
   // would have allowed. Decoupled, height wins the fit on typical portrait
   // phones; the width-based cap below is what still protects unusually
   // wide/short viewports where width remains the tighter constraint.
-  const hudW        = clamp(132 / PIXEL_SCALE, 112 / PIXEL_SCALE, W * 0.34);
+  const hudW        = clamp(70 / PIXEL_SCALE, 52 / PIXEL_SCALE, W * 0.34);
   const cellByHeight = Math.floor((H - nuiH - bottomGap) / ROWS);
   const cellByWidth  = Math.floor((W - gutter * 2 - hudW) / COLS);
   CELL = Math.max(Math.min(cellByHeight, cellByWidth), minCell);
@@ -262,11 +248,6 @@ const TAU    = Math.PI * 2;
 const rnd    = (a, b) => a + Math.random() * (b - a);
 const rndInt = (a, b) => Math.floor(rnd(a, b + 1));
 const clamp  = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
-
-// Type system shared by the title, overlays, rail, and touch controls.
-// Display copy is broad and unmistakable; telemetry stays monospaced.
-const FONT_DISPLAY = '"Arial Black","Helvetica Neue",Arial,sans-serif';
-const FONT_DATA = '"SFMono-Regular",Menlo,Consolas,"Liberation Mono","Courier New",monospace';
 
 // ── Audio ──────────────────────────────────────────────────────────────
 let _ac = null;
@@ -1161,233 +1142,218 @@ function drawBoard() {
   }
 }
 
-function uiText(g, text, x, y, size, opts={}) {
-  const {
-    align='left', baseline='top', color='#ffffff', weight=700,
-    family=FONT_DATA, glow=null, stroke='rgba(0,0,0,.92)',
-    strokeWidth=Math.max(1, size*0.12), alpha=1
-  } = opts;
-  g.save();
-  g.globalAlpha=alpha;
-  g.font=`${weight} ${size}px ${family}`;
-  g.textAlign=align;
-  g.textBaseline=baseline;
-  g.lineJoin='round';
-  const tx=Math.round(x), ty=Math.round(y);
-  if(stroke) {
-    g.strokeStyle=stroke;
-    g.lineWidth=strokeWidth;
-    g.strokeText(String(text),tx,ty);
-  }
-  g.fillStyle=color;
-  g.shadowColor=glow||'transparent';
-  g.shadowBlur=glow?Math.min(4,size*.22):0;
-  g.fillText(String(text),tx,ty);
-  g.restore();
-}
-
-function drawUIBlock(g, px, py, size, col, glo, alpha=1, dimmed=false) {
-  const pad=Math.max(.75,size*.055);
-  g.save();
-  g.globalAlpha=alpha;
-  const fill=dimmed?'#4b5968':col;
-  const glow=dimmed?'#263443':glo;
-  g.shadowColor=glow;
-  g.shadowBlur=dimmed?0:Math.min(5,size*.25);
-  const grad=g.createLinearGradient(px,py,px,py+size);
-  grad.addColorStop(0,lighten(fill,dimmed?.12:.28));
-  grad.addColorStop(.52,fill);
-  grad.addColorStop(1,darken(fill,dimmed?.16:.28));
-  g.fillStyle=grad;
-  g.fillRect(px+pad,py+pad,size-pad*2,size-pad*2);
-  g.shadowBlur=0;
-  g.globalAlpha=alpha*(dimmed?.28:.62);
-  g.strokeStyle=dimmed?'#91a0ad':lighten(fill,.5);
-  g.lineWidth=Math.max(.65,size*.045);
-  g.strokeRect(px+pad+.35,py+pad+.35,size-pad*2-.7,size-pad*2-.7);
-  g.restore();
-}
-
-function drawUIPiecePreview(g,key,bx,by,boxW,cell,alpha=1,dimmed=false) {
-  const np=PIECES[key];
-  const shape=np.shapes[0];
-  const minC=Math.min(...shape.map(([c])=>c)), maxC=Math.max(...shape.map(([c])=>c));
-  const minR=Math.min(...shape.map(([,r])=>r)), maxR=Math.max(...shape.map(([,r])=>r));
-  const pw=(maxC-minC+1)*cell, ph=(maxR-minR+1)*cell;
-  const ox=bx+(boxW-pw)/2;
-  for(const [dc,dr] of shape) {
-    drawUIBlock(g,ox+(dc-minC)*cell,by+(dr-minR)*cell,cell,np.col,np.glow,alpha,dimmed);
-  }
-  return ph;
-}
-
-function drawRailPanel(g,x,y,w,h) {
-  g.save();
-  g.fillStyle='rgba(2,7,18,.72)';
-  g.fillRect(x,y,w,h);
-  g.strokeStyle='rgba(68,194,255,.28)';
-  g.lineWidth=.8;
-  g.strokeRect(x+.5,y+.5,w-1,h-1);
-  g.strokeStyle='rgba(255,255,255,.08)';
-  g.beginPath();
-  g.moveTo(x+4,y+4);g.lineTo(x+w-4,y+4);
-  g.stroke();
-  g.restore();
-}
-
 function drawHUD() {
-  const g=hud;
-  const railX=HUD_X-2;
-  const railY=BOARD_Y+5;
-  const railW=HUD_W+4;
-  const railH=Math.max(0,BOARD_H-10);
-  const pad=clamp(HUD_W*.09,4,8);
-  const infoX=HUD_X+pad;
-  const infoW=Math.max(16,HUD_W-pad*2);
-  const labelFs=clamp(CELL*.3,7,10);
-  const microFs=clamp(CELL*.24,6.5,8.5);
-  const cyan='rgba(94,215,255,.88)';
+  const infoX = HUD_X;
+  const infoW = HUD_W;
 
-  drawRailPanel(g,railX,railY,railW,railH);
+  ctx.save();
+  ctx.textAlign='left';
 
-  let y=railY+pad;
-  uiText(g,'HOLD',infoX,y,labelFs,{color:cyan,weight:800});
-  y+=labelFs+clamp(CELL*.18,4,7);
+  const label = (txt, x, y) => {
+    ctx.fillStyle='rgba(60,180,255,0.5)';
+    ctx.shadowBlur=0;
+    ctx.fillText(txt, x, y);
+  };
+  const value = (txt, x, y, col='#ffffff') => {
+    ctx.fillStyle=col;
+    ctx.shadowColor=col; ctx.shadowBlur=8;
+    ctx.fillText(txt, x, y);
+  };
 
-  const holdCell=clamp(Math.min(infoW/4.2,CELL*.62),6,15);
-  const holdSlotH=holdCell*2+clamp(CELL*.2,4,8);
-  if(gs.hold) {
-    drawUIPiecePreview(g,gs.hold,infoX,y,infoW,holdCell,gs.holdUsed?.36:1,gs.holdUsed);
-    if(gs.holdUsed) uiText(g,'LOCKED',infoX+infoW,y+holdSlotH-2,microFs,{align:'right',baseline:'bottom',color:'rgba(170,185,200,.7)',weight:700});
+  // ── NEXT ×3 — top half of the column ─────────────────────────────────
+  // As in resize(): every clamp() bound below is a real-screen legibility
+  // floor/ceiling, so it gets the same /PIXEL_SCALE treatment as minCell
+  // and the NUI height — otherwise a PIXEL_SCALE>1 quietly doubles what
+  // was meant to be an absolute minimum, same bug as the CELL floor.
+  const colTop    = BOARD_Y;
+  const colBottom = BOARD_Y + BOARD_H;
+  const halfH     = (colBottom - colTop) / 2;
+
+  const topPad      = clamp(CELL*0.5, 8/PIXEL_SCALE, 16/PIXEL_SCALE);
+  const nextLabelFs = clamp(CELL*0.4, 10/PIXEL_SCALE, 14/PIXEL_SCALE);
+  const labelGap    = clamp(CELL*0.25, 5/PIXEL_SCALE, 9/PIXEL_SCALE);
+
+  // Renders a single piece centered within a box of width `boxW`, at the
+  // given cell size, with its top-left at (bx, by). Returns nothing; pure draw.
+  const drawPiecePreview = (key, bx, by, boxW, cell, alpha, dimmed=false) => {
+    const np = PIECES[key];
+    const shape = np.shapes[0];
+    const minC=Math.min(...shape.map(([c])=>c)), maxC=Math.max(...shape.map(([c])=>c));
+    const minR=Math.min(...shape.map(([,r])=>r)), maxR=Math.max(...shape.map(([,r])=>r));
+    const pw=(maxC-minC+1)*cell, ph=(maxR-minR+1)*cell;
+    const ox=bx+(boxW-pw)/2, oy=by;
+    for (const [dc,dr] of shape) {
+      const col  = dimmed ? '#4a5a6a' : np.col;
+      const glow = dimmed ? '#2a3a4a' : np.glow;
+      drawBlock(ox+(dc-minC)*cell, oy+(dr-minR)*cell, cell, col, glow, alpha);
+    }
+    return ph;
+  };
+
+  // ── HOLD box — sits at the very top of the rail, above NEXT ──────────
+  // Mirrors the reference design (panel 1–4): a labelled reserve slot that
+  // shows the stored piece in true color, or reads EMPTY when nothing is
+  // held, and dims to grey while hold is on cooldown for the current drop.
+  let py = colTop + topPad;
+  ctx.font=`bold ${nextLabelFs}px "Courier New",monospace`;
+  label('HOLD', infoX, py + nextLabelFs);
+  py += nextLabelFs + labelGap;
+
+  const holdCell = clamp(infoW/4.3, 10/PIXEL_SCALE, 22/PIXEL_SCALE);
+  const holdBoxH = holdCell*2 + clamp(CELL*0.2, 3/PIXEL_SCALE, 7/PIXEL_SCALE);
+  if (gs.hold) {
+    // Grey out (dimmed) exactly when the player can't act on it yet.
+    drawPiecePreview(gs.hold, infoX, py, infoW, holdCell, gs.holdUsed?0.4:1, gs.holdUsed);
   } else {
-    uiText(g,'EMPTY',infoX,y+holdCell*.55,microFs,{color:'rgba(145,172,198,.62)',weight:650});
+    ctx.font=`${clamp(CELL*0.32,8/PIXEL_SCALE,12/PIXEL_SCALE)}px "Courier New",monospace`;
+    ctx.fillStyle='rgba(90,130,170,0.45)'; ctx.shadowBlur=0;
+    ctx.fillText('EMPTY', infoX, py + holdCell);
   }
-  y+=holdSlotH;
+  py += holdBoxH + clamp(CELL*0.4, 8/PIXEL_SCALE, 16/PIXEL_SCALE);
 
-  g.save();
-  g.strokeStyle='rgba(70,190,255,.18)';
-  g.lineWidth=.7;
-  g.beginPath();g.moveTo(infoX,y);g.lineTo(infoX+infoW,y);g.stroke();
-  g.restore();
-  y+=clamp(CELL*.3,6,11);
+  // ── NEXT ×3 — fills the rest of the top half below the HOLD box ──────
+  ctx.font=`bold ${nextLabelFs}px "Courier New",monospace`;
+  label('NEXT', infoX, py + nextLabelFs);
+  py += nextLabelFs + labelGap;
 
-  uiText(g,'NEXT',infoX,y,labelFs,{color:cyan,weight:800});
-  y+=labelFs+clamp(CELL*.18,4,7);
+  // Three slots evenly fill whatever's left of the top half. previewCell
+  // is capped by BOTH the per-slot height budget and the column width —
+  // width is the usual limiter (a 4-wide I-piece has to fit infoW), so the
+  // extra vertical room mostly becomes breathing room between slots rather
+  // than oversized icons blowing past the column.
+  // Floor the per-slot height so, even after the HOLD box eats into the top
+  // half, the three NEXT slots never collapse below a legible minimum.
+  const minSlotH = (10/PIXEL_SCALE) * 2.4;
+  const slotH = Math.max(minSlotH, (colTop + halfH - py) / 3);
+  const previewCell = clamp(Math.min(slotH/2.2, infoW/4.3), 10/PIXEL_SCALE, 22/PIXEL_SCALE);
 
-  const dataTop=railY+railH*.59;
-  const queueH=Math.max(36,dataTop-y-clamp(CELL*.25,5,9));
-  const slotH=queueH/3;
-  const previewCell=clamp(Math.min(infoW/4.2,slotH/2.25),6,15);
-  for(let i=0;i<3;i++) {
-    const key=gs.nextQueue&&gs.nextQueue[i];
-    if(!key) continue;
-    const slotY=y+i*slotH+(slotH-previewCell*2)/2;
-    drawUIPiecePreview(g,key,infoX,slotY,infoW,previewCell,i===0?1:.46,false);
-    uiText(g,String(i+1),infoX+infoW,slotY,microFs,{align:'right',color:i===0?'rgba(255,255,255,.85)':'rgba(130,170,200,.45)',weight:700,stroke:null});
+  for (let i=0;i<3;i++) {
+    const key = gs.nextQueue && gs.nextQueue[i];
+    if (!key) continue;
+    const slotY = py + i*slotH + (slotH-previewCell*2)/2;   // center each piece within its slot
+    const a = i===0 ? 1 : 0.5;   // the up-next piece reads brightest; the queue behind it dims
+    drawPiecePreview(key, infoX, slotY, infoW, previewCell, a);
   }
 
-  g.save();
-  g.strokeStyle='rgba(70,190,255,.2)';
-  g.lineWidth=.7;
-  g.beginPath();g.moveTo(infoX,dataTop);g.lineTo(infoX+infoW,dataTop);g.stroke();
-  g.restore();
-
-  const rowsInfo=[
-    ['SCORE',gs.score.toString().padStart(7,'0'),'#41ffe2'],
-    ['LINES',gs.lines.toString().padStart(3,'0'),'#ffe450'],
-    ['LEVEL',gs.level.toString().padStart(2,'0'),'#ff9cff'],
-    ['BEST',gs.highScore.toString().padStart(7,'0'),'rgba(235,244,255,.72)'],
+  // ── SCORE / LINES / LEVEL / BEST — bottom half of the column,
+  //    space-distributed, sized down and capped so it can never demand
+  //    more width than the column actually has. ───────────────────────
+  const bandTop = colTop + halfH;
+  const bandH   = Math.max(0, colBottom - bandTop);
+  const rowsInfo = [
+    ['SCORE', gs.score.toString().padStart(7,'0'), '#00ffee'],
+    ['LINES', gs.lines.toString(), '#ffee00'],
+    ['LEVEL', gs.level.toString(), '#ff88ff'],
+    ['BEST',  gs.highScore.toString().padStart(7,'0'), 'rgba(255,255,255,0.4)'],
   ];
-  const bandH=Math.max(0,railY+railH-dataTop-pad*.35);
-  const rowH=bandH/rowsInfo.length;
-  const dataLabelFs=clamp(rowH*.18,6.5,9);
-  const valueFs=clamp(Math.min(rowH*.31,infoW/4.25),8,16);
+  const rowH      = bandH / rowsInfo.length;
+  const labelFont = clamp(rowH*0.2, 9/PIXEL_SCALE, 13/PIXEL_SCALE);
+  const valueFont = clamp(Math.min(rowH*0.3, infoW/4.8), 11/PIXEL_SCALE, 20/PIXEL_SCALE);
 
-  rowsInfo.forEach(([lab,val,col],i)=>{
-    const rowY=dataTop+i*rowH+clamp(rowH*.13,2,5);
-    uiText(g,lab,infoX,rowY,dataLabelFs,{color:'rgba(101,184,230,.7)',weight:800});
-    uiText(g,val,infoX,rowY+dataLabelFs+clamp(rowH*.08,1.5,4),valueFs,{color:col,weight:800,glow:i<3?col:null,strokeWidth:Math.max(1,valueFs*.14)});
+  rowsInfo.forEach(([lab,val,col], i) => {
+    const cy = bandTop + rowH*i;
+    ctx.font=`bold ${labelFont}px "Courier New",monospace`;
+    label(lab, infoX, cy+labelFont);
+    ctx.font=`bold ${valueFont}px "Courier New",monospace`;
+    value(val, infoX, cy+labelFont+valueFont*0.95, col);
   });
 
-  // Event callout uses an opaque plate, so it never competes with the stack.
+  ctx.restore();
+
+  // Floating message
   if(gs.msgTimer>0) {
-    const fa=Math.min(1,gs.msgTimer)*Math.min(1,(2-gs.msgTimer)*3);
-    const isLevel=gs.msg.startsWith('LEVEL');
-    const fs=isLevel?clamp(CELL*.94,19,36):clamp(CELL*.72,15,27);
-    const col=isLevel?'#ffe450':(gs.msg==='ZITTRIS ⬡'?'#ff9a24':'#52ffd9');
-    const cx=BOARD_X+BOARD_W/2, cy=BOARD_Y+BOARD_H*.46;
-    g.save();g.globalAlpha=fa;
-    const plateW=Math.min(BOARD_W*.88,Math.max(CELL*5,gs.msg.length*fs*.62));
-    const plateH=fs*1.75;
-    g.fillStyle='rgba(2,7,18,.86)';
-    g.fillRect(cx-plateW/2,cy-plateH/2,plateW,plateH);
-    g.strokeStyle='rgba(255,255,255,.16)';g.lineWidth=.8;
-    g.strokeRect(cx-plateW/2+.5,cy-plateH/2+.5,plateW-1,plateH-1);
-    g.restore();
-    uiText(g,gs.msg,cx,cy,fs,{align:'center',baseline:'middle',family:FONT_DISPLAY,color:col,weight:900,glow:col,alpha:fa,strokeWidth:Math.max(1.5,fs*.12)});
+    const fa = Math.min(1,gs.msgTimer)*Math.min(1,(2-gs.msgTimer)*3);
+    ctx.save(); ctx.globalAlpha=fa; ctx.textAlign='center';
+    const isLevel = gs.msg.startsWith('LEVEL');
+    const fs = isLevel ? clamp(CELL*1.1,22,42) : clamp(CELL*0.9,18,32);
+    ctx.font=`bold ${fs}px "Courier New",monospace`;
+    const col = isLevel ? '#ffee00' : (gs.msg==='ZITTRIS ⬡'?'#ff8800':'#00ffcc');
+    ctx.shadowColor=col; ctx.shadowBlur=20;
+    ctx.fillStyle=col;
+    ctx.fillText(gs.msg, BOARD_X+BOARD_W/2, BOARD_Y+BOARD_H/2);
+    ctx.restore();
   }
 }
 
 function drawTitle() {
-  const g=hud;
+  ctx.save(); ctx.textAlign='center';
   const cx=W/2, cy=H/2;
-  const titleFs=clamp(W*.09,29,68);
-  const subFs=clamp(W*.025,9,17);
-  const bodyFs=clamp(W*.02,8,13);
-  const panelW=Math.min(W*.82,440);
-  const panelH=clamp(H*.53,190,310);
-  const panelX=cx-panelW/2, panelY=cy-panelH*.52;
 
-  g.save();
-  g.fillStyle='rgba(2,7,18,.76)';g.fillRect(panelX,panelY,panelW,panelH);
-  g.strokeStyle='rgba(56,214,255,.34)';g.lineWidth=1;
-  g.strokeRect(panelX+.5,panelY+.5,panelW-1,panelH-1);
-  g.restore();
+  // Title
+  ctx.font=`bold ${clamp(W*0.08,28,72)}px "Courier New",monospace`;
+  ctx.shadowColor='#00ffff'; ctx.shadowBlur=30;
+  ctx.fillStyle='#00ffff';
+  ctx.fillText('ZITTRIS', cx, cy-clamp(H*0.08,20,55));
 
-  uiText(g,'ZITTRIS',cx,panelY+panelH*.12,titleFs,{align:'center',family:FONT_DISPLAY,color:'#35f1ff',weight:900,glow:'#35f1ff',strokeWidth:Math.max(2,titleFs*.1)});
-  uiText(g,'OBLITERATUS',cx,panelY+panelH*.39,subFs,{align:'center',color:'#a68cff',weight:800});
-  uiText(g,'FTS ARCADE  /  FREE FOREVER',cx,panelY+panelH*.49,bodyFs,{align:'center',color:'rgba(153,219,255,.82)',weight:700});
+  ctx.font=`bold ${clamp(W*0.032,11,22)}px "Courier New",monospace`;
+  ctx.shadowColor='#8866ff'; ctx.shadowBlur=16;
+  ctx.fillStyle='#8866ff';
+  ctx.fillText('O B L I T E R A T U S', cx, cy-clamp(H*0.04,8,28));
 
-  const optY=panelY+panelH*.62;
-  uiText(g,`◄  LEVEL ${titleLevel.toString().padStart(2,'0')}  ►`,cx,optY,subFs,{align:'center',color:'#f3f7ff',weight:800});
-  uiText(g,`◄  HEIGHT ${titleHeight.toString().padStart(2,'0')}  ►`,cx,optY+subFs*1.65,subFs,{align:'center',color:'#f3f7ff',weight:800});
-  uiText(g,nuiActive?'LEFT/RIGHT: LEVEL  ·  ROTATE/DROP: HEIGHT':'ARROW KEYS ADJUST START',cx,optY+subFs*3.35,bodyFs,{align:'center',color:'rgba(140,180,215,.68)',weight:650,stroke:null});
+  ctx.font=`${clamp(W*0.022,9,16)}px "Courier New",monospace`;
+  ctx.shadowBlur=8; ctx.shadowColor='rgba(60,200,255,0.6)';
+  ctx.fillStyle='rgba(60,200,255,0.8)';
+  ctx.fillText('FTS ARCADE  ·  FREE FOREVER', cx, cy+clamp(H*0.04,12,32));
 
-  const pulse=.68+.32*Math.sin(Date.now()*.003);
-  uiText(g,nuiActive?'TAP BOARD TO START':'PRESS SPACE TO START',cx,panelY+panelH*.9,subFs,{align:'center',baseline:'middle',color:'#ffffff',weight:850,glow:'#ffffff',alpha:pulse});
+  // ── Starting options ─────────────────────────────────────────────────
+  const optY   = cy+clamp(H*0.09,26,60);
+  const optGap = clamp(H*0.045,14,30);
+  ctx.font = `bold ${clamp(W*0.024,10,16)}px "Courier New",monospace`;
+  ctx.shadowBlur=6; ctx.shadowColor='rgba(255,255,255,0.5)'; ctx.fillStyle='rgba(220,240,255,0.85)';
+  ctx.fillText(`◄  LEVEL: ${titleLevel}  ►`, cx, optY);
+  ctx.fillText(`◄  HEIGHT: ${titleHeight}  ►`, cx, optY+optGap);
+
+  ctx.font=`${clamp(W*0.018,8,12)}px "Courier New",monospace`;
+  ctx.shadowBlur=0; ctx.fillStyle='rgba(140,180,220,0.55)';
+  ctx.fillText(nuiActive ? 'LEFT/RIGHT: LEVEL   ROTATE/DROP: HEIGHT' : 'ARROW KEYS TO ADJUST', cx, optY+optGap*1.9);
+
+  const pulse = 0.6+0.4*Math.sin(Date.now()*0.003);
+  ctx.globalAlpha=pulse;
+  ctx.font=`${clamp(W*0.025,10,17)}px "Courier New",monospace`;
+  ctx.shadowColor='#ffffff'; ctx.shadowBlur=12;
+  ctx.fillStyle='#ffffff';
+  ctx.fillText(nuiActive?'TAP BOARD TO START':'PRESS SPACE TO START', cx, optY+optGap*1.9+clamp(H*0.055,16,38));
+
+  ctx.restore();
 }
 
 function drawGameOver() {
-  const g=hud;
-  const cx=BOARD_X+(BOARD_W+HUD_W)/2;
-  const cy=BOARD_Y+BOARD_H*.43;
-  const panelW=Math.min(W*.82,BOARD_W+HUD_W+18);
-  const panelH=clamp(H*.3,130,220);
-  const titleFs=clamp(W*.075,28,58);
-  const dataFs=clamp(W*.025,10,18);
+  ctx.save(); ctx.textAlign='center';
+  const cx=W/2, cy=H/3;
 
-  g.save();
-  g.fillStyle='rgba(2,5,14,.82)';g.fillRect(0,0,W,H);
-  g.fillStyle='rgba(12,4,10,.93)';g.fillRect(cx-panelW/2,cy-panelH/2,panelW,panelH);
-  g.strokeStyle='rgba(255,52,72,.52)';g.lineWidth=1.1;
-  g.strokeRect(cx-panelW/2+.5,cy-panelH/2+.5,panelW-1,panelH-1);
-  g.restore();
+  ctx.font=`bold ${clamp(W*0.07,22,56)}px "Courier New",monospace`;
+  ctx.shadowColor='#ff2222'; ctx.shadowBlur=28;
+  ctx.fillStyle='#ff2222';
+  ctx.fillText('GAME OVER', cx, cy);
 
-  uiText(g,'GAME OVER',cx,cy-panelH*.3,titleFs,{align:'center',family:FONT_DISPLAY,color:'#ff3a4d',weight:900,glow:'#ff3a4d',strokeWidth:Math.max(2,titleFs*.11)});
-  uiText(g,`SCORE  ${gs.score.toString().padStart(7,'0')}`,cx,cy+panelH*.03,dataFs,{align:'center',color:'#56ffe3',weight:800});
-  if(gs.score>=gs.highScore&&gs.score>0) {
-    uiText(g,'NEW BEST',cx,cy+panelH*.18,dataFs,{align:'center',color:'#ffe450',weight:900,glow:'#ffe450'});
+  ctx.font=`${clamp(W*0.03,11,20)}px "Courier New",monospace`;
+  ctx.shadowColor='#00ffcc'; ctx.shadowBlur=12;
+  ctx.fillStyle='#00ffcc';
+  ctx.fillText(`SCORE: ${gs.score}`, cx, cy+clamp(H*0.07,20,46));
+
+  if(gs.score>=gs.highScore && gs.score>0) {
+    ctx.shadowColor='#ffee00'; ctx.fillStyle='#ffee00';
+    ctx.fillText('NEW BEST!', cx, cy+clamp(H*0.12,30,72));
   }
-  const pulse=.66+.34*Math.sin(Date.now()*.003);
-  uiText(g,nuiActive?'TAP TO RESTART':'SPACE TO RESTART',cx,cy+panelH*.36,dataFs,{align:'center',color:'#ffffff',weight:800,alpha:pulse});
+
+  const pulse=0.6+0.4*Math.sin(Date.now()*0.003);
+  ctx.globalAlpha=pulse;
+  ctx.font=`${clamp(W*0.025,10,16)}px "Courier New",monospace`;
+  ctx.shadowBlur=8; ctx.fillStyle='#ffffff';
+  ctx.fillText(nuiActive?'TAP TO RESTART':'SPACE TO RESTART', cx, cy+clamp(H*0.2,50,105));
+  ctx.restore();
 }
 
 function drawPause() {
-  const g=hud;
-  g.save();g.fillStyle='rgba(2,6,16,.78)';g.fillRect(0,0,W,H);g.restore();
-  const fs=clamp(W*.07,25,50);
-  uiText(g,'PAUSED',W/2,H/2,fs,{align:'center',baseline:'middle',family:FONT_DISPLAY,color:'#ffe450',weight:900,glow:'#ffe450',strokeWidth:Math.max(2,fs*.11)});
-  uiText(g,'P / ESC TO RESUME',W/2,H/2+fs*.72,clamp(fs*.27,9,14),{align:'center',color:'#ffffff',weight:750});
+  ctx.save();
+  ctx.fillStyle='rgba(5,8,18,0.72)';
+  ctx.fillRect(0,0,W,H);
+  ctx.textAlign='center';
+  ctx.font=`bold ${clamp(W*0.06,20,48)}px "Courier New",monospace`;
+  ctx.shadowColor='#ffee00'; ctx.shadowBlur=22;
+  ctx.fillStyle='#ffee00';
+  ctx.fillText('PAUSED', W/2, H/2);
+  ctx.restore();
 }
 
 // ── Main loop ──────────────────────────────────────────────────────────
@@ -1475,10 +1441,6 @@ function loop(ts) {
 
   for(const sw of shockwaves) sw.draw();
   for(const p of particles) p.draw();
-
-  // Native-resolution UI canvas is rebuilt each frame; the game field stays
-  // in the low-resolution backbuffer and receives the CRT treatment below.
-  hud.clearRect(0,0,W,H);
 
   if(gs.state!=='title') drawBoard();
   if(gs.state==='playing'||gs.state==='gameover') drawHUD();
