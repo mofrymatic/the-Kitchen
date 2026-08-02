@@ -33,74 +33,58 @@
 <meta name="twitter:image" content="https://frymatic.us/FTSArcade/minesweeper_preview.png">
 
 <style>
-:root{
-  color-scheme:dark;
-  --ink:#05080b;
-  --steel:#101a20;
-  --steel2:#182831;
-  --amber:#ffb000;
-  --amber2:#ffd45a;
-  --phosphor:#8dffb5;
-  --cyan:#67d9e8;
-  --danger:#ff3c34;
-}
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-html,body{
-  width:100%;height:100%;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;
-  background:
-    radial-gradient(circle at 50% 18%,rgba(45,92,101,.16),transparent 42%),
-    linear-gradient(135deg,rgba(255,176,0,.025),transparent 28%,rgba(82,210,225,.025) 74%,transparent),
-    #05080b;
-}
-canvas{display:block;position:fixed;inset:0;touch-action:none;cursor:crosshair}
-#glass,#crt{position:fixed;inset:0;pointer-events:none}
-#glass{
-  z-index:4;
-  background:
-    linear-gradient(115deg,rgba(255,255,255,.045),transparent 18%,transparent 72%,rgba(255,255,255,.018)),
-    radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.62) 100%);
-}
+html,body{width:100%;height:100%;background:#050810;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+canvas{display:block;position:fixed;top:0;left:0;touch-action:none;cursor:crosshair}
+
+/* ── CRT chrome (Obliteratus) ─────────────────────────────────────────
+   Ported verbatim from tetris.html — static CSS overlay, zero canvas
+   cost, zero per-frame JS. Composited once by the browser and left alone. */
 #crt{
-  z-index:5;
-  opacity:.48;
+  position:fixed;inset:0;z-index:5;pointer-events:none;
   background:
-    repeating-linear-gradient(rgba(255,255,255,.012) 0,rgba(255,255,255,.012) 1px,rgba(0,0,0,.18) 1px,rgba(0,0,0,.18) 3px),
-    repeating-linear-gradient(90deg,rgba(255,176,0,.008) 0,rgba(255,176,0,.008) 1px,transparent 1px,transparent 4px);
-  mix-blend-mode:multiply;
+    repeating-linear-gradient(rgba(0,0,0,0) 0px,rgba(0,0,0,0) 1px,rgba(0,0,0,.16) 2px,rgba(0,0,0,.16) 3px),
+    radial-gradient(ellipse at center,rgba(0,0,0,0) 55%,rgba(0,0,0,.55) 100%);
 }
 
-/* Touch flag selector: compact industrial toggle, not a floating neon toy. */
-#nui{
-  display:none;position:fixed;right:clamp(12px,3vw,26px);bottom:clamp(12px,3vh,24px);z-index:50;
-  flex-direction:column;align-items:flex-end;gap:8px;pointer-events:none;
-}
+/* ── NUI (touch-only overlay) ───────────────────────────────── */
+#nui{display:none;position:fixed;bottom:clamp(12px,3vh,24px);right:clamp(14px,4vw,28px);
+  z-index:50;flex-direction:column;align-items:flex-end;gap:10px;pointer-events:none}
 @media(pointer:coarse){#nui{display:flex}}
+
 .nb{
-  --nb-sz:clamp(64px,14vw,88px);
   pointer-events:all;touch-action:none;-webkit-tap-highlight-color:transparent;
-  appearance:none;outline:none;cursor:pointer;width:var(--nb-sz);height:var(--nb-sz);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:8px;
-  background:linear-gradient(180deg,rgba(27,42,49,.95),rgba(8,14,18,.96));
-  border:1px solid rgba(103,217,232,.35);
-  box-shadow:0 8px 28px rgba(0,0,0,.5),inset 0 1px rgba(255,255,255,.06),inset 0 -10px 18px rgba(0,0,0,.28);
-  color:rgba(141,255,181,.82);font-family:ui-monospace,'SFMono-Regular',Menlo,Consolas,monospace;
-  font-weight:900;font-size:clamp(22px,5vw,30px);letter-spacing:.06em;
-  transition:transform .06s,border-color .06s,color .06s,box-shadow .06s,background .06s;
+  -webkit-appearance:none;appearance:none;outline:none;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  width:var(--nb-sz,clamp(62px,13.5vw,88px));height:var(--nb-sz,clamp(62px,13.5vw,88px));
+  border-radius:14px;background:rgba(2,14,32,.68);
+  border:1.5px solid rgba(0,190,255,.28);
+  box-shadow:0 0 12px rgba(0,170,255,.12),inset 0 0 10px rgba(0,160,255,.05);
+  color:rgba(0,210,255,.72);font-family:'Courier New',monospace;
+  font-weight:bold;font-size:clamp(22px,5vw,28px);
+  animation:nb-appear .35s ease both;
+  transition:background .06s,border-color .06s,box-shadow .06s,color .06s,transform .06s;
 }
-.nb::before{content:'';position:absolute;width:8px;height:8px;border-radius:50%;margin-top:-48px;margin-left:48px;background:#27333a;box-shadow:inset 0 1px 2px #000}
-.nb-lbl{font-size:clamp(7px,1.5vw,10px);letter-spacing:.16em;margin-top:4px;color:rgba(210,232,237,.55)}
+.nb-lbl{font-size:clamp(7px,1.5vw,10px);letter-spacing:.14em;margin-top:3px;opacity:.65}
+
+/* Persistent "on" state (flag mode active) */
 .nb.active{
-  color:#101607;background:linear-gradient(180deg,#ffc43e,#d98d00);border-color:#ffe18d;
-  box-shadow:0 0 0 2px rgba(255,176,0,.15),0 8px 28px rgba(0,0,0,.5),0 0 24px rgba(255,176,0,.28),inset 0 1px rgba(255,255,255,.4);
+  background:rgba(255,238,0,.12);border-color:rgba(255,238,0,.62);
+  color:rgba(255,238,0,.88);
+  box-shadow:0 0 18px rgba(255,220,0,.42),inset 0 0 10px rgba(255,220,0,.07);
 }
-.nb.active .nb-lbl{color:rgba(25,20,8,.72)}
-.nb:active,.nb.hit{transform:translateY(2px) scale(.96);border-color:#fff0b5;box-shadow:0 2px 10px rgba(0,0,0,.55),0 0 22px rgba(255,176,0,.36),inset 0 2px 8px rgba(0,0,0,.2)}
-@media(pointer:coarse) and (orientation:landscape){.nb{--nb-sz:clamp(54px,11vw,72px)}}
+/* Press flash */
+.nb:active,.nb.hit{
+  background:rgba(255,238,0,.18);border-color:rgba(255,238,0,.94);
+  color:#ffee00;transform:scale(.93);
+  box-shadow:0 0 28px rgba(255,220,0,.62),inset 0 0 12px rgba(255,220,0,.1);
+}
+@keyframes nb-appear{from{opacity:0;transform:translateY(14px) scale(.88)}to{opacity:1;transform:none}}
+@media(pointer:coarse)and(orientation:landscape){.nb{--nb-sz:clamp(52px,11vw,72px)}}
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
-<div id="glass"></div>
 <div id="crt"></div>
 
 <div id="nui" role="group" aria-label="Game controls">
@@ -112,8 +96,8 @@ canvas{display:block;position:fixed;inset:0;touch-action:none;cursor:crosshair}
 
 <script>
 // ═══════════════════════════════════════════════════════════════════════
-//  M I N E S W E E P E R  ·  S T O C K P I L E  S T E W A R D
-//  Depot terminal · Ordnance manifest · Adaptive NUI
+//  M I N E S W E E P E R  ·  O B L I T E R A T U S
+//  Spring-mesh grid · Neon logic · Adaptive NUI
 //  FishTacoStand Arcade — frymatic.us/FTSArcade/
 // ═══════════════════════════════════════════════════════════════════════
 
@@ -131,29 +115,23 @@ window.addEventListener('resize', resize);
 
 // ── Palette ───────────────────────────────────────────────────────────
 const C = {
-  bg:      '#05080b',
-  covCell: '#14232a',
-  hovCell: '#203944',
-  revCell: '#080d10',
-  brd:     'rgba(103,217,232,0.16)',
-  brdHi:   'rgba(255,196,62,0.88)',
-  mine:    '#ff3c34',
-  explBg:  '#2a0907',
-  flag:    '#ffb000',
-  wrongX:  '#ff3c34',
-  nums:    ['','#8dffb5','#67d9e8','#ffb000','#ff7a45','#ef6dff','#ff4f76','#f6f08b','#d7f5ff'],
-  ui:      '#67d9e8',
-  uiD:     'rgba(150,211,220,0.48)',
-  red:     '#ff3c34',
-  yel:     '#ffb000',
-  grn:     '#8dffb5',
-  steel:   '#14232a',
-  steelHi: '#28424d',
-  paper:   '#dbe9eb',
+  bg:      '#050810',
+  covCell: '#031b30',
+  hovCell: '#073a5a',
+  revCell: '#010d1b',
+  brd:     'rgba(0,185,255,0.2)',
+  brdHi:   'rgba(0,255,255,0.72)',
+  mine:    '#ff0055',
+  explBg:  '#240012',
+  flag:    '#ffee00',
+  wrongX:  '#ff3300',
+  nums:    ['','#00e5ff','#22ff77','#ff4455','#4488ff','#ff8800','#ff44ff','#ffee00','#ccffff'],
+  ui:      '#00e5ff',
+  uiD:     'rgba(0,229,255,0.38)',
+  red:     '#ff0055',
+  yel:     '#ffee00',
+  grn:     '#22ff77',
 };
-
-const FONT_DISPLAY = '"Arial Black","Helvetica Neue",Arial,sans-serif';
-const FONT_DATA = 'ui-monospace,"SFMono-Regular",Menlo,Consolas,"Liberation Mono",monospace';
 
 const glow   = (c, b) => { ctx.shadowColor = c; ctx.shadowBlur = b; };
 const noGlow = ()     => { ctx.shadowBlur  = 0; };
@@ -214,37 +192,10 @@ const grid = {
   spacing: 38,
   cols: 0, rows: 0,
   waves: [],   // [{x,y,r,maxR,alpha}]
-  bg: null,
 
   init() {
     this.cols = Math.ceil(W / this.spacing) + 2;
     this.rows = Math.ceil(H / this.spacing) + 2;
-
-    // Static depot-floor plate: rebuilt only on resize.
-    this.bg = document.createElement('canvas');
-    this.bg.width = W; this.bg.height = H;
-    const g = this.bg.getContext('2d');
-    const horizon = HUD_H + Math.max(36, H * 0.12);
-    const floorGrad = g.createLinearGradient(0, horizon, 0, H);
-    floorGrad.addColorStop(0, 'rgba(21,39,45,0.02)');
-    floorGrad.addColorStop(1, 'rgba(21,39,45,0.28)');
-    g.fillStyle = floorGrad; g.fillRect(0, horizon, W, H-horizon);
-    g.lineWidth = 1;
-    for (let i = -8; i <= 8; i++) {
-      const bx = W/2 + i * W * 0.11;
-      g.strokeStyle = i % 2 ? 'rgba(103,217,232,.045)' : 'rgba(255,176,0,.035)';
-      g.beginPath(); g.moveTo(W/2 + i*10, horizon); g.lineTo(bx, H+24); g.stroke();
-    }
-    for (let j = 0; j < 11; j++) {
-      const q = j/10, y = horizon + Math.pow(q,2.05)*(H-horizon);
-      g.strokeStyle = `rgba(103,217,232,${0.025 + q*0.055})`;
-      g.beginPath(); g.moveTo(0,y); g.lineTo(W,y); g.stroke();
-    }
-    const rg = g.createRadialGradient(W*.5,H*.52,0,W*.5,H*.52,Math.max(W,H)*.66);
-    rg.addColorStop(0,'rgba(141,255,181,.05)');
-    rg.addColorStop(.55,'rgba(141,255,181,.015)');
-    rg.addColorStop(1,'rgba(0,0,0,0)');
-    g.fillStyle=rg; g.fillRect(0,0,W,H);
   },
 
   // Called on mine detonation — pushes a ring outward from impact point
@@ -263,35 +214,25 @@ const grid = {
   },
 
   draw() {
-    const t = Date.now() * 0.00018;
     ctx.save();
-    if (this.bg) ctx.drawImage(this.bg, 0, 0);
-
-    // Slow radar sweep: one translucent wedge, no full-screen redraw work.
-    ctx.save();
-    ctx.translate(W*.5,H*.52); ctx.rotate(t);
-    const sweep = ctx.createLinearGradient(0,0,Math.max(W,H)*.58,0);
-    sweep.addColorStop(0,'rgba(141,255,181,.085)');
-    sweep.addColorStop(1,'rgba(141,255,181,0)');
-    ctx.fillStyle=sweep;
-    ctx.beginPath(); ctx.moveTo(0,0); ctx.arc(0,0,Math.max(W,H)*.58,-.06,.34); ctx.closePath(); ctx.fill();
-    ctx.restore();
-
-    // Only visit the dot lattice while an impact ring actually exists.
-    if (this.waves.length) {
-      for (let r = 0; r < this.rows; r++) {
-        for (let c = 0; c < this.cols; c++) {
-          const px = c*this.spacing-this.spacing, py = r*this.spacing-this.spacing;
-          let bright = 0;
-          for (const w of this.waves) {
-            const ring = Math.abs(Math.hypot(px-w.x,py-w.y)-w.r);
-            if (ring < 28) bright += (1-ring/28)*w.alpha*.72;
-          }
-          if (bright > .025) {
-            ctx.fillStyle=`rgba(255,176,0,${Math.min(.78,bright)})`;
-            ctx.fillRect(px-1,py-1,2,2);
+    for (let r = 0; r < this.rows; r++) {
+      for (let c = 0; c < this.cols; c++) {
+        const px = c * this.spacing - this.spacing;
+        const py = r * this.spacing - this.spacing;
+        let bright = 0.06;
+        for (const w of this.waves) {
+          const d = Math.hypot(px - w.x, py - w.y);
+          const ring = Math.abs(d - w.r);
+          if (ring < 28) {
+            const falloff = (1 - ring / 28) * w.alpha;
+            bright += falloff * 0.55;
           }
         }
+        bright = Math.max(0, Math.min(0.8, bright));
+        ctx.fillStyle = `rgba(50,160,255,${bright})`;
+        ctx.beginPath();
+        ctx.arc(px, py, 1.2, 0, TAU);
+        ctx.fill();
       }
     }
     ctx.restore();
@@ -329,7 +270,7 @@ const DIFFS = {
 };
 
 // ── Layout ─────────────────────────────────────────────────────────────
-const HUD_H  = 86;
+const HUD_H  = 64;
 const MARGIN = 8;
 let cellSz, boardX, boardY;
 let curDiff = 'beginner', diff = DIFFS[curDiff];
@@ -714,230 +655,356 @@ function updateFlagBtn() {
 //  DRAW LAYER
 // ═══════════════════════════════════════════════════════════════════════
 
-// ── Covered cell: sealed stockpile crate ─────────────────────────────
+// ── Covered cell ──────────────────────────────────────────────────────
 function drawCoveredCell(x, y, S, hover) {
-  const gap = Math.max(1, Math.floor(S * 0.055));
-  const inner = S - gap*2;
-  ctx.save();
+  const pad = S > 16 ? 1 : 0;
+  ctx.fillStyle = hover ? C.hovCell : C.covCell;
+  ctx.fillRect(x + pad, y + pad, S - pad*2, S - pad*2);
+  ctx.strokeStyle = hover ? C.brdHi : C.brd;
+  ctx.lineWidth   = 1;
+  ctx.strokeRect(x + pad + 0.5, y + pad + 0.5, S - pad*2 - 1, S - pad*2 - 1);
+  // Subtle 3-D bevel (top + left edge lighter)
+  if (S > 18) {
+    ctx.fillStyle = 'rgba(0,200,255,0.07)';
+    ctx.fillRect(x + pad, y + pad, S - pad*2, 2);
+    ctx.fillRect(x + pad, y + pad, 2, S - pad*2);
+  }
+}
 
-  const g = ctx.createLinearGradient(x, y, x, y+S);
-  g.addColorStop(0, hover ? '#294653' : '#1d3038');
-  g.addColorStop(.48, hover ? '#1d3540' : '#14242b');
-  g.addColorStop(1, '#0b1216');
-  ctx.fillStyle = g;
-  ctx.fillRect(x+gap,y+gap,inner,inner);
+// ── Mine symbol ───────────────────────────────────────────────────────
+function drawMine(cx, cy, r, color, blur) {
+  glow(color, blur);
+  ctx.fillStyle = color;
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = color;
+  ctx.lineWidth   = Math.max(1.5, r * 0.22);
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.moveTo(cx + Math.cos(a) * r * 0.82, cy + Math.sin(a) * r * 0.82);
+    ctx.lineTo(cx + Math.cos(a) * r * 1.74, cy + Math.sin(a) * r * 1.74);
+    ctx.stroke();
+  }
+  noGlow();
+  ctx.fillStyle = 'rgba(255,255,255,0.30)';
+  ctx.beginPath(); ctx.arc(cx - r*0.28, cy - r*0.28, r*0.26, 0, Math.PI*2); ctx.fill();
+}
 
-  ctx.strokeStyle = hover ? C.brdHi : 'rgba(103,217,232,.22)';
-  ctx.lineWidth = hover ? 1.7 : 1;
-  if (hover) glow(C.yel, 10);
-  ctx.strokeRect(x+gap+.5,y+gap+.5,inner-1,inner-1);
+// ── Flag symbol ───────────────────────────────────────────────────────
+function drawFlag(cx, cy, r) {
+  glow(C.flag, 10);
+  ctx.strokeStyle = C.flag;
+  ctx.fillStyle   = C.flag;
+  ctx.lineWidth   = Math.max(1.5, r * 0.18);
+  // Pole
+  ctx.beginPath(); ctx.moveTo(cx, cy + r*1.22); ctx.lineTo(cx, cy - r*1.12); ctx.stroke();
+  // Triangle
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - r*1.12);
+  ctx.lineTo(cx + r*1.16, cy - r*0.44);
+  ctx.lineTo(cx, cy + r*0.08);
+  ctx.closePath(); ctx.fill();
+  // Base
+  ctx.lineWidth = Math.max(2, r * 0.22);
+  ctx.beginPath(); ctx.moveTo(cx - r*0.72, cy + r*1.22); ctx.lineTo(cx + r*0.72, cy + r*1.22); ctx.stroke();
+  noGlow();
+}
+
+// ── Wrong-flag (flagged non-mine revealed on game-over) ───────────────
+function drawWrongFlag(cx, cy, r) {
+  drawFlag(cx, cy, r * 0.72);
+  glow(C.wrongX, 8);
+  ctx.strokeStyle = C.wrongX;
+  ctx.lineWidth   = Math.max(2, r * 0.28);
+  const d = r * 0.9;
+  ctx.beginPath();
+  ctx.moveTo(cx-d, cy-d); ctx.lineTo(cx+d, cy+d);
+  ctx.moveTo(cx+d, cy-d); ctx.lineTo(cx-d, cy+d);
+  ctx.stroke(); noGlow();
+}
+
+// ── Face button ───────────────────────────────────────────────────────
+function drawFace(cx, cy, r, state) {
+  // Outer glow ring
+  glow(C.ui, 12);
+  ctx.strokeStyle = C.ui; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.stroke();
+  noGlow();
+  // Interior fill
+  ctx.fillStyle = '#031628';
+  ctx.beginPath(); ctx.arc(cx, cy, r - 1.5, 0, Math.PI*2); ctx.fill();
+
+  const ey = cy - r*0.12, ex = r*0.28, er = r*0.115;
+
+  // Eyes
+  if (state === ST.OVER) {
+    // ✕ eyes
+    glow(C.red, 8); ctx.strokeStyle = C.red; ctx.lineWidth = 1.5;
+    [-ex, ex].forEach(ox => {
+      ctx.beginPath();
+      ctx.moveTo(cx+ox-er, ey-er); ctx.lineTo(cx+ox+er, ey+er);
+      ctx.moveTo(cx+ox+er, ey-er); ctx.lineTo(cx+ox-er, ey+er);
+      ctx.stroke();
+    });
+  } else if (state === 'click') {
+    // O eyes (surprised)
+    glow(C.ui, 6); ctx.strokeStyle = C.ui; ctx.lineWidth = 1.5;
+    [-ex, ex].forEach(ox => {
+      ctx.beginPath(); ctx.arc(cx+ox, ey, er*1.3, 0, Math.PI*2); ctx.stroke();
+    });
+  } else {
+    // Dot eyes
+    const col = state === ST.WIN ? C.grn : C.ui;
+    glow(col, 6); ctx.fillStyle = col;
+    [-ex, ex].forEach(ox => {
+      ctx.beginPath(); ctx.arc(cx+ox, ey, er, 0, Math.PI*2); ctx.fill();
+    });
+  }
   noGlow();
 
-  // Welded lip and pressure seam.
-  if (S >= 20) {
-    ctx.strokeStyle='rgba(255,255,255,.08)'; ctx.lineWidth=1;
-    ctx.beginPath();
-    ctx.moveTo(x+gap+3,y+gap+3);ctx.lineTo(x+S-gap-4,y+gap+3);
-    ctx.moveTo(x+gap+3,y+gap+3);ctx.lineTo(x+gap+3,y+S-gap-4);
-    ctx.stroke();
-    ctx.strokeStyle='rgba(0,0,0,.48)';
-    ctx.beginPath();ctx.moveTo(x+gap+3,y+S-gap-3);ctx.lineTo(x+S-gap-3,y+S-gap-3);ctx.stroke();
+  // Mouth
+  const my = cy + r*0.30, mr = r*0.33;
+  if (state === ST.OVER) {
+    glow(C.red, 6); ctx.strokeStyle = C.red; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(cx, my + mr*0.55, mr, Math.PI*0.1, Math.PI*0.9, false); ctx.stroke();
+  } else if (state === ST.WIN) {
+    glow(C.grn, 8); ctx.strokeStyle = C.grn; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(cx, my - mr*0.22, mr, 0.05, Math.PI-0.05, false); ctx.stroke();
+  } else if (state === 'click') {
+    glow(C.ui, 5); ctx.strokeStyle = C.ui; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(cx, my + r*0.08, r*0.15, 0, Math.PI*2); ctx.stroke();
+  } else {
+    glow(C.ui, 5); ctx.strokeStyle = C.ui; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(cx, my - mr*0.18, mr*0.8, 0.1, Math.PI-0.1, false); ctx.stroke();
+  }
+  noGlow();
+}
 
-    // Corner fasteners.
-    ctx.fillStyle=hover?'rgba(255,196,62,.78)':'rgba(126,171,180,.38)';
-    const b=Math.max(1,S*.035), o=gap+4;
-    for(const [dx,dy] of [[o,o],[S-o,o],[o,S-o],[S-o,S-o]]){
-      ctx.beginPath();ctx.arc(x+dx,y+dy,b,0,TAU);ctx.fill();
+// ── Segmented LCD display (mines / timer) ─────────────────────────────
+function drawSegDisp(val, x, y, h, col) {
+  const s  = String(Math.max(0, Math.min(999, Math.abs(val)))).padStart(3, '0');
+  const bw = h * 2.12;
+  ctx.save();
+  ctx.fillStyle   = '#000d1c';
+  ctx.fillRect(x - 4, y - h/2 - 4, bw + 8, h + 8);
+  ctx.strokeStyle = col + '44'; ctx.lineWidth = 1;
+  ctx.strokeRect(x - 3.5, y - h/2 - 3.5, bw + 7, h + 7);
+  glow(col, 14); ctx.fillStyle = col;
+  ctx.font          = `bold ${h}px "Courier New", monospace`;
+  ctx.textAlign     = 'left';
+  ctx.textBaseline  = 'middle';
+  ctx.fillText(s, x, y);
+  noGlow(); ctx.restore();
+}
+
+// ── HUD ────────────────────────────────────────────────────────────────
+function drawHUD() {
+  ctx.fillStyle = 'rgba(2,11,24,0.94)';
+  ctx.fillRect(0, 0, W, HUD_H);
+  // Bottom rule
+  ctx.strokeStyle = 'rgba(0,190,255,0.16)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, HUD_H-0.5); ctx.lineTo(W, HUD_H-0.5); ctx.stroke();
+
+  const cy = HUD_H / 2, dh = 24;
+
+  // Mines remaining (left)
+  const mLeft = (gs.state === ST.TITLE)
+    ? diff.mines
+    : Math.max(0, gs.totalMines - gs.flagCount);
+  drawSegDisp(mLeft, 18, cy, dh, C.red);
+
+  // Timer (right)
+  const elapsed = (gs.state === ST.PLAY && gs.startTime)
+    ? Math.min(999, Math.floor((Date.now() - gs.startTime) / 1000))
+    : gs.elapsed;
+  drawSegDisp(elapsed, W - 78, cy, dh, C.yel);
+
+  // Face button (center)
+  const fr     = Math.floor(HUD_H * 0.36);
+  const fState = gs.state === ST.OVER ? ST.OVER
+               : gs.state === ST.WIN  ? ST.WIN
+               : (gs.mDown && gs.state === ST.PLAY) ? 'click'
+               : 'normal';
+  drawFace(W/2, cy, fr, fState);
+  gs.faceBtn = { cx: W/2, cy, r: fr };
+
+  // Micro label (top of HUD)
+  ctx.save();
+  ctx.font          = '8px "Courier New", monospace';
+  ctx.fillStyle     = C.uiD;
+  ctx.textAlign     = 'center';
+  ctx.textBaseline  = 'top';
+  ctx.fillText('MINESWEEPER  ·  STOCKPILE STEWARD', W/2, 4);
+  ctx.restore();
+}
+
+// ── Individual cell ────────────────────────────────────────────────────
+function drawCell(r, c) {
+  const cell = gs.board[r][c];
+  const x    = boardX + c * cellSz;
+  const y    = boardY + r * cellSz;
+  const S    = cellSz;
+  const cx   = x + S/2, cy = y + S/2;
+  const over  = gs.state === ST.OVER || gs.state === ST.WIN;
+  const hover = gs.hover.r === r && gs.hover.c === c && gs.state === ST.PLAY;
+
+  ctx.save();
+
+  if (!cell.revealed && cell.flagged) {
+    // Flagged (covered) cell
+    drawCoveredCell(x, y, S, false);
+    const fr = S * 0.27;
+    if (over && !cell.mine) drawWrongFlag(cx, cy, fr);  // incorrectly flagged
+    else                    drawFlag(cx, cy, fr);
+
+  } else if (!cell.revealed) {
+    // Plain covered cell
+    drawCoveredCell(x, y, S, hover);
+
+  } else {
+    // Revealed cell
+    const isXpl = gs.xplR === r && gs.xplC === c;
+    ctx.fillStyle = isXpl ? C.explBg : C.revCell;
+    ctx.fillRect(x + 1, y + 1, S - 2, S - 2);
+
+    if (cell.mine) {
+      drawMine(cx, cy, S * (isXpl ? 0.37 : 0.25), C.mine, isXpl ? 26 : 10);
+    } else if (cell.count > 0) {
+      const fs = Math.max(9, Math.floor(S * 0.54));
+      ctx.font          = `bold ${fs}px "Courier New", monospace`;
+      ctx.textAlign     = 'center';
+      ctx.textBaseline  = 'middle';
+      glow(C.nums[cell.count], 7); ctx.fillStyle = C.nums[cell.count];
+      ctx.fillText(cell.count, cx, cy); noGlow();
     }
   }
+
   ctx.restore();
 }
 
-// ── Mine symbol: ordnance puck ───────────────────────────────────────
-function drawMine(cx, cy, r, color, blur) {
-  ctx.save();
-  glow(color, blur);
-  ctx.fillStyle = '#180604';
-  ctx.strokeStyle = color;
-  ctx.lineWidth = Math.max(1.4,r*.18);
-  ctx.beginPath();ctx.arc(cx,cy,r,0,TAU);ctx.fill();ctx.stroke();
-  for(let i=0;i<8;i++){
-    const a=i/8*TAU;
-    ctx.beginPath();
-    ctx.moveTo(cx+Math.cos(a)*r*.88,cy+Math.sin(a)*r*.88);
-    ctx.lineTo(cx+Math.cos(a)*r*1.46,cy+Math.sin(a)*r*1.46);
-    ctx.stroke();
-  }
-  noGlow();
-  ctx.fillStyle=color;ctx.beginPath();ctx.arc(cx,cy,r*.37,0,TAU);ctx.fill();
-  ctx.fillStyle='rgba(255,232,190,.8)';ctx.beginPath();ctx.arc(cx-r*.15,cy-r*.15,r*.11,0,TAU);ctx.fill();
-  ctx.restore();
-}
-
-// ── Flag symbol: inspection pennant ─────────────────────────────────
-function drawFlag(cx, cy, r) {
-  ctx.save(); glow(C.flag, 9);
-  ctx.strokeStyle=C.flag;ctx.fillStyle=C.flag;ctx.lineWidth=Math.max(1.6,r*.18);
-  ctx.beginPath();ctx.moveTo(cx-r*.42,cy+r*1.14);ctx.lineTo(cx-r*.42,cy-r*1.12);ctx.stroke();
-  ctx.beginPath();ctx.moveTo(cx-r*.42,cy-r*1.08);ctx.lineTo(cx+r*1.02,cy-r*.52);ctx.lineTo(cx-r*.42,cy+.04);ctx.closePath();ctx.fill();
-  ctx.lineWidth=Math.max(2,r*.2);ctx.beginPath();ctx.moveTo(cx-r*.95,cy+r*1.15);ctx.lineTo(cx+r*.55,cy+r*1.15);ctx.stroke();
-  noGlow();ctx.restore();
-}
-
-function drawWrongFlag(cx, cy, r) {
-  drawFlag(cx,cy,r*.72);
-  ctx.save();glow(C.wrongX,7);ctx.strokeStyle=C.wrongX;ctx.lineWidth=Math.max(2,r*.28);
-  const d=r*.92;ctx.beginPath();ctx.moveTo(cx-d,cy-d);ctx.lineTo(cx+d,cy+d);ctx.moveTo(cx+d,cy-d);ctx.lineTo(cx-d,cy+d);ctx.stroke();noGlow();ctx.restore();
-}
-
-// ── Steward badge / restart control ─────────────────────────────────
-function drawFace(cx, cy, r, state) {
-  const col = state===ST.OVER?C.red:state===ST.WIN?C.grn:state==='click'?C.yel:C.ui;
-  ctx.save();ctx.translate(cx,cy);
-  const pts=[];for(let i=0;i<8;i++){const a=-Math.PI/8+i*TAU/8;pts.push([Math.cos(a)*r,Math.sin(a)*r])}
-  ctx.beginPath();pts.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.closePath();
-  ctx.fillStyle='#0b1418';ctx.fill();glow(col,10);ctx.strokeStyle=col;ctx.lineWidth=1.4;ctx.stroke();noGlow();
-  ctx.strokeStyle='rgba(255,255,255,.11)';ctx.lineWidth=1;ctx.beginPath();pts.forEach(([x,y],i)=>{x*=.77;y*=.77;i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.closePath();ctx.stroke();
-
-  glow(col,7);ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=Math.max(1.5,r*.08);
-  if(state===ST.OVER){
-    ctx.beginPath();ctx.moveTo(-r*.38,-r*.35);ctx.lineTo(r*.38,r*.35);ctx.moveTo(r*.38,-r*.35);ctx.lineTo(-r*.38,r*.35);ctx.stroke();
-  }else if(state===ST.WIN){
-    ctx.beginPath();ctx.moveTo(-r*.45,0);ctx.lineTo(-r*.08,r*.32);ctx.lineTo(r*.48,-r*.36);ctx.stroke();
-  }else if(state==='click'){
-    ctx.beginPath();ctx.arc(0,0,r*.28,0,TAU);ctx.stroke();ctx.beginPath();ctx.arc(0,0,r*.07,0,TAU);ctx.fill();
-  }else{
-    ctx.beginPath();ctx.arc(0,0,r*.34,0,TAU);ctx.stroke();
-    ctx.beginPath();ctx.moveTo(-r*.55,0);ctx.lineTo(r*.55,0);ctx.moveTo(0,-r*.55);ctx.lineTo(0,r*.55);ctx.stroke();
-    ctx.beginPath();ctx.arc(0,0,r*.07,0,TAU);ctx.fill();
-  }
-  noGlow();ctx.restore();
-}
-
-function drawSegDisp(val, x, y, h, col, label, align='left') {
-  const s=String(Math.max(0,Math.min(999,Math.abs(val)))).padStart(3,'0');
-  const bw=h*2.45, bx=align==='right'?x-bw:x;
-  ctx.save();
-  ctx.fillStyle='rgba(4,9,11,.92)';ctx.fillRect(bx,y-h*.56,bw,h*1.12);
-  ctx.strokeStyle='rgba(103,217,232,.18)';ctx.lineWidth=1;ctx.strokeRect(bx+.5,y-h*.56+.5,bw-1,h*1.12-1);
-  ctx.font=`800 ${Math.max(7,h*.24)}px ${FONT_DATA}`;ctx.textAlign=align==='right'?'right':'left';ctx.textBaseline='bottom';ctx.fillStyle='rgba(171,204,209,.58)';
-  ctx.fillText(label,align==='right'?x-6:x+6,y-h*.58);
-  glow(col,6);ctx.fillStyle=col;ctx.font=`900 ${h}px ${FONT_DATA}`;ctx.textBaseline='middle';ctx.textAlign='center';ctx.fillText(s,bx+bw/2,y+1);noGlow();ctx.restore();
-}
-
-function drawHUD() {
-  ctx.save();
-  const g=ctx.createLinearGradient(0,0,0,HUD_H);
-  g.addColorStop(0,'rgba(24,39,46,.98)');g.addColorStop(.72,'rgba(10,18,22,.98)');g.addColorStop(1,'rgba(4,8,10,.98)');
-  ctx.fillStyle=g;ctx.fillRect(0,0,W,HUD_H);
-  ctx.fillStyle='rgba(255,176,0,.75)';ctx.fillRect(0,HUD_H-4,W,2);
-  ctx.fillStyle='rgba(103,217,232,.2)';ctx.fillRect(0,HUD_H-1,W,1);
-
-  // Hazard ticks.
-  ctx.fillStyle='rgba(255,176,0,.16)';
-  for(let x=0;x<W;x+=28){ctx.beginPath();ctx.moveTo(x,HUD_H-12);ctx.lineTo(x+12,HUD_H-12);ctx.lineTo(x+20,HUD_H-4);ctx.lineTo(x+8,HUD_H-4);ctx.closePath();ctx.fill()}
-
-  const cy=HUD_H*.49, dh=Math.min(30,HUD_H*.34);
-  const mLeft=gs.state===ST.TITLE?diff.mines:Math.max(0,gs.totalMines-gs.flagCount);
-  const elapsed=(gs.state===ST.PLAY&&gs.startTime)?Math.min(999,Math.floor((Date.now()-gs.startTime)/1000)):gs.elapsed;
-  drawSegDisp(mLeft,14,cy+5,dh,C.yel,'UNMARKED');
-  drawSegDisp(elapsed,W-14,cy+5,dh,C.grn,'MISSION TIME','right');
-
-  const fr=Math.floor(HUD_H*.28);
-  const fState=gs.state===ST.OVER?ST.OVER:gs.state===ST.WIN?ST.WIN:(gs.mDown&&gs.state===ST.PLAY)?'click':'normal';
-  drawFace(W/2,cy+3,fr,fState);gs.faceBtn={cx:W/2,cy:cy+3,r:fr};
-
-  ctx.textAlign='center';ctx.textBaseline='top';ctx.font=`900 ${Math.max(10,Math.min(14,W*.014))}px ${FONT_DISPLAY}`;ctx.fillStyle=C.paper;
-  ctx.fillText('STOCKPILE STEWARD',W/2,6);
-  ctx.font=`700 7px ${FONT_DATA}`;ctx.fillStyle='rgba(103,217,232,.58)';ctx.letterSpacing='1px';
-  ctx.fillText('FTS DEPOT CONTROL  //  LIVE ORDNANCE MANIFEST',W/2,22);
-  ctx.restore();
-}
-
-function drawCell(r,c){
-  const cell=gs.board[r][c],x=boardX+c*cellSz,y=boardY+r*cellSz,S=cellSz,cx=x+S/2,cy=y+S/2;
-  const over=gs.state===ST.OVER||gs.state===ST.WIN;
-  const hover=gs.hover.r===r&&gs.hover.c===c&&gs.state===ST.PLAY;
-  ctx.save();
-  if(!cell.revealed&&cell.flagged){
-    drawCoveredCell(x,y,S,false);const fr=S*.25;over&&!cell.mine?drawWrongFlag(cx,cy,fr):drawFlag(cx,cy,fr);
-  }else if(!cell.revealed){drawCoveredCell(x,y,S,hover);
-  }else{
-    const isXpl=gs.xplR===r&&gs.xplC===c;
-    ctx.fillStyle=isXpl?C.explBg:C.revCell;ctx.fillRect(x+1,y+1,S-2,S-2);
-    ctx.strokeStyle='rgba(103,217,232,.075)';ctx.lineWidth=1;ctx.strokeRect(x+1.5,y+1.5,S-3,S-3);
-    if(cell.mine)drawMine(cx,cy,S*(isXpl?.34:.23),C.mine,isXpl?24:8);
-    else if(cell.count>0){
-      const fs=Math.max(10,Math.floor(S*.52));ctx.font=`900 ${fs}px ${FONT_DATA}`;ctx.textAlign='center';ctx.textBaseline='middle';
-      glow(C.nums[cell.count],Math.min(7,S*.18));ctx.fillStyle=C.nums[cell.count];ctx.fillText(cell.count,cx,cy+1);noGlow();
-    }else if(S>22){ctx.fillStyle='rgba(141,255,181,.16)';ctx.fillRect(cx-1,cy-1,2,2)}
-  }
-  ctx.restore();
-}
-
+// ── Full board ─────────────────────────────────────────────────────────
 function drawBoard() {
-  if(!gs.board.length)return;
-  const bw=diff.cols*cellSz,bh=diff.rows*cellSz;
+  if (!gs.board.length) return;
+  for (let r = 0; r < gs.rows; r++)
+    for (let c = 0; c < gs.cols; c++) drawCell(r, c);
+  noGlow();
+  ctx.strokeStyle = 'rgba(0,190,255,0.15)'; ctx.lineWidth = 1;
+  ctx.strokeRect(boardX - 0.5, boardY - 0.5, diff.cols*cellSz+1, diff.rows*cellSz+1);
+}
+
+// ── Status overlay (game-over / win) ──────────────────────────────────
+function drawStatus() {
+  const won = gs.state === ST.WIN;
+  const col = won ? C.grn : C.red;
+  const msg = won ? 'CLEARED' : 'DETONATED';
+  const sy  = Math.max(HUD_H + 22, boardY - 28);
+
   ctx.save();
-  ctx.shadowColor='rgba(0,0,0,.75)';ctx.shadowBlur=28;ctx.fillStyle='rgba(3,7,9,.9)';ctx.fillRect(boardX-10,boardY-10,bw+20,bh+20);ctx.shadowBlur=0;
-  ctx.strokeStyle='rgba(103,217,232,.23)';ctx.lineWidth=1;ctx.strokeRect(boardX-9.5,boardY-9.5,bw+19,bh+19);
-  ctx.strokeStyle='rgba(255,176,0,.62)';ctx.lineWidth=2;
-  const k=Math.min(18,Math.max(8,cellSz*.45));
-  for(const [sx,sy,dx,dy] of [[boardX-10,boardY-10,1,1],[boardX+bw+10,boardY-10,-1,1],[boardX-10,boardY+bh+10,1,-1],[boardX+bw+10,boardY+bh+10,-1,-1]]){
-    ctx.beginPath();ctx.moveTo(sx+dx*k,sy);ctx.lineTo(sx,sy);ctx.lineTo(sx,sy+dy*k);ctx.stroke();
-  }
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = `bold 26px "Courier New", monospace`;
+  glow(col, 24); ctx.fillStyle = col; ctx.fillText(msg, W/2, sy); noGlow();
+  ctx.font      = '10px "Courier New", monospace';
+  ctx.fillStyle = C.uiD;
+  ctx.fillText(`TIME: ${gs.elapsed}s  ·  CLICK FACE TO RETURN`, W/2, sy + 20);
   ctx.restore();
-  for(let r=0;r<gs.rows;r++)for(let c=0;c<gs.cols;c++)drawCell(r,c);
 }
 
-function drawStatus(){
-  const won=gs.state===ST.WIN,col=won?C.grn:C.red;
-  const msg=won?'STOCKPILE SECURED':'CHAIN REACTION';
-  const sub=won?'ALL ORDNANCE ACCOUNTED FOR':'CONTAINMENT FAILURE';
-  const cy=Math.max(HUD_H+54,boardY-32);
-  ctx.save();ctx.textAlign='center';ctx.textBaseline='middle';
-  ctx.fillStyle='rgba(3,7,9,.88)';ctx.fillRect(W/2-Math.min(260,W*.42),cy-29,Math.min(520,W*.84),58);
-  ctx.strokeStyle=col;ctx.lineWidth=1;ctx.strokeRect(W/2-Math.min(260,W*.42)+.5,cy-28.5,Math.min(520,W*.84)-1,57);
-  ctx.font=`900 ${Math.min(26,Math.max(18,W*.033))}px ${FONT_DISPLAY}`;glow(col,10);ctx.fillStyle=col;ctx.fillText(msg,W/2,cy-6);noGlow();
-  ctx.font=`700 8px ${FONT_DATA}`;ctx.fillStyle='rgba(220,236,239,.68)';ctx.fillText(`${sub}  //  ${gs.elapsed}s  //  SELECT CENTER BADGE`,W/2,cy+16);ctx.restore();
-}
+// ── Title / difficulty screen ──────────────────────────────────────────
+function drawTitle() {
+  const t    = Date.now() / 1000;
+  const avH  = H - HUD_H;
 
-function drawTitle(){
-  const t=Date.now()/1000,avH=H-HUD_H;
-  const panelW=Math.min(620,W*.9),panelH=Math.min(avH*.86,520),px=W/2-panelW/2,py=HUD_H+(avH-panelH)/2;
+  // ── Big title
+  const ts     = Math.min(60, Math.max(26, Math.floor(W / 9)));
+  const titleY = HUD_H + avH * 0.16;
+
   ctx.save();
-  ctx.fillStyle='rgba(8,14,17,.93)';ctx.fillRect(px,py,panelW,panelH);
-  ctx.strokeStyle='rgba(103,217,232,.28)';ctx.lineWidth=1;ctx.strokeRect(px+.5,py+.5,panelW-1,panelH-1);
-  ctx.fillStyle='rgba(255,176,0,.72)';ctx.fillRect(px,py,6,panelH);
-  ctx.fillStyle='rgba(255,176,0,.12)';for(let y=py+8;y<py+panelH;y+=24){ctx.beginPath();ctx.moveTo(px+6,y);ctx.lineTo(px+18,y);ctx.lineTo(px+6,y+12);ctx.closePath();ctx.fill()}
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.globalAlpha = 0.96 + Math.sin(t * 0.65) * 0.04;
+  ctx.font = `900 ${ts}px "Courier New", monospace`;
+  glow(C.ui, 30);     ctx.fillStyle = C.ui;     ctx.fillText('MINESWEEPER', W/2, titleY);
+  glow('#ff00ff', 62); ctx.fillStyle = C.ui;    ctx.fillText('MINESWEEPER', W/2, titleY);
+  ctx.globalAlpha = 1; noGlow();
+  // Brand line — matches tetris.html's OBLITERATUS treatment exactly
+  ctx.font = `bold ${Math.max(10, Math.floor(ts * 0.24))}px "Courier New", monospace`;
+  ctx.shadowColor = '#8866ff'; ctx.shadowBlur = 16;
+  ctx.fillStyle = '#8866ff';
+  ctx.fillText('O B L I T E R A T U S', W/2, titleY + ts * 0.62);
 
-  const titleFs=Math.min(54,Math.max(27,panelW*.085));
-  ctx.textAlign='left';ctx.textBaseline='top';
-  ctx.font=`900 ${titleFs}px ${FONT_DISPLAY}`;ctx.fillStyle=C.paper;ctx.fillText('MINESWEEPER',px+34,py+25);
-  ctx.font=`900 ${Math.max(12,titleFs*.26)}px ${FONT_DATA}`;ctx.fillStyle=C.yel;ctx.fillText('STOCKPILE STEWARD / OBLITERATUS',px+37,py+31+titleFs);
-  ctx.font=`700 ${Math.max(8,titleFs*.18)}px ${FONT_DATA}`;ctx.fillStyle='rgba(149,207,216,.7)';ctx.fillText('FTS ARCADE DEPOT CONTROL  //  FREE FOREVER',px+37,py+54+titleFs);
+  noGlow();
+  ctx.font = `11px "Courier New", monospace`; ctx.fillStyle = C.uiD;
+  ctx.fillText('· STOCKPILE STEWARD ·', W/2, titleY + ts * 0.92);
 
-  const dividerY=py+82+titleFs;ctx.strokeStyle='rgba(103,217,232,.18)';ctx.beginPath();ctx.moveTo(px+34,dividerY);ctx.lineTo(px+panelW-26,dividerY);ctx.stroke();
+  // FTS Arcade tagline — matches tetris.html's tagline treatment exactly
+  ctx.font = `${Math.max(9, Math.floor(ts * 0.2))}px "Courier New", monospace`;
+  ctx.shadowBlur = 8; ctx.shadowColor = 'rgba(60,200,255,0.6)';
+  ctx.fillStyle = 'rgba(60,200,255,0.8)';
+  ctx.fillText('FTS ARCADE  ·  FREE FOREVER', W/2, titleY + ts * 1.18);
+  ctx.restore();
 
-  const keys=Object.keys(DIFFS),gap=10,btnH=Math.max(48,Math.min(66,(panelH-(dividerY-py)-112-keys.length*gap)/keys.length));
-  const startY=dividerY+18,btnX=px+34,btnW=panelW-68;gs.diffBtns={};
-  keys.forEach((key,i)=>{
-    const d=DIFFS[key],sel=curDiff===key,by=startY+i*(btnH+gap);gs.diffBtns[key]={x:btnX,y:by,w:btnW,h:btnH};
-    const fill=sel?'rgba(255,176,0,.12)':'rgba(20,34,40,.74)';ctx.fillStyle=fill;ctx.fillRect(btnX,by,btnW,btnH);
-    ctx.strokeStyle=sel?C.yel:'rgba(103,217,232,.18)';ctx.lineWidth=sel?2:1;if(sel)glow(C.yel,8);ctx.strokeRect(btnX+.5,by+.5,btnW-1,btnH-1);noGlow();
-    ctx.font=`900 ${Math.max(12,Math.min(17,btnH*.29))}px ${FONT_DISPLAY}`;ctx.fillStyle=sel?C.paper:'rgba(214,231,235,.72)';ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText(d.label,btnX+16,by+btnH*.4);
-    ctx.font=`700 ${Math.max(8,Math.min(11,btnH*.18))}px ${FONT_DATA}`;ctx.fillStyle=sel?C.yel:'rgba(139,190,198,.55)';ctx.fillText(`${d.cols} x ${d.rows} FIELD  /  ${d.mines} LIVE UNITS`,btnX+16,by+btnH*.72);
-    ctx.textAlign='right';ctx.font=`900 ${Math.max(10,Math.min(14,btnH*.23))}px ${FONT_DATA}`;ctx.fillStyle=sel?C.grn:'rgba(141,255,181,.32)';ctx.fillText(sel?'AUTHORIZED':'STANDBY',btnX+btnW-16,by+btnH*.5);
+  // ── Difficulty buttons
+  const btnW  = Math.min(252, W * 0.74);
+  const btnH  = Math.min(44, Math.max(32, Math.floor(avH * 0.115)));
+  const btnGp = Math.min(10, Math.floor(avH * 0.022));
+  const keys  = Object.keys(DIFFS);
+  const totBH = keys.length * (btnH + btnGp);
+  const startY = HUD_H + avH * 0.16 + ts * 1.18 + Math.max(24, avH * 0.06);
+
+  gs.diffBtns = {};
+  keys.forEach((key, i) => {
+    const d   = DIFFS[key];
+    const sel = curDiff === key;
+    const bx  = W/2 - btnW/2;
+    const by  = startY + i * (btnH + btnGp);
+    gs.diffBtns[key] = { x: bx, y: by, w: btnW, h: btnH };
+
+    ctx.save();
+    ctx.fillStyle = sel ? 'rgba(0,180,255,0.13)' : 'rgba(2,14,32,0.72)';
+    ctx.fillRect(bx, by, btnW, btnH);
+    if (sel) glow(C.ui, 14);
+    ctx.strokeStyle = sel ? 'rgba(0,255,255,0.9)' : 'rgba(0,180,255,0.28)';
+    ctx.lineWidth   = sel ? 2 : 1;
+    ctx.strokeRect(bx+0.5, by+0.5, btnW-1, btnH-1); noGlow();
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font      = `bold ${sel ? 14 : 12}px "Courier New", monospace`;
+    ctx.fillStyle = sel ? '#00ffff' : 'rgba(0,200,255,0.62)';
+    ctx.fillText(d.label, W/2, by + btnH/2 - 7);
+    ctx.font      = '9px "Courier New", monospace';
+    ctx.fillStyle = sel ? 'rgba(0,255,255,0.5)' : 'rgba(0,180,255,0.30)';
+    ctx.fillText(`${d.cols}×${d.rows}  ·  ${d.mines} MINES`, W/2, by + btnH/2 + 8);
+    ctx.restore();
   });
 
-  const sbW=Math.min(240,btnW*.62),sbH=48,sbX=px+panelW-sbW-34,sbY=py+panelH-sbH-22;gs.startBtn={x:sbX,y:sbY,w:sbW,h:sbH};
-  const pulse=.62+.38*Math.sin(t*3.1);ctx.fillStyle=`rgba(255,176,0,${.12+pulse*.05})`;ctx.fillRect(sbX,sbY,sbW,sbH);glow(C.yel,6+pulse*7);ctx.strokeStyle=C.yel;ctx.lineWidth=2;ctx.strokeRect(sbX+.5,sbY+.5,sbW-1,sbH-1);noGlow();
-  ctx.textAlign='center';ctx.textBaseline='middle';ctx.font=`900 16px ${FONT_DISPLAY}`;ctx.fillStyle=C.paper;ctx.fillText('OPEN MANIFEST',sbX+sbW/2,sbY+sbH/2);
+  // ── BEGIN button
+  const sbW = Math.min(202, W * 0.56);
+  const sbH = Math.min(50, Math.max(36, Math.floor(avH * 0.11)));
+  const sbX = W/2 - sbW/2;
+  const sbY = startY + totBH + 14;
+  gs.startBtn = { x: sbX, y: sbY, w: sbW, h: sbH };
 
-  ctx.textAlign='left';ctx.textBaseline='middle';ctx.font=`700 8px ${FONT_DATA}`;ctx.fillStyle='rgba(167,204,210,.52)';
-  const mob=window.matchMedia('(pointer:coarse)').matches;
-  ctx.fillText(mob?'TAP REVEALS  /  HOLD OR TOGGLE FLAGS':'LEFT REVEALS  /  RIGHT FLAGS  /  NUMBER CHORDS',px+34,sbY+12);
-  ctx.fillText('FIRST OPENING IS ALWAYS CONTAINED',px+34,sbY+29);
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,180,255,0.08)'; ctx.fillRect(sbX, sbY, sbW, sbH);
+  glow('#00ffff', 14 + Math.sin(t * 3.2) * 6);
+  ctx.strokeStyle = '#00ffff'; ctx.lineWidth = 2;
+  ctx.strokeRect(sbX+0.5, sbY+0.5, sbW-1, sbH-1);
+  ctx.font = `bold 19px "Courier New", monospace`; ctx.fillStyle = '#00ffff';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('BEGIN', W/2, sbY + sbH/2);
+  noGlow(); ctx.restore();
+
+  // ── Controls hint (bottom)
+  const isMob = window.matchMedia('(pointer:coarse)').matches;
+  ctx.save();
+  ctx.font          = '9px "Courier New", monospace';
+  ctx.fillStyle     = 'rgba(0,160,255,0.28)';
+  ctx.textAlign     = 'center';
+  ctx.textBaseline  = 'bottom';
+  ctx.fillText(
+    isMob
+      ? 'TAP: REVEAL  ·  HOLD: FLAG  ·  ⚑ BUTTON: TOGGLE MODE'
+      : 'LEFT CLICK: REVEAL  ·  RIGHT CLICK: FLAG  ·  CLICK NUMBER: CHORD',
+    W/2, H - 10);
   ctx.restore();
 }
 
@@ -968,7 +1035,7 @@ function loop(ts) {
   ctx.fillStyle = C.bg;
   ctx.fillRect(-20, -20, W+40, H+40);
 
-  // Depot floor / radar atmosphere
+  // Spring-mesh grid
   grid.draw();
 
   // HUD (always)
