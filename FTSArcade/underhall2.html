@@ -9,7 +9,7 @@
 <title>UNDERHALL — DELVE</title>
 
 <!-- ── Primary Meta ─────────────────────────────────────────────────── -->
-<meta name="description" content="FishTacoStand Arcade — Underhall Delve. A 12-level descent. Turn-based glyphs, deliberate light. Permadeath, obviously." />
+<meta name="description" content="FishTacoStand Arcade — Underhall Delve. A 12-level descent. Turn-based glyphs, real-time glow. Permadeath, obviously." />
 
 <!-- ── Favicons ─────────────────────────────────────────────────────── -->
 <link rel="icon" type="image/png" href="fts-favicon.png">
@@ -18,7 +18,7 @@
 
 <!-- ── Open Graph ────────────────────────────────────────────────────── -->
 <meta property="og:title" content="Underhall · Delve">
-<meta property="og:description" content="FishTacoStand Arcade — a 12-level descent. Turn-based glyphs, deliberate light.">
+<meta property="og:description" content="FishTacoStand Arcade — a 12-level descent. Turn-based glyphs, real-time glow.">
 <meta property="og:url" content="https://frymatic.us/FTSArcade/underhall.html">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="FishTacoStand Arcade">
@@ -29,151 +29,113 @@
 <!-- ── Twitter / X Card ─────────────────────────────────────────────── -->
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Underhall · Delve">
-<meta name="twitter:description" content="A 12-level descent. Turn-based glyphs, deliberate light.">
+<meta name="twitter:description" content="A 12-level descent. Turn-based glyphs, real-time glow.">
 <meta name="twitter:image" content="https://frymatic.us/FTSArcade/FishTacoStand.png">
 
 <style>
-:root{
-  --ink:#f3fbff;
-  --cyan:#6ee7ff;
-  --cyan-hot:#b9f5ff;
-  --cyan-dim:rgba(110,231,255,.42);
-  --amber:#ffc857;
-  --red:#ff476f;
-  --green:#77f2a1;
-  --panel:rgba(4,12,22,.90);
-  --panel-soft:rgba(7,20,34,.72);
-  --edge:rgba(120,214,238,.26);
-  --safe-bottom:env(safe-area-inset-bottom,0px);
-}
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-html,body{
-  width:100%;height:100%;overflow:hidden;overscroll-behavior:none;
-  background:#02070d;color:var(--ink);touch-action:none;user-select:none;-webkit-user-select:none;
-  font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-}
-body::before{
-  content:"";position:fixed;inset:0;z-index:70;pointer-events:none;
-  background:
-    linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px) 0 0/100% 4px,
-    radial-gradient(circle at 50% 42%,transparent 36%,rgba(0,0,0,.18) 70%,rgba(0,0,0,.56) 100%);
-  mix-blend-mode:screen;opacity:.55;
-}
-body::after{
-  content:"";position:fixed;inset:8px;z-index:69;pointer-events:none;
-  border:1px solid rgba(110,231,255,.12);
-  box-shadow:inset 0 0 0 3px rgba(0,0,0,.28),inset 0 0 42px rgba(0,0,0,.72),0 0 0 8px #01050a;
-}
-canvas{display:block;position:fixed;inset:0;touch-action:none;cursor:crosshair}
+html,body{width:100%;height:100%;background:#020b18;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+canvas{display:block;position:fixed;top:0;left:0;touch-action:none;cursor:crosshair}
 
-/* Discrete turn controller: one press, one committed action. */
-#nui{
-  display:none;position:fixed;left:0;right:0;bottom:0;z-index:50;pointer-events:none;
-  align-items:flex-end;justify-content:space-between;gap:18px;
-  min-height:clamp(184px,29vh,242px);
-  padding:14px clamp(14px,4vw,34px) calc(12px + var(--safe-bottom));
-  background:linear-gradient(to top,rgba(1,6,12,.98) 0%,rgba(2,9,16,.88) 55%,transparent 100%);
-}
-@media(pointer:coarse), (max-width:760px){body.playing #nui{display:flex}}
+/* ── NUI (touch-only overlay) ───────────────────────────────── */
+#nui{display:none;position:fixed;bottom:0;left:0;right:0;z-index:50;
+  height:var(--nui-h,208px);pointer-events:none;
+  align-items:flex-end;justify-content:space-between;
+  padding:0 clamp(14px,5vw,34px) clamp(10px,2.5vh,20px);
+  background:linear-gradient(to top,rgba(2,11,24,.75) 0%,transparent 100%)}
+@media(pointer:coarse){#nui{display:flex}}
 
-#move-cluster{display:flex;align-items:flex-end;gap:10px;pointer-events:none}
-#move-pad{
-  pointer-events:all;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);
-  width:clamp(168px,46vw,222px);aspect-ratio:1;gap:5px;padding:7px;
-  border:1px solid rgba(110,231,255,.24);border-radius:18px;
-  background:linear-gradient(145deg,rgba(10,25,39,.94),rgba(3,10,18,.96));
-  box-shadow:0 18px 34px rgba(0,0,0,.45),inset 0 0 0 1px rgba(255,255,255,.025),inset 0 -16px 28px rgba(0,0,0,.32);
-  transform:perspective(420px) rotateX(3deg);
+#nui-act{display:flex;flex-direction:column;align-items:center;gap:clamp(6px,1.4vh,12px);pointer-events:none}
+
+/* ── Virtual joystick (8-way snap) ─────────────────────────── */
+#joy-base{
+  --joy-sz:clamp(120px,30vw,168px);
+  pointer-events:all;touch-action:none;-webkit-tap-highlight-color:transparent;
+  position:relative;width:var(--joy-sz);height:var(--joy-sz);border-radius:50%;
+  background:rgba(2,14,32,.55);
+  border:1.5px solid rgba(0,190,255,.28);
+  box-shadow:0 0 16px rgba(0,170,255,.14),inset 0 0 16px rgba(0,160,255,.06);
+  animation:nb-appear .35s ease both;
 }
-.pad-key,.action-key{
-  -webkit-appearance:none;appearance:none;border:0;outline:0;touch-action:manipulation;
-  display:flex;align-items:center;justify-content:center;flex-direction:column;
-  color:var(--cyan-hot);font:800 clamp(22px,6.4vw,31px)/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-  background:linear-gradient(160deg,rgba(24,54,73,.74),rgba(5,16,27,.94));
-  border:1px solid rgba(110,231,255,.27);border-radius:10px;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.07),inset 0 -5px 8px rgba(0,0,0,.34),0 3px 0 rgba(0,0,0,.42);
-  text-shadow:0 0 9px rgba(110,231,255,.38);
-  transition:transform .055s ease,background .055s ease,border-color .055s ease,color .055s ease,box-shadow .055s ease;
+#joy-base::before,#joy-base::after{content:'';position:absolute;background:rgba(0,190,255,.16)}
+#joy-base::before{left:50%;top:8%;bottom:8%;width:1px;transform:translateX(-50%)}
+#joy-base::after{top:50%;left:8%;right:8%;height:1px;transform:translateY(-50%)}
+#joy-knob{
+  position:absolute;left:50%;top:50%;
+  width:38%;height:38%;border-radius:50%;
+  transform:translate(-50%,-50%);
+  background:rgba(0,190,255,.14);border:1.5px solid rgba(0,210,255,.5);
+  box-shadow:0 0 14px rgba(0,200,255,.35),inset 0 0 10px rgba(0,200,255,.12);
+  transition:background .08s,border-color .08s,box-shadow .08s;
 }
-.pad-key .micro,.action-key .micro{
-  margin-top:4px;font:700 8px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-  letter-spacing:.16em;color:rgba(185,245,255,.52);text-shadow:none;
+#joy-base.hit #joy-knob{background:rgba(0,220,255,.28);border-color:#00ffff;box-shadow:0 0 22px rgba(0,220,255,.6),inset 0 0 12px rgba(0,220,255,.2)}
+
+.nb{
+  pointer-events:all;touch-action:none;-webkit-tap-highlight-color:transparent;
+  -webkit-appearance:none;appearance:none;outline:none;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  width:var(--nb-sz,clamp(46px,10vw,62px));height:var(--nb-sz,clamp(46px,10vw,62px));
+  border-radius:12px;background:rgba(2,14,32,.68);
+  border:1.5px solid rgba(0,190,255,.28);
+  box-shadow:0 0 12px rgba(0,170,255,.12),inset 0 0 10px rgba(0,160,255,.05);
+  color:rgba(0,210,255,.72);font-family:'Courier New',monospace;
+  font-weight:bold;font-size:clamp(16px,4vw,22px);
+  animation:nb-appear .35s ease both;
+  transition:background .06s,border-color .06s,box-shadow .06s,color .06s,transform .06s;
 }
-.pad-key.rest{
-  color:var(--amber);border-color:rgba(255,200,87,.38);
-  background:linear-gradient(160deg,rgba(76,56,23,.68),rgba(23,16,7,.96));
-  text-shadow:0 0 10px rgba(255,200,87,.35);
+.nb-lbl{font-size:clamp(6px,1.3vw,9px);letter-spacing:.1em;margin-top:1px;opacity:.65}
+.nb:active,.nb.hit{
+  background:rgba(0,190,255,.14);border-color:rgba(0,220,255,.82);
+  color:#00ffff;transform:scale(.92);
+  box-shadow:0 0 20px rgba(0,200,255,.5),inset 0 0 12px rgba(0,200,255,.1);
 }
-.pad-key.rest .micro{color:rgba(255,220,145,.64)}
-.pad-key:active,.pad-key.hit,.action-key:active,.action-key.hit{
-  transform:translateY(3px) scale(.97);color:#fff;border-color:rgba(210,250,255,.88);
-  background:linear-gradient(160deg,rgba(48,108,139,.9),rgba(6,28,44,.98));
-  box-shadow:inset 0 2px 8px rgba(0,0,0,.44),0 0 16px rgba(110,231,255,.28);
+.nb-act{--nb-sz:clamp(64px,15vw,86px);border-radius:50%;
+  border-color:rgba(255,215,0,.32);color:rgba(255,215,0,.82);
+  font-size:clamp(22px,6vw,30px);
+  box-shadow:0 0 14px rgba(255,190,0,.16),inset 0 0 12px rgba(255,180,0,.06);}
+.nb-act:active,.nb-act.hit{
+  background:rgba(255,200,0,.14);border-color:rgba(255,220,0,.92);color:#ffee00;
+  box-shadow:0 0 26px rgba(255,200,0,.62),inset 0 0 14px rgba(255,200,0,.1);}
+.nb-wait{--nb-sz:clamp(40px,9vw,54px);font-size:clamp(9px,2.2vw,12px);letter-spacing:.1em;}
+@media(pointer:coarse)and(orientation:landscape){
+  #nui{--nui-h:clamp(124px,26vh,160px)}
+  .nb{--nb-sz:clamp(38px,8vw,50px)}
+  .nb-act{--nb-sz:clamp(52px,11vw,68px)}
+  #joy-base{--joy-sz:clamp(96px,22vh,132px)}
 }
-.pad-key.rest:active,.pad-key.rest.hit{border-color:var(--amber);background:linear-gradient(160deg,rgba(125,89,30,.94),rgba(34,22,5,.98));box-shadow:inset 0 2px 8px rgba(0,0,0,.44),0 0 18px rgba(255,200,87,.26)}
-#nui-act{pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:9px;padding-bottom:4px}
-.action-key{
-  pointer-events:all;width:clamp(82px,22vw,104px);height:clamp(82px,22vw,104px);border-radius:50%;
-  color:var(--amber);border-color:rgba(255,200,87,.42);font-size:clamp(24px,7vw,34px);
-  background:radial-gradient(circle at 38% 30%,rgba(107,79,31,.88),rgba(25,17,7,.98) 72%);
-  text-shadow:0 0 10px rgba(255,200,87,.36);
-}
-.action-key:active,.action-key.hit{border-color:var(--amber);background:radial-gradient(circle at 40% 30%,rgba(150,104,32,.95),rgba(35,22,6,.99) 72%);box-shadow:inset 0 3px 10px rgba(0,0,0,.5),0 0 20px rgba(255,200,87,.28)}
-#turn-rule{
-  max-width:112px;text-align:center;color:rgba(185,245,255,.50);
-  font:700 8px/1.35 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.12em;
-}
+@keyframes nb-appear{from{opacity:0;transform:translateY(14px) scale(.88)}to{opacity:1;transform:none}}
 
 /* Message log */
-#log{
-  position:fixed;left:18px;bottom:18px;z-index:40;display:none;pointer-events:none;
-  width:min(48vw,460px);padding:10px 12px;border-left:2px solid rgba(110,231,255,.34);
-  background:linear-gradient(90deg,rgba(2,9,16,.76),transparent);
-  font:600 11px/1.48 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-}
+#log{position:fixed;left:8px;bottom:8px;z-index:40;pointer-events:none;
+  font-family:'Courier New',monospace;font-size:11px;line-height:1.5;
+  max-width:min(46vw,420px);display:none}
 body.playing #log{display:block}
-.log-line{color:rgba(185,245,255,.76);text-shadow:0 0 7px rgba(30,182,220,.18);opacity:0;animation:log-in .22s ease forwards}
-.log-line.dmg{color:#ff7894}.log-line.good{color:#8cf5ae}.log-line.warn{color:#ffd776}
-@media(pointer:coarse), (max-width:760px){#log{left:12px;bottom:clamp(194px,31vh,252px);width:min(64vw,370px);font-size:10px;padding:7px 9px}}
-@media(pointer:coarse) and (orientation:landscape){
-  #nui{min-height:138px;padding-top:8px}
-  #move-pad{width:126px;border-radius:14px;padding:5px;gap:4px}
-  .pad-key{font-size:19px;border-radius:7px}.pad-key .micro{display:none}
-  .action-key{width:72px;height:72px;font-size:25px}
-  #log{bottom:148px}
-}
-@media(max-width:360px){#move-pad{width:158px}.action-key{width:74px;height:74px}#turn-rule{max-width:84px;font-size:7px}}
-@keyframes log-in{from{opacity:0;transform:translateX(-5px)}to{opacity:1;transform:none}}
+.log-line{color:rgba(0,220,255,.72);text-shadow:0 0 6px rgba(0,200,255,.4);opacity:0;
+  animation:log-in .25s ease forwards}
+.log-line.dmg{color:#ff5577;text-shadow:0 0 6px rgba(255,0,80,.5)}
+.log-line.good{color:#5cffa0;text-shadow:0 0 6px rgba(40,255,140,.5)}
+.log-line.warn{color:#ffee00;text-shadow:0 0 6px rgba(255,220,0,.5)}
+@keyframes log-in{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:none}}
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
 <div id="log"></div>
 
-<div id="nui" role="group" aria-label="Turn controls">
-  <div id="move-cluster">
-    <div id="move-pad" role="group" aria-label="Eight-way movement and rest">
-      <button class="pad-key" data-dx="-1" data-dy="-1" aria-label="Move northwest"><span>↖</span><span class="micro">NW</span></button>
-      <button class="pad-key" data-dx="0" data-dy="-1" aria-label="Move north"><span>↑</span><span class="micro">N</span></button>
-      <button class="pad-key" data-dx="1" data-dy="-1" aria-label="Move northeast"><span>↗</span><span class="micro">NE</span></button>
-      <button class="pad-key" data-dx="-1" data-dy="0" aria-label="Move west"><span>←</span><span class="micro">W</span></button>
-      <button class="pad-key rest" data-dx="0" data-dy="0" aria-label="Rest for one turn"><span>⌛</span><span class="micro">REST</span></button>
-      <button class="pad-key" data-dx="1" data-dy="0" aria-label="Move east"><span>→</span><span class="micro">E</span></button>
-      <button class="pad-key" data-dx="-1" data-dy="1" aria-label="Move southwest"><span>↙</span><span class="micro">SW</span></button>
-      <button class="pad-key" data-dx="0" data-dy="1" aria-label="Move south"><span>↓</span><span class="micro">S</span></button>
-      <button class="pad-key" data-dx="1" data-dy="1" aria-label="Move southeast"><span>↘</span><span class="micro">SE</span></button>
-    </div>
+<div id="nui" role="group" aria-label="Game controls">
+  <div id="joy-base" role="group" aria-label="Movement joystick">
+    <div id="joy-knob"></div>
   </div>
   <div id="nui-act">
-    <button class="action-key" id="nb-use" aria-label="Attack or use item"><span>⚔</span><span class="micro">USE</span></button>
-    <div id="turn-rule">ONE PRESS<br>ONE TURN</div>
+    <button class="nb nb-act" id="nb-use" aria-label="Use / attack"><span>⚔</span></button>
+    <button class="nb nb-wait" id="nb-wait" aria-label="Wait"><span>WAIT</span></button>
   </div>
 </div>
 
 <script>
 // ═══════════════════════════════════════════════════════════════════════
 //  U N D E R H A L L  ·  O B L I T E R A T U S
-//  A 12-level descent · turn-based glyphs, deliberate light · permadeath
+//  A 12-level descent · turn-based glyphs, real-time glow · permadeath
 //  FishTacoStand Arcade — frymatic.us/FTSArcade/
 // ═══════════════════════════════════════════════════════════════════════
 
@@ -225,7 +187,6 @@ function noise(dur,bandFreq=150,vol=0.2){
 }
 const SFX = {
   step:    ()=>tone(180,'square',0.03,0.03),
-  rest:    ()=>tone(116,'sine',0.07,0.035,92),
   bump:    ()=>tone(90,'square',0.05,0.06),
   hit:     ()=>{noise(0.08,900,0.1);tone(320,'square',0.05,0.08);},
   crit:    ()=>{noise(0.12,700,0.16);tone(180,'sawtooth',0.12,0.14,420);},
@@ -346,7 +307,7 @@ function generateLevel(depth, rng){
     const a=centers[i-1], b=centers[i];
     if(rng()<0.5){ carveH(a.x,b.x,a.y); carveV(a.y,b.y,b.x); }
     else{ carveV(a.y,b.y,a.x); carveH(a.x,b.x,b.y); }
-    if(rng()<0.3){ const dx=rng()<0.5?a.x:b.x; cells[idx(dx, rng()<0.5?a.y:b.y)]=TILE.DOOR; }
+    if(rng()<0.3){ const dx=Math.random()<0.5?a.x:b.x; cells[idx(dx, rng()<0.5?a.y:b.y)]=TILE.DOOR; }
   }
   const spawnRoom = rooms[0];
   const spawn = {x:spawnRoom.x+((spawnRoom.w/2)|0), y:spawnRoom.y+((spawnRoom.h/2)|0)};
@@ -602,10 +563,8 @@ function refreshFOV(){
 // ── camera / cell sizing ──────────────────────────────────────────────
 let cell = 22, camX=0, camY=0;
 function calcCamera(){
-  const touchDeck = window.matchMedia('(pointer:coarse), (max-width:760px)').matches;
-  const controlInset = touchDeck ? Math.min(238, Math.max(184, H*0.29)) : 0;
-  const avH = Math.max(220, H - HUD_H - controlInset);
-  cell = Math.max(14, Math.min(30, Math.floor(Math.min(W/22, avH/15))));
+  const avH = H - HUD_H;
+  cell = Math.max(14, Math.min(30, Math.floor(Math.min(W/22, avH/16))));
   camX = gs.player.x*cell - W/2;
   camY = gs.player.y*cell - avH/2 - HUD_H;
 }
@@ -629,14 +588,11 @@ function drawDungeon(){
       const cx = x*cell+cell/2, cy=y*cell+cell/2;
       const memAlpha = v>0.02 ? 1 : 0.16;
       if(t===TILE.WALL){
-        ctx.fillStyle = `rgba(10,31,45,${0.94*memAlpha})`;
+        ctx.fillStyle = `rgba(11,52,84,${0.55*memAlpha})`;
         ctx.fillRect(x*cell, y*cell, cell, cell);
-        ctx.strokeStyle = `rgba(75,132,153,${0.18*memAlpha})`;
-        ctx.strokeRect(x*cell+.5,y*cell+.5,cell-1,cell-1);
       } else {
-        ctx.fillStyle = `rgba(3,17,27,${0.96*memAlpha})`;
+        ctx.fillStyle = `rgba(2,35,62,${0.9*memAlpha})`;
         ctx.fillRect(x*cell, y*cell, cell, cell);
-        if(v>0.02){ ctx.fillStyle=`rgba(110,231,255,${0.022*v})`; ctx.fillRect(x*cell+2,y*cell+2,cell-4,cell-4); }
         if(t===TILE.STAIRS){
           const glowAmt = v>0.02 ? 14*v : 3;
           glow(C.stairs, glowAmt);
@@ -688,7 +644,7 @@ function drawDungeon(){
   {
     const p=gs.player;
     const cx=p.x*cell+cell/2, cy=p.y*cell+cell/2;
-    const pulse = 14 + gs.restPulse*12 + Math.sin(Date.now()/220)*4;
+    const pulse = 14 + Math.sin(Date.now()/220)*4;
     glow(C.player, pulse);
     ctx.fillStyle = C.player;
     ctx.fillText('@', cx, cy);
@@ -702,7 +658,7 @@ function drawDungeon(){
 // KERNEL — state machine, turn loop, message log
 // ═══════════════════════════════════════════════════════════════════════
 const ST = { TITLE:'title', PLAY:'play', OVER:'over', WIN:'win' };
-const HUD_H = 70;
+const HUD_H = 56;
 const MAX_DEPTH = 12;
 
 function freshPlayer(){
@@ -722,7 +678,6 @@ function freshGS(){
     monsters: [], groundItems: [],
     sparks: [], shakeT:0, shakeMag:0,
     turnLock:false,
-    turn:0, lastAction:'READY', restPulse:0,
     startBtn:null,
     msgs: [],
     score:0,
@@ -814,44 +769,24 @@ function buildLevel(depth){
 function playerTurn(dx,dy){
   if(gs.state!==ST.PLAY || gs.turnLock) return;
   const p = gs.player;
-  if(dx===0 && dy===0){
-    gs.lastAction='REST';
-    gs.restPulse=1;
-    SFX.rest();
-    endPlayerTurn();
-    return;
-  }
-
   const nx=p.x+dx, ny=p.y+dy;
+  if(dx===0&&dy===0){ endPlayerTurn(); return; } // wait
   if(nx<0||ny<0||nx>=gs.level.w||ny>=gs.level.h) return;
-  if(blockedCorner(gs.level, p.x, p.y, dx, dy)){ SFX.bump(); gs.lastAction='BLOCKED'; return; }
-
-  const t = gs.level.cells[gs.level.idx(nx,ny)];
-  if(t===TILE.WALL){ SFX.bump(); gs.lastAction='BLOCKED'; return; }
-
   const target = occupiedBy(nx,ny);
   if(target && target!==p){
-    gs.lastAction='STRIKE';
     meleeAttack(p, target);
     endPlayerTurn();
     return;
   }
-
+  const t = gs.level.cells[gs.level.idx(nx,ny)];
+  if(t===TILE.WALL){ SFX.bump(); return; }
+  if(blockedCorner(gs.level, p.x, p.y, dx, dy)){ SFX.bump(); return; }
   p.x=nx; p.y=ny;
-  gs.lastAction = directionName(dx,dy);
   SFX.step();
   if(t===TILE.DOOR) SFX.door();
   pickupCheck();
-  if(t===TILE.STAIRS){
-    gs.lastAction='DESCEND';
-    spendTurn(false);
-    if(gs.state===ST.PLAY) descend();
-    return;
-  }
+  if(t===TILE.STAIRS){ descend(); return; }
   endPlayerTurn();
-}
-function directionName(dx,dy){
-  return ({'-1,-1':'NW','0,-1':'N','1,-1':'NE','-1,0':'W','1,0':'E','-1,1':'SW','0,1':'S','1,1':'SE'})[`${dx},${dy}`] || 'MOVE';
 }
 function meleeAttack(p, mon){
   const pow = p.atk + p.atkBonus + p.weaponBonus;
@@ -886,23 +821,18 @@ function descend(){
   logMsg(`You descend to depth ${gs.depth}.`, 'warn');
   buildLevel(gs.depth);
 }
-function spendTurn(runMonsters=true){
-  gs.turn++;
-  if(gs.player.torchFuel>0) gs.player.torchFuel=Math.max(0,gs.player.torchFuel-1);
+function endPlayerTurn(){
   refreshFOV();
-  if(runMonsters){
-    for(const m of gs.monsters){
-      if(!m.alive) continue;
-      const ii=m.y*gs.level.w+m.x;
-      if((visMap[ii]||0) < 0.03 && Math.hypot(m.x-gs.player.x,m.y-gs.player.y) > 9) continue;
-      monsterAct(m, gs.level, gs.player, gs.rng||Math.random, emit);
-    }
-    refreshFOV();
+  for(const m of gs.monsters){
+    if(!m.alive) continue;
+    const ii=m.y*gs.level.w+m.x;
+    if((visMap[ii]||0) < 0.03 && Math.hypot(m.x-gs.player.x,m.y-gs.player.y) > 9) continue; // dormant far offscreen
+    monsterAct(m, gs.level, gs.player, gs.rng||Math.random, emit);
   }
+  refreshFOV();
   calcCamera();
   checkPlayerDeath();
 }
-function endPlayerTurn(){ spendTurn(true); }
 function checkPlayerDeath(){
   if(gs.player.hp<=0){ endGame(false); }
 }
@@ -913,12 +843,11 @@ function useAction(){
   const p=gs.player;
   // adjacent enemy? attack it (prefer)
   const adj = gs.monsters.find(m=>m.alive && Math.abs(m.x-p.x)<=1 && Math.abs(m.y-p.y)<=1 && !(m.x===p.x&&m.y===p.y));
-  if(adj){ gs.lastAction='STRIKE'; meleeAttack(p, adj); endPlayerTurn(); return; }
+  if(adj){ meleeAttack(p, adj); endPlayerTurn(); return; }
   // else quaff first potion
   const potIdx = p.inventory.findIndex(it=>ITEMS[it.key].kind==='potion');
   if(potIdx>=0){
     const item = p.inventory.splice(potIdx,1)[0];
-    gs.lastAction='QUAFF';
     quaffPotion(item, p, emit);
     endPlayerTurn();
     return;
@@ -926,7 +855,6 @@ function useAction(){
   const scrIdx = p.inventory.findIndex(it=>ITEMS[it.key].kind==='scroll');
   if(scrIdx>=0){
     const item = p.inventory.splice(scrIdx,1)[0];
-    gs.lastAction='READ';
     useScroll(item, p);
     endPlayerTurn();
     return;
@@ -938,7 +866,7 @@ function useScroll(item, p){
   if(sub==='id'){ logMsg('The scroll crumbles to dust. Nothing happens (yet).', ''); }
   else if(sub==='tp'){
     const spots = gs.level.rooms;
-    const room = choice(gs.rng || Math.random, spots) || spots[0];
+    const room = choice(gs.rng||Math.random>0.5?()=>Math.random():gs.rng, spots) || spots[0];
     p.x = room.x + ((room.w/2)|0); p.y = room.y + ((room.h/2)|0);
     logMsg('Reality folds. You are elsewhere.', 'good');
     SFX.quaff();
@@ -1011,10 +939,7 @@ window.addEventListener('keydown', e=>{
     'arrowdown':[0,1], 's':[0,1], 'j':[0,1],
     'arrowleft':[-1,0], 'a':[-1,0], 'h':[-1,0],
     'arrowright':[1,0], 'd':[1,0], 'l':[1,0],
-    '.':[0,0], 'x':[0,0],
-    '7':[-1,-1], '8':[0,-1], '9':[1,-1],
-    '4':[-1,0],  '5':[0,0],  '6':[1,0],
-    '1':[-1,1],  '2':[0,1],  '3':[1,1],
+    '.':[0,0],
     // numpad — classic roguelike 8-way (Angband convention)
     'numpad7':[-1,-1], 'numpad8':[0,-1], 'numpad9':[1,-1],
     'numpad4':[-1,0],  'numpad5':[0,0],  'numpad6':[1,0],
@@ -1035,26 +960,78 @@ canvas.addEventListener('mousedown', e=>{
   if(gs.state===ST.OVER||gs.state===ST.WIN){ goTitle(); return; }
 });
 
-// ── Discrete keypad: no repeat, no analog ambiguity, one press = one turn ──
+// ── Virtual joystick: drag out past deadzone snaps to 1-of-8, fires one
+//    turn per direction-change, must re-center (or change dir) to fire again ──
 (function(){
-  function bindPress(el, action){
-    const release=()=>el.classList.remove('hit');
-    el.addEventListener('pointerdown', e=>{
-      e.preventDefault();
-      acUnlock();
-      el.classList.add('hit');
-      action();
-    }, {passive:false});
-    el.addEventListener('pointerup', release, {passive:true});
-    el.addEventListener('pointercancel', release, {passive:true});
-    el.addEventListener('pointerleave', release, {passive:true});
+  const base = document.getElementById('joy-base');
+  const knob = document.getElementById('joy-knob');
+  const DEADZONE = 0.32;   // fraction of radius before a direction registers
+  const REPEAT_MS = 190;   // holding a direction repeats the step at this interval
+  let dragging = false, originX=0, originY=0, radius=1, activeDir=null, repeatTimer=null;
+
+  function dirFromAngle(ang){
+    // 8-way snap, 0 = east, going clockwise in screen space (y-down)
+    const seg = Math.round(ang / (Math.PI/4)) & 7;
+    const table = [
+      [1,0],[1,1],[0,1],[-1,1],[-1,0],[-1,-1],[0,-1],[1,-1]
+    ];
+    return table[seg];
   }
-  document.querySelectorAll('.pad-key').forEach(btn=>{
-    const dx=Number(btn.dataset.dx), dy=Number(btn.dataset.dy);
-    bindPress(btn, ()=>playerTurn(dx,dy));
-  });
-  bindPress(document.getElementById('nb-use'), useAction);
+  function setKnob(nx,ny){ knob.style.transform = `translate(calc(-50% + ${nx}px), calc(-50% + ${ny}px))`; }
+  function resetKnob(){ knob.style.transform = 'translate(-50%,-50%)'; }
+  function stopRepeat(){ if(repeatTimer){ clearInterval(repeatTimer); repeatTimer=null; } }
+  function fire(dir){ playerTurn(dir[0], dir[1]); }
+
+  function onDown(e){
+    acUnlock();
+    dragging = true; base.classList.add('hit');
+    const r = base.getBoundingClientRect();
+    originX = r.left + r.width/2; originY = r.top + r.height/2; radius = r.width/2;
+    activeDir = null; stopRepeat();
+    base.setPointerCapture && e.pointerId!=null && base.setPointerCapture(e.pointerId);
+  }
+  function onMove(e){
+    if(!dragging) return;
+    const dx = e.clientX - originX, dy = e.clientY - originY;
+    const dist = Math.hypot(dx,dy);
+    const clamped = Math.min(dist, radius);
+    const ang = Math.atan2(dy,dx);
+    if(dist>0){ setKnob(Math.cos(ang)*clamped*0.9, Math.sin(ang)*clamped*0.9); } else setKnob(0,0);
+
+    if(dist < radius*DEADZONE){
+      if(activeDir){ activeDir=null; stopRepeat(); }
+      return;
+    }
+    const dir = dirFromAngle(ang<0?ang+Math.PI*2:ang);
+    const key = dir[0]+','+dir[1];
+    if(!activeDir || activeDir.key!==key){
+      activeDir = {key, dir};
+      stopRepeat();
+      fire(dir);
+      repeatTimer = setInterval(()=>fire(dir), REPEAT_MS);
+    }
+  }
+  function onUp(e){
+    dragging = false; activeDir=null; stopRepeat();
+    base.classList.remove('hit'); resetKnob();
+  }
+  base.addEventListener('pointerdown', e=>{ e.preventDefault(); onDown(e); }, {passive:false});
+  window.addEventListener('pointermove', onMove, {passive:true});
+  window.addEventListener('pointerup', onUp, {passive:true});
+  window.addEventListener('pointercancel', onUp, {passive:true});
 })();
+document.getElementById('nb-use').addEventListener('pointerdown', e=>{
+  e.preventDefault(); acUnlock();
+  const btn=e.currentTarget; btn.classList.add('hit');
+  useAction();
+});
+document.getElementById('nb-use').addEventListener('pointerup', e=>e.currentTarget.classList.remove('hit'));
+document.getElementById('nb-wait').addEventListener('pointerdown', e=>{
+  e.preventDefault(); acUnlock();
+  const btn=e.currentTarget; btn.classList.add('hit');
+  playerTurn(0,0);
+});
+document.getElementById('nb-wait').addEventListener('pointerup', e=>e.currentTarget.classList.remove('hit'));
 
 // tap-on-canvas to move toward tapped tile (mobile convenience, one step)
 let touchStartT=0;
@@ -1066,99 +1043,103 @@ canvas.addEventListener('touchstart', e=>{ acUnlock(); touchStartT=Date.now(); }
 function drawTitle(){
   const t=Date.now()/1000;
   ctx.save();
-  ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  const ts = Math.min(66, Math.max(30, Math.floor(W/9)));
+  ctx.globalAlpha = 0.96+Math.sin(t*0.6)*0.04;
+  ctx.font = `900 ${ts}px "Courier New", monospace`;
+  glow(C.ui,30); ctx.fillStyle=C.ui; ctx.fillText('UNDERHALL', W/2, H*0.28);
+  glow('#ff00ff',60); ctx.fillStyle=C.ui; ctx.fillText('UNDERHALL', W/2, H*0.28);
+  ctx.globalAlpha=1; noGlow();
+  ctx.font='12px "Courier New", monospace'; ctx.fillStyle=C.uiD;
+  ctx.fillText('· DELVE ·  A 12-LEVEL DESCENT', W/2, H*0.28+ts*0.62);
 
-  const titleSize=Math.min(74,Math.max(34,Math.floor(W/8.4)));
-  const y=H*0.27;
-  ctx.font=`900 ${titleSize}px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace`;
-  ctx.letterSpacing='0px';
-  glow('rgba(45,196,232,.48)',18);
-  ctx.fillStyle='#dffaff';ctx.fillText('UNDERHALL',W/2,y);
+  ctx.font='11px "Courier New", monospace'; ctx.fillStyle='rgba(0,200,255,0.5)';
+  ctx.fillText('PERMADEATH. NO STAIRS UP. TAKE THE THRONE OR DON\'T.', W/2, H*0.28+ts*0.62+22);
+
+  const hs = getHighScore();
+  ctx.font='12px "Courier New", monospace'; ctx.fillStyle=C.yel;
+  ctx.fillText(`HIGH SCORE: ${hs}`, W/2, H*0.28+ts*0.62+46);
+
+  const bw=Math.min(220,W*0.6), bh=Math.min(54,Math.max(38,H*0.07));
+  const bx=W/2-bw/2, by=H*0.56;
+  gs.startBtn={x:bx,y:by,w:bw,h:bh};
+  ctx.fillStyle='rgba(0,180,255,0.08)'; ctx.fillRect(bx,by,bw,bh);
+  glow('#00ffff',14+Math.sin(t*3.2)*6);
+  ctx.strokeStyle='#00ffff'; ctx.lineWidth=2; ctx.strokeRect(bx+0.5,by+0.5,bw-1,bh-1);
+  ctx.font='bold 20px "Courier New", monospace'; ctx.fillStyle='#00ffff';
+  ctx.fillText('DESCEND', W/2, by+bh/2);
   noGlow();
 
-  ctx.fillStyle='rgba(110,231,255,.74)';
-  ctx.font='800 11px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
-  ctx.fillText('DELVE  /  TWELVE LEVELS  /  NO ASCENT',W/2,y+titleSize*.63);
-
-  const ruleW=Math.min(520,W*.78);
-  ctx.strokeStyle='rgba(110,231,255,.22)';ctx.lineWidth=1;
-  ctx.beginPath();ctx.moveTo(W/2-ruleW/2,y+titleSize*.82);ctx.lineTo(W/2+ruleW/2,y+titleSize*.82);ctx.stroke();
-
-  ctx.font='700 11px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
-  ctx.fillStyle='rgba(243,251,255,.58)';
-  ctx.fillText('EVERY STEP IS A DECISION. EVERY DECISION SPENDS A TURN.',W/2,y+titleSize*.82+22);
-
-  const hs=getHighScore();
-  ctx.fillStyle=C.yel;ctx.font='800 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
-  ctx.fillText(`HIGH SCORE  ${hs}`,W/2,y+titleSize*.82+49);
-
-  const bw=Math.min(236,W*.64),bh=Math.min(58,Math.max(44,H*.072));
-  const bx=W/2-bw/2,by=H*.58;
-  gs.startBtn={x:bx,y:by,w:bw,h:bh};
-  ctx.fillStyle='rgba(7,24,37,.92)';ctx.fillRect(bx,by,bw,bh);
-  ctx.strokeStyle='rgba(185,245,255,.88)';ctx.lineWidth=1.5;ctx.strokeRect(bx+.75,by+.75,bw-1.5,bh-1.5);
-  ctx.fillStyle='#e8fbff';ctx.font='900 18px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
-  ctx.fillText('DESCEND',W/2,by+bh/2-1);
-
-  const isMob=window.matchMedia('(pointer:coarse), (max-width:760px)').matches;
-  ctx.font='700 9px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
-  ctx.fillStyle='rgba(110,231,255,.40)';ctx.textBaseline='bottom';
-  ctx.fillText(isMob?'DIRECTION PAD: MOVE  ·  CENTER: REST  ·  ⚔: ATTACK / USE':'NUMPAD 1–9: MOVE / REST  ·  U OR E: USE  ·  ARROWS / WASD ALSO MOVE',W/2,H-19);
+  const isMob = window.matchMedia('(pointer:coarse)').matches;
+  ctx.font='10px "Courier New", monospace'; ctx.fillStyle='rgba(0,160,255,0.32)';
+  ctx.textBaseline='bottom';
+  ctx.fillText(isMob ? 'JOYSTICK: 8-WAY MOVE  ·  ⚔: ATTACK / USE POTION  ·  WAIT: PASS TURN'
+                      : 'NUMPAD 1-9 OR ARROWS/WASD: MOVE (DIAGONALS ON NUMPAD)  ·  U: USE ITEM',
+               W/2, H-14);
   ctx.restore();
 }
 
 function drawHUD(){
   ctx.save();
-  ctx.fillStyle='rgba(2,8,14,.96)';ctx.fillRect(0,0,W,HUD_H);
-  ctx.strokeStyle='rgba(110,231,255,.18)';ctx.lineWidth=1;
-  ctx.beginPath();ctx.moveTo(0,HUD_H-.5);ctx.lineTo(W,HUD_H-.5);ctx.stroke();
+  ctx.fillStyle='rgba(2,11,24,0.94)'; ctx.fillRect(0,0,W,HUD_H);
+  ctx.strokeStyle='rgba(0,190,255,0.16)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(0,HUD_H-0.5); ctx.lineTo(W,HUD_H-0.5); ctx.stroke();
 
   const p=gs.player;
-  const hpPct=Math.max(0,p.hp)/p.maxHp;
-  const torchPct=Math.max(0,p.torchFuel)/260;
-  const compact=W<640;
-  const mono='ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
+  ctx.textBaseline='middle'; ctx.font='bold 13px "Courier New", monospace';
+  ctx.textAlign='left';
 
-  // Left instrument: life.
-  ctx.textAlign='left';ctx.textBaseline='middle';
-  ctx.font=`800 9px ${mono}`;ctx.fillStyle='rgba(185,245,255,.52)';ctx.fillText('VITAL',14,18);
-  const hpW=compact?96:132;
-  ctx.fillStyle='rgba(255,255,255,.055)';ctx.fillRect(14,29,hpW,10);
-  ctx.fillStyle=hpPct<.3?C.red:C.grn;ctx.fillRect(14,29,hpW*hpPct,10);
-  ctx.font=`800 11px ${mono}`;ctx.fillStyle='#f4fbff';ctx.fillText(`${Math.max(0,p.hp)}/${p.maxHp}`,14,53);
+  // HP
+  const hpPct = Math.max(0,p.hp)/p.maxHp;
+  ctx.fillStyle=C.uiD; ctx.fillText('HP', 12, HUD_H/2-10);
+  ctx.strokeStyle='rgba(0,190,255,0.3)'; ctx.strokeRect(38,HUD_H/2-18,120,12);
+  ctx.fillStyle = hpPct<0.3? C.red : C.grn;
+  glow(hpPct<0.3?C.red:C.grn, 6);
+  ctx.fillRect(39,HUD_H/2-17,118*hpPct,10);
+  noGlow();
+  ctx.fillStyle='#fff'; ctx.font='10px "Courier New", monospace';
+  ctx.fillText(`${Math.max(0,p.hp)}/${p.maxHp}`, 42, HUD_H/2-12+18);
 
-  // Center instrument: dungeon clock.
-  ctx.textAlign='center';ctx.font=`900 ${compact?13:15}px ${mono}`;ctx.fillStyle='#dffaff';
-  ctx.fillText(`DEPTH ${gs.depth} / ${MAX_DEPTH}`,W/2,18);
-  ctx.font=`800 10px ${mono}`;ctx.fillStyle='rgba(110,231,255,.66)';
-  ctx.fillText(`TURN ${String(gs.turn).padStart(4,'0')}  ·  ${gs.lastAction}`,W/2,37);
-  ctx.font=`700 9px ${mono}`;ctx.fillStyle='rgba(185,245,255,.38)';
-  ctx.fillText(`${p.gold} GOLD  ·  ${p.kills} KILLS`,W/2,54);
+  // depth
+  ctx.textAlign='center'; ctx.font='bold 14px "Courier New", monospace';
+  glow(C.ui,8); ctx.fillStyle=C.ui;
+  ctx.fillText(`DEPTH ${gs.depth}`, W/2, HUD_H/2-9);
+  noGlow();
+  ctx.font='9px "Courier New", monospace'; ctx.fillStyle=C.uiD;
+  ctx.fillText(`${p.gold} GOLD  ·  ${p.kills} KILLS`, W/2, HUD_H/2+10);
 
-  // Right instrument: light measured in turns.
-  const tx=W-14-(compact?82:112),tw=compact?82:112;
-  ctx.textAlign='right';ctx.font=`800 9px ${mono}`;ctx.fillStyle='rgba(255,215,118,.66)';ctx.fillText('TORCH TURNS',W-14,18);
-  ctx.fillStyle='rgba(255,255,255,.055)';ctx.fillRect(tx,29,tw,10);
-  ctx.fillStyle=torchPct<.2?C.red:C.yel;ctx.fillRect(tx,29,tw*torchPct,10);
-  ctx.font=`800 11px ${mono}`;ctx.fillStyle='#f4fbff';ctx.fillText(`${Math.ceil(p.torchFuel)}`,W-14,53);
+  // torch
+  ctx.textAlign='right'; ctx.font='10px "Courier New", monospace';
+  const torchPct = Math.max(0,p.torchFuel)/260;
+  ctx.fillStyle = torchPct<0.2?C.red:C.yel;
+  ctx.fillText('TORCH', W-12, HUD_H/2-10);
+  ctx.strokeStyle='rgba(255,220,0,0.3)'; ctx.strokeRect(W-132,HUD_H/2-18,100,12);
+  glow(torchPct<0.2?C.red:C.yel,6);
+  ctx.fillStyle= torchPct<0.2?C.red:C.yel;
+  ctx.fillRect(W-131,HUD_H/2-17,98*torchPct,10);
+  noGlow();
+
   ctx.restore();
 }
 
 function drawStatus(){
-  const won=gs.state===ST.WIN;
-  const col=won?C.grn:C.red;
-  const msg=won?'THE THRONE FALLS':'YOU HAVE DIED';
-  const mono='ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
-  ctx.save();ctx.textAlign='center';ctx.textBaseline='middle';
-  ctx.fillStyle='rgba(2,8,14,.82)';ctx.fillRect(W*.12,H*.24,W*.76,H*.38);
-  ctx.strokeStyle=won?'rgba(119,242,161,.42)':'rgba(255,71,111,.42)';ctx.strokeRect(W*.12+.5,H*.24+.5,W*.76-1,H*.38-1);
-  glow(col,18);ctx.fillStyle=col;ctx.font=`900 ${Math.min(38,Math.max(27,W/13))}px ${mono}`;ctx.fillText(msg,W/2,H*.34);noGlow();
-  ctx.font=`700 11px ${mono}`;ctx.fillStyle='rgba(185,245,255,.58)';
-  ctx.fillText(`DEPTH ${gs.depth}  ·  TURN ${gs.turn}  ·  KILLS ${gs.player.kills}  ·  GOLD ${gs.player.gold}`,W/2,H*.34+40);
-  ctx.font=`900 17px ${mono}`;ctx.fillStyle=C.yel;ctx.fillText(`SCORE  ${gs.score}`,W/2,H*.34+70);
-  const hs=getHighScore();ctx.font=`700 10px ${mono}`;ctx.fillStyle=hs===gs.score?C.grn:'rgba(185,245,255,.44)';
-  ctx.fillText(hs===gs.score?'NEW HIGH SCORE':`HIGH SCORE  ${hs}`,W/2,H*.34+94);
-  ctx.fillStyle='rgba(185,245,255,.38)';ctx.fillText('TAP OR PRESS ENTER TO RETURN',W/2,H*.34+126);
+  const won = gs.state===ST.WIN;
+  const col = won?C.grn:C.red;
+  const msg = won? 'THE THRONE FALLS' : 'YOU HAVE DIED';
+  ctx.save();
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.font='900 34px "Courier New", monospace';
+  glow(col,26); ctx.fillStyle=col; ctx.fillText(msg, W/2, H*0.34);
+  noGlow();
+  ctx.font='13px "Courier New", monospace'; ctx.fillStyle=C.uiD;
+  ctx.fillText(`DEPTH REACHED: ${gs.depth}   KILLS: ${gs.player.kills}   GOLD: ${gs.player.gold}`, W/2, H*0.34+34);
+  ctx.font='bold 16px "Courier New", monospace'; ctx.fillStyle=C.yel;
+  ctx.fillText(`SCORE: ${gs.score}`, W/2, H*0.34+58);
+  const hs=getHighScore();
+  ctx.font='11px "Courier New", monospace'; ctx.fillStyle=hs===gs.score?C.grn:C.uiD;
+  ctx.fillText(hs===gs.score?'NEW HIGH SCORE':`HIGH SCORE: ${hs}`, W/2, H*0.34+78);
+  ctx.font='10px "Courier New", monospace'; ctx.fillStyle='rgba(0,200,255,0.4)';
+  ctx.fillText('TAP OR PRESS ENTER TO RETURN', W/2, H*0.34+104);
   ctx.restore();
 }
 
@@ -1171,7 +1152,7 @@ function loop(ts){
   grid.update(dt);
   if(gs.shakeT>0) gs.shakeT-=dt;
   gs.sparks = gs.sparks.filter(s=>{ s.update(dt); return !s.dead; });
-  if(gs.restPulse>0) gs.restPulse=Math.max(0,gs.restPulse-dt*3.4);
+  if(gs.state===ST.PLAY && gs.player.torchFuel>0){ gs.player.torchFuel -= dt*1.0; }
 
   ctx.save();
   if(gs.shakeT>0){ const m=gs.shakeMag*(gs.shakeT/0.5); ctx.translate((Math.random()-0.5)*m,(Math.random()-0.5)*m); }
