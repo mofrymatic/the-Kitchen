@@ -323,9 +323,9 @@ body::after{
         </section>
 
         <section class="settings-group"><h3>Audio & Feedback</h3>
-          <label class="setting-row"><span class="setting-copy"><strong>AUXigeN Music Style</strong><small>Six 128 BPM arrangements of the same theme contour. Changes take effect when settings are saved.</small></span><span class="setting-control"><select name="musicStyle"><option value="neon_lagoon">NEON LAGOON · CHILLWAVE</option><option value="witch_house">WITCH HOUSE</option><option value="west_coast_bass">WEST COAST BASS</option><option value="klezmer">KLEZMER</option><option value="jungle">JUNGLE</option><option value="rnb">R&amp;B</option></select></span></label>
+          <label class="setting-row"><span class="setting-copy"><strong>Music Style</strong><small>Six 128 BPM arrangements of the same theme contour. Changes take effect when settings are saved.</small></span><span class="setting-control"><select name="musicStyle"><option value="neon_lagoon">NEON LAGOON · CHILLWAVE</option><option value="witch_house">WITCH HOUSE</option><option value="west_coast_bass">WEST COAST BASS</option><option value="klezmer">KLEZMER</option><option value="jungle">JUNGLE</option><option value="rnb">R&amp;B</option></select></span></label>
           <label class="setting-row"><span class="setting-copy"><strong>Sound Effects</strong><small>Movement, rotation, landing, line-clear, and game-over synthesis.</small></span><span class="setting-control"><span class="switch"><input name="sfxEnabled" type="checkbox"><span></span></span></span></label>
-          <label class="setting-row"><span class="setting-copy"><strong>Background Music</strong><small>Adaptive 128 BPM AUXigeN arrangement during active, unpaused play.</small></span><span class="setting-control"><span class="switch"><input name="bgmEnabled" type="checkbox"><span></span></span></span></label>
+          <label class="setting-row"><span class="setting-copy"><strong>Background Music</strong><small>Adaptive 128 BPM arrangement during active, unpaused play.</small></span><span class="setting-control"><span class="switch"><input name="bgmEnabled" type="checkbox"><span></span></span></span></label>
           <label class="setting-row"><span class="setting-copy"><strong>Touch Haptics</strong><small>Use short vibration cues for locks and clears where supported.</small></span><span class="setting-control"><span class="switch"><input name="hapticsEnabled" type="checkbox"><span></span></span></span></label>
         </section>
 
@@ -625,11 +625,11 @@ const clamp  = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const FONT_DISPLAY = '"Arial Black","Helvetica Neue",Arial,sans-serif';
 const FONT_DATA = '"SFMono-Regular",Menlo,Consolas,"Liberation Mono","Courier New",monospace';
 
-// ── AUXigeN adaptive audio system ─────────────────────────────────────
+// ── Aadaptive audio system ─────────────────────────────────────
 // FTS Arcade chillwave / tropical-house adaptation: 128 BPM · A minor · 16 bars.
 // Six-voice ceiling, pulse duet, triangle/808 bass, trap percussion,
 // pinball/FM accents, and game-state pitch/intensity tracking.
-const AUXIGEN_MANIFEST = Object.freeze({
+const AUX_MANIFEST = Object.freeze({
   game:'zittris', sound_family:'fts_arcade', runtime:'web_audio',
   tempo_bpm:128, musical_key:'A_minor', loop_length_bars:16,
   polyphony_limit:6, working_depth:'32_bit_float', delivery_depth:'16_bit',
@@ -671,7 +671,7 @@ const audioEngine={
 
   midi(n){return 440*Math.pow(2,(n-69)/12)},
   nextVar(name,count=4){const n=(this.variation[name]||0)%count;this.variation[name]=n+1;return n},
-  canVoice(){return this.activeVoices<AUXIGEN_MANIFEST.polyphony_limit},
+  canVoice(){return this.activeVoices<AUX_MANIFEST.polyphony_limit},
   claim(node,stopAt){
     this.activeVoices++;
     const release=()=>{this.activeVoices=Math.max(0,this.activeVoices-1);node.removeEventListener?.('ended',release)};
