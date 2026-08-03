@@ -59,7 +59,7 @@ canvas{display:block;position:fixed;top:0;left:0;touch-action:none;image-renderi
 
 #nui{
   position:fixed;bottom:0;left:0;right:0;
-  height:var(--nui-h,190px);z-index:50;
+  height:var(--nui-h,206px);z-index:50;
   pointer-events:none;align-items:flex-end;
   justify-content:space-between;
   padding:0 clamp(12px,4vw,32px) clamp(10px,2.5vh,22px);
@@ -67,7 +67,11 @@ canvas{display:block;position:fixed;top:0;left:0;touch-action:none;image-renderi
 }
 #nui-move{display:flex;flex-direction:column;align-items:center;gap:clamp(5px,1.2vh,10px);pointer-events:none}
 #nui-lr-row{display:flex;align-items:center;gap:clamp(6px,2.2vw,14px)}
-#nui-act{display:flex;flex-direction:column;align-items:center;gap:clamp(5px,1.2vh,10px);pointer-events:none}
+#nui-act{
+  position:relative;pointer-events:none;align-self:stretch;
+  width:clamp(170px,34vw,250px);height:clamp(150px,28vw,215px);
+  margin-right:clamp(2px,1vw,10px);
+}
 
 .nb{
   pointer-events:all;touch-action:none;-webkit-tap-highlight-color:transparent;
@@ -89,25 +93,36 @@ canvas{display:block;position:fixed;top:0;left:0;touch-action:none;image-renderi
   box-shadow:0 0 22px rgba(60,200,255,.55),0 0 44px rgba(60,200,255,.18),inset 0 0 12px rgba(60,200,255,.10);
 }
 .nb-rot{
-  --nb-sz:clamp(72px,16vw,104px);border-radius:50%;
-  border-color:rgba(255,200,80,.30);color:rgba(255,210,80,.80);
+  --nb-sz:clamp(80px,18vw,114px);border-radius:18px;
+  border-color:rgba(255,178,60,.45);color:rgba(255,196,96,.92);
   font-size:clamp(10px,2.5vw,14px);letter-spacing:.16em;
-  box-shadow:0 0 14px rgba(255,180,0,.14),inset 0 0 12px rgba(255,170,0,.05);
+  box-shadow:0 0 16px rgba(255,165,0,.18),inset 0 0 12px rgba(255,170,0,.07);
   animation-delay:.12s;
 }
-.nb-rot .nb-dot{font-size:clamp(24px,5.5vw,36px);line-height:1;margin-bottom:2px}
-/* HOLD button — green "reserve/swap" language from the ZITTRIS spec card.
-   A smaller companion to ROTATE, sitting above the action cluster. */
+.nb-rot .nb-dot,.nb-glyph{font-size:clamp(24px,5.5vw,36px);line-height:1;margin-bottom:2px}
+/* GameCube-style action cluster: primary rotate button centered, with
+   hold above-left and slam below-left. */
+.nb-act{position:absolute;pointer-events:all}
+.nb-rotate-gc{
+  right:0;top:50%;transform:translateY(-50%);
+  --nb-sz:clamp(88px,20vw,126px);width:var(--nb-sz);height:var(--nb-sz);
+  border-radius:22px;
+}
+.nb-rotate-gc:active,.nb-rotate-gc.hit{
+  transform:translateY(-50%) scale(.92);
+}
 .nb-hold{
-  --nb-sz:clamp(52px,11vw,74px);
-  border-color:rgba(80,255,160,.30);color:rgba(90,255,170,.80);
-  font-size:clamp(20px,4.6vw,30px);
-  box-shadow:0 0 12px rgba(40,230,140,.12),inset 0 0 10px rgba(40,220,140,.04);
+  left:clamp(18px,4vw,38px);top:0;
+  --nb-sz:clamp(58px,12vw,82px);width:var(--nb-sz);height:var(--nb-sz);
+  border-radius:18px;
+  border-color:rgba(196,170,255,.44);color:rgba(226,214,255,.92);
+  box-shadow:0 0 13px rgba(176,150,255,.15),inset 0 0 10px rgba(176,150,255,.05);
   animation-delay:.06s;
 }
+.nb-hold .nb-glyph{font-size:clamp(22px,4.5vw,30px)}
 .nb-hold:active,.nb-hold.hit{
-  background:rgba(60,230,150,.14);border-color:rgba(90,255,170,.90);color:#4dffaa;
-  box-shadow:0 0 22px rgba(60,240,150,.55),0 0 44px rgba(60,240,150,.18),inset 0 0 12px rgba(60,240,150,.10);
+  background:rgba(170,145,255,.15);border-color:rgba(214,196,255,.94);color:#f0e8ff;
+  box-shadow:0 0 22px rgba(183,157,255,.52),0 0 44px rgba(183,157,255,.18),inset 0 0 12px rgba(183,157,255,.10);
 }
 /* Cooldown: hold already used this drop. Dim + non-interactive, matching the
    "cannot hold again yet" state (panel 4) in the design reference. */
@@ -116,9 +131,22 @@ canvas{display:block;position:fixed;top:0;left:0;touch-action:none;image-renderi
   border-color:rgba(120,140,160,.25);color:rgba(150,170,190,.5);
   box-shadow:none;
 }
+.nb-slam{
+  left:0;bottom:0;
+  --nb-sz:clamp(58px,12vw,82px);width:var(--nb-sz);height:var(--nb-sz);
+  border-radius:18px;
+  border-color:rgba(255,104,126,.46);color:rgba(255,126,144,.92);
+  box-shadow:0 0 14px rgba(255,82,110,.16),inset 0 0 10px rgba(255,82,110,.06);
+  animation-delay:.18s;
+}
+.nb-slam .nb-glyph{font-size:clamp(24px,4.8vw,32px)}
+.nb-slam:active,.nb-slam.hit{
+  background:rgba(255,92,120,.15);border-color:rgba(255,132,154,.95);color:#ffd6dd;
+  box-shadow:0 0 22px rgba(255,86,116,.55),0 0 44px rgba(255,86,116,.18),inset 0 0 12px rgba(255,86,116,.10);
+}
 .nb-rot:active,.nb-rot.hit{
-  background:rgba(255,200,0,.13);border-color:rgba(255,215,0,.92);color:#ffe000;
-  box-shadow:0 0 24px rgba(255,200,0,.60),0 0 50px rgba(255,200,0,.22),inset 0 0 14px rgba(255,200,0,.10);
+  background:rgba(255,190,40,.14);border-color:rgba(255,215,120,.95);color:#fff0b8;
+  box-shadow:0 0 24px rgba(255,188,32,.60),0 0 50px rgba(255,188,32,.22),inset 0 0 14px rgba(255,188,32,.10);
 }
 #nui-pause{
   position:fixed;top:clamp(6px,1.5vh,12px);left:50%;transform:translateX(-50%);
@@ -135,9 +163,12 @@ canvas{display:block;position:fixed;top:0;left:0;touch-action:none;image-renderi
 #nui-pause:active,#nui-pause.hit{background:rgba(60,190,255,.14);border-color:rgba(80,220,255,.82);color:#00ffff;box-shadow:0 0 18px rgba(60,200,255,.5)}
 #nui-pause[data-state="paused"]{border-color:rgba(255,220,0,.5);color:rgba(255,220,0,.85);box-shadow:0 0 12px rgba(255,200,0,.2);letter-spacing:0;font-size:15px}
 @media(pointer:coarse)and(orientation:landscape){
-  #nui{--nui-h:clamp(110px,24vh,145px)}
+  #nui{--nui-h:clamp(118px,25vh,152px)}
   .nb{--nb-sz:clamp(50px,10.5vw,74px)}
   .nb-rot{--nb-sz:clamp(63px,13.5vw,88px)}
+  #nui-act{width:clamp(148px,27vw,200px);height:clamp(112px,22vh,154px)}
+  .nb-rotate-gc{--nb-sz:clamp(72px,13vw,96px)}
+  .nb-hold,.nb-slam{--nb-sz:clamp(48px,9vw,66px)}
 }
 @keyframes nb-appear{from{opacity:0;transform:translateY(16px) scale(.88)}to{opacity:1;transform:none}}
 
@@ -323,7 +354,7 @@ body::after{
         </section>
 
         <section class="settings-group"><h3>Audio & Feedback</h3>
-          <label class="setting-row"><span class="setting-copy"><strong>Music Style</strong><small>Six 128 BPM arrangements of the same theme contour. Changes take effect when settings are saved.</small></span><span class="setting-control"><select name="musicStyle"><option value="neon_lagoon">NEON LAGOON · CHILLWAVE</option><option value="witch_house">WITCH HOUSE</option><option value="west_coast_bass">WEST COAST BASS</option><option value="klezmer">KLEZMER</option><option value="jungle">JUNGLE</option><option value="rnb">R&amp;B</option></select></span></label>
+          <label class="setting-row"><span class="setting-copy"><strong>Music Style</strong><small>Twelve adaptive 128 BPM arrangements of the same theme contour. Changes take effect when settings are saved.</small></span><span class="setting-control"><select name="musicStyle"><option value="neon_lagoon">NEON LAGOON · CHILLWAVE</option><option value="witch_house">WITCH HOUSE</option><option value="west_coast_bass">WEST COAST BASS</option><option value="klezmer">KLEZMER</option><option value="jungle">JUNGLE</option><option value="rnb">R&amp;B</option><option value="acid_core">ACID CORE</option><option value="deep_house">DEEP HOUSE</option><option value="trap">TRAP</option><option value="drill_beat">DRILL BEAT</option><option value="psytrance">PSYTRANCE</option><option value="triphop">TRIP-HOP</option></select></span></label>
           <label class="setting-row"><span class="setting-copy"><strong>Sound Effects</strong><small>Movement, rotation, landing, line-clear, and game-over synthesis.</small></span><span class="setting-control"><span class="switch"><input name="sfxEnabled" type="checkbox"><span></span></span></span></label>
           <label class="setting-row"><span class="setting-copy"><strong>Background Music</strong><small>Adaptive 128 BPM arrangement during active, unpaused play.</small></span><span class="setting-control"><span class="switch"><input name="bgmEnabled" type="checkbox"><span></span></span></span></label>
           <label class="setting-row"><span class="setting-copy"><strong>Touch Haptics</strong><small>Use short vibration cues for locks and clears where supported.</small></span><span class="setting-control"><span class="switch"><input name="hapticsEnabled" type="checkbox"><span></span></span></span></label>
@@ -357,11 +388,11 @@ body::after{
     <button class="nb" id="nb-down" aria-label="Soft drop" style="width:var(--nb-sz,clamp(60px,13vw,88px));height:calc(var(--nb-sz,clamp(60px,13vw,88px)) * 0.72)"><span>▼</span><span class="nb-lbl">DROP</span></button>
   </div>
   <div id="nui-act" role="group" aria-label="Actions">
-    <button class="nb nb-hold" id="nb-hold" aria-label="Hold piece"><span>⇄</span><span class="nb-lbl">HOLD</span></button>
-    <button class="nb nb-rot" id="nb-rotate" aria-label="Rotate">
+    <button class="nb nb-act nb-hold" id="nb-hold" aria-label="Hold piece"><span class="nb-glyph">⇄</span><span class="nb-lbl">HOLD</span></button>
+    <button class="nb nb-act nb-rot nb-rotate-gc" id="nb-rotate" aria-label="Rotate">
       <span class="nb-dot">↻</span><span class="nb-lbl">ROTATE</span>
     </button>
-    <button class="nb" id="nb-harddrop" aria-label="Hard drop" style="width:var(--nb-sz,clamp(60px,13vw,88px));height:calc(var(--nb-sz,clamp(60px,13vw,88px)) * 0.72)"><span>⬇</span><span class="nb-lbl">SLAM</span></button>
+    <button class="nb nb-act nb-slam" id="nb-harddrop" aria-label="Hard drop"><span class="nb-glyph">⬇</span><span class="nb-lbl">SLAM</span></button>
   </div>
 </div>
 <button id="nui-pause" aria-label="Pause" data-state="playing">II</button>
@@ -406,7 +437,7 @@ const DEFAULT_SETTINGS = Object.freeze({
 });
 const SETTING_ENUMS = {
   rotationSystem:['srs','ars'], randomizer:['bag','history'], hardDropMode:['lock','sonic'],
-  musicStyle:['neon_lagoon','witch_house','west_coast_bass','klezmer','jungle','rnb'],
+  musicStyle:['neon_lagoon','witch_house','west_coast_bass','klezmer','jungle','rnb','acid_core','deep_house','trap','drill_beat','psytrance','triphop'],
   queueCount:[1,2,3,4,5], softDropFactor:[5,10,20,40,999], lockResetLimit:[0,8,15,30]
 };
 const settingClamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
@@ -574,7 +605,7 @@ function resize() {
   // constants — they get divided by PIXEL_SCALE for the same reason the
   // touch-NUI height does: they're anchored to the physical device, not to
   // whatever internal resolution the backbuffer happens to be running at.
-  const nuiH      = nuiActive ? Math.min(190 / PIXEL_SCALE, H * 0.26) : 0;
+  const nuiH      = nuiActive ? Math.min(206 / PIXEL_SCALE, H * 0.28) : 0;
   const minCell   = Math.round(18 / PIXEL_SCALE);
   const bottomGap = Math.max(2, Math.round(6 / PIXEL_SCALE));   // breathing room above the NUI zone, not a dead zone
   const gutter    = Math.max(3, Math.round(12 / PIXEL_SCALE));
@@ -634,7 +665,7 @@ const AUX_MANIFEST = Object.freeze({
   tempo_bpm:128, musical_key:'A_minor', loop_length_bars:16,
   polyphony_limit:6, working_depth:'32_bit_float', delivery_depth:'16_bit',
   sample_rate_hz:48000, composition:'user_supplied_midi_adaptation', source_midi:'Tetris - A Theme.mid',
-  styles:['neon_lagoon','witch_house','west_coast_bass','klezmer','jungle','rnb'],
+  styles:['neon_lagoon','witch_house','west_coast_bass','klezmer','jungle','rnb','acid_core','deep_house','trap','drill_beat','psytrance','triphop'],
   states:['idle','playing','stack_rising','danger','combo','game_over'],
   sfx:['move','rotate','soft_drop','hard_drop','hold','line_clear','combo','level_up','danger','game_over']
 });
@@ -773,6 +804,78 @@ const audioEngine={
       if(bn>=0&&[0,6,10,14].includes(beat))this.bass(bn-12,time,.27,.054+.008*intensity,beat===0);
       if(ln>=0&&beat%2===0){this.osc({freq:this.midi(ln-12),type:'triangle',time,dur:.18,gain:.021+.003*intensity,bus:'music'});if(beat%4===0)this.pulse(ln+3,time+.012,.12,.010,1);}
       if(bar%4===3&&beat===15)this.fmBell(this.midi(76),time,.025,.22);
+    }else if(style==='acid_core'){
+      // Acid core: relentless four-floor pulse, resonant 303-like saw bass,
+      // clipped hats, and an abrasive octave lead in higher intensity states.
+      if(beat%4===0)this.kick(time,.125+.012*intensity);
+      if(beat===4||beat===12)this.snare(time,.055+.009*intensity);
+      if(beat%2===0)this.hat(time,.017+.004*intensity);
+      if(intensity>=2&&beat%2===1)this.hat(time+.012,.013+.003*intensity);
+      if(bn>=0){
+        const acidNote=bn-12+([0,0,7,3][Math.floor(beat/4)%4]||0);
+        this.osc({freq:this.midi(acidNote),type:'sawtooth',time,dur:.105,gain:.045+.007*intensity,bus:'music',sweep:this.midi(acidNote+(beat%4===3?12:2))});
+      }
+      if(ln>=0&&beat%2===0)this.pulse(ln+(intensity>=3?12:0),time,.052,.017+.003*intensity,beat%4===0?1:0);
+      if(bar%4===3&&beat===15)this.noise({time,dur:.22,gain:.032,frequency:3200,q:6,bus:'music'});
+    }else if(style==='deep_house'){
+      // Deep house: soft four-floor kick, offbeat hats, warm sub and restrained
+      // chord-like pulse voicings that leave the Tetris hook spacious.
+      if(beat%4===0)this.kick(time,.092+.008*intensity);
+      if(beat===4||beat===12)this.snare(time,.040+.006*intensity);
+      if([2,6,10,14].includes(beat))this.hat(time,.012+.002*intensity);
+      if(bn>=0&&[0,6,8,14].includes(beat))this.bass(bn-12,time,.30,.052+.007*intensity,beat===0||beat===8);
+      if(ln>=0&&beat%4===2){
+        this.osc({freq:this.midi(ln-12),type:'triangle',time,dur:.22,gain:.020+.003*intensity,bus:'music'});
+        this.pulse(ln+3,time+.012,.14,.009+.002*intensity,1);
+      }
+      if(bar%4===3&&beat===15)this.fmBell(this.midi(76),time,.022,.24);
+    }else if(style==='trap'){
+      // Trap: half-time backbeat, sparse 808 phrases and accelerating hat rolls.
+      if([0,7,10].includes(beat))this.kick(time,.115+.010*intensity);
+      if(beat===8)this.snare(time,.080+.010*intensity);
+      if([2,6,10,14].includes(beat))this.hat(time,.014+.003*intensity);
+      if((intensity>=2&&[3,11,15].includes(beat))||(intensity>=3&&beat%2===1))this.hat(time+.022,.013+.003*intensity);
+      if(bn>=0&&[0,3,7,10,14].includes(beat))this.bass(bn-12,time,.28,.078+.009*intensity,true);
+      if(ln>=0&&beat%2===0)this.pulse(ln-12,time,.070,.017+.003*intensity,0);
+      if(bar%4===3&&beat===15)this.fmBell(this.midi(69),time,.028,.18);
+    }else if(style==='drill_beat'){
+      // Drill: sliding sub movement, displaced kicks, clipped snare and tense
+      // upper-register motif fragments.
+      if([0,5,7,11,14].includes(beat))this.kick(time,.108+.010*intensity);
+      if(beat===8)this.snare(time,.074+.009*intensity);
+      if(beat%2===0)this.hat(time,.012+.003*intensity);
+      if([3,6,13,15].includes(beat))this.hat(time+.018,.011+.003*intensity);
+      if(bn>=0&&[0,5,9,12,15].includes(beat)){
+        const slide=beat===15?bn-19:bn-12;
+        this.osc({freq:this.midi(slide),type:'sine',time,dur:.26,gain:.080+.008*intensity,bus:'music',sweep:this.midi(slide+(beat===15?7:-2))});
+      }
+      if(ln>=0&&[0,4,10,14].includes(beat))this.pulse(ln+(beat===14?12:0),time,.060,.018+.003*intensity,1);
+    }else if(style==='psytrance'){
+      // Psytrance: four-floor kick with rolling offbeat bass and bright,
+      // tightly gated lead repetitions.
+      if(beat%4===0)this.kick(time,.120+.010*intensity);
+      if(beat%4!==0&&bn>=0)this.bass(bn-12,time,.085,.050+.007*intensity,false);
+      if(beat%2===0)this.hat(time,.013+.003*intensity);
+      if(intensity>=2&&beat%2===1)this.hat(time+.014,.011+.002*intensity);
+      if(beat===4||beat===12)this.snare(time,.036+.005*intensity);
+      if(ln>=0){
+        this.pulse(ln,time,.045,.018+.003*intensity,beat%2);
+        if(intensity>=3&&beat%4===3)this.pulse(ln+12,time+.025,.032,.009,1);
+      }
+      if(bar%4===3&&beat===15)this.noise({time,dur:.30,gain:.026,frequency:5200,q:3,bus:'music'});
+    }else if(style==='triphop'){
+      // Trip-hop: 128 BPM clock interpreted as a heavy half-time pocket,
+      // dusty percussion, long bass notes and low, smoky melody voicings.
+      if([0,10].includes(beat))this.kick(time,.090+.007*intensity);
+      if(beat===8)this.snare(time,.068+.008*intensity);
+      if([3,7,11,15].includes(beat))this.hat(time,.008+.002*intensity);
+      if([6,14].includes(beat))this.noise({time,dur:.055,gain:.018,frequency:1100,q:1.8,bus:'music'});
+      if(bn>=0&&[0,8].includes(beat))this.bass(bn-12,time,.42,.060+.007*intensity,true);
+      if(ln>=0&&beat%4===0){
+        this.osc({freq:this.midi(ln-12),type:'triangle',time,dur:.25,gain:.023+.003*intensity,bus:'music'});
+        if(intensity>=2)this.pulse(ln-5,time+.030,.16,.009,1);
+      }
+      if(bar%4===3&&beat===15)this.fmBell(this.midi(64),time,.021,.30);
     }else{
       // Neon Lagoon: chillwave / tropical-house baseline.
       if(beat%4===0)this.kick(time,.095+.014*intensity);
