@@ -140,12 +140,152 @@ canvas{display:block;position:fixed;top:0;left:0;touch-action:none;image-renderi
   .nb-rot{--nb-sz:clamp(63px,13.5vw,88px)}
 }
 @keyframes nb-appear{from{opacity:0;transform:translateY(16px) scale(.88)}to{opacity:1;transform:none}}
+
+
+/* ── ZITTRIS command deck / settings overhaul ───────────────────────── */
+:root{
+  --ui-cyan:#48dcff;--ui-blue:#1688ff;--ui-violet:#b35cff;--ui-gold:#ffbd25;
+  --ui-green:#45ffc0;--ui-red:#ff536b;--ui-ink:#030813;--ui-panel:rgba(3,10,24,.94);
+  --ui-line:rgba(72,220,255,.42);--ui-text:#dff7ff;--ui-muted:#7aa3bc;
+}
+button,select,input{font:inherit}
+button{touch-action:manipulation}
+.ui-hidden{display:none!important}
+#menu-layer,#settings-backdrop,#how-backdrop{font-family:ui-monospace,'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace}
+#menu-layer{
+  position:fixed;inset:0;z-index:80;display:grid;grid-template-columns:minmax(150px,22vw) minmax(340px,620px) minmax(130px,19vw);
+  gap:clamp(14px,2vw,34px);align-items:center;justify-content:center;padding:clamp(18px,4vw,64px);
+  background:radial-gradient(circle at 50% 44%,rgba(21,72,145,.16),transparent 38%);pointer-events:auto;
+}
+.menu-rail,.menu-core{border:1px solid rgba(55,205,255,.46);background:linear-gradient(180deg,rgba(2,8,20,.9),rgba(2,6,15,.96));box-shadow:0 0 32px rgba(0,130,255,.13),inset 0 0 24px rgba(30,100,190,.08);clip-path:polygon(0 12px,12px 0,calc(100% - 12px) 0,100% 12px,100% calc(100% - 12px),calc(100% - 12px) 100%,12px 100%,0 calc(100% - 12px))}
+.menu-rail{padding:clamp(14px,2vw,24px);display:flex;flex-direction:column;gap:18px;min-height:430px;justify-content:center}
+.menu-core{padding:clamp(20px,3vw,40px);text-align:center;position:relative}
+.z-title{font-family:'Arial Black','Helvetica Neue',Arial,sans-serif;font-weight:900;font-size:clamp(48px,8vw,104px);line-height:.84;letter-spacing:-.06em;color:#55e9ff;text-shadow:0 0 5px #1acfff,0 0 22px rgba(30,110,255,.8),4px 4px 0 #6b3cff;margin-bottom:16px}
+.z-sub{font-weight:900;letter-spacing:.32em;color:#d383ff;font-size:clamp(15px,2vw,25px);margin-left:.32em;text-shadow:0 0 12px rgba(180,70,255,.65)}
+.z-kicker{color:#4ce9ff;letter-spacing:.27em;font-size:clamp(8px,1vw,12px);margin:12px 0 24px}
+.menu-actions{display:grid;gap:9px;margin:0 auto 20px;max-width:530px}
+.arcade-btn,.step-btn,.icon-btn{
+  appearance:none;border:1px solid rgba(54,202,255,.58);background:linear-gradient(180deg,rgba(6,24,50,.92),rgba(2,10,24,.96));color:var(--ui-cyan);cursor:pointer;font-weight:900;letter-spacing:.08em;text-transform:uppercase;box-shadow:inset 0 0 14px rgba(28,147,255,.08);transition:.12s transform,.12s border-color,.12s box-shadow,.12s color,.12s background;
+}
+.arcade-btn{min-height:54px;padding:12px 18px;font-size:clamp(15px,2vw,24px);text-align:left;display:flex;align-items:center;justify-content:center;gap:14px}
+.arcade-btn.primary{color:var(--ui-gold);border-color:rgba(255,185,32,.75);background:linear-gradient(180deg,rgba(58,35,4,.9),rgba(18,12,2,.96));box-shadow:0 0 18px rgba(255,166,0,.13),inset 0 0 12px rgba(255,190,40,.08)}
+.arcade-btn:hover,.arcade-btn:focus-visible,.step-btn:hover,.step-btn:focus-visible,.icon-btn:hover,.icon-btn:focus-visible{outline:none;transform:translateY(-1px);border-color:#fff;color:#fff;box-shadow:0 0 20px rgba(62,210,255,.32),inset 0 0 15px rgba(50,180,255,.12)}
+.start-options{border-top:1px solid rgba(60,210,255,.34);padding-top:14px;display:grid;gap:10px}
+.step-row{display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px;text-align:left;color:#b6ddf0;font-size:clamp(11px,1.25vw,16px);font-weight:800}
+.stepper{display:grid;grid-template-columns:44px 64px 44px;border:1px solid rgba(40,185,255,.44)}
+.step-btn{border:0;min-height:38px;font-size:20px}.step-value{display:grid;place-items:center;background:rgba(5,12,25,.95);color:var(--ui-gold);font-size:20px;font-weight:900;border-inline:1px solid rgba(40,185,255,.35)}
+.menu-hint{margin-top:18px;padding:10px;border:1px solid rgba(60,185,255,.24);color:#8db2c8;font-size:clamp(8px,1vw,11px);letter-spacing:.06em}.menu-hint b{color:var(--ui-gold)}
+.rail-label{color:var(--ui-cyan);text-align:center;letter-spacing:.16em;font-weight:900;font-size:13px}.rail-stat{padding:15px;border:1px solid rgba(45,185,255,.32);background:rgba(1,7,17,.82);text-align:center}.rail-stat strong{display:block;color:var(--ui-gold);font-size:clamp(24px,3vw,44px);letter-spacing:.03em;margin:5px 0}.rail-stat small{color:#6dc8f2;font-weight:900;letter-spacing:.12em}
+.piece-stack{display:flex;flex-direction:column;align-items:center;gap:13px}.piece-preview{width:96px;min-height:58px;display:grid;place-items:center;padding:8px;border:1px solid rgba(52,194,255,.24);background:rgba(1,7,17,.76)}
+.mini-grid{display:grid;grid-template-columns:repeat(4,12px);grid-template-rows:repeat(4,12px)}.mini-cell{width:11px;height:11px;border:1px solid rgba(255,255,255,.35);box-shadow:0 0 7px currentColor}
+#btn-settings-floating{position:fixed;z-index:68;top:12px;right:12px;width:46px;height:42px;border-radius:8px;font-size:22px;display:none}
+.modal-backdrop{position:fixed;inset:0;z-index:100;background:rgba(0,3,10,.78);backdrop-filter:blur(6px);display:grid;place-items:center;padding:clamp(10px,3vw,38px);overflow:auto;pointer-events:auto}
+.settings-panel,.how-panel{width:min(1080px,96vw);max-height:min(900px,94vh);overflow:auto;border:2px solid rgba(58,205,255,.66);background:linear-gradient(180deg,rgba(3,11,27,.98),rgba(1,6,16,.99));box-shadow:0 0 50px rgba(0,116,255,.3),inset 0 0 35px rgba(28,90,190,.08);clip-path:polygon(0 20px,20px 0,calc(100% - 20px) 0,100% 20px,100% calc(100% - 20px),calc(100% - 20px) 100%,20px 100%,0 calc(100% - 20px))}
+.settings-head{position:sticky;top:0;z-index:2;display:flex;justify-content:space-between;align-items:center;padding:20px 24px 16px;background:rgba(3,11,27,.98);border-bottom:1px solid rgba(55,200,255,.25)}
+.settings-head h2{font-family:'Arial Black','Helvetica Neue',Arial,sans-serif;color:var(--ui-cyan);font-size:clamp(24px,4vw,48px);letter-spacing:.03em;text-shadow:0 0 16px rgba(28,150,255,.55)}
+.settings-head p{color:#9b6cff;letter-spacing:.22em;font-weight:900;font-size:11px;margin-top:5px}.icon-btn{width:48px;height:44px;font-size:27px}
+.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:20px 24px}
+.settings-group{border:1px solid rgba(44,188,255,.31);background:rgba(2,8,20,.7);padding:15px;display:grid;gap:10px;align-content:start}.settings-group h3{color:#c76cff;letter-spacing:.14em;font-size:13px;text-transform:uppercase;border-bottom:1px solid rgba(171,83,255,.3);padding-bottom:9px;margin-bottom:2px}
+.setting-row{display:grid;grid-template-columns:minmax(170px,1fr) minmax(150px,auto);gap:14px;align-items:center;padding:10px 11px;border:1px solid rgba(48,180,235,.18);background:rgba(5,14,30,.72)}
+.setting-copy strong{display:block;color:#64e7ff;font-size:14px;letter-spacing:.04em}.setting-copy small{display:block;color:#799bb0;font-size:10px;line-height:1.35;margin-top:4px;max-width:430px}.setting-control{display:flex;justify-content:flex-end;align-items:center;gap:8px;color:#fff}.setting-control select{min-width:150px;background:#061327;color:#e8fbff;border:1px solid rgba(65,207,255,.48);padding:9px 10px;font-weight:800}.setting-control input[type=range]{width:min(180px,25vw);accent-color:#29d6ff}.range-out{min-width:62px;color:var(--ui-gold);font-weight:900;text-align:right}
+.switch{position:relative;width:66px;height:34px;display:inline-block}.switch input{opacity:0;width:0;height:0}.switch span{position:absolute;inset:0;border:1px solid rgba(60,205,255,.4);background:#071124;cursor:pointer;transition:.15s}.switch span::before{content:'';position:absolute;width:24px;height:24px;left:4px;top:4px;background:#506176;transition:.15s;box-shadow:0 0 8px rgba(255,255,255,.15)}.switch input:checked+span{border-color:#ffbb20;background:rgba(69,39,2,.9)}.switch input:checked+span::before{transform:translateX(32px);background:#ffc025;box-shadow:0 0 15px rgba(255,178,20,.9)}
+.settings-foot{position:sticky;bottom:0;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:10px;padding:16px 24px;background:rgba(3,10,24,.98);border-top:1px solid rgba(55,200,255,.25)}.settings-foot .arcade-btn{min-height:46px;font-size:14px;text-align:center;width:auto}.settings-foot .save{color:var(--ui-gold);border-color:rgba(255,188,30,.72)}
+.how-panel{width:min(720px,95vw);padding:24px}.how-panel h2{color:var(--ui-cyan);font:900 36px 'Arial Black','Helvetica Neue',Arial,sans-serif;margin-bottom:15px}.how-panel p,.how-panel li{color:#b8d8e8;line-height:1.55;font-size:13px}.how-panel ul{display:grid;gap:7px;margin:16px 0 22px 20px}.kbd{display:inline-block;border:1px solid rgba(69,203,255,.5);padding:2px 6px;color:#63e7ff;background:#07152b;font-weight:900}
+body.reduced-motion *{animation:none!important;transition:none!important}body.no-crt #crt{display:none}
+@media(max-width:900px){#menu-layer{grid-template-columns:1fr;overflow:auto;align-items:start;padding:16px}.menu-rail{display:none}.menu-core{margin:auto;width:min(620px,100%)}.settings-grid{grid-template-columns:1fr}.setting-row{grid-template-columns:1fr}.setting-control{justify-content:flex-start}.settings-panel{max-height:96vh}.settings-head{padding:15px}.settings-grid{padding:14px}.settings-foot{padding:12px}}
+@media(max-width:520px){.z-title{font-size:53px}.menu-core{padding:18px 14px}.arcade-btn{min-height:47px;font-size:15px}.step-row{font-size:10px}.settings-head h2{font-size:24px}.setting-control select{width:100%}.setting-control{width:100%}.setting-control input[type=range]{width:100%}.settings-foot .arcade-btn{flex:1;min-width:135px}}
+
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
 <div id="crt"></div>
 <canvas id="hud" aria-hidden="true"></canvas>
+
+<!-- Main menu: crisp DOM typography above the low-resolution game canvas. -->
+<section id="menu-layer" aria-label="ZITTRIS main menu">
+  <aside class="menu-rail" aria-label="Player record">
+    <div class="rail-stat"><span class="rail-label">BEST</span><strong id="menu-best">0000000</strong><small>LOCAL RECORD</small></div>
+    <div><div class="rail-label">HOLD</div><div class="piece-stack"><div class="piece-preview" id="menu-hold-preview"></div></div></div>
+    <div class="rail-stat"><small>ROTATION</small><strong id="menu-rule" style="font-size:24px">SRS</strong><small id="menu-randomizer">7-BAG</small></div>
+  </aside>
+
+  <main class="menu-core">
+    <div class="z-title">ZITTRIS</div>
+    <div class="z-sub">OBLITERATUS</div>
+    <div class="z-kicker">FTS ARCADE · FREE FOREVER</div>
+    <div class="menu-actions">
+      <button class="arcade-btn primary" id="menu-start">▶ START GAME</button>
+      <button class="arcade-btn" id="menu-settings">⚙ SETTINGS</button>
+      <button class="arcade-btn" id="menu-how">? HOW TO PLAY</button>
+      <button class="arcade-btn" id="menu-back">↩ BACK TO ARCADE</button>
+    </div>
+    <div class="start-options">
+      <div class="step-row"><span>START LEVEL</span><div class="stepper"><button class="step-btn" id="level-down" aria-label="Lower start level">◀</button><span class="step-value" id="level-value">01</span><button class="step-btn" id="level-up" aria-label="Raise start level">▶</button></div></div>
+      <div class="step-row"><span>START HEIGHT</span><div class="stepper"><button class="step-btn" id="height-down" aria-label="Lower start height">◀</button><span class="step-value" id="height-value">00</span><button class="step-btn" id="height-up" aria-label="Raise start height">▶</button></div></div>
+    </div>
+    <div class="menu-hint">ARROW KEYS ADJUST START · <b>SPACE</b> TO START · <b>O / S</b> FOR SETTINGS</div>
+  </main>
+
+  <aside class="menu-rail" aria-label="Upcoming pieces">
+    <div class="rail-label">NEXT</div>
+    <div class="piece-stack" id="menu-next-stack"></div>
+  </aside>
+</section>
+
+<button class="icon-btn" id="btn-settings-floating" aria-label="Open settings" aria-haspopup="dialog">⚙</button>
+
+<div class="modal-backdrop ui-hidden" id="settings-backdrop" role="presentation">
+  <section class="settings-panel" id="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+    <header class="settings-head">
+      <div><h2 id="settings-title">SETTINGS CONTROL PANEL</h2><p>ZITTRIS · FTS ARCADE</p></div>
+      <button class="icon-btn" id="settings-x" aria-label="Close settings">×</button>
+    </header>
+    <form id="settings-form">
+      <div class="settings-grid">
+        <section class="settings-group"><h3>Rules & Rotation</h3>
+          <label class="setting-row"><span class="setting-copy"><strong>Rotation System</strong><small>SRS uses modern five-test kicks. ARS uses TGM-style spawn states, two-state I/S/Z pieces, right-biased horizontal kicks, and no I kicks.</small></span><span class="setting-control"><select name="rotationSystem"><option value="srs">SRS · MODERN</option><option value="ars">ARS · TGM-STYLE</option></select></span></label>
+          <label class="setting-row"><span class="setting-copy"><strong>Piece Randomizer</strong><small>7-Bag guarantees all seven pieces per bag. History-4 emulates the less predictable TGM distribution.</small></span><span class="setting-control"><select name="randomizer"><option value="bag">7-BAG</option><option value="history">HISTORY-4</option></select></span></label>
+          <label class="setting-row"><span class="setting-copy"><strong>Enable Hold</strong><small>Show the reserve slot and allow one swap per active piece.</small></span><span class="setting-control"><span class="switch"><input name="holdEnabled" type="checkbox"><span></span></span></span></label>
+          <label class="setting-row"><span class="setting-copy"><strong>Next Queue</strong><small>Number of upcoming pieces rendered. The internal queue remains five pieces deep.</small></span><span class="setting-control"><select name="queueCount"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></span></label>
+          <label class="setting-row"><span class="setting-copy"><strong>Ghost Piece</strong><small>Show the landing projection beneath the active tetromino.</small></span><span class="setting-control"><span class="switch"><input name="ghostEnabled" type="checkbox"><span></span></span></span></label>
+          <label class="setting-row"><span class="setting-copy"><strong>180° Rotation</strong><small>Add a one-button half-turn using conservative SRS+/ARS kick tests.</small></span><span class="setting-control"><span class="switch"><input name="rotate180Enabled" type="checkbox"><span></span></span></span></label>
+          <label class="setting-row"><span class="setting-copy"><strong>Initial Rotation</strong><small>Apply a held rotation input as the next piece enters the well.</small></span><span class="setting-control"><span class="switch"><input name="irsEnabled" type="checkbox"><span></span></span></span></label>
+          <label class="setting-row"><span class="setting-copy"><strong>Hard Drop Behavior</strong><small>LOCK places immediately. SONIC moves to the floor but preserves lock delay.</small></span><span class="setting-control"><select name="hardDropMode"><option value="lock">LOCK</option><option value="sonic">SONIC</option></select></span></label>
+        </section>
+
+        <section class="settings-group"><h3>Handling & Timing</h3>
+          <label class="setting-row"><span class="setting-copy"><strong>DAS</strong><small>Delay before a held horizontal input begins auto-shifting.</small></span><span class="setting-control"><input name="dasMs" type="range" min="60" max="300" step="5"><output class="range-out" data-for="dasMs"></output></span></label>
+          <label class="setting-row"><span class="setting-copy"><strong>ARR</strong><small>Interval between auto-shifts. 0 ms moves instantly to the wall.</small></span><span class="setting-control"><input name="arrMs" type="range" min="0" max="100" step="5"><output class="range-out" data-for="arrMs"></output></span></label>
+          <label class="setting-row"><span class="setting-copy"><strong>Soft Drop Factor</strong><small>Multiplier applied while Down is held. Instant acts as a non-locking sonic drop.</small></span><span class="setting-control"><select name="softDropFactor"><option value="5">5×</option><option value="10">10×</option><option value="20">20×</option><option value="40">40×</option><option value="999">INSTANT</option></select></span></label>
+          <label class="setting-row"><span class="setting-copy"><strong>Lock Delay</strong><small>Grace period after a piece touches the stack.</small></span><span class="setting-control"><input name="lockDelayMs" type="range" min="100" max="1000" step="25"><output class="range-out" data-for="lockDelayMs"></output></span></label>
+          <label class="setting-row"><span class="setting-copy"><strong>Lock Reset Limit</strong><small>Maximum grounded movement/rotation resets per piece.</small></span><span class="setting-control"><select name="lockResetLimit"><option value="0">0 · STEP ONLY</option><option value="8">8</option><option value="15">15 · MODERN</option><option value="30">30</option></select></span></label>
+        </section>
+
+        <section class="settings-group"><h3>Audio & Feedback</h3>
+          <label class="setting-row"><span class="setting-copy"><strong>Sound Effects</strong><small>Movement, rotation, landing, line-clear, and game-over synthesis.</small></span><span class="setting-control"><span class="switch"><input name="sfxEnabled" type="checkbox"><span></span></span></span></label>
+          <label class="setting-row"><span class="setting-copy"><strong>Background Music</strong><small>Procedural Web Audio pulse during active, unpaused play.</small></span><span class="setting-control"><span class="switch"><input name="bgmEnabled" type="checkbox"><span></span></span></span></label>
+          <label class="setting-row"><span class="setting-copy"><strong>Touch Haptics</strong><small>Use short vibration cues for locks and clears where supported.</small></span><span class="setting-control"><span class="switch"><input name="hapticsEnabled" type="checkbox"><span></span></span></span></label>
+        </section>
+
+        <section class="settings-group"><h3>Display & Accessibility</h3>
+          <label class="setting-row"><span class="setting-copy"><strong>CRT Treatment</strong><small>Scanline and vignette overlay above the pixel-scaled game field.</small></span><span class="setting-control"><span class="switch"><input name="crtEnabled" type="checkbox"><span></span></span></span></label>
+          <label class="setting-row"><span class="setting-copy"><strong>Reduced Motion</strong><small>Suppress screen-filling shockwaves, excess particles, and interface animation.</small></span><span class="setting-control"><span class="switch"><input name="reducedMotion" type="checkbox"><span></span></span></span></label>
+        </section>
+      </div>
+      <footer class="settings-foot">
+        <button type="button" class="arcade-btn" id="settings-reset">↻ RESET DEFAULTS</button>
+        <button type="button" class="arcade-btn" id="settings-cancel">× CANCEL</button>
+        <button type="submit" class="arcade-btn save">▣ SAVE & CLOSE</button>
+      </footer>
+    </form>
+  </section>
+</div>
+
+<div class="modal-backdrop ui-hidden" id="how-backdrop">
+  <section class="how-panel" role="dialog" aria-modal="true" aria-labelledby="how-title"><h2 id="how-title">HOW TO PLAY</h2><p>Stack tetrominoes into complete horizontal lines. Keep the well open, chain difficult clears, and use the selected rotation system deliberately.</p><ul><li><span class="kbd">← →</span> Move · <span class="kbd">↓</span> Soft drop · <span class="kbd">SPACE</span> Hard drop</li><li><span class="kbd">↑ / X</span> Rotate clockwise · <span class="kbd">Z</span> Counter-clockwise · <span class="kbd">A</span> 180°</li><li><span class="kbd">C / SHIFT</span> Hold · <span class="kbd">P / ESC</span> Pause · <span class="kbd">O / S</span> Settings</li><li><b>SRS</b> supports modern wall/floor kicks. <b>ARS</b> is tighter, right-biased, and favors TGM-style placement discipline.</li></ul><button class="arcade-btn" id="how-close">CLOSE</button></section>
+</div>
+
 
 <div id="nui" aria-label="Game controls" role="group">
   <div id="nui-move" role="group" aria-label="Movement">
@@ -192,6 +332,157 @@ const canvas     = document.createElement('canvas'); // backbuffer — never ins
 const ctx        = canvas.getContext('2d');
 let W, H, BOARD_X, BOARD_Y, CELL, BOARD_W, BOARD_H, HUD_X, HUD_W;
 let nuiActive = false;
+
+
+// ── Persistent settings / modal state ─────────────────────────────────
+const SETTINGS_KEY = 'zittris_settings_v2';
+const DEFAULT_SETTINGS = Object.freeze({
+  rotationSystem:'srs', randomizer:'bag', holdEnabled:true, queueCount:3,
+  ghostEnabled:true, rotate180Enabled:false, irsEnabled:true, hardDropMode:'lock',
+  dasMs:160, arrMs:40, softDropFactor:10, lockDelayMs:500, lockResetLimit:15,
+  sfxEnabled:true, bgmEnabled:true, hapticsEnabled:true, crtEnabled:true,
+  reducedMotion:false
+});
+const SETTING_ENUMS = {
+  rotationSystem:['srs','ars'], randomizer:['bag','history'], hardDropMode:['lock','sonic'],
+  queueCount:[1,2,3,4,5], softDropFactor:[5,10,20,40,999], lockResetLimit:[0,8,15,30]
+};
+const settingClamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
+function safeStorageGet(key,fallback=null){try{const v=localStorage.getItem(key);return v===null?fallback:v}catch(e){return fallback}}
+function safeStorageSet(key,value){try{localStorage.setItem(key,String(value));return true}catch(e){return false}}
+function parseStoredBool(v,fallback){ return v===true||v==='true'?true:v===false||v==='false'?false:fallback; }
+function validateSettings(candidate={}){
+  const d=DEFAULT_SETTINGS, out={...d};
+  for(const k of ['rotationSystem','randomizer','hardDropMode']) if(SETTING_ENUMS[k].includes(candidate[k])) out[k]=candidate[k];
+  for(const k of ['queueCount','softDropFactor','lockResetLimit']) { const n=Number(candidate[k]); if(SETTING_ENUMS[k].includes(n)) out[k]=n; }
+  out.dasMs=settingClamp(Number(candidate.dasMs)||d.dasMs,60,300);
+  out.arrMs=settingClamp(Number.isFinite(Number(candidate.arrMs))?Number(candidate.arrMs):d.arrMs,0,100);
+  out.lockDelayMs=settingClamp(Number(candidate.lockDelayMs)||d.lockDelayMs,100,1000);
+  for(const k of ['holdEnabled','ghostEnabled','rotate180Enabled','irsEnabled','sfxEnabled','bgmEnabled','hapticsEnabled','crtEnabled','reducedMotion']) out[k]=parseStoredBool(candidate[k],d[k]);
+  return out;
+}
+function loadSettings(){
+  let raw={};
+  try { raw=JSON.parse(safeStorageGet(SETTINGS_KEY,'{}'))||{}; } catch(e){}
+  // v1 compatibility with the originally proposed individual keys.
+  const legacy={
+    holdEnabled:safeStorageGet('tetris_set_hold'), queueCount:safeStorageGet('tetris_set_queue'),
+    sfxEnabled:safeStorageGet('tetris_set_sfx'), bgmEnabled:safeStorageGet('tetris_set_bgm')
+  };
+  for(const [k,v] of Object.entries(legacy)) if(v!==null && raw[k]===undefined) raw[k]=v;
+  return validateSettings(raw);
+}
+let settings=loadSettings();
+function saveSettings(next){
+  const previous=settings;
+  settings=validateSettings(next);
+  if(previous.randomizer!==settings.randomizer)resetRandomizer();
+  try {
+    safeStorageSet(SETTINGS_KEY,JSON.stringify(settings));
+    safeStorageSet('tetris_set_hold',String(settings.holdEnabled));
+    safeStorageSet('tetris_set_queue',String(settings.queueCount));
+    safeStorageSet('tetris_set_sfx',String(settings.sfxEnabled));
+    safeStorageSet('tetris_set_bgm',String(settings.bgmEnabled));
+  } catch(e){}
+  applySettingsPresentation();
+  reconcileBGM();
+  resize();
+  renderMenuData();
+}
+
+const pauseReasons=new Set();
+let settingsOpen=false, howOpen=false, settingsOpener=null;
+function syncPauseState(){
+  if(!gs || gs.state!=='playing') return;
+  gs.paused=pauseReasons.size>0;
+  const pb=document.getElementById('nui-pause');
+  if(pb){ pb.dataset.state=gs.paused?'paused':'playing'; pb.textContent=gs.paused?'▶':'II'; }
+  reconcileBGM();
+}
+function setPauseReason(reason,active){ active?pauseReasons.add(reason):pauseReasons.delete(reason); syncPauseState(); }
+function toggleManualPause(){ if(!gs||gs.state!=='playing'||settingsOpen) return; setPauseReason('manual',!pauseReasons.has('manual')); }
+function clearPauseReasons(){ pauseReasons.clear(); if(gs) gs.paused=false; syncPauseState(); }
+
+function applySettingsPresentation(){
+  document.body.classList.toggle('reduced-motion',settings.reducedMotion);
+  document.body.classList.toggle('no-crt',!settings.crtEnabled);
+  const holdBtn=document.getElementById('nb-hold');
+  if(holdBtn){ holdBtn.hidden=!settings.holdEnabled; holdBtn.disabled=!settings.holdEnabled; }
+}
+function haptic(pattern){ if(settings.hapticsEnabled && navigator.vibrate) try{navigator.vibrate(pattern);}catch(e){} }
+
+function populateSettingsForm(source=settings){
+  const f=document.getElementById('settings-form'); if(!f) return;
+  for(const [k,v] of Object.entries(source)){
+    const el=f.elements[k]; if(!el) continue;
+    if(el.type==='checkbox') el.checked=!!v; else el.value=String(v);
+  }
+  updateRangeOutputs();
+}
+function readSettingsForm(){
+  const f=document.getElementById('settings-form'), next={};
+  for(const k of Object.keys(DEFAULT_SETTINGS)){
+    const el=f.elements[k]; if(!el) continue;
+    next[k]=el.type==='checkbox'?el.checked:el.value;
+  }
+  return validateSettings(next);
+}
+function updateRangeOutputs(){
+  const f=document.getElementById('settings-form'); if(!f) return;
+  document.querySelectorAll('.range-out').forEach(out=>{
+    const el=f.elements[out.dataset.for]; if(!el) return;
+    out.value=`${el.value} ms`; out.textContent=out.value;
+  });
+}
+function openSettings(opener=document.activeElement){
+  if(settingsOpen) return;
+  settingsOpen=true; settingsOpener=opener;
+  populateSettingsForm(settings);
+  document.getElementById('settings-backdrop').classList.remove('ui-hidden');
+  if(gs&&gs.state==='playing') setPauseReason('settings-modal',true);
+  updateChromeVisibility();
+  requestAnimationFrame(()=>document.querySelector('#settings-form select, #settings-form input')?.focus());
+}
+function closeSettings(commit=false){
+  if(!settingsOpen) return;
+  if(commit) saveSettings(readSettingsForm());
+  settingsOpen=false;
+  document.getElementById('settings-backdrop').classList.add('ui-hidden');
+  setPauseReason('settings-modal',false);
+  updateChromeVisibility();
+  document.activeElement?.blur?.();settingsOpener?.focus?.(); settingsOpener=null;
+}
+function openHow(){ howOpen=true; document.getElementById('how-backdrop').classList.remove('ui-hidden'); updateChromeVisibility(); }
+function closeHow(){ howOpen=false; document.getElementById('how-backdrop').classList.add('ui-hidden'); updateChromeVisibility(); }
+
+function updateChromeVisibility(){
+  const menu=document.getElementById('menu-layer');
+  const showMenu=!!gs && gs.state==='title' && !settingsOpen && !howOpen;
+  menu?.classList.toggle('ui-hidden',!showMenu);
+  const playing=!!gs&&gs.state==='playing',commandable=!!gs&&(gs.state==='playing'||gs.state==='gameover');
+  const floating=document.getElementById('btn-settings-floating');
+  if(floating)floating.style.display=(commandable&&!settingsOpen&&!howOpen)?'grid':'none';
+  const nui=document.getElementById('nui'), pause=document.getElementById('nui-pause');
+  if(nui) nui.style.display=(nuiActive&&playing&&!settingsOpen&&!howOpen)?'flex':'none';
+  if(pause) pause.style.display=(nuiActive&&playing&&!settingsOpen&&!howOpen)?'flex':'none';
+}
+
+function miniPieceHTML(key,system=settings.rotationSystem){
+  const shapes=getPieceShapes(key,system), shape=shapes[0], p=PIECES[key];
+  const cells=new Map(shape.map(([x,y])=>[`${x},${y}`,true])); let html='<div class="mini-grid">';
+  for(let y=0;y<4;y++) for(let x=0;x<4;x++) html+=cells.has(`${x},${y}`)?`<i class="mini-cell" style="background:${p.col};color:${p.glow}"></i>`:'<i></i>';
+  return html+'</div>';
+}
+function renderMenuData(){
+  if(!gs) return;
+  const best=document.getElementById('menu-best'); if(best) best.textContent=String(gs.highScore||0).padStart(7,'0');
+  const lv=document.getElementById('level-value'), hv=document.getElementById('height-value');
+  if(lv) lv.textContent=String(titleLevel).padStart(2,'0'); if(hv) hv.textContent=String(titleHeight).padStart(2,'0');
+  const rule=document.getElementById('menu-rule'), rndm=document.getElementById('menu-randomizer');
+  if(rule) rule.textContent=settings.rotationSystem.toUpperCase(); if(rndm) rndm.textContent=settings.randomizer==='bag'?'7-BAG':'HISTORY-4';
+  const hp=document.getElementById('menu-hold-preview'); if(hp) hp.innerHTML=settings.holdEnabled?miniPieceHTML('O'):'<span style="color:#55758a;font-size:11px">DISABLED</span>';
+  const stack=document.getElementById('menu-next-stack'); if(stack){ stack.innerHTML=''; (gs.nextQueue||[]).slice(0,Math.max(3,settings.queueCount)).forEach(k=>{const d=document.createElement('div');d.className='piece-preview';d.innerHTML=miniPieceHTML(k);stack.appendChild(d);}); }
+}
 
 // ── Board config ──────────────────────────────────────────────────────
 const COLS = 10;
@@ -269,114 +560,128 @@ const FONT_DISPLAY = '"Arial Black","Helvetica Neue",Arial,sans-serif';
 const FONT_DATA = '"SFMono-Regular",Menlo,Consolas,"Liberation Mono","Courier New",monospace';
 
 // ── Audio ──────────────────────────────────────────────────────────────
-let _ac = null;
-const AC = () => _ac || (_ac = new (window.AudioContext||window.webkitAudioContext)());
-
-function tone(freq, type, dur, vol=0.2, sweep=null) {
-  try {
-    const ac=AC(), o=ac.createOscillator(), g=ac.createGain();
-    o.connect(g); g.connect(ac.destination);
-    o.type=type;
-    o.frequency.setValueAtTime(sweep||freq, ac.currentTime);
-    if (sweep) o.frequency.exponentialRampToValueAtTime(freq, ac.currentTime+dur);
-    g.gain.setValueAtTime(vol, ac.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime+dur);
-    o.start(); o.stop(ac.currentTime+dur);
-  } catch(e){}
+let _ac=null, bgmTimer=null, bgmStep=0;
+const AC=()=>_ac||(_ac=new (window.AudioContext||window.webkitAudioContext)());
+function synthTone(freq,type,dur,vol=0.2,sweep=null){
+  try{
+    const ac=AC(),o=ac.createOscillator(),g=ac.createGain();
+    o.connect(g);g.connect(ac.destination);o.type=type;
+    o.frequency.setValueAtTime(sweep||freq,ac.currentTime);
+    if(sweep)o.frequency.exponentialRampToValueAtTime(freq,ac.currentTime+dur);
+    g.gain.setValueAtTime(Math.max(.0001,vol),ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+dur);
+    o.start();o.stop(ac.currentTime+dur);
+  }catch(e){}
 }
-function noise(dur, bandFreq=150, vol=0.2) {
-  try {
-    const ac=AC();
-    const buf=ac.createBuffer(1,Math.ceil(ac.sampleRate*dur),ac.sampleRate);
-    const d=buf.getChannelData(0);
-    for (let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
-    const src=ac.createBufferSource(); src.buffer=buf;
-    const flt=ac.createBiquadFilter(); flt.type='bandpass';
-    flt.frequency.value=bandFreq; flt.Q.value=0.7;
-    const g=ac.createGain();
-    g.gain.setValueAtTime(vol, ac.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime+dur);
-    src.connect(flt); flt.connect(g); g.connect(ac.destination);
-    src.start(); src.stop(ac.currentTime+dur);
-  } catch(e){}
+function tone(freq,type,dur,vol=.2,sweep=null){if(!settings.sfxEnabled)return;synthTone(freq,type,dur,vol,sweep)}
+function bgmTone(freq,type,dur,vol=.035){if(!settings.bgmEnabled)return;synthTone(freq,type,dur,vol)}
+function noise(dur,bandFreq=150,vol=.2){
+  if(!settings.sfxEnabled)return;
+  try{
+    const ac=AC(),buf=ac.createBuffer(1,Math.ceil(ac.sampleRate*dur),ac.sampleRate),d=buf.getChannelData(0);
+    for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+    const src=ac.createBufferSource();src.buffer=buf;
+    const flt=ac.createBiquadFilter();flt.type='bandpass';flt.frequency.value=bandFreq;flt.Q.value=.7;
+    const g=ac.createGain();g.gain.setValueAtTime(vol,ac.currentTime);g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+dur);
+    src.connect(flt);flt.connect(g);g.connect(ac.destination);src.start();src.stop(ac.currentTime+dur);
+  }catch(e){}
+}
+function startBGM(){
+  if(bgmTimer)return;
+  const bass=[55,55,65.41,73.42,55,82.41,73.42,65.41],lead=[220,261.63,329.63,293.66,220,392,329.63,261.63];
+  bgmTimer=setInterval(()=>{
+    if(!settings.bgmEnabled||!gs||gs.state!=='playing'||gs.paused||settingsOpen||document.hidden)return;
+    bgmTone(bass[bgmStep%bass.length],'triangle',.22,.028);
+    if(bgmStep%2===0)bgmTone(lead[bgmStep%lead.length],'square',.105,.018);
+    bgmStep=(bgmStep+1)%64;
+  },240);
+}
+function stopBGM(){if(bgmTimer){clearInterval(bgmTimer);bgmTimer=null}}
+function reconcileBGM(){
+  const allowed=settings.bgmEnabled&&typeof gs!=='undefined'&&gs&&gs.state==='playing'&&!gs.paused&&!settingsOpen&&!document.hidden;
+  allowed?startBGM():stopBGM();
+}
+document.addEventListener('visibilitychange',()=>{setPauseReason('visibility-change',document.hidden&&gs?.state==='playing');reconcileBGM()});
+
+const SFX={
+  move:()=>tone(220,'square',.04,.06),rotate:()=>tone(380,'square',.06,.08,540),
+  land:()=>{noise(.12,120,.14);tone(95,'sawtooth',.09,.10)},
+  clear1:()=>{noise(.25,180,.22);tone(440,'sine',.2,.18,660)},
+  clear2:()=>{noise(.32,200,.30);tone(520,'sine',.28,.22,880)},
+  clear3:()=>{noise(.42,230,.38);[440,660,880].forEach((f,i)=>setTimeout(()=>tone(f,'sawtooth',.18,.18),i*55))},
+  clear4:()=>{noise(.6,260,.5);[330,440,550,660,880,1100].forEach((f,i)=>setTimeout(()=>tone(f,'sawtooth',.22,.22),i*45))},
+  levelUp:()=>[260,330,440,550,660,880].forEach((f,i)=>setTimeout(()=>tone(f,'sine',.15,.2),i*70)),
+  gameOver:()=>[400,300,220,160,110].forEach((f,i)=>setTimeout(()=>tone(f,'sawtooth',.3,.28),i*200)),
+  hardDrop:()=>{noise(.08,80,.12);tone(70,'sawtooth',.06,.12)}
+};
+
+// ── Piece definitions and selectable rotation profiles ────────────────
+const SRS_SHAPES={
+  I:[[[0,1],[1,1],[2,1],[3,1]],[[2,0],[2,1],[2,2],[2,3]],[[0,2],[1,2],[2,2],[3,2]],[[1,0],[1,1],[1,2],[1,3]]],
+  O:[[[1,0],[2,0],[1,1],[2,1]]],
+  T:[[[1,0],[0,1],[1,1],[2,1]],[[1,0],[1,1],[2,1],[1,2]],[[0,1],[1,1],[2,1],[1,2]],[[1,0],[0,1],[1,1],[1,2]]],
+  S:[[[1,0],[2,0],[0,1],[1,1]],[[1,0],[1,1],[2,1],[2,2]],[[1,1],[2,1],[0,2],[1,2]],[[0,0],[0,1],[1,1],[1,2]]],
+  Z:[[[0,0],[1,0],[1,1],[2,1]],[[2,0],[1,1],[2,1],[1,2]],[[0,1],[1,1],[1,2],[2,2]],[[1,0],[0,1],[1,1],[0,2]]],
+  J:[[[0,0],[0,1],[1,1],[2,1]],[[1,0],[2,0],[1,1],[1,2]],[[0,1],[1,1],[2,1],[2,2]],[[1,0],[1,1],[0,2],[1,2]]],
+  L:[[[2,0],[0,1],[1,1],[2,1]],[[1,0],[1,1],[1,2],[2,2]],[[0,1],[1,1],[2,1],[0,2]],[[0,0],[1,0],[1,1],[1,2]]]
+};
+// ARS/TGM-style profile: Sega-derived spawn stances, two-state I/S/Z,
+// simple right-then-left wall kicks, and no I-piece kicks. It intentionally
+// avoids TGM3-specific floor-kick exceptions so the rules remain teachable.
+const ARS_SHAPES={
+  I:[[[0,1],[1,1],[2,1],[3,1]],[[2,0],[2,1],[2,2],[2,3]]],
+  O:[[[1,0],[2,0],[1,1],[2,1]]],
+  T:[[[0,0],[1,0],[2,0],[1,1]],[[2,0],[1,1],[2,1],[2,2]],[[1,1],[0,2],[1,2],[2,2]],[[0,0],[0,1],[1,1],[0,2]]],
+  S:[[[1,0],[2,0],[0,1],[1,1]],[[1,0],[1,1],[2,1],[2,2]]],
+  Z:[[[0,0],[1,0],[1,1],[2,1]],[[2,0],[1,1],[2,1],[1,2]]],
+  J:[[[0,0],[1,0],[2,0],[0,1]],[[1,0],[2,0],[2,1],[2,2]],[[2,1],[0,2],[1,2],[2,2]],[[0,0],[0,1],[0,2],[1,2]]],
+  L:[[[0,0],[1,0],[2,0],[2,1]],[[2,0],[2,1],[1,2],[2,2]],[[0,1],[0,2],[1,2],[2,2]],[[0,0],[1,0],[0,1],[0,2]]]
+};
+const PIECES={
+  I:{col:'#00f0ff',glow:'#0088ff'},O:{col:'#ffe000',glow:'#ff8800'},T:{col:'#cc00ff',glow:'#8800cc'},
+  S:{col:'#00ff66',glow:'#00aa44'},Z:{col:'#ff2222',glow:'#cc0000'},J:{col:'#ff8800',glow:'#cc4400'},L:{col:'#2266ff',glow:'#0033cc'}
+};
+const PIECE_KEYS=Object.keys(PIECES);
+function getPieceShapes(key,system=settings.rotationSystem){return(system==='ars'?ARS_SHAPES:SRS_SHAPES)[key]}
+function shapesFor(piece){return getPieceShapes(piece.key,piece.system||settings.rotationSystem)}
+
+// Guideline SRS kick tables. Coordinates are board-space (+y is down).
+const KICKS_JLSTZ={
+  '01':[[0,0],[-1,0],[-1,-1],[0,2],[-1,2]],'10':[[0,0],[1,0],[1,1],[0,-2],[1,-2]],
+  '12':[[0,0],[1,0],[1,1],[0,-2],[1,-2]],'21':[[0,0],[-1,0],[-1,-1],[0,2],[-1,2]],
+  '23':[[0,0],[1,0],[1,-1],[0,2],[1,2]],'32':[[0,0],[-1,0],[-1,1],[0,-2],[-1,-2]],
+  '30':[[0,0],[-1,0],[-1,1],[0,-2],[-1,-2]],'03':[[0,0],[1,0],[1,-1],[0,2],[1,2]]
+};
+const KICKS_I={
+  '01':[[0,0],[-2,0],[1,0],[-2,1],[1,-2]],'10':[[0,0],[2,0],[-1,0],[2,-1],[-1,2]],
+  '12':[[0,0],[-1,0],[2,0],[-1,-2],[2,1]],'21':[[0,0],[1,0],[-2,0],[1,2],[-2,-1]],
+  '23':[[0,0],[2,0],[-1,0],[2,-1],[-1,2]],'32':[[0,0],[-2,0],[1,0],[-2,1],[1,-2]],
+  '30':[[0,0],[1,0],[-2,0],[1,2],[-2,-1]],'03':[[0,0],[-1,0],[2,0],[-1,-2],[2,1]]
+};
+const KICKS_180_SRS=[[0,0],[1,0],[-1,0],[0,-1],[0,1],[2,0],[-2,0]];
+function kickTests(piece,from,to,dir){
+  if(Math.abs(dir)===2)return piece.system==='ars'?[[0,0],[1,0],[-1,0]]:KICKS_180_SRS;
+  if(piece.system==='ars')return piece.key==='I'||piece.key==='O'?[[0,0]]:[[0,0],[1,0],[-1,0]];
+  if(piece.key==='O')return[[0,0]];
+  return(piece.key==='I'?KICKS_I:KICKS_JLSTZ)[`${from}${to}`]||[[0,0]];
 }
 
-const SFX = {
-  move:      () => tone(220,'square',0.04,0.06),
-  rotate:    () => tone(380,'square',0.06,0.08,540),
-  land:      () => { noise(0.12,120,0.14); tone(95,'sawtooth',0.09,0.10); },
-  clear1:    () => { noise(0.25,180,0.22); tone(440,'sine',0.2,0.18,660); },
-  clear2:    () => { noise(0.32,200,0.30); tone(520,'sine',0.28,0.22,880); },
-  clear3:    () => { noise(0.42,230,0.38); [440,660,880].forEach((f,i)=>setTimeout(()=>tone(f,'sawtooth',0.18,0.18),i*55)); },
-  clear4:    () => { noise(0.6,260,0.5); [330,440,550,660,880,1100].forEach((f,i)=>setTimeout(()=>tone(f,'sawtooth',0.22,0.22),i*45)); },
-  levelUp:   () => [260,330,440,550,660,880].forEach((f,i)=>setTimeout(()=>tone(f,'sine',0.15,0.2),i*70)),
-  gameOver:  () => [400,300,220,160,110].forEach((f,i)=>setTimeout(()=>tone(f,'sawtooth',0.3,0.28),i*200)),
-  hardDrop:  () => { noise(0.08,80,0.12); tone(70,'sawtooth',0.06,0.12); },
-};
+const T_CORNERS=[[0,0],[2,0],[2,2],[0,2]];
+const T_FRONT={0:[0,1],1:[1,2],2:[2,3],3:[3,0]};
 
-// ── Piece definitions ─────────────────────────────────────────────────
-// Each piece: color, glow, rotations (array of [col,row] offsets)
-const PIECES = {
-  I: { col:'#00f0ff', glow:'#0088ff',
-       shapes:[[[0,1],[1,1],[2,1],[3,1]],[[2,0],[2,1],[2,2],[2,3]],[[0,2],[1,2],[2,2],[3,2]],[[1,0],[1,1],[1,2],[1,3]]] },
-  O: { col:'#ffe000', glow:'#ff8800',
-       shapes:[[[1,0],[2,0],[1,1],[2,1]]] },
-  T: { col:'#cc00ff', glow:'#8800cc',
-       shapes:[[[1,0],[0,1],[1,1],[2,1]],[[1,0],[1,1],[2,1],[1,2]],[[0,1],[1,1],[2,1],[1,2]],[[1,0],[0,1],[1,1],[1,2]]] },
-  S: { col:'#00ff66', glow:'#00aa44',
-       shapes:[[[1,0],[2,0],[0,1],[1,1]],[[1,0],[1,1],[2,1],[2,2]],[[1,1],[2,1],[0,2],[1,2]],[[0,0],[0,1],[1,1],[1,2]]] },
-  Z: { col:'#ff2222', glow:'#cc0000',
-       shapes:[[[0,0],[1,0],[1,1],[2,1]],[[2,0],[1,1],[2,1],[1,2]],[[0,1],[1,1],[1,2],[2,2]],[[1,0],[0,1],[1,1],[0,2]]] },
-  J: { col:'#ff8800', glow:'#cc4400',
-       shapes:[[[0,0],[0,1],[1,1],[2,1]],[[1,0],[2,0],[1,1],[1,2]],[[0,1],[1,1],[2,1],[2,2]],[[1,0],[1,1],[0,2],[1,2]]] },
-  L: { col:'#2266ff', glow:'#0033cc',
-       shapes:[[[2,0],[0,1],[1,1],[2,1]],[[1,0],[1,1],[1,2],[2,2]],[[0,1],[1,1],[2,1],[0,2]],[[0,0],[1,0],[1,1],[1,2]]] },
-};
-const PIECE_KEYS = Object.keys(PIECES);
-
-// ── SRS wall-kick data ─────────────────────────────────────────────────
-// Guideline SRS. Kicks are (dx,dy) in board coords where +y is DOWN, so the
-// wiki's "+y up" convention is negated here (wiki (0,-2) => our (0,+2)).
-// Keyed by `${from}${to}` where rotation states are 0,R(1),2,L(3).
-// Test order matters: index 0 is basic rotation, index 4 is the "1x2" kick
-// that upgrades a mini T-spin to a proper one.
-const KICKS_JLSTZ = {
-  '01':[[0,0],[-1,0],[-1,-1],[0,2],[-1,2]],
-  '10':[[0,0],[1,0],[1,1],[0,-2],[1,-2]],
-  '12':[[0,0],[1,0],[1,1],[0,-2],[1,-2]],
-  '21':[[0,0],[-1,0],[-1,-1],[0,2],[-1,2]],
-  '23':[[0,0],[1,0],[1,-1],[0,2],[1,2]],
-  '32':[[0,0],[-1,0],[-1,1],[0,-2],[-1,-2]],
-  '30':[[0,0],[-1,0],[-1,1],[0,-2],[-1,-2]],
-  '03':[[0,0],[1,0],[1,-1],[0,2],[1,2]],
-};
-const KICKS_I = {
-  '01':[[0,0],[-2,0],[1,0],[-2,1],[1,-2]],
-  '10':[[0,0],[2,0],[-1,0],[2,-1],[-1,2]],
-  '12':[[0,0],[-1,0],[2,0],[-1,-2],[2,1]],
-  '21':[[0,0],[1,0],[-2,0],[1,2],[-2,-1]],
-  '23':[[0,0],[2,0],[-1,0],[2,-1],[-1,2]],
-  '32':[[0,0],[-2,0],[1,0],[-2,1],[1,-2]],
-  '30':[[0,0],[1,0],[-2,0],[1,2],[-2,-1]],
-  '03':[[0,0],[-1,0],[2,0],[-1,-2],[2,1]],
-};
-function kickTable(key){ return key==='I' ? KICKS_I : (key==='O' ? null : KICKS_JLSTZ); }
-
-// T-spin corner probes, relative to the T's 3x3 bounding box origin (its x,y).
-// The T's rotation center is always cell (1,1) of the box. The two "front"
-// corners are the ones flanking the nub, and rotate with the piece.
-// front[rot] = [cornerA, cornerB]; back = the other two corners.
-const T_CORNERS = [[1,1],[3,1],[3,3],[1,3]].map(([c,r])=>[c-1,r-1]); // TL,TR,BR,BL of 3x3, 0-indexed
-// Which of TL,TR,BR,BL are "front" per rotation state 0,R,2,L:
-const T_FRONT = { 0:[0,1], 1:[1,2], 2:[2,3], 3:[3,0] }; // indices into T_CORNERS
-// 7-bag randomizer
-let bag = [];
-function nextBag() {
-  bag = [...PIECE_KEYS].sort(()=>Math.random()-0.5);
+// Selectable 7-bag or TGM-style history-4 randomization.
+let bag=[],pieceHistory=['Z','Z','S','S'],piecesGenerated=0;
+function resetRandomizer(){bag=[];pieceHistory=['Z','Z','S','S'];piecesGenerated=0}
+function nextBag(){
+  bag=[...PIECE_KEYS];
+  for(let i=bag.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[bag[i],bag[j]]=[bag[j],bag[i]]}
 }
-function pickPiece() {
-  if (!bag.length) nextBag();
-  return bag.pop();
+function pickPiece(){
+  if(settings.randomizer==='bag'){if(!bag.length)nextBag();piecesGenerated++;return bag.pop()}
+  let candidate;
+  const pool=piecesGenerated===0?['I','J','L','T']:PIECE_KEYS;
+  for(let roll=0;roll<6;roll++){candidate=pool[rndInt(0,pool.length-1)];if(!pieceHistory.includes(candidate))break}
+  pieceHistory.shift();pieceHistory.push(candidate);piecesGenerated++;return candidate;
 }
 
 // ── Color palette ──────────────────────────────────────────────────────
@@ -524,16 +829,16 @@ let gs = {};
 // player's selection right before it gets used. Persisted the same way
 // the high score is, so the choice survives a page reload too.
 const LEVEL_MIN=1, LEVEL_MAX=15, HEIGHT_MIN=0, HEIGHT_MAX=8;
-let titleLevel  = clamp(parseInt(localStorage.getItem('tetris_ob_level')  ||'1'), LEVEL_MIN,  LEVEL_MAX);
-let titleHeight = clamp(parseInt(localStorage.getItem('tetris_ob_height') ||'0'), HEIGHT_MIN, HEIGHT_MAX);
+let titleLevel  = clamp(parseInt(safeStorageGet('tetris_ob_level')  ||'1'), LEVEL_MIN,  LEVEL_MAX);
+let titleHeight = clamp(parseInt(safeStorageGet('tetris_ob_height') ||'0'), HEIGHT_MIN, HEIGHT_MAX);
 function adjustStartLevel(d) {
   titleLevel = clamp(titleLevel+d, LEVEL_MIN, LEVEL_MAX);
-  localStorage.setItem('tetris_ob_level', titleLevel);
+  safeStorageSet('tetris_ob_level',titleLevel);
   SFX.move();
 }
 function adjustStartHeight(d) {
   titleHeight = clamp(titleHeight+d, HEIGHT_MIN, HEIGHT_MAX);
-  localStorage.setItem('tetris_ob_height', titleHeight);
+  safeStorageSet('tetris_ob_height',titleHeight);
   SFX.move();
 }
 // Classic "Type B" style handicap: fill the bottom `height` rows with
@@ -552,160 +857,80 @@ function applyStartHeight(height) {
   }
 }
 
-function initGS() {
-  gs = {
-    state: 'title',   // title | playing | paused | gameover
-    board: Array.from({length:ROWS},()=>Array(COLS).fill(null)),
-    current: null,   // {key, rot, x, y}
-    nextQueue: [],   // 3-deep lookahead, index 0 spawns next
-    hold: null,      // key of the reserved piece, or null if the HOLD box is empty
-    holdUsed: false, // true once hold has been used this drop; blocks re-hold until the next lock
-    score: 0,
-    lines: 0,
-    level: 1,
-    paused: false,
-    dropTimer: 0,
-    lockTimer: 0,
-    lockDelay: 0.5,
-    lockOnFloor: false,
-    msgTimer: 0,
-    msg: '',
-    clearFlash: [],   // rows currently flashing before clearing
-    clearTimer: 0,
-    lastActionRotate: false,  // was the current piece's last maneuver a rotation?
-    pendingTSpin: 'none',     // 'none'|'mini'|'proper' captured at lock time
-    b2b: false,               // back-to-back active (last difficult clear chains)
-    combo: -1,                // combo counter; -1 = no active combo
-    highScore: parseInt(localStorage.getItem('tetris_ob_hi')||'0'),
+function initGS(){
+  gs={
+    state:'title',board:Array.from({length:ROWS},()=>Array(COLS).fill(null)),current:null,nextQueue:[],
+    hold:null,holdUsed:false,score:0,lines:0,level:1,paused:false,dropTimer:0,lockTimer:0,
+    lockOnFloor:false,lockResets:0,msgTimer:0,msg:'',clearFlash:[],clearTimer:0,
+    lastActionRotate:false,pendingTSpin:'none',b2b:false,combo:-1,
+    highScore:parseInt(safeStorageGet('tetris_ob_hi')||'0')
   };
-  nextBag(); nextBag();
-  gs.nextQueue = [pickPiece(), pickPiece(), pickPiece()];
+  resetRandomizer();
+  gs.nextQueue=Array.from({length:5},()=>pickPiece());
 }
 initGS();
 
-function dropInterval() {
-  // Level-scaled gravity
-  const t = Math.max(0.05, 0.8 - (gs.level-1)*0.07);
-  return t;
+function dropInterval(){return Math.max(.05,.8-(gs.level-1)*.07)}
+
+function spawnPiece(key){
+  const system=settings.rotationSystem,shape=getPieceShapes(key,system)[0];
+  const minC=Math.min(...shape.map(([c])=>c)),maxC=Math.max(...shape.map(([c])=>c));
+  const startX=Math.floor((COLS-(maxC-minC+1))/2)-minC;
+  return{key,system,rot:0,x:startX,y:0,lastKick:0};
+}
+function applyInitialRotation(){
+  if(!settings.irsEnabled||!gs.current)return;
+  if(settings.rotate180Enabled&&keys['KeyA'])tryRotate(2,true);
+  else if(keys['ArrowUp']||keys['KeyX'])tryRotate(1,true);
+  else if(keys['KeyZ'])tryRotate(-1,true);
+}
+function topOut(){
+  gs.current=null;gs.state='gameover';stopBGM();
+  if(gs.score>gs.highScore){gs.highScore=gs.score;safeStorageSet('tetris_ob_hi',gs.highScore)}
+  SFX.gameOver();spawnGameOverEffect();updateChromeVisibility();renderMenuData();
+}
+function spawnNext(){
+  if(!gs.nextQueue.length)gs.nextQueue.push(pickPiece());
+  gs.current=spawnPiece(gs.nextQueue.shift());gs.nextQueue.push(pickPiece());
+  gs.holdUsed=false;gs.lastActionRotate=false;gs.dropTimer=0;gs.lockTimer=0;gs.lockOnFloor=false;gs.lockResets=0;
+  applyInitialRotation();
+  if(!canPlace(gs.current,0,0))topOut();
 }
 
-function spawnPiece(key) {
-  const p = PIECES[key];
-  const shape = p.shapes[0];
-  const minC = Math.min(...shape.map(([c])=>c));
-  const maxC = Math.max(...shape.map(([c])=>c));
-  const startX = Math.floor((COLS - (maxC - minC + 1)) / 2) - minC;
-  return { key, rot:0, x:startX, y:0 };
-}
-
-function spawnNext() {
-  if (!gs.nextQueue.length) gs.nextQueue.push(pickPiece());
-  gs.current = spawnPiece(gs.nextQueue.shift());
-  gs.nextQueue.push(pickPiece());
-  gs.holdUsed = false;         // fresh drop — hold becomes available again
-  gs.lastActionRotate = false;
-  gs.dropTimer = 0;
-  gs.lockTimer = 0;
-  gs.lockOnFloor = false;
-  if (!canPlace(gs.current, 0, 0)) {
-    gs.state = 'gameover';
-    if (gs.score > gs.highScore) {
-      gs.highScore = gs.score;
-      localStorage.setItem('tetris_ob_hi', gs.highScore);
-    }
-    SFX.gameOver();
-    spawnGameOverEffect();
+function holdPiece(){
+  if(!settings.holdEnabled||gs.state!=='playing'||gs.paused||gs.clearFlash.length>0||!gs.current||gs.holdUsed)return;
+  const activeKey=gs.current.key;
+  if(gs.hold===null){gs.hold=activeKey;spawnNext();if(gs.state!=='playing')return}
+  else{
+    const swapKey=gs.hold;gs.hold=activeKey;gs.current=spawnPiece(swapKey);
+    gs.lastActionRotate=false;gs.dropTimer=0;gs.lockTimer=0;gs.lockOnFloor=false;gs.lockResets=0;
+    applyInitialRotation();
+    if(!canPlace(gs.current,0,0)){topOut();return}
   }
+  gs.holdUsed=true;SFX.rotate();haptic(8);
+}
+function currentCells(piece,dx=0,dy=0){
+  const{rot,x,y}=piece;return shapesFor(piece)[rot].map(([c,r])=>[x+c+dx,y+r+dy]);
 }
 
-// ── Hold / reserve piece ───────────────────────────────────────────────
-// Guideline Hold: swap the active piece with the reserved one (or stash it
-// and pull the next piece if the box is empty). Locked for the rest of the
-// current drop via holdUsed — reset to false only when a piece locks into
-// the stack (see spawnNext), which prevents hold-spamming to stall gravity.
-// The swapped-in piece always re-enters at its spawn state (rot 0, top-
-// center) exactly as if it had come from the queue; this is what keeps a
-// held-then-restored piece from re-appearing mid-board in a rotated state.
-function holdPiece() {
-  if (gs.state !== 'playing' || gs.paused || gs.clearFlash.length > 0) return;
-  if (!gs.current || gs.holdUsed) return;   // one hold per drop
-
-  const activeKey = gs.current.key;
-
-  if (gs.hold === null) {
-    // Box empty: stash the active piece, pull the next piece to become active.
-    gs.hold = activeKey;
-    // spawnNext resets holdUsed to false, so set it AFTER the spawn call.
-    spawnNext();
-    if (gs.state !== 'playing') return;   // spawnNext may have topped us out
-  } else {
-    // Box filled: swap. The reserved piece re-enters at spawn state.
-    const swapKey = gs.hold;
-    gs.hold = activeKey;
-    gs.current = spawnPiece(swapKey);
-    gs.lastActionRotate = false;
-    gs.dropTimer = 0;
-    gs.lockTimer = 0;
-    gs.lockOnFloor = false;
-    // A swapped-in piece can top out if the stack has reached spawn rows.
-    if (!canPlace(gs.current, 0, 0)) {
-      gs.current = null;
-      gs.state = 'gameover';
-      if (gs.score > gs.highScore) {
-        gs.highScore = gs.score;
-        localStorage.setItem('tetris_ob_hi', gs.highScore);
-      }
-      SFX.gameOver();
-      spawnGameOverEffect();
-      return;
-    }
-  }
-
-  gs.holdUsed = true;          // lock hold until the next piece locks
-  SFX.rotate();                // swap whoosh — reuses the rotate blip for now
+// Three-corner T-spin recognition. ARS uses the same scoring recognizer,
+// while retaining its own stricter movement and kick behavior.
+function detectTSpin(piece){
+  if(piece.key!=='T'||!gs.lastActionRotate)return'none';
+  const occ=(dc,dr)=>{const c=piece.x+dc,r=piece.y+dr;if(c<0||c>=COLS||r>=ROWS)return true;if(r<0)return false;return gs.board[r][c]!==null};
+  const filled=T_CORNERS.map(([dc,dr])=>occ(dc,dr)),total=filled.reduce((sum,v)=>sum+(v?1:0),0);
+  if(total<3)return'none';
+  if(piece.system==='ars')return'proper';
+  const front=T_FRONT[piece.rot%4]||T_FRONT[0],frontCount=(filled[front[0]]?1:0)+(filled[front[1]]?1:0);
+  if(frontCount===2)return'proper';
+  if(piece.system==='srs'&&Math.abs(piece.lastRotationDir||0)===1&&piece.lastKick===4)return'proper';
+  return'mini';
 }
-
-function currentCells(piece, dx=0, dy=0) {
-  const {key,rot,x,y} = piece;
-  return PIECES[key].shapes[rot].map(([c,r])=>[x+c+dx, y+r+dy]);
-}
-
-// ── T-spin detection (3-corner rule) ───────────────────────────────────
-// Returns 'none' | 'mini' | 'proper'. Must be called with the T in its
-// final locked position, BEFORE the board is mutated.
-function detectTSpin(piece) {
-  if (piece.key !== 'T' || !gs.lastActionRotate) return 'none';
-
-  // Occupancy at a 3x3-box-relative cell: walls/floor count as occupied.
-  const occ = (dc, dr) => {
-    const c = piece.x + dc, r = piece.y + dr;
-    if (c < 0 || c >= COLS || r >= ROWS) return true;   // wall/floor
-    if (r < 0) return false;                             // above ceiling = empty
-    return gs.board[r][c] !== null;
-  };
-
-  const filled = T_CORNERS.map(([dc,dr]) => occ(dc,dr));   // [TL,TR,BR,BL]
-  const total = filled.reduce((s,v)=>s+(v?1:0),0);
-  if (total < 3) return 'none';
-
-  const [fa, fb] = T_FRONT[piece.rot];
-  const frontCount = (filled[fa]?1:0) + (filled[fb]?1:0);
-
-  // Two front corners filled => proper. Otherwise mini, unless the last kick
-  // was the 1x2 SRS test (index 4), which upgrades mini to proper.
-  if (frontCount === 2) return 'proper';
-  if (piece.lastKick === 4) return 'proper';
-  return 'mini';
-}
-
-function canPlace(piece, dx, dy, newRot) {
-  const rot = (newRot !== undefined) ? newRot : piece.rot;
-  const shape = PIECES[piece.key].shapes[rot];
-  for (const [c,r] of shape) {
-    const nc = piece.x+c+dx, nr = piece.y+r+dy;
-    if (nc<0||nc>=COLS||nr>=ROWS) return false;
-    if (nr>=0 && gs.board[nr][nc]) return false;
-  }
+function canPlace(piece,dx,dy,newRot){
+  if(!piece)return false;
+  const shapes=shapesFor(piece),rot=newRot!==undefined?newRot:piece.rot,shape=shapes[rot];
+  if(!shape)return false;
+  for(const[c,r]of shape){const nc=piece.x+c+dx,nr=piece.y+r+dy;if(nc<0||nc>=COLS||nr>=ROWS)return false;if(nr>=0&&gs.board[nr][nc])return false}
   return true;
 }
 
@@ -721,25 +946,13 @@ function lockPiece() {
   const pieceGlow = PIECES[gs.current.key].glow;
 
   // Top-out: any cell above the board means the stack has breached the ceiling.
-  if (cells.some(([,r]) => r < 0)) {
-    for (const [c,r] of cells) {
-      if (r>=0) gs.board[r][c] = { col: pieceCol, glow: pieceGlow };
-    }
-    gs.current = null;
-    gs.state = 'gameover';
-    if (gs.score > gs.highScore) {
-      gs.highScore = gs.score;
-      localStorage.setItem('tetris_ob_hi', gs.highScore);
-    }
-    SFX.gameOver();
-    spawnGameOverEffect();
-    return;
-  }
+  if(cells.some(([,r])=>r<0)){for(const[c,r]of cells)if(r>=0)gs.board[r][c]={col:pieceCol,glow:pieceGlow};topOut();return}
 
   for (const [c,r] of cells) {
     gs.board[r][c] = { col: pieceCol, glow: pieceGlow };
   }
-  SFX.land();
+  SFX.land();haptic(10);
+  if(!settings.reducedMotion){
 
   // Shockwave at landing point
   const avgRow = Math.max(...cells.map(([,r])=>r));
@@ -758,6 +971,7 @@ function lockPiece() {
     }
   }
 
+  }
   checkLines();
 }
 
@@ -795,6 +1009,8 @@ function checkLines() {
 
 function triggerLineClearEffect(rows) {
   const n = rows.length;
+  haptic(n>=4?[20,25,35]:[12,18,12]);
+  if(settings.reducedMotion){grid.ripple(BOARD_X+BOARD_W/2,BOARD_Y+BOARD_H/2,180,160);return;}
   // Explosion scale: n^(4/3)
   const scale = Math.pow(n, 4/3);
 
@@ -906,124 +1122,98 @@ function clearLines() {
   spawnNext();
 }
 
-// ── Input ──────────────────────────────────────────────────────────────
-const keys = {};
-window.addEventListener('keydown', e => {
-  keys[e.code] = true;
-  if (['Space','ArrowLeft','ArrowRight','ArrowDown','ArrowUp'].includes(e.code)) e.preventDefault();
-  // Hold: C or either Shift, per the guideline default binding.
-  const isHoldKey = e.code==='KeyC' || e.code==='ShiftLeft' || e.code==='ShiftRight';
-  if (gs.state==='title') {
-    if (e.code==='ArrowLeft')  adjustStartLevel(-1);
-    if (e.code==='ArrowRight') adjustStartLevel(1);
-    if (e.code==='ArrowUp')    adjustStartHeight(1);
-    if (e.code==='ArrowDown')  adjustStartHeight(-1);
-    if (['Space','Enter'].includes(e.code)) startGame();
+// ── Input / handling ───────────────────────────────────────────────────
+const keys={};
+window.addEventListener('keydown',e=>{
+  if(settingsOpen){if(e.code==='Escape'){e.preventDefault();closeSettings(false)}return}
+  if(howOpen){if(e.code==='Escape'){e.preventDefault();closeHow()}return}
+  const interactive=e.target?.matches?.('button,input,select,textarea');
+  if(!e.repeat&&(e.code==='KeyO'||e.code==='KeyS')){e.preventDefault();openSettings(e.target);return}
+  if((e.code==='KeyP'||e.code==='Escape')&&gs.state==='playing'){e.preventDefault();toggleManualPause();return}
+  if(interactive)return;
+  keys[e.code]=true;
+  if(['Space','ArrowLeft','ArrowRight','ArrowDown','ArrowUp'].includes(e.code))e.preventDefault();
+  const isHoldKey=e.code==='KeyC'||e.code==='ShiftLeft'||e.code==='ShiftRight';
+  if(gs.state==='title'){
+    if(e.code==='ArrowLeft')adjustStartLevel(-1);
+    if(e.code==='ArrowRight')adjustStartLevel(1);
+    if(e.code==='ArrowUp')adjustStartHeight(1);
+    if(e.code==='ArrowDown')adjustStartHeight(-1);
+    if(['Space','Enter'].includes(e.code))startGame();
+    renderMenuData();return;
+  }
+  if(gs.state==='gameover'){
+    if(['Space','Enter'].includes(e.code))startGame();
     return;
   }
-  if (gs.state==='gameover') { if(['Space','Enter'].includes(e.code)) startGame(); return; }
-  if (e.code==='KeyP'||e.code==='Escape') togglePause();
-  if (gs.paused||gs.clearFlash.length>0) return;
-  if (e.code==='ArrowLeft')  tryMove(-1,0);
-  if (e.code==='ArrowRight') tryMove(1,0);
-  if (e.code==='ArrowDown')  { tryMove(0,1); gs.dropTimer=0; }
-  if (e.code==='ArrowUp'||e.code==='KeyX') tryRotate(1);
-  if (e.code==='KeyZ') tryRotate(-1);
-  if (e.code==='Space') hardDrop();
-  // Ignore the OS key-repeat stream so a held-down hold key can't fire twice
-  // in one drop the instant holdUsed clears on the next lock.
-  if (isHoldKey && !e.repeat) holdPiece();
+  if(gs.paused||gs.clearFlash.length>0)return;
+  if(e.code==='ArrowLeft')tryMove(-1,0);
+  if(e.code==='ArrowRight')tryMove(1,0);
+  if(e.code==='ArrowDown'){tryMove(0,1);gs.dropTimer=0}
+  if(e.code==='ArrowUp'||e.code==='KeyX')tryRotate(1);
+  if(e.code==='KeyZ')tryRotate(-1);
+  if(e.code==='KeyA'&&settings.rotate180Enabled)tryRotate(2);
+  if(e.code==='Space'&&!e.repeat)hardDrop();
+  if(isHoldKey&&!e.repeat)holdPiece();
 });
-window.addEventListener('keyup', e => { keys[e.code]=false; });
+window.addEventListener('keyup',e=>{keys[e.code]=false});
 
-// DAS (delayed auto-shift)
-let dasDir=0, dasTimer=0, arrTimer=0;
-const DAS=0.16, ARR=0.04;
-
-function tryMove(dx, dy) {
-  if (!gs.current||gs.state!=='playing'||gs.paused||gs.clearFlash.length>0) return false;
-  if (canPlace(gs.current,dx,dy)) {
-    gs.current.x+=dx; gs.current.y+=dy;
-    gs.lastActionRotate = false;   // a move breaks the "last maneuver was rotation" condition
-    if(dx!==0) SFX.move();
-    // Reset lock timer on successful lateral move while on floor
-    if (gs.lockOnFloor) gs.lockTimer=0;
+let dasDir=0,dasTimer=0,arrTimer=0,dasInstantFired=false;
+function tryResetLockDelay(){
+  if(!gs.lockOnFloor)return;
+  if(gs.lockResets<settings.lockResetLimit){gs.lockTimer=0;gs.lockResets++}
+}
+function tryMove(dx,dy){
+  if(!gs.current||gs.state!=='playing'||gs.paused||gs.clearFlash.length>0)return false;
+  if(canPlace(gs.current,dx,dy)){
+    gs.current.x+=dx;gs.current.y+=dy;gs.lastActionRotate=false;
+    if(dx!==0)SFX.move();
+    if(dx!==0)tryResetLockDelay();
     return true;
   }
   return false;
 }
-
-function tryRotate(dir) {
-  if (!gs.current||gs.state!=='playing'||gs.paused||gs.clearFlash.length>0) return;
-  const piece = gs.current;
-  const nRots = PIECES[piece.key].shapes.length;
-  if (nRots < 2) return;                 // O piece: no rotation, no kicks
-  const from = piece.rot;
-  const to   = ((piece.rot + dir) % nRots + nRots) % nRots;
-  const table = kickTable(piece.key);
-  const tests = table[`${from}${to}`] || [[0,0]];
-  for (let i=0;i<tests.length;i++) {
-    const [kx,ky] = tests[i];
-    if (canPlace(piece, kx, ky, to)) {
-      piece.rot = to;
-      piece.x += kx;
-      piece.y += ky;
-      piece.lastKick = i;                // 4 == the 1x2 kick (mini->proper upgrade)
-      gs.lastActionRotate = true;        // T-spin requires last maneuver be a rotation
-      SFX.rotate();
-      if(gs.lockOnFloor) gs.lockTimer=0;
-      return;
+function tryRotate(dir,silent=false){
+  if(!gs.current||gs.state!=='playing'||gs.paused||gs.clearFlash.length>0)return false;
+  if(Math.abs(dir)===2&&!settings.rotate180Enabled)return false;
+  const piece=gs.current,shapes=shapesFor(piece),nRots=shapes.length;
+  if(nRots<2)return false;
+  const from=piece.rot,to=((piece.rot+dir)%nRots+nRots)%nRots;
+  if(to===from)return false;
+  const tests=kickTests(piece,from,to,dir);
+  for(let i=0;i<tests.length;i++){
+    const[kx,ky]=tests[i];
+    if(canPlace(piece,kx,ky,to)){
+      piece.rot=to;piece.x+=kx;piece.y+=ky;piece.lastKick=i;piece.lastRotationDir=dir;gs.lastActionRotate=true;
+      if(!silent)SFX.rotate();tryResetLockDelay();return true;
     }
   }
+  return false;
 }
-
-function hardDrop() {
-  if (!gs.current||gs.state!=='playing'||gs.paused||gs.clearFlash.length>0) return;
-  let dy=0;
-  while(canPlace(gs.current,0,dy+1)) dy++;
-  gs.current.y+=dy;
-  if(dy>0) gs.lastActionRotate=false;   // moved down => not a T-spin (a 0-cell drop preserves an immobile spin)
-  SFX.hardDrop();
-  // Visual trail
-  const cells = currentCells(gs.current);
-  const col = PIECES[gs.current.key].col;
-  for (const [c,r] of cells) {
-    const px=BOARD_X+(c+0.5)*CELL, py=BOARD_Y+(r+0.5)*CELL;
-    for(let i=0;i<3;i++) particles.push(new Spark(px,py,rnd(-40,40),rnd(-80,-10),col,rnd(0.2,0.5),rnd(3,6)));
+function hardDrop(){
+  if(!gs.current||gs.state!=='playing'||gs.paused||gs.clearFlash.length>0)return;
+  let dy=0;while(canPlace(gs.current,0,dy+1))dy++;gs.current.y+=dy;
+  if(dy>0)gs.lastActionRotate=false;SFX.hardDrop();
+  if(!settings.reducedMotion){
+    const cells=currentCells(gs.current),col=PIECES[gs.current.key].col;
+    for(const[c,r]of cells){const px=BOARD_X+(c+.5)*CELL,py=BOARD_Y+(r+.5)*CELL;for(let i=0;i<3;i++)particles.push(new Spark(px,py,rnd(-40,40),rnd(-80,-10),col,rnd(.2,.5),rnd(3,6)))}
   }
-  // Lock synchronously. Deferring to the next frame left a window in which a
-  // queued move/rotate could reset the lock timer and float the piece free.
-  gs.lockTimer=0;
-  gs.lockOnFloor=false;
-  lockPiece();
+  gs.lockTimer=0;gs.lockOnFloor=true;
+  if(settings.hardDropMode==='lock'){gs.lockOnFloor=false;lockPiece()}
 }
-
-function ghostY() {
-  if (!gs.current) return gs.current?.y;
-  let dy=0;
-  while(canPlace(gs.current,0,dy+1)) dy++;
-  return gs.current.y+dy;
-}
+function ghostY(){if(!gs.current)return 0;let dy=0;while(canPlace(gs.current,0,dy+1))dy++;return gs.current.y+dy}
 
 // ── Game flow ──────────────────────────────────────────────────────────
-function startGame() {
-  try { AC().resume(); } catch(e){}
-  initGS();
-  gs.level = titleLevel;
-  applyStartHeight(titleHeight);
-  gs.state = 'playing';
-  spawnNext();
+function startGame(){
+  try{AC().resume()}catch(e){}
+  clearPauseReasons();initGS();gs.level=titleLevel;applyStartHeight(titleHeight);gs.state='playing';spawnNext();
+  updateChromeVisibility();reconcileBGM();
 }
-
-function togglePause() {
-  if (gs.state!=='playing') return;
-  gs.paused=!gs.paused;
-  const pb=document.getElementById('nui-pause');
-  if(pb) { pb.dataset.state=gs.paused?'paused':'playing'; pb.textContent=gs.paused?'▶':'II'; }
-}
+function togglePause(){toggleManualPause()}
 
 // ── Effects ───────────────────────────────────────────────────────────
 function spawnGameOverEffect() {
+  if(settings.reducedMotion)return;
   for (let r=0;r<ROWS;r++) {
     for (let c=0;c<COLS;c++) {
       const cell=gs.board[r][c];
@@ -1131,10 +1321,10 @@ function drawBoard() {
   }
 
   // Ghost piece
-  if(gs.current && gs.state==='playing' && !gs.paused) {
+  if(settings.ghostEnabled && gs.current && gs.state==='playing' && !gs.paused) {
     const gy = ghostY();
     if(gy !== gs.current.y) {
-      const shape = PIECES[gs.current.key].shapes[gs.current.rot];
+      const shape = shapesFor(gs.current)[gs.current.rot];
       const col = PIECES[gs.current.key].col;
       for(const [dc,dr] of shape) {
         const c=gs.current.x+dc, r=gy+dr;
@@ -1151,7 +1341,7 @@ function drawBoard() {
 
   // Current piece
   if(gs.current && gs.state==='playing') {
-    const shape = PIECES[gs.current.key].shapes[gs.current.rot];
+    const shape = shapesFor(gs.current)[gs.current.rot];
     const col = PIECES[gs.current.key].col;
     const glo = PIECES[gs.current.key].glow;
     for(const [dc,dr] of shape) {
@@ -1210,7 +1400,7 @@ function drawUIBlock(g, px, py, size, col, glo, alpha=1, dimmed=false) {
 
 function drawUIPiecePreview(g,key,bx,by,boxW,cell,alpha=1,dimmed=false) {
   const np=PIECES[key];
-  const shape=np.shapes[0];
+  const shape=getPieceShapes(key,settings.rotationSystem)[0];
   const minC=Math.min(...shape.map(([c])=>c)), maxC=Math.max(...shape.map(([c])=>c));
   const minR=Math.min(...shape.map(([,r])=>r)), maxR=Math.max(...shape.map(([,r])=>r));
   const pw=(maxC-minC+1)*cell, ph=(maxR-minR+1)*cell;
@@ -1251,36 +1441,29 @@ function drawHUD() {
   drawRailPanel(g,railX,railY,railW,railH);
 
   let y=railY+pad;
-  uiText(g,'HOLD',infoX,y,labelFs,{color:cyan,weight:800});
-  y+=labelFs+clamp(CELL*.18,4,7);
-
   const holdCell=clamp(Math.min(infoW/4.2,CELL*.62),6,15);
   const holdSlotH=holdCell*2+clamp(CELL*.2,4,8);
-  if(gs.hold) {
-    drawUIPiecePreview(g,gs.hold,infoX,y,infoW,holdCell,gs.holdUsed?.36:1,gs.holdUsed);
-    if(gs.holdUsed) uiText(g,'LOCKED',infoX+infoW,y+holdSlotH-2,microFs,{align:'right',baseline:'bottom',color:'rgba(170,185,200,.7)',weight:700});
-  } else {
-    uiText(g,'EMPTY',infoX,y+holdCell*.55,microFs,{color:'rgba(145,172,198,.62)',weight:650});
+  if(settings.holdEnabled){
+    uiText(g,'HOLD',infoX,y,labelFs,{color:cyan,weight:800});
+    y+=labelFs+clamp(CELL*.18,4,7);
+    if(gs.hold){
+      drawUIPiecePreview(g,gs.hold,infoX,y,infoW,holdCell,gs.holdUsed?.36:1,gs.holdUsed);
+      if(gs.holdUsed)uiText(g,'LOCKED',infoX+infoW,y+holdSlotH-2,microFs,{align:'right',baseline:'bottom',color:'rgba(170,185,200,.7)',weight:700});
+    }else uiText(g,'EMPTY',infoX,y+holdCell*.55,microFs,{color:'rgba(145,172,198,.62)',weight:650});
+    y+=holdSlotH;
+    g.save();g.strokeStyle='rgba(70,190,255,.18)';g.lineWidth=.7;g.beginPath();g.moveTo(infoX,y);g.lineTo(infoX+infoW,y);g.stroke();g.restore();
+    y+=clamp(CELL*.3,6,11);
   }
-  y+=holdSlotH;
-
-  g.save();
-  g.strokeStyle='rgba(70,190,255,.18)';
-  g.lineWidth=.7;
-  g.beginPath();g.moveTo(infoX,y);g.lineTo(infoX+infoW,y);g.stroke();
-  g.restore();
-  y+=clamp(CELL*.3,6,11);
-
   uiText(g,'NEXT',infoX,y,labelFs,{color:cyan,weight:800});
   y+=labelFs+clamp(CELL*.18,4,7);
 
-  const dataTop=railY+railH*.59;
+  const dataTop=railY+railH*.61;
+  const visibleQueueCount=clamp(settings.queueCount,1,5);
   const queueH=Math.max(36,dataTop-y-clamp(CELL*.25,5,9));
-  const slotH=queueH/3;
-  const previewCell=clamp(Math.min(infoW/4.2,slotH/2.25),6,15);
-  for(let i=0;i<3;i++) {
-    const key=gs.nextQueue&&gs.nextQueue[i];
-    if(!key) continue;
+  const slotH=queueH/visibleQueueCount;
+  const previewCell=clamp(Math.min(infoW/4.2,slotH/2.25),4.5,15);
+  for(let i=0;i<visibleQueueCount;i++){
+    const key=gs.nextQueue&&gs.nextQueue[i];if(!key)continue;
     const slotY=y+i*slotH+(slotH-previewCell*2)/2;
     drawUIPiecePreview(g,key,infoX,slotY,infoW,previewCell,i===0?1:.46,false);
     uiText(g,String(i+1),infoX+infoW,slotY,microFs,{align:'right',color:i===0?'rgba(255,255,255,.85)':'rgba(130,170,200,.45)',weight:700,stroke:null});
@@ -1328,34 +1511,7 @@ function drawHUD() {
   }
 }
 
-function drawTitle() {
-  const g=hud;
-  const cx=W/2, cy=H/2;
-  const titleFs=clamp(W*.09,29,68);
-  const subFs=clamp(W*.025,9,17);
-  const bodyFs=clamp(W*.02,8,13);
-  const panelW=Math.min(W*.82,440);
-  const panelH=clamp(H*.53,190,310);
-  const panelX=cx-panelW/2, panelY=cy-panelH*.52;
-
-  g.save();
-  g.fillStyle='rgba(2,7,18,.76)';g.fillRect(panelX,panelY,panelW,panelH);
-  g.strokeStyle='rgba(56,214,255,.34)';g.lineWidth=1;
-  g.strokeRect(panelX+.5,panelY+.5,panelW-1,panelH-1);
-  g.restore();
-
-  uiText(g,'ZITTRIS',cx,panelY+panelH*.12,titleFs,{align:'center',family:FONT_DISPLAY,color:'#35f1ff',weight:900,glow:'#35f1ff',strokeWidth:Math.max(2,titleFs*.1)});
-  uiText(g,'OBLITERATUS',cx,panelY+panelH*.39,subFs,{align:'center',color:'#a68cff',weight:800});
-  uiText(g,'FTS ARCADE  /  FREE FOREVER',cx,panelY+panelH*.49,bodyFs,{align:'center',color:'rgba(153,219,255,.82)',weight:700});
-
-  const optY=panelY+panelH*.62;
-  uiText(g,`◄  LEVEL ${titleLevel.toString().padStart(2,'0')}  ►`,cx,optY,subFs,{align:'center',color:'#f3f7ff',weight:800});
-  uiText(g,`◄  HEIGHT ${titleHeight.toString().padStart(2,'0')}  ►`,cx,optY+subFs*1.65,subFs,{align:'center',color:'#f3f7ff',weight:800});
-  uiText(g,nuiActive?'LEFT/RIGHT: LEVEL  ·  ROTATE/DROP: HEIGHT':'ARROW KEYS ADJUST START',cx,optY+subFs*3.35,bodyFs,{align:'center',color:'rgba(140,180,215,.68)',weight:650,stroke:null});
-
-  const pulse=.68+.32*Math.sin(Date.now()*.003);
-  uiText(g,nuiActive?'TAP BOARD TO START':'PRESS SPACE TO START',cx,panelY+panelH*.9,subFs,{align:'center',baseline:'middle',color:'#ffffff',weight:850,glow:'#ffffff',alpha:pulse});
-}
+function drawTitle(){ /* DOM main menu owns the title presentation. */ }
 
 function drawGameOver() {
   const g=hud;
@@ -1419,49 +1575,42 @@ function loop(ts) {
       gs.clearTimer-=dt;
       if(gs.clearTimer<=0) clearLines();
     } else if (gs.current) {
-      // DAS
-      const leftDown=keys['ArrowLeft']||keys['nb-left'];
-      const rightDown=keys['ArrowRight']||keys['nb-right'];
+      // Configurable DAS / ARR. ARR 0 performs one instant wall shift.
+      const leftDown=keys['ArrowLeft']||keys['nb-left'],rightDown=keys['ArrowRight']||keys['nb-right'];
       const newDir=leftDown?-1:rightDown?1:0;
-      if(newDir!==dasDir) { dasDir=newDir; dasTimer=0; arrTimer=0; }
-      if(dasDir!==0) {
+      if(newDir!==dasDir){dasDir=newDir;dasTimer=0;arrTimer=0;dasInstantFired=false}
+      if(dasDir!==0){
         dasTimer+=dt;
-        if(dasTimer>=DAS) {
-          arrTimer+=dt;
-          if(arrTimer>=ARR) { arrTimer=0; tryMove(dasDir,0); }
-        }
-      }
-
-      // Soft drop
-      softDropHeld = keys['ArrowDown']||keys['nb-down'];
-
-      // Gravity
-      const interval = softDropHeld ? Math.min(0.05, dropInterval()/10) : dropInterval();
-      gs.dropTimer+=dt;
-      if(gs.dropTimer>=interval) {
-        gs.dropTimer=0;
-        if(!canPlace(gs.current,0,1)) {
-          gs.lockOnFloor=true;
-        } else {
-          gs.current.y++;
-          gs.lastActionRotate=false;   // gravity drop breaks T-spin rotation condition
-          gs.lockOnFloor=false;
-          gs.lockTimer=0;
-        }
-      }
-
-      // Lock delay — re-verify the piece is still grounded before locking.
-      // (A lateral move or rotation may have slid it over a gap.)
-      if(gs.lockOnFloor) {
-        if(canPlace(gs.current,0,1)) {
-          gs.lockOnFloor=false;
-          gs.lockTimer=0;
-        } else {
-          gs.lockTimer+=dt;
-          if(gs.lockTimer>=gs.lockDelay) {
-            gs.lockTimer=0; gs.lockOnFloor=false;
-            lockPiece();
+        if(dasTimer>=settings.dasMs/1000){
+          if(settings.arrMs===0){
+            if(!dasInstantFired){while(tryMove(dasDir,0)){}dasInstantFired=true}
+          }else{
+            arrTimer+=dt;
+            if(arrTimer>=settings.arrMs/1000){arrTimer=0;tryMove(dasDir,0)}
           }
+        }
+      }
+
+      softDropHeld=keys['ArrowDown']||keys['nb-down'];
+      if(softDropHeld&&settings.softDropFactor>=999){
+        let moved=false;while(canPlace(gs.current,0,1)){gs.current.y++;moved=true}
+        if(moved)gs.lastActionRotate=false;
+        if(!canPlace(gs.current,0,1))gs.lockOnFloor=true;
+      }else{
+        const interval=softDropHeld?Math.max(.008,dropInterval()/settings.softDropFactor):dropInterval();
+        gs.dropTimer+=dt;
+        if(gs.dropTimer>=interval){
+          gs.dropTimer=0;
+          if(!canPlace(gs.current,0,1))gs.lockOnFloor=true;
+          else{gs.current.y++;gs.lastActionRotate=false;gs.lockOnFloor=false;gs.lockTimer=0}
+        }
+      }
+
+      if(gs.lockOnFloor){
+        if(canPlace(gs.current,0,1)){gs.lockOnFloor=false;gs.lockTimer=0}
+        else{
+          gs.lockTimer+=dt;
+          if(gs.lockTimer>=settings.lockDelayMs/1000){gs.lockTimer=0;gs.lockOnFloor=false;lockPiece()}
         }
       }
     }
@@ -1484,7 +1633,7 @@ function loop(ts) {
   if(gs.state==='playing'||gs.state==='gameover') drawHUD();
   if(gs.state==='title') drawTitle();
   if(gs.state==='gameover') drawGameOver();
-  if(gs.state==='playing'&&gs.paused) drawPause();
+  if(gs.state==='playing'&&gs.paused&&!settingsOpen) drawPause();
 
   syncHoldButton();
 
@@ -1524,8 +1673,7 @@ function setupNUI() {
   nuiActive = isTouch;
   if(!isTouch) return;
 
-  document.getElementById('nui').style.display='flex';
-  document.getElementById('nui-pause').style.display='flex';
+  updateChromeVisibility();
 
   // Simple key injection
   const btnActions = {
@@ -1574,13 +1722,11 @@ function setupNUI() {
     const el=document.getElementById(id); if(!el) return;
     el.addEventListener('pointerdown',e=>{
       clearInterval(repeatIntervals[id]);
-      let started=false;
       let t=setTimeout(()=>{
-        repeatIntervals[id]=setInterval(()=>{
-          if(id==='nb-left') tryMove(-1,0);
-          else tryMove(1,0);
-        }, ARR*1000);
-      }, DAS*1000);
+        const dir=id==='nb-left'?-1:1;
+        if(settings.arrMs===0){while(tryMove(dir,0)){}return;}
+        repeatIntervals[id]=setInterval(()=>tryMove(dir,0),Math.max(16,settings.arrMs));
+      },settings.dasMs);
       el._clearRepeat=()=>{ clearTimeout(t); clearInterval(repeatIntervals[id]); };
     },{passive:true});
     ['pointerup','pointercancel'].forEach(ev=>{
@@ -1617,10 +1763,31 @@ function setupNUI() {
   },{passive:true});
 })();
 
+// ── DOM command deck / settings bindings ─────────────────────────────
+function bindUI(){
+  const on=(id,event,fn)=>document.getElementById(id)?.addEventListener(event,fn);
+  on('menu-start','click',startGame);
+  on('menu-settings','click',e=>openSettings(e.currentTarget));
+  on('btn-settings-floating','click',e=>openSettings(e.currentTarget));
+  on('menu-how','click',openHow);on('how-close','click',closeHow);
+  on('menu-back','click',()=>{if(document.referrer)history.back();else location.href='/FTSArcade/'});
+  on('level-down','click',()=>{adjustStartLevel(-1);renderMenuData()});
+  on('level-up','click',()=>{adjustStartLevel(1);renderMenuData()});
+  on('height-down','click',()=>{adjustStartHeight(-1);renderMenuData()});
+  on('height-up','click',()=>{adjustStartHeight(1);renderMenuData()});
+  on('settings-x','click',()=>closeSettings(false));
+  on('settings-cancel','click',()=>closeSettings(false));
+  on('settings-reset','click',()=>populateSettingsForm(DEFAULT_SETTINGS));
+  on('settings-form','submit',e=>{e.preventDefault();closeSettings(true)});
+  document.getElementById('settings-form')?.addEventListener('input',updateRangeOutputs);
+  document.getElementById('settings-backdrop')?.addEventListener('pointerdown',e=>{if(e.target.id==='settings-backdrop')closeSettings(false)});
+  document.getElementById('how-backdrop')?.addEventListener('pointerdown',e=>{if(e.target.id==='how-backdrop')closeHow()});
+}
+
 // ── Go ─────────────────────────────────────────────────────────────────
-setupNUI();
-resize();
-requestAnimationFrame(ts=>{ lastTs=ts; requestAnimationFrame(loop); });
+bindUI();applySettingsPresentation();setupNUI();resize();renderMenuData();updateChromeVisibility();
+requestAnimationFrame(ts=>{lastTs=ts;requestAnimationFrame(loop)});
+
 </script>
 </body>
 </html>

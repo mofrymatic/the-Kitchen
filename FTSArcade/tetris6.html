@@ -1,0 +1,1626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>ZITTRIS · FTS ARCADE</title>
+
+<!-- ── Primary Meta ─────────────────────────────────────────────── -->
+<meta name="description" content="ZITTRIS — The classic block stacker, rebuilt for the FTS Arcade. Shockwaves, explosions, free forever.">
+
+<!-- ── Favicons ─────────────────────────────────────────────────────────── -->
+<link rel="icon" type="image/png" href="fts-favicon.png">
+<link rel="shortcut icon" type="image/png" href="fts-favicon.png">
+<link rel="apple-touch-icon" href="fts-favicon.png">
+
+<!-- ── Open Graph ────────────────────────────────────────────────── -->
+<meta property="og:title" content="ZITTRIS">
+<meta property="og:description" content="Classic Zittris reborn — shockwave physics, explosive line clears, and free forever from the FTS Arcade.">
+<meta property="og:url" content="https://mofrymatic.github.io/the-Kitchen/FTSArcade/tetris.html">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://frymatic.us/FTSArcade/zittris-preview.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+
+<!-- ── Twitter / X Card ─────────────────────────────────────────────────── -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Zittris">
+<meta name="twitter:description" content="A retro arcade hub serving Neon Invaders, Astroids, Cave Racer, RED EYE, Packman, Zittris, and more.">
+<meta name="twitter:image" content="https://frymatic.us/FTSArcade/zittris-preview.png">
+
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;background:#050810;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+canvas{display:block;position:fixed;top:0;left:0;touch-action:none;image-rendering:pixelated;image-rendering:crisp-edges}
+#c{z-index:1}
+#hud{position:fixed;inset:0;z-index:6;pointer-events:none;image-rendering:auto}
+
+/* ── CRT chrome (Obliteratus) ─────────────────────────────────────────
+   Ported from neon-invaders.html's low-native-res + nearest-neighbor
+   aesthetic. Scanlines + vignette are a STATIC CSS overlay — zero canvas
+   cost, zero per-frame JS — composited once by the browser and left
+   alone, in keeping with "Canvas 2D is the bottleneck, don't feed it
+   more work than gameplay needs." The actual chunky-pixel look comes
+   from a reduced-resolution backbuffer (see PIXEL_SCALE in the script). */
+#crt{
+  position:fixed;inset:0;z-index:5;pointer-events:none;
+  background:
+    repeating-linear-gradient(rgba(0,0,0,0) 0px,rgba(0,0,0,0) 1px,rgba(0,0,0,.16) 2px,rgba(0,0,0,.16) 3px),
+    radial-gradient(ellipse at center,rgba(0,0,0,0) 55%,rgba(0,0,0,.55) 100%);
+}
+
+/* ── NUI (touch only) ─────────────────────────────────────────── */
+#nui,#nui-pause{display:none}
+@media(pointer:coarse){#nui,#nui-pause{display:flex}}
+
+#nui{
+  position:fixed;bottom:0;left:0;right:0;
+  height:var(--nui-h,190px);z-index:50;
+  pointer-events:none;align-items:flex-end;
+  justify-content:space-between;
+  padding:0 clamp(12px,4vw,32px) clamp(10px,2.5vh,22px);
+  background:linear-gradient(to top,rgba(5,8,16,.80) 0%,transparent 100%);
+}
+#nui-move{display:flex;flex-direction:column;align-items:center;gap:clamp(5px,1.2vh,10px);pointer-events:none}
+#nui-lr-row{display:flex;align-items:center;gap:clamp(6px,2.2vw,14px)}
+#nui-act{display:flex;flex-direction:column;align-items:center;gap:clamp(5px,1.2vh,10px);pointer-events:none}
+
+.nb{
+  pointer-events:all;touch-action:none;-webkit-tap-highlight-color:transparent;
+  -webkit-appearance:none;appearance:none;outline:none;cursor:pointer;
+  position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  width:var(--nb-sz,clamp(60px,13vw,88px));height:var(--nb-sz,clamp(60px,13vw,88px));
+  border-radius:12px;background:rgba(5,10,24,.70);
+  border:1.5px solid rgba(80,200,255,.25);
+  box-shadow:0 0 12px rgba(60,180,255,.10),inset 0 0 10px rgba(60,160,255,.04);
+  color:rgba(80,210,255,.70);font-family:ui-monospace,'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+  font-weight:bold;font-size:clamp(18px,5vw,28px);
+  animation:nb-appear .4s ease both;
+  transition:background .06s,border-color .06s,box-shadow .06s,color .06s,transform .06s;
+}
+.nb-lbl{font-size:clamp(7px,1.5vw,9px);letter-spacing:.12em;margin-top:2px;opacity:.60}
+.nb:active,.nb.hit{
+  background:rgba(60,190,255,.13);border-color:rgba(80,220,255,.85);
+  color:#00ffff;transform:scale(.92);
+  box-shadow:0 0 22px rgba(60,200,255,.55),0 0 44px rgba(60,200,255,.18),inset 0 0 12px rgba(60,200,255,.10);
+}
+.nb-rot{
+  --nb-sz:clamp(72px,16vw,104px);border-radius:50%;
+  border-color:rgba(255,200,80,.30);color:rgba(255,210,80,.80);
+  font-size:clamp(10px,2.5vw,14px);letter-spacing:.16em;
+  box-shadow:0 0 14px rgba(255,180,0,.14),inset 0 0 12px rgba(255,170,0,.05);
+  animation-delay:.12s;
+}
+.nb-rot .nb-dot{font-size:clamp(24px,5.5vw,36px);line-height:1;margin-bottom:2px}
+/* HOLD button — green "reserve/swap" language from the ZITTRIS spec card.
+   A smaller companion to ROTATE, sitting above the action cluster. */
+.nb-hold{
+  --nb-sz:clamp(52px,11vw,74px);
+  border-color:rgba(80,255,160,.30);color:rgba(90,255,170,.80);
+  font-size:clamp(20px,4.6vw,30px);
+  box-shadow:0 0 12px rgba(40,230,140,.12),inset 0 0 10px rgba(40,220,140,.04);
+  animation-delay:.06s;
+}
+.nb-hold:active,.nb-hold.hit{
+  background:rgba(60,230,150,.14);border-color:rgba(90,255,170,.90);color:#4dffaa;
+  box-shadow:0 0 22px rgba(60,240,150,.55),0 0 44px rgba(60,240,150,.18),inset 0 0 12px rgba(60,240,150,.10);
+}
+/* Cooldown: hold already used this drop. Dim + non-interactive, matching the
+   "cannot hold again yet" state (panel 4) in the design reference. */
+.nb-hold.cooldown{
+  opacity:.32;pointer-events:none;
+  border-color:rgba(120,140,160,.25);color:rgba(150,170,190,.5);
+  box-shadow:none;
+}
+.nb-rot:active,.nb-rot.hit{
+  background:rgba(255,200,0,.13);border-color:rgba(255,215,0,.92);color:#ffe000;
+  box-shadow:0 0 24px rgba(255,200,0,.60),0 0 50px rgba(255,200,0,.22),inset 0 0 14px rgba(255,200,0,.10);
+}
+#nui-pause{
+  position:fixed;top:clamp(6px,1.5vh,12px);left:50%;transform:translateX(-50%);
+  z-index:60;pointer-events:all;touch-action:none;-webkit-tap-highlight-color:transparent;
+  -webkit-appearance:none;appearance:none;outline:none;cursor:pointer;
+  align-items:center;justify-content:center;
+  width:44px;height:36px;border-radius:8px;
+  background:rgba(5,12,28,.70);border:1.5px solid rgba(80,190,255,.28);
+  color:rgba(80,210,255,.72);font-family:ui-monospace,'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+  font-size:13px;font-weight:bold;letter-spacing:2px;
+  box-shadow:0 0 10px rgba(60,170,255,.12);
+  transition:background .06s,border-color .06s,box-shadow .06s;
+}
+#nui-pause:active,#nui-pause.hit{background:rgba(60,190,255,.14);border-color:rgba(80,220,255,.82);color:#00ffff;box-shadow:0 0 18px rgba(60,200,255,.5)}
+#nui-pause[data-state="paused"]{border-color:rgba(255,220,0,.5);color:rgba(255,220,0,.85);box-shadow:0 0 12px rgba(255,200,0,.2);letter-spacing:0;font-size:15px}
+@media(pointer:coarse)and(orientation:landscape){
+  #nui{--nui-h:clamp(110px,24vh,145px)}
+  .nb{--nb-sz:clamp(50px,10.5vw,74px)}
+  .nb-rot{--nb-sz:clamp(63px,13.5vw,88px)}
+}
+@keyframes nb-appear{from{opacity:0;transform:translateY(16px) scale(.88)}to{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="crt"></div>
+<canvas id="hud" aria-hidden="true"></canvas>
+
+<div id="nui" aria-label="Game controls" role="group">
+  <div id="nui-move" role="group" aria-label="Movement">
+    <div id="nui-lr-row">
+      <button class="nb" id="nb-left" aria-label="Move left"><span>◄</span><span class="nb-lbl">LEFT</span></button>
+      <button class="nb" id="nb-right" aria-label="Move right"><span>►</span><span class="nb-lbl">RIGHT</span></button>
+    </div>
+    <button class="nb" id="nb-down" aria-label="Soft drop" style="width:var(--nb-sz,clamp(60px,13vw,88px));height:calc(var(--nb-sz,clamp(60px,13vw,88px)) * 0.72)"><span>▼</span><span class="nb-lbl">DROP</span></button>
+  </div>
+  <div id="nui-act" role="group" aria-label="Actions">
+    <button class="nb nb-hold" id="nb-hold" aria-label="Hold piece"><span>⇄</span><span class="nb-lbl">HOLD</span></button>
+    <button class="nb nb-rot" id="nb-rotate" aria-label="Rotate">
+      <span class="nb-dot">↻</span><span class="nb-lbl">ROTATE</span>
+    </button>
+    <button class="nb" id="nb-harddrop" aria-label="Hard drop" style="width:var(--nb-sz,clamp(60px,13vw,88px));height:calc(var(--nb-sz,clamp(60px,13vw,88px)) * 0.72)"><span>⬇</span><span class="nb-lbl">SLAM</span></button>
+  </div>
+</div>
+<button id="nui-pause" aria-label="Pause" data-state="playing">II</button>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════
+//  T E T R I S  ·  O B L I T E R A T U S
+//  Classic block stacker · Shockwave physics · Explosive line clears
+//  FTS Arcade · Open Source · Free Forever
+// ═══════════════════════════════════════════════════════════════════════
+
+// ── Display canvas (real DOM element — receives input, holds the final
+//    pixelated composite) vs. backbuffer (offscreen, reduced-resolution,
+//    the target every existing draw call below still writes to via `ctx`).
+// PIXEL_SCALE: how many real screen px each backbuffer px becomes. 1 =
+// original crisp full-res rendering (pre-CRT-pass). 2–3 = chunky retro
+// block look, same trick neon-invaders gets from its fixed low native
+// resolution, adapted here for a full-screen adaptive board. Lower internal
+// resolution also means fewer pixels for the GPU/compositor to push per
+// frame — worth remembering if a machine is choking on shadowBlur-heavy
+// canvas 2D content (see kid packet notes on the Firefox/CachyOS report).
+const PIXEL_SCALE = 2;
+
+const dispCanvas = document.getElementById('c');
+const dispCtx    = dispCanvas.getContext('2d');
+const hudCanvas  = document.getElementById('hud');
+const hud        = hudCanvas.getContext('2d', {alpha:true});
+const canvas     = document.createElement('canvas'); // backbuffer — never inserted into the DOM
+const ctx        = canvas.getContext('2d');
+let W, H, BOARD_X, BOARD_Y, CELL, BOARD_W, BOARD_H, HUD_X, HUD_W;
+let nuiActive = false;
+
+// ── Board config ──────────────────────────────────────────────────────
+const COLS = 10;
+const ROWS = 20;
+
+function resize() {
+  const winW = window.innerWidth, winH = window.innerHeight;
+  dispCanvas.width  = winW;
+  dispCanvas.height = winH;
+  W = canvas.width  = Math.round(winW / PIXEL_SCALE);
+  H = canvas.height = Math.round(winH / PIXEL_SCALE);
+
+  // Cave Racer-style dual-canvas composition: gameplay remains deliberately
+  // chunky in the reduced backbuffer, while typography is drawn once at the
+  // display's native resolution. This prevents scanlines and nearest-neighbor
+  // scaling from destroying counters, labels, and overlay copy.
+  hudCanvas.width = winW;
+  hudCanvas.height = winH;
+  hud.setTransform(winW / W, 0, 0, winH / H, 0, 0);
+  hud.imageSmoothingEnabled = true;
+
+  // 190/PIXEL_SCALE, minCell, and the gutters below are all real-screen-px
+  // constants — they get divided by PIXEL_SCALE for the same reason the
+  // touch-NUI height does: they're anchored to the physical device, not to
+  // whatever internal resolution the backbuffer happens to be running at.
+  const nuiH      = nuiActive ? Math.min(190 / PIXEL_SCALE, H * 0.26) : 0;
+  const minCell   = Math.round(18 / PIXEL_SCALE);
+  const bottomGap = Math.max(2, Math.round(6 / PIXEL_SCALE));   // breathing room above the NUI zone, not a dead zone
+  const gutter    = Math.max(3, Math.round(12 / PIXEL_SCALE));
+
+  // The board now owns the full screen height — flush to the true top
+  // (open well, no ceiling — see drawBoard), filling down to just above
+  // the touch controls instead of floating centered with margins on every
+  // side. HUD_W is a near-fixed target (sized for a 7-char readout + a
+  // 4-wide piece icon) rather than proportional to CELL — tying it to CELL
+  // meant a bigger cell demanded a wider column, which shrank the board's
+  // width budget, which capped CELL below what the available height alone
+  // would have allowed. Decoupled, height wins the fit on typical portrait
+  // phones; the width-based cap below is what still protects unusually
+  // wide/short viewports where width remains the tighter constraint.
+  const hudW        = clamp(132 / PIXEL_SCALE, 112 / PIXEL_SCALE, W * 0.34);
+  const cellByHeight = Math.floor((H - nuiH - bottomGap) / ROWS);
+  const cellByWidth  = Math.floor((W - gutter * 2 - hudW) / COLS);
+  CELL = Math.max(Math.min(cellByHeight, cellByWidth), minCell);
+
+  BOARD_W = CELL * COLS;
+  BOARD_H = CELL * ROWS;
+  BOARD_Y = 0;
+
+  // Center the board+HUD block as a unit when the fit leaves leftover
+  // width — on a wide desktop window, CELL gets capped by height long
+  // before it runs out of width, so pinning BOARD_X to a small fixed
+  // gutter left the whole thing stranded against the left edge. On
+  // phones the width term is usually already the binding constraint, so
+  // there's no leftover here and this is a no-op.
+  const contentW = BOARD_W + gutter + hudW;
+  BOARD_X = Math.max(gutter, Math.floor((W - contentW) / 2));
+
+  HUD_X = BOARD_X + BOARD_W + gutter;
+  HUD_W = Math.min(hudW, W - HUD_X - gutter);
+
+  grid.init();
+}
+window.addEventListener('resize', resize);
+
+// ── Maths ──────────────────────────────────────────────────────────────
+const TAU    = Math.PI * 2;
+const rnd    = (a, b) => a + Math.random() * (b - a);
+const rndInt = (a, b) => Math.floor(rnd(a, b + 1));
+const clamp  = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+// Type system shared by the title, overlays, rail, and touch controls.
+// Display copy is broad and unmistakable; telemetry stays monospaced.
+const FONT_DISPLAY = '"Arial Black","Helvetica Neue",Arial,sans-serif';
+const FONT_DATA = '"SFMono-Regular",Menlo,Consolas,"Liberation Mono","Courier New",monospace';
+
+// ── Audio ──────────────────────────────────────────────────────────────
+let _ac = null;
+const AC = () => _ac || (_ac = new (window.AudioContext||window.webkitAudioContext)());
+
+function tone(freq, type, dur, vol=0.2, sweep=null) {
+  try {
+    const ac=AC(), o=ac.createOscillator(), g=ac.createGain();
+    o.connect(g); g.connect(ac.destination);
+    o.type=type;
+    o.frequency.setValueAtTime(sweep||freq, ac.currentTime);
+    if (sweep) o.frequency.exponentialRampToValueAtTime(freq, ac.currentTime+dur);
+    g.gain.setValueAtTime(vol, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime+dur);
+    o.start(); o.stop(ac.currentTime+dur);
+  } catch(e){}
+}
+function noise(dur, bandFreq=150, vol=0.2) {
+  try {
+    const ac=AC();
+    const buf=ac.createBuffer(1,Math.ceil(ac.sampleRate*dur),ac.sampleRate);
+    const d=buf.getChannelData(0);
+    for (let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+    const src=ac.createBufferSource(); src.buffer=buf;
+    const flt=ac.createBiquadFilter(); flt.type='bandpass';
+    flt.frequency.value=bandFreq; flt.Q.value=0.7;
+    const g=ac.createGain();
+    g.gain.setValueAtTime(vol, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime+dur);
+    src.connect(flt); flt.connect(g); g.connect(ac.destination);
+    src.start(); src.stop(ac.currentTime+dur);
+  } catch(e){}
+}
+
+const SFX = {
+  move:      () => tone(220,'square',0.04,0.06),
+  rotate:    () => tone(380,'square',0.06,0.08,540),
+  land:      () => { noise(0.12,120,0.14); tone(95,'sawtooth',0.09,0.10); },
+  clear1:    () => { noise(0.25,180,0.22); tone(440,'sine',0.2,0.18,660); },
+  clear2:    () => { noise(0.32,200,0.30); tone(520,'sine',0.28,0.22,880); },
+  clear3:    () => { noise(0.42,230,0.38); [440,660,880].forEach((f,i)=>setTimeout(()=>tone(f,'sawtooth',0.18,0.18),i*55)); },
+  clear4:    () => { noise(0.6,260,0.5); [330,440,550,660,880,1100].forEach((f,i)=>setTimeout(()=>tone(f,'sawtooth',0.22,0.22),i*45)); },
+  levelUp:   () => [260,330,440,550,660,880].forEach((f,i)=>setTimeout(()=>tone(f,'sine',0.15,0.2),i*70)),
+  gameOver:  () => [400,300,220,160,110].forEach((f,i)=>setTimeout(()=>tone(f,'sawtooth',0.3,0.28),i*200)),
+  hardDrop:  () => { noise(0.08,80,0.12); tone(70,'sawtooth',0.06,0.12); },
+};
+
+// ── Piece definitions ─────────────────────────────────────────────────
+// Each piece: color, glow, rotations (array of [col,row] offsets)
+const PIECES = {
+  I: { col:'#00f0ff', glow:'#0088ff',
+       shapes:[[[0,1],[1,1],[2,1],[3,1]],[[2,0],[2,1],[2,2],[2,3]],[[0,2],[1,2],[2,2],[3,2]],[[1,0],[1,1],[1,2],[1,3]]] },
+  O: { col:'#ffe000', glow:'#ff8800',
+       shapes:[[[1,0],[2,0],[1,1],[2,1]]] },
+  T: { col:'#cc00ff', glow:'#8800cc',
+       shapes:[[[1,0],[0,1],[1,1],[2,1]],[[1,0],[1,1],[2,1],[1,2]],[[0,1],[1,1],[2,1],[1,2]],[[1,0],[0,1],[1,1],[1,2]]] },
+  S: { col:'#00ff66', glow:'#00aa44',
+       shapes:[[[1,0],[2,0],[0,1],[1,1]],[[1,0],[1,1],[2,1],[2,2]],[[1,1],[2,1],[0,2],[1,2]],[[0,0],[0,1],[1,1],[1,2]]] },
+  Z: { col:'#ff2222', glow:'#cc0000',
+       shapes:[[[0,0],[1,0],[1,1],[2,1]],[[2,0],[1,1],[2,1],[1,2]],[[0,1],[1,1],[1,2],[2,2]],[[1,0],[0,1],[1,1],[0,2]]] },
+  J: { col:'#ff8800', glow:'#cc4400',
+       shapes:[[[0,0],[0,1],[1,1],[2,1]],[[1,0],[2,0],[1,1],[1,2]],[[0,1],[1,1],[2,1],[2,2]],[[1,0],[1,1],[0,2],[1,2]]] },
+  L: { col:'#2266ff', glow:'#0033cc',
+       shapes:[[[2,0],[0,1],[1,1],[2,1]],[[1,0],[1,1],[1,2],[2,2]],[[0,1],[1,1],[2,1],[0,2]],[[0,0],[1,0],[1,1],[1,2]]] },
+};
+const PIECE_KEYS = Object.keys(PIECES);
+
+// ── SRS wall-kick data ─────────────────────────────────────────────────
+// Guideline SRS. Kicks are (dx,dy) in board coords where +y is DOWN, so the
+// wiki's "+y up" convention is negated here (wiki (0,-2) => our (0,+2)).
+// Keyed by `${from}${to}` where rotation states are 0,R(1),2,L(3).
+// Test order matters: index 0 is basic rotation, index 4 is the "1x2" kick
+// that upgrades a mini T-spin to a proper one.
+const KICKS_JLSTZ = {
+  '01':[[0,0],[-1,0],[-1,-1],[0,2],[-1,2]],
+  '10':[[0,0],[1,0],[1,1],[0,-2],[1,-2]],
+  '12':[[0,0],[1,0],[1,1],[0,-2],[1,-2]],
+  '21':[[0,0],[-1,0],[-1,-1],[0,2],[-1,2]],
+  '23':[[0,0],[1,0],[1,-1],[0,2],[1,2]],
+  '32':[[0,0],[-1,0],[-1,1],[0,-2],[-1,-2]],
+  '30':[[0,0],[-1,0],[-1,1],[0,-2],[-1,-2]],
+  '03':[[0,0],[1,0],[1,-1],[0,2],[1,2]],
+};
+const KICKS_I = {
+  '01':[[0,0],[-2,0],[1,0],[-2,1],[1,-2]],
+  '10':[[0,0],[2,0],[-1,0],[2,-1],[-1,2]],
+  '12':[[0,0],[-1,0],[2,0],[-1,-2],[2,1]],
+  '21':[[0,0],[1,0],[-2,0],[1,2],[-2,-1]],
+  '23':[[0,0],[2,0],[-1,0],[2,-1],[-1,2]],
+  '32':[[0,0],[-2,0],[1,0],[-2,1],[1,-2]],
+  '30':[[0,0],[1,0],[-2,0],[1,2],[-2,-1]],
+  '03':[[0,0],[-1,0],[2,0],[-1,-2],[2,1]],
+};
+function kickTable(key){ return key==='I' ? KICKS_I : (key==='O' ? null : KICKS_JLSTZ); }
+
+// T-spin corner probes, relative to the T's 3x3 bounding box origin (its x,y).
+// The T's rotation center is always cell (1,1) of the box. The two "front"
+// corners are the ones flanking the nub, and rotate with the piece.
+// front[rot] = [cornerA, cornerB]; back = the other two corners.
+const T_CORNERS = [[1,1],[3,1],[3,3],[1,3]].map(([c,r])=>[c-1,r-1]); // TL,TR,BR,BL of 3x3, 0-indexed
+// Which of TL,TR,BR,BL are "front" per rotation state 0,R,2,L:
+const T_FRONT = { 0:[0,1], 1:[1,2], 2:[2,3], 3:[3,0] }; // indices into T_CORNERS
+// 7-bag randomizer
+let bag = [];
+function nextBag() {
+  bag = [...PIECE_KEYS].sort(()=>Math.random()-0.5);
+}
+function pickPiece() {
+  if (!bag.length) nextBag();
+  return bag.pop();
+}
+
+// ── Color palette ──────────────────────────────────────────────────────
+const BOARD_BG   = 'rgba(6,12,28,0.96)';
+const BOARD_LINE = 'rgba(40,80,140,0.18)';
+
+// ── Simplified grid background ─────────────────────────────────────────
+// Static dots + wave-driven brightness — zero spring physics, zero per-frame allocation
+const grid = {
+  spacing: 38,
+  cols: 0, rows: 0,
+  // ripple waves: [{x,y,r,maxR,alpha}]
+  waves: [],
+
+  init() {
+    this.cols = Math.ceil(W / this.spacing) + 2;
+    this.rows = Math.ceil(H / this.spacing) + 2;
+  },
+
+  ripple(wx, wy, mag, radius) {
+    this.waves.push({ x:wx, y:wy, r:0, maxR:radius, alpha:Math.min(1, mag/600) });
+  },
+
+  update(dt) {
+    const speed = 320;
+    for (let i = this.waves.length-1; i >= 0; i--) {
+      const w = this.waves[i];
+      w.r += speed * dt;
+      w.alpha -= dt * 1.1;
+      if (w.alpha <= 0 || w.r > w.maxR * 1.4) this.waves.splice(i, 1);
+    }
+  },
+
+  draw() {
+    ctx.save();
+    // Draw dots; brightness lifted if inside a wave ring
+    for (let r = 0; r < this.rows; r++) {
+      for (let c = 0; c < this.cols; c++) {
+        const px = c * this.spacing - this.spacing;
+        const py = r * this.spacing - this.spacing;
+        let bright = 0.06;
+        for (const w of this.waves) {
+          const d = Math.hypot(px - w.x, py - w.y);
+          const ring = Math.abs(d - w.r);
+          if (ring < 28) {
+            const falloff = (1 - ring/28) * w.alpha;
+            bright += falloff * 0.55;
+          }
+        }
+        bright = clamp(bright, 0, 0.8);
+        ctx.fillStyle = `rgba(50,160,255,${bright})`;
+        ctx.beginPath();
+        ctx.arc(px, py, 1.2, 0, TAU);
+        ctx.fill();
+      }
+    }
+    ctx.restore();
+  }
+};
+
+// ── Particle system ───────────────────────────────────────────────────
+const particles = [];
+
+class Spark {
+  constructor(x, y, vx, vy, col, life, size) {
+    this.x=x; this.y=y; this.vx=vx; this.vy=vy;
+    this.col=col; this.life=life; this.maxLife=life; this.size=size;
+    this.dead=false;
+  }
+  update(dt) {
+    this.x+=this.vx*dt; this.y+=this.vy*dt;
+    this.vx*=0.94; this.vy*=0.94; this.vy+=60*dt;
+    this.life-=dt;
+    if(this.life<=0) this.dead=true;
+  }
+  draw() {
+    const t=clamp(this.life/this.maxLife,0,1);
+    ctx.save(); ctx.globalAlpha=t*t;
+    ctx.shadowColor=this.col; ctx.shadowBlur=this.size*3*t;
+    ctx.fillStyle=this.col;
+    ctx.beginPath(); ctx.arc(this.x,this.y,this.size*t,0,TAU); ctx.fill();
+    ctx.restore();
+  }
+}
+
+class BlockShard {
+  constructor(x, y, col, size) {
+    this.x=x; this.y=y;
+    this.vx=rnd(-260,260); this.vy=rnd(-380,-60);
+    this.col=col; this.size=size;
+    this.angle=rnd(0,TAU); this.spin=rnd(-8,8);
+    this.life=rnd(0.6,1.4); this.maxLife=this.life;
+    this.dead=false;
+  }
+  update(dt) {
+    this.vx*=0.97; this.vy+=320*dt;
+    this.x+=this.vx*dt; this.y+=this.vy*dt;
+    this.angle+=this.spin*dt;
+    this.life-=dt;
+    if(this.life<=0) this.dead=true;
+  }
+  draw() {
+    const t=clamp(this.life/this.maxLife,0,1);
+    ctx.save(); ctx.globalAlpha=t;
+    ctx.translate(this.x,this.y); ctx.rotate(this.angle);
+    ctx.shadowColor=this.col; ctx.shadowBlur=this.size*2*t;
+    ctx.fillStyle=this.col;
+    ctx.fillRect(-this.size/2,-this.size/2,this.size,this.size);
+    ctx.restore();
+  }
+}
+
+// ── Shockwave ring (visual only) ───────────────────────────────────────
+const shockwaves = [];
+class Shockwave {
+  constructor(x, y, col, maxR, thick) {
+    this.x=x; this.y=y; this.col=col;
+    this.r=0; this.maxR=maxR; this.thick=thick;
+    this.life=1; this.dead=false;
+  }
+  update(dt) {
+    const speed = this.maxR * 3.2;
+    this.r += speed * dt;
+    this.life -= dt * 2.8;
+    if(this.life<=0||this.r>this.maxR) this.dead=true;
+  }
+  draw() {
+    if(this.r<=0) return;
+    const t=clamp(this.life,0,1);
+    ctx.save();
+    ctx.globalAlpha=t*0.7;
+    ctx.strokeStyle=this.col;
+    ctx.lineWidth=this.thick*t;
+    ctx.shadowColor=this.col; ctx.shadowBlur=12*t;
+    ctx.beginPath(); ctx.arc(this.x,this.y,this.r,0,TAU); ctx.stroke();
+    ctx.restore();
+  }
+}
+
+// ── Game state ─────────────────────────────────────────────────────────
+let gs = {};
+
+// Title-screen options. Live outside `gs` deliberately — initGS() rebuilds
+// `gs` from scratch on every startGame(), which would otherwise wipe the
+// player's selection right before it gets used. Persisted the same way
+// the high score is, so the choice survives a page reload too.
+const LEVEL_MIN=1, LEVEL_MAX=15, HEIGHT_MIN=0, HEIGHT_MAX=8;
+let titleLevel  = clamp(parseInt(localStorage.getItem('tetris_ob_level')  ||'1'), LEVEL_MIN,  LEVEL_MAX);
+let titleHeight = clamp(parseInt(localStorage.getItem('tetris_ob_height') ||'0'), HEIGHT_MIN, HEIGHT_MAX);
+function adjustStartLevel(d) {
+  titleLevel = clamp(titleLevel+d, LEVEL_MIN, LEVEL_MAX);
+  localStorage.setItem('tetris_ob_level', titleLevel);
+  SFX.move();
+}
+function adjustStartHeight(d) {
+  titleHeight = clamp(titleHeight+d, HEIGHT_MIN, HEIGHT_MAX);
+  localStorage.setItem('tetris_ob_height', titleHeight);
+  SFX.move();
+}
+// Classic "Type B" style handicap: fill the bottom `height` rows with
+// junk blocks, each row missing exactly one random column so nothing
+// starts pre-cleared and nothing starts as an instant top-out.
+function applyStartHeight(height) {
+  if (!height) return;
+  const startRow = ROWS - height;
+  for (let r=startRow; r<ROWS; r++) {
+    const gapCol = rndInt(0, COLS-1);
+    for (let c=0; c<COLS; c++) {
+      if (c===gapCol) continue;
+      const key = PIECE_KEYS[rndInt(0, PIECE_KEYS.length-1)];
+      gs.board[r][c] = { col: PIECES[key].col, glow: PIECES[key].glow };
+    }
+  }
+}
+
+function initGS() {
+  gs = {
+    state: 'title',   // title | playing | paused | gameover
+    board: Array.from({length:ROWS},()=>Array(COLS).fill(null)),
+    current: null,   // {key, rot, x, y}
+    nextQueue: [],   // 3-deep lookahead, index 0 spawns next
+    hold: null,      // key of the reserved piece, or null if the HOLD box is empty
+    holdUsed: false, // true once hold has been used this drop; blocks re-hold until the next lock
+    score: 0,
+    lines: 0,
+    level: 1,
+    paused: false,
+    dropTimer: 0,
+    lockTimer: 0,
+    lockDelay: 0.5,
+    lockOnFloor: false,
+    msgTimer: 0,
+    msg: '',
+    clearFlash: [],   // rows currently flashing before clearing
+    clearTimer: 0,
+    lastActionRotate: false,  // was the current piece's last maneuver a rotation?
+    pendingTSpin: 'none',     // 'none'|'mini'|'proper' captured at lock time
+    b2b: false,               // back-to-back active (last difficult clear chains)
+    combo: -1,                // combo counter; -1 = no active combo
+    highScore: parseInt(localStorage.getItem('tetris_ob_hi')||'0'),
+  };
+  nextBag(); nextBag();
+  gs.nextQueue = [pickPiece(), pickPiece(), pickPiece()];
+}
+initGS();
+
+function dropInterval() {
+  // Level-scaled gravity
+  const t = Math.max(0.05, 0.8 - (gs.level-1)*0.07);
+  return t;
+}
+
+function spawnPiece(key) {
+  const p = PIECES[key];
+  const shape = p.shapes[0];
+  const minC = Math.min(...shape.map(([c])=>c));
+  const maxC = Math.max(...shape.map(([c])=>c));
+  const startX = Math.floor((COLS - (maxC - minC + 1)) / 2) - minC;
+  return { key, rot:0, x:startX, y:0 };
+}
+
+function spawnNext() {
+  if (!gs.nextQueue.length) gs.nextQueue.push(pickPiece());
+  gs.current = spawnPiece(gs.nextQueue.shift());
+  gs.nextQueue.push(pickPiece());
+  gs.holdUsed = false;         // fresh drop — hold becomes available again
+  gs.lastActionRotate = false;
+  gs.dropTimer = 0;
+  gs.lockTimer = 0;
+  gs.lockOnFloor = false;
+  if (!canPlace(gs.current, 0, 0)) {
+    gs.state = 'gameover';
+    if (gs.score > gs.highScore) {
+      gs.highScore = gs.score;
+      localStorage.setItem('tetris_ob_hi', gs.highScore);
+    }
+    SFX.gameOver();
+    spawnGameOverEffect();
+  }
+}
+
+// ── Hold / reserve piece ───────────────────────────────────────────────
+// Guideline Hold: swap the active piece with the reserved one (or stash it
+// and pull the next piece if the box is empty). Locked for the rest of the
+// current drop via holdUsed — reset to false only when a piece locks into
+// the stack (see spawnNext), which prevents hold-spamming to stall gravity.
+// The swapped-in piece always re-enters at its spawn state (rot 0, top-
+// center) exactly as if it had come from the queue; this is what keeps a
+// held-then-restored piece from re-appearing mid-board in a rotated state.
+function holdPiece() {
+  if (gs.state !== 'playing' || gs.paused || gs.clearFlash.length > 0) return;
+  if (!gs.current || gs.holdUsed) return;   // one hold per drop
+
+  const activeKey = gs.current.key;
+
+  if (gs.hold === null) {
+    // Box empty: stash the active piece, pull the next piece to become active.
+    gs.hold = activeKey;
+    // spawnNext resets holdUsed to false, so set it AFTER the spawn call.
+    spawnNext();
+    if (gs.state !== 'playing') return;   // spawnNext may have topped us out
+  } else {
+    // Box filled: swap. The reserved piece re-enters at spawn state.
+    const swapKey = gs.hold;
+    gs.hold = activeKey;
+    gs.current = spawnPiece(swapKey);
+    gs.lastActionRotate = false;
+    gs.dropTimer = 0;
+    gs.lockTimer = 0;
+    gs.lockOnFloor = false;
+    // A swapped-in piece can top out if the stack has reached spawn rows.
+    if (!canPlace(gs.current, 0, 0)) {
+      gs.current = null;
+      gs.state = 'gameover';
+      if (gs.score > gs.highScore) {
+        gs.highScore = gs.score;
+        localStorage.setItem('tetris_ob_hi', gs.highScore);
+      }
+      SFX.gameOver();
+      spawnGameOverEffect();
+      return;
+    }
+  }
+
+  gs.holdUsed = true;          // lock hold until the next piece locks
+  SFX.rotate();                // swap whoosh — reuses the rotate blip for now
+}
+
+function currentCells(piece, dx=0, dy=0) {
+  const {key,rot,x,y} = piece;
+  return PIECES[key].shapes[rot].map(([c,r])=>[x+c+dx, y+r+dy]);
+}
+
+// ── T-spin detection (3-corner rule) ───────────────────────────────────
+// Returns 'none' | 'mini' | 'proper'. Must be called with the T in its
+// final locked position, BEFORE the board is mutated.
+function detectTSpin(piece) {
+  if (piece.key !== 'T' || !gs.lastActionRotate) return 'none';
+
+  // Occupancy at a 3x3-box-relative cell: walls/floor count as occupied.
+  const occ = (dc, dr) => {
+    const c = piece.x + dc, r = piece.y + dr;
+    if (c < 0 || c >= COLS || r >= ROWS) return true;   // wall/floor
+    if (r < 0) return false;                             // above ceiling = empty
+    return gs.board[r][c] !== null;
+  };
+
+  const filled = T_CORNERS.map(([dc,dr]) => occ(dc,dr));   // [TL,TR,BR,BL]
+  const total = filled.reduce((s,v)=>s+(v?1:0),0);
+  if (total < 3) return 'none';
+
+  const [fa, fb] = T_FRONT[piece.rot];
+  const frontCount = (filled[fa]?1:0) + (filled[fb]?1:0);
+
+  // Two front corners filled => proper. Otherwise mini, unless the last kick
+  // was the 1x2 SRS test (index 4), which upgrades mini to proper.
+  if (frontCount === 2) return 'proper';
+  if (piece.lastKick === 4) return 'proper';
+  return 'mini';
+}
+
+function canPlace(piece, dx, dy, newRot) {
+  const rot = (newRot !== undefined) ? newRot : piece.rot;
+  const shape = PIECES[piece.key].shapes[rot];
+  for (const [c,r] of shape) {
+    const nc = piece.x+c+dx, nr = piece.y+r+dy;
+    if (nc<0||nc>=COLS||nr>=ROWS) return false;
+    if (nr>=0 && gs.board[nr][nc]) return false;
+  }
+  return true;
+}
+
+function lockPiece() {
+  // Never lock a second piece while a clear is still resolving.
+  if (!gs.current || gs.clearFlash.length>0) return;
+
+  // T-spin must be evaluated while the board is still un-mutated.
+  gs.pendingTSpin = detectTSpin(gs.current);
+
+  const cells = currentCells(gs.current);
+  const pieceCol = PIECES[gs.current.key].col;
+  const pieceGlow = PIECES[gs.current.key].glow;
+
+  // Top-out: any cell above the board means the stack has breached the ceiling.
+  if (cells.some(([,r]) => r < 0)) {
+    for (const [c,r] of cells) {
+      if (r>=0) gs.board[r][c] = { col: pieceCol, glow: pieceGlow };
+    }
+    gs.current = null;
+    gs.state = 'gameover';
+    if (gs.score > gs.highScore) {
+      gs.highScore = gs.score;
+      localStorage.setItem('tetris_ob_hi', gs.highScore);
+    }
+    SFX.gameOver();
+    spawnGameOverEffect();
+    return;
+  }
+
+  for (const [c,r] of cells) {
+    gs.board[r][c] = { col: pieceCol, glow: pieceGlow };
+  }
+  SFX.land();
+
+  // Shockwave at landing point
+  const avgRow = Math.max(...cells.map(([,r])=>r));
+  const avgCol = cells.reduce((s,[c])=>s+c,0)/cells.length;
+  const wx = BOARD_X + (avgCol+0.5)*CELL;
+  const wy = BOARD_Y + (avgRow+1)*CELL;
+  shockwaves.push(new Shockwave(wx, wy, pieceGlow, CELL*3.5, 2.5));
+  grid.ripple(wx, wy, 200, 200);
+
+  // Small sparks at each locked cell
+  for (const [c,r] of cells) {
+    const px = BOARD_X + (c+0.5)*CELL;
+    const py = BOARD_Y + (r+0.5)*CELL;
+    for (let i=0;i<5;i++) {
+      particles.push(new Spark(px,py,rnd(-80,80),rnd(-120,-20),pieceCol,rnd(0.3,0.8),rnd(2,5)));
+    }
+  }
+
+  checkLines();
+}
+
+function checkLines() {
+  const full = [];
+  for (let r=0;r<ROWS;r++) {
+    if (gs.board[r].every(c=>c!==null)) full.push(r);
+  }
+  if (full.length===0) {
+    // No lines cleared: combo ends. A zero-line T-spin still scores and,
+    // importantly, does NOT break the back-to-back chain.
+    gs.combo = -1;
+    const tspin = gs.pendingTSpin || 'none';
+    gs.pendingTSpin = 'none';
+    if (tspin !== 'none') {
+      const base = tspin === 'proper' ? 400 : 100;
+      gs.score += base * gs.level;
+      gs.msg = tspin === 'proper' ? 'T-SPIN' : 'T-SPIN MINI';
+      gs.msgTimer = 1.4;
+    }
+    spawnNext();
+    return;
+  }
+
+  // Detach the piece: it is now part of the board. Leaving it attached lets a
+  // queued input move a piece that no longer exists and desync the board.
+  gs.current = null;
+  gs.lockOnFloor = false;
+  gs.lockTimer = 0;
+  gs.clearFlash = full;
+  gs.clearTimer = 0.38;
+  [SFX.clear1, SFX.clear2, SFX.clear3, SFX.clear4][Math.min(full.length,4)-1]();
+  triggerLineClearEffect(full);
+}
+
+function triggerLineClearEffect(rows) {
+  const n = rows.length;
+  // Explosion scale: n^(4/3)
+  const scale = Math.pow(n, 4/3);
+
+  for (const r of rows) {
+    const cy = BOARD_Y + (r+0.5)*CELL;
+    for (let c=0;c<COLS;c++) {
+      const cell = gs.board[r][c];
+      if (!cell) continue;
+      const cx = BOARD_X + (c+0.5)*CELL;
+      const col = cell.col;
+      const glow = cell.glow;
+
+      // Shards
+      const nShards = Math.round(3 * scale);
+      for (let i=0;i<nShards;i++) {
+        particles.push(new BlockShard(cx,cy,col,rnd(CELL*0.15,CELL*0.38)*scale*0.7));
+      }
+      // Sparks
+      const nSparks = Math.round(8 * scale);
+      for (let i=0;i<nSparks;i++) {
+        const spd = rnd(60,320)*scale;
+        const a = rnd(0,TAU);
+        particles.push(new Spark(cx,cy,Math.cos(a)*spd,Math.sin(a)*spd,col,rnd(0.4,1.2)*scale*0.6,rnd(2,5)));
+      }
+      // Grid ripple per cell
+      grid.ripple(cx, cy, 280*scale, 180*scale);
+    }
+
+    // Shockwave rings expanding outward per line
+    const wx = BOARD_X + BOARD_W/2;
+    const wy = BOARD_Y + (r+0.5)*CELL;
+    for (let k=0;k<n;k++) {
+      const delay = k*0.04;
+      setTimeout(()=>{
+        shockwaves.push(new Shockwave(wx, wy, '#ffffff', CELL*6*scale, 3*scale));
+        shockwaves.push(new Shockwave(wx, wy, rows.length>=4?'#ffee00':'#00ffff', CELL*9*scale, 1.5*scale));
+        grid.ripple(wx, wy, 600*scale, 400*scale);
+      }, delay*1000);
+    }
+  }
+
+  // Screen-wide mega shockwave for Zittris (4 lines)
+  if (n >= 4) {
+    setTimeout(()=>{
+      shockwaves.push(new Shockwave(BOARD_X+BOARD_W/2, BOARD_Y+BOARD_H/2, '#ffee00', Math.max(W,H)*0.8, 5));
+      shockwaves.push(new Shockwave(BOARD_X+BOARD_W/2, BOARD_Y+BOARD_H/2, '#ff8800', Math.max(W,H)*1.0, 2));
+      grid.ripple(W/2, H/2, 1200, 900);
+    }, 60);
+  }
+}
+
+function clearLines() {
+  // Recompute against the live board rather than trusting cached indices.
+  // Any row that is genuinely full gets removed; survivors keep their order.
+  const survivors = gs.board.filter(row => !row.every(c => c !== null));
+  const n = ROWS - survivors.length;
+  while (survivors.length < ROWS) survivors.unshift(Array(COLS).fill(null));
+  gs.board = survivors;
+  gs.clearFlash = [];
+
+  if (n === 0) { spawnNext(); return; }
+
+  const tspin = gs.pendingTSpin || 'none';
+  gs.pendingTSpin = 'none';
+
+  // Base points (pre-level). T-spin tables from tetris.wiki.
+  let base, label, difficult;
+  if (tspin === 'proper') {
+    base  = [400,800,1200,1600][n];
+    label = ['T-SPIN','T-SPIN SINGLE','T-SPIN DOUBLE','T-SPIN TRIPLE'][n];
+    difficult = true;                       // any line-clearing T-spin is difficult
+  } else if (tspin === 'mini') {
+    base  = [100,200,400][n] ?? 400;
+    label = ['T-SPIN MINI','T-SPIN MINI SINGLE','T-SPIN MINI DOUBLE'][n] || 'T-SPIN MINI';
+    difficult = true;
+  } else {
+    base  = [0,100,300,500,800][n];
+    label = ['','SINGLE','DOUBLE','TRIPLE','ZITTRIS ⬡'][n] || '';
+    difficult = (n >= 4);                    // only a Zittris is difficult among plain clears
+  }
+
+  // Back-to-back: +50% when this difficult clear follows another difficult clear.
+  const b2bBonus = (difficult && gs.b2b);
+  let pts = base * gs.level;
+  if (b2bBonus) pts = Math.floor(pts * 1.5);
+
+  // Combo: +1 per consecutive line-clearing lock. Guideline combo bonus = 50*combo*level.
+  gs.combo += 1;
+  const comboPts = gs.combo > 0 ? 50 * gs.combo * gs.level : 0;
+  pts += comboPts;
+
+  gs.b2b = difficult;                        // chain continues only through difficult clears
+
+  gs.score += pts;
+  gs.lines += n;
+  const newLevel = Math.floor(gs.lines / 10) + 1;
+  if (newLevel > gs.level) {
+    gs.level = newLevel;
+    gs.msg = `LEVEL ${gs.level}`;
+    gs.msgTimer = 2.2;
+    SFX.levelUp();
+  } else {
+    let m = label;
+    if (b2bBonus && m) m = 'B2B ' + m;
+    if (gs.combo > 0) m = (m ? m + '  ' : '') + `${gs.combo}x COMBO`;
+    gs.msg = m;
+    gs.msgTimer = 1.5;
+  }
+  spawnNext();
+}
+
+// ── Input ──────────────────────────────────────────────────────────────
+const keys = {};
+window.addEventListener('keydown', e => {
+  keys[e.code] = true;
+  if (['Space','ArrowLeft','ArrowRight','ArrowDown','ArrowUp'].includes(e.code)) e.preventDefault();
+  // Hold: C or either Shift, per the guideline default binding.
+  const isHoldKey = e.code==='KeyC' || e.code==='ShiftLeft' || e.code==='ShiftRight';
+  if (gs.state==='title') {
+    if (e.code==='ArrowLeft')  adjustStartLevel(-1);
+    if (e.code==='ArrowRight') adjustStartLevel(1);
+    if (e.code==='ArrowUp')    adjustStartHeight(1);
+    if (e.code==='ArrowDown')  adjustStartHeight(-1);
+    if (['Space','Enter'].includes(e.code)) startGame();
+    return;
+  }
+  if (gs.state==='gameover') { if(['Space','Enter'].includes(e.code)) startGame(); return; }
+  if (e.code==='KeyP'||e.code==='Escape') togglePause();
+  if (gs.paused||gs.clearFlash.length>0) return;
+  if (e.code==='ArrowLeft')  tryMove(-1,0);
+  if (e.code==='ArrowRight') tryMove(1,0);
+  if (e.code==='ArrowDown')  { tryMove(0,1); gs.dropTimer=0; }
+  if (e.code==='ArrowUp'||e.code==='KeyX') tryRotate(1);
+  if (e.code==='KeyZ') tryRotate(-1);
+  if (e.code==='Space') hardDrop();
+  // Ignore the OS key-repeat stream so a held-down hold key can't fire twice
+  // in one drop the instant holdUsed clears on the next lock.
+  if (isHoldKey && !e.repeat) holdPiece();
+});
+window.addEventListener('keyup', e => { keys[e.code]=false; });
+
+// DAS (delayed auto-shift)
+let dasDir=0, dasTimer=0, arrTimer=0;
+const DAS=0.16, ARR=0.04;
+
+function tryMove(dx, dy) {
+  if (!gs.current||gs.state!=='playing'||gs.paused||gs.clearFlash.length>0) return false;
+  if (canPlace(gs.current,dx,dy)) {
+    gs.current.x+=dx; gs.current.y+=dy;
+    gs.lastActionRotate = false;   // a move breaks the "last maneuver was rotation" condition
+    if(dx!==0) SFX.move();
+    // Reset lock timer on successful lateral move while on floor
+    if (gs.lockOnFloor) gs.lockTimer=0;
+    return true;
+  }
+  return false;
+}
+
+function tryRotate(dir) {
+  if (!gs.current||gs.state!=='playing'||gs.paused||gs.clearFlash.length>0) return;
+  const piece = gs.current;
+  const nRots = PIECES[piece.key].shapes.length;
+  if (nRots < 2) return;                 // O piece: no rotation, no kicks
+  const from = piece.rot;
+  const to   = ((piece.rot + dir) % nRots + nRots) % nRots;
+  const table = kickTable(piece.key);
+  const tests = table[`${from}${to}`] || [[0,0]];
+  for (let i=0;i<tests.length;i++) {
+    const [kx,ky] = tests[i];
+    if (canPlace(piece, kx, ky, to)) {
+      piece.rot = to;
+      piece.x += kx;
+      piece.y += ky;
+      piece.lastKick = i;                // 4 == the 1x2 kick (mini->proper upgrade)
+      gs.lastActionRotate = true;        // T-spin requires last maneuver be a rotation
+      SFX.rotate();
+      if(gs.lockOnFloor) gs.lockTimer=0;
+      return;
+    }
+  }
+}
+
+function hardDrop() {
+  if (!gs.current||gs.state!=='playing'||gs.paused||gs.clearFlash.length>0) return;
+  let dy=0;
+  while(canPlace(gs.current,0,dy+1)) dy++;
+  gs.current.y+=dy;
+  if(dy>0) gs.lastActionRotate=false;   // moved down => not a T-spin (a 0-cell drop preserves an immobile spin)
+  SFX.hardDrop();
+  // Visual trail
+  const cells = currentCells(gs.current);
+  const col = PIECES[gs.current.key].col;
+  for (const [c,r] of cells) {
+    const px=BOARD_X+(c+0.5)*CELL, py=BOARD_Y+(r+0.5)*CELL;
+    for(let i=0;i<3;i++) particles.push(new Spark(px,py,rnd(-40,40),rnd(-80,-10),col,rnd(0.2,0.5),rnd(3,6)));
+  }
+  // Lock synchronously. Deferring to the next frame left a window in which a
+  // queued move/rotate could reset the lock timer and float the piece free.
+  gs.lockTimer=0;
+  gs.lockOnFloor=false;
+  lockPiece();
+}
+
+function ghostY() {
+  if (!gs.current) return gs.current?.y;
+  let dy=0;
+  while(canPlace(gs.current,0,dy+1)) dy++;
+  return gs.current.y+dy;
+}
+
+// ── Game flow ──────────────────────────────────────────────────────────
+function startGame() {
+  try { AC().resume(); } catch(e){}
+  initGS();
+  gs.level = titleLevel;
+  applyStartHeight(titleHeight);
+  gs.state = 'playing';
+  spawnNext();
+}
+
+function togglePause() {
+  if (gs.state!=='playing') return;
+  gs.paused=!gs.paused;
+  const pb=document.getElementById('nui-pause');
+  if(pb) { pb.dataset.state=gs.paused?'paused':'playing'; pb.textContent=gs.paused?'▶':'II'; }
+}
+
+// ── Effects ───────────────────────────────────────────────────────────
+function spawnGameOverEffect() {
+  for (let r=0;r<ROWS;r++) {
+    for (let c=0;c<COLS;c++) {
+      const cell=gs.board[r][c];
+      if(!cell) continue;
+      const px=BOARD_X+(c+0.5)*CELL, py=BOARD_Y+(r+0.5)*CELL;
+      setTimeout(()=>{
+        for(let i=0;i<4;i++) {
+          particles.push(new BlockShard(px,py,cell.col,rnd(CELL*0.15,CELL*0.4)));
+          particles.push(new Spark(px,py,rnd(-180,180),rnd(-280,-40),cell.col,rnd(0.5,1.2),rnd(2,5)));
+        }
+        shockwaves.push(new Shockwave(px,py,cell.glow,CELL*3,1.5));
+        grid.ripple(px,py,150,120);
+      }, r*30+c*8);
+    }
+  }
+}
+
+// ── Draw helpers ──────────────────────────────────────────────────────
+function drawBlock(px, py, size, col, glo, alpha=1, flash=false) {
+  const pad = 1;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  if (flash) {
+    ctx.shadowColor='#ffffff'; ctx.shadowBlur=size*1.2;
+    ctx.fillStyle='#ffffff';
+  } else {
+    ctx.shadowColor=glo; ctx.shadowBlur=size*0.55;
+    // Gradient fill for depth
+    const grad = ctx.createLinearGradient(px+pad,py+pad,px+pad,py+size-pad);
+    grad.addColorStop(0, lighten(col,0.35));
+    grad.addColorStop(0.5, col);
+    grad.addColorStop(1, darken(col,0.35));
+    ctx.fillStyle=grad;
+  }
+  ctx.fillRect(px+pad,py+pad,size-pad*2,size-pad*2);
+  // Highlight edge
+  if(!flash) {
+    ctx.globalAlpha=alpha*0.5;
+    ctx.strokeStyle=lighten(col,0.55);
+    ctx.lineWidth=1;
+    ctx.strokeRect(px+pad+0.5,py+pad+0.5,size-pad*2-1,size-pad*2-1);
+  }
+  ctx.restore();
+}
+function drawCell(c, r, col, glo, alpha=1, flash=false) {
+  drawBlock(BOARD_X + c*CELL, BOARD_Y + r*CELL, CELL, col, glo, alpha, flash);
+}
+
+function lighten(hex, amt) {
+  let n=parseInt(hex.slice(1),16);
+  let r=Math.min(255,((n>>16)&255)+Math.round(amt*200));
+  let g=Math.min(255,((n>>8)&255)+Math.round(amt*200));
+  let b=Math.min(255,(n&255)+Math.round(amt*200));
+  return `rgb(${r},${g},${b})`;
+}
+function darken(hex, amt) {
+  let n=parseInt(hex.slice(1),16);
+  let r=Math.max(0,((n>>16)&255)-Math.round(amt*180));
+  let g=Math.max(0,((n>>8)&255)-Math.round(amt*180));
+  let b=Math.max(0,(n&255)-Math.round(amt*180));
+  return `rgb(${r},${g},${b})`;
+}
+
+function drawBoard() {
+  // Board background
+  ctx.save();
+  ctx.fillStyle=BOARD_BG;
+  ctx.fillRect(BOARD_X,BOARD_Y,BOARD_W,BOARD_H);
+
+  // Grid lines
+  ctx.strokeStyle=BOARD_LINE;
+  ctx.lineWidth=0.5;
+  for(let c=0;c<=COLS;c++) {
+    ctx.beginPath();
+    ctx.moveTo(BOARD_X+c*CELL,BOARD_Y);
+    ctx.lineTo(BOARD_X+c*CELL,BOARD_Y+BOARD_H);
+    ctx.stroke();
+  }
+  for(let r=1;r<=ROWS;r++) {
+    ctx.beginPath();
+    ctx.moveTo(BOARD_X,BOARD_Y+r*CELL);
+    ctx.lineTo(BOARD_X+BOARD_W,BOARD_Y+r*CELL);
+    ctx.stroke();
+  }
+  // Border glow — left, bottom, right only. No top stroke: the well reads
+  // as open, feeding down from off-screen, rather than a closed box.
+  ctx.shadowColor='rgba(60,180,255,0.4)'; ctx.shadowBlur=12;
+  ctx.strokeStyle='rgba(60,180,255,0.35)'; ctx.lineWidth=1.5;
+  ctx.beginPath();
+  ctx.moveTo(BOARD_X,BOARD_Y);
+  ctx.lineTo(BOARD_X,BOARD_Y+BOARD_H);
+  ctx.lineTo(BOARD_X+BOARD_W,BOARD_Y+BOARD_H);
+  ctx.lineTo(BOARD_X+BOARD_W,BOARD_Y);
+  ctx.stroke();
+  ctx.restore();
+
+  // Locked cells
+  for(let r=0;r<ROWS;r++) {
+    const flash = gs.clearFlash.includes(r);
+    const flashAlpha = flash ? (0.7 + 0.3*Math.sin(gs.clearTimer*TAU*8)) : 1;
+    for(let c=0;c<COLS;c++) {
+      const cell=gs.board[r][c];
+      if(cell) drawCell(c,r,cell.col,cell.glow,flashAlpha,flash);
+    }
+  }
+
+  // Ghost piece
+  if(gs.current && gs.state==='playing' && !gs.paused) {
+    const gy = ghostY();
+    if(gy !== gs.current.y) {
+      const shape = PIECES[gs.current.key].shapes[gs.current.rot];
+      const col = PIECES[gs.current.key].col;
+      for(const [dc,dr] of shape) {
+        const c=gs.current.x+dc, r=gy+dr;
+        if(r>=0&&r<ROWS&&c>=0&&c<COLS) {
+          ctx.save();
+          ctx.globalAlpha=0.15;
+          ctx.fillStyle=col;
+          ctx.fillRect(BOARD_X+c*CELL+1,BOARD_Y+r*CELL+1,CELL-2,CELL-2);
+          ctx.restore();
+        }
+      }
+    }
+  }
+
+  // Current piece
+  if(gs.current && gs.state==='playing') {
+    const shape = PIECES[gs.current.key].shapes[gs.current.rot];
+    const col = PIECES[gs.current.key].col;
+    const glo = PIECES[gs.current.key].glow;
+    for(const [dc,dr] of shape) {
+      const c=gs.current.x+dc, r=gs.current.y+dr;
+      if(r>=0&&r<ROWS&&c>=0&&c<COLS) drawCell(c,r,col,glo);
+    }
+  }
+}
+
+function uiText(g, text, x, y, size, opts={}) {
+  const {
+    align='left', baseline='top', color='#ffffff', weight=700,
+    family=FONT_DATA, glow=null, stroke='rgba(0,0,0,.92)',
+    strokeWidth=Math.max(1, size*0.12), alpha=1
+  } = opts;
+  g.save();
+  g.globalAlpha=alpha;
+  g.font=`${weight} ${size}px ${family}`;
+  g.textAlign=align;
+  g.textBaseline=baseline;
+  g.lineJoin='round';
+  const tx=Math.round(x), ty=Math.round(y);
+  if(stroke) {
+    g.strokeStyle=stroke;
+    g.lineWidth=strokeWidth;
+    g.strokeText(String(text),tx,ty);
+  }
+  g.fillStyle=color;
+  g.shadowColor=glow||'transparent';
+  g.shadowBlur=glow?Math.min(4,size*.22):0;
+  g.fillText(String(text),tx,ty);
+  g.restore();
+}
+
+function drawUIBlock(g, px, py, size, col, glo, alpha=1, dimmed=false) {
+  const pad=Math.max(.75,size*.055);
+  g.save();
+  g.globalAlpha=alpha;
+  const fill=dimmed?'#4b5968':col;
+  const glow=dimmed?'#263443':glo;
+  g.shadowColor=glow;
+  g.shadowBlur=dimmed?0:Math.min(5,size*.25);
+  const grad=g.createLinearGradient(px,py,px,py+size);
+  grad.addColorStop(0,lighten(fill,dimmed?.12:.28));
+  grad.addColorStop(.52,fill);
+  grad.addColorStop(1,darken(fill,dimmed?.16:.28));
+  g.fillStyle=grad;
+  g.fillRect(px+pad,py+pad,size-pad*2,size-pad*2);
+  g.shadowBlur=0;
+  g.globalAlpha=alpha*(dimmed?.28:.62);
+  g.strokeStyle=dimmed?'#91a0ad':lighten(fill,.5);
+  g.lineWidth=Math.max(.65,size*.045);
+  g.strokeRect(px+pad+.35,py+pad+.35,size-pad*2-.7,size-pad*2-.7);
+  g.restore();
+}
+
+function drawUIPiecePreview(g,key,bx,by,boxW,cell,alpha=1,dimmed=false) {
+  const np=PIECES[key];
+  const shape=np.shapes[0];
+  const minC=Math.min(...shape.map(([c])=>c)), maxC=Math.max(...shape.map(([c])=>c));
+  const minR=Math.min(...shape.map(([,r])=>r)), maxR=Math.max(...shape.map(([,r])=>r));
+  const pw=(maxC-minC+1)*cell, ph=(maxR-minR+1)*cell;
+  const ox=bx+(boxW-pw)/2;
+  for(const [dc,dr] of shape) {
+    drawUIBlock(g,ox+(dc-minC)*cell,by+(dr-minR)*cell,cell,np.col,np.glow,alpha,dimmed);
+  }
+  return ph;
+}
+
+function drawRailPanel(g,x,y,w,h) {
+  g.save();
+  g.fillStyle='rgba(2,7,18,.72)';
+  g.fillRect(x,y,w,h);
+  g.strokeStyle='rgba(68,194,255,.28)';
+  g.lineWidth=.8;
+  g.strokeRect(x+.5,y+.5,w-1,h-1);
+  g.strokeStyle='rgba(255,255,255,.08)';
+  g.beginPath();
+  g.moveTo(x+4,y+4);g.lineTo(x+w-4,y+4);
+  g.stroke();
+  g.restore();
+}
+
+function drawHUD() {
+  const g=hud;
+  const railX=HUD_X-2;
+  const railY=BOARD_Y+5;
+  const railW=HUD_W+4;
+  const railH=Math.max(0,BOARD_H-10);
+  const pad=clamp(HUD_W*.09,4,8);
+  const infoX=HUD_X+pad;
+  const infoW=Math.max(16,HUD_W-pad*2);
+  const labelFs=clamp(CELL*.3,7,10);
+  const microFs=clamp(CELL*.24,6.5,8.5);
+  const cyan='rgba(94,215,255,.88)';
+
+  drawRailPanel(g,railX,railY,railW,railH);
+
+  let y=railY+pad;
+  uiText(g,'HOLD',infoX,y,labelFs,{color:cyan,weight:800});
+  y+=labelFs+clamp(CELL*.18,4,7);
+
+  const holdCell=clamp(Math.min(infoW/4.2,CELL*.62),6,15);
+  const holdSlotH=holdCell*2+clamp(CELL*.2,4,8);
+  if(gs.hold) {
+    drawUIPiecePreview(g,gs.hold,infoX,y,infoW,holdCell,gs.holdUsed?.36:1,gs.holdUsed);
+    if(gs.holdUsed) uiText(g,'LOCKED',infoX+infoW,y+holdSlotH-2,microFs,{align:'right',baseline:'bottom',color:'rgba(170,185,200,.7)',weight:700});
+  } else {
+    uiText(g,'EMPTY',infoX,y+holdCell*.55,microFs,{color:'rgba(145,172,198,.62)',weight:650});
+  }
+  y+=holdSlotH;
+
+  g.save();
+  g.strokeStyle='rgba(70,190,255,.18)';
+  g.lineWidth=.7;
+  g.beginPath();g.moveTo(infoX,y);g.lineTo(infoX+infoW,y);g.stroke();
+  g.restore();
+  y+=clamp(CELL*.3,6,11);
+
+  uiText(g,'NEXT',infoX,y,labelFs,{color:cyan,weight:800});
+  y+=labelFs+clamp(CELL*.18,4,7);
+
+  const dataTop=railY+railH*.59;
+  const queueH=Math.max(36,dataTop-y-clamp(CELL*.25,5,9));
+  const slotH=queueH/3;
+  const previewCell=clamp(Math.min(infoW/4.2,slotH/2.25),6,15);
+  for(let i=0;i<3;i++) {
+    const key=gs.nextQueue&&gs.nextQueue[i];
+    if(!key) continue;
+    const slotY=y+i*slotH+(slotH-previewCell*2)/2;
+    drawUIPiecePreview(g,key,infoX,slotY,infoW,previewCell,i===0?1:.46,false);
+    uiText(g,String(i+1),infoX+infoW,slotY,microFs,{align:'right',color:i===0?'rgba(255,255,255,.85)':'rgba(130,170,200,.45)',weight:700,stroke:null});
+  }
+
+  g.save();
+  g.strokeStyle='rgba(70,190,255,.2)';
+  g.lineWidth=.7;
+  g.beginPath();g.moveTo(infoX,dataTop);g.lineTo(infoX+infoW,dataTop);g.stroke();
+  g.restore();
+
+  const rowsInfo=[
+    ['SCORE',gs.score.toString().padStart(7,'0'),'#41ffe2'],
+    ['LINES',gs.lines.toString().padStart(3,'0'),'#ffe450'],
+    ['LEVEL',gs.level.toString().padStart(2,'0'),'#ff9cff'],
+    ['BEST',gs.highScore.toString().padStart(7,'0'),'rgba(235,244,255,.72)'],
+  ];
+  const bandH=Math.max(0,railY+railH-dataTop-pad*.35);
+  const rowH=bandH/rowsInfo.length;
+  const dataLabelFs=clamp(rowH*.18,6.5,9);
+  const valueFs=clamp(Math.min(rowH*.31,infoW/4.25),8,16);
+
+  rowsInfo.forEach(([lab,val,col],i)=>{
+    const rowY=dataTop+i*rowH+clamp(rowH*.13,2,5);
+    uiText(g,lab,infoX,rowY,dataLabelFs,{color:'rgba(101,184,230,.7)',weight:800});
+    uiText(g,val,infoX,rowY+dataLabelFs+clamp(rowH*.08,1.5,4),valueFs,{color:col,weight:800,glow:i<3?col:null,strokeWidth:Math.max(1,valueFs*.14)});
+  });
+
+  // Event callout uses an opaque plate, so it never competes with the stack.
+  if(gs.msgTimer>0) {
+    const fa=Math.min(1,gs.msgTimer)*Math.min(1,(2-gs.msgTimer)*3);
+    const isLevel=gs.msg.startsWith('LEVEL');
+    const fs=isLevel?clamp(CELL*.94,19,36):clamp(CELL*.72,15,27);
+    const col=isLevel?'#ffe450':(gs.msg==='ZITTRIS ⬡'?'#ff9a24':'#52ffd9');
+    const cx=BOARD_X+BOARD_W/2, cy=BOARD_Y+BOARD_H*.46;
+    g.save();g.globalAlpha=fa;
+    const plateW=Math.min(BOARD_W*.88,Math.max(CELL*5,gs.msg.length*fs*.62));
+    const plateH=fs*1.75;
+    g.fillStyle='rgba(2,7,18,.86)';
+    g.fillRect(cx-plateW/2,cy-plateH/2,plateW,plateH);
+    g.strokeStyle='rgba(255,255,255,.16)';g.lineWidth=.8;
+    g.strokeRect(cx-plateW/2+.5,cy-plateH/2+.5,plateW-1,plateH-1);
+    g.restore();
+    uiText(g,gs.msg,cx,cy,fs,{align:'center',baseline:'middle',family:FONT_DISPLAY,color:col,weight:900,glow:col,alpha:fa,strokeWidth:Math.max(1.5,fs*.12)});
+  }
+}
+
+function drawTitle() {
+  const g=hud;
+  const cx=W/2, cy=H/2;
+  const titleFs=clamp(W*.09,29,68);
+  const subFs=clamp(W*.025,9,17);
+  const bodyFs=clamp(W*.02,8,13);
+  const panelW=Math.min(W*.82,440);
+  const panelH=clamp(H*.53,190,310);
+  const panelX=cx-panelW/2, panelY=cy-panelH*.52;
+
+  g.save();
+  g.fillStyle='rgba(2,7,18,.76)';g.fillRect(panelX,panelY,panelW,panelH);
+  g.strokeStyle='rgba(56,214,255,.34)';g.lineWidth=1;
+  g.strokeRect(panelX+.5,panelY+.5,panelW-1,panelH-1);
+  g.restore();
+
+  uiText(g,'ZITTRIS',cx,panelY+panelH*.12,titleFs,{align:'center',family:FONT_DISPLAY,color:'#35f1ff',weight:900,glow:'#35f1ff',strokeWidth:Math.max(2,titleFs*.1)});
+  uiText(g,'OBLITERATUS',cx,panelY+panelH*.39,subFs,{align:'center',color:'#a68cff',weight:800});
+  uiText(g,'FTS ARCADE  /  FREE FOREVER',cx,panelY+panelH*.49,bodyFs,{align:'center',color:'rgba(153,219,255,.82)',weight:700});
+
+  const optY=panelY+panelH*.62;
+  uiText(g,`◄  LEVEL ${titleLevel.toString().padStart(2,'0')}  ►`,cx,optY,subFs,{align:'center',color:'#f3f7ff',weight:800});
+  uiText(g,`◄  HEIGHT ${titleHeight.toString().padStart(2,'0')}  ►`,cx,optY+subFs*1.65,subFs,{align:'center',color:'#f3f7ff',weight:800});
+  uiText(g,nuiActive?'LEFT/RIGHT: LEVEL  ·  ROTATE/DROP: HEIGHT':'ARROW KEYS ADJUST START',cx,optY+subFs*3.35,bodyFs,{align:'center',color:'rgba(140,180,215,.68)',weight:650,stroke:null});
+
+  const pulse=.68+.32*Math.sin(Date.now()*.003);
+  uiText(g,nuiActive?'TAP BOARD TO START':'PRESS SPACE TO START',cx,panelY+panelH*.9,subFs,{align:'center',baseline:'middle',color:'#ffffff',weight:850,glow:'#ffffff',alpha:pulse});
+}
+
+function drawGameOver() {
+  const g=hud;
+  const cx=BOARD_X+(BOARD_W+HUD_W)/2;
+  const cy=BOARD_Y+BOARD_H*.43;
+  const panelW=Math.min(W*.82,BOARD_W+HUD_W+18);
+  const panelH=clamp(H*.3,130,220);
+  const titleFs=clamp(W*.075,28,58);
+  const dataFs=clamp(W*.025,10,18);
+
+  g.save();
+  g.fillStyle='rgba(2,5,14,.82)';g.fillRect(0,0,W,H);
+  g.fillStyle='rgba(12,4,10,.93)';g.fillRect(cx-panelW/2,cy-panelH/2,panelW,panelH);
+  g.strokeStyle='rgba(255,52,72,.52)';g.lineWidth=1.1;
+  g.strokeRect(cx-panelW/2+.5,cy-panelH/2+.5,panelW-1,panelH-1);
+  g.restore();
+
+  uiText(g,'GAME OVER',cx,cy-panelH*.3,titleFs,{align:'center',family:FONT_DISPLAY,color:'#ff3a4d',weight:900,glow:'#ff3a4d',strokeWidth:Math.max(2,titleFs*.11)});
+  uiText(g,`SCORE  ${gs.score.toString().padStart(7,'0')}`,cx,cy+panelH*.03,dataFs,{align:'center',color:'#56ffe3',weight:800});
+  if(gs.score>=gs.highScore&&gs.score>0) {
+    uiText(g,'NEW BEST',cx,cy+panelH*.18,dataFs,{align:'center',color:'#ffe450',weight:900,glow:'#ffe450'});
+  }
+  const pulse=.66+.34*Math.sin(Date.now()*.003);
+  uiText(g,nuiActive?'TAP TO RESTART':'SPACE TO RESTART',cx,cy+panelH*.36,dataFs,{align:'center',color:'#ffffff',weight:800,alpha:pulse});
+}
+
+function drawPause() {
+  const g=hud;
+  g.save();g.fillStyle='rgba(2,6,16,.78)';g.fillRect(0,0,W,H);g.restore();
+  const fs=clamp(W*.07,25,50);
+  uiText(g,'PAUSED',W/2,H/2,fs,{align:'center',baseline:'middle',family:FONT_DISPLAY,color:'#ffe450',weight:900,glow:'#ffe450',strokeWidth:Math.max(2,fs*.11)});
+  uiText(g,'P / ESC TO RESUME',W/2,H/2+fs*.72,clamp(fs*.27,9,14),{align:'center',color:'#ffffff',weight:750});
+}
+
+// ── Main loop ──────────────────────────────────────────────────────────
+let lastTs=0;
+let softDropHeld=false;
+
+function loop(ts) {
+  const dt = Math.min((ts-lastTs)/1000, 0.05);
+  lastTs = ts;
+
+  // Update grid
+  grid.update(dt);
+
+  // Update particles
+  for(let i=particles.length-1;i>=0;i--) {
+    particles[i].update(dt);
+    if(particles[i].dead) particles.splice(i,1);
+  }
+  for(let i=shockwaves.length-1;i>=0;i--) {
+    shockwaves[i].update(dt);
+    if(shockwaves[i].dead) shockwaves.splice(i,1);
+  }
+
+  if(gs.state==='playing' && !gs.paused) {
+    if(gs.msgTimer>0) gs.msgTimer-=dt;
+
+    // Clear animation
+    if(gs.clearFlash.length>0) {
+      gs.clearTimer-=dt;
+      if(gs.clearTimer<=0) clearLines();
+    } else if (gs.current) {
+      // DAS
+      const leftDown=keys['ArrowLeft']||keys['nb-left'];
+      const rightDown=keys['ArrowRight']||keys['nb-right'];
+      const newDir=leftDown?-1:rightDown?1:0;
+      if(newDir!==dasDir) { dasDir=newDir; dasTimer=0; arrTimer=0; }
+      if(dasDir!==0) {
+        dasTimer+=dt;
+        if(dasTimer>=DAS) {
+          arrTimer+=dt;
+          if(arrTimer>=ARR) { arrTimer=0; tryMove(dasDir,0); }
+        }
+      }
+
+      // Soft drop
+      softDropHeld = keys['ArrowDown']||keys['nb-down'];
+
+      // Gravity
+      const interval = softDropHeld ? Math.min(0.05, dropInterval()/10) : dropInterval();
+      gs.dropTimer+=dt;
+      if(gs.dropTimer>=interval) {
+        gs.dropTimer=0;
+        if(!canPlace(gs.current,0,1)) {
+          gs.lockOnFloor=true;
+        } else {
+          gs.current.y++;
+          gs.lastActionRotate=false;   // gravity drop breaks T-spin rotation condition
+          gs.lockOnFloor=false;
+          gs.lockTimer=0;
+        }
+      }
+
+      // Lock delay — re-verify the piece is still grounded before locking.
+      // (A lateral move or rotation may have slid it over a gap.)
+      if(gs.lockOnFloor) {
+        if(canPlace(gs.current,0,1)) {
+          gs.lockOnFloor=false;
+          gs.lockTimer=0;
+        } else {
+          gs.lockTimer+=dt;
+          if(gs.lockTimer>=gs.lockDelay) {
+            gs.lockTimer=0; gs.lockOnFloor=false;
+            lockPiece();
+          }
+        }
+      }
+    }
+  }
+
+  // ── Render ─────────────────────────────────────────────────────────
+  ctx.fillStyle='#050810';
+  ctx.fillRect(0,0,W,H);
+
+  grid.draw();
+
+  for(const sw of shockwaves) sw.draw();
+  for(const p of particles) p.draw();
+
+  // Native-resolution UI canvas is rebuilt each frame; the game field stays
+  // in the low-resolution backbuffer and receives the CRT treatment below.
+  hud.clearRect(0,0,W,H);
+
+  if(gs.state!=='title') drawBoard();
+  if(gs.state==='playing'||gs.state==='gameover') drawHUD();
+  if(gs.state==='title') drawTitle();
+  if(gs.state==='gameover') drawGameOver();
+  if(gs.state==='playing'&&gs.paused) drawPause();
+
+  syncHoldButton();
+
+  // ── CRT pass ─────────────────────────────────────────────────────────
+  // One drawImage, nearest-neighbor: the whole reduced-res backbuffer
+  // scaled up onto the real, input-receiving canvas. This is the entire
+  // "pixelated" effect — everything above this line is untouched original
+  // gameplay rendering, just aimed at a smaller buffer.
+  dispCtx.imageSmoothingEnabled = false;
+  dispCtx.clearRect(0, 0, dispCanvas.width, dispCanvas.height);
+  dispCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, dispCanvas.width, dispCanvas.height);
+
+  requestAnimationFrame(loop);
+}
+
+// ── NUI hold-button cooldown reflection ────────────────────────────────
+// holdUsed flips inside game logic, not from a DOM event, so the button's
+// dimmed "cannot hold again yet" state has to be synced each frame. Cheap:
+// a single cached-boolean compare + one classList toggle only on change.
+let _nbHoldEl = null, _nbHoldCooldownShown = null;
+function syncHoldButton() {
+  if (!nuiActive) return;
+  if (_nbHoldEl === null) _nbHoldEl = document.getElementById('nb-hold');
+  if (!_nbHoldEl) return;
+  // Cooldown look applies only mid-drop during play; anywhere else it reads normal.
+  const cd = (gs.state === 'playing' && gs.holdUsed);
+  if (cd !== _nbHoldCooldownShown) {
+    _nbHoldEl.classList.toggle('cooldown', cd);
+    _nbHoldCooldownShown = cd;
+  }
+}
+
+// ── Touch NUI ──────────────────────────────────────────────────────────
+function setupNUI() {
+  const isTouch = window.matchMedia('(pointer:coarse)').matches
+               || ('ontouchstart' in window && navigator.maxTouchPoints>0);
+  nuiActive = isTouch;
+  if(!isTouch) return;
+
+  document.getElementById('nui').style.display='flex';
+  document.getElementById('nui-pause').style.display='flex';
+
+  // Simple key injection
+  const btnActions = {
+    'nb-left':     () => tryMove(-1,0),
+    'nb-right':    () => tryMove(1,0),
+    'nb-down':     () => { keys['nb-down']=true; },
+    'nb-rotate':   () => tryRotate(1),
+    'nb-harddrop': () => hardDrop(),
+    'nb-hold':     () => holdPiece(),
+  };
+  const btnRelease = {
+    'nb-down': () => { keys['nb-down']=false; },
+  };
+  // On the title screen only, LEFT/RIGHT/ROTATE/DROP adjust the starting
+  // options instead of jumping straight into a game. SLAM has no title-
+  // screen mapping and falls through to startGame(), same as any button
+  // still does on the gameover screen — that flow is unchanged.
+  const titleActions = {
+    'nb-left':   () => adjustStartLevel(-1),
+    'nb-right':  () => adjustStartLevel(1),
+    'nb-rotate': () => adjustStartHeight(1),
+    'nb-down':   () => adjustStartHeight(-1),
+  };
+
+  for(const [id, fn] of Object.entries(btnActions)) {
+    const el=document.getElementById(id); if(!el) continue;
+    el.addEventListener('pointerdown',e=>{
+      e.preventDefault(); el.setPointerCapture(e.pointerId);
+      el.classList.add('hit');
+      if (gs.state==='title') {
+        const titleFn = titleActions[id];
+        if (titleFn) { titleFn(); return; }
+        startGame(); return;
+      }
+      if(gs.state!=='playing') { startGame(); return; }
+      fn();
+    },{passive:false});
+    const up=e=>{ e.preventDefault(); el.classList.remove('hit'); (btnRelease[id]||function(){})(); };
+    el.addEventListener('pointerup',up,{passive:false});
+    el.addEventListener('pointercancel',up,{passive:false});
+  }
+
+  // Repeat for left/right held
+  let repeatIntervals = {};
+  ['nb-left','nb-right'].forEach(id=>{
+    const el=document.getElementById(id); if(!el) return;
+    el.addEventListener('pointerdown',e=>{
+      clearInterval(repeatIntervals[id]);
+      let started=false;
+      let t=setTimeout(()=>{
+        repeatIntervals[id]=setInterval(()=>{
+          if(id==='nb-left') tryMove(-1,0);
+          else tryMove(1,0);
+        }, ARR*1000);
+      }, DAS*1000);
+      el._clearRepeat=()=>{ clearTimeout(t); clearInterval(repeatIntervals[id]); };
+    },{passive:true});
+    ['pointerup','pointercancel'].forEach(ev=>{
+      el.addEventListener(ev,()=>{ if(el._clearRepeat) el._clearRepeat(); },{passive:true});
+    });
+  });
+
+  const pb=document.getElementById('nui-pause');
+  pb.addEventListener('pointerdown',e=>{
+    e.preventDefault(); pb.classList.add('hit'); togglePause();
+  },{passive:false});
+  pb.addEventListener('pointerup',e=>{e.preventDefault();pb.classList.remove('hit');},{passive:false});
+  pb.addEventListener('pointercancel',()=>pb.classList.remove('hit'),{passive:false});
+
+  dispCanvas.addEventListener('pointerdown',()=>{ if(gs.state!=='playing') startGame(); },{passive:true});
+}
+
+// ── Swipe gestures ────────────────────────────────────────────────────
+(function setupSwipe(){
+  let sx,sy,t0;
+  dispCanvas.addEventListener('touchstart',e=>{
+    const t=e.touches[0]; sx=t.clientX; sy=t.clientY; t0=Date.now();
+  },{passive:true});
+  dispCanvas.addEventListener('touchend',e=>{
+    if(!e.changedTouches.length||gs.state!=='playing'||gs.paused) return;
+    const t=e.changedTouches[0];
+    const dx=t.clientX-sx, dy=t.clientY-sy, dur=(Date.now()-t0)/1000;
+    const adx=Math.abs(dx),ady=Math.abs(dy);
+    if(dur<0.25&&Math.max(adx,ady)>30){
+      if(adx>ady) tryMove(dx>0?1:-1,0);
+      else if(dy>0&&ady>40) hardDrop();
+      else if(dy<0) tryRotate(1);
+    }
+  },{passive:true});
+})();
+
+// ── Go ─────────────────────────────────────────────────────────────────
+setupNUI();
+resize();
+requestAnimationFrame(ts=>{ lastTs=ts; requestAnimationFrame(loop); });
+</script>
+</body>
+</html>
