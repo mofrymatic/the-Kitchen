@@ -354,7 +354,7 @@ body::after{
         </section>
 
         <section class="settings-group"><h3>Audio & Feedback</h3>
-          <label class="setting-row"><span class="setting-copy"><strong>Music Style</strong><small>Sixteen adaptive 128 BPM arrangements with 42% Intaglio Galactica relief, a three-range frymatic legato-bass underlay, and darkened eardar-safe treble. Changes take effect when settings are saved.</small></span><span class="setting-control"><select name="musicStyle"><option value="neon_lagoon">NEON LAGOON · CHILLWAVE</option><option value="witch_house">WITCH HOUSE</option><option value="west_coast_bass">WEST COAST BASS</option><option value="klezmer">KLEZMER</option><option value="jungle">JUNGLE</option><option value="rnb">R&amp;B</option><option value="acid_core">ACID CORE</option><option value="deep_house">DEEP HOUSE</option><option value="trap">TRAP</option><option value="drill_beat">DRILL BEAT</option><option value="psytrance">PSYTRANCE</option><option value="triphop">TRIP-HOP</option><option value="dubstep">DUBSTEP</option><option value="drum_n_bass">DRUM N BASS</option><option value="viking_metal">VIKING METAL</option><option value="zittristein">ZITTRISTEIN · INDUSTRIAL ELECTRO</option></select></span></label>
+          <label class="setting-row"><span class="setting-copy"><strong>Music Style</strong><small>Twelve adaptive 128 BPM arrangements of the same theme contour. Changes take effect when settings are saved.</small></span><span class="setting-control"><select name="musicStyle"><option value="neon_lagoon">NEON LAGOON · CHILLWAVE</option><option value="witch_house">WITCH HOUSE</option><option value="west_coast_bass">WEST COAST BASS</option><option value="klezmer">KLEZMER</option><option value="jungle">JUNGLE</option><option value="rnb">R&amp;B</option><option value="acid_core">ACID CORE</option><option value="deep_house">DEEP HOUSE</option><option value="trap">TRAP</option><option value="drill_beat">DRILL BEAT</option><option value="psytrance">PSYTRANCE</option><option value="triphop">TRIP-HOP</option></select></span></label>
           <label class="setting-row"><span class="setting-copy"><strong>Sound Effects</strong><small>Movement, rotation, landing, line-clear, and game-over synthesis.</small></span><span class="setting-control"><span class="switch"><input name="sfxEnabled" type="checkbox"><span></span></span></span></label>
           <label class="setting-row"><span class="setting-copy"><strong>Background Music</strong><small>Adaptive 128 BPM arrangement during active, unpaused play.</small></span><span class="setting-control"><span class="switch"><input name="bgmEnabled" type="checkbox"><span></span></span></span></label>
           <label class="setting-row"><span class="setting-copy"><strong>Touch Haptics</strong><small>Use short vibration cues for locks and clears where supported.</small></span><span class="setting-control"><span class="switch"><input name="hapticsEnabled" type="checkbox"><span></span></span></span></label>
@@ -437,7 +437,7 @@ const DEFAULT_SETTINGS = Object.freeze({
 });
 const SETTING_ENUMS = {
   rotationSystem:['srs','ars'], randomizer:['bag','history'], hardDropMode:['lock','sonic'],
-  musicStyle:['neon_lagoon','witch_house','west_coast_bass','klezmer','jungle','rnb','acid_core','deep_house','trap','drill_beat','psytrance','triphop','dubstep','drum_n_bass','viking_metal','zittristein'],
+  musicStyle:['neon_lagoon','witch_house','west_coast_bass','klezmer','jungle','rnb','acid_core','deep_house','trap','drill_beat','psytrance','triphop'],
   queueCount:[1,2,3,4,5], softDropFactor:[5,10,20,40,999], lockResetLimit:[0,8,15,30]
 };
 const settingClamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
@@ -658,15 +658,14 @@ const FONT_DATA = '"SFMono-Regular",Menlo,Consolas,"Liberation Mono","Courier Ne
 
 // ── Aadaptive audio system ─────────────────────────────────────
 // FTS Arcade chillwave / tropical-house adaptation: 128 BPM · A minor · 16 bars.
-// Core pulse voices, style-specific percussion, adaptive harmony,
+// Six-voice ceiling, pulse duet, triangle/808 bass, trap percussion,
 // pinball/FM accents, and game-state pitch/intensity tracking.
 const AUX_MANIFEST = Object.freeze({
   game:'zittris', sound_family:'fts_arcade', runtime:'web_audio',
-  tempo_bpm:128, musical_key:'A_minor', loop_length_bars:'style_dependent_16_or_24',
-  polyphony_limit:8, core_polyphony:6, intaglio_relief_voices:2, working_depth:'32_bit_float', delivery_depth:'16_bit',
+  tempo_bpm:128, musical_key:'A_minor', loop_length_bars:16,
+  polyphony_limit:6, working_depth:'32_bit_float', delivery_depth:'16_bit',
   sample_rate_hz:48000, composition:'user_supplied_midi_adaptation', source_midi:'Tetris - A Theme.mid',
-  styles:['neon_lagoon','witch_house','west_coast_bass','klezmer','jungle','rnb','acid_core','deep_house','trap','drill_beat','psytrance','triphop','dubstep','drum_n_bass','viking_metal','zittristein'],
-  aesthetic_overlay:{name:'intaglio_galactica',amount:.42,traits:['engraved_depth','orbital_spacing','metallic_relief','mosaic_counterline']},
+  styles:['neon_lagoon','witch_house','west_coast_bass','klezmer','jungle','rnb','acid_core','deep_house','trap','drill_beat','psytrance','triphop'],
   states:['idle','playing','stack_rising','danger','combo','game_over'],
   sfx:['move','rotate','soft_drop','hard_drop','hold','line_clear','combo','level_up','danger','game_over']
 });
@@ -678,14 +677,12 @@ const ZITTRIS_THEME_BASS = Object.freeze([40, -1, 59, -1, 40, -1, 59, -1, 40, -1
 
 let _ac=null;
 const AC=()=>_ac||(_ac=new (window.AudioContext||window.webkitAudioContext)({sampleRate:48000}));
-const COGNICRAFT_AMOUNT=.05;
 
 const audioEngine={
-  master:null,musicBus:null,sfxBus:null,musicGuard:null,musicCeiling:null,igBus:null,igDry:null,igDelay:null,igFeedback:null,igFilter:null,igVerb:null,compressor:null,
+  master:null,musicBus:null,sfxBus:null,compressor:null,
   timer:null,nextStepTime:0,step:0,state:'idle',lastState:'idle',dangerLatched:false,
   activeVoices:0,variation:{},noiseBuffer:null,lastAdaptiveCheck:0,
-  klezmerLead:null,frymaticBass:null,
-  bpm:128,lookAheadMs:25,scheduleAhead:.12,igAmount:.42,
+  bpm:128,lookAheadMs:25,scheduleAhead:.12,
 
   init(){
     if(this.master)return;
@@ -693,47 +690,10 @@ const audioEngine={
     this.master=ac.createGain();this.master.gain.value=.82;
     this.musicBus=ac.createGain();this.musicBus.gain.value=.44;
     this.sfxBus=ac.createGain();this.sfxBus.gain.value=.72;
-
-    // Intaglio Galactica is an overlay, not a replacement genre. A literal
-    // 0.42 amount feeds a restrained dry relief plus a short orbital chamber.
-    // The core six voices remain available to the arrangement; two additional
-    // voices are reserved for engraved counterlines and registration marks.
-    this.igBus=ac.createGain();this.igBus.gain.value=this.igAmount;
-    this.igDry=ac.createGain();this.igDry.gain.value=.56;
-    this.igDelay=ac.createDelay(1.0);this.igDelay.delayTime.value=.1875;
-    this.igFeedback=ac.createGain();this.igFeedback.gain.value=.19;
-    this.igFilter=ac.createBiquadFilter();this.igFilter.type='lowpass';this.igFilter.frequency.value=3280;this.igFilter.Q.value=.72;
-    this.igVerb=ac.createConvolver();
-    const irLen=Math.max(1,Math.floor(ac.sampleRate*1.15));
-    const ir=ac.createBuffer(2,irLen,ac.sampleRate);
-    for(let ch=0;ch<2;ch++){
-      const data=ir.getChannelData(ch);
-      for(let i=0;i<irLen;i++){
-        const x=i/irLen,decay=Math.pow(1-x,3.3);
-        const early=(i%Math.max(1,Math.floor(ac.sampleRate*.031))<2)?0.18:0;
-        data[i]=(Math.random()*2-1)*decay*.24+early*decay*(ch?-.7:.7);
-      }
-    }
-    this.igVerb.buffer=ir;
-
     this.compressor=ac.createDynamicsCompressor();
     this.compressor.threshold.value=-18;this.compressor.knee.value=12;
     this.compressor.ratio.value=5;this.compressor.attack.value=.004;this.compressor.release.value=.18;
-    // Music-only protection: a gentle high shelf removes the brittle edge,
-    // then a fast ceiling catches isolated click/snare spikes before they can
-    // stress small speakers. SFX keep their separate impact dynamics.
-    this.musicGuard=ac.createBiquadFilter();this.musicGuard.type='highshelf';
-    // Eardar pass: another twenty percent of treble restraint. The corner is
-    // lowered slightly and the shelf deepens from -5.5 dB to -6.6 dB.
-    this.musicGuard.frequency.value=4300;this.musicGuard.gain.value=-6.6;
-    this.musicCeiling=ac.createDynamicsCompressor();
-    this.musicCeiling.threshold.value=-22;this.musicCeiling.knee.value=2;
-    this.musicCeiling.ratio.value=14;this.musicCeiling.attack.value=.001;this.musicCeiling.release.value=.085;
-    this.musicBus.connect(this.musicGuard);this.musicGuard.connect(this.musicCeiling);this.musicCeiling.connect(this.compressor);
-    this.sfxBus.connect(this.compressor);
-    this.igBus.connect(this.igDry);this.igDry.connect(this.musicGuard);
-    this.igBus.connect(this.igDelay);this.igDelay.connect(this.igFeedback);this.igFeedback.connect(this.igDelay);
-    this.igDelay.connect(this.igFilter);this.igBus.connect(this.igVerb);this.igVerb.connect(this.igFilter);this.igFilter.connect(this.musicGuard);
+    this.musicBus.connect(this.compressor);this.sfxBus.connect(this.compressor);
     this.compressor.connect(this.master);this.master.connect(ac.destination);
     const len=Math.max(1,Math.floor(ac.sampleRate*.5));
     this.noiseBuffer=ac.createBuffer(1,len,ac.sampleRate);
@@ -742,7 +702,7 @@ const audioEngine={
 
   midi(n){return 440*Math.pow(2,(n-69)/12)},
   nextVar(name,count=4){const n=(this.variation[name]||0)%count;this.variation[name]=n+1;return n},
-  canVoice(priority=false){return priority||this.activeVoices<AUX_MANIFEST.polyphony_limit},
+  canVoice(){return this.activeVoices<AUX_MANIFEST.polyphony_limit},
   claim(node,stopAt){
     this.activeVoices++;
     const release=()=>{this.activeVoices=Math.max(0,this.activeVoices-1);node.removeEventListener?.('ended',release)};
@@ -750,31 +710,30 @@ const audioEngine={
     if(!node.addEventListener)setTimeout(release,Math.max(20,(stopAt-AC().currentTime)*1000+20));
   },
 
-  osc({freq=440,type='square',time=AC().currentTime,dur=.08,gain=.08,bus='sfx',detune=0,sweep=null,attack=.002,priority=false}){
-    if(!this.canVoice(priority))return;
+  osc({freq=440,type='square',time=AC().currentTime,dur=.08,gain=.08,bus='sfx',detune=0,sweep=null,attack=.002}){
+    if(!this.canVoice())return;
     this.init();const ac=AC(),o=ac.createOscillator(),g=ac.createGain();
     o.type=type;o.frequency.setValueAtTime(Math.max(20,freq),time);o.detune.value=detune;
     if(sweep)o.frequency.exponentialRampToValueAtTime(Math.max(20,sweep),time+dur);
     g.gain.setValueAtTime(.0001,time);g.gain.exponentialRampToValueAtTime(Math.max(.0002,gain),time+attack);
     g.gain.exponentialRampToValueAtTime(.0001,time+dur);
-    o.connect(g);g.connect(bus==='music'?this.musicBus:bus==='ig'?this.igBus:this.sfxBus);o.start(time);o.stop(time+dur+.01);this.claim(o,time+dur+.01);
+    o.connect(g);g.connect(bus==='music'?this.musicBus:this.sfxBus);o.start(time);o.stop(time+dur+.01);this.claim(o,time+dur+.01);
   },
 
-  noise({time=AC().currentTime,dur=.06,gain=.09,frequency=1800,q=.8,type='bandpass',bus='sfx',priority=false}){
-    if(!this.canVoice(priority))return;
+  noise({time=AC().currentTime,dur=.06,gain=.09,frequency=1800,q=.8,type='bandpass',bus='sfx'}){
+    if(!this.canVoice())return;
     this.init();const ac=AC(),src=ac.createBufferSource(),flt=ac.createBiquadFilter(),g=ac.createGain();
     src.buffer=this.noiseBuffer;flt.type=type;flt.frequency.value=frequency;flt.Q.value=q;
     g.gain.setValueAtTime(Math.max(.0002,gain),time);g.gain.exponentialRampToValueAtTime(.0001,time+dur);
-    src.connect(flt);flt.connect(g);g.connect(bus==='music'?this.musicBus:bus==='ig'?this.igBus:this.sfxBus);src.start(time);src.stop(time+dur+.01);this.claim(src,time+dur+.01);
+    src.connect(flt);flt.connect(g);g.connect(bus==='music'?this.musicBus:this.sfxBus);src.start(time);src.stop(time+dur+.01);this.claim(src,time+dur+.01);
   },
 
-  fmBell(freq,time=AC().currentTime,gain=.12,dur=.34,bus='sfx'){
+  fmBell(freq,time=AC().currentTime,gain=.12,dur=.34){
     if(!this.canVoice())return;
     this.init();const ac=AC(),carrier=ac.createOscillator(),mod=ac.createOscillator(),mg=ac.createGain(),out=ac.createGain();
     carrier.type='sine';mod.type='sine';carrier.frequency.value=freq;mod.frequency.value=freq*2.71;mg.gain.value=freq*.42;
     mod.connect(mg);mg.connect(carrier.frequency);out.gain.setValueAtTime(gain,time);out.gain.exponentialRampToValueAtTime(.0001,time+dur);
-    carrier.connect(out);out.connect(bus==='music'?this.musicBus:bus==='ig'?this.igBus:this.sfxBus);
-    carrier.start(time);mod.start(time);carrier.stop(time+dur+.01);mod.stop(time+dur+.01);this.claim(carrier,time+dur+.01);
+    carrier.connect(out);out.connect(this.sfxBus);carrier.start(time);mod.start(time);carrier.stop(time+dur+.01);mod.stop(time+dur+.01);this.claim(carrier,time+dur+.01);
   },
 
   kick(time,gain=.16){
@@ -786,231 +745,6 @@ const audioEngine={
   },
   hat(time,gain=.028){this.noise({time,dur:.028,gain,frequency:7600,q:.5,type:'highpass',bus:'music'})},
   snare(time,gain=.075){this.noise({time,dur:.11,gain,frequency:1900,q:.85,bus:'music'});this.osc({freq:185,type:'triangle',time,dur:.08,gain:gain*.38,bus:'music',sweep:115})},
-  // Klezmer-specific percussion is intentionally darker than the shared
-  // electronic kit. The old 7.6 kHz hat and 1.9 kHz snare noise were reading
-  // as sharp ticks beside the clarinet-like lead, especially on upbeats.
-  klezmerShaker(time,gain=.0065){
-    this.noise({time:time+.006,dur:.040,gain,frequency:3450,q:.72,type:'bandpass',bus:'music'});
-  },
-  klezmerFrameHit(time,gain=.030){
-    this.noise({time,dur:.095,gain:gain*.62,frequency:1120,q:.62,type:'bandpass',bus:'music'});
-    this.osc({freq:148,type:'triangle',time,dur:.095,gain:gain*.31,bus:'music',sweep:102,attack:.004});
-  },
-  jungleSplash(time,gain=.006,accent=false){
-    // Wide, low-Q spray with no naked high-pass transient. Energy is spread
-    // over time and centered below the speaker-fatiguing click region.
-    this.noise({time,dur:accent?.135:.092,gain,frequency:3150,q:.30,type:'bandpass',bus:'music'});
-    this.noise({time:time+.014,dur:accent?.110:.072,gain:gain*.28,frequency:5200,q:.22,type:'bandpass',bus:'music'});
-  },
-  jungleSnare(time,gain=.030){
-    // Breakbeat backbeat shaped as body + broad paper splash, never a needle.
-    this.noise({time,dur:.105,gain:gain*.68,frequency:1280,q:.44,type:'bandpass',bus:'music'});
-    this.noise({time:time+.009,dur:.130,gain:gain*.30,frequency:2850,q:.30,type:'bandpass',bus:'music'});
-    this.osc({freq:172,type:'triangle',time,dur:.090,gain:gain*.22,bus:'music',sweep:108,attack:.006});
-  },
-  dubWobble(note,time,dur=.22,gain=.038,rate=4){
-    if(!this.canVoice())return;
-    this.init();const ac=AC(),o=ac.createOscillator(),flt=ac.createBiquadFilter(),amp=ac.createGain(),lfo=ac.createOscillator(),depth=ac.createGain();
-    o.type='sawtooth';o.frequency.value=this.midi(note);flt.type='lowpass';flt.frequency.value=720;flt.Q.value=5.2;
-    lfo.type='sine';lfo.frequency.value=rate;depth.gain.value=470;
-    lfo.connect(depth);depth.connect(flt.frequency);o.connect(flt);flt.connect(amp);amp.connect(this.musicBus);
-    amp.gain.setValueAtTime(.0001,time);amp.gain.exponentialRampToValueAtTime(gain,time+.008);amp.gain.exponentialRampToValueAtTime(.0001,time+dur);
-    o.start(time);lfo.start(time);o.stop(time+dur+.01);lfo.stop(time+dur+.01);this.claim(o,time+dur+.01);
-  },
-  dnbSnare(time,gain=.036){
-    this.noise({time,dur:.090,gain:gain*.62,frequency:1460,q:.48,type:'bandpass',bus:'music'});
-    this.noise({time:time+.006,dur:.105,gain:gain*.22,frequency:3400,q:.28,type:'bandpass',bus:'music'});
-    this.osc({freq:196,type:'triangle',time,dur:.070,gain:gain*.20,bus:'music',sweep:124,attack:.004});
-  },
-  metalChug(note,time,dur=.11,gain=.026,accent=false){
-    if(!this.canVoice())return;
-    this.init();const ac=AC(),o=ac.createOscillator(),shaper=ac.createWaveShaper(),flt=ac.createBiquadFilter(),amp=ac.createGain();
-    o.type='sawtooth';o.frequency.value=this.midi(note);flt.type='lowpass';flt.frequency.value=accent?2850:2250;flt.Q.value=.75;
-    const curve=new Float32Array(256);for(let i=0;i<curve.length;i++){const x=i*2/(curve.length-1)-1;curve[i]=Math.tanh(x*(accent?3.8:2.8));}shaper.curve=curve;shaper.oversample='2x';
-    amp.gain.setValueAtTime(.0001,time);amp.gain.exponentialRampToValueAtTime(gain,time+.003);amp.gain.exponentialRampToValueAtTime(.0001,time+dur);
-    o.connect(shaper);shaper.connect(flt);flt.connect(amp);amp.connect(this.musicBus);o.start(time);o.stop(time+dur+.01);this.claim(o,time+dur+.01);
-  },
-  industrialPulse(note,time,dur=.16,gain=.034,drop=2){
-    if(!this.canVoice())return;
-    this.init();const ac=AC(),o=ac.createOscillator(),flt=ac.createBiquadFilter(),amp=ac.createGain();
-    o.type='square';o.frequency.setValueAtTime(this.midi(note),time);o.frequency.exponentialRampToValueAtTime(this.midi(note-drop),time+dur);
-    flt.type='lowpass';flt.frequency.value=1750;flt.Q.value=1.25;
-    amp.gain.setValueAtTime(.0001,time);amp.gain.exponentialRampToValueAtTime(gain,time+.004);amp.gain.exponentialRampToValueAtTime(.0001,time+dur);
-    o.connect(flt);flt.connect(amp);amp.connect(this.musicBus);o.start(time);o.stop(time+dur+.01);this.claim(o,time+dur+.01);
-  },
-  rnbBrush(time,gain=.020){
-    this.noise({time:time+.008,dur:.082,gain:gain*.55,frequency:2100,q:.45,type:'bandpass',bus:'music'});
-    this.osc({freq:132,type:'sine',time,dur:.095,gain:gain*.18,bus:'music',sweep:104,attack:.008});
-  },
-  rnbKeys(root,time,intensity=1,alternate=false){
-    // Late-90s UK R&B harmony: warm, patient triads with a suspended alternate
-    // voicing. These support the supplied Tetris contour rather than adding a
-    // competing hook.
-    const intervals=alternate?[0,5,8]:[0,3,7];
-    intervals.forEach((iv,i)=>this.osc({
-      freq:this.midi(root+iv),type:i===0?'triangle':'sine',time:time+i*.006,
-      dur:.42,gain:(.0065+.0007*intensity)*(i===0?1:.72),bus:'music',attack:.035,detune:i===2?4:-2
-    }));
-  },
-  rnbVocal(note,time,intensity=1,harmony=false){
-    const gain=.013+.0015*intensity;
-    this.osc({freq:this.midi(note-12),type:'triangle',time,dur:.185,gain,bus:'music',attack:.024,detune:-3});
-    if(harmony)this.osc({freq:this.midi(note-9),type:'sine',time:time+.014,dur:.165,gain:gain*.48,bus:'music',attack:.032,detune:4});
-  },
-
-
-  // A clarinet phrase is not a sequence of disconnected beeps. This persistent
-  // dual-oscillator voice behaves more like one continuous column of air:
-  // phrase attacks are lightly tongued, while close notes share breath and
-  // portamento into one another without reopening the amplitude envelope.
-  ensureKlezmerClarinet(){
-    if(this.klezmerLead)return this.klezmerLead;
-    this.init();
-    const ac=AC(),reed=ac.createOscillator(),body=ac.createOscillator();
-    const reedMix=ac.createGain(),bodyMix=ac.createGain(),filter=ac.createBiquadFilter(),amp=ac.createGain();
-    const vibrato=ac.createOscillator(),vibratoDepth=ac.createGain();
-    reed.type='square';body.type='sine';reedMix.gain.value=.43;bodyMix.gain.value=.57;
-    filter.type='lowpass';filter.frequency.value=2380;filter.Q.value=1.05;amp.gain.value=.0001;
-    vibrato.type='sine';vibrato.frequency.value=5.25;vibratoDepth.gain.value=3.2;
-    vibrato.connect(vibratoDepth);vibratoDepth.connect(reed.frequency);vibratoDepth.connect(body.frequency);
-    reed.connect(reedMix);body.connect(bodyMix);reedMix.connect(filter);bodyMix.connect(filter);filter.connect(amp);amp.connect(this.musicBus);
-    reed.start();body.start();vibrato.start();
-    this.klezmerLead={reed,body,filter,amp};
-    return this.klezmerLead;
-  },
-  klezmerLeadDelay(beat){return [3,7,10,11,15].includes(beat)?.018:.006},
-  klezmerNeighbor(phrase,dir,maxGap=3){
-    for(let gap=1;gap<=maxGap;gap++){
-      const i=phrase+dir*gap;if(i<0||i>=ZITTRIS_THEME_LEAD.length)break;
-      const raw=ZITTRIS_THEME_LEAD[i];
-      if(raw>=0)return{note:raw>92?raw-12:raw,gap,index:i};
-    }
-    return null;
-  },
-  klezmerShouldSlur(from,to,gap,targetBeat,targetIndex){
-    const interval=Math.abs(to-from),groupSlot=((targetIndex%8)+8)%8;
-    if(gap>2||interval>5||[0,4,8,12].includes(targetBeat))return false;
-    // Klezmer clarinet alternates articulated declarations with short slurred
-    // runs. Only selected two-to-four-note cells share breath; every fourth
-    // transition is deliberately re-tongued so the whole melody never melts.
-    const inSlurCell=[2,3,6,7].includes(groupSlot);
-    const ornamentalPickup=[3,7,11,15].includes(targetBeat)&&interval<=4;
-    return (inSlurCell&&interval<=3)||ornamentalPickup;
-  },
-  klezmerClarinet({note,nextNote=null,time,nextTime=null,stepDur,intensity=1,slurIn=false,slurOut=false,accent=false}){
-    const ac=AC(),voice=this.ensureKlezmerClarinet(),gain=.026+.003*intensity;
-    const setFreq=(param,value,at)=>param.setValueAtTime(Math.max(20,value),at);
-    const rampFreq=(param,value,at)=>param.exponentialRampToValueAtTime(Math.max(20,value),at);
-    const target=this.midi(note);
-
-    if(!slurIn){
-      voice.amp.gain.cancelScheduledValues(time);
-      voice.amp.gain.setValueAtTime(.0001,time);
-      const startNote=accent?note-1.20:note,startFreq=this.midi(startNote);
-      setFreq(voice.reed.frequency,startFreq,time);setFreq(voice.body.frequency,startFreq,time);
-      rampFreq(voice.reed.frequency,target,time+(accent?.026:.006));
-      rampFreq(voice.body.frequency,target,time+(accent?.029:.008));
-      voice.amp.gain.exponentialRampToValueAtTime(gain,time+(accent?.014:.010));
-    }else{
-      // The previous note has already bent into this pitch. Preserve the air
-      // column and merely breathe the dynamic upward rather than re-tonguing.
-      voice.amp.gain.setValueAtTime(gain*.93,time);
-    }
-
-    if(slurOut&&nextNote!==null&&nextTime!==null){
-      const destination=this.midi(nextNote),distance=Math.max(.025,nextTime-time);
-      const glide=Math.min(.078,Math.max(.026,distance*.38));
-      const glideStart=nextTime-glide;
-      setFreq(voice.reed.frequency,target,glideStart);setFreq(voice.body.frequency,target,glideStart);
-      rampFreq(voice.reed.frequency,destination,nextTime);
-      rampFreq(voice.body.frequency,destination,nextTime+.003);
-      voice.amp.gain.setValueAtTime(gain*.91,nextTime-.002);
-    }else{
-      const release=time+stepDur*.78;
-      voice.amp.gain.setValueAtTime(gain,release);
-      voice.amp.gain.exponentialRampToValueAtTime(.0001,release+.055);
-    }
-  },
-  silenceKlezmerClarinet(time=AC().currentTime){
-    if(!this.klezmerLead)return;
-    const g=this.klezmerLead.amp.gain;
-    g.cancelScheduledValues(time);g.setTargetAtTime(.0001,time,.018);
-  },
-  fitMidiRange(note,low,high){
-    let n=note;
-    while(n<low)n+=12;
-    while(n>high)n-=12;
-    return n;
-  },
-  bassNeighbor(phrase,dir,maxGap=4){
-    for(let gap=1;gap<=maxGap;gap++){
-      const idx=(phrase+dir*gap+ZITTRIS_THEME_BASS.length)%ZITTRIS_THEME_BASS.length;
-      const raw=ZITTRIS_THEME_BASS[idx];
-      if(raw>=0)return{note:raw>55?raw-12:raw,gap,index:idx};
-    }
-    return null;
-  },
-  ensureFrymaticBass(){
-    if(this.frymaticBass)return this.frymaticBass;
-    this.init();
-    const ac=AC();
-    const makeLane=(type,cutoff,q,detune=0)=>{
-      const osc=ac.createOscillator(),filter=ac.createBiquadFilter(),gain=ac.createGain();
-      osc.type=type;osc.frequency.value=55;osc.detune.value=detune;
-      filter.type='lowpass';filter.frequency.value=cutoff;filter.Q.value=q;
-      gain.gain.value=.0001;osc.connect(filter);filter.connect(gain);gain.connect(this.musicBus);osc.start();
-      return{osc,filter,gain,lastFreq:55,lastGain:.0001};
-    };
-    this.frymaticBass={
-      sub:makeLane('sine',190,.30,-2),
-      body:makeLane('triangle',430,.48,2),
-      upper:makeLane('triangle',820,.42,-4)
-    };
-    return this.frymaticBass;
-  },
-  frymaticBassProfile(style,intensity){
-    const heavy=['witch_house','west_coast_bass','dubstep','drum_n_bass','drill_beat','triphop','viking_metal','zittristein'].includes(style);
-    const light=style==='klezmer'||style==='rnb'||style==='deep_house';
-    const weight=heavy?1.08:light?.74:.88;
-    return{
-      sub:(.0108+.0011*intensity)*weight,
-      body:(.0078+.0008*intensity)*weight,
-      upper:(.0046+.00045*intensity)*weight
-    };
-  },
-  applyFrymaticLegatoBass({phrase,bn,time,stepDur,intensity,style}){
-    if(bn<0)return;
-    const voices=this.ensureFrymaticBass(),profile=this.frymaticBassProfile(style,intensity);
-    const previous=this.bassNeighbor(phrase,-1,3),next=this.bassNeighbor(phrase,1,4);
-    const slurIn=!!previous&&previous.gap<=3;
-    const slurOut=!!next&&next.gap<=3;
-    const glide=style==='acid_core'?.082:style==='dubstep'?.074:.056;
-    const targets={
-      sub:this.fitMidiRange(bn-12,24,39),
-      body:this.fitMidiRange(bn,34,49),
-      upper:this.fitMidiRange(bn+12,43,58)
-    };
-    for(const name of ['sub','body','upper']){
-      const lane=voices[name],freq=this.midi(targets[name]),gain=profile[name];
-      const fp=lane.osc.frequency,gp=lane.gain.gain;
-      fp.cancelScheduledValues(time);fp.setValueAtTime(Math.max(20,lane.lastFreq),time);
-      fp.exponentialRampToValueAtTime(Math.max(20,freq),time+(slurIn?glide:.018));
-      gp.cancelScheduledValues(time);gp.setValueAtTime(Math.max(.0001,lane.lastGain),time);
-      gp.exponentialRampToValueAtTime(Math.max(.0002,gain),time+(slurIn?.018:.050));
-      if(!slurOut){
-        const release=time+stepDur*.86;
-        gp.setValueAtTime(gain,release);gp.exponentialRampToValueAtTime(.0001,release+.090);
-        lane.lastGain=.0001;
-      }else lane.lastGain=gain;
-      lane.lastFreq=freq;
-    }
-  },
-  silenceFrymaticBass(time=AC().currentTime){
-    if(!this.frymaticBass)return;
-    for(const lane of Object.values(this.frymaticBass)){
-      const g=lane.gain.gain;g.cancelScheduledValues(time);g.setTargetAtTime(.0001,time,.030);lane.lastGain=.0001;
-    }
-  },
   bass(note,time,dur=.18,gain=.07,accent=false){
     const f=this.midi(note);this.osc({freq:f,type:'triangle',time,dur,gain,bus:'music'});
     if(accent)this.osc({freq:f/2,type:'sine',time,dur:Math.min(.32,dur+.08),gain:gain*.9,bus:'music',sweep:Math.max(28,f/2*.82)});
@@ -1019,89 +753,23 @@ const audioEngine={
     this.osc({freq:this.midi(note),type:'square',time,dur,gain,bus:'music',detune:voice?7:-7});
   },
 
-  // Intaglio Galactica vocabulary: shallow-attack tones read as engraved
-  // relief; delayed perfect-fifth/octave ghosts imply orbital repetition;
-  // filtered noise adds tiny registration scratches without becoming hiss.
-  igRelief(note,time,dur=.32,gain=.018,interval=7){
-    const f=this.midi(note);
-    this.osc({freq:f,type:'triangle',time,dur,gain,bus:'ig',attack:.018,detune:-4});
-    this.osc({freq:this.midi(note+interval),type:'sine',time:time+.047,dur:dur*.82,gain:gain*.52,bus:'ig',attack:.026,detune:5});
-  },
-  igEngrave(note,time,gain=.014,fall=2){
-    this.osc({freq:this.midi(note),type:'sine',time,dur:.19,gain,bus:'ig',attack:.007,sweep:this.midi(note-fall)});
-    this.noise({time:time+.006,dur:.052,gain:gain*.30,frequency:this.midi(note)*2.4,q:7,type:'bandpass',bus:'ig'});
-  },
-  applyIntaglioGalactica({beat,bar,ln,bn,time,intensity,style}){
-    const dark=style==='witch_house'||style==='triphop'||style==='drill_beat'||style==='dubstep'||style==='viking_metal'||style==='zittristein';
-    const bright=style==='klezmer'||style==='neon_lagoon'||style==='deep_house';
-    const root=bn>=0?bn-12:45;
-
-    // Deep plate: one long, low orbital foundation every other bar.
-    if(beat===0&&bar%2===0){
-      this.igRelief(root-(dark?12:0),time,.58,.020+.002*intensity,dark?6:7);
-    }
-
-    // Mosaic counterline: sparse negative-space answers around the MIDI lead.
-    if(ln>=0&&((bar%2===0&&beat===11)||(bar%2===1&&beat===3))){
-      const offset=dark?-6:(bright?7:5);
-      this.igEngrave(ln-12+offset,time+.028,.013+.0015*intensity,dark?3:1);
-    }
-
-    // Registration is now a single harmony-derived engraving, deliberately
-    // separated from phrase endings. This removes the clustered 'mystery
-    // jingle' created when bells, relief tones, and scratches arrived together.
-    if(beat===12&&bar%8===7){
-      this.igEngrave(root+(dark?0:12),time+.018,.0075+.0005*intensity,dark?2:1);
-    }
-
-    // Stack pressure reveals a little more of the carved under-image while
-    // preserving the global 42% identity and keeping the mix below the SFX.
-    if(intensity>=2&&ln>=0&&beat===7){
-      this.igEngrave(ln-17,time+.041,.010+.001*intensity,2);
-    }
-  },
-
-  applyCogniCraftPolish({beat,bar,ln,bn,time,intensity,style}){
-    // Literal five-percent pass: no stochastic notes and no decorative cluster.
-    // A rare, low-level shadow reinforces an existing melody/root pitch so the
-    // arrangements feel more authored without announcing another instrument.
-    if(['klezmer','jungle','rnb','acid_core'].includes(style))return;
-    const dark=style==='witch_house'||style==='drill_beat'||style==='triphop'||style==='dubstep'||style==='viking_metal'||style==='zittristein';
-    if(ln>=0&&beat===8&&bar%4===2){
-      this.osc({freq:this.midi(ln-(dark?24:12)),type:'sine',time:time+.010,dur:.24,
-        gain:COGNICRAFT_AMOUNT*(.085+.008*intensity),bus:'music',attack:.030,detune:dark?-5:4});
-    }
-    if(bn>=0&&beat===0&&bar%8===4){
-      this.osc({freq:this.midi(bn-24),type:'triangle',time,dur:.30,
-        gain:COGNICRAFT_AMOUNT*.075,bus:'music',attack:.034});
-    }
-  },
-
   currentIntensity(){return this.state==='danger'?3:this.state==='stack_rising'?2:this.state==='combo'?2.6:1},
   scheduleStep(step,time){
     if(!settings.bgmEnabled||!gs||gs.state!=='playing'||gs.paused||settingsOpen||document.hidden)return;
-    const s=step%384, phrase=s%128, beat=s%16, bar=Math.floor(s/16), intensity=this.currentIntensity(), stepDur=60/this.bpm/4;
+    const s=step%256, phrase=s%128, beat=s%16, bar=Math.floor(s/16), intensity=this.currentIntensity();
     const lead=ZITTRIS_THEME_LEAD[phrase], bass=ZITTRIS_THEME_BASS[phrase];
     const ln=lead>=0?(lead>92?lead-12:lead):-1;
     const bn=bass>=0?(bass>55?bass-12:bass):-1;
     const style=settings.musicStyle||'neon_lagoon';
 
     if(style==='witch_house'){
-      // Horror-forward witch house: funeral half-time, sub-octave drones,
-      // tritone shadows, ritual pulses, and breathy spectral transitions.
-      if([0,11].includes(beat))this.kick(time,.115+.011*intensity);
-      if(beat===8)this.snare(time,.062+.009*intensity);
-      if([3,7,12,15].includes(beat))this.hat(time,.008+.003*intensity);
-      if(intensity>=2&&[5,13].includes(beat))this.noise({time:time+.012,dur:.055,gain:.014,frequency:4300,q:5,type:'bandpass',bus:'music'});
-      if(bn>=0&&[0,4,8,11,14].includes(beat)){
-        this.bass(bn-24,time,.34,.060+.010*intensity,beat===0||beat===11);
-        if(beat===4||beat===14)this.osc({freq:this.midi(bn-18),type:'sawtooth',time,dur:.24,gain:.018+.003*intensity,bus:'music',detune:-13,sweep:this.midi(bn-24)});
-      }
-      if(ln>=0&&[0,3,6,10,13].includes(beat)){
-        this.osc({freq:this.midi(ln-24),type:'triangle',time,dur:.24,gain:.019+.003*intensity,bus:'music',detune:-7});
-        this.osc({freq:this.midi(ln-18),type:'sine',time:time+.018,dur:.19,gain:.010+.002*intensity,bus:'music',detune:5});
-      }
-      if(bar%2===1&&beat===15)this.noise({time,dur:.42,gain:.028,frequency:520,q:5,type:'bandpass',bus:'music'});
+      if(beat===0||beat===10)this.kick(time,.12+.012*intensity);
+      if(beat===8)this.snare(time,.075+.010*intensity);
+      if([2,6,11,14].includes(beat))this.hat(time,.013+.004*intensity);
+      if(intensity>=2&&beat%2===1)this.hat(time+.014,.009);
+      if(bn>=0&&beat%2===0)this.bass(bn-12,time,.28,.060+.010*intensity,beat===0);
+      if(ln>=0&&beat%2===0){this.osc({freq:this.midi(ln-12),type:'sawtooth',time,dur:.16,gain:.018+.003*intensity,bus:'music',detune:-9});this.pulse(ln,time+.018,.10,.014,1);}
+      if(bar%4===3&&beat===15)this.noise({time,dur:.34,gain:.025,frequency:900,q:4,bus:'music'});
     }else if(style==='west_coast_bass'){
       if([0,3,7,10,14].includes(beat))this.kick(time,.105+.010*intensity);
       if(beat===4||beat===12)this.snare(time,.060+.009*intensity);
@@ -1109,102 +777,46 @@ const audioEngine={
       if(intensity>=2&&[6,15].includes(beat))this.hat(time+.025,.018);
       if(bn>=0&&[0,3,6,10,13].includes(beat))this.bass(bn-12,time,.24,.072+.009*intensity,true);
       if(ln>=0&&beat%2===0)this.pulse(ln-12,time,.075,.017+.003*intensity,0);
+      if(bar%4===3&&beat===15)this.fmBell(this.midi(69),time,.026,.16);
     }else if(style==='klezmer'){
-      // The rhythm section still syncopates, but the lead now follows the MIDI
-      // contour as a breath phrase. Nearby notes are slurred with measured
-      // portamento; phrase anchors and wide leaps retain a light tongue.
-      if(beat===0||beat===9)this.kick(time,.068+.006*intensity);
-      if(beat===4||beat===12)this.klezmerFrameHit(time,.026+.003*intensity);
-      if([2,6,10,14].includes(beat))this.klezmerShaker(time,.0052+.0005*intensity);
-      if(bn>=0&&[0,4,8,12].includes(beat))this.bass(bn,time,.18,.040+.006*intensity,beat===0);
-      if(bn>=0&&[3,7,11,15].includes(beat))this.bass(bn+7,time+.018,.10,.026,false);
+      if(beat===0||beat===8)this.kick(time,.075+.007*intensity);
+      if(beat===4||beat===12)this.snare(time,.043+.006*intensity);
+      if(beat%4===2)this.hat(time,.011);
+      if(bn>=0&&beat%4===0)this.bass(bn,time,.20,.044+.007*intensity,beat===0);
+      if(bn>=0&&beat%4===2)this.bass(bn+7,time,.12,.030,false);
       if(ln>=0){
-        const stepDur=60/this.bpm/4,prev=this.klezmerNeighbor(phrase,-1,3),next=this.klezmerNeighbor(phrase,1,3);
-        const noteTime=time+this.klezmerLeadDelay(beat);
-        const slurIn=!!prev&&this.klezmerShouldSlur(prev.note,ln,prev.gap,beat,phrase);
-        const nextBeat=next?(beat+next.gap)%16:beat;
-        const slurOut=!!next&&this.klezmerShouldSlur(ln,next.note,next.gap,nextBeat,next.index);
-        const nextTime=next?time+next.gap*stepDur+this.klezmerLeadDelay(nextBeat):null;
-        const accent=!slurIn&&([0,4,8,12].includes(beat)||(next&&Math.abs(next.note-ln)>5));
-        this.klezmerClarinet({note:ln,nextNote:next?.note??null,time:noteTime,nextTime,stepDur,intensity,slurIn,slurOut,accent});
-        // A restrained upper echo appears only under pressure; it ornaments the
-        // phrase without breaking the continuous primary clarinet breath.
-        if(intensity>=2&&[6,13].includes(beat)&&!slurOut)this.osc({freq:this.midi(ln+12),type:'triangle',time:noteTime+.070,dur:.052,gain:.008,bus:'music',sweep:this.midi(ln+10),attack:.010});
+        if(beat%4===0)this.osc({freq:this.midi(ln-1),type:'square',time,dur:.030,gain:.015,bus:'music',sweep:this.midi(ln)});
+        this.osc({freq:this.midi(ln),type:'sawtooth',time:time+.024,dur:.095,gain:.020+.003*intensity,bus:'music',detune:(beat%2?4:-4)});
       }
+      if(bar%4===3&&beat===15)this.fmBell(this.midi(88),time,.032,.20);
     }else if(style==='jungle'){
-      if([0,6,10].includes(beat))this.kick(time,.092+.007*intensity);
-      if(beat===4||beat===12)this.jungleSnare(time,.026+.004*intensity);
-      if(beat%2===0)this.jungleSplash(time+.012,.0048+.0005*intensity,false);
-      if(intensity>=2||beat%4===3)this.jungleSplash(time+.034,.0038+.0004*intensity,beat===15);
-      if(bn>=0&&[0,5,8,11,14].includes(beat))this.bass(bn-12,time,.13,.060+.007*intensity,beat===0||beat===11);
-      if(ln>=0)this.osc({freq:this.midi(ln),type:'triangle',time,dur:.060,gain:.013+.002*intensity,bus:'music',attack:.006});
-      if(beat===15)this.jungleSplash(time+.018,.0062+.0006*intensity,true);
+      if([0,6,10].includes(beat))this.kick(time,.10+.009*intensity);
+      if([4,12,15].includes(beat))this.snare(time,.060+.009*intensity);
+      if(beat%2===0)this.hat(time,.014+.003*intensity);
+      if(intensity>=2||beat%4===3)this.hat(time+.028,.012+.002*intensity);
+      if(bn>=0&&[0,5,8,11,14].includes(beat))this.bass(bn-12,time,.13,.065+.009*intensity,beat===0||beat===11);
+      if(ln>=0){this.pulse(ln,time,.055,.020+.003*intensity,0);if(beat%4===3)this.pulse(ln+12,time+.030,.035,.010,1);}
     }else if(style==='rnb'){
-      // Confessional late-90s UK R&B/pop: patient backbeat, warm keys, rounded
-      // sub and breathy stacked harmony. It evokes that era's emotional cover
-      // language without borrowing another song's melody.
-      if([0,7,10].includes(beat))this.kick(time,beat===0?.082+.006*intensity:.064+.005*intensity);
-      if(beat===4||beat===12)this.rnbBrush(time,.019+.002*intensity);
-      if([3,7,11,15].includes(beat))this.noise({time:time+.018,dur:.045,gain:.0045+.0005*intensity,frequency:4800,q:.38,type:'bandpass',bus:'music'});
-      if(bn>=0&&[0,6,10,14].includes(beat))this.bass(bn-12,time,.31,.050+.006*intensity,beat===0);
-      if(bn>=0&&(beat===0||beat===8))this.rnbKeys(bn-12,time+.008,intensity,beat===8);
-      if(ln>=0)this.rnbVocal(ln,time+.010,intensity,[0,8,12].includes(beat)&&bar%2===1);
+      if([0,7,10].includes(beat))this.kick(time,.085+.007*intensity);
+      if(beat===4||beat===12)this.snare(time,.052+.007*intensity);
+      if([2,6,10,14].includes(beat))this.hat(time,.010+.002*intensity);
+      if(intensity>=2&&beat===15)this.hat(time+.022,.014);
+      if(bn>=0&&[0,6,10,14].includes(beat))this.bass(bn-12,time,.27,.054+.008*intensity,beat===0);
+      if(ln>=0&&beat%2===0){this.osc({freq:this.midi(ln-12),type:'triangle',time,dur:.18,gain:.021+.003*intensity,bus:'music'});if(beat%4===0)this.pulse(ln+3,time+.012,.12,.010,1);}
+      if(bar%4===3&&beat===15)this.fmBell(this.midi(76),time,.025,.22);
     }else if(style==='acid_core'){
-      // Acid Core waltz: the 128 BPM sixteenth-note clock is grouped into
-      // twelve-step 3/4 bars. Beat one lands hard; beats two and three answer
-      // with smaller industrial impacts while the 303 coils between them.
-      const acidStep=step%12,acidBeat=Math.floor(acidStep/4),acidPulse=acidStep%4,acidBar=Math.floor(step/12);
-      if(acidPulse===0)this.kick(time,(acidBeat===0?.126:.072)+.009*intensity);
-      if(acidStep===4||acidStep===8)this.snare(time+.012,.031+.005*intensity);
-      if([2,6,10].includes(acidStep))this.hat(time+.016,.010+.002*intensity);
-      if(intensity>=2&&[3,7,11].includes(acidStep))this.hat(time+.026,.007+.002*intensity);
-      if(bn>=0&&acidStep%2===1){
-        const offsets=[0,7,3],acidNote=bn-12+offsets[acidBeat];
-        this.osc({freq:this.midi(acidNote),type:'sawtooth',time,dur:.110,gain:.041+.006*intensity,bus:'music',
-          sweep:this.midi(acidNote+(acidPulse===3?7:2)),attack:.002});
+      // Acid core: relentless four-floor pulse, resonant 303-like saw bass,
+      // clipped hats, and an abrasive octave lead in higher intensity states.
+      if(beat%4===0)this.kick(time,.125+.012*intensity);
+      if(beat===4||beat===12)this.snare(time,.055+.009*intensity);
+      if(beat%2===0)this.hat(time,.017+.004*intensity);
+      if(intensity>=2&&beat%2===1)this.hat(time+.012,.013+.003*intensity);
+      if(bn>=0){
+        const acidNote=bn-12+([0,0,7,3][Math.floor(beat/4)%4]||0);
+        this.osc({freq:this.midi(acidNote),type:'sawtooth',time,dur:.105,gain:.045+.007*intensity,bus:'music',sweep:this.midi(acidNote+(beat%4===3?12:2))});
       }
-      if(ln>=0&&[0,3,4,7,8,11].includes(acidStep))this.pulse(ln+(intensity>=3&&acidBeat===0?12:0),time,.055,.015+.0025*intensity,acidBeat===0?1:0);
-      if(acidBar%8===7&&acidStep===11)this.noise({time,dur:.18,gain:.018,frequency:2600,q:2.8,bus:'music'});
-    }else if(style==='dubstep'){
-      // Half-time dubstep at the shared 128 BPM clock: heavy negative space,
-      // elastic filtered bass and broad percussion with no brittle top spike.
-      if([0,7,10].includes(beat))this.kick(time,.112+.009*intensity);
-      if(beat===8)this.dnbSnare(time,.031+.004*intensity);
-      if([3,6,11,14].includes(beat))this.noise({time:time+.016,dur:.070,gain:.0048+.0005*intensity,frequency:3600,q:.28,type:'bandpass',bus:'music'});
-      if(bn>=0&&[0,3,6,8,11,14].includes(beat))this.dubWobble(bn-24,time,.20,.034+.005*intensity,[2,3,4,6][Math.floor(beat/4)%4]);
-      if(bn>=0&&[0,8].includes(beat))this.osc({freq:this.midi(bn-36),type:'sine',time,dur:.38,gain:.045+.005*intensity,bus:'music',attack:.012});
-      if(ln>=0&&[0,4,10,14].includes(beat))this.osc({freq:this.midi(ln-12),type:'triangle',time:time+.018,dur:.105,gain:.014+.002*intensity,bus:'music',attack:.012,sweep:this.midi(ln-14)});
-    }else if(style==='drum_n_bass'){
-      // Double-time breakbeat illusion at 128 BPM: fast kick/snare displacement,
-      // short bass answers and softened cymbal spray instead of needle hats.
-      if([0,3,6,10,14].includes(beat))this.kick(time,.086+.007*intensity);
-      if([4,12].includes(beat))this.dnbSnare(time,.032+.004*intensity);
-      if([2,5,8,11,15].includes(beat))this.jungleSplash(time+.012,.0038+.0004*intensity,beat===15);
-      if(intensity>=2&&[7,13].includes(beat))this.dnbSnare(time+.026,.014+.002*intensity);
-      if(bn>=0&&[0,2,5,8,10,11,14,15].includes(beat))this.bass(bn-12,time,.095,.050+.006*intensity,[0,11].includes(beat));
-      if(ln>=0&&[0,3,6,8,11,14].includes(beat))this.osc({freq:this.midi(ln),type:'triangle',time,dur:.050,gain:.014+.002*intensity,bus:'music',attack:.004});
-    }else if(style==='viking_metal'){
-      // Galloping low chugs, double-kick pressure, broad war-drum backbeats and
-      // a modal lead derived from the supplied theme rather than a new hook.
-      if(beat%2===0)this.kick(time,(beat%4===0?.094:.070)+.008*intensity);
-      if(intensity>=2&&[3,7,11,15].includes(beat))this.kick(time+.026,.050+.005*intensity);
-      if(beat===4||beat===12)this.klezmerFrameHit(time,.036+.004*intensity);
-      if(bn>=0&&beat%2===0)this.metalChug(bn-24,time,beat%4===0?.14:.095,.024+.0035*intensity,beat===0||beat===8);
-      if(ln>=0&&[0,4,8,12].includes(beat)){
-        this.metalChug(ln-24,time+.010,.20,.019+.0025*intensity,true);
-        this.osc({freq:this.midi(ln-17),type:'triangle',time:time+.016,dur:.18,gain:.010+.0015*intensity,bus:'music',attack:.018});
-      }
-      if(bar%4===3&&beat===14)this.noise({time,dur:.22,gain:.011,frequency:980,q:.45,type:'bandpass',bus:'music'});
-    }else if(style==='zittristein'){
-      // Severe industrial electro: sparse architecture, clipped analog bass,
-      // metallic low-mid impacts and deliberate silence between statements.
-      if([0,4,8,12].includes(beat))this.kick(time,(beat===0?.112:.078)+.008*intensity);
-      if(beat===8)this.dnbSnare(time,.024+.003*intensity);
-      if([3,11].includes(beat))this.noise({time,dur:.080,gain:.010+.001*intensity,frequency:920,q:2.1,type:'bandpass',bus:'music'});
-      if(bn>=0&&[0,3,7,8,11,14].includes(beat))this.industrialPulse(bn-24,time,(beat===0||beat===8)?.22:.13,.032+.004*intensity,beat===14?5:2);
-      if(bn>=0&&[0,8].includes(beat))this.osc({freq:this.midi(bn-36),type:'sine',time,dur:.34,gain:.040+.004*intensity,bus:'music',attack:.010});
-      if(ln>=0&&[2,6,10,14].includes(beat))this.osc({freq:this.midi(ln-24),type:'sawtooth',time:time+.012,dur:.075,gain:.010+.0015*intensity,bus:'music',attack:.006,sweep:this.midi(ln-27)});
-      if(bar%4===3&&beat===15)this.noise({time,dur:.26,gain:.012,frequency:620,q:4.5,type:'bandpass',bus:'music'});
+      if(ln>=0&&beat%2===0)this.pulse(ln+(intensity>=3?12:0),time,.052,.017+.003*intensity,beat%4===0?1:0);
+      if(bar%4===3&&beat===15)this.noise({time,dur:.22,gain:.032,frequency:3200,q:6,bus:'music'});
     }else if(style==='deep_house'){
       // Deep house: soft four-floor kick, offbeat hats, warm sub and restrained
       // chord-like pulse voicings that leave the Tetris hook spacious.
@@ -1216,6 +828,7 @@ const audioEngine={
         this.osc({freq:this.midi(ln-12),type:'triangle',time,dur:.22,gain:.020+.003*intensity,bus:'music'});
         this.pulse(ln+3,time+.012,.14,.009+.002*intensity,1);
       }
+      if(bar%4===3&&beat===15)this.fmBell(this.midi(76),time,.022,.24);
     }else if(style==='trap'){
       // Trap: half-time backbeat, sparse 808 phrases and accelerating hat rolls.
       if([0,7,10].includes(beat))this.kick(time,.115+.010*intensity);
@@ -1224,6 +837,7 @@ const audioEngine={
       if((intensity>=2&&[3,11,15].includes(beat))||(intensity>=3&&beat%2===1))this.hat(time+.022,.013+.003*intensity);
       if(bn>=0&&[0,3,7,10,14].includes(beat))this.bass(bn-12,time,.28,.078+.009*intensity,true);
       if(ln>=0&&beat%2===0)this.pulse(ln-12,time,.070,.017+.003*intensity,0);
+      if(bar%4===3&&beat===15)this.fmBell(this.midi(69),time,.028,.18);
     }else if(style==='drill_beat'){
       // Drill: sliding sub movement, displaced kicks, clipped snare and tense
       // upper-register motif fragments.
@@ -1261,6 +875,7 @@ const audioEngine={
         this.osc({freq:this.midi(ln-12),type:'triangle',time,dur:.25,gain:.023+.003*intensity,bus:'music'});
         if(intensity>=2)this.pulse(ln-5,time+.030,.16,.009,1);
       }
+      if(bar%4===3&&beat===15)this.fmBell(this.midi(64),time,.021,.30);
     }else{
       // Neon Lagoon: chillwave / tropical-house baseline.
       if(beat%4===0)this.kick(time,.095+.014*intensity);
@@ -1270,27 +885,19 @@ const audioEngine={
       if(intensity>=3&&beat%4===3)this.hat(time+.018,.020);
       if(bn>=0)this.bass(bn,time,.16,.041+.010*intensity,beat===0||beat===8);
       if(ln>=0){this.pulse(ln,time,.072,.023+.005*intensity,0);if(intensity>=2&&beat%4===0)this.pulse(ln-12,time+.008,.055,.012+.003*intensity,1);}
+      if(bar%4===3&&beat===15)this.fmBell(this.midi(81),time,.030,.18);
     }
-
-    // Frymatic brush stroke: three quiet, persistent bass registers share
-    // breath across short MIDI gaps and glide between roots without adding
-    // another attack transient. The style arrangement remains foreground.
-    this.applyFrymaticLegatoBass({phrase,bn,time,stepDur,intensity,style});
-
-    // Intaglio Galactica follows as a consistent 42% material/space treatment.
-    this.applyIntaglioGalactica({beat,bar,ln,bn,time,intensity,style});
-    this.applyCogniCraftPolish({beat,bar,ln,bn,time,intensity,style});
   },
 
   scheduler(){
     const ac=AC(),stepDur=60/this.bpm/4;
-    while(this.nextStepTime<ac.currentTime+this.scheduleAhead){this.scheduleStep(this.step,this.nextStepTime);this.nextStepTime+=stepDur;this.step=(this.step+1)%384}
+    while(this.nextStepTime<ac.currentTime+this.scheduleAhead){this.scheduleStep(this.step,this.nextStepTime);this.nextStepTime+=stepDur;this.step=(this.step+1)%256}
   },
   start(){
     this.init();if(this.timer)return;const ac=AC();this.nextStepTime=ac.currentTime+.05;this.step=0;
     this.timer=setInterval(()=>this.scheduler(),this.lookAheadMs);
   },
-  stop(){if(this.timer){clearInterval(this.timer);this.timer=null}if(this.master){this.silenceKlezmerClarinet();this.silenceFrymaticBass()}},
+  stop(){if(this.timer){clearInterval(this.timer);this.timer=null}},
   setState(next){
     if(next===this.state)return;this.lastState=this.state;this.state=next;
     if(next==='danger'&&!this.dangerLatched){this.dangerLatched=true;this.sfx('danger')}
@@ -1329,74 +936,15 @@ const audioEngine={
         });
         break}
 
-      case'rotate':{
-        // Frequent-use cue: a soft hollow pivot, not a bright arcade chirp.
-        // Low triangle body + filtered breath gives it a compact plastic/air
-        // chamber quality while staying out of the melody register.
-        const dir=detail===-1?-1:detail===2?2:1;
-        const body=118+stateShift*2+(dir<0?-4:4);
-        this.noise({time:t,dur:.028,gain:.018,frequency:620,q:1.15,type:'bandpass'});
-        this.osc({freq:body,type:'triangle',time:t,dur:.060,gain:.036,sweep:dir<0?96:138,attack:.0015});
-        this.osc({freq:body*.5,type:'sine',time:t+.006,dur:.070,gain:.020,sweep:body*.42,attack:.002});
-        if(dir===2){
-          this.noise({time:t+.040,dur:.022,gain:.014,frequency:760,q:1.25,type:'bandpass'});
-          this.osc({freq:body*1.12,type:'triangle',time:t+.040,dur:.052,gain:.028,sweep:body*.88,attack:.0015});
-        }
-        break}
+      case'rotate':{const dir=detail===-1?-1:detail===2?2:1,base=74+stateShift;this.noise({time:t,dur:.022,gain:.030,frequency:2600,q:2.2});this.osc({freq:this.midi(base),type:'square',time:t,dur:.052,gain:.052,sweep:this.midi(base+(dir<0?-2:2))});if(dir===2){this.noise({time:t+.045,dur:.020,gain:.024,frequency:3100,q:2.4});this.osc({freq:this.midi(base+5),type:'square',time:t+.045,dur:.048,gain:.045,sweep:this.midi(base+7)});}break}
       case'soft_drop':this.noise({time:t,dur:.035,gain:.025,frequency:950+v*180,q:1.4});this.osc({freq:95+v*8,type:'triangle',time:t,dur:.035,gain:.028,sweep:70});break;
       case'hard_drop':this.osc({freq:92+v*5,type:'sine',time:t,dur:.18,gain:.16,sweep:34});this.noise({time:t,dur:.09,gain:.12,frequency:110+v*15,q:.7});this.fmBell(this.midi(57+v),t+.025,.055,.22);break;
-      case'hold':{
-        // A continuous tabletop glide rather than a pair of impacts. The noise
-        // tail supplies friction while a very soft body resonance tracks the
-        // piece moving laterally. A swap uses two overlapping opposite glides.
-        const swapping=!!detail;
-        const slide=(when,from,to,gain=.020,dur=.22)=>{
-          this.noise({time:when,dur,gain,frequency:430,q:.42,type:'lowpass'});
-          this.noise({time:when+.018,dur:dur*.86,gain:gain*.48,frequency:980,q:.55,type:'bandpass'});
-          this.osc({freq:from,type:'sine',time:when,dur:dur*.92,gain:gain*.42,sweep:to,attack:.018});
-        };
-        slide(t,136+v*2,88+v,.020,.24);
-        if(swapping)slide(t+.055,92+v,142+v*2,.017,.22);
-        break}
+      case'hold':this.fmBell(this.midi(72+[0,5,7,12][v]),t,.105,.28);this.osc({freq:this.midi(60+v),type:'square',time:t,dur:.11,gain:.045,sweep:this.midi(67+v)});break;
       case'land':this.osc({freq:76+v*4,type:'triangle',time:t,dur:.085,gain:.075,sweep:52});this.noise({time:t,dur:.06,gain:.05,frequency:180,q:.8});break;
       case'line_clear':{
-        const n=Math.max(1,Math.min(4,detail||1));
-        // Bowling-strike grammar: one compressed impact, then a very short
-        // scatter of elastic block collisions. The body sits between a tennis
-        // ball's soft pop and a racquetball's sharper rubber crack.
-        const hit=(when,weight=1,pitch=1)=>{
-          this.osc({freq:150*pitch,type:'triangle',time:when,dur:.052,gain:.050*weight,sweep:92*pitch,attack:.001,priority:true});
-          this.osc({freq:82*pitch,type:'sine',time:when,dur:.105,gain:.050*weight,sweep:44*pitch,attack:.001,priority:true});
-          this.noise({time:when,dur:.026,gain:.030*weight,frequency:1050*pitch,q:1.35,type:'bandpass',priority:true});
-        };
-        const collisions={1:1,2:4,3:8,4:16}[n];
-        hit(t,1.22+n*.16,1+.025*n);
-        // A compact 90-220 ms burst, not a steady stream.
-        for(let i=0;i<collisions;i++){
-          const spread=(i/collisions);
-          const when=t+.045+spread*(.045+n*.030)+rnd(-.006,.006);
-          const weight=(.72-spread*.34)*(1+n*.05);
-          const pitch=.82+rnd(0,.55)+i*.018;
-          hit(when,weight,pitch);
-          if(i%3===2)this.noise({time:when+.010,dur:.030,gain:.018*weight,frequency:360+rnd(0,420),q:.85,type:'bandpass',priority:true});
-        }
-        if(n>=3)this.osc({freq:64,type:'sine',time:t+.018,dur:.18,gain:.060+n*.010,sweep:29,attack:.001,priority:true});
-        if(n===4)this.noise({time:t+.020,dur:.12,gain:.070,frequency:210,q:.7,type:'bandpass',priority:true});
-        break}
-      case'zittris_streak':{
-        const streak=Math.max(2,Math.min(6,detail||2));
-        const tier=streak-1,extra=streak===2?8:streak===3?16:24;
-        // Consecutive Zittrises become larger secondary pin-deck collapses:
-        // another explosive strike, then increasingly dense ricochets.
-        this.osc({freq:58-tier*3,type:'sine',time:t,dur:.24,gain:.095+.012*tier,sweep:24,attack:.001,priority:true});
-        this.noise({time:t,dur:.09,gain:.065+.009*tier,frequency:170,q:.7,type:'bandpass',priority:true});
-        for(let i=0;i<extra;i++){
-          const spread=i/extra;
-          const when=t+.035+spread*(.12+.035*tier)+rnd(-.005,.005);
-          const weight=(.060+.008*tier)*(1-spread*.42);
-          this.osc({freq:128+rnd(-28,95)+i*2,type:'triangle',time:when,dur:.045,gain:weight,sweep:70+rnd(-12,35),attack:.001,priority:true});
-          this.noise({time:when,dur:.022,gain:weight*.55,frequency:780+rnd(0,1050),q:1.15,type:'bandpass',priority:true});
-        }
+        const n=Math.max(1,Math.min(4,detail||1)),base=69+level%5;
+        this.noise({time:t,dur:.16+n*.05,gain:.09+n*.025,frequency:1200+n*420,q:.65});
+        for(let i=0;i<n+1;i++)this.fmBell(this.midi(base+[0,3,7,12,15][i]+v),t+i*.045,.07+n*.012,.22+i*.025);
         break}
       case'combo':{
         const n=Math.min(7,Math.max(1,detail||1));for(let i=0;i<3;i++)this.osc({freq:this.midi(76+n+[0,4,7][i]),type:'square',time:t+i*.035,dur:.09,gain:.055,bus:'sfx'});break}
@@ -1419,10 +967,10 @@ document.addEventListener('visibilitychange',()=>{setPauseReason('visibility-cha
 
 const SFX={
   move:()=>audioEngine.sfx('move'),rotate:(dir=1)=>audioEngine.sfx('rotate',dir),softDrop:()=>audioEngine.sfx('soft_drop'),
-  hardDrop:()=>audioEngine.sfx('hard_drop'),hold:swapping=>audioEngine.sfx('hold',swapping?1:0),land:()=>audioEngine.sfx('land'),
+  hardDrop:()=>audioEngine.sfx('hard_drop'),hold:()=>audioEngine.sfx('hold'),land:()=>audioEngine.sfx('land'),
   clear1:()=>audioEngine.sfx('line_clear',1),clear2:()=>audioEngine.sfx('line_clear',2),
   clear3:()=>audioEngine.sfx('line_clear',3),clear4:()=>audioEngine.sfx('line_clear',4),
-  combo:n=>audioEngine.sfx('combo',n),zittrisStreak:n=>audioEngine.sfx('zittris_streak',n),levelUp:()=>audioEngine.sfx('level_up'),
+  combo:n=>audioEngine.sfx('combo',n),levelUp:()=>audioEngine.sfx('level_up'),
   danger:()=>audioEngine.sfx('danger'),gameOver:()=>audioEngine.sfx('game_over')
 };
 
@@ -1673,7 +1221,7 @@ function initGS(){
     state:'title',board:Array.from({length:ROWS},()=>Array(COLS).fill(null)),current:null,nextQueue:[],
     hold:null,holdUsed:false,score:0,lines:0,level:1,paused:false,dropTimer:0,lockTimer:0,
     lockOnFloor:false,lockResets:0,msgTimer:0,msg:'',clearFlash:[],clearTimer:0,
-    lastActionRotate:false,pendingTSpin:'none',b2b:false,combo:-1,zittrisStreak:0,
+    lastActionRotate:false,pendingTSpin:'none',b2b:false,combo:-1,
     highScore:parseInt(safeStorageGet('tetris_ob_hi')||'0')
   };
   resetRandomizer();
@@ -1711,7 +1259,6 @@ function spawnNext(){
 function holdPiece(){
   if(!settings.holdEnabled||gs.state!=='playing'||gs.paused||gs.clearFlash.length>0||!gs.current||gs.holdUsed)return;
   const activeKey=gs.current.key;
-  const wasSwap=gs.hold!==null;
   if(gs.hold===null){gs.hold=activeKey;spawnNext();if(gs.state!=='playing')return}
   else{
     const swapKey=gs.hold;gs.hold=activeKey;gs.current=spawnPiece(swapKey);
@@ -1719,7 +1266,7 @@ function holdPiece(){
     applyInitialRotation();
     if(!canPlace(gs.current,0,0)){topOut();return}
   }
-  gs.holdUsed=true;SFX.hold(wasSwap);haptic(8);
+  gs.holdUsed=true;SFX.hold();haptic(8);
 }
 function currentCells(piece,dx=0,dy=0){
   const{rot,x,y}=piece;return shapesFor(piece)[rot].map(([c,r])=>[x+c+dx,y+r+dy]);
@@ -1796,7 +1343,6 @@ function checkLines() {
     // No lines cleared: combo ends. A zero-line T-spin still scores and,
     // importantly, does NOT break the back-to-back chain.
     gs.combo = -1;
-    gs.zittrisStreak = 0;
     const tspin = gs.pendingTSpin || 'none';
     gs.pendingTSpin = 'none';
     if (tspin !== 'none') {
@@ -1917,11 +1463,6 @@ function clearLines() {
   pts += comboPts;
 
   gs.b2b = difficult;                        // chain continues only through difficult clears
-
-  if(n>=4){
-    gs.zittrisStreak=(gs.zittrisStreak||0)+1;
-    if(gs.zittrisStreak>=2)SFX.zittrisStreak(gs.zittrisStreak);
-  }else gs.zittrisStreak=0;
 
   gs.score += pts;
   gs.lines += n;
