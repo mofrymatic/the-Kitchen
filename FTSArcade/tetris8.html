@@ -323,9 +323,8 @@ body::after{
         </section>
 
         <section class="settings-group"><h3>Audio & Feedback</h3>
-          <label class="setting-row"><span class="setting-copy"><strong>AUXigeN Music Style</strong><small>Six 128 BPM arrangements of the same theme contour. Changes take effect when settings are saved.</small></span><span class="setting-control"><select name="musicStyle"><option value="neon_lagoon">NEON LAGOON · CHILLWAVE</option><option value="witch_house">WITCH HOUSE</option><option value="west_coast_bass">WEST COAST BASS</option><option value="klezmer">KLEZMER</option><option value="jungle">JUNGLE</option><option value="rnb">R&amp;B</option></select></span></label>
           <label class="setting-row"><span class="setting-copy"><strong>Sound Effects</strong><small>Movement, rotation, landing, line-clear, and game-over synthesis.</small></span><span class="setting-control"><span class="switch"><input name="sfxEnabled" type="checkbox"><span></span></span></span></label>
-          <label class="setting-row"><span class="setting-copy"><strong>Background Music</strong><small>Adaptive 128 BPM AUXigeN arrangement during active, unpaused play.</small></span><span class="setting-control"><span class="switch"><input name="bgmEnabled" type="checkbox"><span></span></span></span></label>
+          <label class="setting-row"><span class="setting-copy"><strong>Background Music</strong><small>Procedural Web Audio pulse during active, unpaused play.</small></span><span class="setting-control"><span class="switch"><input name="bgmEnabled" type="checkbox"><span></span></span></span></label>
           <label class="setting-row"><span class="setting-copy"><strong>Touch Haptics</strong><small>Use short vibration cues for locks and clears where supported.</small></span><span class="setting-control"><span class="switch"><input name="hapticsEnabled" type="checkbox"><span></span></span></span></label>
         </section>
 
@@ -401,12 +400,11 @@ const DEFAULT_SETTINGS = Object.freeze({
   rotationSystem:'srs', randomizer:'bag', holdEnabled:true, queueCount:3,
   ghostEnabled:true, rotate180Enabled:false, irsEnabled:true, hardDropMode:'lock',
   dasMs:160, arrMs:40, softDropFactor:10, lockDelayMs:500, lockResetLimit:15,
-  musicStyle:'neon_lagoon', sfxEnabled:false, bgmEnabled:false, hapticsEnabled:true, crtEnabled:true,
+  sfxEnabled:true, bgmEnabled:true, hapticsEnabled:true, crtEnabled:true,
   reducedMotion:false
 });
 const SETTING_ENUMS = {
   rotationSystem:['srs','ars'], randomizer:['bag','history'], hardDropMode:['lock','sonic'],
-  musicStyle:['neon_lagoon','witch_house','west_coast_bass','klezmer','jungle','rnb'],
   queueCount:[1,2,3,4,5], softDropFactor:[5,10,20,40,999], lockResetLimit:[0,8,15,30]
 };
 const settingClamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
@@ -415,7 +413,7 @@ function safeStorageSet(key,value){try{localStorage.setItem(key,String(value));r
 function parseStoredBool(v,fallback){ return v===true||v==='true'?true:v===false||v==='false'?false:fallback; }
 function validateSettings(candidate={}){
   const d=DEFAULT_SETTINGS, out={...d};
-  for(const k of ['rotationSystem','randomizer','hardDropMode','musicStyle']) if(SETTING_ENUMS[k].includes(candidate[k])) out[k]=candidate[k];
+  for(const k of ['rotationSystem','randomizer','hardDropMode']) if(SETTING_ENUMS[k].includes(candidate[k])) out[k]=candidate[k];
   for(const k of ['queueCount','softDropFactor','lockResetLimit']) { const n=Number(candidate[k]); if(SETTING_ENUMS[k].includes(n)) out[k]=n; }
   out.dasMs=settingClamp(Number(candidate.dasMs)||d.dasMs,60,300);
   out.arrMs=settingClamp(Number.isFinite(Number(candidate.arrMs))?Number(candidate.arrMs):d.arrMs,0,100);
@@ -439,10 +437,6 @@ function saveSettings(next){
   const previous=settings;
   settings=validateSettings(next);
   if(previous.randomizer!==settings.randomizer)resetRandomizer();
-  if(previous.musicStyle!==settings.musicStyle && typeof audioEngine!=='undefined'){
-    audioEngine.step=0;
-    if(audioEngine.timer){audioEngine.stop();audioEngine.start();}
-  }
   try {
     safeStorageSet(SETTINGS_KEY,JSON.stringify(settings));
     safeStorageSet('tetris_set_hold',String(settings.holdEnabled));
@@ -625,250 +619,60 @@ const clamp  = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const FONT_DISPLAY = '"Arial Black","Helvetica Neue",Arial,sans-serif';
 const FONT_DATA = '"SFMono-Regular",Menlo,Consolas,"Liberation Mono","Courier New",monospace';
 
-// ── AUXigeN adaptive audio system ─────────────────────────────────────
-// FTS Arcade chillwave / tropical-house adaptation: 128 BPM · A minor · 16 bars.
-// Six-voice ceiling, pulse duet, triangle/808 bass, trap percussion,
-// pinball/FM accents, and game-state pitch/intensity tracking.
-const AUXIGEN_MANIFEST = Object.freeze({
-  game:'zittris', sound_family:'fts_arcade', runtime:'web_audio',
-  tempo_bpm:128, musical_key:'A_minor', loop_length_bars:16,
-  polyphony_limit:6, working_depth:'32_bit_float', delivery_depth:'16_bit',
-  sample_rate_hz:48000, composition:'user_supplied_midi_adaptation', source_midi:'Tetris - A Theme.mid',
-  styles:['neon_lagoon','witch_house','west_coast_bass','klezmer','jungle','rnb'],
-  states:['idle','playing','stack_rising','danger','combo','game_over'],
-  sfx:['move','rotate','soft_drop','hard_drop','hold','line_clear','combo','level_up','danger','game_over']
-});
-
-// Theme contour extracted from the user-supplied MIDI.
-// Re-orchestrated at runtime with original Web Audio voices.
-const ZITTRIS_THEME_LEAD = Object.freeze([88, -1, -1, -1, 83, -1, 84, -1, 86, -1, 88, 86, 84, -1, 83, -1, 81, -1, -1, -1, 81, -1, 84, -1, 88, -1, -1, -1, 86, -1, 84, -1, 83, -1, -1, -1, 83, -1, 84, -1, 86, -1, -1, -1, 88, -1, -1, -1, 84, -1, 72, -1, 81, -1, 76, -1, 81, -1, 81, -1, 81, 83, 84, 86, 88, -1, 86, -1, -1, -1, 89, -1, 93, -1, -1, -1, 91, -1, 89, -1, 88, -1, -1, -1, -1, -1, 84, -1, 88, -1, -1, -1, 86, -1, 84, -1, 83, -1, -1, -1, 83, -1, 84, -1, 86, -1, -1, -1, 88, -1, -1, -1, 84, -1, -1, -1, 81, -1, -1, -1, 81, -1, -1, -1, -1, -1, -1, -1]);
-const ZITTRIS_THEME_BASS = Object.freeze([40, -1, 59, -1, 40, -1, 59, -1, 40, -1, 59, -1, 40, -1, 59, -1, 45, -1, 57, -1, 45, -1, 57, -1, 45, -1, 57, -1, 45, -1, 57, -1, 44, -1, 59, -1, 40, -1, 59, -1, 44, -1, 59, -1, 40, -1, 59, -1, 45, -1, 57, -1, 33, -1, 57, -1, 45, -1, 57, -1, 57, 59, -1, -1, 52, -1, 45, -1, 50, -1, 45, -1, 57, -1, 45, -1, 57, -1, 53, -1, 48, -1, 48, -1, 48, -1, 48, -1, 48, -1, 57, -1, 43, -1, 57, -1, 47, -1, 59, -1, 47, -1, 59, -1, 50, -1, 52, -1, 59, -1, 56, -1, 45, -1, 57, -1, 45, -1, 57, -1, 45, -1, 57, -1, 52, 50, 48, 47]);
-
-let _ac=null;
-const AC=()=>_ac||(_ac=new (window.AudioContext||window.webkitAudioContext)({sampleRate:48000}));
-
-const audioEngine={
-  master:null,musicBus:null,sfxBus:null,compressor:null,
-  timer:null,nextStepTime:0,step:0,state:'idle',lastState:'idle',dangerLatched:false,
-  activeVoices:0,variation:{},noiseBuffer:null,lastAdaptiveCheck:0,
-  bpm:128,lookAheadMs:25,scheduleAhead:.12,
-
-  init(){
-    if(this.master)return;
-    const ac=AC();
-    this.master=ac.createGain();this.master.gain.value=.82;
-    this.musicBus=ac.createGain();this.musicBus.gain.value=.44;
-    this.sfxBus=ac.createGain();this.sfxBus.gain.value=.72;
-    this.compressor=ac.createDynamicsCompressor();
-    this.compressor.threshold.value=-18;this.compressor.knee.value=12;
-    this.compressor.ratio.value=5;this.compressor.attack.value=.004;this.compressor.release.value=.18;
-    this.musicBus.connect(this.compressor);this.sfxBus.connect(this.compressor);
-    this.compressor.connect(this.master);this.master.connect(ac.destination);
-    const len=Math.max(1,Math.floor(ac.sampleRate*.5));
-    this.noiseBuffer=ac.createBuffer(1,len,ac.sampleRate);
-    const d=this.noiseBuffer.getChannelData(0);for(let i=0;i<len;i++)d[i]=Math.random()*2-1;
-  },
-
-  midi(n){return 440*Math.pow(2,(n-69)/12)},
-  nextVar(name,count=4){const n=(this.variation[name]||0)%count;this.variation[name]=n+1;return n},
-  canVoice(){return this.activeVoices<AUXIGEN_MANIFEST.polyphony_limit},
-  claim(node,stopAt){
-    this.activeVoices++;
-    const release=()=>{this.activeVoices=Math.max(0,this.activeVoices-1);node.removeEventListener?.('ended',release)};
-    node.addEventListener?.('ended',release);
-    if(!node.addEventListener)setTimeout(release,Math.max(20,(stopAt-AC().currentTime)*1000+20));
-  },
-
-  osc({freq=440,type='square',time=AC().currentTime,dur=.08,gain=.08,bus='sfx',detune=0,sweep=null,attack=.002}){
-    if(!this.canVoice())return;
-    this.init();const ac=AC(),o=ac.createOscillator(),g=ac.createGain();
-    o.type=type;o.frequency.setValueAtTime(Math.max(20,freq),time);o.detune.value=detune;
-    if(sweep)o.frequency.exponentialRampToValueAtTime(Math.max(20,sweep),time+dur);
-    g.gain.setValueAtTime(.0001,time);g.gain.exponentialRampToValueAtTime(Math.max(.0002,gain),time+attack);
-    g.gain.exponentialRampToValueAtTime(.0001,time+dur);
-    o.connect(g);g.connect(bus==='music'?this.musicBus:this.sfxBus);o.start(time);o.stop(time+dur+.01);this.claim(o,time+dur+.01);
-  },
-
-  noise({time=AC().currentTime,dur=.06,gain=.09,frequency=1800,q=.8,type='bandpass',bus='sfx'}){
-    if(!this.canVoice())return;
-    this.init();const ac=AC(),src=ac.createBufferSource(),flt=ac.createBiquadFilter(),g=ac.createGain();
-    src.buffer=this.noiseBuffer;flt.type=type;flt.frequency.value=frequency;flt.Q.value=q;
-    g.gain.setValueAtTime(Math.max(.0002,gain),time);g.gain.exponentialRampToValueAtTime(.0001,time+dur);
-    src.connect(flt);flt.connect(g);g.connect(bus==='music'?this.musicBus:this.sfxBus);src.start(time);src.stop(time+dur+.01);this.claim(src,time+dur+.01);
-  },
-
-  fmBell(freq,time=AC().currentTime,gain=.12,dur=.34){
-    if(!this.canVoice())return;
-    this.init();const ac=AC(),carrier=ac.createOscillator(),mod=ac.createOscillator(),mg=ac.createGain(),out=ac.createGain();
-    carrier.type='sine';mod.type='sine';carrier.frequency.value=freq;mod.frequency.value=freq*2.71;mg.gain.value=freq*.42;
-    mod.connect(mg);mg.connect(carrier.frequency);out.gain.setValueAtTime(gain,time);out.gain.exponentialRampToValueAtTime(.0001,time+dur);
-    carrier.connect(out);out.connect(this.sfxBus);carrier.start(time);mod.start(time);carrier.stop(time+dur+.01);mod.stop(time+dur+.01);this.claim(carrier,time+dur+.01);
-  },
-
-  kick(time,gain=.16){
-    if(!this.canVoice())return;
-    this.init();const ac=AC(),o=ac.createOscillator(),g=ac.createGain();o.type='sine';
-    o.frequency.setValueAtTime(145,time);o.frequency.exponentialRampToValueAtTime(42,time+.11);
-    g.gain.setValueAtTime(gain,time);g.gain.exponentialRampToValueAtTime(.0001,time+.16);
-    o.connect(g);g.connect(this.musicBus);o.start(time);o.stop(time+.17);this.claim(o,time+.17);
-  },
-  hat(time,gain=.028){this.noise({time,dur:.028,gain,frequency:7600,q:.5,type:'highpass',bus:'music'})},
-  snare(time,gain=.075){this.noise({time,dur:.11,gain,frequency:1900,q:.85,bus:'music'});this.osc({freq:185,type:'triangle',time,dur:.08,gain:gain*.38,bus:'music',sweep:115})},
-  bass(note,time,dur=.18,gain=.07,accent=false){
-    const f=this.midi(note);this.osc({freq:f,type:'triangle',time,dur,gain,bus:'music'});
-    if(accent)this.osc({freq:f/2,type:'sine',time,dur:Math.min(.32,dur+.08),gain:gain*.9,bus:'music',sweep:Math.max(28,f/2*.82)});
-  },
-  pulse(note,time,dur=.09,gain=.034,voice=0){
-    this.osc({freq:this.midi(note),type:'square',time,dur,gain,bus:'music',detune:voice?7:-7});
-  },
-
-  currentIntensity(){return this.state==='danger'?3:this.state==='stack_rising'?2:this.state==='combo'?2.6:1},
-  scheduleStep(step,time){
+// ── Audio ──────────────────────────────────────────────────────────────
+let _ac=null, bgmTimer=null, bgmStep=0;
+const AC=()=>_ac||(_ac=new (window.AudioContext||window.webkitAudioContext)());
+function synthTone(freq,type,dur,vol=0.2,sweep=null){
+  try{
+    const ac=AC(),o=ac.createOscillator(),g=ac.createGain();
+    o.connect(g);g.connect(ac.destination);o.type=type;
+    o.frequency.setValueAtTime(sweep||freq,ac.currentTime);
+    if(sweep)o.frequency.exponentialRampToValueAtTime(freq,ac.currentTime+dur);
+    g.gain.setValueAtTime(Math.max(.0001,vol),ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+dur);
+    o.start();o.stop(ac.currentTime+dur);
+  }catch(e){}
+}
+function tone(freq,type,dur,vol=.2,sweep=null){if(!settings.sfxEnabled)return;synthTone(freq,type,dur,vol,sweep)}
+function bgmTone(freq,type,dur,vol=.035){if(!settings.bgmEnabled)return;synthTone(freq,type,dur,vol)}
+function noise(dur,bandFreq=150,vol=.2){
+  if(!settings.sfxEnabled)return;
+  try{
+    const ac=AC(),buf=ac.createBuffer(1,Math.ceil(ac.sampleRate*dur),ac.sampleRate),d=buf.getChannelData(0);
+    for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+    const src=ac.createBufferSource();src.buffer=buf;
+    const flt=ac.createBiquadFilter();flt.type='bandpass';flt.frequency.value=bandFreq;flt.Q.value=.7;
+    const g=ac.createGain();g.gain.setValueAtTime(vol,ac.currentTime);g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+dur);
+    src.connect(flt);flt.connect(g);g.connect(ac.destination);src.start();src.stop(ac.currentTime+dur);
+  }catch(e){}
+}
+function startBGM(){
+  if(bgmTimer)return;
+  const bass=[55,55,65.41,73.42,55,82.41,73.42,65.41],lead=[220,261.63,329.63,293.66,220,392,329.63,261.63];
+  bgmTimer=setInterval(()=>{
     if(!settings.bgmEnabled||!gs||gs.state!=='playing'||gs.paused||settingsOpen||document.hidden)return;
-    const s=step%256, phrase=s%128, beat=s%16, bar=Math.floor(s/16), intensity=this.currentIntensity();
-    const lead=ZITTRIS_THEME_LEAD[phrase], bass=ZITTRIS_THEME_BASS[phrase];
-    const ln=lead>=0?(lead>92?lead-12:lead):-1;
-    const bn=bass>=0?(bass>55?bass-12:bass):-1;
-    const style=settings.musicStyle||'neon_lagoon';
-
-    if(style==='witch_house'){
-      if(beat===0||beat===10)this.kick(time,.12+.012*intensity);
-      if(beat===8)this.snare(time,.075+.010*intensity);
-      if([2,6,11,14].includes(beat))this.hat(time,.013+.004*intensity);
-      if(intensity>=2&&beat%2===1)this.hat(time+.014,.009);
-      if(bn>=0&&beat%2===0)this.bass(bn-12,time,.28,.060+.010*intensity,beat===0);
-      if(ln>=0&&beat%2===0){this.osc({freq:this.midi(ln-12),type:'sawtooth',time,dur:.16,gain:.018+.003*intensity,bus:'music',detune:-9});this.pulse(ln,time+.018,.10,.014,1);}
-      if(bar%4===3&&beat===15)this.noise({time,dur:.34,gain:.025,frequency:900,q:4,bus:'music'});
-    }else if(style==='west_coast_bass'){
-      if([0,3,7,10,14].includes(beat))this.kick(time,.105+.010*intensity);
-      if(beat===4||beat===12)this.snare(time,.060+.009*intensity);
-      if(beat%2===1)this.hat(time,.012+.003*intensity);
-      if(intensity>=2&&[6,15].includes(beat))this.hat(time+.025,.018);
-      if(bn>=0&&[0,3,6,10,13].includes(beat))this.bass(bn-12,time,.24,.072+.009*intensity,true);
-      if(ln>=0&&beat%2===0)this.pulse(ln-12,time,.075,.017+.003*intensity,0);
-      if(bar%4===3&&beat===15)this.fmBell(this.midi(69),time,.026,.16);
-    }else if(style==='klezmer'){
-      if(beat===0||beat===8)this.kick(time,.075+.007*intensity);
-      if(beat===4||beat===12)this.snare(time,.043+.006*intensity);
-      if(beat%4===2)this.hat(time,.011);
-      if(bn>=0&&beat%4===0)this.bass(bn,time,.20,.044+.007*intensity,beat===0);
-      if(bn>=0&&beat%4===2)this.bass(bn+7,time,.12,.030,false);
-      if(ln>=0){
-        if(beat%4===0)this.osc({freq:this.midi(ln-1),type:'square',time,dur:.030,gain:.015,bus:'music',sweep:this.midi(ln)});
-        this.osc({freq:this.midi(ln),type:'sawtooth',time:time+.024,dur:.095,gain:.020+.003*intensity,bus:'music',detune:(beat%2?4:-4)});
-      }
-      if(bar%4===3&&beat===15)this.fmBell(this.midi(88),time,.032,.20);
-    }else if(style==='jungle'){
-      if([0,6,10].includes(beat))this.kick(time,.10+.009*intensity);
-      if([4,12,15].includes(beat))this.snare(time,.060+.009*intensity);
-      if(beat%2===0)this.hat(time,.014+.003*intensity);
-      if(intensity>=2||beat%4===3)this.hat(time+.028,.012+.002*intensity);
-      if(bn>=0&&[0,5,8,11,14].includes(beat))this.bass(bn-12,time,.13,.065+.009*intensity,beat===0||beat===11);
-      if(ln>=0){this.pulse(ln,time,.055,.020+.003*intensity,0);if(beat%4===3)this.pulse(ln+12,time+.030,.035,.010,1);}
-    }else if(style==='rnb'){
-      if([0,7,10].includes(beat))this.kick(time,.085+.007*intensity);
-      if(beat===4||beat===12)this.snare(time,.052+.007*intensity);
-      if([2,6,10,14].includes(beat))this.hat(time,.010+.002*intensity);
-      if(intensity>=2&&beat===15)this.hat(time+.022,.014);
-      if(bn>=0&&[0,6,10,14].includes(beat))this.bass(bn-12,time,.27,.054+.008*intensity,beat===0);
-      if(ln>=0&&beat%2===0){this.osc({freq:this.midi(ln-12),type:'triangle',time,dur:.18,gain:.021+.003*intensity,bus:'music'});if(beat%4===0)this.pulse(ln+3,time+.012,.12,.010,1);}
-      if(bar%4===3&&beat===15)this.fmBell(this.midi(76),time,.025,.22);
-    }else{
-      // Neon Lagoon: chillwave / tropical-house baseline.
-      if(beat%4===0)this.kick(time,.095+.014*intensity);
-      if(beat===4||beat===12)this.snare(time,.045+.010*intensity);
-      if(beat%2===0)this.hat(time,.014+.004*intensity);
-      if(intensity>=2&&beat%2===1)this.hat(time,.010+.004*intensity);
-      if(intensity>=3&&beat%4===3)this.hat(time+.018,.020);
-      if(bn>=0)this.bass(bn,time,.16,.041+.010*intensity,beat===0||beat===8);
-      if(ln>=0){this.pulse(ln,time,.072,.023+.005*intensity,0);if(intensity>=2&&beat%4===0)this.pulse(ln-12,time+.008,.055,.012+.003*intensity,1);}
-      if(bar%4===3&&beat===15)this.fmBell(this.midi(81),time,.030,.18);
-    }
-  },
-
-  scheduler(){
-    const ac=AC(),stepDur=60/this.bpm/4;
-    while(this.nextStepTime<ac.currentTime+this.scheduleAhead){this.scheduleStep(this.step,this.nextStepTime);this.nextStepTime+=stepDur;this.step=(this.step+1)%256}
-  },
-  start(){
-    this.init();if(this.timer)return;const ac=AC();this.nextStepTime=ac.currentTime+.05;this.step=0;
-    this.timer=setInterval(()=>this.scheduler(),this.lookAheadMs);
-  },
-  stop(){if(this.timer){clearInterval(this.timer);this.timer=null}},
-  setState(next){
-    if(next===this.state)return;this.lastState=this.state;this.state=next;
-    if(next==='danger'&&!this.dangerLatched){this.dangerLatched=true;this.sfx('danger')}
-    if(next!=='danger')this.dangerLatched=false;
-    const target=next==='danger'?.58:next==='stack_rising'?.50:.44;
-    if(this.musicBus)this.musicBus.gain.setTargetAtTime(target,AC().currentTime,.08);
-  },
-  updateAdaptiveState(ts=performance.now()){
-    if(ts-this.lastAdaptiveCheck<120)return;this.lastAdaptiveCheck=ts;
-    if(!gs||gs.state==='title'){this.setState('idle');return}
-    if(gs.state==='gameover'){this.setState('game_over');return}
-    if(gs.combo>0&&gs.msgTimer>0){this.setState('combo');return}
-    let top=ROWS;for(let r=0;r<ROWS;r++){if(gs.board[r].some(Boolean)){top=r;break}}
-    const height=ROWS-top;
-    this.setState(height>=16?'danger':height>=11?'stack_rising':'playing');
-  },
-
-  sfx(name,detail=0){
-    if(!settings.sfxEnabled)return;this.init();const t=AC().currentTime,v=this.nextVar(name,4),level=Math.max(1,gs?.level||1);
-    const stateShift=this.state==='danger'?3:this.state==='stack_rising'?1:0;
-    switch(name){
-      case'move':{
-        // Direction-neutral tetromino rail slide. The identity stays fixed;
-        // only microscopic noise, pitch, duration, and gain variance prevent
-        // repeated movement from sounding mechanically identical.
-        const pitchJitter=1+rnd(-.014,.014);
-        const dur=rnd(.027,.035);
-        const gain=rnd(.030,.036);
-        this.noise({
-          time:t,dur:rnd(.012,.018),gain:rnd(.010,.015),
-          frequency:rnd(1700,2050),q:rnd(1.4,2.0),type:'bandpass'
-        });
-        this.osc({
-          freq:176*pitchJitter,type:'triangle',time:t,dur,gain,
-          sweep:148*pitchJitter,attack:.0015
-        });
-        break}
-
-      case'rotate':{const dir=detail===-1?-1:detail===2?2:1,base=74+stateShift;this.noise({time:t,dur:.022,gain:.030,frequency:2600,q:2.2});this.osc({freq:this.midi(base),type:'square',time:t,dur:.052,gain:.052,sweep:this.midi(base+(dir<0?-2:2))});if(dir===2){this.noise({time:t+.045,dur:.020,gain:.024,frequency:3100,q:2.4});this.osc({freq:this.midi(base+5),type:'square',time:t+.045,dur:.048,gain:.045,sweep:this.midi(base+7)});}break}
-      case'soft_drop':this.noise({time:t,dur:.035,gain:.025,frequency:950+v*180,q:1.4});this.osc({freq:95+v*8,type:'triangle',time:t,dur:.035,gain:.028,sweep:70});break;
-      case'hard_drop':this.osc({freq:92+v*5,type:'sine',time:t,dur:.18,gain:.16,sweep:34});this.noise({time:t,dur:.09,gain:.12,frequency:110+v*15,q:.7});this.fmBell(this.midi(57+v),t+.025,.055,.22);break;
-      case'hold':this.fmBell(this.midi(72+[0,5,7,12][v]),t,.105,.28);this.osc({freq:this.midi(60+v),type:'square',time:t,dur:.11,gain:.045,sweep:this.midi(67+v)});break;
-      case'land':this.osc({freq:76+v*4,type:'triangle',time:t,dur:.085,gain:.075,sweep:52});this.noise({time:t,dur:.06,gain:.05,frequency:180,q:.8});break;
-      case'line_clear':{
-        const n=Math.max(1,Math.min(4,detail||1)),base=69+level%5;
-        this.noise({time:t,dur:.16+n*.05,gain:.09+n*.025,frequency:1200+n*420,q:.65});
-        for(let i=0;i<n+1;i++)this.fmBell(this.midi(base+[0,3,7,12,15][i]+v),t+i*.045,.07+n*.012,.22+i*.025);
-        break}
-      case'combo':{
-        const n=Math.min(7,Math.max(1,detail||1));for(let i=0;i<3;i++)this.osc({freq:this.midi(76+n+[0,4,7][i]),type:'square',time:t+i*.035,dur:.09,gain:.055,bus:'sfx'});break}
-      case'level_up':for(let i=0;i<6;i++)this.fmBell(this.midi(69+[0,3,7,12,15,19][i]),t+i*.075,.09,.3);break;
-      case'danger':this.osc({freq:110,type:'sawtooth',time:t,dur:.45,gain:.11,sweep:220});this.noise({time:t+.08,dur:.28,gain:.07,frequency:2800,q:3});break;
-      case'game_over':for(let i=0;i<6;i++)this.osc({freq:this.midi(57-[0,2,5,7,9,12][i]),type:i%2?'triangle':'sawtooth',time:t+i*.16,dur:.28,gain:.10,sweep:this.midi(45-i)});break;
-    }
-  }
-};
-
-function tone(freq,type,dur,vol=.2,sweep=null){if(settings.sfxEnabled)audioEngine.osc({freq,type,dur,gain:vol,sweep})}
-function noise(dur,bandFreq=150,vol=.2){if(settings.sfxEnabled)audioEngine.noise({dur,gain:vol,frequency:bandFreq})}
-function startBGM(){audioEngine.start()}
-function stopBGM(){audioEngine.stop()}
+    bgmTone(bass[bgmStep%bass.length],'triangle',.22,.028);
+    if(bgmStep%2===0)bgmTone(lead[bgmStep%lead.length],'square',.105,.018);
+    bgmStep=(bgmStep+1)%64;
+  },240);
+}
+function stopBGM(){if(bgmTimer){clearInterval(bgmTimer);bgmTimer=null}}
 function reconcileBGM(){
   const allowed=settings.bgmEnabled&&typeof gs!=='undefined'&&gs&&gs.state==='playing'&&!gs.paused&&!settingsOpen&&!document.hidden;
-  allowed?audioEngine.start():audioEngine.stop();
+  allowed?startBGM():stopBGM();
 }
 document.addEventListener('visibilitychange',()=>{setPauseReason('visibility-change',document.hidden&&gs?.state==='playing');reconcileBGM()});
 
 const SFX={
-  move:()=>audioEngine.sfx('move'),rotate:(dir=1)=>audioEngine.sfx('rotate',dir),softDrop:()=>audioEngine.sfx('soft_drop'),
-  hardDrop:()=>audioEngine.sfx('hard_drop'),hold:()=>audioEngine.sfx('hold'),land:()=>audioEngine.sfx('land'),
-  clear1:()=>audioEngine.sfx('line_clear',1),clear2:()=>audioEngine.sfx('line_clear',2),
-  clear3:()=>audioEngine.sfx('line_clear',3),clear4:()=>audioEngine.sfx('line_clear',4),
-  combo:n=>audioEngine.sfx('combo',n),levelUp:()=>audioEngine.sfx('level_up'),
-  danger:()=>audioEngine.sfx('danger'),gameOver:()=>audioEngine.sfx('game_over')
+  move:()=>tone(220,'square',.04,.06),rotate:()=>tone(380,'square',.06,.08,540),
+  land:()=>{noise(.12,120,.14);tone(95,'sawtooth',.09,.10)},
+  clear1:()=>{noise(.25,180,.22);tone(440,'sine',.2,.18,660)},
+  clear2:()=>{noise(.32,200,.30);tone(520,'sine',.28,.22,880)},
+  clear3:()=>{noise(.42,230,.38);[440,660,880].forEach((f,i)=>setTimeout(()=>tone(f,'sawtooth',.18,.18),i*55))},
+  clear4:()=>{noise(.6,260,.5);[330,440,550,660,880,1100].forEach((f,i)=>setTimeout(()=>tone(f,'sawtooth',.22,.22),i*45))},
+  levelUp:()=>[260,330,440,550,660,880].forEach((f,i)=>setTimeout(()=>tone(f,'sine',.15,.2),i*70)),
+  gameOver:()=>[400,300,220,160,110].forEach((f,i)=>setTimeout(()=>tone(f,'sawtooth',.3,.28),i*200)),
+  hardDrop:()=>{noise(.08,80,.12);tone(70,'sawtooth',.06,.12)}
 };
 
 // ── Piece definitions and selectable rotation profiles ────────────────
@@ -1163,7 +967,7 @@ function holdPiece(){
     applyInitialRotation();
     if(!canPlace(gs.current,0,0)){topOut();return}
   }
-  gs.holdUsed=true;SFX.hold();haptic(8);
+  gs.holdUsed=true;SFX.rotate();haptic(8);
 }
 function currentCells(piece,dx=0,dy=0){
   const{rot,x,y}=piece;return shapesFor(piece)[rot].map(([c,r])=>[x+c+dx,y+r+dy]);
@@ -1355,7 +1159,6 @@ function clearLines() {
 
   // Combo: +1 per consecutive line-clearing lock. Guideline combo bonus = 50*combo*level.
   gs.combo += 1;
-  if(gs.combo>0)SFX.combo(gs.combo);
   const comboPts = gs.combo > 0 ? 50 * gs.combo * gs.level : 0;
   pts += comboPts;
 
@@ -1406,7 +1209,7 @@ window.addEventListener('keydown',e=>{
   if(gs.paused||gs.clearFlash.length>0)return;
   if(e.code==='ArrowLeft')tryMove(-1,0);
   if(e.code==='ArrowRight')tryMove(1,0);
-  if(e.code==='ArrowDown'){tryMove(0,1);gs.dropTimer=0;SFX.softDrop()}
+  if(e.code==='ArrowDown'){tryMove(0,1);gs.dropTimer=0}
   if(e.code==='ArrowUp'||e.code==='KeyX')tryRotate(1);
   if(e.code==='KeyZ')tryRotate(-1);
   if(e.code==='KeyA'&&settings.rotate180Enabled)tryRotate(2);
@@ -1442,7 +1245,7 @@ function tryRotate(dir,silent=false){
     const[kx,ky]=tests[i];
     if(canPlace(piece,kx,ky,to)){
       piece.rot=to;piece.x+=kx;piece.y+=ky;piece.lastKick=i;piece.lastRotationDir=dir;gs.lastActionRotate=true;
-      if(!silent)SFX.rotate(dir);tryResetLockDelay();return true;
+      if(!silent)SFX.rotate();tryResetLockDelay();return true;
     }
   }
   return false;
@@ -1880,8 +1683,6 @@ function loop(ts) {
     }
   }
 
-  audioEngine.updateAdaptiveState(ts);
-
   // ── Render ─────────────────────────────────────────────────────────
   ctx.fillStyle='#050810';
   ctx.fillRect(0,0,W,H);
@@ -1945,7 +1746,7 @@ function setupNUI() {
   const btnActions = {
     'nb-left':     () => tryMove(-1,0),
     'nb-right':    () => tryMove(1,0),
-    'nb-down':     () => { keys['nb-down']=true; SFX.softDrop(); },
+    'nb-down':     () => { keys['nb-down']=true; },
     'nb-rotate':   () => tryRotate(1),
     'nb-harddrop': () => hardDrop(),
     'nb-hold':     () => holdPiece(),
