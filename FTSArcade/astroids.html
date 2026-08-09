@@ -22,7 +22,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="ASTROIDS">
 
-<meta property="og:image" content="https://frymatic.us/FTSArcade/FishTacoStand.png">
+<meta property="og:image" content="https://frymatic.us/FTSArcade/astroids_preview.png">
 <meta property="og:image:alt" content="FishTacoStand Arcade cabinet menu with clickable retro games.">
 <meta property="og:image:type" content="image/png">
 
@@ -30,7 +30,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Astroids">
 <meta name="twitter:description" content="A retro arcade hub serving Neon Invaders, Astroids, Cave Racer, RED EYE, Packman, Tetris, and more.">
-<meta name="twitter:image" content="https://frymatic.us/FTSArcade/FishTacoStand.png">
+<meta name="twitter:image" content="https://frymatic.us/FTSArcade/astroids_preview.png">
 
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
@@ -52,7 +52,7 @@ canvas{display:block;position:fixed;top:0;left:0;touch-action:none;cursor:none}
 #nui-move{display:flex;flex-direction:column;align-items:center;gap:clamp(6px,1.4vh,12px);pointer-events:none}
 #nui-thrust-row{display:flex;justify-content:center}
 #nui-lr-row{display:flex;align-items:center;gap:clamp(6px,2.2vw,14px)}
-#nui-act{display:flex;align-items:flex-end;pointer-events:none}
+#nui-act{display:flex;flex-direction:column;align-items:center;gap:7px;justify-content:flex-end;pointer-events:none}
 
 .nb{
   pointer-events:all;touch-action:none;-webkit-tap-highlight-color:transparent;
@@ -73,6 +73,10 @@ canvas{display:block;position:fixed;top:0;left:0;touch-action:none;cursor:none}
   color:#00ffff;transform:scale(.93);
   box-shadow:0 0 22px rgba(0,200,255,.55),0 0 44px rgba(0,200,255,.2),inset 0 0 12px rgba(0,200,255,.1);
 }
+.nb-hyper{--nb-sz:clamp(48px,10.5vw,64px);border-color:rgba(70,255,165,.18);color:rgba(90,255,180,.42);font-size:clamp(9px,2vw,12px);letter-spacing:.08em;opacity:.42;transition:opacity .12s,box-shadow .12s,border-color .12s,color .12s,transform .06s}
+.nb-hyper.ready{opacity:1;border-color:rgba(70,255,165,.55);color:#62ffb0;box-shadow:0 0 18px rgba(70,255,165,.25)}
+.nb-hyper.ready:active,.nb-hyper.ready.hit{background:rgba(70,255,165,.12);border-color:#62ffb0;box-shadow:0 0 28px rgba(70,255,165,.45);transform:scale(.93)}
+.nb:disabled{cursor:default}
 .nb-fire{
   --nb-sz:clamp(78px,17vw,110px);border-radius:50%;
   border-color:rgba(255,215,0,.32);color:rgba(255,215,0,.82);
@@ -105,6 +109,30 @@ canvas{display:block;position:fixed;top:0;left:0;touch-action:none;cursor:none}
   .nb-fire{--nb-sz:clamp(66px,14vw,92px)}
 }
 @keyframes nb-appear{from{opacity:0;transform:translateY(16px) scale(.88)}to{opacity:1;transform:none}}
+
+/* ── AUXigeN settings / House Rules ───────────────────────────── */
+#settings-btn{
+  position:fixed;top:12px;right:118px;z-index:72;width:42px;height:38px;border-radius:10px;
+  border:1px solid rgba(0,229,255,.32);background:rgba(2,14,32,.78);color:#65f3ff;
+  font:700 18px/1 'Courier New',monospace;cursor:pointer;box-shadow:0 0 14px rgba(0,190,255,.12);
+}
+#settings-btn:hover,#settings-btn:focus-visible{border-color:#00e5ff;box-shadow:0 0 22px rgba(0,229,255,.28);outline:none}
+#settings-overlay{position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(0,5,14,.78);backdrop-filter:blur(8px)}
+#settings-overlay.open{display:flex}
+.settings-card{width:min(780px,96vw);max-height:min(88vh,860px);overflow:auto;border:1px solid rgba(0,229,255,.38);border-radius:18px;background:linear-gradient(180deg,rgba(3,20,43,.98),rgba(2,9,22,.98));box-shadow:0 0 50px rgba(0,100,255,.2);padding:24px;color:#d9fbff;font-family:'Courier New',monospace}
+.settings-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px}
+.settings-kicker{font-size:10px;letter-spacing:.25em;color:#ff75ef;margin-bottom:5px}.settings-head h2{font-size:clamp(24px,5vw,38px);letter-spacing:.04em;color:#72f7ff;text-shadow:0 0 18px rgba(0,229,255,.35)}
+.settings-sub{margin-top:6px;font-size:11px;line-height:1.5;color:rgba(185,239,255,.58)}
+.settings-close{border:1px solid rgba(255,90,225,.35);background:rgba(255,50,210,.08);color:#ff84e9;border-radius:10px;width:40px;height:38px;font:700 18px 'Courier New',monospace;cursor:pointer}
+.settings-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.settings-section{border:1px solid rgba(0,229,255,.14);background:rgba(0,160,255,.035);border-radius:14px;padding:15px}
+.settings-section h3{font-size:12px;letter-spacing:.18em;color:#ffdf54;margin-bottom:13px}.setting-row{display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px;padding:8px 0;border-top:1px solid rgba(120,220,255,.07)}.setting-row:first-of-type{border-top:0}
+.setting-copy b{display:block;font-size:12px;color:#d9fbff}.setting-copy span{display:block;margin-top:3px;font-size:9px;line-height:1.4;color:rgba(185,239,255,.48)}
+.settings-card select,.settings-card input[type=range]{accent-color:#00e5ff}.settings-card select{max-width:190px;background:#071a2e;color:#bffaff;border:1px solid rgba(0,229,255,.28);border-radius:8px;padding:7px 8px;font:11px 'Courier New',monospace}
+.switch{position:relative;width:46px;height:24px}.switch input{position:absolute;opacity:0}.switch i{position:absolute;inset:0;border-radius:20px;border:1px solid rgba(0,229,255,.24);background:#071426;transition:.16s}.switch i:after{content:'';position:absolute;width:16px;height:16px;left:3px;top:3px;border-radius:50%;background:#5f7485;transition:.16s}.switch input:checked+i{background:rgba(0,229,255,.15);border-color:#00e5ff;box-shadow:0 0 12px rgba(0,229,255,.18)}.switch input:checked+i:after{transform:translateX(22px);background:#71f7ff;box-shadow:0 0 10px #00e5ff}
+.settings-footer{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:16px;font-size:9px;color:rgba(185,239,255,.4)}
+.settings-reset{border:1px solid rgba(255,220,80,.25);background:transparent;color:#ffd84d;border-radius:8px;padding:7px 10px;font:10px 'Courier New',monospace;cursor:pointer}
+@media(max-width:680px){.settings-grid{grid-template-columns:1fr}.settings-card{padding:18px}.setting-row{gap:8px}}
 </style>
 </head>
 <body>
@@ -120,13 +148,42 @@ canvas{display:block;position:fixed;top:0;left:0;touch-action:none;cursor:none}
       <button class="nb" id="nb-rotr" aria-label="Rotate right"><span>►</span></button>
     </div>
   </div>
-  <div id="nui-act" role="group" aria-label="Fire">
+  <div id="nui-act" role="group" aria-label="Actions">
+    <button class="nb nb-hyper" id="nb-hyper" aria-label="Use hyperspace charge" disabled><span>H</span><span class="nb-lbl">HYPER</span></button>
     <button class="nb nb-fire" id="nb-fire" aria-label="Fire">
       <span class="nb-dot">⬤</span><span class="nb-lbl">FIRE</span>
     </button>
   </div>
 </div>
 <button id="nui-pause" aria-label="Pause" data-state="playing">II</button>
+<button id="settings-btn" aria-label="House Rules and audio settings" title="House Rules / Settings">⚙</button>
+
+<div id="settings-overlay" aria-hidden="true">
+  <div class="settings-card" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+    <div class="settings-head">
+      <div><div class="settings-kicker">AUXigeN · HOUSE RULES</div><h2 id="settings-title">OBLITERATUS CONTROL DECK</h2><div class="settings-sub">Tune the cabinet. Rules persist locally. Audio defaults quiet until you opt in.</div></div>
+      <button class="settings-close" id="settings-close" aria-label="Close settings">×</button>
+    </div>
+    <div class="settings-grid">
+      <section class="settings-section"><h3>HOUSE RULES</h3>
+        <div class="setting-row"><div class="setting-copy"><b>Starting Ships</b><span>Classic three or a friendlier five.</span></div><select data-setting="startingLives"><option value="3">3 · CLASSIC</option><option value="5">5 · HOUSE</option></select></div>
+        <div class="setting-row"><div class="setting-copy"><b>Rock Traffic</b><span>Controls large asteroid count per wave.</span></div><select data-setting="density"><option value="classic">CLASSIC</option><option value="busy">BUSY</option><option value="obliteratus">OBLITERATUS</option></select></div>
+        <div class="setting-row"><div class="setting-copy"><b>Enemy Heat</b><span>Saucer aim, cadence and satellite pursuit.</span></div><select data-setting="enemyHeat"><option value="classic">CLASSIC</option><option value="hot">HOT</option><option value="spicy">SPICY</option></select></div>
+        <div class="setting-row"><div class="setting-copy"><b>Velocity Scoring</b><span>Ship speed multiplies destruction points.</span></div><label class="switch"><input type="checkbox" data-setting="velocityBonus"><i></i></label></div>
+        <div class="setting-row"><div class="setting-copy"><b>Powerups</b><span>Shield, twin shot, rapid fire, hyperspace cores.</span></div><label class="switch"><input type="checkbox" data-setting="powerups"><i></i></label></div>
+        <div class="setting-row"><div class="setting-copy"><b>Extra Ships</b><span>Award one ship every 10,000 points.</span></div><label class="switch"><input type="checkbox" data-setting="extraLives"><i></i></label></div>
+      </section>
+      <section class="settings-section"><h3>AUXigeN AUDIO</h3>
+        <div class="setting-row"><div class="setting-copy"><b>SFX</b><span>Layered transients, filtered debris and tactile pickup cues.</span></div><label class="switch"><input type="checkbox" data-setting="sfx"><i></i></label></div>
+        <div class="setting-row"><div class="setting-copy"><b>MIDI Music</b><span>Procedural note-grid score synthesized in-browser.</span></div><label class="switch"><input type="checkbox" data-setting="music"><i></i></label></div>
+        <div class="setting-row"><div class="setting-copy"><b>Music Program</b><span>Change harmonic and rhythmic treatment.</span></div><select data-setting="musicStyle"><option value="vector">VECTOR HOUSE</option><option value="acid">ACID ORBIT</option><option value="bass">WEST COAST BASS</option><option value="med">MED WAVE</option></select></div>
+        <div class="setting-row"><div class="setting-copy"><b>Tempo</b><span>Score clock. Gameplay is unaffected.</span></div><select data-setting="bpm"><option value="112">112 BPM</option><option value="128">128 BPM</option><option value="138">138 BPM</option><option value="148">148 BPM</option></select></div>
+        <div class="setting-row"><div class="setting-copy"><b>Master Level</b><span>Audio bus level.</span></div><input type="range" min="0" max="1" step="0.05" data-setting="master"></div>
+      </section>
+    </div>
+    <div class="settings-footer"><span>KEYS: O SETTINGS · P PAUSE · H HYPERSPACE (WHEN CHARGED)</span><button id="settings-reset" class="settings-reset">RESET HOUSE</button></div>
+  </div>
+</div>
 
 <script>
 // ═══════════════════════════════════════════════════════════════════════
@@ -155,6 +212,16 @@ const wrap   = (v, lo, hi) => v < lo ? hi-(lo-v)%(hi-lo) : lo+(v-lo)%(hi-lo);
 const dist   = (a, b) => Math.hypot(a.x-b.x, a.y-b.y);
 const clamp  = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
+// ── Persistent cabinet config ─────────────────────────────────────────
+const SETTINGS_KEY='astroids_obliteratus_settings_v2';
+const DEFAULT_SETTINGS={
+  startingLives:3,density:'classic',enemyHeat:'hot',velocityBonus:true,powerups:true,extraLives:true,
+  sfx:false,music:false,musicStyle:'vector',bpm:128,master:0.55
+};
+let settings={...DEFAULT_SETTINGS};
+try { settings={...DEFAULT_SETTINGS,...JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}')}; } catch(e){}
+const saveSettings=()=>localStorage.setItem(SETTINGS_KEY,JSON.stringify(settings));
+
 // ── Palette ───────────────────────────────────────────────────────────
 const C = {
   bg:     '#020b18',
@@ -181,67 +248,88 @@ const C = {
 const glow   = (col, blur=14) => { ctx.shadowColor=col; ctx.shadowBlur=blur; };
 const noGlow = () => { ctx.shadowBlur=0; };
 
-// ── Audio ─────────────────────────────────────────────────────────────
-let _ac = null;
-const AC = () => _ac || (_ac = new (window.AudioContext||window.webkitAudioContext)());
-
-function tone(freq, type, dur, vol=0.25, sweep=null) {
-  try {
-    const ac=AC(), o=ac.createOscillator(), g=ac.createGain();
-    o.connect(g); g.connect(ac.destination);
-    o.type=type;
-    o.frequency.setValueAtTime(sweep||freq, ac.currentTime);
-    if (sweep) o.frequency.exponentialRampToValueAtTime(freq, ac.currentTime+dur);
-    g.gain.setValueAtTime(vol, ac.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime+dur);
-    o.start(); o.stop(ac.currentTime+dur);
-  } catch(e){}
-}
-
-function noise(dur, bandFreq=150, vol=0.2) {
-  try {
-    const ac=AC();
-    const buf=ac.createBuffer(1, ac.sampleRate*dur, ac.sampleRate);
-    const d=buf.getChannelData(0);
-    for (let i=0; i<d.length; i++) d[i]=Math.random()*2-1;
-    const src=ac.createBufferSource(); src.buffer=buf;
-    const flt=ac.createBiquadFilter(); flt.type='bandpass';
-    flt.frequency.value=bandFreq; flt.Q.value=0.6;
-    const g=ac.createGain();
-    g.gain.setValueAtTime(vol, ac.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime+dur);
-    src.connect(flt); flt.connect(g); g.connect(ac.destination);
-    src.start(); src.stop(ac.currentTime+dur);
-  } catch(e){}
-}
-
-const SFX = {
-  shoot:      () => tone(1100,'square',0.07,0.12,1600),
-  thrust:     () => noise(0.08,90,0.04),
-  boomLarge:  () => { noise(0.6,65,0.5); tone(52,'sawtooth',0.4,0.25,110); },
-  boomMed:    () => { noise(0.32,105,0.35); tone(85,'sawtooth',0.22,0.16); },
-  boomSmall:  () => noise(0.16,195,0.22),
-  ufoShoot:   () => tone(440,'square',0.1,0.1,640),
-  ufoSpawn:   () => [180,240,320,420].forEach((f,i)=>setTimeout(()=>tone(f,'sine',0.12,0.1),i*55)),
-  playerDie:  () => { noise(0.9,52,0.55); tone(68,'sawtooth',0.65,0.32,210); },
-  extraLife:  () => [440,550,660,880].forEach((f,i)=>setTimeout(()=>tone(f,'sine',0.1,0.2),i*80)),
-  waveStart:  () => [200,300,450,680].forEach((f,i)=>setTimeout(()=>tone(f,'sawtooth',0.12,0.15),i*90)),
-  gameOver:   () => [400,300,200,100].forEach((f,i)=>setTimeout(()=>tone(f,'sawtooth',0.28,0.3),i*220)),
+// ── AUXigeN audio: layered SFX + procedural MIDI-style score ──────────
+let _ac=null,_master=null;
+const AC=()=>{
+  if(!_ac){
+    _ac=new (window.AudioContext||window.webkitAudioContext)();
+    _master=_ac.createGain(); _master.gain.value=settings.master; _master.connect(_ac.destination);
+  }
+  return _ac;
 };
+function ensureAudio(){ try{const ac=AC(); if(ac.state==='suspended') ac.resume(); if(_master)_master.gain.setTargetAtTime(settings.master,ac.currentTime,.02);}catch(e){} }
+function tone(freq,type,dur,vol=.2,sweep=null,when=0,filterFreq=null){
+  if(!settings.sfx) return;
+  try{
+    const ac=AC(),t=ac.currentTime+when,o=ac.createOscillator(),g=ac.createGain(); let out=o;
+    if(filterFreq){const f=ac.createBiquadFilter();f.type='lowpass';f.frequency.value=filterFreq;o.connect(f);out=f;}
+    out.connect(g);g.connect(_master);o.type=type;o.frequency.setValueAtTime(Math.max(20,sweep||freq),t);
+    if(sweep)o.frequency.exponentialRampToValueAtTime(Math.max(20,freq),t+dur);
+    g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(Math.max(.0002,vol),t+.008);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+    o.start(t);o.stop(t+dur+.02);
+  }catch(e){}
+}
+function noise(dur,bandFreq=150,vol=.2,when=0,q=.7){
+  if(!settings.sfx)return;
+  try{const ac=AC(),t=ac.currentTime+when,buf=ac.createBuffer(1,Math.ceil(ac.sampleRate*dur),ac.sampleRate),d=buf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+    const src=ac.createBufferSource(),flt=ac.createBiquadFilter(),g=ac.createGain();src.buffer=buf;flt.type='bandpass';flt.frequency.value=bandFreq;flt.Q.value=q;
+    g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+.008);g.gain.exponentialRampToValueAtTime(.0001,t+dur);src.connect(flt);flt.connect(g);g.connect(_master);src.start(t);src.stop(t+dur+.02);}catch(e){}
+}
+const chirp=(a,b,d=.12,v=.1)=>{tone(b,'triangle',d,v,a);tone(b*2,'sine',d*.65,v*.35,a*2,.015)};
+const SFX={
+  shoot:()=>{chirp(1450,760,.075,.105);noise(.035,2600,.025)},
+  thrust:()=>{noise(.065,105,.024,0,.5);tone(58,'sawtooth',.06,.018,82)},
+  boomLarge:()=>{noise(.62,72,.34,0,.45);noise(.22,820,.1,.02,1.2);tone(46,'sawtooth',.46,.19,105)},
+  boomMed:()=>{noise(.34,118,.24);noise(.12,1250,.07,.01,1.1);tone(76,'triangle',.26,.12,150)},
+  boomSmall:()=>{noise(.16,240,.14,0,1.0);chirp(240,105,.11,.05)},
+  ufoShoot:()=>{chirp(680,350,.105,.075);tone(175,'square',.08,.035,260,.02)},
+  ufoSpawn:()=>[180,240,315,430].forEach((f,i)=>tone(f,'sine',.16,.07,null,i*.055)),
+  playerDie:()=>{noise(.82,58,.38);noise(.35,1500,.1,.02);tone(62,'sawtooth',.7,.22,220)},
+  extraLife:()=>[440,554,659,880].forEach((f,i)=>tone(f,'triangle',.12,.12,null,i*.075)),
+  waveStart:()=>[196,294,440,659].forEach((f,i)=>tone(f,'sawtooth',.14,.085,null,i*.075,1800)),
+  gameOver:()=>[392,294,196,98].forEach((f,i)=>tone(f,'triangle',.3,.16,null,i*.18)),
+  powerSpawn:()=>{tone(880,'sine',.18,.07,330);tone(1320,'triangle',.2,.05,660,.04)},
+  powerPickup:()=>[523,659,784,1047].forEach((f,i)=>tone(f,'triangle',.12,.095,null,i*.045)),
+  shieldPop:()=>{noise(.18,1900,.08);chirp(900,180,.22,.09)},
+  hyperspace:()=>{noise(.2,950,.055);tone(1800,'sine',.32,.08,120)},
+};
+
+const MUSIC_PROGRAMS={
+  vector:{root:45,scale:[0,3,5,7,10],bass:[0,0,7,5,3,5,7,10],lead:[12,15,17,19,22,19,17,15]},
+  acid:{root:41,scale:[0,2,3,7,10],bass:[0,7,3,10,0,7,12,10],lead:[12,14,15,19,22,19,15,14]},
+  bass:{root:38,scale:[0,3,5,7,10],bass:[0,0,10,7,3,0,5,7],lead:[12,15,17,22,19,17,15,10]},
+  med:{root:45,scale:[0,2,4,7,9],bass:[0,7,9,7,4,2,0,9],lead:[12,16,19,21,19,16,14,12]},
+};
+let musicStep=0,musicClock=0;
+const midiHz=n=>440*Math.pow(2,(n-69)/12);
+function musicVoice(note,dur,vol,type='triangle',cutoff=1700){
+  if(!settings.music)return; try{const ac=AC(),t=ac.currentTime,o=ac.createOscillator(),f=ac.createBiquadFilter(),g=ac.createGain();o.type=type;o.frequency.value=midiHz(note);f.type='lowpass';f.frequency.value=cutoff;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+dur);o.connect(f);f.connect(g);g.connect(_master);o.start(t);o.stop(t+dur+.03);}catch(e){}
+}
+function updateMusic(dt){
+  if(!settings.music||gs.state!=='playing'||gs.paused)return;
+  musicClock-=dt;if(musicClock>0)return;ensureAudio();const stepDur=60/Number(settings.bpm)/2;musicClock+=stepDur;
+  const pr=MUSIC_PROGRAMS[settings.musicStyle]||MUSIC_PROGRAMS.vector,i=musicStep++%16,idx=i%8;
+  musicVoice(pr.root+pr.bass[idx],stepDur*.88,.055,i%4===0?'square':'triangle',settings.musicStyle==='acid'?900:1500);
+  if(i%2===0)musicVoice(pr.root+pr.lead[idx],stepDur*.7,.028,settings.musicStyle==='med'?'sine':'triangle',2200);
+  if(i%4===2)musicVoice(pr.root+24+pr.scale[(idx+gs.wave)%pr.scale.length],stepDur*.45,.018,'sine',2600);
+}
 
 // ── Keyboard ──────────────────────────────────────────────────────────
 const keys = {};
 window.addEventListener('keydown', e => {
+  if(e.code==='Escape'&&document.getElementById('settings-overlay').classList.contains('open')){closeSettings();return;}
+  if(e.code==='KeyO'){e.preventDefault();toggleSettings();return;}
   keys[e.code]=true;
-  if (['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)) e.preventDefault();
-  if (e.code==='Space' && gs.state!=='playing') startGame();
+  if (['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyH','ShiftLeft','ShiftRight'].includes(e.code)) e.preventDefault();
+  if (e.code==='Space' && gs.state!=='playing') { ensureAudio(); startGame(); }
   if (e.code==='KeyP' && gs.state==='playing') togglePause();
+  if ((e.code==='KeyH'||e.code==='ShiftLeft'||e.code==='ShiftRight')&&gs.state==='playing') useHyperspace();
 });
 window.addEventListener('keyup', e => { keys[e.code]=false; });
 
 // ── Grid (Geometry Wars spring-mesh) ─────────────────────────────────
 const grid = {
-  cells:52, nodes:[], cw:0, ch:0, cols:0, rows:0,
+  cells:52, nodes:[], cw:0, ch:0, cols:0, rows:0, kickTimer:0, kickMag:0,
 
   init() {
     this.cw=W/this.cells; this.ch=this.cw;
@@ -271,7 +359,10 @@ const grid = {
     }
   },
 
+  kick(mag,dur){this.kickMag=Math.max(this.kickMag,mag);this.kickTimer=Math.max(this.kickTimer,dur);},
+
   update(dt) {
+    if(this.kickTimer>0)this.kickTimer=Math.max(0,this.kickTimer-dt);
     const spring=8, damp=0.88;
     for (let r=0; r<this.rows; r++) {
       for (let c=0; c<this.cols; c++) {
@@ -284,7 +375,9 @@ const grid = {
   },
 
   draw() {
-    ctx.save(); ctx.lineWidth=0.8;
+    ctx.save();
+    if(this.kickTimer>0)ctx.translate(rnd(-this.kickMag,this.kickMag),rnd(-this.kickMag,this.kickMag));
+    ctx.lineWidth=0.8;
     for (let r=0; r<this.rows; r++) {
       for (let c=0; c<this.cols-1; c++) {
         const n0=this.nodes[r][c],n1=this.nodes[r][c+1];
@@ -465,12 +558,16 @@ class Ship {
     this.angle=-Math.PI/2; this.radius=13;
     this.invincible=3; this.blinkTimer=0; this.visible=true;
     this.thrustCooldown=0; this.dead=false;
+    this.shield=0; this.twinTimer=0; this.rapidTimer=0; this.hyperCharges=0;
   }
   get nose() {
     return {x:this.x+Math.cos(this.angle)*this.radius*1.6,
             y:this.y+Math.sin(this.angle)*this.radius*1.6};
   }
   update(dt) {
+    if(this.shield>0)this.shield=Math.max(0,this.shield-dt);
+    if(this.twinTimer>0)this.twinTimer=Math.max(0,this.twinTimer-dt);
+    if(this.rapidTimer>0)this.rapidTimer=Math.max(0,this.rapidTimer-dt);
     if (keys['ArrowLeft']||keys['KeyA']) this.angle-=3.3*dt;
     if (keys['ArrowRight']||keys['KeyD']) this.angle+=3.3*dt;
     const thrusting=keys['ArrowUp']||keys['KeyW'];
@@ -503,6 +600,9 @@ class Ship {
     if (!this.visible) return;
     const r=this.radius;
     ctx.save(); ctx.translate(this.x,this.y); ctx.rotate(this.angle);
+    if(this.shield>0){
+      ctx.save();ctx.rotate(-this.angle);ctx.globalAlpha=.2+.13*Math.sin(performance.now()/90);glow('#7c8cff',20);ctx.strokeStyle='#8e9cff';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(0,0,r*2.0,0,TAU);ctx.stroke();ctx.restore();
+    }
     glow(C.playerGlow,22); ctx.strokeStyle=C.player; ctx.lineWidth=2;
     ctx.beginPath();
     ctx.moveTo(r*1.6,0); ctx.lineTo(-r,r*0.85); ctx.lineTo(-r*0.45,0);
@@ -546,6 +646,41 @@ class Bullet {
     ctx.beginPath(); ctx.arc(this.x,this.y,this.radius,0,TAU); ctx.fill();
     ctx.restore();
   }
+}
+
+// ── Powerups / score floaters ─────────────────────────────────────────
+const POWER_META={
+  shield:{label:'VECTOR SHIELD',glyph:'◇',col:'#8f9cff'},
+  twin:{label:'TWIN SHOT',glyph:'Y',col:'#ffee44'},
+  rapid:{label:'RAPID FIRE',glyph:'»',col:'#ff7bd5'},
+  hyper:{label:'HYPERSPACE +2',glyph:'H',col:'#62ffb0'},
+};
+class PowerUp{
+  constructor(x,y,type){this.x=x;this.y=y;this.type=type;this.radius=12;this.life=11;this.dead=false;this.a=rnd(0,TAU);const q=rnd(0,TAU);this.vx=Math.cos(q)*26;this.vy=Math.sin(q)*26;}
+  update(dt){this.x=wrap(this.x+this.vx*dt,0,W);this.y=wrap(this.y+this.vy*dt,0,H);this.a+=dt*2.4;this.life-=dt;if(this.life<=0)this.dead=true;}
+  draw(){const m=POWER_META[this.type];ctx.save();ctx.translate(this.x,this.y);ctx.rotate(this.a);ctx.globalAlpha=clamp(this.life,0,1);glow(m.col,20);ctx.strokeStyle=m.col;ctx.lineWidth=1.5;ctx.beginPath();ctx.rect(-9,-9,18,18);ctx.stroke();ctx.rotate(-this.a);ctx.fillStyle=m.col;ctx.font='bold 12px "Courier New",monospace';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(m.glyph,0,1);ctx.restore();}
+}
+class FloatText{
+  constructor(x,y,text,col='#ffee44'){Object.assign(this,{x,y,text,col,life:.8,maxLife:.8,dead:false});}
+  update(dt){this.y-=24*dt;this.life-=dt;if(this.life<=0)this.dead=true;}
+  draw(){ctx.save();ctx.globalAlpha=clamp(this.life/this.maxLife,0,1);ctx.textAlign='center';ctx.font='bold 12px "Courier New",monospace';glow(this.col,8);ctx.fillStyle=this.col;ctx.fillText(this.text,this.x,this.y);ctx.restore();}
+}
+function maybeDropPowerup(x,y,chance=.1){
+  if(!settings.powerups||gs.powerups.length>=2||Math.random()>chance)return;
+  const types=['shield','twin','rapid','hyper'];const type=types[rndInt(0,types.length-1)];gs.powerups.push(new PowerUp(x,y,type));SFX.powerSpawn();
+}
+function applyPowerup(p){
+  if(!gs.ship)return;const sh=gs.ship;
+  if(p.type==='shield')sh.shield=Math.max(sh.shield,8);
+  if(p.type==='twin')sh.twinTimer=Math.max(sh.twinTimer,10);
+  if(p.type==='rapid')sh.rapidTimer=Math.max(sh.rapidTimer,9);
+  if(p.type==='hyper')sh.hyperCharges=Math.min(5,sh.hyperCharges+2);
+  gs.waveMsg=POWER_META[p.type].label;gs.waveMsgTimer=1.2;gs.floaters.push(new FloatText(p.x,p.y,POWER_META[p.type].label,POWER_META[p.type].col));SFX.powerPickup();
+}
+function useHyperspace(){
+  const sh=gs.ship;if(!sh||sh.hyperCharges<=0||gs.paused)return;
+  sh.hyperCharges--;let x,y,tries=0;do{x=rnd(50,W-50);y=rnd(70,H-50);tries++;}while(tries<20&&gs.asteroids.some(a=>dist({x,y},a)<a.radius+90));
+  grid.ripple(sh.x,sh.y,180,150);sh.x=x;sh.y=y;sh.vx*=.35;sh.vy*=.35;sh.invincible=Math.max(sh.invincible,1.0);grid.ripple(x,y,260,190);SFX.hyperspace();
 }
 
 // ── Asteroid ──────────────────────────────────────────────────────────
@@ -618,18 +753,20 @@ class UFO {
       this.radius=22;
       this.vx=rnd(55,90)*(Math.random()<0.5?1:-1);
       this.vy=rnd(20,55)*(Math.random()<0.5?1:-1);
-      this.shootTimer=rnd(2,3.5);
-      this.changeTimer=rnd(1.5,3);
+      const heat=settings.enemyHeat==='spicy'?.68:settings.enemyHeat==='hot'?.82:1;
+      this.shootTimer=rnd(1.7,3.0)*heat;
+      this.changeTimer=rnd(1.3,2.6);
     } else if (type==='small') {
       this.radius=13;
       this.vx=rnd(90,130)*(Math.random()<0.5?1:-1);
       this.vy=rnd(40,80)*(Math.random()<0.5?1:-1);
-      this.shootTimer=rnd(1.2,2.2);
-      this.changeTimer=rnd(0.8,2);
+      const heat=settings.enemyHeat==='spicy'?.62:settings.enemyHeat==='hot'?.78:1;
+      this.shootTimer=rnd(.95,1.75)*heat;
+      this.changeTimer=rnd(.7,1.7);
     } else {
       // Killer Satellite — tiny, fast, homing
       this.radius=8;
-      this.speed=110;
+      this.speed=settings.enemyHeat==='spicy'?165:settings.enemyHeat==='hot'?145:120;
       this.shootTimer=999;
       this.changeTimer=999;
       const a=rnd(0,TAU);
@@ -645,7 +782,7 @@ class UFO {
       if (gs.ship) {
         const dx=gs.ship.x-this.x, dy=gs.ship.y-this.y;
         const d=Math.hypot(dx,dy)||1;
-        const turn=0.9*dt;
+        const turn=(settings.enemyHeat==='spicy'?1.45:settings.enemyHeat==='hot'?1.2:.95)*dt;
         this.vx+=(dx/d)*this.speed*turn;
         this.vy+=(dy/d)*this.speed*turn;
         const spd=Math.hypot(this.vx,this.vy);
@@ -661,14 +798,19 @@ class UFO {
       }
       this.shootTimer-=dt;
       if (this.shootTimer<=0 && gs.ship) {
-        this.shootTimer=this.type==='small'?rnd(1.2,2.2):rnd(2,3.5);
+        const heat=settings.enemyHeat==='spicy'?.62:settings.enemyHeat==='hot'?.78:1;
+        this.shootTimer=(this.type==='small'?rnd(.95,1.75):rnd(1.7,3.0))*heat;
         let angle;
         if (this.type==='small') {
-          // Aimed with slight inaccuracy
-          angle=Math.atan2(gs.ship.y-this.y,gs.ship.x-this.x)+rnd(-0.3,0.3);
+          // Predictive lead: nastier without becoming hitscan-perfect.
+          const lead=settings.enemyHeat==='spicy'?.62:settings.enemyHeat==='hot'?.46:.28;
+          const tx=gs.ship.x+gs.ship.vx*lead,ty=gs.ship.y+gs.ship.vy*lead;
+          const err=settings.enemyHeat==='spicy'?.08:settings.enemyHeat==='hot'?.14:.28;
+          angle=Math.atan2(ty-this.y,tx-this.x)+rnd(-err,err);
         } else {
-          // Random
-          angle=rnd(0,TAU);
+          // Large saucers occasionally take a dirty aimed shot on hotter rules.
+          if(settings.enemyHeat!=='classic'&&Math.random()<.42)angle=Math.atan2(gs.ship.y-this.y,gs.ship.x-this.x)+rnd(-.48,.48);
+          else angle=rnd(0,TAU);
         }
         const spd=280;
         gs.bullets.push(new Bullet(this.x,this.y,Math.cos(angle)*spd,Math.sin(angle)*spd,false));
@@ -745,9 +887,8 @@ class UFO {
   }
 }
 
-// ── Screen shake ──────────────────────────────────────────────────────
-let shakeTimer=0, shakeMag=0;
-function shake(mag,dur) { shakeMag=Math.max(shakeMag,mag); shakeTimer=Math.max(shakeTimer,dur); }
+// ── Impact response: grid only. Gameplay, ship and HUD remain stable. ──
+function shake(mag,dur) { grid.kick(mag,dur); }
 
 // ── HUD ───────────────────────────────────────────────────────────────
 function drawMiniShip(x,y) {
@@ -760,6 +901,7 @@ function drawMiniShip(x,y) {
 }
 
 function drawHUD() {
+  const hb=document.getElementById('nb-hyper');if(hb){const ready=!!(gs.ship&&gs.ship.hyperCharges>0);hb.disabled=!ready;hb.classList.toggle('ready',ready);}
   ctx.save();
   ctx.font='bold 20px "Courier New",monospace';
   glow(C.ui,13); ctx.fillStyle=C.ui; ctx.textAlign='left';
@@ -767,10 +909,17 @@ function drawHUD() {
   ctx.font='13px "Courier New",monospace';
   ctx.fillStyle='rgba(0,200,220,0.5)';
   ctx.fillText(`HI: ${gs.hiScore}`,22,57);
+  if(gs.ship&&settings.velocityBonus){const m=getVelocityMultiplier();ctx.fillStyle=m>1.01?'#ffee44':'rgba(0,200,220,.42)';ctx.fillText(`VELOCITY ×${m.toFixed(2)}`,22,76);}
   ctx.font='bold 20px "Courier New",monospace';
   glow('#ff44ff',13); ctx.fillStyle='#ff66ff';
   ctx.textAlign='right';
   ctx.fillText(`WAVE: ${gs.wave}`,W-22,38);
+  if(gs.ship){ctx.font='11px "Courier New",monospace';noGlow();let yy=58;
+    if(gs.ship.shield>0){ctx.fillStyle='#a9b2ff';ctx.fillText(`SHIELD ${gs.ship.shield.toFixed(1)}s`,W-22,yy);yy+=16;}
+    if(gs.ship.twinTimer>0){ctx.fillStyle='#ffee55';ctx.fillText(`TWIN ${gs.ship.twinTimer.toFixed(1)}s`,W-22,yy);yy+=16;}
+    if(gs.ship.rapidTimer>0){ctx.fillStyle='#ff8ddd';ctx.fillText(`RAPID ${gs.ship.rapidTimer.toFixed(1)}s`,W-22,yy);yy+=16;}
+    if(gs.ship.hyperCharges>0){ctx.fillStyle='#62ffb0';ctx.fillText(`HYPER H×${gs.ship.hyperCharges}`,W-22,yy);}
+  }
   ctx.textAlign='center';
   for (let i=0; i<gs.lives; i++) drawMiniShip(W/2-(gs.lives-1)*20+i*40,32);
   ctx.restore();
@@ -800,7 +949,7 @@ function drawTitle() {
   if (!nuiActive) {
     ctx.font='13px "Courier New",monospace'; noGlow();
     ctx.fillStyle='rgba(0,200,220,0.65)';
-    ctx.fillText('A/D ◄► ROTATE   W▲ THRUST   SPACE FIRE   P PAUSE',W/2,H/2+72);
+    ctx.fillText('A/D ◄► ROTATE   W▲ THRUST   SPACE FIRE   H HYPER   O RULES   P PAUSE',W/2,H/2+72);
   }
   if (gs.hiScore>0) {
     ctx.font='14px "Courier New",monospace';
@@ -853,7 +1002,7 @@ const gs = {
   score:0, hiScore:parseInt(localStorage.getItem('astroids_obliteratus_hi')||'0'),
   lives:3, wave:1,
   ship:null,
-  asteroids:[], bullets:[], sparks:[], debris:[], ufos:[],
+  asteroids:[], bullets:[], sparks:[], debris:[], ufos:[], powerups:[], floaters:[],
   shootCd:0,
   ufoTimer:0, ufoPhase:0,       // ufoPhase tracks what we next want to spawn
   waveMsg:'', waveMsgTimer:0,
@@ -870,10 +1019,10 @@ function togglePause() {
 function startGame() {
   Object.assign(gs,{
     state:'playing',paused:false,
-    score:0,lives:3,wave:1,
+    score:0,lives:Number(settings.startingLives),wave:1,
     ship:new Ship(),
-    asteroids:[],bullets:[],sparks:[],debris:[],ufos:[],
-    shootCd:0,ufoTimer:rnd(16,24),ufoPhase:0,
+    asteroids:[],bullets:[],sparks:[],debris:[],ufos:[],powerups:[],floaters:[],
+    shootCd:0,ufoTimer:rnd(13,20),ufoPhase:0,
     respawnTimer:0,
   });
   const btn=document.getElementById('nui-pause');
@@ -884,7 +1033,8 @@ function startGame() {
 function spawnWave(w) {
   gs.asteroids=[]; gs.bullets=gs.bullets.filter(b=>!b.fromPlayer);
   gs.ufos=[];
-  const count=3+w;
+  const densityAdd=settings.density==='obliteratus'?3:settings.density==='busy'?1:0;
+  const count=3+w+densityAdd;
   for (let i=0; i<count; i++) {
     let x,y;
     do { x=rnd(0,W); y=rnd(0,H); }
@@ -893,13 +1043,23 @@ function spawnWave(w) {
   }
   gs.waveMsg=w===1?'ENGAGE':`WAVE  ${w}`;
   gs.waveMsgTimer=2.5;
-  gs.ufoTimer=rnd(14,22);
+  gs.ufoTimer=rnd(settings.enemyHeat==='spicy'?9:settings.enemyHeat==='hot'?11:14,settings.enemyHeat==='spicy'?15:settings.enemyHeat==='hot'?18:22);
   SFX.waveStart();
 }
 
+function getVelocityMultiplier(){
+  if(!settings.velocityBonus||!gs.ship)return 1;
+  const speed=Math.hypot(gs.ship.vx,gs.ship.vy);
+  return 1+Math.min(1.5,speed/300*1.5);
+}
+function awardKill(base,x,y){
+  const m=getVelocityMultiplier(),pts=Math.max(1,Math.round(base*m));addScore(pts);
+  if(m>1.08)gs.floaters.push(new FloatText(x,y,`+${pts}  ×${m.toFixed(2)}`,'#ffee44'));
+  else gs.floaters.push(new FloatText(x,y,`+${pts}`,'#8cf8ff'));
+}
 function addScore(pts) {
   const prev=gs.score; gs.score+=pts;
-  if (Math.floor(gs.score/10000)>Math.floor(prev/10000)) {
+  if (settings.extraLives&&Math.floor(gs.score/10000)>Math.floor(prev/10000)) {
     gs.lives=Math.min(gs.lives+1,7); SFX.extraLife();
     gs.waveMsg='+1  LIFE'; gs.waveMsgTimer=1.5;
   }
@@ -911,6 +1071,7 @@ function addScore(pts) {
 
 function killShip() {
   if (!gs.ship) return;
+  if(gs.ship.shield>0){gs.ship.shield=0;gs.ship.invincible=.65;grid.ripple(gs.ship.x,gs.ship.y,320,220);SFX.shieldPop();gs.waveMsg='SHIELD  BROKEN';gs.waveMsgTimer=.75;return;}
   // Ship explosion — blue-white debris fragments!
   const sx=gs.ship.x, sy=gs.ship.y;
   grid.ripple(sx,sy,550,320);
@@ -931,8 +1092,8 @@ function killShip() {
 
 // ── UFO spawn logic: wave-scaled enemy mix ────────────────────────────
 function trySpawnUFO() {
-  if (gs.ufos.length>=2) return;
-  gs.ufoTimer=rnd(12,22);
+  const cap=settings.enemyHeat==='spicy'?3:2;if(gs.ufos.length>=cap)return;
+  gs.ufoTimer=rnd(settings.enemyHeat==='spicy'?8:settings.enemyHeat==='hot'?10:12,settings.enemyHeat==='spicy'?14:settings.enemyHeat==='hot'?18:22);
   // Each wave cycle: large → small → satellite (on wave 3+)
   const types=['large','small'];
   if (gs.wave>=3) types.push('sat');
@@ -951,19 +1112,17 @@ function loop(ts) {
   grid.update(dt);
 
   if (gs.state==='playing'&&!gs.paused) {
-    if (shakeTimer>0) shakeTimer-=dt;
     if (gs.waveMsgTimer>0) gs.waveMsgTimer-=dt;
+    updateMusic(dt);
 
     gs.ufoTimer-=dt;
     if (gs.ufoTimer<=0) trySpawnUFO();
 
     gs.shootCd-=dt;
     if (keys['Space']&&gs.ship&&gs.shootCd<=0) {
-      gs.shootCd=0.17;
-      const n=gs.ship.nose, spd=570;
-      gs.bullets.push(new Bullet(n.x,n.y,
-        gs.ship.vx+Math.cos(gs.ship.angle)*spd,
-        gs.ship.vy+Math.sin(gs.ship.angle)*spd,true));
+      gs.shootCd=gs.ship.rapidTimer>0?.085:.17;
+      const n=gs.ship.nose,spd=570,angles=gs.ship.twinTimer>0?[-.085,.085]:[0];
+      for(const off of angles)gs.bullets.push(new Bullet(n.x,n.y,gs.ship.vx+Math.cos(gs.ship.angle+off)*spd,gs.ship.vy+Math.sin(gs.ship.angle+off)*spd,true));
       SFX.shoot();
     }
 
@@ -978,6 +1137,8 @@ function loop(ts) {
     for (const b of gs.bullets) b.update(dt);
     for (const p of gs.sparks) p.update(dt);
     for (const d of gs.debris) d.update(dt);
+    for (const p of gs.powerups) p.update(dt);
+    for (const f of gs.floaters) f.update(dt);
 
     // ── Collisions ───────────────────────────────────────────────
     for (const b of gs.bullets) {
@@ -985,14 +1146,14 @@ function loop(ts) {
       for (const a of gs.asteroids) {
         if (a.dead||b.dead) continue;
         if (dist(b,a)<b.radius+a.radius) {
-          b.dead=true; a.dead=true; a.explode();
-          addScore({3:20,2:50,1:100}[a.size]);
+          b.dead=true; a.dead=true; const ax=a.x,ay=a.y,asz=a.size; a.explode();
+          awardKill({3:20,2:50,1:100}[asz],ax,ay);maybeDropPowerup(ax,ay,asz===1?.10:.055);
         }
       }
       for (const u of gs.ufos) {
         if (u.dead||b.dead) continue;
         if (dist(b,u)<b.radius+u.radius) {
-          b.dead=true; u.dead=true; u.explode(); addScore(u.points);
+          b.dead=true; u.dead=true; const ux=u.x,uy=u.y,up=u.points; u.explode(); awardKill(up,ux,uy); maybeDropPowerup(ux,uy,.24);
         }
       }
     }
@@ -1016,6 +1177,9 @@ function loop(ts) {
         if (dist(u,gs.ship)<u.radius+gs.ship.radius) { u.dead=true; u.explode(); killShip(); break; }
       }
     }
+    if(gs.ship){
+      for(const p of gs.powerups){if(!p.dead&&dist(p,gs.ship)<p.radius+gs.ship.radius+4){p.dead=true;applyPowerup(p);}}
+    }
 
     // Cleanup
     gs.asteroids=gs.asteroids.filter(a=>!a.dead);
@@ -1023,6 +1187,8 @@ function loop(ts) {
     gs.bullets=gs.bullets.filter(b=>!b.dead);
     gs.sparks=gs.sparks.filter(p=>!p.dead);
     gs.debris=gs.debris.filter(d=>!d.dead);
+    gs.powerups=gs.powerups.filter(p=>!p.dead);
+    gs.floaters=gs.floaters.filter(f=>!f.dead);
 
     // Next wave
     if (gs.asteroids.length===0&&gs.ufos.length===0&&gs.respawnTimer<=0) {
@@ -1032,7 +1198,6 @@ function loop(ts) {
 
   // ── Render ───────────────────────────────────────────────────────
   ctx.save();
-  if (shakeTimer>0) ctx.translate(rnd(-shakeMag,shakeMag),rnd(-shakeMag,shakeMag));
   ctx.fillStyle=C.bg; ctx.fillRect(-20,-20,W+40,H+40);
   grid.draw();
 
@@ -1044,7 +1209,9 @@ function loop(ts) {
     for (const a of gs.asteroids) a.draw();
     for (const u of gs.ufos) u.draw();
     for (const b of gs.bullets) b.draw();
+    for (const p of gs.powerups) p.draw();
     if (gs.ship) gs.ship.draw();
+    for (const f of gs.floaters) f.draw();
 
     if (gs.waveMsgTimer>0) {
       const fa=Math.min(1,gs.waveMsgTimer)*Math.min(1,(2.5-gs.waveMsgTimer)*2.2);
@@ -1071,6 +1238,22 @@ function loop(ts) {
   requestAnimationFrame(loop);
 }
 
+// ── Settings control deck ─────────────────────────────────────────────
+let settingsWasPaused=false;
+function syncSettingsUI(){
+  document.querySelectorAll('[data-setting]').forEach(el=>{const k=el.dataset.setting,v=settings[k];if(el.type==='checkbox')el.checked=!!v;else el.value=String(v);});
+}
+function openSettings(){const ov=document.getElementById('settings-overlay');if(ov.classList.contains('open'))return;settingsWasPaused=gs.paused;if(gs.state==='playing')gs.paused=true;syncSettingsUI();ov.classList.add('open');ov.setAttribute('aria-hidden','false');}
+function closeSettings(){const ov=document.getElementById('settings-overlay');ov.classList.remove('open');ov.setAttribute('aria-hidden','true');if(gs.state==='playing')gs.paused=settingsWasPaused;}
+function toggleSettings(){document.getElementById('settings-overlay').classList.contains('open')?closeSettings():openSettings();}
+function setupSettings(){
+  const ov=document.getElementById('settings-overlay');document.getElementById('settings-btn').addEventListener('click',()=>{ensureAudio();openSettings();});document.getElementById('settings-close').addEventListener('click',closeSettings);
+  ov.addEventListener('pointerdown',e=>{if(e.target===ov)closeSettings();});
+  document.querySelectorAll('[data-setting]').forEach(el=>el.addEventListener('change',()=>{const k=el.dataset.setting;let v=el.type==='checkbox'?el.checked:el.value;if(k==='startingLives'||k==='bpm')v=Number(v);if(k==='master')v=Number(v);settings[k]=v;saveSettings();if(k==='master'&&_master)_master.gain.setTargetAtTime(v,AC().currentTime,.02);if(k==='music'&&v){ensureAudio();musicClock=0;} }));
+  document.querySelector('[data-setting="master"]').addEventListener('input',e=>{settings.master=Number(e.target.value);saveSettings();if(_master)_master.gain.setTargetAtTime(settings.master,AC().currentTime,.02);});
+  document.getElementById('settings-reset').addEventListener('click',()=>{settings={...DEFAULT_SETTINGS};saveSettings();syncSettingsUI();if(_master)_master.gain.value=settings.master;});syncSettingsUI();
+}
+
 // ── Touch NUI ─────────────────────────────────────────────────────────
 function setupNUI() {
   const touchPrimary=window.matchMedia('(pointer:coarse)').matches
@@ -1087,12 +1270,17 @@ function setupNUI() {
     el.addEventListener('pointerdown',e=>{
       e.preventDefault(); el.setPointerCapture(e.pointerId);
       keys[code]=true; el.classList.add('hit');
-      if (code==='Space'&&gs.state!=='playing') startGame();
+      if (code==='Space'&&gs.state!=='playing') {ensureAudio();startGame();}
     },{passive:false});
     const up=e=>{e.preventDefault();keys[code]=false;el.classList.remove('hit');};
     el.addEventListener('pointerup',up,{passive:false});
     el.addEventListener('pointercancel',up,{passive:false});
   }
+
+  const hb=document.getElementById('nb-hyper');
+  hb.addEventListener('pointerdown',e=>{e.preventDefault();if(hb.disabled)return;hb.classList.add('hit');ensureAudio();useHyperspace();},{passive:false});
+  hb.addEventListener('pointerup',e=>{e.preventDefault();hb.classList.remove('hit');},{passive:false});
+  hb.addEventListener('pointercancel',()=>hb.classList.remove('hit'),{passive:false});
 
   const pb=document.getElementById('nui-pause');
   pb.addEventListener('pointerdown',e=>{
@@ -1101,11 +1289,12 @@ function setupNUI() {
   pb.addEventListener('pointerup',e=>{e.preventDefault();pb.classList.remove('hit');},{passive:false});
   pb.addEventListener('pointercancel',()=>pb.classList.remove('hit'),{passive:false});
 
-  canvas.addEventListener('pointerdown',()=>{ if(gs.state!=='playing') startGame(); },{passive:true});
+  canvas.addEventListener('pointerdown',()=>{ ensureAudio(); if(gs.state!=='playing') startGame(); },{passive:true});
 }
 
 // ── Go ────────────────────────────────────────────────────────────────
 resize();
+setupSettings();
 setupNUI();
 requestAnimationFrame(ts=>{lastTs=ts;requestAnimationFrame(loop);});
 </script>
