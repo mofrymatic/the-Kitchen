@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-WWL5YRP8W7"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-WWL5YRP8W7');
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="mobile-web-app-capable" content="yes">
@@ -31,45 +40,6 @@
 <meta name="twitter:title" content="Zittris">
 <meta name="twitter:description" content="A retro arcade hub serving Neon Invaders, Astroids, Cave Racer, RED EYE, Packman, Zittris, and more.">
 <meta name="twitter:image" content="https://frymatic.us/FTSArcade/zittris-preview.png">
-
-<!-- ── Google Analytics (GA4) ───────────────────────────────────────────
-     Paste the real Measurement ID from the Analytics dashboard into
-     FTS_GA_ID below. Left as the placeholder, this stays fully inert:
-     gaEvent() degrades to a console-log-only stub — same dry-run pattern
-     as reportToShell — so nothing here can block or throw inside
-     gameplay, on/offline, ID set or not, adblocked or not.
-     Event shape is the arcade-wide convention: node entry/exit + dwell
-     time, "node" being this cabinet's play session. -->
-<script>
-(function(){
-  const FTS_GA_ID = 'G-WWL5YRP8W7'; // TODO: replace with real Measurement ID
-  const gaReady = !!FTS_GA_ID && !FTS_GA_ID.includes('WWL5YRP8W7');
-
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){ window.dataLayer.push(arguments); }
-  window.gtag = gtag;
-
-  if (gaReady) {
-    const s = document.createElement('script');
-    s.async = true;
-    s.src = 'https://www.googletagmanager.com/gtag/js?id=' + FTS_GA_ID;
-    s.onerror = () => { /* blocked or offline — gaEvent() below still no-ops safely */ };
-    document.head.appendChild(s);
-    gtag('js', new Date());
-    gtag('config', FTS_GA_ID, { send_page_view: true });
-  }
-
-  window.gaEvent = function(name, params) {
-    try {
-      if (gaReady && typeof window.gtag === 'function') {
-        gtag('event', name, params || {});
-      } else {
-        console.log('[GA dry-run]', name, params || {});
-      }
-    } catch (e) { /* analytics must never break gameplay */ }
-  };
-})();
-</script>
 
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
@@ -1920,11 +1890,6 @@ function topOut(){
   gs.current=null;gs.state='gameover';stopBGM();
   if(gs.score>gs.highScore){gs.highScore=gs.score;safeStorageSet('tetris_ob_hi',gs.highScore)}
   SFX.gameOver();spawnGameOverEffect();updateChromeVisibility();renderMenuData();
-  gaEvent('node_exit',{
-    node:'zittris',cabinet:'ZITTRIS',
-    dwell_ms:Math.round(performance.now()-(gs.sessionStartTs||performance.now())),
-    score:gs.score,level:gs.level,is_high_score:gs.score>=gs.highScore
-  });
 }
 function spawnNext(){
   if(!gs.nextQueue.length)gs.nextQueue.push(pickPiece());
@@ -2252,8 +2217,6 @@ function ghostY(){if(!gs.current)return 0;let dy=0;while(canPlace(gs.current,0,d
 function startGame(){
   try{AC().resume()}catch(e){}
   clearPauseReasons();initGS();gs.level=titleLevel;applyStartHeight(titleHeight);gs.state='playing';spawnNext();
-  gs.sessionStartTs=performance.now();
-  gaEvent('node_entry',{node:'zittris',cabinet:'ZITTRIS',start_level:gs.level});
   updateChromeVisibility();reconcileBGM();
 }
 function togglePause(){toggleManualPause()}
