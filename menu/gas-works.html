@@ -72,13 +72,15 @@ a{color:inherit}
 .shell{max-width:1220px;margin:0 auto;padding:22px}
 .sheet{
   background:var(--sheet);
-  border:2px solid var(--line);
-  box-shadow:0 16px 44px rgba(50,30,20,.13);
+  border:1px solid var(--hair);
+  border-radius:10px;
+  overflow:hidden;
+  box-shadow:0 16px 44px rgba(50,30,20,.10);
 }
-.form-head{display:grid;grid-template-columns:1fr 290px;border-bottom:2px solid var(--line)}
+.form-head{display:grid;grid-template-columns:1fr 290px;border-bottom:1px solid var(--line)}
 .form-head-main{padding:22px 24px 24px}
 .form-id{
-  border-left:2px solid var(--line);
+  border-left:1px solid var(--line);
   padding:18px 20px;
   display:flex;
   flex-direction:column;
@@ -110,7 +112,7 @@ h1{
 .notice{
   display:grid;
   grid-template-columns:180px 1fr;
-  border-bottom:2px solid var(--line);
+  border-bottom:1px solid var(--line);
   background:var(--amber-soft);
 }
 .notice-label{
@@ -121,7 +123,7 @@ h1{
   letter-spacing:.08em;
 }
 .notice-copy{padding:11px 14px;font-size:13px}
-.section{border-bottom:2px solid var(--line)}
+.section{border-bottom:1px solid var(--line)}
 .section:last-child{border-bottom:0}
 .section-title{
   display:grid;
@@ -147,13 +149,14 @@ h1{
 }
 input,select,textarea{
   width:100%;
-  border:1px solid var(--line);
+  border:1px solid var(--hair);
   background:var(--field);
   padding:10px 11px;
-  border-radius:0;
+  border-radius:6px;
   outline:none;
+  transition:border-color .15s ease, box-shadow .15s ease;
 }
-input:focus,select:focus,textarea:focus{box-shadow:0 0 0 2px var(--amber)}
+input:focus,select:focus,textarea:focus{border-color:var(--amber);box-shadow:0 0 0 3px rgba(157,100,32,.16)}
 textarea{min-height:88px;resize:vertical}
 .service-grid{display:grid;grid-template-columns:repeat(3,1fr)}
 .service{
@@ -202,7 +205,9 @@ textarea{min-height:88px;resize:vertical}
 .matrix-grid{
   display:grid;
   grid-template-columns:180px 1fr;
-  border:2px solid var(--amber);
+  border:1px solid var(--amber);
+  border-radius:8px;
+  overflow:hidden;
 }
 .matrix-status{
   padding:14px;
@@ -334,16 +339,18 @@ textarea{min-height:88px;resize:vertical}
 .total-row.grand{font-size:18px;background:#f0e6d8}
 .actions{display:flex;gap:10px;flex-wrap:wrap;padding:16px;background:#f1e8dc;border-top:1px solid var(--line)}
 .btn{
-  border:1px solid var(--line);
+  border:1px solid var(--hair);
+  border-radius:6px;
   background:#fff;
   padding:11px 14px;
   font-weight:800;
   text-transform:uppercase;
   letter-spacing:.04em;
   font-size:12px;
+  transition:border-color .15s ease, filter .15s ease;
 }
 .btn.primary{background:var(--amber);border-color:var(--amber);color:#fff}
-.btn.dark{background:#15110f;color:#fff}
+.btn.dark{background:#15110f;border-color:#15110f;color:#fff}
 .btn:hover{filter:brightness(.96)}
 .output{
   padding:20px;
@@ -404,8 +411,10 @@ textarea{min-height:88px;resize:vertical}
   margin:0 auto;
   background:#fff;
   color:#111;
-  border:1px solid #1b1b1b;
-  box-shadow:0 14px 34px rgba(0,0,0,.16);
+  border:1px solid #d7d7d5;
+  border-radius:8px;
+  overflow:hidden;
+  box-shadow:0 14px 34px rgba(0,0,0,.12);
   font-family:Arial,Helvetica,sans-serif;
 }
 .invoice-paper *{box-sizing:border-box}
@@ -414,14 +423,14 @@ textarea{min-height:88px;resize:vertical}
   grid-template-columns:1.35fr .65fr;
   gap:24px;
   padding:22px 24px 16px;
-  border-bottom:5px solid #9d6420;
+  border-bottom:2px solid #9d6420;
   position:relative;
 }
 .inv-brand{display:grid;grid-template-columns:88px 1fr;gap:14px;align-items:start}
 .inv-mark{
   width:82px;height:82px;border-radius:50%;
-  border:4px solid #18110d;
-  outline:2px solid #9d6420;
+  border:2px solid #18110d;
+  outline:1px solid #9d6420;
   display:grid;place-items:center;
   background:#17110f;color:#c88a32;
   font:700 64px/1 Georgia,serif;
@@ -437,7 +446,7 @@ textarea{min-height:88px;resize:vertical}
 .inv-docmeta td:last-child{font-weight:700}
 .inv-titlebar{
   display:flex;justify-content:space-between;gap:16px;align-items:baseline;
-  padding:8px 18px 7px;border-bottom:1.5px solid #111;
+  padding:8px 18px 7px;border-bottom:1px solid #111;
 }
 .inv-titlebar strong{font-size:16px;letter-spacing:.02em;text-transform:uppercase}
 .inv-titlebar span{font:700 9px var(--mono);letter-spacing:.04em;color:#9d6420;text-transform:uppercase}
@@ -483,6 +492,31 @@ textarea{min-height:88px;resize:vertical}
   .invoice-paper{width:8.5in;transform-origin:top left}
 }
 
+/* ── Signature capture & scheduling embed ───────────────────────────── */
+.sign-panel{background:#fff;border:1px solid var(--hair);border-radius:10px;padding:16px;max-width:820px;margin:0 auto;box-shadow:0 4px 18px rgba(50,30,20,.06)}
+.sign-panel .cell{padding:0 0 14px;border:0}
+.sign-pad-wrap{margin-bottom:14px}
+#sigCanvas{
+  display:block;
+  width:100%;
+  height:180px;
+  background:
+    repeating-linear-gradient(transparent, transparent 39px, var(--hair) 40px),
+    var(--field);
+  border:1px solid var(--hair);
+  border-radius:6px;
+  touch-action:none;
+  cursor:crosshair;
+}
+.sign-hint{font:11px var(--mono);color:var(--muted);margin:6px 0 0}
+.inv-sign-img{max-height:44px;display:block;margin-bottom:2px}
+.calendar-panel{background:#fff;border:1px solid var(--hair);border-radius:10px;overflow:hidden;padding:0;max-width:900px;margin:0 auto;box-shadow:0 4px 18px rgba(50,30,20,.06)}
+.calendar-ref{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-bottom:1px solid var(--hair);background:var(--amber-soft);font:12px var(--mono)}
+.calendar-ref code{font-weight:700;background:#fff;padding:2px 6px;border:1px solid var(--hair);border-radius:4px}
+#calendarEmbed{width:100%;height:680px;border:0;display:block}
+.calendar-fallback{padding:12px 14px;font:12px var(--mono);color:var(--muted);border-top:1px solid var(--hair)}
+.calendar-fallback a{color:var(--amber);font-weight:700}
+
 @media(max-width:940px){
   .service-grid{grid-template-columns:1fr 1fr}
   .service:nth-child(3n){border-right:1px solid var(--line)}
@@ -492,7 +526,7 @@ textarea{min-height:88px;resize:vertical}
 }
 @media(max-width:760px){
   .form-head{grid-template-columns:1fr}
-  .form-id{border-left:0;border-top:2px solid var(--line);min-height:145px}
+  .form-id{border-left:0;border-top:1px solid var(--line);min-height:145px}
   .notice{grid-template-columns:1fr}
   .notice-label{border-right:0;border-bottom:1px solid var(--line)}
   .cols-2,.cols-3,.service-grid,.audit-grid,.total-grid,.vector{grid-template-columns:1fr}
@@ -903,10 +937,50 @@ textarea{min-height:88px;resize:vertical}
           <span>GLZ-01 commercial invoice preview · browser PDF output remains vector-sharp</span>
           <div class="invoice-toolbar-actions">
             <button class="btn dark" id="printInvoiceTop">Print / Save PDF</button>
+            <button class="btn primary" id="openSign">Sign Invoice</button>
             <button class="btn" id="closeInvoice">Close Preview</button>
           </div>
         </div>
         <div class="invoice-paper" id="invoicePaper"></div>
+      </div>
+
+      <div class="invoice-stage hidden" id="signStage">
+        <div class="invoice-toolbar">
+          <span>GLZ-01 e-signature · draw once, bind commercially forever(-ish)</span>
+          <div class="invoice-toolbar-actions">
+            <button class="btn" id="clearSignature">Clear</button>
+            <button class="btn" id="closeSign">Close</button>
+          </div>
+        </div>
+        <div class="sign-panel">
+          <div class="cell">
+            <label for="signerName">Signer full name</label>
+            <input id="signerName" placeholder="As it should appear on the executed record">
+          </div>
+          <div class="sign-pad-wrap">
+            <label class="field-label">Signature</label>
+            <canvas id="sigCanvas" width="760" height="180"></canvas>
+            <div class="sign-hint">Mouse, trackpad, or touch. This is an illustrative capture, not a notarized instrument.</div>
+          </div>
+          <button class="btn primary" id="adoptSignature">Sign &amp; Continue →</button>
+        </div>
+      </div>
+
+      <div class="invoice-stage hidden" id="calendarStage">
+        <div class="invoice-toolbar">
+          <span>Executed. Next: lock a start date before the glaze sets.</span>
+        </div>
+        <div class="calendar-panel">
+          <div class="calendar-ref">
+            <span>Paste this into the booking form's reference / notes field so it lands on the calendar event:</span>
+            <span><code id="calendarRefCode">—</code> <button class="btn" id="copyCalendarRef" style="padding:4px 8px;font-size:10px">Copy</button></span>
+          </div>
+          <iframe id="calendarEmbed" src="" loading="lazy" title="Schedule kickoff"></iframe>
+          <div class="calendar-fallback">
+            If the scheduler above doesn't render inline, <a id="calendarFallbackLink" href="https://calendar.app.google/i74QhSdEATRZW6Ho7" target="_blank" rel="noopener">open it directly ↗</a>.
+            (Embedding requires the framing-safe URL from Google Calendar's own <b>Sharing options → Website embed</b> — the plain share link cannot be framed and will always show this fallback.)
+          </div>
+        </div>
       </div>
     </section>
 
@@ -1092,9 +1166,9 @@ function invoiceRows(){
 function invoiceMoney(n){
   return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(n)||0);
 }
-function buildInvoiceHTML(){
+function buildInvoiceHTML(fixedInvNo){
   const r=route();
-  const invNo=invoiceNumber();
+  const invNo=fixedInvNo||invoiceNumber();
   const rows=invoiceRows();
   const lineTotal=rows.reduce((sum,s)=>sum+(typeof s.amount==='number'?s.amount:0),0);
   const hasCustom=rows.some(s=>s.amount===null);
@@ -1200,14 +1274,114 @@ function buildInvoiceHTML(){
     <div><b>Date</b><br>${esc(invoiceDate())}</div>
     <div><b>Total Service Units</b><br>${rows.length}<br><b>Total Weight</b><br>0 kg</div>
   </div>
+  ${clientSignatureDataUrl?`<div class="inv-sign">
+    <div><b>Prospective Client / Signature</b><img class="inv-sign-img" src="${clientSignatureDataUrl}" alt="Signature of ${esc(clientSignedName)}">${esc(clientSignedName)}</div>
+    <div><b>Date Signed</b><br>${esc(clientSignedDate)}</div>
+    <div><b>Status</b><br>EXECUTED (illustrative)</div>
+  </div>`:''}
   <div class="inv-footer">GLZ-01 · Fictional post-AI revenue services worksheet · No actual gaslighting required · Chat support remains unavailable by design.</div>`;
 }
 
+let clientSignatureDataUrl='', clientSignedName='', clientSignedDate='';
+
+/* ── Scheduling embed config ──────────────────────────────────────────
+   calendar.app.google short links cannot be framed (Google sends
+   X-Frame-Options on that redirector domain). Get the framing-safe URL
+   from Google Calendar → Booking pages → Options → Sharing options →
+   Website embed. It looks like:
+   https://calendar.google.com/calendar/appointments/schedules/AcZssZ...?gv=true
+   Drop it in below. Leaving this blank keeps the fallback link visible
+   and skips the (guaranteed-to-fail) iframe attempt. */
+const CALENDAR_EMBED_URL='https://calendar.google.com/calendar/appointments/schedules/AcZssZ11kiXpV3btDfhzvbRNLA0SZ4JCLPEkAliRAp0m3kGlMEwfdSZ7RosfCPx4miHm1q_1IMwrMAtc?gv=true';
+const CALENDAR_SHORT_LINK='https://calendar.app.google/i74QhSdEATRZW6Ho7';
+
+function calendarReference(){
+  const invNo=$('invoicePaper').dataset.invNo||'';
+  const org=value('org')||'Unspecified org';
+  return (invNo?invNo+' · ':'')+org;
+}
+
 function renderInvoice(){
-  $('invoicePaper').innerHTML=buildInvoiceHTML();
+  if(!$('invoicePaper').dataset.invNo) $('invoicePaper').dataset.invNo=invoiceNumber();
+  $('invoicePaper').innerHTML=buildInvoiceHTML($('invoicePaper').dataset.invNo);
   $('invoiceStage').classList.remove('hidden');
   $('invoiceStage').scrollIntoView({behavior:'smooth',block:'start'});
 }
+
+/* ── Signature pad ────────────────────────────────────────────────── */
+const sigCanvas=$('sigCanvas');
+const sigCtx=sigCanvas.getContext('2d');
+sigCtx.lineWidth=2.2;
+sigCtx.lineCap='round';
+sigCtx.strokeStyle='#17110f';
+let drawing=false,hasSignature=false;
+
+function sigPos(e){
+  const r=sigCanvas.getBoundingClientRect();
+  const p=e.touches?e.touches[0]:e;
+  return {
+    x:(p.clientX-r.left)*(sigCanvas.width/r.width),
+    y:(p.clientY-r.top)*(sigCanvas.height/r.height)
+  };
+}
+function sigStart(e){drawing=true;hasSignature=true;const p=sigPos(e);sigCtx.beginPath();sigCtx.moveTo(p.x,p.y);e.preventDefault();}
+function sigMove(e){if(!drawing)return;const p=sigPos(e);sigCtx.lineTo(p.x,p.y);sigCtx.stroke();e.preventDefault();}
+function sigEnd(){drawing=false;}
+
+sigCanvas.addEventListener('mousedown',sigStart);
+sigCanvas.addEventListener('mousemove',sigMove);
+window.addEventListener('mouseup',sigEnd);
+sigCanvas.addEventListener('touchstart',sigStart,{passive:false});
+sigCanvas.addEventListener('touchmove',sigMove,{passive:false});
+sigCanvas.addEventListener('touchend',sigEnd);
+
+function clearSignaturePad(){
+  sigCtx.clearRect(0,0,sigCanvas.width,sigCanvas.height);
+  hasSignature=false;
+}
+
+$('openSign').addEventListener('click',()=>{
+  $('signStage').classList.remove('hidden');
+  $('signStage').scrollIntoView({behavior:'smooth',block:'start'});
+});
+$('closeSign').addEventListener('click',()=>$('signStage').classList.add('hidden'));
+$('clearSignature').addEventListener('click',clearSignaturePad);
+
+$('adoptSignature').addEventListener('click',()=>{
+  const name=value('signerName');
+  if(!name){alert('Enter a name before signing — even an illustrative signature needs an attribution line.');return;}
+  if(!hasSignature){alert('Draw a signature in the box first.');return;}
+  clientSignatureDataUrl=sigCanvas.toDataURL('image/png');
+  clientSignedName=name;
+  clientSignedDate=invoiceDate();
+  renderInvoice();
+  $('signStage').classList.add('hidden');
+
+  const ref=calendarReference();
+  $('calendarRefCode').textContent=ref;
+  $('calendarFallbackLink').href=CALENDAR_SHORT_LINK;
+  if(CALENDAR_EMBED_URL){
+    $('calendarEmbed').src=CALENDAR_EMBED_URL;
+    $('calendarEmbed').classList.remove('hidden');
+  }else{
+    $('calendarEmbed').classList.add('hidden');
+  }
+  $('calendarStage').classList.remove('hidden');
+  $('calendarStage').scrollIntoView({behavior:'smooth',block:'start'});
+  bubble('Signed by '+name+'. Invoice executed. Routing to scheduling — chat remains unavailable, but the calendar is not.','agent');
+});
+
+$('copyCalendarRef').addEventListener('click',async e=>{
+  const ref=$('calendarRefCode').textContent;
+  try{
+    await navigator.clipboard.writeText(ref);
+    const old=e.currentTarget.textContent;
+    e.currentTarget.textContent='Copied';
+    setTimeout(()=>e.currentTarget.textContent=old,1200);
+  }catch(err){
+    window.prompt('Copy reference:',ref);
+  }
+});
 
 function printInvoiceDocument(){
   const invoice=$('invoicePaper').innerHTML.trim()||buildInvoiceHTML();
