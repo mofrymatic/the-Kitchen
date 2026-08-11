@@ -139,19 +139,6 @@
       #help{display:none}
     }
     @media(orientation:landscape) and (pointer:coarse){#touchControls{display:none}#help{display:none}}
-
-    /* AUXOR audio console — Cave Racer parity with the current FTS audio runtime. */
-    #audioButton{position:absolute;z-index:13;right:14px;top:14px;width:46px;height:42px;border:1px solid rgba(32,234,255,.52);background:rgba(2,5,15,.9);color:#20eaff;font:800 18px/1 "Courier New",monospace;cursor:pointer;box-shadow:0 0 18px rgba(32,234,255,.12);clip-path:polygon(0 8px,8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%)}
-    #audioButton:hover,#audioButton:focus-visible{outline:none;color:#fff;border-color:#fff;box-shadow:0 0 22px rgba(32,234,255,.34)}
-    #audioPanel{position:absolute;z-index:22;inset:0;display:grid;place-items:center;padding:18px;background:rgba(1,2,8,.84);backdrop-filter:blur(7px);touch-action:auto}
-    #audioPanel[hidden]{display:none}
-    .aux-card{width:min(820px,95%);max-height:92%;overflow:auto;border:1px solid rgba(32,234,255,.62);background:linear-gradient(180deg,rgba(4,12,27,.985),rgba(2,5,14,.995));box-shadow:0 0 48px rgba(0,180,255,.18),inset 0 0 28px rgba(99,28,150,.10);padding:22px;clip-path:polygon(0 16px,16px 0,calc(100% - 16px) 0,100% 16px,100% calc(100% - 16px),calc(100% - 16px) 100%,16px 100%,0 calc(100% - 16px))}
-    .aux-head{display:flex;justify-content:space-between;gap:18px;align-items:start;border-bottom:1px solid rgba(32,234,255,.24);padding-bottom:14px;margin-bottom:16px}.aux-head h2{margin:0;color:#20eaff;font:900 clamp(22px,4vw,38px)/1 "Courier New",monospace;letter-spacing:.04em}.aux-head p{margin:7px 0 0;color:#b464ff;font:800 11px/1.4 "Courier New",monospace;letter-spacing:.18em}.aux-close{width:44px;height:40px;border:1px solid rgba(255,40,183,.55);background:#090514;color:#ff6bd2;font:900 24px/1 monospace;cursor:pointer}
-    .aux-grid{display:grid;gap:12px}.aux-row{display:grid;grid-template-columns:minmax(220px,1fr) minmax(220px,1fr);gap:14px;align-items:center;padding:12px;border:1px solid rgba(32,234,255,.18);background:rgba(3,10,24,.68)}.aux-copy strong{display:block;color:#66efff;font-size:14px}.aux-copy small{display:block;color:#7897ae;font-size:10px;line-height:1.45;margin-top:4px}.aux-control{display:flex;justify-content:flex-end;align-items:center;gap:10px}.aux-control select,.aux-control input[type=range]{width:100%}.aux-control select{background:#061225;color:#effbff;border:1px solid rgba(32,234,255,.48);padding:10px;font:800 12px "Courier New",monospace}.aux-control input{accent-color:#20eaff}
-    .aux-switch{width:58px;height:30px;position:relative;display:inline-block}.aux-switch input{opacity:0;width:0;height:0}.aux-switch span{position:absolute;inset:0;border:1px solid rgba(32,234,255,.42);background:#071020}.aux-switch span:before{content:"";position:absolute;width:20px;height:20px;left:4px;top:4px;background:#536779;transition:.14s}.aux-switch input:checked+span{border-color:#ffbd25;background:#251704}.aux-switch input:checked+span:before{transform:translateX(28px);background:#ffbd25;box-shadow:0 0 12px #ff9d00}
-    .aux-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:16px;color:#7897ae;font-size:10px}.aux-save{border:1px solid rgba(255,189,37,.62);background:#241604;color:#ffd465;padding:12px 18px;font:900 12px "Courier New",monospace;cursor:pointer}.aux-now{position:absolute;z-index:11;right:68px;top:20px;color:rgba(180,221,238,.66);font:700 9px/1.35 "Courier New",monospace;letter-spacing:.08em;pointer-events:none;text-align:right;text-transform:uppercase}
-    @media(max-width:700px){.aux-card{padding:16px}.aux-row{grid-template-columns:1fr}.aux-control{justify-content:flex-start}.aux-now{display:none}}
-
   </style>
 </head>
 <body>
@@ -162,24 +149,6 @@
     <div id="glass"></div>
     <div id="bezel"></div>
     <canvas id="hud" width="960" height="540" aria-hidden="true"></canvas>
-
-    <button id="audioButton" type="button" aria-label="Open AUXOR audio controls">♫</button>
-    <div class="aux-now" id="auxNow">AUXOR · 151 BPM<br>AFTERBURN / INDUSTRIAL TECHNO</div>
-    <section id="audioPanel" hidden aria-label="AUXOR audio settings">
-      <div class="aux-card" role="dialog" aria-modal="true" aria-labelledby="auxTitle">
-        <header class="aux-head"><div><h2 id="auxTitle">AUXOR · CAVE RACER</h2><p>151 BPM · MIDI-DERIVED ADAPTIVE FLIGHT ENGINE</p></div><button class="aux-close" id="audioClose" type="button" aria-label="Close audio settings">×</button></header>
-        <div class="aux-grid">
-          <label class="aux-row"><span class="aux-copy"><strong>Source Variation</strong><small>Three treatments derived from the uploaded MIDI: two source-contour cells plus an interpolated extrapolation that fills selected gaps without replacing the original contour.</small></span><span class="aux-control"><select id="musicVariation"><option value="afterburn">AFTERBURN · SOURCE CONTOUR</option><option value="redline">REDLINE · REFRAIN CELL</option><option value="vector">VECTOR · INTERPOLATED</option></select></span></label>
-          <label class="aux-row"><span class="aux-copy"><strong>Music Style</strong><small>The current ZITTRIS-style arrangement matrix: one MIDI-derived contour, multiple orchestration grammars.</small></span><span class="aux-control"><select id="musicStyle"><option value="med_wave">MED WAVE</option><option value="witch_house">WITCH HOUSE</option><option value="g_funk">G-FUNK</option><option value="klezmer">KLEZMER</option><option value="jungle">JUNGLE</option><option value="uk_rnb">UK R&amp;B</option><option value="acidcore">ACIDCORE</option><option value="deep_house">DEEP HOUSE</option><option value="trap">TRAP</option><option value="uk_drill">UK DRILL</option><option value="psytrance">PSYTRANCE</option><option value="triphop">TRIP-HOP</option><option value="dubstep">DUBSTEP</option><option value="liquid_dnb">LIQUID D&amp;B</option><option value="viking_metal">VIKING METAL</option><option value="industrial_techno">INDUSTRIAL TECHNO</option></select></span></label>
-          <label class="aux-row"><span class="aux-copy"><strong>Adaptive Flight Mix</strong><small>Boost, near-miss pressure, wave progression, and collisions alter density and energy without changing the selected source variation.</small></span><span class="aux-control"><span class="aux-switch"><input id="adaptiveMusic" type="checkbox"><span></span></span></span></label>
-          <label class="aux-row"><span class="aux-copy"><strong>Background Music</strong><small>Web Audio arrangement with the Tetris-era 42% Intaglio Galactica relief layer, frymatic-style legato low end, and a guarded high-frequency ceiling.</small></span><span class="aux-control"><span class="aux-switch"><input id="bgmEnabled" type="checkbox"><span></span></span></span></label>
-          <label class="aux-row"><span class="aux-copy"><strong>Sound Effects</strong><small>Rounded cape swoop, boost ignition, collision, wave, pause, and obliteration cues. No brittle click/clap transient layer.</small></span><span class="aux-control"><span class="aux-switch"><input id="sfxEnabled" type="checkbox"><span></span></span></span></label>
-          <label class="aux-row"><span class="aux-copy"><strong>Music Level</strong><small>Independent music bus gain.</small></span><span class="aux-control"><input id="musicVolume" type="range" min="0" max="100" step="1"></span></label>
-          <label class="aux-row"><span class="aux-copy"><strong>SFX Level</strong><small>Independent effects bus gain.</small></span><span class="aux-control"><input id="sfxVolume" type="range" min="0" max="100" step="1"></span></label>
-        </div>
-        <footer class="aux-foot"><span><b>M</b> toggles music · <b>O</b> opens AUXOR · audio remains OFF by default</span><button class="aux-save" id="audioSave" type="button">SAVE &amp; CLOSE</button></footer>
-      </div>
-    </section>
     <div id="help" aria-hidden="true">
       <span><b>Z / ↑</b> HOP</span>
       <span><b>X / SPACE</b> HYPERFLOW</span>
@@ -242,135 +211,6 @@
   function rgba(hex,a){const n=parseInt(hex.slice(1),16);return 'rgba(' + ((n>>16)&255) + ',' + ((n>>8)&255) + ',' + (n&255) + ',' + a + ')'}
   function palette(){return PALETTES[(state.wave-1)%PALETTES.length]}
   function round(v){return Math.round(v)}
-
-
-  // ── AUXOR adaptive audio runtime ──────────────────────────────────────
-  // The melodic contours below are quantized from the user-supplied MIDI at
-  // 16th-note resolution. They are embedded so Cave Racer remains standalone.
-  const AUXOR_MANIFEST=Object.freeze({
-    game:'cave_racer',sound_family:'fts_arcade',runtime:'web_audio',tempo_bpm:151,
-    composition:'user_supplied_midi_adaptation',source_midi:'Kenny Loggins - Danger Zone.mid.mid',
-    polyphony_limit:10,working_depth:'32_bit_float',delivery_depth:'16_bit',sample_rate_hz:48000,
-    variations:['afterburn','redline','vector'],
-    styles:['med_wave','witch_house','g_funk','klezmer','jungle','uk_rnb','acidcore','deep_house','trap','uk_drill','psytrance','triphop','dubstep','liquid_dnb','viking_metal','industrial_techno'],
-    aesthetic_overlay:{name:'intaglio_galactica',amount:.42},
-    states:['idle','cruise','boost','near_miss','wave','game_over'],
-    safeguards:{treble_hit_amount:.10,high_shelf_hz:3800,lowpass_hz:5200}
-  });
-  const AUXOR_THEMES=Object.freeze({
-    afterburn:Object.freeze({lead:Object.freeze([68,-1,70,-1,-1,-1,-1,-1,70,-1,-1,-1,-1,-1,70,-1,-1,-1,-1,-1,70,-1,70,-1,70,-1,-1,-1,70,-1,-1,-1,68,-1,70,-1,-1,-1,-1,-1,70,-1,-1,-1,-1,-1,70,-1,-1,-1,-1,-1,70,-1,70,-1,73,-1,-1,-1,73,-1,-1,-1,68,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,68,-1,70,-1,-1,-1,-1,-1,70,-1,-1,-1,-1,-1,70,-1,-1,-1,-1,-1,70,-1,70,-1,70,-1,-1,-1,70,-1,-1,-1]),low:Object.freeze([61,-1,63,-1,-1,-1,-1,-1,63,-1,-1,-1,-1,-1,63,-1,-1,-1,-1,-1,63,-1,63,-1,63,-1,-1,-1,63,-1,-1,-1,61,-1,63,-1,-1,-1,-1,-1,63,-1,-1,-1,-1,-1,63,-1,-1,-1,-1,-1,63,-1,63,-1,66,-1,-1,-1,66,-1,-1,-1,61,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,61,-1,63,-1,-1,-1,-1,-1,63,-1,-1,-1,-1,-1,63,-1,-1,-1,-1,-1,63,-1,63,-1,63,-1,-1,-1,63,-1,-1,-1])}),
-    redline:Object.freeze({lead:Object.freeze([78,-1,78,-1,78,-1,78,-1,78,-1,-1,-1,-1,-1,-1,-1,78,-1,78,-1,78,-1,78,-1,77,-1,75,-1,73,-1,73,-1,-1,-1,75,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,70,-1,70,-1,70,-1,78,-1,78,-1,78,-1,78,-1,78,-1,-1,-1,-1,-1,-1,-1,78,-1,78,-1,78,-1,78,-1,77,-1,75,-1,73,-1,73,-1,-1,-1,75,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,63,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1]),low:Object.freeze([70,-1,78,-1,78,-1,78,-1,78,-1,-1,-1,-1,-1,-1,-1,78,-1,78,-1,78,-1,78,-1,77,-1,75,-1,73,-1,73,-1,-1,-1,75,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,70,-1,70,-1,70,-1,70,-1,78,-1,78,-1,78,-1,78,-1,-1,-1,-1,-1,-1,-1,78,-1,78,-1,78,-1,78,-1,77,-1,75,-1,73,-1,73,-1,-1,-1,75,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,58,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1])})
-  });
-  const AUXOR_STYLE_LABELS=Object.freeze({med_wave:'MED WAVE',witch_house:'WITCH HOUSE',g_funk:'G-FUNK',klezmer:'KLEZMER',jungle:'JUNGLE',uk_rnb:'UK R&B',acidcore:'ACIDCORE',deep_house:'DEEP HOUSE',trap:'TRAP',uk_drill:'UK DRILL',psytrance:'PSYTRANCE',triphop:'TRIP-HOP',dubstep:'DUBSTEP',liquid_dnb:'LIQUID D&B',viking_metal:'VIKING METAL',industrial_techno:'INDUSTRIAL TECHNO'});
-  const AUXOR_VARIATION_LABELS=Object.freeze({afterburn:'AFTERBURN',redline:'REDLINE',vector:'VECTOR'});
-  const AUXOR_PROFILES=Object.freeze({
-    med_wave:{kick:[0,8],snare:[4,12],hat:[2,6,10,14],bass:[0,8],chord:[0,8],wave:'triangle',gate:2,transpose:0},
-    witch_house:{kick:[0,11],snare:[8],hat:[3,7,12,15],bass:[0,4,8,11,14],chord:[0],wave:'triangle',gate:2,transpose:-12},
-    g_funk:{kick:[0,3,7,10,14],snare:[4,12],hat:[1,5,9,13],bass:[0,3,6,10,13],chord:[0,8],wave:'sine',gate:2,transpose:-12},
-    klezmer:{kick:[0,9],snare:[4,12],hat:[2,6,10,14],bass:[0,4,8,12],chord:[],wave:'triangle',gate:1,transpose:0},
-    jungle:{kick:[0,6,10],snare:[4,12],hat:[2,5,7,10,13,15],bass:[0,5,8,11,14],chord:[],wave:'triangle',gate:1,transpose:0},
-    uk_rnb:{kick:[0,7,10],snare:[4,12],hat:[3,7,11,15],bass:[0,6,10,14],chord:[0,8],wave:'sine',gate:2,transpose:-12},
-    acidcore:{kick:[0,4,8,12],snare:[6,14],hat:[2,6,10,14],bass:[1,3,5,7,9,11,13,15],chord:[],wave:'sawtooth',gate:2,transpose:-12},
-    deep_house:{kick:[0,4,8,12],snare:[4,12],hat:[2,6,10,14],bass:[2,6,10,14],chord:[3,7,11,15],wave:'triangle',gate:2,transpose:-12},
-    trap:{kick:[0,7,10],snare:[8],hat:[2,4,6,10,12,14,15],bass:[0,8,11],chord:[],wave:'triangle',gate:2,transpose:-12},
-    uk_drill:{kick:[0,5,11,14],snare:[8],hat:[2,6,10,13,15],bass:[0,5,9,13],chord:[],wave:'triangle',gate:2,transpose:-12},
-    psytrance:{kick:[0,4,8,12],snare:[4,12],hat:[2,6,10,14],bass:[1,2,3,5,6,7,9,10,11,13,14,15],chord:[],wave:'square',gate:1,transpose:0},
-    triphop:{kick:[0,10],snare:[8],hat:[3,7,11,15],bass:[0,8],chord:[0],wave:'triangle',gate:4,transpose:-12},
-    dubstep:{kick:[0,10],snare:[8],hat:[3,7,11,15],bass:[0,3,8,11],chord:[],wave:'sawtooth',gate:4,transpose:-12},
-    liquid_dnb:{kick:[0,6,10],snare:[4,12],hat:[2,5,7,10,13,15],bass:[0,4,8,12],chord:[0,8],wave:'triangle',gate:1,transpose:0},
-    viking_metal:{kick:[0,4,8,12],snare:[4,12],hat:[2,6,10,14],bass:[0,4,8,12],chord:[0,8],wave:'sawtooth',gate:2,transpose:-12},
-    industrial_techno:{kick:[0,4,8,12],snare:[4,12],hat:[2,6,10,14],bass:[0,3,6,8,11,14],chord:[],wave:'square',gate:2,transpose:-12}
-  });
-
-  const AUXOR_KEY='caveRacerAuxorV1';
-  const AUXOR_DEFAULTS=Object.freeze({variation:'afterburn',style:'industrial_techno',adaptive:true,bgm:false,sfx:false,musicVolume:52,sfxVolume:62});
-  function loadAuxorSettings(){try{return Object.assign({},AUXOR_DEFAULTS,JSON.parse(localStorage.getItem(AUXOR_KEY)||'{}'))}catch(_){return Object.assign({},AUXOR_DEFAULTS)}}
-  let auxorSettings=loadAuxorSettings(),audioPanelPausedGame=false,lastAudioWave=1;
-  function saveAuxorSettings(){try{localStorage.setItem(AUXOR_KEY,JSON.stringify(auxorSettings))}catch(_){}updateAuxorNow()}
-  function updateAuxorNow(){const el=document.getElementById('auxNow');if(el)el.innerHTML='AUXOR · 151 BPM<br>'+AUXOR_VARIATION_LABELS[auxorSettings.variation]+' / '+AUXOR_STYLE_LABELS[auxorSettings.style]}
-
-  let _auxAC=null;
-  function AUXAC(){
-    if(_auxAC)return _auxAC;
-    const C=window.AudioContext||window.webkitAudioContext;if(!C)return null;
-    try{_auxAC=new C({sampleRate:48000})}catch(_){_auxAC=new C()}
-    return _auxAC;
-  }
-  const AUXOR={
-    master:null,musicBus:null,sfxBus:null,guard:null,softener:null,ceiling:null,compressor:null,igBus:null,igDelay:null,igFeedback:null,igFilter:null,
-    timer:null,nextStepTime:0,step:0,activeVoices:0,noiseBuffer:null,bpm:151,lookAheadMs:25,scheduleAhead:.12,lastState:'idle',lastAdaptiveCheck:0,lastBass:44,
-    init(){
-      if(this.master)return true;const ac=AUXAC();if(!ac)return false;
-      this.master=ac.createGain();this.master.gain.value=.82;
-      this.musicBus=ac.createGain();this.sfxBus=ac.createGain();
-      this.guard=ac.createBiquadFilter();this.guard.type='highshelf';this.guard.frequency.value=3800;this.guard.gain.value=-8;
-      this.softener=ac.createBiquadFilter();this.softener.type='lowpass';this.softener.frequency.value=5200;this.softener.Q.value=.28;
-      this.ceiling=ac.createDynamicsCompressor();this.ceiling.threshold.value=-22;this.ceiling.knee.value=3;this.ceiling.ratio.value=14;this.ceiling.attack.value=.0015;this.ceiling.release.value=.11;
-      this.compressor=ac.createDynamicsCompressor();this.compressor.threshold.value=-17;this.compressor.knee.value=10;this.compressor.ratio.value=5;this.compressor.attack.value=.004;this.compressor.release.value=.18;
-      this.igBus=ac.createGain();this.igBus.gain.value=.42;
-      this.igDelay=ac.createDelay(1);this.igDelay.delayTime.value=.149;
-      this.igFeedback=ac.createGain();this.igFeedback.gain.value=.16;
-      this.igFilter=ac.createBiquadFilter();this.igFilter.type='lowpass';this.igFilter.frequency.value=3000;this.igFilter.Q.value=.6;
-      this.musicBus.connect(this.guard);this.guard.connect(this.softener);this.softener.connect(this.ceiling);this.ceiling.connect(this.compressor);
-      this.igBus.connect(this.igDelay);this.igDelay.connect(this.igFeedback);this.igFeedback.connect(this.igDelay);this.igDelay.connect(this.igFilter);this.igFilter.connect(this.guard);
-      this.sfxBus.connect(this.compressor);this.compressor.connect(this.master);this.master.connect(ac.destination);
-      const len=Math.max(1,Math.floor(ac.sampleRate*.5));this.noiseBuffer=ac.createBuffer(1,len,ac.sampleRate);const d=this.noiseBuffer.getChannelData(0);for(let i=0;i<len;i++)d[i]=Math.random()*2-1;
-      this.applyVolumes();return true;
-    },
-    applyVolumes(){if(!this.master&&!this.init())return;const ac=AUXAC(),mv=Math.pow(auxorSettings.musicVolume/100,1.35),sv=Math.pow(auxorSettings.sfxVolume/100,1.25);this.musicBus.gain.setTargetAtTime(.48*mv,ac.currentTime,.04);this.sfxBus.gain.setTargetAtTime(.70*sv,ac.currentTime,.04)},
-    unlock(){const ac=AUXAC();if(ac&&ac.state==='suspended')ac.resume().catch(()=>{})},
-    midi(n){return 440*Math.pow(2,(n-69)/12)},
-    canVoice(priority=false){return priority||this.activeVoices<AUXOR_MANIFEST.polyphony_limit},
-    claim(node){this.activeVoices++;node.addEventListener?.('ended',()=>{this.activeVoices=Math.max(0,this.activeVoices-1)},{once:true})},
-    osc({freq=440,type='triangle',time=null,dur=.1,gain=.04,bus='music',attack=.008,sweep=null,detune=0,lowpass=null,priority=false}={}){
-      if(!this.init()||!this.canVoice(priority))return;const ac=AUXAC(),t=time??ac.currentTime,o=ac.createOscillator(),g=ac.createGain();o.type=type;o.frequency.setValueAtTime(Math.max(20,freq),t);o.detune.value=detune;if(sweep)o.frequency.exponentialRampToValueAtTime(Math.max(20,sweep),t+dur);
-      g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(Math.max(.0002,gain),t+Math.min(attack,dur*.4));g.gain.exponentialRampToValueAtTime(.0001,t+dur);
-      if(lowpass){const f=ac.createBiquadFilter();f.type='lowpass';f.frequency.value=lowpass;f.Q.value=.42;o.connect(f);f.connect(g)}else o.connect(g);g.connect(bus==='ig'?this.igBus:bus==='sfx'?this.sfxBus:this.musicBus);o.start(t);o.stop(t+dur+.01);this.claim(o)
-    },
-    noise({time=null,dur=.06,gain=.03,frequency=1200,q=.5,type='bandpass',bus='music',attack=.01,priority=false}={}){
-      if(!this.init()||!this.canVoice(priority))return;const ac=AUXAC(),t=time??ac.currentTime,s=ac.createBufferSource(),f=ac.createBiquadFilter(),g=ac.createGain();s.buffer=this.noiseBuffer;f.type=type;f.frequency.value=frequency;f.Q.value=q;g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(Math.max(.0002,gain),t+Math.min(attack,dur*.4));g.gain.exponentialRampToValueAtTime(.0001,t+dur);s.connect(f);f.connect(g);g.connect(bus==='ig'?this.igBus:bus==='sfx'?this.sfxBus:this.musicBus);s.start(t);s.stop(t+dur+.01);this.claim(s)
-    },
-    kick(t,g=.095){this.osc({freq:128,type:'sine',time:t,dur:.17,gain:g,bus:'music',sweep:43,attack:.006})},
-    snare(t,g=.04){this.noise({time:t,dur:.14,gain:g*.55,frequency:940,q:.36,bus:'music',attack:.014});this.osc({freq:158,type:'triangle',time:t,dur:.11,gain:g*.24,bus:'music',sweep:98,attack:.014,lowpass:1300})},
-    hat(t,g=.0045){this.noise({time:t+.012,dur:.095,gain:g*.10,frequency:2500,q:.24,bus:'music',attack:.025})},
-    bass(note,t,dur=.20,g=.036,slide=null){this.osc({freq:this.midi(note),type:'sine',time:t,dur,gain:g,bus:'music',sweep:slide?this.midi(slide):null,attack:.018,lowpass:520});this.osc({freq:this.midi(note+12),type:'triangle',time:t+.008,dur:dur*.84,gain:g*.36,bus:'music',attack:.026,lowpass:900})},
-    lead(note,t,profile,intensity){const type=profile.wave||'triangle',boost=state.boosting&&auxorSettings.adaptive;this.osc({freq:this.midi(note+profile.transpose),type,time:t,dur:boost?.16:.12,gain:.013+.002*intensity,bus:'music',attack:.012,lowpass:type==='sawtooth'||type==='square'?1900:2600,detune:-4});if(boost)this.osc({freq:this.midi(note+12),type:'sine',time:t+.016,dur:.13,gain:.0065+.001*intensity,bus:'music',attack:.025,detune:5})},
-    chord(root,t,intensity){[0,3,7,10].forEach((iv,i)=>this.osc({freq:this.midi(root-12+iv),type:i?'sine':'triangle',time:t+i*.006,dur:.34,gain:(.0048+.0005*intensity)*(i?0.7:1),bus:'music',attack:.035,lowpass:2200}))},
-    igRelief(note,t,intensity){this.osc({freq:this.midi(note-12),type:'triangle',time:t,dur:.34,gain:.007+.001*intensity,bus:'ig',attack:.035,detune:-5,lowpass:1800});this.osc({freq:this.midi(note-5),type:'sine',time:t+.047,dur:.25,gain:.0038+.0005*intensity,bus:'ig',attack:.045,detune:5})},
-    theme(){return AUXOR_THEMES[auxorSettings.variation==='redline'?'redline':'afterburn']},
-    findNeighbor(arr,index,dir,maxGap=6){for(let g=1;g<=maxGap;g++){const n=arr[(index+dir*g+arr.length)%arr.length];if(n>=0)return{n,g}}return null},
-    themeNote(index){const th=this.theme(),i=index%th.lead.length,n=th.lead[i];if(auxorSettings.variation!=='vector'||n>=0)return n;if(i%2===0)return -1;const a=this.findNeighbor(th.lead,i,-1,5),b=this.findNeighbor(th.lead,i,1,5);if(!a||!b||Math.abs(b.n-a.n)>7)return -1;return Math.round(a.n+(b.n-a.n)*(a.g/(a.g+b.g)))},
-    bassSource(index){const th=this.theme(),i=index%th.low.length,n=th.low[i];if(n>=0){this.lastBass=n-24;return this.lastBass}return this.lastBass},
-    intensity(){if(!auxorSettings.adaptive)return 1;if(state.boosting)return 3;if(state.nearMiss>.35)return 2.5;return 1+Math.min(1.2,(state.wave-1)*.12)},
-    scheduleStep(step,t){
-      if(!auxorSettings.bgm||state.phase!=='play'||state.paused||!document.getElementById('audioPanel').hidden||document.hidden)return;
-      const profile=AUXOR_PROFILES[auxorSettings.style]||AUXOR_PROFILES.industrial_techno,beat=step%16,bar=Math.floor(step/16),phrase=step%128,intensity=this.intensity(),ln=this.themeNote(phrase),bn=this.bassSource(phrase),stepDur=60/this.bpm/4;
-      if(profile.kick.includes(beat))this.kick(t,.082+.009*intensity);if(profile.snare.includes(beat))this.snare(t,.028+.004*intensity);if(profile.hat.includes(beat))this.hat(t,.004+.0006*intensity);
-      if(profile.bass.includes(beat)){const slide=state.boosting&&auxorSettings.adaptive?bn+7:null;this.bass(bn,t,Math.min(.30,stepDur*(state.boosting?1.7:2.2)),.030+.005*intensity,slide)}
-      if(profile.chord.includes(beat)&&bn)this.chord(bn,t,intensity);
-      if(ln>=0&&(phrase%Math.max(1,profile.gate)===0))this.lead(ln,t,profile,intensity);
-      if(ln>=0&&((beat===0&&bar%2===0)||(state.boosting&&beat===12)))this.igRelief(ln,t+.024,intensity);
-      if(state.boosting&&auxorSettings.adaptive&&beat===15)this.noise({time:t+.02,dur:.18,gain:.0045,frequency:1180,q:.22,bus:'ig',attack:.055});
-    },
-    scheduler(){const ac=AUXAC(),stepDur=60/this.bpm/4;while(this.nextStepTime<ac.currentTime+this.scheduleAhead){this.scheduleStep(this.step,this.nextStepTime);this.nextStepTime+=stepDur;this.step=(this.step+1)%4096}},
-    start(){if(!auxorSettings.bgm||!this.init()||this.timer)return;this.unlock();const ac=AUXAC();this.nextStepTime=ac.currentTime+.05;this.timer=setInterval(()=>this.scheduler(),this.lookAheadMs)},
-    stop(){if(this.timer){clearInterval(this.timer);this.timer=null}},
-    resetPhrase(){this.step=0;this.lastBass=44},
-    updateAdaptiveState(){const now=performance.now();if(now-this.lastAdaptiveCheck<120)return;this.lastAdaptiveCheck=now;let s=state.phase==='over'?'game_over':state.boosting?'boost':state.nearMiss>.35?'near_miss':state.phase==='play'?'cruise':'idle';if(s!==this.lastState){this.lastState=s;if(this.musicBus&&auxorSettings.adaptive){const base=s==='boost'?.58:s==='near_miss'?.52:.48;this.musicBus.gain.setTargetAtTime(base*Math.pow(auxorSettings.musicVolume/100,1.35),AUXAC().currentTime,.08)}}},
-    sfx(name){if(!auxorSettings.sfx)return;if(!this.init())return;this.unlock();const t=AUXAC().currentTime;switch(name){
-      case'hop':this.osc({freq:205,type:'sine',time:t,dur:.20,gain:.055,bus:'sfx',sweep:520,attack:.014});this.noise({time:t+.02,dur:.16,gain:.018,frequency:820,q:.25,bus:'sfx',attack:.045});break;
-      case'boost':this.osc({freq:72,type:'sine',time:t,dur:.28,gain:.13,bus:'sfx',sweep:245,attack:.010,priority:true});this.osc({freq:112,type:'triangle',time:t+.035,dur:.34,gain:.068,bus:'sfx',sweep:510,attack:.035});this.noise({time:t+.04,dur:.31,gain:.045,frequency:650,q:.22,type:'lowpass',bus:'sfx',attack:.055});break;
-      case'hit':this.osc({freq:84,type:'sine',time:t,dur:.22,gain:.15,bus:'sfx',sweep:31,attack:.003,priority:true});this.noise({time:t,dur:.12,gain:.08,frequency:220,q:.55,bus:'sfx',priority:true});break;
-      case'wave':for(let i=0;i<4;i++)this.osc({freq:this.midi(64+[0,5,7,12][i]),type:'triangle',time:t+i*.055,dur:.18,gain:.04,bus:'sfx',attack:.012});break;
-      case'pause':this.osc({freq:118,type:'triangle',time:t,dur:.08,gain:.032,bus:'sfx',sweep:92,attack:.008});break;
-      case'game_over':for(let i=0;i<5;i++)this.osc({freq:this.midi(57-[0,2,5,7,12][i]),type:'triangle',time:t+i*.13,dur:.24,gain:.065,bus:'sfx',sweep:this.midi(48-i),attack:.012});break;
-    }}
-  };
-  function reconcileAuxor(){const allow=auxorSettings.bgm&&state.phase==='play'&&!state.paused&&document.getElementById('audioPanel').hidden&&!document.hidden;allow?AUXOR.start():AUXOR.stop()}
-  function openAudioPanel(){const panel=document.getElementById('audioPanel');if(!panel.hidden)return;audioPanelPausedGame=state.phase==='play'&&!state.paused;if(audioPanelPausedGame)state.paused=true;panel.hidden=false;populateAudioPanel();reconcileAuxor()}
-  function closeAudioPanel(save=true){const panel=document.getElementById('audioPanel');if(panel.hidden)return;if(save)readAudioPanel();panel.hidden=true;if(audioPanelPausedGame&&state.phase==='play')state.paused=false;audioPanelPausedGame=false;saveAuxorSettings();AUXOR.applyVolumes();AUXOR.resetPhrase();reconcileAuxor()}
-  function populateAudioPanel(){document.getElementById('musicVariation').value=auxorSettings.variation;document.getElementById('musicStyle').value=auxorSettings.style;document.getElementById('adaptiveMusic').checked=!!auxorSettings.adaptive;document.getElementById('bgmEnabled').checked=!!auxorSettings.bgm;document.getElementById('sfxEnabled').checked=!!auxorSettings.sfx;document.getElementById('musicVolume').value=auxorSettings.musicVolume;document.getElementById('sfxVolume').value=auxorSettings.sfxVolume}
-  function readAudioPanel(){auxorSettings.variation=document.getElementById('musicVariation').value;auxorSettings.style=document.getElementById('musicStyle').value;auxorSettings.adaptive=document.getElementById('adaptiveMusic').checked;auxorSettings.bgm=document.getElementById('bgmEnabled').checked;auxorSettings.sfx=document.getElementById('sfxEnabled').checked;auxorSettings.musicVolume=Number(document.getElementById('musicVolume').value);auxorSettings.sfxVolume=Number(document.getElementById('sfxVolume').value)}
 
   function configureCanvases(){
     canvas.width=Math.max(1,Math.round(W*renderScale));
@@ -725,52 +565,6 @@
     ctx.restore();
   }
 
-
-
-  // Boost-only schlieren/Mach treatment inspired by high-speed shadowgraphy:
-  // alternating compression sheets, a bow arc, and nested trailing cones.
-  function drawBoostShockwave(p){
-    if(!state.boosting)return;
-    const speedNorm=clamp((state.speed-MAX_CRUISE)/(MAX_CRUISE*BOOST_MULT-MAX_CRUISE),0,1);
-    const intensity=.55+speedNorm*.45;
-    const layers=IS_FIREFOX?3:quality<.62?4:6;
-    const coneAngle=.30-speedNorm*.055;
-    const flow=(state.time*.19)%42;
-    ctx.save();ctx.translate(state.playerX+26,state.playerY);ctx.rotate(state.pitch*.55);ctx.lineCap='round';ctx.lineJoin='round';
-
-    // Bow shock just ahead of the flyer: narrow and bright, with a dark
-    // schlieren partner line that makes it legible against either cave wall.
-    ctx.globalCompositeOperation='screen';
-    ctx.strokeStyle='rgba(255,255,255,'+(0.22*intensity)+')';ctx.lineWidth=1.15;ctx.shadowColor=p.grid;ctx.shadowBlur=(quality>.65&&!IS_FIREFOX)?9:0;
-    ctx.beginPath();ctx.ellipse(13,0,24+speedNorm*9,48+speedNorm*16,0,-1.03,1.03);ctx.stroke();
-    ctx.shadowBlur=0;ctx.globalCompositeOperation='source-over';ctx.strokeStyle='rgba(0,0,0,.19)';ctx.lineWidth=3.4;ctx.beginPath();ctx.ellipse(16,0,26+speedNorm*9,51+speedNorm*16,0,-1.0,1.0);ctx.stroke();
-
-    // Nested Mach sheets. Each sheet is a paired upper/lower curved ray whose
-    // apparent registration drifts backward, echoing the stacked bands in the
-    // reference image while remaining readable at Cave Racer's pixel scale.
-    for(let i=0;i<layers;i++){
-      const drift=(flow+i*42/layers)%42;
-      const apexX=-8-i*24-drift*.36;
-      const len=245+i*38+speedNorm*95;
-      const spread=Math.tan(coneAngle)*(len*.92)+(i*10);
-      const alpha=(.12+i*.016)*intensity*(1-i/(layers+2));
-      const drawSheet=(sign)=>{
-        ctx.globalCompositeOperation='source-over';ctx.strokeStyle='rgba(0,0,0,'+(alpha*.82)+')';ctx.lineWidth=5.2-i*.35;ctx.beginPath();ctx.moveTo(apexX,sign*(3+i*.7));ctx.bezierCurveTo(apexX-len*.28,sign*(spread*.18),apexX-len*.68,sign*(spread*.72),apexX-len,sign*spread);ctx.stroke();
-        ctx.globalCompositeOperation='screen';ctx.strokeStyle=i%2?rgba(p.grid,alpha):'rgba(255,255,255,'+(alpha*.92)+')';ctx.lineWidth=1.05+i*.08;ctx.shadowColor=i%2?p.grid:'#fff';ctx.shadowBlur=(quality>.7&&!IS_FIREFOX)?6:0;ctx.beginPath();ctx.moveTo(apexX,sign*(1+i*.4));ctx.bezierCurveTo(apexX-len*.28,sign*(spread*.18),apexX-len*.68,sign*(spread*.72),apexX-len,sign*spread);ctx.stroke();
-      };
-      drawSheet(-1);drawSheet(1);
-    }
-
-    // A few near-field compression ribs give the flyer a visible pocket of
-    // distorted air without turning the whole playfield into a screen shake.
-    ctx.shadowBlur=0;ctx.globalCompositeOperation='screen';
-    for(let i=0;i<4;i++){
-      const x=-24-i*34-(flow*.25);const r=18+i*11+speedNorm*8;
-      ctx.globalAlpha=(.19-i*.03)*intensity;ctx.strokeStyle=i%2?p.wallA:p.grid;ctx.lineWidth=1.1;ctx.beginPath();ctx.ellipse(x,0,r*1.75,r*.62,0,0,TAU);ctx.stroke();
-    }
-    ctx.restore();
-  }
-
   function drawTiltDepth(){
     const g=ctx.createLinearGradient(0,0,0,H);
     g.addColorStop(0,'rgba(0,0,0,0.26)');
@@ -789,12 +583,12 @@
 
   function startGame(){
     Object.assign(state,{phase:'play',paused:false,time:0,distance:0,score:0,wave:1,lives:3,speed:BASE_SPEED,targetSpeed:BASE_SPEED,playerX:W*.235,playerY:H*.5,playerVY:0,pitch:0,pitchVel:0,inputLift:0,boost:100,boosting:false,boostLock:0,invulnerable:0,nearMiss:0,combo:1,comboTimer:0,hopCooldown:0});
-    shake=0;hitFlash=0;boostFlash=0;sparks.length=0;rings.length=0;lastAudioWave=1;initGrid();resetTrail();AUXOR.resetPhrase();reconcileAuxor();
+    shake=0;hitFlash=0;boostFlash=0;sparks.length=0;rings.length=0;initGrid();resetTrail();
   }
-  function endGame(){state.phase='over';state.boosting=false;AUXOR.sfx('game_over');reconcileAuxor();if(state.score>state.highScore){state.highScore=Math.floor(state.score);saveHighScore(state.highScore)}}
+  function endGame(){state.phase='over';state.boosting=false;if(state.score>state.highScore){state.highScore=Math.floor(state.score);saveHighScore(state.highScore)}}
   function hitWall(c){
     if(state.invulnerable>0)return;
-    state.lives--;state.invulnerable=1.18;state.playerVY*=-.42;state.playerY=clamp(state.playerY,c.top+PLAYER_R+9,c.bottom-PLAYER_R-9);state.boost=Math.max(0,state.boost-25);state.boosting=false;state.boostLock=.52;state.combo=1;state.comboTimer=0;hitFlash=1;shake=Math.max(shake,19);spawnSpark(state.playerX,state.playerY,palette().edge,24,1.2);spawnRing(state.playerX,state.playerY,palette().hud,1.1);AUXOR.sfx('hit');if(state.lives<=0)endGame();
+    state.lives--;state.invulnerable=1.18;state.playerVY*=-.42;state.playerY=clamp(state.playerY,c.top+PLAYER_R+9,c.bottom-PLAYER_R-9);state.boost=Math.max(0,state.boost-25);state.boosting=false;state.boostLock=.52;state.combo=1;state.comboTimer=0;hitFlash=1;shake=Math.max(shake,19);spawnSpark(state.playerX,state.playerY,palette().edge,24,1.2);spawnRing(state.playerX,state.playerY,palette().hud,1.1);if(state.lives<=0)endGame();
   }
 
   function update(dt){
@@ -804,7 +598,7 @@
     state.invulnerable=Math.max(0,state.invulnerable-dt);state.boostLock=Math.max(0,state.boostLock-dt);state.hopCooldown=Math.max(0,state.hopCooldown-dt);
     const wantsBoost=keys.Space||keys.KeyX||touchMode('boost');
     const canBoost=wantsBoost&&state.boost>.5&&state.boostLock<=0;
-    if(canBoost&&!state.boosting){boostFlash=1;shake=Math.max(shake,8);spawnSpark(state.playerX-18,state.playerY,palette().grid,14,1.1);spawnRing(state.playerX-8,state.playerY,palette().grid,1.2);AUXOR.sfx('boost')}
+    if(canBoost&&!state.boosting){boostFlash=1;shake=Math.max(shake,8);spawnSpark(state.playerX-18,state.playerY,palette().grid,14,1.1);spawnRing(state.playerX-8,state.playerY,palette().grid,1.2)}
     state.boosting=!!canBoost;
     if(state.boosting){state.boost=Math.max(0,state.boost-BOOST_DRAIN*dt);if(state.boost<=.01){state.boosting=false;state.boostLock=.72}}else state.boost=Math.min(100,state.boost+BOOST_RECHARGE*dt);
 
@@ -818,11 +612,11 @@
     state.playerY+=state.playerVY*dt;
     state.pitch=clamp(state.playerVY/780,-.18,.28);
 
-    state.distance+=state.speed*dt;recordTrail(false);updateGrid(dt);const nextWave=1+Math.floor(state.distance/WAVE_DISTANCE);if(nextWave>lastAudioWave){lastAudioWave=nextWave;AUXOR.sfx('wave')}state.wave=nextWave;state.score+=state.speed*dt*(state.boosting?.25:.115)*state.combo;
+    state.distance+=state.speed*dt;recordTrail(false);updateGrid(dt);state.wave=1+Math.floor(state.distance/WAVE_DISTANCE);state.score+=state.speed*dt*(state.boosting?.25:.115)*state.combo;
     const c=caveAt(state.playerX),ct=state.playerY-PLAYER_R-c.top,cb=c.bottom-(state.playerY+PLAYER_R),clearance=Math.min(ct,cb);
     if(clearance<0)hitWall(c);else if(clearance<25){state.nearMiss=Math.min(1,state.nearMiss+dt*5);state.comboTimer+=dt;if(state.comboTimer>.52){state.combo=Math.min(5,state.combo+.25);state.comboTimer=0}if(Math.random()<dt*18)spawnSpark(state.playerX+2,ct<cb?c.top:c.bottom,palette().edge,1,.7)}else{state.nearMiss=Math.max(0,state.nearMiss-dt*2.5);state.comboTimer=Math.max(0,state.comboTimer-dt);if(state.comboTimer<=0)state.combo=lerp(state.combo,1,1-Math.pow(.34,dt))}
     const rate=(state.boosting?68:24)*(0.65+quality*0.35);if(Math.random()<rate*dt)spawnSpark(state.playerX-16,state.playerY+(Math.random()-.5)*11,palette().grid,state.boosting?2:1,state.boosting?1.0:.52);
-    if(state.boosting&&Math.random()<dt*9)spawnRing(state.playerX-28,state.playerY,palette().grid,.38);AUXOR.updateAdaptiveState();
+    if(state.boosting&&Math.random()<dt*9)spawnRing(state.playerX-28,state.playerY,palette().grid,.38);
   }
 
   function cyberFrame(g,p){
@@ -935,7 +729,7 @@
   function drawScene(){
     const p=palette(),c=buildCave(),sx=shake>.1?(Math.random()-.5)*shake:0,sy=shake>.1?(Math.random()-.5)*shake*.6:0;
     ctx.fillStyle='#020208';ctx.fillRect(0,0,W,H);
-    ctx.save();ctx.translate(sx,sy);drawSpeedLines(p);drawGrid(p);drawRibbon(p);drawCave(c,p);drawFlowWake(p);drawBoostShockwave(p);drawRings();drawSparks();drawPlayer(p);drawTiltDepth();
+    ctx.save();ctx.translate(sx,sy);drawSpeedLines(p);drawGrid(p);drawRibbon(p);drawCave(c,p);drawFlowWake(p);drawRings();drawSparks();drawPlayer(p);drawTiltDepth();
     if(state.nearMiss>.02){ctx.fillStyle=rgba(p.edge,state.nearMiss*.06);ctx.fillRect(0,0,W,H)}
     ctx.restore();
     if(boostFlash>0){const g=ctx.createRadialGradient(state.playerX,state.playerY,8,state.playerX,state.playerY,330);g.addColorStop(0,rgba(p.grid,boostFlash*.22));g.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=g;ctx.fillRect(0,0,W,H)}
@@ -945,14 +739,12 @@
 
   function touchMode(m){for(const v of touches.values())if(v===m)return true;return false}
   function pointerMode(clientX){const r=shell.getBoundingClientRect(),x=(clientX-r.left)/r.width;return x<.5?'hop':'boost'}
-  function hop(){begin();if(state.phase==='play'&&!state.paused&&state.hopCooldown<=0){state.playerVY=HOP_IMPULSE;state.hopCooldown=HOP_COOLDOWN;AUXOR.sfx('hop');spawnRing(state.playerX-6,state.playerY,palette().grid,.25);spawnSpark(state.playerX-10,state.playerY+8,palette().grid,4,.42)}}
-  function begin(){AUXOR.unlock();if(state.phase!=='play')startGame();reconcileAuxor()}
-  function togglePause(){if(state.phase!=='play'||!document.getElementById('audioPanel').hidden)return;state.paused=!state.paused;lastTime=performance.now();AUXOR.sfx('pause');reconcileAuxor()}
+  function hop(){begin();if(state.phase==='play'&&!state.paused&&state.hopCooldown<=0){state.playerVY=HOP_IMPULSE;state.hopCooldown=HOP_COOLDOWN;spawnRing(state.playerX-6,state.playerY,palette().grid,.25);spawnSpark(state.playerX-10,state.playerY+8,palette().grid,4,.42)}}
+  function begin(){if(state.phase!=='play')startGame()}
+  function togglePause(){if(state.phase!=='play')return;state.paused=!state.paused;lastTime=performance.now()}
 
   window.addEventListener('keydown',e=>{
     if(['ArrowUp','Space'].includes(e.code))e.preventDefault();
-    if(e.code==='KeyO'){openAudioPanel();return}
-    if(e.code==='KeyM'){auxorSettings.bgm=!auxorSettings.bgm;saveAuxorSettings();AUXOR.applyVolumes();reconcileAuxor();return}
     if(e.code==='KeyR'){startGame();return}
     if((e.code==='KeyP'||e.code==='Escape')&&!pauseLatch){pauseLatch=true;togglePause();return}
     if(['ArrowUp','KeyW','KeyZ'].includes(e.code)&&!keys[e.code])hop();
@@ -969,25 +761,14 @@
   boostButton.addEventListener('pointerdown',e=>{e.preventDefault();touches.set('boostButton','boost');begin()});
   const releaseBoost=()=>touches.delete('boostButton');boostButton.addEventListener('pointerup',releaseBoost);boostButton.addEventListener('pointercancel',releaseBoost);boostButton.addEventListener('pointerleave',releaseBoost);
 
-  document.addEventListener('visibilitychange',()=>{lastTime=performance.now();for(const k of Object.keys(keys))keys[k]=false;touches.clear();if(document.hidden&&state.phase==='play')state.paused=true;reconcileAuxor()});
+  document.addEventListener('visibilitychange',()=>{lastTime=performance.now();for(const k of Object.keys(keys))keys[k]=false;touches.clear();if(document.hidden&&state.phase==='play')state.paused=true});
   window.addEventListener('resize',configureCanvases,{passive:true});
   if('ResizeObserver' in window){new ResizeObserver(configureCanvases).observe(shell)}
-
-
-
-  document.getElementById('audioButton').addEventListener('click',e=>{e.preventDefault();e.stopPropagation();openAudioPanel()});
-  document.getElementById('audioClose').addEventListener('click',()=>closeAudioPanel(false));
-  document.getElementById('audioSave').addEventListener('click',()=>closeAudioPanel(true));
-  document.getElementById('audioPanel').addEventListener('pointerdown',e=>e.stopPropagation());
-  document.getElementById('musicVariation').addEventListener('change',()=>{readAudioPanel();AUXOR.resetPhrase();updateAuxorNow()});
-  document.getElementById('musicStyle').addEventListener('change',()=>{readAudioPanel();AUXOR.resetPhrase();updateAuxorNow()});
-  document.getElementById('musicVolume').addEventListener('input',()=>{readAudioPanel();AUXOR.applyVolumes()});
-  document.getElementById('sfxVolume').addEventListener('input',()=>{readAudioPanel();AUXOR.applyVolumes()});
 
   function frame(now){const dt=Math.min(.033,Math.max(0,(now-lastTime)/1000));lastTime=now;tuneQuality(dt);update(dt);drawScene();requestAnimationFrame(frame)}
   if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches){renderScale=IS_FIREFOX?0.36:0.42;quality=.55}
 
-  updateAuxorNow();populateAudioPanel();configureCanvases();initGrid();initStars();resetTrail();requestAnimationFrame(frame);
+  configureCanvases();initGrid();initStars();resetTrail();requestAnimationFrame(frame);
 })();
 </script>
 </body>
