@@ -19,7 +19,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Grace v. Baron">
 <meta property="og:locale" content="en_US">
-<meta property="og:image" content="https://frymatic.us/FTSArcade/grace_preview.png">
+<meta property="og:iø mage" content="https://frymatic.us/FTSArcade/grace_preview.png">
 <meta property="og:image:secure_url" content="https://frymatic.us/FTSArcade/grace_preview.png">
 <meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="1672">
@@ -91,11 +91,14 @@ canvas{display:block;image-rendering:auto;background:#0d1420;
 "use strict";
 /* ============================================================================
    GRACE BLAND :: CLOCKTOWER COFFEE BREAK
-   Single-screen boss arena. FTS Arcade cabinet. Canvas 2D + local production-sheet cels.
+   Single-screen boss arena. FTS Arcade cabinet. Canvas 2D, zero external assets.
 
-   BUILT FROM: the supplied Grace, Baron, environment, scene, and UX production
-   sheets.  The gameplay/state machines below are preserved, while the render
-   layer crops the labelled production cels directly from the local PNGs.
+   BUILT FROM: the four Grace/Baron atlas sheets. Those sheets are read here as
+   an ANIMATION STATE SPEC, not as art reference -- every labelled row on the
+   character sheets is a state in the FSMs below, and the "modular breakdown"
+   panel is implemented literally: heads, arms, legs, hands and boots are
+   separate parameterised draw calls composed at runtime by a keyframe rig.
+   Nothing is a baked pose.
 
    ROGUELIKE HOOK: everything stochastic runs through mulberry32 off RUN.seed.
    ARENA and BOSS.patterns are plain data -- a room generator swaps them.
@@ -162,134 +165,6 @@ const C = {
   night:'#101a2c', night2:'#1b2b46', skyline:'#141d2b', skylineFar:'#1d2a3d',
   moon:'#f2e6bd', wood:'#6b4a2e', woodLite:'#8a6440', smoke:'#e6ded0'
 };
-
-
-/* ============================================================================
-   PRODUCTION-SHEET SPRITE RUNTIME
-   The five PNG production sheets live beside this HTML.  We crop the labelled
-   cels at startup and flood-fill only the paper connected to each crop edge.
-   That preserves Grace's cream skin/boots and the Baron's white gloves while
-   turning the surrounding art-board paper transparent.
-   ============================================================================ */
-const SHEET_FILES = {
-  arena:'arena-cels.png', baron:'baron-cels.png', grace:'grace-cels.png',
-  scene:'scene-atlas.png', ux:'ux-cels.png'
-};
-const SHEET_IMG = {}, CEL = { grace:{}, baron:{}, arena:{}, ux:{} };
-const SPR = { ready:false, paperKey:true, error:'' };
-const spriteStatus = document.createElement('div');
-spriteStatus.style.cssText = 'position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:20;padding:14px 18px;border:1px solid #b98f4c;background:rgba(9,8,7,.92);color:#f3e3c0;font:700 12px/1.5 "Courier New",monospace;letter-spacing:.08em;text-align:center;pointer-events:none';
-spriteStatus.textContent = 'DEVELOPING THE PRODUCTION CELS...';
-document.body.appendChild(spriteStatus);
-
-function loadSheet(src){ return new Promise((resolve,reject)=>{ const im = new Image(); im.onload=()=>resolve(im); im.onerror=()=>reject(new Error(src)); im.src=src; }); }
-function srect(cx,cy,w,h){ return {x:Math.round(cx-w/2),y:Math.round(cy-h/2),w,h}; }
-function sheetCrop(im,r){
-  const c=document.createElement('canvas'); c.width=r.w; c.height=r.h;
-  const x=c.getContext('2d',{willReadFrequently:true}); x.drawImage(im,r.x,r.y,r.w,r.h,0,0,r.w,r.h);
-  try{
-    const id=x.getImageData(0,0,r.w,r.h), d=id.data, w=r.w, h=r.h;
-    // Median of bright low-chroma pixels is more reliable than four corners:
-    // some cels touch crop corners, and some rows contain guide rules there.
-    const rs=[],gs=[],bs=[];
-    for(let py=0;py<h;py+=2) for(let px=0;px<w;px+=2){
-      const i=(py*w+px)*4, rr=d[i],gg=d[i+1],bb=d[i+2], hi=Math.max(rr,gg,bb),lo=Math.min(rr,gg,bb);
-      if(rr>205 && gg>195 && bb>170 && hi-lo<55){ rs.push(rr); gs.push(gg); bs.push(bb); }
-    }
-    const med=a=>{a.sort((a,b)=>a-b);return a.length?a[a.length>>1]:235};
-    const br=med(rs), bg=med(gs), bb=med(bs);
-    const near=(i,lim=48)=>{const dr=d[i]-br,dg=d[i+1]-bg,db=d[i+2]-bb;return dr*dr+dg*dg+db*db<lim*lim;};
-    const seen=new Uint8Array(w*h), q=new Int32Array(w*h); let qh=0,qt=0;
-    function push(px,py){ if(px<0||py<0||px>=w||py>=h)return; const p=py*w+px; if(seen[p])return; const i=p*4; if(!near(i))return; seen[p]=1; q[qt++]=p; }
-    for(let px=0;px<w;px++){push(px,0);push(px,h-1)} for(let py=0;py<h;py++){push(0,py);push(w-1,py)}
-    while(qh<qt){ const p=q[qh++], px=p%w, py=(p/w)|0, i=p*4; d[i+3]=0; push(px-1,py);push(px+1,py);push(px,py-1);push(px,py+1); }
-    // Production-sheet rules sometimes cross a crop.  Remove only rows/columns
-    // that are overwhelmingly thin dark rules, never compact cel linework.
-    for(let py=0;py<h;py++){ let n=0; for(let px=0;px<w;px++){const i=(py*w+px)*4;if(d[i+3]>20&&d[i]<190&&d[i+1]<190&&d[i+2]<190)n++;}
-      if(n>w*.80) for(let yy=Math.max(0,py-1);yy<=Math.min(h-1,py+1);yy++) for(let px=0;px<w;px++) d[(yy*w+px)*4+3]=0; }
-    for(let px=0;px<w;px++){ let n=0; for(let py=0;py<h;py++){const i=(py*w+px)*4;if(d[i+3]>20&&d[i]<190&&d[i+1]<190&&d[i+2]<190)n++;}
-      if(n>h*.86) for(let xx=Math.max(0,px-1);xx<=Math.min(w-1,px+1);xx++) for(let py=0;py<h;py++) d[(py*w+xx)*4+3]=0; }
-    x.putImageData(id,0,0);
-  }catch(e){ SPR.paperKey=false; }
-  return c;
-}
-function scrop(sheet,x,y,w,h){ return sheetCrop(SHEET_IMG[sheet],{x,y,w,h}); }
-function sseq(sheet,centers,cy,w,h){ return centers.map(cx=>sheetCrop(SHEET_IMG[sheet],srect(cx,cy,w,h))); }
-function buildProductionCels(){
-  // Grace rows from the master character production sheet.
-  CEL.grace.IDLE=sseq('grace',[193,263,324,384,441,491,542],92,52,42);
-  CEL.grace.RUN=sseq('grace',[193,284,371,458,545,639,732,817],132,78,36);
-  CEL.grace.JUMP_START=sseq('grace',[190,256,322,384,451,532,613],166,72,34);
-  CEL.grace.JUMP_UP=sseq('grace',[194,259,329,399,465,536,599,646],202,68,38);
-  CEL.grace.FALL=sseq('grace',[193,270,349,428,515,585,648,707,758],268,72,30);
-  CEL.grace.LAND=sseq('grace',[190,260,329,399,472,543,612,681,754],300,72,30);
-  CEL.grace.WALL_SLIDE=sseq('grace',[190,262,332,403,477,548],328,58,32);
-  CEL.grace.WALL_JUMP=sseq('grace',[190,271,347,424,488,552,609,679,752],359,72,36);
-  CEL.grace.LEDGE_GRAB=sseq('grace',[193,277,354,431],388,76,34);
-  CEL.grace.CLIMB_UP=sseq('grace',[194,292,356,430,506,576,646,708],410,74,34);
-  CEL.grace.CROUCH=sseq('grace',[194,270,342,412,483],438,72,32);
-  CEL.grace.SLIDE=sseq('grace',[195,294,384,478,573,667,755],465,98,34);
-  CEL.grace.FIRE=sseq('grace',[194,289,385,480,575,667,757],494,98,32);
-  CEL.grace.BURST_START=sseq('grace',[194,292,387,482,579],525,90,32);
-  CEL.grace.BURST_LOOP=sseq('grace',[219,309,404,499,590,704,802],563,108,34);
-  CEL.grace.BURST_FINISH=sseq('grace',[194,289,383,479],598,108,32);
-  CEL.grace.HURT=sseq('grace',[193,290,384,477,558,653,748,806],633,84,30);
-  CEL.grace.KNOCKBACK=sseq('grace',[207,302,394,493,606,700,792],669,102,32);
-  CEL.grace.VICTORY=sseq('grace',[195,289,385,482,579,673,758],720,86,54);
-
-  // Clockwork Baron rows.  Gear toss uses the lower seamless loop because the
-  // labelled top row is the projectile arc itself rather than a body pose.
-  CEL.baron.IDLE=sseq('baron',[168,231,307,377,439,500,559,619,680,739,801],94,64,42);
-  CEL.baron.WINDUP=sseq('baron',[158,222,286,354,421,486,551,615,680,746],141,74,38);
-  CEL.baron.FIRE=sseq('baron',[157,222,286,349,465,535,606,677,745],181,80,34);
-  CEL.baron.GEAR_TOSS=sseq('baron',[315,352,390,430,470,510,548],590,52,34);
-  CEL.baron.DASH=sseq('baron',[169,258,354,468,591,687],279,96,40);
-  CEL.baron.JUMP=sseq('baron',[183,239,294,351,433],321,80,38);
-  CEL.baron.STAGGER=sseq('baron',[159,232,306,381,457,541,615,682,753],364,74,36);
-  CEL.baron.PHASE=sseq('baron',[157,217,279,340,402,466,531,597,687,744],407,74,38);
-  CEL.baron.HURT=sseq('baron',[156,223,288,351,418,484,550,618,686,748],445,74,34);
-  CEL.baron.DEFEAT=sseq('baron',[156,225,296,370,444,520,596,670,744],485,80,30);
-  CEL.baron.VICTORY=sseq('baron',[159,230,300,373,445,512,579,647,714,776],520,74,38);
-  CEL.baron.CUPBOT=sseq('baron',[112,180,236,296,350],681,50,34);
-
-  // Arena modules, cropped tightly enough to exclude the production labels.
-  CEL.arena.clock=scrop('arena',672,98,135,170);
-  CEL.arena.skyline=scrop('arena',458,428,250,65);
-  CEL.arena.windows=scrop('arena',31,427,316,71);
-  CEL.arena.gears=scrop('arena',27,568,178,77);
-  CEL.arena.columns=scrop('arena',371,568,214,72);
-  CEL.arena.chandelier=scrop('arena',600,565,220,75);
-  CEL.arena.pipe=scrop('arena',952,97,113,23);
-  CEL.arena.platform=scrop('arena',58,151,212,20);
-  CEL.arena.banner=scrop('arena',31,720,99,115);
-  CEL.arena.floor=scrop('arena',1170,562,190,42);
-  CEL.arena.catwalk=scrop('arena',1244,109,161,32);
-  CEL.arena.props=scrop('arena',370,722,236,172);
-  CEL.arena.sceneBg=scrop('scene',125,674,205,26);
-  CEL.arena.sceneFar=scrop('scene',125,710,205,26);
-
-  // FX / UI / pickups from the dedicated accessory sheet.
-  CEL.ux.heartFull=scrop('ux',1151,331,34,32); // center ~1168,347
-  CEL.ux.heartEmpty=scrop('ux',1398,331,34,32);
-  CEL.ux.coffee=scrop('ux',1149,382,38,38);
-  CEL.ux.star=scrop('ux',414,536,48,48);
-  CEL.ux.bossbar=scrop('ux',45,542,160,32);
-  CEL.ux.gear=scrop('ux',860,383,46,46);
-  CEL.ux.bolt=scrop('ux',867,337,24,20);
-  CEL.ux.shot=scrop('ux',64,141,24,18);
-  CEL.ux.spark=scrop('ux',864,143,30,30);
-  CEL.ux.ring=scrop('ux',611,193,38,32);
-  CEL.ux.dust=scrop('ux',864,199,34,28);
-}
-async function loadProductionSheets(){
-  try{
-    await Promise.all(Object.entries(SHEET_FILES).map(async([k,v])=>SHEET_IMG[k]=await loadSheet(v)));
-    buildProductionCels(); SPR.ready=true; spriteStatus.remove();
-  }catch(e){ SPR.error='Missing local production sheet: '+e.message; spriteStatus.innerHTML='SPRITE SHEETS NOT FOUND<br><span style="opacity:.7">Keep this HTML beside arena-cels.png, baron-cels.png, grace-cels.png, scene-atlas.png and ux-cels.png.</span>'; throw e; }
-}
-function celFrame(seq,fps,t){ if(!seq||!seq.length)return null; return seq[Math.floor(Math.max(0,t)*fps)%seq.length]; }
-function drawCel(c,x,y,scale,flip=1,alpha=1,rot=0){ if(!c)return; ctx.save();ctx.translate(x,y);ctx.rotate(rot);ctx.scale(flip,1);ctx.globalAlpha=alpha;ctx.drawImage(c,-c.width*scale/2,-c.height*scale,c.width*scale,c.height*scale);ctx.restore(); }
-function drawCelRect(c,x,y,w,h,alpha=1){ if(!c)return;ctx.save();ctx.globalAlpha=alpha;ctx.drawImage(c,x,y,w,h);ctx.restore(); }
 
 /* ---------- canvas + scaling --------------------------------------------- */
 const cv = document.getElementById('game');
@@ -1916,144 +1791,6 @@ function drawHUD(){
   }
 }
 
-
-/* ============================================================================
-   SPRITE-SHEET RENDER OVERRIDES
-   Simulation, collision, attack timing, replay digest, inputs, and balancing
-   remain the original game.  Only presentation is replaced by the production
-   cels so the visual build follows the supplied character/environment/UX art.
-   ============================================================================ */
-if(true){
-  drawGrace = function(p){
-    if(!SPR.ready) return;
-    let state = p.fireT > 0 && p.burstT <= 0 ? 'FIRE' : (p.state || 'IDLE');
-    if(state==='DOUBLE_JUMP') state='JUMP_UP';
-    const seq = CEL.grace[state] || CEL.grace[p.anim && p.anim.name] || CEL.grace.IDLE;
-    const fps = state==='RUN'?15:state==='BURST_LOOP'?16:state==='FIRE'?13:state==='VICTORY'?7:10;
-    const c = celFrame(seq,fps,p.clock);
-    let scale = state==='VICTORY'?3.15:3.55;
-    if(state==='BURST_LOOP'||state==='SLIDE'||state==='KNOCKBACK') scale=3.35;
-    const alpha = p.inv>0 && (RUN.frame%6)>=3 ? .28 : 1;
-    drawCel(c,p.x+p.w/2,p.y+p.h+8,scale,p.face,alpha);
-  };
-
-  drawBaron = function(b){
-    if(!SPR.ready) return;
-    const map={ WALK:'IDLE',TAUNT:'VICTORY',STOMP:'DASH',LAND:'STAGGER',DAMAGED:'HURT',KNOCKBACK:'HURT',ENRAGE:'PHASE' };
-    let state=map[b.state]||b.state||'IDLE';
-    if(!b.alive||b.act==='defeat') state='DEFEAT';
-    const seq=CEL.baron[state]||CEL.baron.IDLE;
-    const fps=state==='DASH'?15:state==='GEAR_TOSS'?13:state==='DEFEAT'?8:10;
-    const c=celFrame(seq,fps,b.clock);
-    const scale = state==='GEAR_TOSS'?5.9:4.9;
-    drawCel(c,b.x+b.w/2,b.y+b.h+12,scale,b.face,b.flash>0?.72:1);
-    b.muzzle={x:b.x+b.w/2+b.face*92,y:b.y+88};
-  };
-
-  drawTick = function(m){
-    const c=celFrame(CEL.baron.CUPBOT,9,m.clock); drawCel(c,m.x,m.y+24,2.45,sign(P.x-m.x)||1,1);
-  };
-
-  drawSky = function(par){
-    if(!SPR.ready) return;
-    if(!SPR.paperKey){ ctx.fillStyle='#ead8b4';ctx.fillRect(0,0,VW,VH); }
-    else { const g=ctx.createLinearGradient(0,0,0,VH);g.addColorStop(0,'#080b10');g.addColorStop(.62,'#172030');g.addColorStop(1,'#0a0a09');ctx.fillStyle=g;ctx.fillRect(0,0,VW,VH); }
-    ctx.save();ctx.globalAlpha=SPR.paperKey ? .42 : .72;
-    drawCelRect(CEL.arena.sceneFar,-60+par*8,250,VW+120,150,.72);
-    drawCelRect(CEL.arena.sceneBg,-60+par*14,350,VW+120,180,.70);
-    for(let i=0;i<9;i++) drawCelRect(CEL.arena.skyline,-160+i*270+par*24,390,300,82);
-    ctx.restore();
-    // moon kept simple so the production skyline retains a readable silhouette.
-    ctx.save();ctx.globalAlpha=.82;ctx.fillStyle='#e7d8ad';ctx.beginPath();ctx.arc(300+par*8,170,58,0,TAU);ctx.fill();ctx.globalCompositeOperation='destination-out';ctx.beginPath();ctx.arc(328+par*8,150,52,0,TAU);ctx.fill();ctx.restore();
-  };
-
-  drawMidground = function(par){
-    if(!SPR.ready) return;
-    const ox=par*52;
-    ctx.save();ctx.globalAlpha=.78;
-    drawCelRect(CEL.arena.windows,55+ox,320,405,105);
-    ctx.save();ctx.translate(VW,0);ctx.scale(-1,1);drawCelRect(CEL.arena.windows,55-ox,320,405,105);ctx.restore();
-    ctx.restore();
-    drawCel(CEL.arena.clock,VW/2+ox*.55,455,2.45,1,.95);
-    ctx.save();ctx.globalAlpha=.72;drawCelRect(CEL.arena.columns,395+ox,480,290,100);drawCelRect(CEL.arena.columns,1235+ox,480,290,100);ctx.restore();
-    drawCel(CEL.arena.chandelier,VW/2+ox*.3,265,1.9,1,.84);
-    ctx.save();ctx.globalAlpha=.64;drawCelRect(CEL.arena.gears,70+ox,520,300,130);drawCelRect(CEL.arena.gears,1550+ox,520,300,130);ctx.restore();
-    for(let i=0;i<7;i++) drawCelRect(CEL.arena.pipe,150+i*270+ox*.35,365,150,30,.72);
-    drawCelRect(CEL.arena.banner,245+ox,340,125,175,.82);drawCelRect(CEL.arena.banner,1550+ox,340,125,175,.82);
-    drawCelRect(CEL.arena.catwalk,60+ox,640,350,68,.76);drawCelRect(CEL.arena.catwalk,1505+ox,625,350,68,.76);
-  };
-
-  drawSolid = function(s){
-    if(!SPR.ready) return;
-    if(s.kind==='floor'){
-      ctx.fillStyle='#17110d';ctx.fillRect(s.x,s.y,s.w,s.h);
-      for(let x=s.x;x<s.x+s.w;x+=235) drawCelRect(CEL.arena.floor,x,s.y-6,240,72,.9);
-      return;
-    }
-    if(s.kind==='wall'){
-      ctx.fillStyle='#201914';ctx.fillRect(s.x,s.y,s.w,s.h);
-      for(let y=s.y;y<s.y+s.h;y+=90) drawCelRect(CEL.arena.columns,s.x-36,y,s.w+72,90,.72);
-      return;
-    }
-    drawCelRect(CEL.arena.platform,s.x,s.y-7,s.w,s.h+16,.96);
-  };
-
-  drawStarPickup = function(q){ if(!q.got) drawCel(CEL.ux.star,q.x,q.y+Math.sin(wallClock*2.4+q.x*.01)*8,1.28,1,.96,Math.sin(wallClock*1.4+q.x*.01)*.08); };
-
-  drawEffects = function(){
-    if(!SPR.ready) return;
-    for(const r of rings){ const u=r.t/r.life; drawCel(CEL.ux.ring,r.x,r.y,1.15+u*2.1,1,(1-u)*.8); }
-    for(const s of shots){ ctx.save();ctx.translate(s.x,s.y); if(s.vx<0)ctx.scale(-1,1);ctx.drawImage(CEL.ux.shot,-34,-13,68,26);ctx.restore(); }
-    for(const b of bolts){
-      if(b.wave){ctx.save();ctx.globalAlpha=.8;ctx.strokeStyle=C.bolt;ctx.lineWidth=8;ctx.beginPath();ctx.arc(b.x,b.y+10,28,Math.PI,TAU);ctx.stroke();ctx.restore();}
-      else {ctx.save();ctx.translate(b.x,b.y);ctx.rotate(Math.atan2(b.vy,b.vx));ctx.drawImage(CEL.ux.bolt,-26,-12,52,24);ctx.restore();}
-    }
-    for(const g of gears){ctx.save();ctx.translate(g.x,g.y);ctx.rotate(g.rot);ctx.drawImage(CEL.ux.gear,-g.r,-g.r,g.r*2,g.r*2);ctx.restore();}
-    for(const m of minions) drawTick(m);
-    for(const p of parts){
-      const u=clamp(p.life/p.max,0,1);
-      if(p.type==='dust'||p.type==='smoke') drawCel(CEL.ux.dust,p.x,p.y,.72+(1-u)*.38,1,u*.72);
-      else if(p.type==='spark'||p.type==='impact'||p.type==='hurtstar'||p.type==='star') drawCel(CEL.ux.spark,p.x,p.y,(p.type==='impact'?1.2:.65)+(1-u)*.25,1,u);
-      else if(p.type==='streak'){ctx.globalAlpha=u;ctx.strokeStyle=C.aura;ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p.x+p.r,p.y);ctx.stroke();ctx.globalAlpha=1;}
-      else {ctx.save();ctx.globalAlpha=u;ctx.translate(p.x,p.y);ctx.rotate(p.rot);ctx.fillStyle=C.brass;ctx.fillRect(-p.r/2,-p.r/2,p.r,p.r);ctx.restore();}
-    }
-  };
-
-  drawForeground = function(){
-    if(!SPR.ready)return;
-    ctx.save();ctx.globalAlpha=.48;drawCelRect(CEL.arena.props,-15,760,330,285);ctx.translate(VW,0);ctx.scale(-1,1);drawCelRect(CEL.arena.props,-15,760,330,285);ctx.restore();
-    const v=ctx.createRadialGradient(VW/2,VH/2,VH*.34,VW/2,VH/2,VH*.94);v.addColorStop(0,'rgba(0,0,0,0)');v.addColorStop(1,'rgba(4,4,4,.72)');ctx.fillStyle=v;ctx.fillRect(0,0,VW,VH);
-  };
-
-  drawHUD = function(){
-    if(!SPR.ready)return;
-    const M=56;
-    for(let i=0;i<P.maxHp;i++) drawCel(i<P.hp?CEL.ux.heartFull:CEL.ux.heartEmpty,M+26+i*48,M+42,1.25);
-    drawCel(CEL.ux.coffee,M+30,M+98,1.35);
-    const mx=M+58,my=M+76,mw=280,mh=22;
-    ctx.fillStyle='rgba(24,17,10,.88)';ctx.beginPath();ctx.roundRect(mx,my,mw,mh,11);ctx.fill();
-    ctx.fillStyle=C.gold;ctx.beginPath();ctx.roundRect(mx+3,my+3,(mw-6)*P.meter,mh-6,8);ctx.fill();
-    ctx.strokeStyle=C.brassPale;ctx.lineWidth=3;ctx.beginPath();ctx.roundRect(mx,my,mw,mh,11);ctx.stroke();
-    ctx.strokeStyle='rgba(243,227,192,.55)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(mx+mw*T.BURST_COST,my);ctx.lineTo(mx+mw*T.BURST_COST,my+mh);ctx.stroke();
-    drawCel(CEL.ux.star,mx+mw+42,my+17,.7);ctx.fillStyle=C.paper;ctx.font='bold 25px "Courier New",monospace';ctx.textAlign='left';ctx.fillText(P.stars+'/3',mx+mw+72,my+23);
-    ctx.textAlign='right';ctx.fillText(timeSec.toFixed(1)+'s',VW-M,M+28);
-
-    if(B.alive||B.act==='defeat'){
-      const bw=760,bx=VW/2-bw/2,by=58;
-      ctx.save();ctx.drawImage(CEL.ux.bossbar,bx,by,bw,44);ctx.restore();
-      ctx.fillStyle='rgba(18,12,8,.86)';ctx.fillRect(bx+74,by+12,bw-148,17);
-      ctx.fillStyle=B.phase>=2?C.bolt:C.blood;ctx.fillRect(bx+74,by+12,(bw-148)*clamp(B.hp/B.maxHp,0,1),17);
-      ctx.strokeStyle=C.brassPale;ctx.lineWidth=2;ctx.strokeRect(bx+74,by+12,bw-148,17);
-      ctx.fillStyle=C.paper;ctx.font='bold 28px Georgia';ctx.textAlign='center';ctx.fillText('CLOCKWORK BARON'+(B.phase>=2?'  ·  OVERWOUND':''),VW/2,47);
-    }
-    if(B.act==='windup'&&B.alive){ctx.globalAlpha=.55+.35*Math.sin(wallClock*22);ctx.textAlign='center';ctx.fillStyle=C.bolt;ctx.font='bold 34px Georgia';const label={BOLTS:'! BOLT VOLLEY !',GEARS:'! GEAR TOSS !',STOMP:'! GROUND SLAM !',DASH:'! CHARGE !',SUMMON:'! TICK-TOCKS !'}[B.next]||'';ctx.fillText(label,B.x+B.w/2,B.y-34);ctx.globalAlpha=1;}
-    if(toastT>0){ctx.globalAlpha=clamp(toastT,0,1);ctx.textAlign='center';ctx.font='bold 34px Georgia';ctx.fillStyle='rgba(18,12,8,.9)';const tw=ctx.measureText(toastMsg).width+46;ctx.beginPath();ctx.roundRect(VW/2-tw/2,238,tw,54,27);ctx.fill();ctx.lineWidth=3;ctx.strokeStyle=C.brassPale;ctx.stroke();ctx.fillStyle=C.paper;ctx.fillText(toastMsg,VW/2,275);ctx.globalAlpha=1;}
-    if(over.active){ctx.fillStyle='rgba(12,10,8,'+clamp(over.t*1.6,0,.82)+')';ctx.fillRect(0,0,VW,VH);if(over.t>.25){ctx.textAlign='center';ctx.fillStyle=over.won?C.gold:C.blood;ctx.font='bold 92px Georgia';ctx.fillText(over.won?'COFFEE BREAK SAVED':'MONDAY WINS',VW/2,470);ctx.fillStyle=C.paper;ctx.font='32px Georgia';ctx.fillText(over.won?'Baron decaffeinated in '+timeSec.toFixed(2)+'s  ·  ★ '+P.stars+'/3':'The Clockwork Baron keeps the schedule.',VW/2,534);const best=storageGet('gb.best',null);if(best)ctx.fillText('BEST '+(+best).toFixed(2)+'s'+(over.record?'  — NEW':''),VW/2,582);ctx.fillStyle=C.paperDim;ctx.font='26px "Courier New",monospace';ctx.fillText('R  or  TAP  to run it again      SEED '+RUN.seed,VW/2,646);}}
-    ctx.textAlign='left';ctx.globalAlpha=1;
-  };
-}
-
-
 /* ============================================================================
    RENDER + LOOP
    ============================================================================ */
@@ -2127,12 +1864,8 @@ document.getElementById('seedChip').textContent = 'SEED ' + RUN.seed;
 P.anim = makeAnim(GRACE_CLIPS, 'IDLE');
 B.anim = makeAnim(BARON_CLIPS, 'IDLE');
 fit();
-loadProductionSheets().then(()=>{
-  resetRun();
-  requestAnimationFrame(frame);
-}).catch(()=>{
-  // Keep the status overlay visible with the exact missing filename.
-});
+resetRun();
+requestAnimationFrame(frame);
 
 /* test hook -- the jsdom harness drives the sim without a real RAF */
 window.__GB__ = { P, B, T, ARENA, RUN, GRACE_CLIPS, BARON_CLIPS,

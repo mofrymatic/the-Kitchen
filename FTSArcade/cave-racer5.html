@@ -125,10 +125,10 @@
       text-shadow:0 0 8px rgba(0,220,255,.3);
     }
     #help b{color:#fff;font-weight:700}
-    #touchControls{display:none;touch-action:none}
+    #touchControls{display:none}
     .touchButton{
       appearance:none;border:1px solid rgba(255,48,89,.55);border-radius:16px;background:linear-gradient(180deg,rgba(27,8,33,.96),rgba(4,3,12,.98));
-      color:#fff;font:800 16px/1 "Courier New",monospace;letter-spacing:.08em;min-height:68px;box-shadow:inset 0 0 20px rgba(255,28,116,.12),0 0 20px rgba(0,0,0,.45);touch-action:none
+      color:#fff;font:800 16px/1 "Courier New",monospace;letter-spacing:.08em;min-height:68px;box-shadow:inset 0 0 20px rgba(255,28,116,.12),0 0 20px rgba(0,0,0,.45);touch-action:manipulation
     }
     .touchButton small{display:block;margin-top:8px;color:rgba(210,230,255,.62);font-size:10px}
     @media(max-width:600px){#help{gap:8px;bottom:5px;letter-spacing:.02em}#help span:last-child{display:none}}
@@ -969,23 +969,6 @@
   boostButton.addEventListener('pointerdown',e=>{e.preventDefault();touches.set('boostButton','boost');begin()});
   const releaseBoost=()=>touches.delete('boostButton');boostButton.addEventListener('pointerup',releaseBoost);boostButton.addEventListener('pointercancel',releaseBoost);boostButton.addEventListener('pointerleave',releaseBoost);
 
-  // iOS Safari fires WebKit-only gesture events for pinch-zoom independently of
-  // touch-action; kill them so a stray two-finger touch near the HOP/BOOST
-  // buttons can never scale the page.
-  ['gesturestart','gesturechange','gestureend'].forEach(type=>{
-    document.addEventListener(type,e=>e.preventDefault(),{passive:false});
-  });
-  // Belt-and-suspenders double-tap-to-zoom guard: Safari's "smart zoom" can still
-  // fire from two quick taps landing on different elements (e.g. HOP then BOOST),
-  // which per-element touch-action alone doesn't catch since each tap targets a
-  // different element. Swallow the second tap of any pair inside iOS's ~300ms
-  // double-tap window.
-  let lastTouchEnd=0;
-  document.addEventListener('touchend',e=>{
-    const now=Date.now();
-    if(now-lastTouchEnd<=350)e.preventDefault();
-    lastTouchEnd=now;
-  },{passive:false});
   document.addEventListener('visibilitychange',()=>{lastTime=performance.now();for(const k of Object.keys(keys))keys[k]=false;touches.clear();if(document.hidden&&state.phase==='play')state.paused=true;reconcileAuxor()});
   window.addEventListener('resize',configureCanvases,{passive:true});
   if('ResizeObserver' in window){new ResizeObserver(configureCanvases).observe(shell)}
