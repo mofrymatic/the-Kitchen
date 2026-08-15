@@ -71,7 +71,7 @@ canvas{display:block;image-rendering:auto;background:#0d1420;
 <div id="wrap">
   <div id="stage">
     <canvas id="game" aria-label="Grace Bland versus the Clockwork Baron"></canvas>
-    <div id="hint">&#9664;&#9654; move &middot; Z fire (hold to lock aim) &middot; SPACE jump (double / wall) &middot; X super coffee &middot; S slide &middot; R restart &middot; M mute</div>
+    <div id="hint">&#9664;&#9654; move &middot; Z fire &middot; SPACE jump &middot; DOWN+SPACE drop through &middot; X super coffee &middot; S slide &middot; R restart &middot; M mute</div>
     <div id="corner"><div class="chip" id="muteChip">SOUND ON</div><div class="chip" id="seedChip">SEED</div></div>
   </div>
   <div id="deck">
@@ -91,10 +91,9 @@ canvas{display:block;image-rendering:auto;background:#0d1420;
 "use strict";
 /* ============================================================================
    GRACE BLAND :: CLOCKTOWER COFFEE BREAK
-   Single-screen boss arena. FTS Arcade cabinet. Canvas 2D + local production-sheet cels.
+   Single-screen boss arena. FTS Arcade cabinet. Canvas 2D + transparent atlases + constrained 2.5D parallax.
 
-   BUILT FROM: the supplied Grace, Baron, environment, scene, and UX production
-   sheets.  The gameplay/state machines below are preserved, while the render
+   BUILT FROM: the refactored transparent Grace, Baron, arena, parallax, and FX atlases.  The gameplay/state machines below are preserved, while the render
    layer crops the labelled production cels directly from the local PNGs.
 
    ROGUELIKE HOOK: everything stochastic runs through mulberry32 off RUN.seed.
@@ -103,7 +102,9 @@ canvas{display:block;image-rendering:auto;background:#0d1420;
 (() => {
 
 /* ---------- world space -------------------------------------------------- */
-const VW = 1920, VH = 1080;   // logical arena, matches the assembly board
+const VW = 1920, VH = 1080;   // logical viewport
+const WORLD_W = VW * 4;       // four-screen-wide clocktower complex
+const WORLD_H = VH * 2;       // enough vertical room to breathe without becoming a tower-climb
 const GRID = 24;              // atlas scale guide: 1 grid square = 24px
 
 /* ---------- sandbox-safe storage (shell iframes deny localStorage) -------- */
@@ -165,131 +166,208 @@ const C = {
 
 
 /* ============================================================================
-   PRODUCTION-SHEET SPRITE RUNTIME
-   The five PNG production sheets live beside this HTML.  We crop the labelled
-   cels at startup and flood-fill only the paper connected to each crop edge.
-   That preserves Grace's cream skin/boots and the Baron's white gloves while
-   turning the surrounding art-board paper transparent.
+   TRANSPARENT ATLAS RUNTIME :: PARALLAX BUILD
+   Refactored for the five transparent production atlases generated 2026-08-14.
+   No paper-keying pass is required: alpha is ground truth.
    ============================================================================ */
 const SHEET_FILES = {
-  arena:'arena-cels.png', baron:'baron-cels.png', grace:'grace-cels.png',
-  scene:'scene-atlas.png', ux:'ux-cels.png'
+  grace:'grace-atlas.png',
+  baron:'baron-atlas.png',
+  arena:'arena-atlas.png',
+  scene:'parallax-atlas.png',
+  ux:'fx-atlas.png'
 };
-const SHEET_IMG = {}, CEL = { grace:{}, baron:{}, arena:{}, ux:{} };
-const SPR = { ready:false, paperKey:true, error:'' };
+const SHEET_IMG = {}, CEL = { grace:{}, baron:{}, arena:{}, scene:{}, ux:{} };
+const SPR = { ready:false, error:'' };
 const spriteStatus = document.createElement('div');
 spriteStatus.style.cssText = 'position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:20;padding:14px 18px;border:1px solid #b98f4c;background:rgba(9,8,7,.92);color:#f3e3c0;font:700 12px/1.5 "Courier New",monospace;letter-spacing:.08em;text-align:center;pointer-events:none';
-spriteStatus.textContent = 'DEVELOPING THE PRODUCTION CELS...';
+spriteStatus.textContent = 'LOADING TRANSPARENT PRODUCTION ATLASES...';
 document.body.appendChild(spriteStatus);
 
-function loadSheet(src){ return new Promise((resolve,reject)=>{ const im = new Image(); im.onload=()=>resolve(im); im.onerror=()=>reject(new Error(src)); im.src=src; }); }
-function srect(cx,cy,w,h){ return {x:Math.round(cx-w/2),y:Math.round(cy-h/2),w,h}; }
-function sheetCrop(im,r){
-  const c=document.createElement('canvas'); c.width=r.w; c.height=r.h;
-  const x=c.getContext('2d',{willReadFrequently:true}); x.drawImage(im,r.x,r.y,r.w,r.h,0,0,r.w,r.h);
-  try{
-    const id=x.getImageData(0,0,r.w,r.h), d=id.data, w=r.w, h=r.h;
-    // Median of bright low-chroma pixels is more reliable than four corners:
-    // some cels touch crop corners, and some rows contain guide rules there.
-    const rs=[],gs=[],bs=[];
-    for(let py=0;py<h;py+=2) for(let px=0;px<w;px+=2){
-      const i=(py*w+px)*4, rr=d[i],gg=d[i+1],bb=d[i+2], hi=Math.max(rr,gg,bb),lo=Math.min(rr,gg,bb);
-      if(rr>205 && gg>195 && bb>170 && hi-lo<55){ rs.push(rr); gs.push(gg); bs.push(bb); }
-    }
-    const med=a=>{a.sort((a,b)=>a-b);return a.length?a[a.length>>1]:235};
-    const br=med(rs), bg=med(gs), bb=med(bs);
-    const near=(i,lim=48)=>{const dr=d[i]-br,dg=d[i+1]-bg,db=d[i+2]-bb;return dr*dr+dg*dg+db*db<lim*lim;};
-    const seen=new Uint8Array(w*h), q=new Int32Array(w*h); let qh=0,qt=0;
-    function push(px,py){ if(px<0||py<0||px>=w||py>=h)return; const p=py*w+px; if(seen[p])return; const i=p*4; if(!near(i))return; seen[p]=1; q[qt++]=p; }
-    for(let px=0;px<w;px++){push(px,0);push(px,h-1)} for(let py=0;py<h;py++){push(0,py);push(w-1,py)}
-    while(qh<qt){ const p=q[qh++], px=p%w, py=(p/w)|0, i=p*4; d[i+3]=0; push(px-1,py);push(px+1,py);push(px,py-1);push(px,py+1); }
-    // Production-sheet rules sometimes cross a crop.  Remove only rows/columns
-    // that are overwhelmingly thin dark rules, never compact cel linework.
-    for(let py=0;py<h;py++){ let n=0; for(let px=0;px<w;px++){const i=(py*w+px)*4;if(d[i+3]>20&&d[i]<190&&d[i+1]<190&&d[i+2]<190)n++;}
-      if(n>w*.80) for(let yy=Math.max(0,py-1);yy<=Math.min(h-1,py+1);yy++) for(let px=0;px<w;px++) d[(yy*w+px)*4+3]=0; }
-    for(let px=0;px<w;px++){ let n=0; for(let py=0;py<h;py++){const i=(py*w+px)*4;if(d[i+3]>20&&d[i]<190&&d[i+1]<190&&d[i+2]<190)n++;}
-      if(n>h*.86) for(let xx=Math.max(0,px-1);xx<=Math.min(w-1,px+1);xx++) for(let py=0;py<h;py++) d[(py*w+xx)*4+3]=0; }
-    x.putImageData(id,0,0);
-  }catch(e){ SPR.paperKey=false; }
-  return c;
+function loadSheet(src){
+  return new Promise((resolve,reject)=>{
+    const im = new Image();
+    im.onload=()=>resolve(im);
+    im.onerror=()=>reject(new Error(src));
+    im.src=src;
+  });
 }
-function scrop(sheet,x,y,w,h){ return sheetCrop(SHEET_IMG[sheet],{x,y,w,h}); }
-function sseq(sheet,centers,cy,w,h){ return centers.map(cx=>sheetCrop(SHEET_IMG[sheet],srect(cx,cy,w,h))); }
+function srect(cx,cy,w,h){ return {x:Math.round(cx-w/2),y:Math.round(cy-h/2),w,h}; }
+function trimAlpha(c,pad=2){
+  const x=c.getContext('2d',{willReadFrequently:true}), w=c.width, h=c.height;
+  let id; try{id=x.getImageData(0,0,w,h)}catch(_){return c}
+  const d=id.data; let l=w,t=h,r=-1,b=-1;
+  for(let yy=0;yy<h;yy++) for(let xx=0;xx<w;xx++){
+    if(d[(yy*w+xx)*4+3] > 5){ if(xx<l)l=xx;if(xx>r)r=xx;if(yy<t)t=yy;if(yy>b)b=yy; }
+  }
+  if(r<l||b<t) return c;
+  l=Math.max(0,l-pad);t=Math.max(0,t-pad);r=Math.min(w-1,r+pad);b=Math.min(h-1,b+pad);
+  const o=document.createElement('canvas');o.width=r-l+1;o.height=b-t+1;
+  o.getContext('2d').drawImage(c,l,t,o.width,o.height,0,0,o.width,o.height);return o;
+}
+function hardenCelAlpha(c){
+  // Image-generation alpha is deliberately soft around inked cels. For the two
+  // character atlases that can read as "ghostly" once the cel is scaled. Keep
+  // antialiased edges, discard only the near-invisible fringe, and make the
+  // actual painted cel fully opaque. Source PNGs are never modified.
+  const x=c.getContext('2d',{willReadFrequently:true});
+  let id;try{id=x.getImageData(0,0,c.width,c.height)}catch(_){return c}
+  const d=id.data;
+  for(let i=3;i<d.length;i+=4){
+    const a=d[i];
+    if(a<18)d[i]=0;
+    else if(a>=176)d[i]=255;
+    else d[i]=Math.round((a-18)/158*255);
+  }
+  x.putImageData(id,0,0);return c;
+}
+function sheetCrop(im,r,solid=false){
+  const x=Math.max(0,r.x|0), y=Math.max(0,r.y|0);
+  const w=Math.max(1,Math.min(r.w|0,im.width-x)), h=Math.max(1,Math.min(r.h|0,im.height-y));
+  const c=document.createElement('canvas');c.width=w;c.height=h;
+  c.getContext('2d').drawImage(im,x,y,w,h,0,0,w,h);
+  if(solid)hardenCelAlpha(c);
+  return trimAlpha(c,2);
+}
+function scrop(sheet,x,y,w,h){ return sheetCrop(SHEET_IMG[sheet],{x,y,w,h},sheet==='grace'||sheet==='baron'); }
+function sseq(sheet,centers,cy,w,h){ return centers.map(cx=>sheetCrop(SHEET_IMG[sheet],srect(cx,cy,w,h),sheet==='grace'||sheet==='baron')); }
+function seqSlice(a,from,to){ return a.slice(from,to); }
+
 function buildProductionCels(){
-  // Grace rows from the master character production sheet.
-  CEL.grace.IDLE=sseq('grace',[193,263,324,384,441,491,542],92,52,42);
-  CEL.grace.RUN=sseq('grace',[193,284,371,458,545,639,732,817],132,78,36);
-  CEL.grace.JUMP_START=sseq('grace',[190,256,322,384,451,532,613],166,72,34);
-  CEL.grace.JUMP_UP=sseq('grace',[194,259,329,399,465,536,599,646],202,68,38);
-  CEL.grace.FALL=sseq('grace',[193,270,349,428,515,585,648,707,758],268,72,30);
-  CEL.grace.LAND=sseq('grace',[190,260,329,399,472,543,612,681,754],300,72,30);
-  CEL.grace.WALL_SLIDE=sseq('grace',[190,262,332,403,477,548],328,58,32);
-  CEL.grace.WALL_JUMP=sseq('grace',[190,271,347,424,488,552,609,679,752],359,72,36);
-  CEL.grace.LEDGE_GRAB=sseq('grace',[193,277,354,431],388,76,34);
-  CEL.grace.CLIMB_UP=sseq('grace',[194,292,356,430,506,576,646,708],410,74,34);
-  CEL.grace.CROUCH=sseq('grace',[194,270,342,412,483],438,72,32);
-  CEL.grace.SLIDE=sseq('grace',[195,294,384,478,573,667,755],465,98,34);
-  CEL.grace.FIRE=sseq('grace',[194,289,385,480,575,667,757],494,98,32);
-  CEL.grace.BURST_START=sseq('grace',[194,292,387,482,579],525,90,32);
-  CEL.grace.BURST_LOOP=sseq('grace',[219,309,404,499,590,704,802],563,108,34);
-  CEL.grace.BURST_FINISH=sseq('grace',[194,289,383,479],598,108,32);
-  CEL.grace.HURT=sseq('grace',[193,290,384,477,558,653,748,806],633,84,30);
-  CEL.grace.KNOCKBACK=sseq('grace',[207,302,394,493,606,700,792],669,102,32);
-  CEL.grace.VICTORY=sseq('grace',[195,289,385,482,579,673,758],720,86,54);
+  // GRACE: the refactored atlas keeps full-frame strips left of x=1024 and
+  // reusable body parts on the right. Generous cells are trimmed by alpha.
+  const gIdle=sseq('grace',[74,159,242,327,412,498,581,668,758,859],61,80,118);
+  const gRun =sseq('grace',[65,165,258,352,447,575,680,777,860,956],165,106,92);
+  const gAir =sseq('grace',[62,151,245,335,428,532,609,688,787,879,970],270,94,112);
+  const gWall=sseq('grace',[61,159,243,335,425,508,590,678,767,858,965],386,92,126);
+  const gFire=sseq('grace',[63,163,256,349,444,548,667,789,965],503,108,104);
+  const gBurst=sseq('grace',[63,176,288,417,548,687,844,963],608,126,102);
+  const gHurt=sseq('grace',[65,166,286,421,554,676,785,882],707,116,110);
+  const gKnock=sseq('grace',[67,178,304,419,548,665,783,883],817,112,106);
+  const gVictory=sseq('grace',[66,176,289,395,491],934,106,120);
+  CEL.grace.IDLE=gIdle; CEL.grace.RUN=gRun;
+  CEL.grace.JUMP_START=seqSlice(gAir,0,4); CEL.grace.JUMP_UP=gAir;
+  CEL.grace.FALL=seqSlice(gAir,5); CEL.grace.LAND=seqSlice(gWall,0,4);
+  CEL.grace.WALL_SLIDE=seqSlice(gWall,5,9); CEL.grace.WALL_JUMP=seqSlice(gAir,1,8);
+  CEL.grace.LEDGE_GRAB=seqSlice(gWall,7,11); CEL.grace.CLIMB_UP=seqSlice(gWall,3,9);
+  CEL.grace.CROUCH=seqSlice(gAir,7,11); CEL.grace.SLIDE=seqSlice(gRun,6,10);
+  CEL.grace.FIRE=gFire; CEL.grace.BURST_START=seqSlice(gBurst,0,3);
+  CEL.grace.BURST_LOOP=seqSlice(gBurst,1,7); CEL.grace.BURST_FINISH=seqSlice(gBurst,5,8);
+  CEL.grace.HURT=gHurt; CEL.grace.KNOCKBACK=gKnock; CEL.grace.VICTORY=gVictory;
 
-  // Clockwork Baron rows.  Gear toss uses the lower seamless loop because the
-  // labelled top row is the projectile arc itself rather than a body pose.
-  CEL.baron.IDLE=sseq('baron',[168,231,307,377,439,500,559,619,680,739,801],94,64,42);
-  CEL.baron.WINDUP=sseq('baron',[158,222,286,354,421,486,551,615,680,746],141,74,38);
-  CEL.baron.FIRE=sseq('baron',[157,222,286,349,465,535,606,677,745],181,80,34);
-  CEL.baron.GEAR_TOSS=sseq('baron',[315,352,390,430,470,510,548],590,52,34);
-  CEL.baron.DASH=sseq('baron',[169,258,354,468,591,687],279,96,40);
-  CEL.baron.JUMP=sseq('baron',[183,239,294,351,433],321,80,38);
-  CEL.baron.STAGGER=sseq('baron',[159,232,306,381,457,541,615,682,753],364,74,36);
-  CEL.baron.PHASE=sseq('baron',[157,217,279,340,402,466,531,597,687,744],407,74,38);
-  CEL.baron.HURT=sseq('baron',[156,223,288,351,418,484,550,618,686,748],445,74,34);
-  CEL.baron.DEFEAT=sseq('baron',[156,225,296,370,444,520,596,670,744],485,80,30);
-  CEL.baron.VICTORY=sseq('baron',[159,230,300,373,445,512,579,647,714,776],520,74,38);
-  CEL.baron.CUPBOT=sseq('baron',[112,180,236,296,350],681,50,34);
+  // BARON: five compact full-character bands plus reusable parts below.
+  const bIdle=sseq('baron',[77,213,343,462,598,727,858,1000,1147,1290,1435],67,126,118);
+  const bFire=sseq('baron',[78,225,347,470,610,792,985,1165,1300,1440],181,138,112);
+  const bDash=sseq('baron',[78,277,470,655,812,1000,1160,1310,1440],285,154,112);
+  const bPhase=sseq('baron',[75,220,360,500,610,760,890,1030,1205,1330,1460],400,138,112);
+  const bDown=sseq('baron',[75,220,350,472,590,755,930,1125,1288,1450],508,146,112);
+  CEL.baron.IDLE=bIdle;
+  CEL.baron.WINDUP=seqSlice(bFire,0,4); CEL.baron.FIRE=bFire;
+  CEL.baron.GEAR_TOSS=seqSlice(bFire,5,10); CEL.baron.DASH=bDash;
+  CEL.baron.JUMP=seqSlice(bDash,3,9); CEL.baron.STAGGER=seqSlice(bPhase,0,5);
+  CEL.baron.PHASE=seqSlice(bPhase,4,9); CEL.baron.HURT=seqSlice(bDown,0,5);
+  CEL.baron.DEFEAT=seqSlice(bDown,4,8); CEL.baron.VICTORY=seqSlice(bDown,7,10);
+  CEL.baron.CUPBOT=sseq('baron',[47,112,180,244,341],838,68,74);
 
-  // Arena modules, cropped tightly enough to exclude the production labels.
-  CEL.arena.clock=scrop('arena',672,98,135,170);
-  CEL.arena.skyline=scrop('arena',458,428,250,65);
-  CEL.arena.windows=scrop('arena',31,427,316,71);
-  CEL.arena.gears=scrop('arena',27,568,178,77);
-  CEL.arena.columns=scrop('arena',371,568,214,72);
-  CEL.arena.chandelier=scrop('arena',600,565,220,75);
-  CEL.arena.pipe=scrop('arena',952,97,113,23);
-  CEL.arena.platform=scrop('arena',58,151,212,20);
-  CEL.arena.banner=scrop('arena',31,720,99,115);
-  CEL.arena.floor=scrop('arena',1170,562,190,42);
-  CEL.arena.catwalk=scrop('arena',1244,109,161,32);
-  CEL.arena.props=scrop('arena',370,722,236,172);
-  CEL.arena.sceneBg=scrop('scene',125,674,205,26);
-  CEL.arena.sceneFar=scrop('scene',125,710,205,26);
+  // BARON MODULAR BREAKDOWN — these cels sit below the five whole-body bands
+  // above and were previously unused entirely. The render layer was cropping
+  // only the pre-posed full-character strips and stretching them 4x, which is
+  // why the boss read flat/soft/small despite the "twice size" scale factor.
+  // drawBaron() below assembles him from these parts on the SAME joint math
+  // already authored in BARON_CLIPS (B_HIP/B_SHO/B_HEADY, aL0/aL1/aR0/aR1/
+  // lL0/lL1/lR0/lR1) — that pose data was being computed every frame and then
+  // discarded. N=1 FLAG: crop rects below were located via alpha connected-
+  // component analysis + visual spot-check, not hand-authored; nudge any that
+  // read as misaligned once seen at gameplay scale.
+  CEL.baron.torsoMain   = scrop('baron',130,640,95,90);   // belly clock, idle/default
+  CEL.baron.torsoGeared = scrop('baron',240,642,85,85);   // extra gear knobs — windup/fire/gear-toss
+  CEL.baron.torsoVent   = scrop('baron',339,646,80,80);   // ribbed vent cage — damaged/knockback/defeat
+  CEL.baron.torsoSkull  = scrop('baron',675,645,82,87);   // skull emblem — phase 2 "overwound"
+  CEL.baron.heads = [
+    scrop('baron',34,553,51,75), scrop('baron',105,558,53,71), scrop('baron',173,561,47,67),
+    scrop('baron',235,560,48,68), scrop('baron',298,560,49,69)
+  ];
+  CEL.baron.foot = [ scrop('baron',30,732,42,51), scrop('baron',90,732,39,52), scrop('baron',148,731,41,53) ];
+  CEL.baron.pipeJoint = [
+    scrop('baron',211,733,47,51), scrop('baron',279,732,43,55),
+    scrop('baron',340,731,39,55), scrop('baron',400,733,38,55)
+  ];
+  CEL.baron.gauge      = scrop('baron',456,731,44,53);
+  CEL.baron.clockFace  = scrop('baron',515,735,50,51);   // large legible dial — used as a rotating halo behind him
+  CEL.baron.gear = [
+    scrop('baron',639,738,46,48), scrop('baron',697,739,42,46),
+    scrop('baron',747,742,31,33), scrop('baron',786,743,30,30)
+  ];
+  CEL.baron.gearRail      = scrop('baron',881,743,47,56);   // curved gear-track — unused, staged for kids
+  CEL.baron.handOpen      = scrop('baron',963,667,34,37);
+  CEL.baron.handFist      = scrop('baron',1361,669,26,35);
+  CEL.baron.handPoint     = scrop('baron',1189,670,28,34);  // unused, staged for kids (taunt gesture)
+  CEL.baron.muzzleFire    = scrop('baron',0,870,150,45);
+  CEL.baron.muzzleFireAlt = scrop('baron',150,870,150,45);  // unused, staged for kids (alt fire frame)
+  CEL.baron.gearProjectile= scrop('baron',697,870,103,65);  // unused, staged for kids (GEAR_TOSS spin-blur)
+  CEL.baron.explosionBig  = scrop('baron',1305,868,80,72);  // unused, staged for kids (impact FX)
+  CEL.baron.sootCloud     = scrop('baron',1445,868,86,80);  // unused, staged for kids (STOMP/defeat dust)
+  CEL.baron.smokeCloud    = scrop('baron',0,938,75,62);     // unused, staged for kids
+  CEL.baron.shockRing     = scrop('baron',185,958,68,64);   // unused, staged for kids (ground-slam ring)
 
-  // FX / UI / pickups from the dedicated accessory sheet.
-  CEL.ux.heartFull=scrop('ux',1151,331,34,32); // center ~1168,347
-  CEL.ux.heartEmpty=scrop('ux',1398,331,34,32);
-  CEL.ux.coffee=scrop('ux',1149,382,38,38);
-  CEL.ux.star=scrop('ux',414,536,48,48);
-  CEL.ux.bossbar=scrop('ux',45,542,160,32);
-  CEL.ux.gear=scrop('ux',860,383,46,46);
-  CEL.ux.bolt=scrop('ux',867,337,24,20);
-  CEL.ux.shot=scrop('ux',64,141,24,18);
-  CEL.ux.spark=scrop('ux',864,143,30,30);
-  CEL.ux.ring=scrop('ux',611,193,38,32);
-  CEL.ux.dust=scrop('ux',864,199,34,28);
+  // ARENA: reusable geometry only. Background depth is handled by scene atlas.
+  CEL.arena.platform=scrop('arena',12,8,240,50);
+  CEL.arena.wall=scrop('arena',500,14,64,184);
+  CEL.arena.clock=scrop('arena',850,8,235,248);
+  CEL.arena.windows=scrop('arena',14,450,306,126);
+  CEL.arena.gears=scrop('arena',14,584,200,148);
+  CEL.arena.columns=scrop('arena',995,452,238,292);
+  CEL.arena.chandelier=scrop('arena',1236,449,290,194);
+  CEL.arena.pipe=scrop('arena',1272,8,255,186);
+  CEL.arena.banner=scrop('arena',12,748,114,246);
+  CEL.arena.floor=scrop('arena',995,867,270,90);
+  CEL.arena.catwalk=scrop('arena',10,330,150,118);
+  CEL.arena.props=scrop('arena',460,748,350,270);
+
+  // PARALLAX SCENERY: intentionally broad crops; alpha trimming preserves shape.
+  CEL.scene.skyA=scrop('scene',0,0,990,66);
+  CEL.scene.skyB=scrop('scene',0,70,990,62);
+  CEL.scene.skyC=scrop('scene',0,136,990,62);
+  CEL.scene.cloudHorizon=scrop('scene',0,198,990,58);
+  CEL.scene.farCity=scrop('scene',0,258,472,88);
+  CEL.scene.nearCity=scrop('scene',470,258,708,190);
+  CEL.scene.moon=scrop('scene',990,0,126,132);
+  CEL.scene.cloudBank=scrop('scene',1114,0,420,258);
+  CEL.scene.clock=scrop('scene',1172,205,205,230);
+  CEL.scene.windows=scrop('scene',10,450,430,126);
+  CEL.scene.wallMech=scrop('scene',820,448,356,248);
+  CEL.scene.foreRig=scrop('scene',1178,442,356,266);
+  CEL.scene.smoke=scrop('scene',0,824,960,142);
+  CEL.scene.lights=scrop('scene',974,816,560,154);
+  CEL.scene.shadows=scrop('scene',0,958,960,66);
+
+  // FX / HUD atlas.
+  CEL.ux.shot=scrop('ux',12,10,92,46);
+  CEL.ux.spark=scrop('ux',8,440,110,76);
+  CEL.ux.dust=scrop('ux',8,204,92,60);
+  CEL.ux.ring=scrop('ux',1135,62,88,74);
+  CEL.ux.gear=scrop('ux',1130,405,74,78);
+  CEL.ux.bolt=scrop('ux',930,345,210,72);
+  CEL.ux.star=scrop('ux',8,525,84,70);
+  CEL.ux.heartFull=scrop('ux',1178,535,64,58);
+  CEL.ux.heartEmpty=scrop('ux',1430,535,66,58);
+  CEL.ux.coffee=scrop('ux',1182,588,70,72);
+  CEL.ux.bossbar=scrop('ux',10,742,320,70);
 }
 async function loadProductionSheets(){
   try{
     await Promise.all(Object.entries(SHEET_FILES).map(async([k,v])=>SHEET_IMG[k]=await loadSheet(v)));
     buildProductionCels(); SPR.ready=true; spriteStatus.remove();
-  }catch(e){ SPR.error='Missing local production sheet: '+e.message; spriteStatus.innerHTML='SPRITE SHEETS NOT FOUND<br><span style="opacity:.7">Keep this HTML beside arena-cels.png, baron-cels.png, grace-cels.png, scene-atlas.png and ux-cels.png.</span>'; throw e; }
+  }catch(e){
+    SPR.error='Missing local production atlas: '+e.message;
+    spriteStatus.innerHTML='SPRITE ATLASES NOT FOUND<br><span style="opacity:.7">Keep this HTML beside grace-atlas.png, baron-atlas.png, arena-atlas.png, parallax-atlas.png and fx-atlas.png.</span>';
+    throw e;
+  }
 }
 function celFrame(seq,fps,t){ if(!seq||!seq.length)return null; return seq[Math.floor(Math.max(0,t)*fps)%seq.length]; }
 function drawCel(c,x,y,scale,flip=1,alpha=1,rot=0){ if(!c)return; ctx.save();ctx.translate(x,y);ctx.rotate(rot);ctx.scale(flip,1);ctx.globalAlpha=alpha;ctx.drawImage(c,-c.width*scale/2,-c.height*scale,c.width*scale,c.height*scale);ctx.restore(); }
 function drawCelRect(c,x,y,w,h,alpha=1){ if(!c)return;ctx.save();ctx.globalAlpha=alpha;ctx.drawImage(c,x,y,w,h);ctx.restore(); }
+
 
 /* ---------- canvas + scaling --------------------------------------------- */
 const cv = document.getElementById('game');
@@ -937,49 +1015,69 @@ function drawTick(m){
    They are grouped so a balance sim can sweep them without touching logic.
    ============================================================================ */
 const T = {
-  GRAV_UP:3000, GRAV_DOWN:4300, GRAV_APEX:1750, APEX_BAND:150, MAX_FALL:1650,
-  RUN:470, ACC_GROUND:5400, ACC_AIR:3300, FRIC_GROUND:4800, FRIC_AIR:820,
-  JUMP_V:1190, DJUMP_V:1060, JUMP_CUT:.42,
-  COYOTE:.10, BUFFER:.12,
-  WALL_SLIDE_MAX:300, WALL_STICK:.09, WALLJUMP_VY:1130, WALLJUMP_IX:660, WALL_LOCK:.16,
-  SLIDE_V:760, SLIDE_TIME:.34,
-  FIRE_CD:.155, SHOT_V:1500, SHOT_DMG:3,
-  BURST_COST:.42, BURST_V:1180, BURST_TIME:.52, BURST_DPS:26,
-  IFRAME:1.25, KNOCK_IX:520, KNOCK_VY:-620,
+  // Bigger room, same Grace: movement is intentionally more athletic rather
+  // than scaling the player up with the environment.
+  GRAV_UP:3250, GRAV_DOWN:4650, GRAV_APEX:1650, APEX_BAND:170, MAX_FALL:1850,
+  RUN:720, ACC_GROUND:7800, ACC_AIR:5200, FRIC_GROUND:5600, FRIC_AIR:980,
+  JUMP_V:1510, DJUMP_V:1390, JUMP_CUT:.40,
+  COYOTE:.12, BUFFER:.14,
+  WALL_SLIDE_MAX:330, WALL_STICK:.11, WALLJUMP_VY:1450, WALLJUMP_IX:880, WALL_LOCK:.14,
+  SLIDE_V:1020, SLIDE_TIME:.36,
+  FIRE_CD:.145, SHOT_V:1900, SHOT_DMG:3,
+  BURST_COST:.42, BURST_V:1680, BURST_TIME:.56, BURST_DPS:26,
+  IFRAME:1.10, KNOCK_IX:620, KNOCK_VY:-760,
+  DROP_TIME:.24,
   METER_REGEN:.045, METER_PER_HIT:.035, METER_PER_STAR:.34,
   HITSTOP_HIT:.045, HITSTOP_HURT:.11, HITSTOP_PHASE:.30, HITSTOP_KILL:.45,
-  IMPULSE_DECAY:3.4
+  IMPULSE_DECAY:3.6
 };
 
 /* ---------- arena (plain data: a room generator swaps this wholesale) ----- */
 const ARENA = {
-  floorY: 936,
+  // Four viewport-widths of room. The scenic art repeats and overlaps at
+  // different depths, but gameplay geometry is deliberately sparse so Grace
+  // always has an escape route instead of getting pinched in a lower corner.
+  floorY: 1960,
   solids: [
-    { x:0,    y:936, w:1920, h:144, kind:'floor' },
-    { x:168,  y:744, w:288,  h:24,  kind:'plat' },
-    { x:288,  y:504, w:240,  h:24,  kind:'plat' },
-    { x:552,  y:624, w:216,  h:24,  kind:'plat' },
-    { x:840,  y:792, w:240,  h:24,  kind:'plat' },
-    { x:1128, y:648, w:264,  h:24,  kind:'plat' },
-    { x:1416, y:480, w:264,  h:24,  kind:'plat' },
-    { x:1536, y:768, w:264,  h:24,  kind:'plat' },
-    { x:72,   y:288, w:48,   h:648, kind:'wall' },
-    { x:1800, y:288, w:48,   h:648, kind:'wall' }
+    { x:0,    y:1960, w:WORLD_W, h:200, kind:'floor' },
+    { x:0,    y:0,    w:72,      h:1960, kind:'wall' },
+    { x:WORLD_W-72, y:0, w:72,    h:1960, kind:'wall' },
+
+    { x:360,  y:1710, w:500, h:24, kind:'plat' },
+    { x:1120, y:1510, w:460, h:24, kind:'plat' },
+    { x:1760, y:1740, w:560, h:24, kind:'plat' },
+    { x:2450, y:1450, w:620, h:24, kind:'plat' },
+    { x:3320, y:1700, w:480, h:24, kind:'plat' },
+    { x:3910, y:1350, w:560, h:24, kind:'plat' },
+    { x:4720, y:1630, w:650, h:24, kind:'plat' },
+    { x:5580, y:1430, w:480, h:24, kind:'plat' },
+    { x:6220, y:1720, w:580, h:24, kind:'plat' },
+    { x:6870, y:1500, w:470, h:24, kind:'plat' },
+
+    { x:760,  y:1230, w:500, h:24, kind:'plat' },
+    { x:2100, y:1120, w:520, h:24, kind:'plat' },
+    { x:3050, y:970,  w:480, h:24, kind:'plat' },
+    { x:4460, y:1110, w:620, h:24, kind:'plat' },
+    { x:5850, y:980,  w:520, h:24, kind:'plat' }
   ],
-  mover: { x:648, y:576, w:192, h:24, kind:'plat', from:648, to:1104, spd:120, dir:1 },
-  spikes: [ { x:792, y:906, w:336, h:30 } ],
-  stars:  [ { x:408, y:432 }, { x:1236, y:576 }, { x:1656, y:408 } ]
+  mover: { x:3560, y:1540, w:340, h:24, kind:'plat', from:3500, to:4300, spd:170, dir:1 },
+  spikes: [
+    { x:1500, y:1930, w:260, h:30 },
+    { x:5150, y:1930, w:300, h:30 },
+    { x:6400, y:1930, w:220, h:30 }
+  ],
+  stars: [ { x:1010, y:1140 }, { x:4140, y:1260 }, { x:6110, y:890 } ]
 };
 
 /* ---------- entities ----------------------------------------------------- */
 const P = {
   x:220, y:800, w:52, h:132, vx:0, vy:0, ix:0, face:1,
   grounded:false, wall:0, wallT:0, coyote:0, buffer:0, lock:0,
-  jumps:0, ledge:0, slideT:0, fireT:0, fireCd:0, burstT:0, burstPhase:0,
+  jumps:0, ledge:0, slideT:0, dropT:0, fireT:0, fireCd:0, burstT:0, burstPhase:0,
   hp:5, maxHp:5, inv:0, meter:1, stars:0, clock:0, state:'IDLE', anim:null, alive:true
 };
 const B = {
-  x:1320, y:520, w:180, h:250, vx:0, vy:0, face:-1,
+  x:2480, y:1320, w:360, h:500, vx:0, vy:0, face:-1,
   hp:120, maxHp:120, phase:1, grounded:false, clock:0, alive:true,   // N=1 hypothesis: dmg:3, 9dps eff → ~40s human
   state:'IDLE', anim:null, timer:1.2, act:null, actT:0, flash:0, hover:520,
   muzzle:{ x:0, y:0 }, enrageDone:false
@@ -1006,31 +1104,59 @@ function hitstop(s){ freeze = Math.max(freeze, s); }
 
 /* ---------- collision ---------------------------------------------------- */
 function solidsNow(){ return ARENA.solids.concat([ARENA.mover]); }
+function isOneWay(s){ return s.kind === 'plat'; }
+function overlapsX(e,s){ return e.x < s.x+s.w && e.x+e.w > s.x; }
 function moveAndCollide(e, dx, dy, onLand){
-  e.wall = 0;
+  const oldY=e.y, oldBottom=oldY+e.h;
+  e.wall = 0; e.groundRef = null;
+
+  // One-way platforms never block lateral motion. Only the floor and boundary
+  // architecture participate in horizontal collision.
   e.x += dx;
   for(const s of solidsNow()){
-    if(!aabb(e, s)) continue;
+    if(isOneWay(s) || !aabb(e,s)) continue;
     if(dx > 0){ e.x = s.x - e.w; e.wall = 1; }
     else if(dx < 0){ e.x = s.x + s.w; e.wall = -1; }
   }
+
   e.y += dy;
-  let landed = false;
+  let landed=false, landedOn=null;
   for(const s of solidsNow()){
-    if(!aabb(e, s)) continue;
-    if(dy > 0){
-      e.y = s.y - e.h; e.vy = 0; landed = true;
-      if(s === ARENA.mover) e.x += ARENA.mover.spd * ARENA.mover.dir * (1/60);
-    } else if(dy < 0){ e.y = s.y + s.h; e.vy = 0; }
+    if(isOneWay(s)){
+      if((e.dropT||0) > 0 || dy < 0 || !overlapsX(e,s)) continue;
+      const newBottom=e.y+e.h;
+      // Crossing the top plane from above is the only way a platform catches
+      // you. This makes every platform jump-through from below by construction.
+      if(oldBottom <= s.y+10 && newBottom >= s.y){
+        e.y=s.y-e.h; e.vy=0; landed=true; landedOn=s;
+        if(s===ARENA.mover)e.x += ARENA.mover.spd*ARENA.mover.dir*(1/60);
+      }
+      continue;
+    }
+    if(!aabb(e,s)) continue;
+    if(dy > 0){ e.y=s.y-e.h; e.vy=0; landed=true; landedOn=s; }
+    else if(dy < 0){ e.y=s.y+s.h; e.vy=0; }
   }
+
   if(landed && !e.grounded && onLand) onLand();
-  e.grounded = landed;
-  if(!landed){
-    // one-pixel ground probe keeps `grounded` stable while standing still
-    const probe = { x:e.x, y:e.y + 1.5, w:e.w, h:e.h };
-    for(const s of solidsNow()) if(aabb(probe, s) && e.vy >= 0){ e.grounded = true; break; }
+  e.grounded=landed; e.groundRef=landedOn;
+
+  if(!landed && (e.dropT||0) <= 0 && e.vy >= 0){
+    // Stable standing probe. For one-way platforms we only accept a top-plane
+    // contact; nearby sides and undersides remain non-solid.
+    const feet=e.y+e.h;
+    for(const s of solidsNow()){
+      if(!overlapsX(e,s)) continue;
+      if(isOneWay(s)){
+        if(feet >= s.y-2 && feet <= s.y+3){ e.grounded=true;e.groundRef=s;break; }
+      }else{
+        const probe={x:e.x,y:e.y+1.5,w:e.w,h:e.h};
+        if(aabb(probe,s)){e.grounded=true;e.groundRef=s;break;}
+      }
+    }
   }
 }
+
 
 /* ============================================================================
    PLAYER
@@ -1047,7 +1173,7 @@ function findLedge(){
   const dir = P.face;
   const handY = P.y + 26;
   for(const s of solidsNow()){
-    if(Math.abs(s.y - handY) > 26) continue;
+    if(!isOneWay(s) || Math.abs(s.y - handY) > 26) continue;
     const edgeX = dir > 0 ? s.x : s.x + s.w;
     const nose  = dir > 0 ? P.x + P.w : P.x;
     if(Math.abs(nose - edgeX) < 26 && P.y + P.h > s.y) return { s, dir, edgeX };
@@ -1091,9 +1217,18 @@ function updatePlayer(dt){
   P.buffer = Math.max(0, P.buffer - dt);
   P.wallT  = Math.max(0, P.wallT - dt);
   P.slideT = Math.max(0, P.slideT - dt);
+  P.dropT  = Math.max(0, P.dropT - dt);
   P.meter  = clamp(P.meter + T.METER_REGEN * dt, 0, 1);
 
-  if(EDGE.jump){ P.buffer = T.BUFFER; EDGE.jump = false; }
+  if(EDGE.jump){
+    // DOWN + JUMP intentionally drops through the one-way support currently
+    // under Grace. Otherwise jump keeps its normal buffered semantics.
+    if(IN.down && P.grounded && P.groundRef && isOneWay(P.groundRef)){
+      P.dropT=T.DROP_TIME; P.grounded=false; P.buffer=0; P.y+=8; P.vy=180;
+      setState('FALL',true); SFX.wall();
+    }else P.buffer=T.BUFFER;
+    EDGE.jump=false;
+  }
   if(EDGE.fire){ fireShot(); EDGE.fire = false; }
   if(EDGE.burst){ startBurst(); EDGE.burst = false; }
   if(!P.alive || over.active){ stepAnim(P.anim, dt); return; }
@@ -1160,7 +1295,7 @@ function updatePlayer(dt){
   const probeL = { x:P.x-3, y:P.y+18, w:P.w+6, h:P.h-46 };
   let touching = 0;
   for(const s of solidsNow()){
-    if(!aabb(probeL, s)) continue;
+    if(isOneWay(s) || !aabb(probeL, s)) continue;
     if(P.x + P.w/2 < s.x) touching = 1; else touching = -1;
   }
   if(touching && !P.grounded) P.wallT = T.WALL_STICK, P.wallDir = touching;
@@ -1205,13 +1340,13 @@ function updatePlayer(dt){
     }
   });
   if(P.wall) P.ix *= .3;
-  P.x = clamp(P.x, 0, VW - P.w);
-  if(P.y > VH + 200){ P.y = 300; P.x = 260; P.vy = 0; hurtPlayer(1, P.x); }
+  P.x = clamp(P.x, 0, WORLD_W - P.w);
+  if(P.y > WORLD_H + 220){ P.y = ARENA.floorY-520; P.vy = 0; hurtPlayer(1, P.x); }
 
   /* --- ledge acquire ------------------------------------------------------- */
   if(!P.grounded && P.vy > 0 && P.state !== 'LEDGE_GRAB'){
     const L = findLedge();
-    if(L && P.wallT > 0){ P.ledge = 1; P.ledgeRef = L; P.jumps = 0; P.y = L.s.y - 26; SFX.wall(); }
+    if(L){ P.ledge = 1; P.ledgeRef = L; P.jumps = 0; P.y = L.s.y - 26; SFX.wall(); }
   }
 
   /* --- hazards + pickups --------------------------------------------------- */
@@ -1263,8 +1398,8 @@ const PATTERNS = {
    passed clean underneath him: 14s of 99%-uptime bot fire removed 4hp. He now
    tracks the player's height, which both fixes reachability and reads as a
    floating enemy stalking you rather than a turret bolted to the sky. */
-function bossHoverY(){ return clamp(P.y - 130, 330, 700); }
-function bossCore(){ return { x:B.x+34, y:B.y+52, w:B.w-68, h:B.h-72 }; }
+function bossHoverY(){ return clamp(P.y - 250, 260, ARENA.floorY - B.h - 170); }
+function bossCore(){ return { x:B.x+68, y:B.y+88, w:B.w-136, h:B.h-128 }; }
 function setB(s, force){ if(B.state !== s || force){ B.state = s; setClip(B.anim, s, force); } }
 
 function hitBoss(dmg, x, y, soft){
@@ -1318,7 +1453,7 @@ function bossFire(){
 function bossGears(){
   const n = B.phase >= 2 ? 3 : 2;
   for(let i = 0; i < n; i++) gears.push({
-    x:B.x+B.w/2, y:B.y+70, vx:(P.x - B.x)*rnd(1.1,.7)/1.1, vy:-rnd(760,520),
+    x:B.x+B.w/2, y:B.y+190, vx:(P.x - B.x)*rnd(1.1,.7)/1.1, vy:-rnd(760,520),
     r:rnd(34,24), life:6, rot:0, bounces:2
   });
   SFX.gear();
@@ -1336,14 +1471,14 @@ function updateBoss(dt){
   B.actT -= dt;
   switch(B.act){
     case 'enrage':
-      B.y += (440 - B.y) * Math.min(1, dt*2);
+      B.y += (Math.max(280,P.y-320) - B.y) * Math.min(1, dt*2);
       if(RUN.frame % 4 === 0) puff(B.x+rnd(B.w), B.y+B.h*.6, 1, 'smoke', 260);
       if(B.actT <= 0){ B.act = 'idle'; B.actT = .5;
-        for(let i = 0; i < 2; i++) minions.push({ x:B.x + (i?60:-60), y:B.y+140, vx:0, vy:0, hp:2, clock:0, grounded:false }); }
+        for(let i = 0; i < 2; i++) minions.push({ x:B.x+B.w/2 + (i?120:-120), y:B.y+B.h-80, vx:0, vy:0, hp:2, clock:0, grounded:false }); }
       break;
 
     case 'idle': {
-      const tx = clamp(px + (px < VW/2 ? 380 : -380), 320, VW - 320) - B.w/2;
+      const tx = clamp(px + (px < WORLD_W/2 ? 720 : -720), 480, WORLD_W - 480) - B.w/2;
       B.x += (tx - B.x) * Math.min(1, dt * (B.phase >= 2 ? 1.5 : .9));
       B.y += (bossHoverY() - B.y) * Math.min(1, dt * 1.7);
       setB(Math.abs(tx - B.x) > 40 ? 'WALK' : 'IDLE');
@@ -1358,11 +1493,11 @@ function updateBoss(dt){
         if(k === 'BOLTS'){ B.act = 'fire'; B.actT = .34; setB('FIRE', true); bossFire(); }
         else if(k === 'GEARS'){ B.act = 'fire'; B.actT = .42; setB('GEAR_TOSS', true); bossGears(); }
         else if(k === 'STOMP'){ B.act = 'rise'; B.actT = .34; setB('JUMP', true);
-          B.slamX = clamp(px - B.w/2, 100, VW - B.w - 100); }   // committed at tell time: dodgeable
+          B.slamX = clamp(px - B.w/2, 100, WORLD_W - B.w - 100); }   // committed at tell time: dodgeable
         else if(k === 'DASH'){ B.act = 'dash'; B.actT = .55; setB('STOMP', true);
           B.dashV = (px < B.x ? -1 : 1) * 1250; SFX.gear(); }
         else { B.act = 'summon'; B.actT = .5; setB('TAUNT', true);
-          for(let i = 0; i < 2; i++) minions.push({ x:B.x+B.w/2 + (i?70:-70), y:B.y+120, vx:0, vy:0, hp:2, clock:0, grounded:false });
+          for(let i = 0; i < 2; i++) minions.push({ x:B.x+B.w/2 + (i?120:-120), y:B.y+B.h-90, vx:0, vy:0, hp:2, clock:0, grounded:false });
           toast('TICK-TOCKS DEPLOYED'); SFX.gear(); }
       }
       break;
@@ -1388,7 +1523,7 @@ function updateBoss(dt){
       B.x += B.dashV * dt;
       B.y += ((P.y + 30) - B.y) * Math.min(1, dt * 1.4);
       if(RUN.frame % 2 === 0) puff(B.x+B.w/2, B.y+B.h*.7, 1, 'smoke', 200);
-      if(B.x < 120 || B.x > VW - B.w - 120){ B.dashV *= -1; shake(.3); }
+      if(B.x < 120 || B.x > WORLD_W - B.w - 120){ B.dashV *= -1; shake(.3); }
       if(B.actT <= 0){ B.act = 'idle'; B.actT = B.phase >= 2 ? .5 : .9; setB('IDLE', true); }
       break;
     }
@@ -1397,7 +1532,7 @@ function updateBoss(dt){
       if(B.actT <= 0){ B.act = 'idle'; B.actT = B.phase >= 2 ? .55 : 1.05; }
       break;
   }
-  B.x = clamp(B.x, 100, VW - B.w - 100);
+  B.x = clamp(B.x, 100, WORLD_W - B.w - 100);
   B.grounded = B.act === 'stompRec';
   if(!over.active && P.alive && aabb(P, bossCore())){
     if(P.burstT > 0 && P.burstPhase === 1) hitBoss(T.BURST_DPS * dt, P.x+P.w/2, P.y+50, true);
@@ -1415,14 +1550,14 @@ function updateThings(dt){
       s.life = 0; m.hp -= 1; puff(m.x, m.y, 5, 'spark', 260); SFX.hitBoss();
       if(m.hp <= 0){ puff(m.x, m.y, 12, 'debris', 420); P.meter = clamp(P.meter+.06,0,1); }
     }
-    if(s.x < -40 || s.x > VW+40) s.life = 0;
+    if(s.x < -40 || s.x > WORLD_W+40) s.life = 0;
   }
   for(const b of bolts){
     b.x += b.vx*dt; b.y += b.vy*dt; b.life -= dt;
     if(b.wave){ b.y = ARENA.floorY - 30; }
     if(P.alive && P.burstT <= 0 && aabb({x:b.x-13,y:b.y-13,w:26,h:26}, P)){ b.life = 0; hurtPlayer(1, b.x); }
     if(P.burstT > 0 && aabb({x:b.x-13,y:b.y-13,w:26,h:26}, P)){ b.life = 0; puff(b.x,b.y,4,'spark',200); }
-    if(b.x < -60 || b.x > VW+60 || b.y > VH+60) b.life = 0;
+    if(b.x < -60 || b.x > WORLD_W+60 || b.y > WORLD_H+60) b.life = 0;
   }
   for(const g of gears){
     g.vy += 2100*dt; g.x += g.vx*dt; g.y += g.vy*dt; g.life -= dt; g.rot += g.vx*dt*.02;
@@ -1435,7 +1570,7 @@ function updateThings(dt){
       if(P.burstT > 0){ g.life = 0; puff(g.x,g.y,8,'debris',300); }
       else { g.life = 0; hurtPlayer(1, g.x); }
     }
-    if(g.x < -80 || g.x > VW+80) g.life = 0;
+    if(g.x < -80 || g.x > WORLD_W+80) g.life = 0;
   }
   for(const m of minions){
     if(m.hp <= 0) continue;
@@ -1483,11 +1618,15 @@ function endRun(won){
 }
 function resetRun(){
   rng = mulberry32(RUN.seed); RUN.frame = 0; RUN.digest = 0x811c9dc5;
-  Object.assign(P, { x:220, y:700, vx:0, vy:0, ix:0, face:1, grounded:false, wall:0, wallT:0,
-    coyote:0, buffer:0, lock:0, jumps:0, ledge:0, slideT:0, fireT:0, fireCd:0,
-    burstT:0, burstPhase:0, hp:5, inv:0, meter:1, stars:0, clock:0, alive:true, state:'IDLE' });
-  Object.assign(B, { x:1320, y:520, vx:0, vy:0, face:-1, hp:B.maxHp, phase:1, clock:0,
+  Object.assign(P, { x:520, y:ARENA.floorY-P.h-180, vx:0, vy:0, ix:0, face:1, grounded:false, wall:0, wallT:0,
+    coyote:0, buffer:0, lock:0, jumps:0, ledge:0, slideT:0, dropT:0, fireT:0, fireCd:0,
+    burstT:0, burstPhase:0, hp:5, inv:0, meter:1, stars:0, clock:0, alive:true, state:'IDLE', groundRef:null });
+  Object.assign(B, { x:2050, y:ARENA.floorY-B.h-260, vx:0, vy:0, face:-1, hp:B.maxHp, phase:1, clock:0,
     alive:true, state:'IDLE', timer:1.2, act:'idle', actT:1.4, flash:0, enrageDone:false });
+  ARENA.mover.x=ARENA.mover.from; ARENA.mover.dir=1;
+  CAM.x=CAM.tx=clamp(P.x+P.w*.5-VW*.46,0,Math.max(0,WORLD_W-VW));
+  CAM.y=CAM.ty=clamp(P.y+P.h*.48-VH*.57,0,Math.max(0,WORLD_H-VH));
+  CAM.zoom=CAM.tz=1;
   P.anim = makeAnim(GRACE_CLIPS, 'IDLE');
   B.anim = makeAnim(BARON_CLIPS, 'IDLE');
   shots = []; bolts = []; gears = []; parts = []; rings = []; minions = [];
@@ -1918,135 +2057,244 @@ function drawHUD(){
 
 
 /* ============================================================================
-   SPRITE-SHEET RENDER OVERRIDES
-   Simulation, collision, attack timing, replay digest, inputs, and balancing
-   remain the original game.  Only presentation is replaced by the production
-   cels so the visual build follows the supplied character/environment/UX art.
+   TRANSPARENT-ATLAS RENDERER + PARALLAX ENVELOPE
+   The simulation remains 2D. Camera state is visual-only and constrained to a
+   deliberately small envelope so the illustrations gain depth without exposing
+   the cheat. Different scenery strata respond at different coefficients.
    ============================================================================ */
+const CAM={x:0,y:0,zoom:1,tx:0,ty:0,tz:1};
+function updateCameraVisual(){
+  const px=P.x+P.w*.5, py=P.y+P.h*.48;
+  const bx=(B.alive||B.act==='defeat')?B.x+B.w*.5:px;
+  const by=(B.alive||B.act==='defeat')?B.y+B.h*.46:py;
+  // Grace owns the camera. The Baron only biases framing enough to keep his
+  // tells readable; velocity look-ahead gives the larger room some speed.
+  const fx=lerp(px,bx,.18)+clamp(P.vx*.20,-170,170);
+  const fy=lerp(py,by,.11)+clamp(P.vy*.055,-75,95);
+  CAM.tx=clamp(fx-VW*.46,0,Math.max(0,WORLD_W-VW));
+  CAM.ty=clamp(fy-VH*.57,0,Math.max(0,WORLD_H-VH));
+  const sep=Math.hypot(px-bx,(py-by)*.6);
+  CAM.tz=clamp(1.018-sep/120000,1.0,1.018);
+  if(P.burstT>0)CAM.tz=Math.min(1.026,CAM.tz+.008);
+  CAM.x += (CAM.tx-CAM.x)*.085;
+  CAM.y += (CAM.ty-CAM.y)*.080;
+  CAM.zoom += (CAM.tz-CAM.zoom)*.065;
+}
+function withDepth(depth,fn){
+  ctx.save();
+  const z=1+(CAM.zoom-1)*depth;
+  ctx.translate(VW/2,VH/2);ctx.scale(z,z);
+  ctx.translate(-VW/2-CAM.x*depth,-VH/2-CAM.y*depth);
+  fn();ctx.restore();
+}
+
+
 if(true){
-  drawGrace = function(p){
-    if(!SPR.ready) return;
-    let state = p.fireT > 0 && p.burstT <= 0 ? 'FIRE' : (p.state || 'IDLE');
-    if(state==='DOUBLE_JUMP') state='JUMP_UP';
-    const seq = CEL.grace[state] || CEL.grace[p.anim && p.anim.name] || CEL.grace.IDLE;
-    const fps = state==='RUN'?15:state==='BURST_LOOP'?16:state==='FIRE'?13:state==='VICTORY'?7:10;
-    const c = celFrame(seq,fps,p.clock);
-    let scale = state==='VICTORY'?3.15:3.55;
-    if(state==='BURST_LOOP'||state==='SLIDE'||state==='KNOCKBACK') scale=3.35;
-    const alpha = p.inv>0 && (RUN.frame%6)>=3 ? .28 : 1;
-    drawCel(c,p.x+p.w/2,p.y+p.h+8,scale,p.face,alpha);
+  drawGrace=function(p){
+    if(!SPR.ready)return;
+    let state=p.fireT>0&&p.burstT<=0?'FIRE':(p.state||'IDLE');
+    if(state==='DOUBLE_JUMP')state='JUMP_UP';
+    const seq=CEL.grace[state]||CEL.grace[p.anim&&p.anim.name]||CEL.grace.IDLE;
+    const fps=state==='RUN'?14:state==='BURST_LOOP'?15:state==='FIRE'?12:state==='VICTORY'?6:9;
+    const c=celFrame(seq,fps,p.clock); if(!c)return;
+    let scale=state==='VICTORY'?1.82:1.92;
+    if(state==='BURST_LOOP'||state==='SLIDE'||state==='KNOCKBACK')scale=1.78;
+    // Keep the character cel opaque. Invulnerability feedback is handled by
+    // sparks/impact language rather than fading the whole drawing into a ghost.
+    ctx.save();ctx.globalAlpha=.30;ctx.fillStyle='#050505';ctx.beginPath();ctx.ellipse(p.x+p.w/2,p.y+p.h+8,34,8,0,0,TAU);ctx.fill();ctx.restore();
+    drawCel(c,p.x+p.w/2,p.y+p.h+10,scale,p.face,1);
+    if(p.inv>0&&(RUN.frame%8)<2){ctx.save();ctx.globalAlpha=.55;ctx.strokeStyle=C.goldLite;ctx.lineWidth=5;ctx.beginPath();ctx.ellipse(p.x+p.w/2,p.y+p.h-62,46,70,0,0,TAU);ctx.stroke();ctx.restore();}
   };
 
-  drawBaron = function(b){
-    if(!SPR.ready) return;
-    const map={ WALK:'IDLE',TAUNT:'VICTORY',STOMP:'DASH',LAND:'STAGGER',DAMAGED:'HURT',KNOCKBACK:'HURT',ENRAGE:'PHASE' };
-    let state=map[b.state]||b.state||'IDLE';
-    if(!b.alive||b.act==='defeat') state='DEFEAT';
-    const seq=CEL.baron[state]||CEL.baron.IDLE;
-    const fps=state==='DASH'?15:state==='GEAR_TOSS'?13:state==='DEFEAT'?8:10;
-    const c=celFrame(seq,fps,b.clock);
-    const scale = state==='GEAR_TOSS'?5.9:4.9;
-    drawCel(c,b.x+b.w/2,b.y+b.h+12,scale,b.face,b.flash>0?.72:1);
-    b.muzzle={x:b.x+b.w/2+b.face*92,y:b.y+88};
-  };
+  // Two-bone limb built from real cel art instead of a stroked hose: same
+  // trig baronSegArm (line ~838) used, but each segment is a rotated
+  // pipe-joint cel and the limb ends in a hand/foot cel. Chaining two solid
+  // cels crisply at native res reads as "machined," not "stretched."
+  function baronCelLimb(x0,y0,a0,a1,L1,L2,segCel,capCel,scale,capScale){
+    const jx=x0+Math.sin(a0)*L1, jy=y0+Math.cos(a0)*L1;
+    const ex=jx+Math.sin(a0+a1)*L2, ey=jy+Math.cos(a0+a1)*L2;
+    if(segCel){
+      ctx.save();ctx.translate((x0+jx)/2,(y0+jy)/2);ctx.rotate(a0);
+      ctx.drawImage(segCel,-segCel.width*scale/2,-segCel.height*scale/2,segCel.width*scale,segCel.height*scale);
+      ctx.restore();
+      ctx.save();ctx.translate((jx+ex)/2,(jy+ey)/2);ctx.rotate(a0+a1);
+      ctx.drawImage(segCel,-segCel.width*scale/2,-segCel.height*scale/2,segCel.width*scale,segCel.height*scale);
+      ctx.restore();
+    }
+    if(capCel){
+      ctx.save();ctx.translate(ex,ey);ctx.rotate(a0+a1);
+      ctx.drawImage(capCel,-capCel.width*capScale/2,-capCel.height*capScale*0.32,capCel.width*capScale,capCel.height*capScale);
+      ctx.restore();
+    }
+    return {x:ex,y:ey};
+  }
 
-  drawTick = function(m){
-    const c=celFrame(CEL.baron.CUPBOT,9,m.clock); drawCel(c,m.x,m.y+24,2.45,sign(P.x-m.x)||1,1);
-  };
+  drawBaron=function(b){
+    if(!SPR.ready)return;
+    const q=(b.anim&&b.anim.pose)||B_BASE;
+    const phase2=b.phase>=2;
+    const defeated=!b.alive||b.act==='defeat';
+    const BS=2.05; // overall rig scale — the whole assembly reads as ~480-540px tall, matching b.w/b.h
 
-  drawSky = function(par){
-    if(!SPR.ready) return;
-    if(!SPR.paperKey){ ctx.fillStyle='#ead8b4';ctx.fillRect(0,0,VW,VH); }
-    else { const g=ctx.createLinearGradient(0,0,0,VH);g.addColorStop(0,'#080b10');g.addColorStop(.62,'#172030');g.addColorStop(1,'#0a0a09');ctx.fillStyle=g;ctx.fillRect(0,0,VW,VH); }
-    ctx.save();ctx.globalAlpha=SPR.paperKey ? .42 : .72;
-    drawCelRect(CEL.arena.sceneFar,-60+par*8,250,VW+120,150,.72);
-    drawCelRect(CEL.arena.sceneBg,-60+par*14,350,VW+120,180,.70);
-    for(let i=0;i<9;i++) drawCelRect(CEL.arena.skyline,-160+i*270+par*24,390,300,82);
+    ctx.save();ctx.globalAlpha=.34;ctx.fillStyle='#050505';ctx.beginPath();ctx.ellipse(b.x+b.w/2,b.y+b.h+12,142,24,0,0,TAU);ctx.fill();ctx.restore();
+
+    ctx.save();
+    ctx.translate(b.x+b.w/2,b.y+b.h+14);
+    ctx.scale(b.face*BS,BS);
+    ctx.translate(0,q.rootY+Math.sin(b.clock*2.2)*(b.grounded?0:7));
+    ctx.scale(q.sqx,q.sqy);
+    ctx.rotate(q.lean*.3);
+
+    // rotating clockface halo behind him — scale/presence, not just a bigger sprite
+    if(!defeated&&CEL.baron.clockFace){
+      const hc=CEL.baron.clockFace, hs=7.6;
+      ctx.save();ctx.globalAlpha=.20+.07*Math.sin(b.clock*1.3);
+      ctx.translate(0,B_SHO-10);ctx.rotate(b.clock*.12);
+      ctx.drawImage(hc,-hc.width*hs/2,-hc.height*hs/2,hc.width*hs,hc.height*hs);
+      ctx.restore();
+    }
+    if(phase2){ ctx.save(); ctx.globalAlpha=.18+.10*Math.sin(b.clock*9); ctx.fillStyle=C.bolt; ctx.beginPath(); ctx.ellipse(0,-120,120,140,0,0,TAU); ctx.fill(); ctx.restore(); }
+
+    const pj=CEL.baron.pipeJoint, footCel=CEL.baron.foot&&CEL.baron.foot[0];
+    const handCel=q.grin>.5?CEL.baron.handFist:CEL.baron.handOpen;
+
+    // far leg + far arm first (behind torso)
+    baronCelLimb(-26,B_HIP,q.lL0,q.lL1,46,42,pj&&pj[1],footCel,1.35,1.5);
+    baronCelLimb(-40,B_SHO+16,q.aL0,q.aL1,44,40,pj&&pj[3],handCel,1.25,1.4);
+
+    // torso — swaps cel by state, same body cavity every time so it never pops
+    let torsoCel=CEL.baron.torsoMain;
+    if(defeated) torsoCel=CEL.baron.torsoVent;
+    else if(phase2) torsoCel=CEL.baron.torsoSkull;
+    else if(b.act==='windup'||b.state==='FIRE'||b.state==='GEAR_TOSS') torsoCel=CEL.baron.torsoGeared;
+    if(torsoCel){
+      const ts=2.05;
+      ctx.drawImage(torsoCel,-torsoCel.width*ts/2,B_SHO-6,torsoCel.width*ts,torsoCel.height*ts);
+    }
+
+    // shoulder + chest gears — independently rotating, the "sophisticated
+    // machination" read that a single flat cel can never sell on its own.
+    const gr=CEL.baron.gear;
+    if(gr&&gr.length){
+      const g0=gr[0],g1=gr[1],g2=gr[2];
+      if(g0){ctx.save();ctx.translate(-46,B_SHO+14);ctx.rotate(b.clock*2.4);ctx.globalAlpha=.92;const s=.85;ctx.drawImage(g0,-g0.width*s/2,-g0.height*s/2,g0.width*s,g0.height*s);ctx.restore();}
+      if(g1){ctx.save();ctx.translate(46,B_SHO+14);ctx.rotate(-b.clock*1.9);ctx.globalAlpha=.92;const s=.85;ctx.drawImage(g1,-g1.width*s/2,-g1.height*s/2,g1.width*s,g1.height*s);ctx.restore();}
+      if(g2){ctx.save();ctx.translate(0,B_SHO-30);ctx.rotate(b.clock*3.3+q.dial);ctx.globalAlpha=Math.min(1,.5+q.glow);const s=.62+q.glow*.25;ctx.drawImage(g2,-g2.width*s/2,-g2.height*s/2,g2.width*s,g2.height*s);ctx.restore();}
+    }
+
+    // near leg + near arm in front
+    baronCelLimb(26,B_HIP,q.lR0,q.lR1,46,42,pj&&pj[0],footCel,1.35,1.5);
+
+    // head — cycles the five near-identical grin cels for a subtle idle
+    // whir; hat tilt reuses q.hat since the hat is baked into each cel.
+    const heads=CEL.baron.heads;
+    const hc2=heads&&heads[Math.floor(b.clock*6)%heads.length];
+    if(hc2){
+      ctx.save();ctx.translate(0,B_HEADY+q.headY);ctx.rotate(q.headRot+q.hat*.3);
+      const hs2=2.3;
+      ctx.drawImage(hc2,-hc2.width*hs2/2,-hc2.height*hs2*0.88,hc2.width*hs2,hc2.height*hs2);
+      ctx.restore();
+    }
+
+    baronCelLimb(40,B_SHO+16,q.aR0,q.aR1,44,40,pj&&pj[2],handCel,1.25,1.4);
+
     ctx.restore();
-    // moon kept simple so the production skyline retains a readable silhouette.
-    ctx.save();ctx.globalAlpha=.82;ctx.fillStyle='#e7d8ad';ctx.beginPath();ctx.arc(300+par*8,170,58,0,TAU);ctx.fill();ctx.globalCompositeOperation='destination-out';ctx.beginPath();ctx.arc(328+par*8,150,52,0,TAU);ctx.fill();ctx.restore();
+
+    if(b.flash>0){ctx.save();ctx.globalAlpha=clamp(b.flash*3.2,0,.55);ctx.strokeStyle=C.boltLite;ctx.lineWidth=10;ctx.beginPath();ctx.ellipse(b.x+b.w/2,b.y+b.h*.48,176,230,0,0,TAU);ctx.stroke();ctx.restore();}
+    b.muzzle={x:b.x+b.w/2+b.face*184,y:b.y+176};
+
+    if((b.state==='FIRE'||b.act==='windup')&&CEL.baron.muzzleFire){
+      const mc=CEL.baron.muzzleFire;
+      ctx.save();ctx.globalAlpha=.85;ctx.translate(b.muzzle.x,b.muzzle.y);ctx.scale(b.face*2.1,2.1);
+      ctx.drawImage(mc,0,-mc.height/2,mc.width,mc.height);ctx.restore();
+    }
   };
 
-  drawMidground = function(par){
-    if(!SPR.ready) return;
-    const ox=par*52;
-    ctx.save();ctx.globalAlpha=.78;
-    drawCelRect(CEL.arena.windows,55+ox,320,405,105);
-    ctx.save();ctx.translate(VW,0);ctx.scale(-1,1);drawCelRect(CEL.arena.windows,55-ox,320,405,105);ctx.restore();
-    ctx.restore();
-    drawCel(CEL.arena.clock,VW/2+ox*.55,455,2.45,1,.95);
-    ctx.save();ctx.globalAlpha=.72;drawCelRect(CEL.arena.columns,395+ox,480,290,100);drawCelRect(CEL.arena.columns,1235+ox,480,290,100);ctx.restore();
-    drawCel(CEL.arena.chandelier,VW/2+ox*.3,265,1.9,1,.84);
-    ctx.save();ctx.globalAlpha=.64;drawCelRect(CEL.arena.gears,70+ox,520,300,130);drawCelRect(CEL.arena.gears,1550+ox,520,300,130);ctx.restore();
-    for(let i=0;i<7;i++) drawCelRect(CEL.arena.pipe,150+i*270+ox*.35,365,150,30,.72);
-    drawCelRect(CEL.arena.banner,245+ox,340,125,175,.82);drawCelRect(CEL.arena.banner,1550+ox,340,125,175,.82);
-    drawCelRect(CEL.arena.catwalk,60+ox,640,350,68,.76);drawCelRect(CEL.arena.catwalk,1505+ox,625,350,68,.76);
+  drawTick=function(m){const c=celFrame(CEL.baron.CUPBOT,8,m.clock);drawCel(c,m.x,m.y+24,1.35,sign(P.x-m.x)||1,1);};
+
+  drawSky=function(){
+    if(!SPR.ready)return;
+    const g=ctx.createLinearGradient(0,0,0,VH);g.addColorStop(0,'#060b16');g.addColorStop(.58,'#17243a');g.addColorStop(1,'#0b0c0d');ctx.fillStyle=g;ctx.fillRect(0,0,VW,VH);
+
+    // The scenic cards are deliberately rendered much larger than before. The
+    // camera crosses a four-screen-wide room while the distant strata move only
+    // fractions of that distance, creating the large-stage 2.5D read.
+    withDepth(.018,()=>{
+      for(let x=-500;x<3600;x+=1950){drawCelRect(CEL.scene.skyA,x,-90,2200,360,.98);drawCelRect(CEL.scene.skyB,x+300,180,2100,300,.90);}
+    });
+    withDepth(.045,()=>{drawCelRect(CEL.scene.moon,1450,60,310,310,.98);});
+    withDepth(.085,()=>{for(let x=-450;x<3900;x+=1500)drawCelRect(CEL.scene.cloudHorizon,x,370,1900,260,.76);});
+    withDepth(.14,()=>{for(let x=-350;x<4300;x+=1050)drawCelRect(CEL.scene.farCity,x,720,1350,360,.72);});
+    withDepth(.24,()=>{for(let x=-700;x<5200;x+=1700)drawCelRect(CEL.scene.nearCity,x,820,1900,720,.84);});
   };
 
-  drawSolid = function(s){
-    if(!SPR.ready) return;
+  drawMidground=function(){
+    if(!SPR.ready)return;
+    withDepth(.36,()=>{
+      for(let x=-200;x<WORLD_W;x+=1500)drawCelRect(CEL.scene.windows,x,920,1180,390,.78);
+    });
+    withDepth(.47,()=>{
+      // Repeated monumental clockworks make the room feel like one huge complex,
+      // not four copies of the original screen.
+      for(const x of [1250,3850,6450])drawCel(CEL.scene.clock,x,1320,4.85,1,.96);
+    });
+    withDepth(.56,()=>{
+      for(let x=-100;x<WORLD_W;x+=1120)drawCelRect(CEL.scene.wallMech,x,1160,1040,700,.80);
+    });
+    withDepth(.67,()=>{
+      for(let x=180;x<WORLD_W;x+=1280)drawCelRect(CEL.arena.gears,x,1390,520,380,.78);
+    });
+    withDepth(.79,()=>{
+      for(let x=650;x<WORLD_W;x+=1900){drawCel(CEL.arena.chandelier,x,760,2.55,1,.90);drawCelRect(CEL.arena.banner,x-430,920,210,430,.88);}
+    });
+  };
+
+  drawSolid=function(s){
+    if(!SPR.ready)return;
     if(s.kind==='floor'){
       ctx.fillStyle='#17110d';ctx.fillRect(s.x,s.y,s.w,s.h);
-      for(let x=s.x;x<s.x+s.w;x+=235) drawCelRect(CEL.arena.floor,x,s.y-6,240,72,.9);
-      return;
+      for(let x=s.x;x<s.x+s.w;x+=260)drawCelRect(CEL.arena.floor,x,s.y-12,270,86,.98);return;
     }
     if(s.kind==='wall'){
-      ctx.fillStyle='#201914';ctx.fillRect(s.x,s.y,s.w,s.h);
-      for(let y=s.y;y<s.y+s.h;y+=90) drawCelRect(CEL.arena.columns,s.x-36,y,s.w+72,90,.72);
-      return;
+      ctx.fillStyle='#161311';ctx.fillRect(s.x,s.y,s.w,s.h);
+      for(let y=s.y;y<s.y+s.h;y+=170)drawCelRect(CEL.arena.wall,s.x-18,y,s.w+36,180,.94);return;
     }
-    drawCelRect(CEL.arena.platform,s.x,s.y-7,s.w,s.h+16,.96);
+    drawCelRect(CEL.arena.platform,s.x,s.y-15,s.w,s.h+30,.98);
   };
 
-  drawStarPickup = function(q){ if(!q.got) drawCel(CEL.ux.star,q.x,q.y+Math.sin(wallClock*2.4+q.x*.01)*8,1.28,1,.96,Math.sin(wallClock*1.4+q.x*.01)*.08); };
+  drawStarPickup=function(q){if(!q.got)drawCel(CEL.ux.star,q.x,q.y+Math.sin(wallClock*2.4+q.x*.01)*8,.92,1,.98,Math.sin(wallClock*1.4+q.x*.01)*.08);};
 
-  drawEffects = function(){
-    if(!SPR.ready) return;
-    for(const r of rings){ const u=r.t/r.life; drawCel(CEL.ux.ring,r.x,r.y,1.15+u*2.1,1,(1-u)*.8); }
-    for(const s of shots){ ctx.save();ctx.translate(s.x,s.y); if(s.vx<0)ctx.scale(-1,1);ctx.drawImage(CEL.ux.shot,-34,-13,68,26);ctx.restore(); }
-    for(const b of bolts){
-      if(b.wave){ctx.save();ctx.globalAlpha=.8;ctx.strokeStyle=C.bolt;ctx.lineWidth=8;ctx.beginPath();ctx.arc(b.x,b.y+10,28,Math.PI,TAU);ctx.stroke();ctx.restore();}
-      else {ctx.save();ctx.translate(b.x,b.y);ctx.rotate(Math.atan2(b.vy,b.vx));ctx.drawImage(CEL.ux.bolt,-26,-12,52,24);ctx.restore();}
-    }
-    for(const g of gears){ctx.save();ctx.translate(g.x,g.y);ctx.rotate(g.rot);ctx.drawImage(CEL.ux.gear,-g.r,-g.r,g.r*2,g.r*2);ctx.restore();}
-    for(const m of minions) drawTick(m);
-    for(const p of parts){
-      const u=clamp(p.life/p.max,0,1);
-      if(p.type==='dust'||p.type==='smoke') drawCel(CEL.ux.dust,p.x,p.y,.72+(1-u)*.38,1,u*.72);
-      else if(p.type==='spark'||p.type==='impact'||p.type==='hurtstar'||p.type==='star') drawCel(CEL.ux.spark,p.x,p.y,(p.type==='impact'?1.2:.65)+(1-u)*.25,1,u);
-      else if(p.type==='streak'){ctx.globalAlpha=u;ctx.strokeStyle=C.aura;ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p.x+p.r,p.y);ctx.stroke();ctx.globalAlpha=1;}
-      else {ctx.save();ctx.globalAlpha=u;ctx.translate(p.x,p.y);ctx.rotate(p.rot);ctx.fillStyle=C.brass;ctx.fillRect(-p.r/2,-p.r/2,p.r,p.r);ctx.restore();}
-    }
-  };
-
-  drawForeground = function(){
+  drawEffects=function(){
     if(!SPR.ready)return;
-    ctx.save();ctx.globalAlpha=.48;drawCelRect(CEL.arena.props,-15,760,330,285);ctx.translate(VW,0);ctx.scale(-1,1);drawCelRect(CEL.arena.props,-15,760,330,285);ctx.restore();
-    const v=ctx.createRadialGradient(VW/2,VH/2,VH*.34,VW/2,VH/2,VH*.94);v.addColorStop(0,'rgba(0,0,0,0)');v.addColorStop(1,'rgba(4,4,4,.72)');ctx.fillStyle=v;ctx.fillRect(0,0,VW,VH);
+    for(const r of rings){const u=r.t/r.life;drawCel(CEL.ux.ring,r.x,r.y,.65+u*1.28,1,(1-u)*.84);}
+    for(const s of shots){ctx.save();ctx.translate(s.x,s.y);if(s.vx<0)ctx.scale(-1,1);ctx.drawImage(CEL.ux.shot,-35,-16,70,32);ctx.restore();}
+    for(const b of bolts){if(b.wave){ctx.save();ctx.globalAlpha=.8;ctx.strokeStyle=C.bolt;ctx.lineWidth=8;ctx.beginPath();ctx.arc(b.x,b.y+10,28,Math.PI,TAU);ctx.stroke();ctx.restore();}else{ctx.save();ctx.translate(b.x,b.y);ctx.rotate(Math.atan2(b.vy,b.vx));ctx.drawImage(CEL.ux.bolt,-35,-14,70,28);ctx.restore();}}
+    for(const g of gears){ctx.save();ctx.translate(g.x,g.y);ctx.rotate(g.rot);ctx.drawImage(CEL.ux.gear,-g.r,-g.r,g.r*2,g.r*2);ctx.restore();}
+    for(const m of minions)drawTick(m);
+    for(const p of parts){const u=clamp(p.life/p.max,0,1);if(p.type==='dust'||p.type==='smoke')drawCel(CEL.ux.dust,p.x,p.y,.52+(1-u)*.30,1,u*.76);else if(p.type==='spark'||p.type==='impact'||p.type==='hurtstar'||p.type==='star')drawCel(CEL.ux.spark,p.x,p.y,(p.type==='impact'?.90:.46)+(1-u)*.22,1,u);else if(p.type==='streak'){ctx.globalAlpha=u;ctx.strokeStyle=C.aura;ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p.x+p.r,p.y);ctx.stroke();ctx.globalAlpha=1;}else{ctx.save();ctx.globalAlpha=u;ctx.translate(p.x,p.y);ctx.rotate(p.rot);ctx.fillStyle=C.brass;ctx.fillRect(-p.r/2,-p.r/2,p.r,p.r);ctx.restore();}}
   };
 
-  drawHUD = function(){
+  drawForeground=function(){
+    if(!SPR.ready)return;
+    withDepth(1.16,()=>{
+      ctx.save();ctx.globalAlpha=.66;
+      for(let x=-220;x<WORLD_W+600;x+=1760){drawCelRect(CEL.scene.foreRig,x,1400,610,650,.86);ctx.save();ctx.translate(x+1420,0);ctx.scale(-1,1);drawCelRect(CEL.scene.foreRig,0,1400,610,650,.82);ctx.restore();}
+      ctx.restore();
+    });
+    withDepth(1.25,()=>{ctx.save();ctx.globalAlpha=.18;for(let x=-200;x<WORLD_W;x+=1500)drawCelRect(CEL.scene.smoke,x,1840,1700,260,.62);ctx.restore();});
+    const v=ctx.createRadialGradient(VW/2,VH/2,VH*.34,VW/2,VH/2,VH*.94);v.addColorStop(0,'rgba(0,0,0,0)');v.addColorStop(1,'rgba(3,4,6,.62)');ctx.fillStyle=v;ctx.fillRect(0,0,VW,VH);
+  };
+
+  drawHUD=function(){
     if(!SPR.ready)return;
     const M=56;
-    for(let i=0;i<P.maxHp;i++) drawCel(i<P.hp?CEL.ux.heartFull:CEL.ux.heartEmpty,M+26+i*48,M+42,1.25);
-    drawCel(CEL.ux.coffee,M+30,M+98,1.35);
+    for(let i=0;i<P.maxHp;i++)drawCel(i<P.hp?CEL.ux.heartFull:CEL.ux.heartEmpty,M+26+i*48,M+42,.82);
+    drawCel(CEL.ux.coffee,M+30,M+100,.78);
     const mx=M+58,my=M+76,mw=280,mh=22;
-    ctx.fillStyle='rgba(24,17,10,.88)';ctx.beginPath();ctx.roundRect(mx,my,mw,mh,11);ctx.fill();
-    ctx.fillStyle=C.gold;ctx.beginPath();ctx.roundRect(mx+3,my+3,(mw-6)*P.meter,mh-6,8);ctx.fill();
-    ctx.strokeStyle=C.brassPale;ctx.lineWidth=3;ctx.beginPath();ctx.roundRect(mx,my,mw,mh,11);ctx.stroke();
-    ctx.strokeStyle='rgba(243,227,192,.55)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(mx+mw*T.BURST_COST,my);ctx.lineTo(mx+mw*T.BURST_COST,my+mh);ctx.stroke();
-    drawCel(CEL.ux.star,mx+mw+42,my+17,.7);ctx.fillStyle=C.paper;ctx.font='bold 25px "Courier New",monospace';ctx.textAlign='left';ctx.fillText(P.stars+'/3',mx+mw+72,my+23);
-    ctx.textAlign='right';ctx.fillText(timeSec.toFixed(1)+'s',VW-M,M+28);
-
-    if(B.alive||B.act==='defeat'){
-      const bw=760,bx=VW/2-bw/2,by=58;
-      ctx.save();ctx.drawImage(CEL.ux.bossbar,bx,by,bw,44);ctx.restore();
-      ctx.fillStyle='rgba(18,12,8,.86)';ctx.fillRect(bx+74,by+12,bw-148,17);
-      ctx.fillStyle=B.phase>=2?C.bolt:C.blood;ctx.fillRect(bx+74,by+12,(bw-148)*clamp(B.hp/B.maxHp,0,1),17);
-      ctx.strokeStyle=C.brassPale;ctx.lineWidth=2;ctx.strokeRect(bx+74,by+12,bw-148,17);
-      ctx.fillStyle=C.paper;ctx.font='bold 28px Georgia';ctx.textAlign='center';ctx.fillText('CLOCKWORK BARON'+(B.phase>=2?'  ·  OVERWOUND':''),VW/2,47);
-    }
-    if(B.act==='windup'&&B.alive){ctx.globalAlpha=.55+.35*Math.sin(wallClock*22);ctx.textAlign='center';ctx.fillStyle=C.bolt;ctx.font='bold 34px Georgia';const label={BOLTS:'! BOLT VOLLEY !',GEARS:'! GEAR TOSS !',STOMP:'! GROUND SLAM !',DASH:'! CHARGE !',SUMMON:'! TICK-TOCKS !'}[B.next]||'';ctx.fillText(label,B.x+B.w/2,B.y-34);ctx.globalAlpha=1;}
+    ctx.fillStyle='rgba(24,17,10,.88)';ctx.beginPath();ctx.roundRect(mx,my,mw,mh,11);ctx.fill();ctx.fillStyle=C.gold;ctx.beginPath();ctx.roundRect(mx+3,my+3,(mw-6)*P.meter,mh-6,8);ctx.fill();ctx.strokeStyle=C.brassPale;ctx.lineWidth=3;ctx.beginPath();ctx.roundRect(mx,my,mw,mh,11);ctx.stroke();ctx.strokeStyle='rgba(243,227,192,.55)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(mx+mw*T.BURST_COST,my);ctx.lineTo(mx+mw*T.BURST_COST,my+mh);ctx.stroke();
+    drawCel(CEL.ux.star,mx+mw+42,my+17,.50);ctx.fillStyle=C.paper;ctx.font='bold 25px "Courier New",monospace';ctx.textAlign='left';ctx.fillText(P.stars+'/3',mx+mw+72,my+23);ctx.textAlign='right';ctx.fillText(timeSec.toFixed(1)+'s',VW-M,M+28);
+    if(B.alive||B.act==='defeat'){const bw=760,bx=VW/2-bw/2,by=58;ctx.drawImage(CEL.ux.bossbar,bx,by,bw,48);ctx.fillStyle='rgba(18,12,8,.86)';ctx.fillRect(bx+74,by+13,bw-148,17);ctx.fillStyle=B.phase>=2?C.bolt:C.blood;ctx.fillRect(bx+74,by+13,(bw-148)*clamp(B.hp/B.maxHp,0,1),17);ctx.strokeStyle=C.brassPale;ctx.lineWidth=2;ctx.strokeRect(bx+74,by+13,bw-148,17);ctx.fillStyle=C.paper;ctx.font='bold 28px Georgia';ctx.textAlign='center';ctx.fillText('CLOCKWORK BARON'+(B.phase>=2?'  ·  OVERWOUND':''),VW/2,47);}
+    if(B.act==='windup'&&B.alive){ctx.globalAlpha=.55+.35*Math.sin(wallClock*22);ctx.textAlign='center';ctx.fillStyle=C.bolt;ctx.font='bold 34px Georgia';const label={BOLTS:'! BOLT VOLLEY !',GEARS:'! GEAR TOSS !',STOMP:'! GROUND SLAM !',DASH:'! CHARGE !',SUMMON:'! TICK-TOCKS !'}[B.next]||'';ctx.fillText(label,B.x+B.w/2-CAM.x,B.y-34-CAM.y);ctx.globalAlpha=1;}
     if(toastT>0){ctx.globalAlpha=clamp(toastT,0,1);ctx.textAlign='center';ctx.font='bold 34px Georgia';ctx.fillStyle='rgba(18,12,8,.9)';const tw=ctx.measureText(toastMsg).width+46;ctx.beginPath();ctx.roundRect(VW/2-tw/2,238,tw,54,27);ctx.fill();ctx.lineWidth=3;ctx.strokeStyle=C.brassPale;ctx.stroke();ctx.fillStyle=C.paper;ctx.fillText(toastMsg,VW/2,275);ctx.globalAlpha=1;}
     if(over.active){ctx.fillStyle='rgba(12,10,8,'+clamp(over.t*1.6,0,.82)+')';ctx.fillRect(0,0,VW,VH);if(over.t>.25){ctx.textAlign='center';ctx.fillStyle=over.won?C.gold:C.blood;ctx.font='bold 92px Georgia';ctx.fillText(over.won?'COFFEE BREAK SAVED':'MONDAY WINS',VW/2,470);ctx.fillStyle=C.paper;ctx.font='32px Georgia';ctx.fillText(over.won?'Baron decaffeinated in '+timeSec.toFixed(2)+'s  ·  ★ '+P.stars+'/3':'The Clockwork Baron keeps the schedule.',VW/2,534);const best=storageGet('gb.best',null);if(best)ctx.fillText('BEST '+(+best).toFixed(2)+'s'+(over.record?'  — NEW':''),VW/2,582);ctx.fillStyle=C.paperDim;ctx.font='26px "Courier New",monospace';ctx.fillText('R  or  TAP  to run it again      SEED '+RUN.seed,VW/2,646);}}
     ctx.textAlign='left';ctx.globalAlpha=1;
@@ -2058,36 +2306,26 @@ if(true){
    RENDER + LOOP
    ============================================================================ */
 function render(){
-  const par = (P.x + P.w/2) / VW - .5;
-  ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
-  ctx.fillStyle = C.night; ctx.fillRect(0, 0, VW, VH);
-  drawSky(par);
-  drawMidground(par);
-  // atmospheric scrim: the backdrop is busy by design, so it gets pushed back
-  // rather than the characters being outlined harder to fight it
-  ctx.fillStyle = 'rgba(9,14,24,.46)'; ctx.fillRect(0, 0, VW, VH);
+  updateCameraVisual();
+  ctx.setTransform(SCALE,0,0,SCALE,0,0);
+  ctx.fillStyle=C.night;ctx.fillRect(0,0,VW,VH);
+  drawSky();
+  drawMidground();
+  // depth haze keeps gameplay readable while retaining parallax cues.
+  ctx.fillStyle='rgba(8,12,20,.32)';ctx.fillRect(0,0,VW,VH);
 
-  const s = trauma * trauma;
+  const ss=trauma*trauma;
   ctx.save();
-  ctx.translate((vrng()*2-1) * 26 * s, (vrng()*2-1) * 20 * s);
-  ARENA.solids.forEach(drawSolid);
-  drawSolid(ARENA.mover);
-  drawSpikes();
-  pickups.forEach(drawStarPickup);
-  if(B.alive || B.act === 'defeat'){
-    if(B.flash > 0){ ctx.save(); ctx.globalAlpha = .6; }
-    drawBaron(B);
-    if(B.flash > 0){ ctx.restore(); }
-  }
-  drawEffects();
-  if(P.inv <= 0 || (RUN.frame % 6) < 3) drawGrace(P);
+  ctx.translate((vrng()*2-1)*26*ss,(vrng()*2-1)*20*ss);
+  withDepth(1.0,()=>{
+    ARENA.solids.forEach(drawSolid);drawSolid(ARENA.mover);drawSpikes();pickups.forEach(drawStarPickup);
+    if(B.alive||B.act==='defeat')drawBaron(B);
+    drawEffects();drawGrace(P);
+  });
   ctx.restore();
 
   drawForeground();
-  if(flashT > 0){
-    ctx.fillStyle = 'rgba(' + flashCol + ',' + clamp(flashT, 0, .8) + ')';
-    ctx.fillRect(0, 0, VW, VH);
-  }
+  if(flashT>0){ctx.fillStyle='rgba('+flashCol+','+clamp(flashT,0,.8)+')';ctx.fillRect(0,0,VW,VH);}
   drawHUD();
 }
 
@@ -2135,7 +2373,7 @@ loadProductionSheets().then(()=>{
 });
 
 /* test hook -- the jsdom harness drives the sim without a real RAF */
-window.__GB__ = { P, B, T, ARENA, RUN, GRACE_CLIPS, BARON_CLIPS,
+window.__GB__ = { P, B, T, ARENA, RUN, GRACE_CLIPS, BARON_CLIPS, SPR, CEL,
   step(n){ for(let i = 0; i < (n||1); i++){ RUN.frame++; updatePlayer(STEP); updateBoss(STEP); updateThings(STEP); } },
   press, release, resetRun, render, state:()=>({ p:P.state, b:B.state, act:B.act }),
   clearInputs(){ for(const k in IN) IN[k] = 0; for(const k in EDGE) EDGE[k] = false; HELD.jump = false; P.heldJump = false; } };
