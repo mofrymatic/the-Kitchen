@@ -1119,115 +1119,121 @@
 
 
         /* ═══════════════════════════════════════════════════════════
-           EDGE VOLUME SLIDER  (preserved from original Gemini code)
+           ARCADE SETTINGS CONTROL PANEL
+           Tetris-derived command-deck language, adapted to the arcade
+           lobby. Audio is split into independent environment buses:
+           CROWD / JUKEBOX / CABINET SFX -> MASTER.
            ═══════════════════════════════════════════════════════════ */
-        #edge-volume {
-            position: fixed;
-            right: 0; top: 50%;
-            transform: translateY(-50%);
-            z-index: 500;
-            display: flex; flex-direction: column;
-            align-items: center; gap: 8px;
-            width: 44px; padding: 14px 10px;
-            background: rgba(10,0,20,0.85);
-            border: 1px solid rgba(255,0,110,0.3);
-            border-right: none;
-            border-radius: 10px 0 0 10px;
-            backdrop-filter: blur(8px);
-            transition:
-                width       0.35s cubic-bezier(0.34, 1.3, 0.64, 1),
-                border-color 0.3s ease,
-                box-shadow   0.3s ease;
-            overflow: hidden;
-            cursor: pointer;
+        .menu-footer { gap: 8%; }
+        .menu-settings {
+            appearance: none; border: 0; background: transparent;
+            font: inherit; font-size: clamp(4px, 0.7vh, 5.5px);
+            color: rgba(255,255,255,0.28); cursor: pointer;
+            letter-spacing: 1px; transition: color .2s ease, text-shadow .2s ease;
+        }
+        .menu-settings:hover, .menu-settings:focus-visible {
+            outline: none; color: var(--neon-blue); text-shadow: 0 0 8px var(--neon-blue);
         }
 
-        #edge-volume:hover,
-        #edge-volume.open {
-            width: 72px;
-            border-color: rgba(255,0,110,0.7);
-            box-shadow: -4px 0 24px rgba(255,0,110,0.25),
-                        inset 0 0 20px rgba(255,0,110,0.05);
+        #arcade-settings {
+            position: fixed; inset: 0; z-index: 1500; display: none;
+            place-items: center; padding: clamp(12px, 3vw, 34px);
+            background: rgba(0,3,10,.82); backdrop-filter: blur(7px);
         }
-
-        #vol-icon {
-            font-size: 14px; color: var(--neon-pink);
-            text-shadow: 0 0 8px var(--neon-pink);
-            user-select: none; flex-shrink: 0;
-            transition: text-shadow 0.3s ease; line-height: 1;
+        #arcade-settings.open { display: grid; }
+        .settings-panel {
+            width: min(960px, 96vw); max-height: min(880px, 94dvh); overflow: auto;
+            border: 2px solid rgba(0,217,255,.62);
+            background: linear-gradient(180deg, rgba(3,11,27,.99), rgba(1,5,14,.995));
+            box-shadow: 0 0 54px rgba(0,116,255,.28), inset 0 0 36px rgba(28,90,190,.08);
+            clip-path: polygon(0 18px,18px 0,calc(100% - 18px) 0,100% 18px,100% calc(100% - 18px),calc(100% - 18px) 100%,18px 100%,0 calc(100% - 18px));
         }
-        #edge-volume:hover #vol-icon {
-            text-shadow: 0 0 14px var(--neon-pink), 0 0 28px var(--neon-pink);
+        .settings-head {
+            position: sticky; top: 0; z-index: 3; display: flex; justify-content: space-between; align-items: center;
+            gap: 18px; padding: 19px 22px 15px; background: rgba(3,11,27,.985);
+            border-bottom: 1px solid rgba(0,217,255,.24);
         }
-
-        #vol-pct {
-            font-size: 7px; color: var(--neon-blue);
-            text-shadow: 0 0 6px var(--neon-blue);
-            white-space: nowrap; letter-spacing: 0.5px;
-            flex-shrink: 0; opacity: 0;
-            transition: opacity 0.25s ease;
+        .settings-head h2 {
+            font-family: 'Bungee', sans-serif; color: var(--neon-blue);
+            font-size: clamp(17px, 3vw, 32px); letter-spacing: .04em;
+            text-shadow: 0 0 16px rgba(0,217,255,.48);
         }
-        #edge-volume:hover #vol-pct,
-        #edge-volume.open  #vol-pct { opacity: 1; }
-
-        #vol-track {
-            position: relative; width: 20px; height: 140px;
-            flex-shrink: 0; opacity: 0;
-            transition: opacity 0.25s ease 0.05s;
+        .settings-head p { color: var(--neon-purple); letter-spacing: .18em; font-size: 7px; margin-top: 5px; }
+        .settings-x {
+            flex: 0 0 auto; width: 44px; height: 40px; cursor: pointer;
+            border: 1px solid rgba(0,217,255,.46); background: #061327; color: var(--neon-blue);
+            font: 700 20px 'Press Start 2P', monospace;
         }
-        #edge-volume:hover #vol-track,
-        #edge-volume.open  #vol-track { opacity: 1; }
-
-        #vol-track::before {
-            content: '';
-            position: absolute; left: 50%; top: 0; bottom: 0; width: 2px;
-            transform: translateX(-50%);
-            background: rgba(255,0,110,0.2); border-radius: 2px;
+        .settings-x:hover, .settings-x:focus-visible { outline: none; border-color: #fff; color: #fff; }
+        .settings-route {
+            margin: 14px 22px 0; padding: 10px 12px; border: 1px solid rgba(168,85,247,.24);
+            background: rgba(5,10,26,.62); color: rgba(208,225,245,.58);
+            font-size: clamp(6px,.75vw,9px); line-height: 1.7; letter-spacing: .06em;
         }
-        #vol-track::after {
-            content: '';
-            position: absolute; left: 50%; bottom: 0; width: 2px;
-            height: var(--vol-fill, 20%);
-            transform: translateX(-50%);
-            background: linear-gradient(to top, var(--neon-pink), var(--neon-blue));
-            border-radius: 2px;
-            box-shadow: 0 0 6px var(--neon-pink);
-            transition: height 0.05s linear;
+        .settings-route strong { color: var(--neon-yellow); }
+        .settings-grid { display: grid; grid-template-columns: 1.35fr .85fr; gap: 16px; padding: 16px 22px 20px; }
+        .settings-group {
+            border: 1px solid rgba(0,217,255,.28); background: rgba(2,8,20,.70);
+            padding: 14px; display: grid; gap: 10px; align-content: start;
         }
-
-        #vol-range {
-            position: absolute; left: 50%; top: 0;
-            transform: translateX(-50%) rotate(-90deg);
-            transform-origin: center center;
-            width: 140px; height: 20px;
-            margin-left: -60px; margin-top: 60px;
-            appearance: none; -webkit-appearance: none;
-            background: transparent; cursor: pointer; outline: none;
+        .settings-group h3 {
+            color: var(--neon-purple); letter-spacing: .13em; font-size: clamp(8px,1vw,11px);
+            text-transform: uppercase; border-bottom: 1px solid rgba(168,85,247,.28); padding-bottom: 9px;
         }
-        #vol-range::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 14px; height: 14px; border-radius: 50%;
-            background: var(--neon-blue); border: 2px solid var(--neon-pink);
-            box-shadow: 0 0 8px var(--neon-blue), 0 0 16px var(--neon-pink);
-            transition: box-shadow 0.2s ease, transform 0.2s ease;
+        .setting-row {
+            display: grid; grid-template-columns: minmax(190px,1fr) minmax(165px,auto);
+            gap: 14px; align-items: center; padding: 10px 11px;
+            border: 1px solid rgba(48,180,235,.16); background: rgba(5,14,30,.70);
+            transition: border-color .12s ease, background .12s ease;
         }
-        #vol-range::-webkit-slider-thumb:hover {
-            transform: scale(1.3);
-            box-shadow: 0 0 12px var(--neon-blue), 0 0 24px var(--neon-pink);
+        .setting-row:hover, .setting-row:focus-within { border-color: rgba(67,225,255,.45); background: rgba(6,24,48,.82); }
+        .setting-copy strong { display:block; color:#64e7ff; font-size: clamp(8px,.9vw,11px); letter-spacing:.04em; line-height:1.4; }
+        .setting-copy small { display:block; color:#789bb0; font-size: clamp(6px,.72vw,8px); line-height:1.55; margin-top:4px; max-width:450px; }
+        .setting-control { display:flex; justify-content:flex-end; align-items:center; gap:8px; min-width:0; }
+        .setting-control input[type=range] { width:min(190px,24vw); accent-color:var(--neon-blue); cursor:pointer; }
+        .setting-control input[type=url] {
+            width:min(310px,34vw); min-width:190px; background:#061327; color:#e8fbff;
+            border:1px solid rgba(65,207,255,.42); padding:9px 10px; font: 700 9px ui-monospace, monospace;
         }
-        #vol-range::-moz-range-thumb {
-            width: 14px; height: 14px; border-radius: 50%;
-            background: var(--neon-blue); border: 2px solid var(--neon-pink);
-            box-shadow: 0 0 8px var(--neon-blue); cursor: pointer;
+        .range-out { min-width: 48px; color: var(--neon-yellow); font-size: 8px; text-align:right; }
+        .switch { position:relative; width:62px; height:32px; display:inline-block; }
+        .switch input { opacity:0; width:0; height:0; }
+        .switch span { position:absolute; inset:0; border:1px solid rgba(60,205,255,.4); background:#071124; cursor:pointer; transition:.15s; }
+        .switch span::before { content:''; position:absolute; width:22px; height:22px; left:4px; top:4px; background:#506176; transition:.15s; }
+        .switch input:checked + span { border-color:var(--neon-yellow); background:rgba(69,39,2,.9); }
+        .switch input:checked + span::before { transform:translateX(30px); background:var(--neon-yellow); box-shadow:0 0 14px rgba(255,190,11,.8); }
+        .settings-test {
+            appearance:none; border:1px solid rgba(0,217,255,.42); background:#061327; color:var(--neon-blue);
+            padding:9px 10px; cursor:pointer; font:700 7px 'Press Start 2P',monospace;
         }
-
-        #vol-ticks {
-            position: absolute; right: -6px; top: 0; bottom: 0;
-            display: flex; flex-direction: column;
-            justify-content: space-between; pointer-events: none;
+        .settings-test:hover, .settings-test:focus-visible { outline:none; color:#fff; border-color:#fff; }
+        .settings-status { color:rgba(255,255,255,.38); font-size:7px; line-height:1.6; }
+        .settings-status[data-state="ready"] { color:var(--neon-green); }
+        .settings-status[data-state="warn"] { color:var(--neon-orange); }
+        .settings-foot {
+            position:sticky; bottom:0; z-index:3; display:flex; flex-wrap:wrap; justify-content:flex-end; gap:10px;
+            padding:14px 22px; background:rgba(3,10,24,.985); border-top:1px solid rgba(0,217,255,.24);
         }
-        .vol-tick { width: 4px; height: 1px; background: rgba(255,0,110,0.4); }
-        .vol-tick.major { width: 6px; background: rgba(0,217,255,0.6); }
+        .settings-action {
+            appearance:none; border:1px solid rgba(0,217,255,.42); background:#061327; color:var(--neon-blue);
+            min-height:42px; padding:10px 14px; cursor:pointer; font:700 8px 'Press Start 2P',monospace;
+        }
+        .settings-action.save { color:var(--neon-yellow); border-color:rgba(255,190,11,.62); }
+        .settings-action:hover, .settings-action:focus-visible { outline:none; color:#fff; border-color:#fff; }
+        body.no-crt::after,
+        body.no-crt .arcade-screen::before, body.no-crt .arcade-screen::after,
+        body.no-crt #closeup-screen::before, body.no-crt #closeup-screen::after,
+        body.no-crt .tile-preview-frame::before { display:none !important; }
+        body.reduced-motion *, body.reduced-motion *::before, body.reduced-motion *::after {
+            animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important;
+        }
+        @media (max-width: 760px) {
+            .settings-grid { grid-template-columns:1fr; padding:14px; }
+            .settings-head { padding:14px; } .settings-route { margin:12px 14px 0; } .settings-foot { padding:12px 14px; }
+            .setting-row { grid-template-columns:1fr; } .setting-control { justify-content:flex-start; width:100%; }
+            .setting-control input[type=range], .setting-control input[type=url] { width:100%; min-width:0; }
+            .settings-action { flex:1; min-width:130px; }
+        }
 
         /* ═══════════════════════════════════════════════════════════
            CLOSE-UP CABINET TRANSITION
@@ -1310,16 +1316,6 @@
                         0 0 40px rgba(0,190,255,0.08);
         }
 
-        /* Volume control anchored inside the CRT in close-up mode.
-           Higher specificity (ID+class) overrides the base ID-only rules. */
-        #edge-volume.in-cabinet {
-            border-radius: 10px;
-            border-right: 1px solid rgba(255,0,110,0.3);
-        }
-        #edge-volume.in-cabinet:hover,
-        #edge-volume.in-cabinet.open {
-            border-color: rgba(255,0,110,0.7);
-        }
     </style>
 </head>
 <body>
@@ -1596,6 +1592,7 @@
                     </div><!-- /.game-grid-wrap -->
 
                     <div class="menu-footer">
+                        <button class="menu-settings" id="menuSettings" type="button">⚙ SETTINGS</button>
                         <span class="menu-back" id="menuBack">◄ EXIT ARCADE</span>
                     </div>
 
@@ -1630,24 +1627,86 @@
     <!-- ESC hint -->
     <div class="key-hint hidden" id="keyHint">ESC · EXIT ARCADE</div>
 
-    <!-- ── EDGE VOLUME CONTROL ──────────────────────────────────── -->
-    <div id="edge-volume" title="Volume">
-        <div id="vol-icon">◁)))</div>
-        <div id="vol-pct">20%</div>
-        <div id="vol-track">
-            <div id="vol-ticks">
-                <span class="vol-tick major"></span>
-                <span class="vol-tick"></span>
-                <span class="vol-tick"></span>
-                <span class="vol-tick"></span>
-                <span class="vol-tick major"></span>
-                <span class="vol-tick"></span>
-                <span class="vol-tick"></span>
-                <span class="vol-tick"></span>
-                <span class="vol-tick major"></span>
-            </div>
-            <input type="range" id="vol-range" min="0" max="100" value="20" step="1">
-        </div>
+    <!-- ── ARCADE SETTINGS CONTROL PANEL ─────────────────────────── -->
+    <div id="arcade-settings" aria-hidden="true">
+        <section class="settings-panel" role="dialog" aria-modal="true" aria-labelledby="arcade-settings-title">
+            <header class="settings-head">
+                <div>
+                    <h2 id="arcade-settings-title">SETTINGS CONTROL PANEL</h2>
+                    <p>FTS ARCADE · FLOOR ENVIRONMENT</p>
+                </div>
+                <button class="settings-x" id="settingsX" type="button" aria-label="Close settings">×</button>
+            </header>
+
+            <div class="settings-route"><strong>AUDIO ROUTING</strong> · CROWD / JUKEBOX / CABINET SFX → MASTER · Preferences are stored locally on this browser.</div>
+
+            <form id="arcade-settings-form">
+                <div class="settings-grid">
+                    <section class="settings-group">
+                        <h3>Audio Environment</h3>
+
+                        <label class="setting-row">
+                            <span class="setting-copy"><strong>Master Volume</strong><small>Overall arcade floor level. This replaces the old edge-mounted volume slider.</small></span>
+                            <span class="setting-control"><input name="masterVolume" type="range" min="0" max="100" step="1"><output class="range-out" data-for="masterVolume"></output></span>
+                        </label>
+
+                        <label class="setting-row">
+                            <span class="setting-copy"><strong>Crowd Ambience</strong><small>Loop the room-tone bed from <code>crowd.mp3</code>. Kept low so cabinets remain intelligible.</small></span>
+                            <span class="setting-control"><span class="switch"><input name="crowdEnabled" type="checkbox"><span></span></span></span>
+                        </label>
+                        <label class="setting-row">
+                            <span class="setting-copy"><strong>Crowd Level</strong><small>Independent gain for the arcade background bed.</small></span>
+                            <span class="setting-control"><input name="crowdVolume" type="range" min="0" max="100" step="1"><output class="range-out" data-for="crowdVolume"></output></span>
+                        </label>
+
+                        <label class="setting-row">
+                            <span class="setting-copy"><strong>Jukebox</strong><small>Optional floor music. Disabled by default until a stream or direct audio URL is configured.</small></span>
+                            <span class="setting-control"><span class="switch"><input name="jukeboxEnabled" type="checkbox"><span></span></span></span>
+                        </label>
+                        <label class="setting-row">
+                            <span class="setting-copy"><strong>Jukebox Level</strong><small>Independent gain for the floor music source.</small></span>
+                            <span class="setting-control"><input name="jukeboxVolume" type="range" min="0" max="100" step="1"><output class="range-out" data-for="jukeboxVolume"></output></span>
+                        </label>
+                        <label class="setting-row">
+                            <span class="setting-copy"><strong>Jukebox Source</strong><small>Direct browser-playable audio/stream URL. For Plex, prefer a proxy/endpoint instead of storing a long-lived auth token here; blank means no source.</small></span>
+                            <span class="setting-control"><input name="jukeboxUrl" type="url" inputmode="url" autocomplete="off" placeholder="https://…/stream.mp3"></span>
+                        </label>
+
+                        <label class="setting-row">
+                            <span class="setting-copy"><strong>Cabinet SFX</strong><small>Coin, hover, selection, launch, denial, and exit sounds generated by this lobby.</small></span>
+                            <span class="setting-control"><span class="switch"><input name="sfxEnabled" type="checkbox"><span></span></span></span>
+                        </label>
+                        <label class="setting-row">
+                            <span class="setting-copy"><strong>Cabinet SFX Level</strong><small>Independent level for lobby feedback without changing crowd or jukebox.</small></span>
+                            <span class="setting-control"><input name="sfxVolume" type="range" min="0" max="100" step="1"><output class="range-out" data-for="sfxVolume"></output></span>
+                        </label>
+                        <div class="setting-row">
+                            <span class="setting-copy"><strong>Audio Check</strong><small>Wake the browser audio context and play the cabinet-selection cue.</small></span>
+                            <span class="setting-control"><button class="settings-test" id="settingsTestSfx" type="button">TEST SFX</button></span>
+                        </div>
+                        <div class="settings-status" id="settingsAudioStatus">AUDIO WAITS FOR THE FIRST PLAYER INPUT.</div>
+                    </section>
+
+                    <section class="settings-group">
+                        <h3>Display & Accessibility</h3>
+                        <label class="setting-row">
+                            <span class="setting-copy"><strong>CRT Treatment</strong><small>Scanlines, screen vignette, and cabinet-screen texture.</small></span>
+                            <span class="setting-control"><span class="switch"><input name="crtEnabled" type="checkbox"><span></span></span></span>
+                        </label>
+                        <label class="setting-row">
+                            <span class="setting-copy"><strong>Reduced Motion</strong><small>Suppress decorative scans, breathing glows, coin travel, and long transition animation.</small></span>
+                            <span class="setting-control"><span class="switch"><input name="reducedMotion" type="checkbox"><span></span></span></span>
+                        </label>
+                    </section>
+                </div>
+
+                <footer class="settings-foot">
+                    <button type="button" class="settings-action" id="settingsReset">↻ RESET DEFAULTS</button>
+                    <button type="button" class="settings-action" id="settingsCancel">× CANCEL</button>
+                    <button type="submit" class="settings-action save">▣ SAVE & CLOSE</button>
+                </footer>
+            </form>
+        </section>
     </div>
 
 
@@ -1658,19 +1717,99 @@
     const AudioCtx    = window.AudioContext || window.webkitAudioContext;
     const audioCtx    = new AudioCtx();
     const masterGain  = audioCtx.createGain();
+    const sfxGain     = audioCtx.createGain();
+    sfxGain.connect(masterGain);
     masterGain.connect(audioCtx.destination);
 
-    const savedVol = parseFloat(localStorage.getItem('fts-volume') ?? '20');
-    masterGain.gain.value = savedVol / 100;
+    const ARCADE_SETTINGS_KEY = 'fts-arcade-settings-v1';
+    const legacyVolume = Math.max(0, Math.min(100, parseFloat(localStorage.getItem('fts-volume') ?? '20') || 20));
+    const DEFAULT_ARCADE_SETTINGS = Object.freeze({
+        masterVolume: legacyVolume,
+        crowdEnabled: true, crowdVolume: 22,
+        jukeboxEnabled: false, jukeboxVolume: 32, jukeboxUrl: '',
+        sfxEnabled: true, sfxVolume: 72,
+        crtEnabled: true, reducedMotion: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches || false
+    });
 
-    function wake() { if (audioCtx.state === 'suspended') audioCtx.resume(); }
+    function clampSetting(v, lo=0, hi=100) { return Math.max(lo, Math.min(hi, Number(v))); }
+    function validateArcadeSettings(candidate = {}) {
+        const d = DEFAULT_ARCADE_SETTINGS;
+        return {
+            masterVolume: clampSetting(Number.isFinite(Number(candidate.masterVolume)) ? candidate.masterVolume : d.masterVolume),
+            crowdEnabled: candidate.crowdEnabled === undefined ? d.crowdEnabled : !!candidate.crowdEnabled,
+            crowdVolume: clampSetting(Number.isFinite(Number(candidate.crowdVolume)) ? candidate.crowdVolume : d.crowdVolume),
+            jukeboxEnabled: candidate.jukeboxEnabled === undefined ? d.jukeboxEnabled : !!candidate.jukeboxEnabled,
+            jukeboxVolume: clampSetting(Number.isFinite(Number(candidate.jukeboxVolume)) ? candidate.jukeboxVolume : d.jukeboxVolume),
+            jukeboxUrl: typeof candidate.jukeboxUrl === 'string' ? candidate.jukeboxUrl.trim() : d.jukeboxUrl,
+            sfxEnabled: candidate.sfxEnabled === undefined ? d.sfxEnabled : !!candidate.sfxEnabled,
+            sfxVolume: clampSetting(Number.isFinite(Number(candidate.sfxVolume)) ? candidate.sfxVolume : d.sfxVolume),
+            crtEnabled: candidate.crtEnabled === undefined ? d.crtEnabled : !!candidate.crtEnabled,
+            reducedMotion: candidate.reducedMotion === undefined ? d.reducedMotion : !!candidate.reducedMotion
+        };
+    }
+    function loadArcadeSettings() {
+        try { return validateArcadeSettings(JSON.parse(localStorage.getItem(ARCADE_SETTINGS_KEY) || '{}')); }
+        catch (_) { return validateArcadeSettings(); }
+    }
+    let arcadeSettings = loadArcadeSettings();
+    let audioUnlocked = false;
+
+    const crowdAudio = new Audio('crowd.mp3');
+    crowdAudio.loop = true; crowdAudio.preload = 'auto';
+    const jukeboxAudio = new Audio();
+    jukeboxAudio.preload = 'none';
+
+    function updateMediaVolumes() {
+        crowdAudio.volume = (arcadeSettings.masterVolume / 100) * (arcadeSettings.crowdVolume / 100);
+        jukeboxAudio.volume = (arcadeSettings.masterVolume / 100) * (arcadeSettings.jukeboxVolume / 100);
+        masterGain.gain.setTargetAtTime(arcadeSettings.masterVolume / 100, audioCtx.currentTime, 0.02);
+        sfxGain.gain.setTargetAtTime(arcadeSettings.sfxVolume / 100, audioCtx.currentTime, 0.02);
+    }
+    function applyPresentationSettings() {
+        document.body.classList.toggle('no-crt', !arcadeSettings.crtEnabled);
+        document.body.classList.toggle('reduced-motion', arcadeSettings.reducedMotion);
+    }
+    function setAudioStatus(text, state='') {
+        const el = document.getElementById('settingsAudioStatus');
+        if (!el) return; el.textContent = text; el.dataset.state = state;
+    }
+    async function syncAmbientPlayback() {
+        updateMediaVolumes();
+        if (!audioUnlocked || document.hidden) return;
+        if (arcadeSettings.crowdEnabled) {
+            try { await crowdAudio.play(); } catch (_) {}
+        } else crowdAudio.pause();
+
+        const url = arcadeSettings.jukeboxUrl.trim();
+        if (url && jukeboxAudio.dataset.sourceUrl !== url) { jukeboxAudio.src = url; jukeboxAudio.dataset.sourceUrl = url; jukeboxAudio.load(); }
+        if (!arcadeSettings.jukeboxEnabled || !url) {
+            jukeboxAudio.pause();
+            setAudioStatus(arcadeSettings.jukeboxEnabled && !url ? 'JUKEBOX SOURCE REQUIRED · CROWD / SFX READY.' : 'ARCADE AUDIO READY.', arcadeSettings.jukeboxEnabled && !url ? 'warn' : 'ready');
+        } else {
+            try { await jukeboxAudio.play(); setAudioStatus('ARCADE AUDIO READY · JUKEBOX STREAM ACTIVE.', 'ready'); }
+            catch (_) { setAudioStatus('JUKEBOX STREAM COULD NOT START · CHECK URL / BROWSER ACCESS.', 'warn'); }
+        }
+    }
+    function commitArcadeSettings(next) {
+        arcadeSettings = validateArcadeSettings(next);
+        try { localStorage.setItem(ARCADE_SETTINGS_KEY, JSON.stringify(arcadeSettings)); localStorage.setItem('fts-volume', String(arcadeSettings.masterVolume)); } catch (_) {}
+        applyPresentationSettings(); updateMediaVolumes(); syncAmbientPlayback();
+    }
+    function wake() {
+        audioUnlocked = true;
+        if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+        syncAmbientPlayback();
+    }
+    applyPresentationSettings();
+    updateMediaVolumes();
 
     /** Play a single tone. All params explicit. */
     function tone(freq, type, vol, dur, delay = 0) {
+        if (!arcadeSettings.sfxEnabled || arcadeSettings.sfxVolume <= 0 || arcadeSettings.masterVolume <= 0) return;
         const osc  = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         osc.connect(gain);
-        gain.connect(masterGain);
+        gain.connect(sfxGain);
         osc.frequency.value = freq;
         osc.type = type;
         const t = audioCtx.currentTime + delay;
@@ -1718,6 +1857,13 @@
     const idle           = document.getElementById('screenIdle');
     const menu           = document.getElementById('screenMenu');
     const back           = document.getElementById('menuBack');
+    const menuSettings   = document.getElementById('menuSettings');
+    const settingsLayer  = document.getElementById('arcade-settings');
+    const settingsForm   = document.getElementById('arcade-settings-form');
+    const settingsX      = document.getElementById('settingsX');
+    const settingsReset  = document.getElementById('settingsReset');
+    const settingsCancel = document.getElementById('settingsCancel');
+    const settingsTestSfx= document.getElementById('settingsTestSfx');
     const keyHint        = document.getElementById('keyHint');
     const gameGrid       = document.getElementById('gameGrid');
     const tiles          = gameGrid.querySelectorAll('.game-tile');
@@ -2022,40 +2168,81 @@
     // visualViewport.resize catches iOS toolbar show/hide; window resize
     // catches everything else (orientation change, actual window resize).
     window.addEventListener('resize', () => {
-        if (menuOpen) { positionCloseupScreen(); enterCabinetVolumeMode(); }
+        if (menuOpen) positionCloseupScreen();
     });
     if (window.visualViewport) {
         window.visualViewport.addEventListener('resize', () => {
-            if (menuOpen) { positionCloseupScreen(); enterCabinetVolumeMode(); }
+            if (menuOpen) positionCloseupScreen();
         });
     }
 
 
+
     /* ══════════════════════════════════════════════════════════════
-       VOLUME CONTROL — CABINET MODE HELPERS
-       Reposition #edge-volume inside the CRT on open; restore on close.
+       SETTINGS CONTROL PANEL
        ══════════════════════════════════════════════════════════════ */
-    function enterCabinetVolumeMode() {
-        // #closeup-screen has been positioned — read its rect for placement.
-        const r   = closeupScreen.getBoundingClientRect();
-        const pad = 10;
-        const edV = document.getElementById('edge-volume');
-        edV.style.right     = Math.max(0, window.innerWidth  - r.right  + pad) + 'px';
-        edV.style.bottom    = Math.max(0, window.innerHeight - r.bottom + pad) + 'px';
-        edV.style.top       = 'auto';
-        edV.style.transform = 'none';
-        edV.classList.add('in-cabinet');
-    }
+    let settingsOpen = false;
+    let settingsSnapshot = null;
 
-    function exitCabinetVolumeMode() {
-        const edV = document.getElementById('edge-volume');
-        edV.style.right     = '';
-        edV.style.bottom    = '';
-        edV.style.top       = '';
-        edV.style.transform = '';
-        edV.classList.remove('in-cabinet');
+    function populateSettingsForm(source = arcadeSettings) {
+        for (const [key, value] of Object.entries(source)) {
+            const el = settingsForm?.elements[key]; if (!el) continue;
+            if (el.type === 'checkbox') el.checked = !!value; else el.value = String(value);
+        }
+        updateSettingOutputs();
+        setAudioStatus(audioUnlocked ? 'ARCADE AUDIO READY.' : 'AUDIO WAITS FOR THE FIRST PLAYER INPUT.', audioUnlocked ? 'ready' : '');
     }
-
+    function readSettingsForm() {
+        const out = {};
+        for (const key of Object.keys(DEFAULT_ARCADE_SETTINGS)) {
+            const el = settingsForm?.elements[key]; if (!el) continue;
+            out[key] = el.type === 'checkbox' ? el.checked : el.value;
+        }
+        return validateArcadeSettings(out);
+    }
+    function updateSettingOutputs() {
+        settingsForm?.querySelectorAll('.range-out').forEach(out => {
+            const el = settingsForm.elements[out.dataset.for];
+            if (el) out.textContent = `${Math.round(Number(el.value))}%`;
+        });
+    }
+    function previewSettingsForm() {
+        const draft = readSettingsForm();
+        arcadeSettings = draft;
+        applyPresentationSettings(); updateMediaVolumes();
+    }
+    function openSettings() {
+        if (settingsOpen) return; settingsOpen = true;
+        settingsSnapshot = {...arcadeSettings};
+        populateSettingsForm(arcadeSettings);
+        settingsLayer.classList.add('open'); settingsLayer.setAttribute('aria-hidden','false');
+        requestAnimationFrame(() => settingsForm?.elements.masterVolume?.focus());
+    }
+    function closeSettings(commit = false) {
+        if (!settingsOpen) return;
+        if (commit) commitArcadeSettings(readSettingsForm());
+        else if (settingsSnapshot) { arcadeSettings = validateArcadeSettings(settingsSnapshot); applyPresentationSettings(); updateMediaVolumes(); syncAmbientPlayback(); }
+        settingsOpen = false; settingsSnapshot = null;
+        settingsLayer.classList.remove('open'); settingsLayer.setAttribute('aria-hidden','true');
+        menuSettings?.focus();
+    }
+    settingsForm?.addEventListener('input', (e) => {
+        updateSettingOutputs();
+        if (e.target.name !== 'jukeboxUrl') previewSettingsForm();
+    });
+    settingsForm?.addEventListener('change', () => { updateSettingOutputs(); previewSettingsForm(); syncAmbientPlayback(); });
+    settingsForm?.addEventListener('submit', (e) => { e.preventDefault(); wake(); closeSettings(true); });
+    menuSettings?.addEventListener('click', (e) => { e.stopPropagation(); wake(); openSettings(); });
+    settingsX?.addEventListener('click', () => closeSettings(false));
+    settingsCancel?.addEventListener('click', () => closeSettings(false));
+    settingsReset?.addEventListener('click', () => {
+        arcadeSettings = validateArcadeSettings(DEFAULT_ARCADE_SETTINGS); populateSettingsForm(arcadeSettings); previewSettingsForm();
+    });
+    settingsTestSfx?.addEventListener('click', () => { wake(); requestAnimationFrame(() => sfx.select()); });
+    settingsLayer?.addEventListener('click', (e) => { if (e.target === settingsLayer) closeSettings(false); });
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) { crowdAudio.pause(); jukeboxAudio.pause(); } else if (audioUnlocked) syncAmbientPlayback();
+    });
 
     /* ══════════════════════════════════════════════════════════════
        STATE MACHINE  (idle ↔ menu)
@@ -2088,7 +2275,6 @@
             positionCloseupScreen();
             closeupScreen.appendChild(menu);
             gameGrid.scrollTop = 0;       // always start at top of game list
-            enterCabinetVolumeMode();     // park volume control inside the CRT
 
             // Re-trigger stagger animation on tiles
             tiles.forEach(t => t.classList.remove('entering'));
@@ -2109,7 +2295,6 @@
         if (!menuOpen) return;
         menuOpen = false;
         wake(); sfx.exit();
-        exitCabinetVolumeMode();          // restore volume to browser edge
 
         // Menu fade-out
         menu.classList.remove('active');
@@ -2219,44 +2404,12 @@
 
     // ── Keyboard ESC ─────────────────────────────────────────────
     document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && settingsOpen) { closeSettings(false); return; }
         if (e.key === 'Escape' && wipGate.classList.contains('open')) { closeWipGate(); return; }
         if (e.key === 'Escape' && menuOpen) closeMenu();
     });
 
 
-    /* ══════════════════════════════════════════════════════════════
-       VOLUME CONTROL  (preserved from original Gemini code)
-       ══════════════════════════════════════════════════════════════ */
-    const edgeVol  = document.getElementById('edge-volume');
-    const volRange = document.getElementById('vol-range');
-    const volPct   = document.getElementById('vol-pct');
-    const volTrack = document.getElementById('vol-track');
-
-    volRange.value = savedVol;
-    volPct.textContent = Math.round(savedVol) + '%';
-    volTrack.style.setProperty('--vol-fill', savedVol + '%');
-
-    function updateVolIcon(pct) {
-        const icon = document.getElementById('vol-icon');
-        icon.textContent =
-            pct === 0  ? '◁'    :
-            pct < 40   ? '◁)'   :
-            pct < 75   ? '◁))'  : '◁)))';
-    }
-    updateVolIcon(savedVol);
-
-    volRange.addEventListener('input', (e) => {
-        wake();
-        const val = parseFloat(e.target.value);
-        masterGain.gain.setTargetAtTime(val / 100, audioCtx.currentTime, 0.015);
-        volPct.textContent = Math.round(val) + '%';
-        volTrack.style.setProperty('--vol-fill', val + '%');
-        updateVolIcon(val);
-        localStorage.setItem('fts-volume', val);
-    });
-
-    volRange.addEventListener('mousedown', () => edgeVol.classList.add('open'));
-    document.addEventListener('mouseup',   () => edgeVol.classList.remove('open'));
     </script>
 </body>
 </html>
