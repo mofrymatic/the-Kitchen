@@ -1316,7 +1316,140 @@
                         0 0 40px rgba(0,190,255,0.08);
         }
 
-    </style>
+    
+
+        /* ═══════════════════════════════════════════════════════════
+           CRT-INTEGRATED CLOSE-UP MENU · 2026-08-16
+           The cabinet photo already contains the best background: curved
+           blue phosphor glass + grid.  The menu is therefore a transparent
+           HUD projected onto that glass instead of a black rectangle pasted
+           over it.  Mild 3D perspective supplies the keystone cue while the
+           viewport radius/vignette supplies the CRT barrel impression.
+           ═══════════════════════════════════════════════════════════ */
+        #closeup-screen {
+            border-radius: 6.4% / 7.6%;
+            background: transparent;
+            perspective: 1500px;
+            transform-style: preserve-3d;
+            box-shadow:
+                inset 0 0 34px rgba(0, 16, 42, .16),
+                inset 0 0 92px rgba(0, 0, 0, .20);
+        }
+
+        #closeup-screen::before {
+            border-radius: inherit;
+            opacity: .72;
+            mix-blend-mode: multiply;
+        }
+
+        #closeup-screen::after {
+            border-radius: inherit;
+            background:
+                linear-gradient(112deg,
+                    transparent 0 27%,
+                    rgba(120, 220, 255, .025) 38%,
+                    rgba(120, 220, 255, .055) 46%,
+                    transparent 55% 100%),
+                radial-gradient(
+                    ellipse at 50% 47%,
+                    rgba(25, 150, 220, .025) 0%,
+                    transparent 58%,
+                    rgba(0, 5, 15, .18) 76%,
+                    rgba(0, 0, 0, .52) 100%
+                );
+        }
+
+        /* Re-parented into #closeup-screen by openMenu().  Keep the original
+           menu styling for the zoomed-out cabinet, but make the close-up HUD
+           transparent and gently conform it to the photographed screen plane. */
+        #closeup-screen .screen-menu {
+            background: transparent;
+            padding: 3.2% 4.0% 2.7%;
+            transform-origin: 50% 52%;
+            transform:
+                perspective(1400px)
+                rotateX(1.25deg)
+                rotateY(-0.18deg)
+                scale(.955, .952)
+                translateY(5px);
+            filter: drop-shadow(0 0 11px rgba(0, 145, 210, .10));
+        }
+
+        #closeup-screen .screen-menu.active {
+            transform:
+                perspective(1400px)
+                rotateX(1.25deg)
+                rotateY(-0.18deg)
+                scale(.975, .972)
+                translateY(0);
+        }
+
+        /* Let the cabinet's native grid show through the list edges. */
+        #closeup-screen .game-grid-wrap::before {
+            background: linear-gradient(to bottom,
+                rgba(1, 9, 22, .52) 0%,
+                rgba(1, 9, 22, 0) 100%);
+        }
+        #closeup-screen .game-grid-wrap::after {
+            background: linear-gradient(to top,
+                rgba(1, 9, 22, .52) 0%,
+                rgba(1, 9, 22, 0) 100%);
+        }
+
+        /* Cabinet cards become translucent drafting overlays.  The individual
+           accent colors stay intact, but the blue CRT grid remains visible
+           through the cards so the whole menu reads as one display surface. */
+        #closeup-screen .game-tile {
+            background:
+                radial-gradient(circle at 50% 0%,
+                    color-mix(in srgb, var(--accent) 12%, transparent) 0%,
+                    transparent 54%),
+                linear-gradient(155deg,
+                    color-mix(in srgb, var(--accent) 6%, transparent) 0%,
+                    rgba(2, 6, 15, .54) 72%);
+            box-shadow:
+                inset 0 0 14px color-mix(in srgb, var(--accent) 5%, transparent),
+                0 0 7px color-mix(in srgb, var(--accent) 10%, transparent);
+        }
+
+        #closeup-screen .game-tile:not(.locked):hover {
+            box-shadow:
+                inset 0 0 22px color-mix(in srgb, var(--accent) 13%, transparent),
+                0 0 17px color-mix(in srgb, var(--accent) 30%, transparent);
+        }
+
+        #closeup-screen .tile-preview-frame {
+            background: rgba(2, 7, 17, .57);
+            box-shadow:
+                inset 0 0 18px rgba(0, 0, 0, .36),
+                0 0 10px color-mix(in srgb, var(--accent) 12%, transparent);
+        }
+
+        #closeup-screen .new-flag,
+        #closeup-screen .tile-preview-status {
+            background: rgba(2, 7, 17, .68);
+        }
+
+        #closeup-screen .menu-title {
+            text-shadow:
+                0 0 7px var(--neon-blue),
+                0 0 18px rgba(0, 217, 255, .22);
+        }
+
+        /* Mobile fallback has no reliable photographed CRT crop.  Restore a
+           semi-opaque panel there so usability does not depend on the image. */
+        #closeup-layer.fallback-mode #closeup-screen {
+            border-radius: 16px;
+            perspective: none;
+            background: rgba(2, 7, 17, .88);
+        }
+        #closeup-layer.fallback-mode #closeup-screen .screen-menu,
+        #closeup-layer.fallback-mode #closeup-screen .screen-menu.active {
+            background: rgba(2, 7, 17, .88);
+            transform: scale(1) translateY(0);
+            filter: none;
+        }
+</style>
 </head>
 <body>
 
@@ -1755,7 +1888,10 @@
     let audioUnlocked = false;
 
     const crowdAudio = new Audio('crowd.mp3');
-    crowdAudio.loop = true; crowdAudio.preload = 'auto';
+    crowdAudio.loop = true;
+    crowdAudio.preload = 'auto';
+    crowdAudio.autoplay = true;
+    crowdAudio.playsInline = true;
     const jukeboxAudio = new Audio();
     jukeboxAudio.preload = 'none';
 
@@ -1773,12 +1909,36 @@
         const el = document.getElementById('settingsAudioStatus');
         if (!el) return; el.textContent = text; el.dataset.state = state;
     }
-    async function syncAmbientPlayback() {
+    let crowdAutoplayBlocked = false;
+
+    async function ensureCrowdPlayback() {
         updateMediaVolumes();
-        if (!audioUnlocked || document.hidden) return;
-        if (arcadeSettings.crowdEnabled) {
-            try { await crowdAudio.play(); } catch (_) {}
-        } else crowdAudio.pause();
+        if (!arcadeSettings.crowdEnabled || arcadeSettings.masterVolume <= 0 || arcadeSettings.crowdVolume <= 0) {
+            crowdAudio.pause();
+            crowdAutoplayBlocked = false;
+            return false;
+        }
+        try {
+            await crowdAudio.play();
+            crowdAutoplayBlocked = false;
+            return true;
+        } catch (_) {
+            // Some browsers block audible autoplay until a player gesture.
+            // We still attempt it immediately, then wake() retries on the very first input.
+            crowdAutoplayBlocked = true;
+            setAudioStatus('CROWD AUTOPLAY BLOCKED BY BROWSER · TAP / PRESS A KEY TO START.', 'warn');
+            return false;
+        }
+    }
+
+    async function syncAmbientPlayback() {
+        // Crowd is an always-on environmental bed and is NOT gated by the
+        // Web Audio unlock used by synthesized cabinet SFX.
+        await ensureCrowdPlayback();
+
+        // Jukebox remains player-initiated because arbitrary stream URLs are
+        // much more likely to be rejected by browser autoplay policy.
+        if (!audioUnlocked) return;
 
         const url = arcadeSettings.jukeboxUrl.trim();
         if (url && jukeboxAudio.dataset.sourceUrl !== url) { jukeboxAudio.src = url; jukeboxAudio.dataset.sourceUrl = url; jukeboxAudio.load(); }
@@ -1802,6 +1962,12 @@
     }
     applyPresentationSettings();
     updateMediaVolumes();
+
+    // Start the room tone at the earliest possible moment. If the browser
+    // allows audible autoplay, crowd.mp3 begins before the player touches the
+    // cabinet. If not, the first input retries immediately via wake().
+    syncAmbientPlayback();
+    window.addEventListener('pageshow', () => syncAmbientPlayback());
 
     /** Play a single tone. All params explicit. */
     function tone(freq, type, vol, dur, delay = 0) {
@@ -2112,11 +2278,12 @@
 
     let menuOpen = false;
 
-    // Fractional coordinates of the CRT bezel within the 1088×976 source image.
-    // Calibrated from live screenshot at 1456×816 (cover scale=1.338, offY=-245):
-    //   left   x≈247px  → col 185  (0.170)   right  x≈1248px → col 932  (0.857)
-    //   top    y≈62px   → row 229  (0.235)   bottom y≈787px  → row 771  (0.790)
-    const CRT = { left: 0.170, top: 0.235, right: 0.857, bottom: 0.790 };
+    // Fractional coordinates of the luminous CRT glass within the 1088×976
+    // cabinet-closeup.png source.  Use the full curved blue glass, not the
+    // smaller rectangular menu inset, so transparent UI can inherit the
+    // cabinet art's native grid, glow and keystone cues.
+    //   glass ≈ x 154..967, y 211..784 in the source image.
+    const CRT = { left: 0.142, top: 0.216, right: 0.889, bottom: 0.803 };
 
     function positionCloseupScreen() {
         const natW = closeupBgImg.naturalWidth  || 1088;
@@ -2241,8 +2408,24 @@
     settingsTestSfx?.addEventListener('click', () => { wake(); requestAnimationFrame(() => sfx.select()); });
     settingsLayer?.addEventListener('click', (e) => { if (e.target === settingsLayer) closeSettings(false); });
     document.addEventListener('visibilitychange', () => {
-        if (document.hidden) { crowdAudio.pause(); jukeboxAudio.pause(); } else if (audioUnlocked) syncAmbientPlayback();
+        // Do not stop the crowd bed just because the tab loses focus; it is
+        // an environmental loop and should continue until the user disables it.
+        // Re-sync when returning in case the browser suspended media itself.
+        if (!document.hidden) syncAmbientPlayback();
     });
+
+    // Global first-input fallback for browsers that reject audible autoplay.
+    // Existing cabinet interactions also call wake(); this catches clicks/keys
+    // anywhere else on the page and removes itself after the first gesture.
+    function firstAudioGesture() {
+        wake();
+        document.removeEventListener('pointerdown', firstAudioGesture, true);
+        document.removeEventListener('keydown', firstAudioGesture, true);
+        document.removeEventListener('touchstart', firstAudioGesture, true);
+    }
+    document.addEventListener('pointerdown', firstAudioGesture, true);
+    document.addEventListener('keydown', firstAudioGesture, true);
+    document.addEventListener('touchstart', firstAudioGesture, { capture: true, passive: true });
 
     /* ══════════════════════════════════════════════════════════════
        STATE MACHINE  (idle ↔ menu)
