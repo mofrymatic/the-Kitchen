@@ -15,7 +15,7 @@
     <title>FishTacoStand Arcade</title>
 
     <!-- ── Primary Meta ─────────────────────────────────────────── -->
-    <meta name="description" content="FishTacoStand Arcade — a playful retro arcade hub serving Neon Invaders, Astroids, Cave Racer, RED EYE, Underhall, Tetris, and more." />
+    <meta name="description" content="FishTacoStand Arcade — 16 free-play cabinets, fresh drops, and seven workbench builds coming soon." />
 
     <!-- ── Favicons ─────────────────────────────────────────────── -->
     <link rel="icon" type="image/png" href="fts-favicon.png">
@@ -24,7 +24,7 @@
 
     <!-- ── Open Graph ───────────────────────────────────────────── -->
     <meta property="og:title"       content="FishTacoStand Arcade">
-    <meta property="og:description" content="Step up to the FishTacoStand Arcade: a retro cabinet hub for Neon Invaders, Astroids, Cave Racer, RED EYE, Underhall, Tetris, and more.">
+    <meta property="og:description" content="Step up to FishTacoStand Arcade: 16 free-play cabinets, fresh drops, and seven workbench builds coming soon.">
     <meta property="og:url"         content="https://frymatic.us/FTSArcade/">
     <meta property="og:type"        content="website">
     <meta property="og:site_name"   content="FishTacoStand Arcade">
@@ -35,7 +35,7 @@
     <!-- ── Twitter / X ──────────────────────────────────────────── -->
     <meta name="twitter:card"        content="summary_large_image">
     <meta name="twitter:title"       content="FishTacoStand Arcade">
-    <meta name="twitter:description" content="A retro arcade hub serving Neon Invaders, Astroids, Cave Racer, RED EYE, Underhall, Tetris, and more.">
+    <meta name="twitter:description" content="16 free-play cabinets, fresh drops, and seven workbench builds coming soon at FishTacoStand Arcade.">
     <meta name="twitter:image"       content="https://frymatic.us/FTSArcade/FishTacoStand.png">
 
     <!-- ── Fonts ────────────────────────────────────────────────── -->
@@ -275,16 +275,49 @@
         /* ── COIN DROP FX ───────────────────────────────────────── */
         .coin-drop {
             position: absolute;
-            font-size: clamp(14px, 2.8vh, 24px);
+            width: clamp(16px, 2.9vh, 25px);
+            aspect-ratio: 1;
+            border-radius: 50%;
             pointer-events: none;
             z-index: 35;
-            animation: dropCoin 0.7s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards;
+            background:
+                radial-gradient(circle at 35% 28%, #fff8c9 0 6%, transparent 7%),
+                radial-gradient(circle at 40% 35%, #ffd76a 0 26%, #c97813 61%, #6b3208 100%);
+            border: 1px solid rgba(255,232,153,0.8);
+            box-shadow: 0 0 9px rgba(255,190,11,0.55), inset 0 0 0 2px rgba(92,43,5,0.25);
+            animation: dropCoin 0.62s cubic-bezier(0.22, 0.7, 0.24, 1) forwards;
         }
-
+        .coin-drop::after {
+            content: 'FTS';
+            position: absolute; inset: 0;
+            display: grid; place-items: center;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 24%;
+            color: rgba(89,42,7,0.75);
+            text-shadow: 0 1px rgba(255,240,180,0.45);
+        }
+        .coin-impact {
+            position: absolute;
+            left: 50%; bottom: 7%;
+            width: 12%; aspect-ratio: 3 / 1;
+            transform: translateX(-50%);
+            border-radius: 50%;
+            background: radial-gradient(ellipse, rgba(255,190,11,0.48), transparent 68%);
+            filter: blur(1px);
+            pointer-events: none;
+            z-index: 34;
+            animation: coinImpact 0.36s ease-out forwards;
+        }
         @keyframes dropCoin {
-            0%   { opacity: 1;   transform: translateY(-24px) rotate(0deg)    scale(1.1); }
-            70%  { opacity: 0.9; transform: translateY(60px)  rotate(480deg)  scale(0.8); }
-            100% { opacity: 0;   transform: translateY(110px) rotate(640deg)  scale(0.4); }
+            0%   { opacity: 0; transform: translateY(-16px) rotateY(0deg) rotateZ(-8deg) scale(1.08); }
+            10%  { opacity: 1; }
+            72%  { opacity: 1; transform: translateY(78px) rotateY(680deg) rotateZ(10deg) scale(0.84); }
+            100% { opacity: 0; transform: translateY(96px) rotateY(820deg) rotateZ(14deg) scale(0.60); }
+        }
+        @keyframes coinImpact {
+            0% { opacity: 0; transform: translateX(-50%) scaleX(0.35); }
+            28% { opacity: 1; transform: translateX(-50%) scaleX(1.25); }
+            100% { opacity: 0; transform: translateX(-50%) scaleX(2.1); }
         }
 
         /* ── WHITE FLASH on start ───────────────────────────────── */
@@ -293,11 +326,11 @@
             background: rgba(255,255,255,0.9);
             opacity: 0;
             pointer-events: none; z-index: 32;
-            animation: screenFlash 0.4s ease forwards;
+            animation: screenFlash 0.52s ease forwards;
         }
 
         @keyframes screenFlash {
-            0%   { opacity: 0.75; }
+            0%   { opacity: 0.55; }
             100% { opacity: 0; }
         }
 
@@ -356,7 +389,7 @@
             box-shadow: 0 0 4px currentColor;
         }
         .legend-live  i { background: var(--neon-green);  color: var(--neon-green); }
-        .legend-tag   i { background: var(--neon-blue);   color: var(--neon-blue); }
+        .legend-new   i { background: var(--neon-pink);   color: var(--neon-pink); }
         .legend-build i { background: var(--neon-orange); color: var(--neon-orange); }
 
         /* ── GAME GRID ──────────────────────────────────────────── */
@@ -422,8 +455,8 @@
 
         /* Stagger animation trigger class */
         .game-tile.entering {
-            animation: tileIn 0.32s ease forwards;
-            animation-delay: calc(var(--i, 0) * 0.045s);
+            animation: tileIn 0.30s ease forwards;
+            animation-delay: calc(var(--i, 0) * 0.028s);
         }
 
         @keyframes tileIn {
@@ -611,6 +644,439 @@
             text-shadow: 0 0 6px #ff5c8a;
         }
 
+
+        /* ── 2026-08 MENU REFRESH ───────────────────────────────── */
+        .menu-section {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: center;
+            gap: 0.8em;
+            min-height: 14px;
+            padding: 1.2% 1% 0.2%;
+            color: rgba(255,255,255,0.62);
+            font-size: clamp(3.5px, 0.63vh, 5.2px);
+            letter-spacing: 1.6px;
+            text-transform: uppercase;
+        }
+        .menu-section::after {
+            content: '';
+            height: 1px;
+            flex: 1;
+            background: linear-gradient(90deg, currentColor, transparent);
+            opacity: 0.35;
+        }
+        .menu-section.free { color: var(--neon-green); }
+        .menu-section.soon { color: var(--neon-purple); margin-top: 1%; }
+        .menu-section small {
+            color: rgba(255,255,255,0.30);
+            font-size: 0.78em;
+            letter-spacing: 0.8px;
+            white-space: nowrap;
+        }
+
+        /* Data-driven cabinet palette: each tile sets --accent inline. */
+        .game-tile {
+            --accent: var(--neon-blue);
+            border-color: var(--accent);
+            background:
+                radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--accent) 15%, transparent) 0%, transparent 52%),
+                linear-gradient(155deg, color-mix(in srgb, var(--accent) 10%, transparent) 0%, rgba(4,4,14,0.95) 72%);
+            box-shadow: inset 0 0 12px color-mix(in srgb, var(--accent) 7%, transparent),
+                        0 0 5px color-mix(in srgb, var(--accent) 13%, transparent);
+            transition: box-shadow 0.15s ease, transform 0.12s ease, border-color 0.2s ease;
+            aspect-ratio: 1 / 1.02;
+            padding-top: 7%;
+        }
+        .game-tile:not(.locked):hover {
+            border-color: color-mix(in srgb, var(--accent) 82%, white);
+            box-shadow: inset 0 0 22px color-mix(in srgb, var(--accent) 18%, transparent),
+                        0 0 16px color-mix(in srgb, var(--accent) 38%, transparent);
+        }
+        .tile-icon { color: var(--accent); filter: drop-shadow(0 0 5px color-mix(in srgb, var(--accent) 42%, transparent)); }
+        .tile-icon *[stroke="currentColor"] { stroke: var(--accent); }
+        .tile-icon *[fill="currentColor"] { fill: var(--accent); }
+        .tile-mode {
+            margin-top: 3.5%;
+            font-size: clamp(3px, 0.56vh, 4.7px);
+            color: var(--accent);
+            opacity: 0.74;
+            text-align: center;
+            letter-spacing: 0.7px;
+            line-height: 1.35;
+        }
+        .tile-sub {
+            color: rgba(255,255,255,0.58);
+            margin-top: 3.5%;
+            line-height: 1.45;
+        }
+        .game-tile.locked { opacity: 0.68; }
+        .game-tile.locked .tile-name { opacity: 0.72; }
+        .game-tile.locked .tile-icon { opacity: 0.46; }
+        .game-tile.locked .tile-mode, .game-tile.locked .tile-sub { opacity: 0.42; }
+        .game-tile.locked::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: repeating-linear-gradient(135deg, transparent 0 10px, rgba(255,255,255,0.018) 10px 12px);
+            pointer-events: none;
+        }
+
+        /* NEW is treated like a newly wired cabinet, not a generic web badge. */
+        .game-tile.is-new {
+            border-width: 1.5px;
+        }
+        .game-tile.is-new.entering {
+            animation-name: tileIn, newCabinetBreath;
+            animation-duration: 0.30s, 2.8s;
+            animation-timing-function: ease, ease-in-out;
+            animation-delay: calc(var(--i, 0) * 0.028s), calc(0.42s + var(--i, 0) * 0.028s);
+            animation-iteration-count: 1, infinite;
+            animation-fill-mode: forwards, none;
+        }
+        .game-tile.is-new::before {
+            content: '';
+            position: absolute;
+            left: -20%; right: -20%; top: -30%;
+            height: 38%;
+            background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--accent) 16%, transparent), transparent);
+            transform: rotate(-6deg);
+            animation: newCabinetScan 3.8s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .new-flag {
+            position: absolute;
+            top: 4%; right: 4%;
+            z-index: 4;
+            padding: 2.2% 3%;
+            border: 1px solid color-mix(in srgb, var(--accent) 72%, white);
+            border-radius: 999px;
+            background: rgba(4,4,14,0.86);
+            color: color-mix(in srgb, var(--accent) 80%, white);
+            font-size: clamp(2.8px, 0.50vh, 4.2px);
+            letter-spacing: 0.7px;
+            text-shadow: 0 0 7px var(--accent);
+            box-shadow: 0 0 9px color-mix(in srgb, var(--accent) 24%, transparent);
+        }
+        @keyframes newCabinetBreath {
+            0%,100% { box-shadow: inset 0 0 12px color-mix(in srgb, var(--accent) 8%, transparent), 0 0 5px color-mix(in srgb, var(--accent) 14%, transparent); }
+            50%     { box-shadow: inset 0 0 20px color-mix(in srgb, var(--accent) 15%, transparent), 0 0 13px color-mix(in srgb, var(--accent) 30%, transparent); }
+        }
+        @keyframes newCabinetScan {
+            0%, 55% { transform: translateY(-210%) rotate(-6deg); opacity: 0; }
+            68% { opacity: 0.8; }
+            100% { transform: translateY(520%) rotate(-6deg); opacity: 0; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .game-tile.entering { animation: none !important; opacity: 1 !important; }
+            .game-tile.is-new::before { animation: none !important; }
+        }
+
+
+
+        /* ═══════════════════════════════════════════════════════════
+           PIXEL ATTRACT SCREENS · 2026-08-16
+           ZITTRIS-derived low-native-resolution thumbnail language:
+           nearest-neighbor pixels, static CRT scanlines, sparse grid,
+           restrained bloom. These replace symbol-only cabinet cards.
+           ═══════════════════════════════════════════════════════════ */
+        .game-tile {
+            aspect-ratio: 1 / 1.04;
+            padding: 4.5% 4% 4%;
+            gap: 0;
+        }
+        .game-tile .tile-icon { display: none; }
+        .tile-preview-frame {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            flex: 0 0 auto;
+            overflow: hidden;
+            margin-bottom: 5.5%;
+            background: #02050d;
+            border: 1px solid color-mix(in srgb, var(--accent) 52%, #0b1730);
+            clip-path: polygon(0 6px,6px 0,calc(100% - 6px) 0,100% 6px,100% calc(100% - 6px),calc(100% - 6px) 100%,6px 100%,0 calc(100% - 6px));
+            box-shadow:
+                inset 0 0 16px rgba(0,0,0,.55),
+                0 0 10px color-mix(in srgb, var(--accent) 14%, transparent);
+            isolation: isolate;
+        }
+        .tile-preview-art {
+            position: absolute;
+            inset: 0;
+            width: 100%; height: 100%;
+            object-fit: cover;
+            display: block;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            filter: saturate(1.06) contrast(1.08) brightness(.86);
+            transform: scale(1.015);
+            transition: transform .18s ease, filter .18s ease, opacity .18s ease;
+        }
+        .tile-preview-frame::before {
+            content: '';
+            position: absolute; inset: 0;
+            z-index: 2; pointer-events: none;
+            background:
+                repeating-linear-gradient(0deg, transparent 0 2px, rgba(0,0,0,.18) 3px 4px),
+                linear-gradient(rgba(40,130,255,.06) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(40,130,255,.045) 1px, transparent 1px);
+            background-size: auto, 16px 16px, 16px 16px;
+            mix-blend-mode: multiply;
+        }
+        .tile-preview-frame::after {
+            content: '';
+            position: absolute; inset: 0;
+            z-index: 3; pointer-events: none;
+            background:
+                radial-gradient(ellipse at 50% 48%, transparent 45%, rgba(0,0,0,.58) 100%),
+                linear-gradient(110deg, transparent 0 42%, color-mix(in srgb, var(--accent) 14%, transparent) 49%, transparent 56%);
+            background-size: auto, 220% 100%;
+            background-position: center, 160% 0;
+            transition: background-position .48s ease;
+        }
+        .tile-preview-status {
+            position: absolute;
+            left: 5%; bottom: 8%;
+            z-index: 5;
+            padding: 2.1% 3%;
+            border: 1px solid color-mix(in srgb, var(--accent) 55%, white);
+            background: rgba(2,5,13,.82);
+            color: color-mix(in srgb, var(--accent) 74%, white);
+            font-size: clamp(2.8px,.48vh,4.2px);
+            letter-spacing: .9px;
+            text-shadow: 0 0 6px var(--accent);
+        }
+        .game-tile:not(.locked):hover .tile-preview-art {
+            transform: scale(1.055);
+            filter: saturate(1.20) contrast(1.10) brightness(1.03);
+        }
+        .game-tile:not(.locked):hover .tile-preview-frame::after { background-position: center, -65% 0; }
+        .game-tile.locked .tile-preview-art {
+            filter: grayscale(.48) saturate(.55) contrast(1.04) brightness(.52);
+            opacity: .82;
+        }
+        .game-tile.locked .tile-preview-frame {
+            border-style: dashed;
+            box-shadow: inset 0 0 20px rgba(0,0,0,.68), 0 0 7px color-mix(in srgb, var(--accent) 8%, transparent);
+        }
+        .game-tile.is-new .tile-preview-frame {
+            border-color: color-mix(in srgb, var(--accent) 82%, white);
+            box-shadow: inset 0 0 16px rgba(0,0,0,.52), 0 0 14px color-mix(in srgb, var(--accent) 28%, transparent);
+        }
+        .game-tile.is-new .new-flag {
+            top: 6%; right: 7%;
+            background: rgba(2,5,13,.90);
+        }
+        .tile-name {
+            font-size: clamp(4px, .76vh, 6.6px);
+            line-height: 1.35;
+        }
+        .tile-mode {
+            margin-top: 2.8%;
+            font-size: clamp(3px, .53vh, 4.5px);
+        }
+        .tile-sub {
+            margin-top: 3.1%;
+            font-size: clamp(3px, .54vh, 4.7px);
+            line-height: 1.45;
+            max-width: 96%;
+        }
+        .tile-badge { z-index: 6; }
+        @media (prefers-reduced-motion: reduce) {
+            .tile-preview-art, .tile-preview-frame::after { transition: none !important; }
+        }
+
+
+
+        /* ═══════════════════════════════════════════════════════════
+           LINE DRAWING PREVIEWS · 2026-08-16
+           Replaces pixel screenshot thumbnails with vector-style
+           cabinet preview drawings for faster iteration and a more
+           unified menu language.
+           ═══════════════════════════════════════════════════════════ */
+        .tile-preview-art {
+            display: none !important;
+        }
+        .tile-preview-frame {
+            background:
+                radial-gradient(circle at 50% 38%, rgba(255,255,255,.035) 0%, rgba(7,15,28,.92) 55%, rgba(2,4,11,1) 100%),
+                linear-gradient(180deg, rgba(10,14,24,.95), rgba(4,8,18,.98));
+            box-shadow:
+                inset 0 0 18px rgba(0,0,0,.58),
+                0 0 10px color-mix(in srgb, var(--accent) 14%, transparent);
+        }
+        .tile-preview-frame::before {
+            background:
+                linear-gradient(0deg, rgba(255,255,255,.045) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px),
+                repeating-linear-gradient(0deg, transparent 0 3px, rgba(0,0,0,.14) 3px 4px);
+            background-size: 14px 14px, 14px 14px, auto;
+            opacity: .72;
+            mix-blend-mode: screen;
+        }
+        .tile-preview-frame::after {
+            background:
+                radial-gradient(ellipse at 50% 48%, transparent 40%, rgba(0,0,0,.58) 100%),
+                linear-gradient(110deg, transparent 0 38%, color-mix(in srgb, var(--accent) 13%, transparent) 49%, transparent 58%);
+            background-size: auto, 220% 100%;
+            background-position: center, 160% 0;
+        }
+        .tile-line-art {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            pointer-events: none;
+            color: var(--accent);
+            transition: transform .18s ease, filter .18s ease, opacity .18s ease;
+            filter: drop-shadow(0 0 8px color-mix(in srgb, var(--accent) 24%, transparent));
+        }
+        .tile-line-scaffold {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            overflow: visible;
+        }
+        .tile-line-scaffold .primary,
+        .tile-line-scaffold .secondary,
+        .tile-line-scaffold .ghost {
+            fill: none;
+            vector-effect: non-scaling-stroke;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .tile-line-scaffold .primary {
+            stroke: currentColor;
+            stroke-width: 2.2;
+        }
+        .tile-line-scaffold .secondary {
+            stroke: rgba(255,255,255,.62);
+            stroke-width: 1.25;
+        }
+        .tile-line-scaffold .ghost {
+            stroke: rgba(255,255,255,.18);
+            stroke-width: 1;
+            stroke-dasharray: 3.2 4.8;
+        }
+        .tile-line-symbol {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 35%;
+            height: 35%;
+            transform: translate(-50%, -50%);
+            overflow: visible;
+        }
+        .tile-line-symbol * {
+            stroke: currentColor !important;
+            fill: none !important;
+            vector-effect: non-scaling-stroke;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            stroke-width: 1.7;
+        }
+        .game-tile:not(.locked):hover .tile-line-art {
+            transform: scale(1.03) translateY(-1px);
+            filter: drop-shadow(0 0 10px color-mix(in srgb, var(--accent) 34%, transparent));
+        }
+        .game-tile.locked .tile-line-art {
+            opacity: .66;
+            filter: grayscale(.16);
+        }
+
+
+
+        /* ═══════════════════════════════════════════════════════════
+           SOURCE-DRIVEN LINE CABINET ART · PASS 2
+           The miniatures now mirror each supplied game's actual screen
+           geometry, not just its genre icon. Secondary / tertiary colors
+           are available per cabinet to preserve each game's identity.
+           ═══════════════════════════════════════════════════════════ */
+        .game-tile {
+            --accent2: color-mix(in srgb, var(--accent) 58%, white);
+            --accent3: color-mix(in srgb, var(--accent) 64%, #ffbe0b);
+        }
+        .tile-line-scaffold .secondary { stroke: var(--accent2); opacity:.88; }
+        .tile-line-scaffold .tertiary,
+        .tile-line-scaffold .hot,
+        .tile-line-scaffold .paper {
+            fill:none; vector-effect:non-scaling-stroke; stroke-linecap:round; stroke-linejoin:round;
+        }
+        .tile-line-scaffold .tertiary { stroke:var(--accent3); stroke-width:1.35; opacity:.92; }
+        .tile-line-scaffold .hot { stroke:#fff; stroke-width:1.15; opacity:.92; }
+        .tile-line-scaffold .paper { stroke:rgba(255,255,255,.46); stroke-width:.9; }
+        .tile-line-scaffold text {
+            fill: currentColor;
+            font: 700 5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+            letter-spacing:.45px;
+        }
+        .tile-line-symbol {
+            left:auto; right:5%; top:7%; transform:none;
+            width:18%; height:18%; opacity:.44;
+        }
+        .tile-line-symbol * { stroke-width:1.25; }
+        .tile-preview-frame { background:#02060f; }
+        .game-tile.coming-soon {
+            cursor:pointer;
+            opacity:.82;
+            border-style:dashed;
+        }
+        .game-tile.coming-soon:hover {
+            opacity:1;
+            transform:translateY(-2px) scale(1.015);
+        }
+        .game-tile.coming-soon .tile-name { opacity:.92; }
+        .game-tile.coming-soon .tile-mode,
+        .game-tile.coming-soon .tile-sub { opacity:.64; }
+        .game-tile.coming-soon .tile-preview-frame {
+            border-style:dashed;
+            box-shadow:inset 0 0 20px rgba(0,0,0,.62),0 0 8px color-mix(in srgb,var(--accent) 12%,transparent);
+        }
+        .game-tile.coming-soon .tile-line-art { opacity:.77; }
+        .workbench-glyph {
+            position:absolute; left:7%; top:6.5%; z-index:7;
+            color:var(--accent3); opacity:.74;
+            font-size:clamp(4px,.7vh,6px); text-shadow:0 0 7px var(--accent3);
+        }
+        .game-tile.coming-soon:hover .tile-line-art { opacity:1; }
+        .game-tile.coming-soon:hover .tile-preview-status { color:#fff; border-color:var(--accent3); }
+
+        /* Workbench exit gate: playable, but the player knowingly leaves
+           the curated arcade floor for an unfinished build. */
+        #wip-gate {
+            position:fixed; inset:0; z-index:1400; display:none;
+            align-items:center; justify-content:center; padding:24px;
+            background:rgba(0,2,8,.78); backdrop-filter:blur(8px);
+        }
+        #wip-gate.open { display:flex; }
+        .wip-card {
+            width:min(520px,92vw); position:relative; overflow:hidden;
+            background:linear-gradient(180deg,rgba(5,16,31,.98),rgba(2,5,14,.99));
+            border:1px solid color-mix(in srgb,var(--wip-accent,#52dcff) 72%,white);
+            clip-path:polygon(0 14px,14px 0,calc(100% - 14px) 0,100% 14px,100% calc(100% - 14px),calc(100% - 14px) 100%,14px 100%,0 calc(100% - 14px));
+            box-shadow:0 0 48px color-mix(in srgb,var(--wip-accent,#52dcff) 22%,transparent),0 24px 80px rgba(0,0,0,.72);
+            padding:28px;
+        }
+        .wip-card::before {
+            content:''; position:absolute; inset:0; pointer-events:none;
+            background:repeating-linear-gradient(0deg,transparent 0 3px,rgba(255,255,255,.025) 3px 4px);
+        }
+        .wip-eyebrow { color:var(--wip-accent,#52dcff); font-size:8px; letter-spacing:.22em; margin-bottom:12px; }
+        .wip-title { color:#fff; font-family:'Bungee',sans-serif; font-size:clamp(16px,4vw,26px); line-height:1.08; margin-bottom:12px; }
+        .wip-copy { color:rgba(225,238,255,.74); font-size:9px; line-height:1.8; letter-spacing:.04em; }
+        .wip-copy strong { color:var(--wip-accent3,#ffc14d); }
+        .wip-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:22px; }
+        .wip-actions button {
+            appearance:none; border:1px solid rgba(255,255,255,.22); background:#07111f;
+            color:#dff6ff; padding:13px 10px; font:700 9px 'Press Start 2P',monospace;
+            cursor:pointer; letter-spacing:.04em;
+        }
+        .wip-actions button:hover { border-color:#fff; }
+        #wip-continue { color:#07111f; background:var(--wip-accent,#52dcff); border-color:var(--wip-accent,#52dcff); }
+        @media(max-width:520px){ .wip-actions{grid-template-columns:1fr}.wip-card{padding:22px} }
+
         /* ── MENU FOOTER ────────────────────────────────────────── */
         .menu-footer {
             flex-shrink: 0;
@@ -773,10 +1239,10 @@
 
         /* Cabinet zoom — gentle push-in before closeup crossfades over */
         .cabinet-wrapper {
-            transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: transform 0.68s cubic-bezier(0.22, 0.86, 0.28, 1);
             transform-origin: 50% 34%;
         }
-        .cabinet-wrapper.zoomed { transform: scale(1.4); }
+        .cabinet-wrapper.zoomed { transform: scale(1.32); }
 
         /* Full-screen close-up overlay */
         #closeup-layer {
@@ -786,10 +1252,14 @@
             height: 100dvh;  /* tracks iOS Safari's collapsing toolbar correctly */
             z-index: 200;
             opacity: 0; pointer-events: none;
-            transition: opacity 0.40s ease;
+            transform: scale(1.018);
+            filter: brightness(0.94);
+            transition: opacity 0.52s ease, transform 0.72s cubic-bezier(0.22,0.86,0.28,1), filter 0.52s ease;
         }
         #closeup-layer.visible {
             opacity: 1; pointer-events: all;
+            transform: scale(1);
+            filter: brightness(1);
         }
 
         #closeup-bg-img {
@@ -877,297 +1347,251 @@
                 <div class="screen-menu" id="screenMenu">
 
                     <div class="menu-header">
-                        <span class="menu-title">── SELECT GAME · 18 CABINETS ──</span>
+                        <span class="menu-title">── SELECT GAME · LINE DRAWING PREVIEWS · 23 CABINETS ──</span>
                         <div class="menu-legend">
-                            <span class="legend-live"><i></i>LIVE</span>
-                            <span class="legend-tag"><i></i>ALPHA/BETA/PROTO</span>
-                            <span class="legend-build"><i></i>BUILDING</span>
+                            <span class="legend-live"><i></i>FREE PLAY</span>
+                            <span class="legend-new"><i></i>NEW · JUST WIRED</span>
+                            <span class="legend-build"><i></i>COMING SOON</span>
                         </div>
                     </div>
 
                     <div class="game-grid-wrap">
                     <div class="game-grid" id="gameGrid">
 
-                        <!-- 1 · Minesweeper -->
-                        <a class="game-tile tile-minesweeper" style="--i:0" href="minesweeper.html" data-game="minesweeper">
-                            <svg class="tile-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-                                <rect x="1" y="1" width="9" height="9" rx="0.5" fill="rgba(20,224,196,0.10)" stroke="#14e0c4" stroke-width="1"/>
-                                <rect x="11.5" y="1" width="9" height="9" rx="0.5" fill="rgba(20,224,196,0.10)" stroke="#14e0c4" stroke-width="1"/>
-                                <rect x="22" y="1" width="9" height="9" rx="0.5" fill="rgba(20,224,196,0.10)" stroke="#14e0c4" stroke-width="1"/>
-                                <rect x="1" y="11.5" width="9" height="9" rx="0.5" fill="#0a2e29" stroke="#14e0c4" stroke-width="1"/>
-                                <rect x="11.5" y="11.5" width="9" height="9" rx="0.5" fill="rgba(20,224,196,0.10)" stroke="#14e0c4" stroke-width="1"/>
-                                <rect x="22" y="11.5" width="9" height="9" rx="0.5" fill="#0a2e29" stroke="#14e0c4" stroke-width="1"/>
-                                <rect x="1" y="22" width="9" height="9" rx="0.5" fill="rgba(20,224,196,0.10)" stroke="#14e0c4" stroke-width="1"/>
-                                <rect x="11.5" y="22" width="9" height="9" rx="0.5" fill="#0a2e29" stroke="#14e0c4" stroke-width="1"/>
-                                <rect x="22" y="22" width="9" height="9" rx="0.5" fill="rgba(20,224,196,0.10)" stroke="#14e0c4" stroke-width="1"/>
-                                <path d="M5.5,13 L5.5,19.5" stroke="#ff0040" stroke-width="0.9"/>
-                                <path d="M5.5,13.5 L9,15 L5.5,16.5 Z" fill="#ff0040"/>
-                                <text x="16" y="19" font-family="'Courier New',monospace" font-size="6" font-weight="bold" text-anchor="middle" fill="#14e0c4">2</text>
-                                <text x="26.5" y="29" font-family="'Courier New',monospace" font-size="6" font-weight="bold" text-anchor="middle" fill="#14e0c4">1</text>
-                            </svg>
-                            <span class="tile-name">MINESWEEPER</span>
-                            <span class="tile-sub">CLEAR THE FIELD</span>
-                        </a>
+                        <div class="menu-section free"><span>FREE PLAY · 16 LIVE</span><small>tap a cabinet to play</small></div>
 
-                        <!-- 2 · Tetris -->
-                        <a class="game-tile tile-tetris" style="--i:1" href="tetris.html" data-game="tetris">
-                            <svg class="tile-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-                                <rect x="0" y="21" width="6" height="6" rx="0.5" fill="#f87171"/>
-                                <rect x="6" y="21" width="6" height="6" rx="0.5" fill="#fde68a"/>
-                                <rect x="12" y="21" width="6" height="6" rx="0.5" fill="#34d399"/>
-                                <rect x="18" y="21" width="6" height="6" rx="0.5" fill="#a78bfa"/>
-                                <rect x="24" y="21" width="6" height="6" rx="0.5" fill="#f87171"/>
-                                <rect x="0" y="15" width="6" height="6" rx="0.5" fill="#fde68a"/>
-                                <rect x="6" y="15" width="6" height="6" rx="0.5" fill="#34d399"/>
-                                <rect x="18" y="15" width="6" height="6" rx="0.5" fill="#a78bfa"/>
-                                <rect x="24" y="15" width="6" height="6" rx="0.5" fill="#fde68a"/>
-                                <rect x="12" y="9" width="6" height="6" rx="0.5" fill="#f87171"/>
-                                <rect x="12" y="3" width="6" height="6" rx="0.5" fill="#a78bfa"/>
-                                <line x1="0" y1="27" x2="30" y2="27" stroke="#04040e" stroke-width="0.4"/>
-                                <line x1="0" y1="21" x2="30" y2="21" stroke="#04040e" stroke-width="0.4"/>
-                                <line x1="6" y1="15" x2="6" y2="27" stroke="#04040e" stroke-width="0.4"/>
-                                <line x1="12" y1="9" x2="12" y2="27" stroke="#04040e" stroke-width="0.4"/>
-                            </svg>
-                            <span class="tile-name">ZITTRIS<br>OBLITERATUS</span>
-                            <span class="tile-sub">CLASSIC</span>
-                        </a>
-
-                        <!-- 3 · Vector Squadron (COMING SOON) -->
-                        <a class="game-tile tile-vector-squadron locked" style="--i:2" href="vector-squadron.html" data-game="vector-squadron">
-                            <span class="lock-glyph">🔒</span>
-                            <svg class="tile-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-                                <polygon points="16,2 20,14 16,11 12,14" fill="none" stroke="#7dd3fc" stroke-width="1.4"/>
-                                <polygon points="6,16 10,26 6,23.5 2,26" fill="none" stroke="#7dd3fc" stroke-width="1.2" opacity="0.75"/>
-                                <polygon points="26,16 30,26 26,23.5 22,26" fill="none" stroke="#7dd3fc" stroke-width="1.2" opacity="0.75"/>
-                            </svg>
-                            <span class="tile-name">VECTOR<br>SQUADRON</span>
-                            <span class="tile-sub">WING FORMATION</span>
-                            <div class="tile-badge badge-soon">COMING SOON</div>
-                        </a>
-
-                        <!-- 4 · Neon Invaders (UNDER CONSTRUCTION) -->
-                        <a class="game-tile tile-neon-invaders locked" style="--i:3" href="neon-invaders.html" data-game="neon-invaders">
-                            <span class="lock-glyph">🔒</span>
-                            <svg class="tile-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-                                <rect x="1"  y="1" width="4" height="4" rx="0.5" fill="#00ff88"/>
-                                <rect x="8"  y="1" width="4" height="4" rx="0.5" fill="#00ff88"/>
-                                <rect x="15" y="1" width="4" height="4" rx="0.5" fill="#00ff88"/>
-                                <rect x="22" y="1" width="4" height="4" rx="0.5" fill="#00ff88"/>
-                                <rect x="1"  y="8" width="5" height="5" rx="0.5" fill="#00ff88" opacity="0.85"/>
-                                <rect x="8"  y="8" width="5" height="5" rx="0.5" fill="#00ff88" opacity="0.85"/>
-                                <rect x="15" y="8" width="5" height="5" rx="0.5" fill="#00ff88" opacity="0.85"/>
-                                <rect x="22" y="8" width="5" height="5" rx="0.5" fill="#00ff88" opacity="0.85"/>
-                                <rect x="4"  y="15" width="6" height="6" rx="0.5" fill="#00ff88" opacity="0.7"/>
-                                <rect x="13" y="15" width="6" height="6" rx="0.5" fill="#00ff88" opacity="0.7"/>
-                                <polygon points="16,23 20,30 12,30" fill="#00ff88"/>
-                                <rect x="15" y="19" width="2" height="3" fill="#ffffff" opacity="0.9"/>
-                            </svg>
-                            <span class="tile-name">NEON<br>INVADERS</span>
-                            <span class="tile-sub">SHOOT 'EM UP</span>
-                            <div class="tile-badge badge-construction">BUILDING</div>
-                        </a>
-
-                        <!-- 5 · Astroids -->
-                        <a class="game-tile tile-astroids" style="--i:4" href="astroids.html" data-game="astroids">
-                            <svg class="tile-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-                                <rect x="2"  y="4"  width="1" height="1" fill="#00d9ff" opacity="0.5"/>
-                                <rect x="20" y="2"  width="1" height="1" fill="#00d9ff" opacity="0.5"/>
-                                <rect x="28" y="10" width="1" height="1" fill="#00d9ff" opacity="0.4"/>
-                                <rect x="6"  y="24" width="1" height="1" fill="#00d9ff" opacity="0.4"/>
-                                <rect x="26" y="27" width="1" height="1" fill="#00d9ff" opacity="0.4"/>
-                                <polygon points="16,3 21,25 16,20 11,25" fill="none" stroke="#00d9ff" stroke-width="1.6"/>
-                                <line x1="13.5" y1="21" x2="12" y2="29" stroke="#ff006e" stroke-width="1.4" opacity="0.9"/>
-                                <line x1="18.5" y1="21" x2="20" y2="29" stroke="#ff006e" stroke-width="1.4" opacity="0.9"/>
-                                <path d="M3,11 L7,9 L11,11 L10,15 L7,16 L3,14 Z" fill="none" stroke="#00d9ff" stroke-width="1.2" opacity="0.8"/>
-                                <path d="M21,19 L25,18 L28,20 L27,23 L24,24 L21,22 Z" fill="none" stroke="#00d9ff" stroke-width="1" opacity="0.65"/>
-                            </svg>
+                        <a class="game-tile" style="--i:0; --accent:#00d9ff; --accent2:#ff8a2a; --accent3:#f5fbff" href="astroids.html" data-game="astroids">
+                            <div class="tile-preview-frame" aria-hidden="true"></div>
+                            
+                            <svg class="tile-icon" viewBox="0 0 32 32"><path d="M16 3l5 20-5-4-5 4 5-20Z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 11l4-3 5 3-1 5-5 1-3-3Z M22 20l4-2 3 3-2 4-4 1-2-3Z" fill="none" stroke="currentColor" stroke-width="1.1"/></svg>
                             <span class="tile-name">ASTROIDS</span>
-                            <span class="tile-sub">VECTOR BLAST</span>
+                            <span class="tile-mode">OBLITERATUS VECTOR SURVIVAL</span>
+                            <span class="tile-sub">THRUST · ROTATE · DODGE · BLAST</span>
+                            
                         </a>
 
-                        <!-- 6 · Red Eye -->
-                        <a class="game-tile tile-red-eye" style="--i:5" href="redeye-hud.html" data-game="red-eye">
-                            <svg class="tile-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M2,16 Q16,3 30,16 Q16,29 2,16 Z"
-                                      fill="rgba(255,0,64,0.07)" stroke="#ff0040" stroke-width="1.6"/>
-                                <circle cx="16" cy="16" r="5.5" fill="rgba(255,0,64,0.14)" stroke="#ff0040" stroke-width="1.3"/>
-                                <circle cx="16" cy="16" r="2.6" fill="#ff0040"/>
-                                <circle cx="13.5" cy="13.5" r="1" fill="rgba(255,255,255,0.55)"/>
-                                <line x1="16" y1="4.5" x2="16" y2="7"   stroke="#ff0040" stroke-width="1" opacity="0.45"/>
-                                <line x1="16" y1="25"  x2="16" y2="27.5" stroke="#ff0040" stroke-width="1" opacity="0.45"/>
-                                <line x1="4.5" y1="16" x2="7"  y2="16"  stroke="#ff0040" stroke-width="1" opacity="0.45"/>
-                                <line x1="25"  y1="16" x2="27.5" y2="16" stroke="#ff0040" stroke-width="1" opacity="0.45"/>
-                            </svg>
-                            <span class="tile-name">RED EYE</span>
-                            <span class="tile-sub">STEALTH ACTION</span>
+                        <a class="game-tile is-new" style="--i:1; --accent:#20eaff; --accent2:#ff2745; --accent3:#ff28b7" href="cave-defender.html" data-game="cave-defender">
+                            <div class="tile-preview-frame" aria-hidden="true"></div>
+                            <span class="new-flag">NEW · JUST WIRED</span>
+                            <svg class="tile-icon" viewBox="0 0 32 32"><path d="M4 6v20M28 6v20" stroke="currentColor" stroke-width="1" opacity=".45"/><path d="M6 16l10-5 9 5-9 5-10-5Z" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="8" cy="25" r="2" fill="none" stroke="currentColor"/><path d="M8 23v-5" stroke="currentColor"/></svg>
+                            <span class="tile-name">CAVE<br>DEFENDER</span>
+                            <span class="tile-mode">WRAPAROUND RESCUE SHOOTER</span>
+                            <span class="tile-sub">FLY · RESCUE · BREAK ABDUCTIONS · BOMB</span>
+                            
                         </a>
 
-                        <!-- 7 · Cave Race -->
-                        <a class="game-tile tile-cave-racer" style="--i:6" href="cave-racer.html" data-game="cave-race">
-                            <svg class="tile-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M0,0 L0,32 L7,32 L5,21 L8,14 L4,7 L8,0 Z" fill="rgba(245,158,11,0.12)"/>
-                                <path d="M0,0 L8,0 L4,7 L8,14 L5,21 L7,32 L0,32 Z" fill="none" stroke="#f59e0b" stroke-width="1.6"/>
-                                <path d="M32,0 L32,32 L25,32 L27,21 L24,14 L28,7 L24,0 Z" fill="rgba(245,158,11,0.12)"/>
-                                <path d="M32,0 L24,0 L28,7 L24,14 L27,21 L25,32 L32,32 Z" fill="none" stroke="#f59e0b" stroke-width="1.6"/>
-                                <polygon points="16,10 21,22 16,18.5 11,22" fill="#f59e0b"/>
-                                <line x1="14" y1="20" x2="12.5" y2="28" stroke="#fb923c" stroke-width="1.6" opacity="0.9"/>
-                                <line x1="18" y1="20" x2="19.5" y2="28" stroke="#fb923c" stroke-width="1.6" opacity="0.9"/>
-                            </svg>
-                            <span class="tile-name">CAVE<br>RACE</span>
-                            <span class="tile-sub">SURVIVE & RACE</span>
+                        <a class="game-tile" style="--i:2; --accent:#ff2745; --accent2:#20eaff; --accent3:#ff28b7" href="cave-racer.html" data-game="cave-racer">
+                            <div class="tile-preview-frame" aria-hidden="true"></div>
+                            
+                            <svg class="tile-icon" viewBox="0 0 32 32"><path d="M1 1l7 5-4 6 4 6-5 13M31 1l-7 5 4 6-4 6 5 13" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M16 8l5 13-5-4-5 4 5-13Z" fill="currentColor"/></svg>
+                            <span class="tile-name">CAVE RACER</span>
+                            <span class="tile-mode">CAVE RUNNER</span>
+                            <span class="tile-sub">HOP · BOOST · THREAD THE CAVE</span>
+                            
                         </a>
 
-                        <!-- 8 · RC Racer (COMING SOON) -->
-                        <a class="game-tile tile-rc-racer locked" style="--i:7" href="rc-racer.html" data-game="rc-racer">
-                            <span class="lock-glyph">🔒</span>
-                            <svg class="tile-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-                                <rect x="8" y="4" width="16" height="24" rx="6" fill="none" stroke="#ff4d9d" stroke-width="1.4"/>
-                                <rect x="11" y="8" width="10" height="6" rx="1.5" fill="rgba(255,77,157,0.18)" stroke="#ff4d9d" stroke-width="1"/>
-                                <rect x="4" y="9" width="4" height="5" rx="1" fill="#ff4d9d" opacity="0.8"/>
-                                <rect x="24" y="9" width="4" height="5" rx="1" fill="#ff4d9d" opacity="0.8"/>
-                                <rect x="4" y="19" width="4" height="5" rx="1" fill="#ff4d9d" opacity="0.8"/>
-                                <rect x="24" y="19" width="4" height="5" rx="1" fill="#ff4d9d" opacity="0.8"/>
-                            </svg>
-                            <span class="tile-name">RC RACER</span>
-                            <span class="tile-sub">3RD-PARTY CHASSIS</span>
-                            <div class="tile-badge badge-soon">COMING SOON</div>
+                        <a class="game-tile is-new" style="--i:3; --accent:#c084fc; --accent2:#ff3fa4; --accent3:#f5b62b" href="coven-blitz.html" data-game="coven-blitz">
+                            <div class="tile-preview-frame" aria-hidden="true"></div>
+                            <span class="new-flag">NEW · JUST WIRED</span>
+                            <svg class="tile-icon" viewBox="0 0 32 32"><path d="M16 2l6 7-6 9-6-9 6-7Z M8 15l5 6-5 8-5-8 5-6Z M24 15l5 6-5 8-5-8 5-6Z" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>
+                            <span class="tile-name">COVEN BLITZ</span>
+                            <span class="tile-mode">60-SECOND WITCH-TECH MATCH-3</span>
+                            <span class="tile-sub">MATCH · CASCADE · POWER UP · BEAT THE CLOCK</span>
+                            
                         </a>
 
-                        <!-- 9 · Packman -->
-                        <a class="game-tile tile-packman" style="--i:8" href="packman.html" data-game="packman">
-                            <svg class="tile-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M16,16 L28,9 A13,13 0 1 0 28,23 Z" fill="#ffd700"/>
-                                <circle cx="13" cy="9.5" r="1.6" fill="#1a1a05"/>
-                                <circle cx="4" cy="16" r="1.4" fill="#ffd700" opacity="0.75"/>
-                                <circle cx="9" cy="16" r="1.4" fill="#ffd700" opacity="0.75"/>
-                            </svg>
-                            <span class="tile-name">POSTAL<br>PACKMAN</span>
-                            <span class="tile-sub">DELIVER THE DOTS</span>
-                        </a>
-
-                        <!-- 10 · Hex Puzzle (UNDER CONSTRUCTION) -->
-                        <a class="game-tile tile-hexpuzzle locked" style="--i:9" href="hexpuzzle.html" data-game="hexpuzzle">
-                            <span class="lock-glyph">🔒</span>
-                            <svg class="tile-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-                                <polygon points="16,2.5 21.6,5.75 21.6,12.25 16,15.5 10.4,12.25 10.4,5.75" fill="rgba(34,211,238,0.10)" stroke="#22d3ee" stroke-width="1.2"/>
-                                <polygon points="9,12.5 14.6,15.75 14.6,22.25 9,25.5 3.4,22.25 3.4,15.75" fill="rgba(34,211,238,0.10)" stroke="#22d3ee" stroke-width="1.2"/>
-                                <polygon points="23,12.5 28.6,15.75 28.6,22.25 23,25.5 17.4,22.25 17.4,15.75" fill="rgba(34,211,238,0.10)" stroke="#22d3ee" stroke-width="1.2"/>
-                            </svg>
-                            <span class="tile-name">HEX<br>PUZZLE</span>
-                            <span class="tile-sub">3RD-PARTY · TILES</span>
-                            <div class="tile-badge badge-construction">BUILDING</div>
-                        </a>
-
-                        <!-- 11 · Red Eye — WebGL Prototype -->
-                        <a class="game-tile tile-redeye-proto" style="--i:10" href="red_eye_webgl_prototype.html" data-game="redeye-proto">
-                            <svg class="tile-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M2,16 Q16,3 30,16 Q16,29 2,16 Z" fill="none" stroke="#ff5c8a" stroke-width="1.2" stroke-dasharray="2.2 2"/>
-                                <circle cx="16" cy="16" r="5.5" fill="none" stroke="#ff5c8a" stroke-width="1" stroke-dasharray="1.6 1.6"/>
-                                <circle cx="16" cy="16" r="1.6" fill="#ff5c8a"/>
-                                <path d="M6,10 L4,7 M26,10 L28,7" stroke="#ff5c8a" stroke-width="1" opacity="0.5"/>
-                            </svg>
-                            <span class="tile-name">RED EYE<br>WEBGL</span>
-                            <span class="tile-sub">RENDER PROTOTYPE</span>
-                            <div class="tile-badge badge-proto">PROTOTYPE</div>
-                        </a>
-
-                        <!-- 12 · Underhall -->
-                        <a class="game-tile tile-underhall" style="--i:11" href="underhall.html" data-game="underhall">
-                            <svg class="tile-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M4,31 L4,13 Q4,3 16,3 Q28,3 28,13 L28,31"
-                                      fill="none" stroke="#ffbe0b" stroke-width="1.6" opacity="0.55"/>
-                                <line x1="4" y1="18" x2="4" y2="18" stroke="#ffbe0b" stroke-width="0.5" opacity="0.3"/>
-                                <line x1="2" y1="24" x2="6" y2="24" stroke="#ffbe0b" stroke-width="0.8" opacity="0.28"/>
-                                <line x1="26" y1="24" x2="30" y2="24" stroke="#ffbe0b" stroke-width="0.8" opacity="0.28"/>
-                                <line x1="2" y1="18" x2="6" y2="18" stroke="#ffbe0b" stroke-width="0.8" opacity="0.22"/>
-                                <line x1="26" y1="18" x2="30" y2="18" stroke="#ffbe0b" stroke-width="0.8" opacity="0.22"/>
-                                <line x1="3" y1="31" x2="29" y2="31" stroke="#ffbe0b" stroke-width="1" opacity="0.3"/>
-                                <path d="M5.5,10 Q6.5,6.5 5.5,3.5 Q8.3,5.5 7.7,9 Q7.2,10.8 5.5,10 Z" fill="#ffbe0b" opacity="0.85"/>
-                                <path d="M26.5,10 Q27.5,6.5 26.5,3.5 Q29.3,5.5 28.7,9 Q28.2,10.8 26.5,10 Z" fill="#ffbe0b" opacity="0.85"/>
-                                <text x="16" y="24" font-family="'Courier New', monospace" font-size="15"
-                                      font-weight="bold" text-anchor="middle" fill="#ffbe0b">@</text>
-                            </svg>
-                            <span class="tile-name">UNDERHALL</span>
-                            <span class="tile-sub">ROGUELIKE DEPTHS</span>
-                        </a>
-
-                        <!-- 13 · Vector Siege -->
-                        <a class="game-tile tile-vector-siege" style="--i:12" href="vector-siege.html" data-game="vector-siege">
-                            <svg class="tile-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-                                <circle cx="16" cy="16" r="9" fill="none" stroke="#ff2d55" stroke-width="1.3"/>
-                                <circle cx="16" cy="16" r="3" fill="none" stroke="#ff2d55" stroke-width="1.1"/>
-                                <line x1="16" y1="1" x2="16" y2="7" stroke="#ff2d55" stroke-width="1.3"/>
-                                <line x1="16" y1="25" x2="16" y2="31" stroke="#ff2d55" stroke-width="1.3"/>
-                                <line x1="1" y1="16" x2="7" y2="16" stroke="#ff2d55" stroke-width="1.3"/>
-                                <line x1="25" y1="16" x2="31" y2="16" stroke="#ff2d55" stroke-width="1.3"/>
-                                <line x1="4" y1="28" x2="14" y2="18" stroke="#ff9db8" stroke-width="1.4"/>
-                            </svg>
-                            <span class="tile-name">VECTOR<br>SIEGE</span>
-                            <span class="tile-sub">MISSILE DEFENSE</span>
-                        </a>
-
-                        <!-- 14 · Ref Pinball (COMING SOON) -->
-                        <a class="game-tile tile-ref-pinball locked" style="--i:13" href="ref-pinball.html" data-game="ref-pinball">
-                            <span class="lock-glyph">🔒</span>
-                            <svg class="tile-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-                                <rect x="3" y="1" width="26" height="30" rx="3" fill="none" stroke="#c084fc" stroke-width="1" opacity="0.4"/>
-                                <circle cx="16" cy="7" r="2.4" fill="#c084fc"/>
-                                <path d="M4,26 L11,23 L11,26 Z" fill="none" stroke="#c084fc" stroke-width="1.3"/>
-                                <path d="M28,26 L21,23 L21,26 Z" fill="none" stroke="#c084fc" stroke-width="1.3"/>
-                            </svg>
-                            <span class="tile-name">REF<br>PINBALL</span>
-                            <span class="tile-sub">SILVERBALL</span>
-                            <div class="tile-badge badge-soon">COMING SOON</div>
-                        </a>
-
-                        <!-- 15 · Plinko -->
-                        <a class="game-tile tile-plinko" style="--i:14" href="plinko.html" data-game="plinko">
-                            <svg class="tile-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-                                <circle cx="16" cy="3" r="1.6" fill="#e2e8f0"/>
-                                <circle cx="12" cy="10" r="1" fill="#94a3b8"/><circle cx="20" cy="10" r="1" fill="#94a3b8"/>
-                                <circle cx="8" cy="17" r="1" fill="#94a3b8"/><circle cx="16" cy="17" r="1" fill="#94a3b8"/><circle cx="24" cy="17" r="1" fill="#94a3b8"/>
-                                <circle cx="4" cy="24" r="1" fill="#94a3b8"/><circle cx="12" cy="24" r="1" fill="#94a3b8"/><circle cx="20" cy="24" r="1" fill="#94a3b8"/><circle cx="28" cy="24" r="1" fill="#94a3b8"/>
-                            </svg>
-                            <span class="tile-name">PLINKO</span>
-                            <span class="tile-sub">DROP & CHANCE</span>
-                            <div class="tile-badge badge-alpha">ALPHA</div>
-                        </a>
-
-                        <!-- 16 · Excitebike -->
-                        <a class="game-tile tile-excitebike" style="--i:15" href="excitebike.html" data-game="excitebike">
-                            <svg class="tile-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-                                <circle cx="7" cy="25" r="4.5" fill="none" stroke="#fb7185" stroke-width="1.4"/>
-                                <circle cx="25" cy="25" r="4.5" fill="none" stroke="#fb7185" stroke-width="1.4"/>
-                                <path d="M7,25 L14,14 L20,14 L25,25 M14,14 L11,9 L17,9 M17,9 L20,14" fill="none" stroke="#fb7185" stroke-width="1.4" stroke-linejoin="round"/>
-                            </svg>
-                            <span class="tile-name">EXCITEBIKE</span>
-                            <span class="tile-sub">DIRT TRACK</span>
-                        </a>
-
-                        <!-- 17 · Crawford County -->
-                        <a class="game-tile tile-crawford" style="--i:16" href="crawford-county.html" data-game="crawford-county">
-                            <svg class="tile-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M0,22 Q8,12 16,22 Q24,12 32,22 L32,32 L0,32 Z" fill="rgba(74,222,128,0.14)" stroke="#4ade80" stroke-width="1.2"/>
-                                <path d="M14,32 L18,20 L22,32" fill="none" stroke="#4ade80" stroke-width="1" opacity="0.5"/>
-                                <circle cx="24" cy="7" r="3" fill="none" stroke="#4ade80" stroke-width="1.2" opacity="0.7"/>
-                            </svg>
+                        <a class="game-tile" style="--i:4; --accent:#e8b34b; --accent2:#f4f1e8; --accent3:#ff7a3d" href="crawford-county.html" data-game="crawford">
+                            <div class="tile-preview-frame" aria-hidden="true"></div>
+                            
+                            <svg class="tile-icon" viewBox="0 0 32 32"><path d="M11 31l3-29M21 31L18 2" stroke="currentColor" stroke-width="1.5"/><path d="M16 4v5m0 5v5m0 5v5" stroke="currentColor" stroke-width="1" stroke-dasharray="2 2"/><path d="M2 12q7-8 14 0 7-8 14 0" fill="none" stroke="currentColor" opacity=".45"/></svg>
                             <span class="tile-name">CRAWFORD<br>COUNTY</span>
-                            <span class="tile-sub">OPEN ROAD</span>
+                            <span class="tile-mode">VOLUMETRIC EXPLORER</span>
+                            <span class="tile-sub">WALK · SPRINT · MAP · DISCOVER</span>
+                            
                         </a>
 
-                        <!-- 18 · Grid Warden -->
-                        <a class="game-tile tile-grid-warden" style="--i:17" href="grid-warden.html" data-game="grid-warden">
-                            <svg class="tile-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-                                <polygon points="10,6 22,6 26,10 26,22 14,22 10,18" fill="none" stroke="#34d399" stroke-width="1.3"/>
-                                <polygon points="10,6 14,10 14,22" fill="none" stroke="#34d399" stroke-width="1.1" opacity="0.6"/>
-                                <line x1="14" y1="10" x2="26" y2="10" stroke="#34d399" stroke-width="1.1" opacity="0.6"/>
-                                <line x1="10" y1="6" x2="14" y2="10" stroke="#34d399" stroke-width="1.1" opacity="0.6"/>
-                            </svg>
-                            <span class="tile-name">GRID<br>WARDEN</span>
-                            <span class="tile-sub">SECTOR DEFENSE</span>
-                            <div class="tile-badge badge-beta">ß BETA</div>
+                        <a class="game-tile" style="--i:5; --accent:#b98f4c; --accent2:#ffcf3d; --accent3:#f3e3c0" href="grace_bland_clocktower1.html" data-game="grace">
+                            <div class="tile-preview-frame" aria-hidden="true"></div>
+                            
+                            <svg class="tile-icon" viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M16 7v9l6 4M16 4v3M16 25v3M4 16h3M25 16h3" stroke="currentColor" stroke-width="1.2"/></svg>
+                            <span class="tile-name">GRACE BLAND</span>
+                            <span class="tile-mode">CLOCKTOWER BOSS ARENA</span>
+                            <span class="tile-sub">MOVE · JUMP · FIRE · SUPER COFFEE</span>
+                            
                         </a>
 
+                        <a class="game-tile" style="--i:6; --accent:#00e5ff; --accent2:#ff44ff; --accent3:#ffee00" href="grid-warden.html" data-game="grid">
+                            <div class="tile-preview-frame" aria-hidden="true"></div>
+                            
+                            <svg class="tile-icon" viewBox="0 0 32 32"><path d="M3 3h26v26H3zM3 12h26M3 21h26M12 3v26M21 3v26" fill="none" stroke="currentColor" stroke-width="1"/><path d="M16 7l6 3v6c0 5-3 8-6 10-3-2-6-5-6-10v-6l6-3Z" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>
+                            <span class="tile-name">GRID WARDEN</span>
+                            <span class="tile-mode">TOWER DEFENSE</span>
+                            <span class="tile-sub">PLACE · UPGRADE · HOLD THE PATH</span>
+                            
+                        </a>
+
+                        <a class="game-tile" style="--i:7; --accent:#67d9e8; --accent2:#ffb000; --accent3:#ff3c34" href="minesweeper.html" data-game="minesweeper">
+                            <div class="tile-preview-frame" aria-hidden="true"></div>
+                            
+                            <svg class="tile-icon" viewBox="0 0 32 32"><circle cx="16" cy="16" r="6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M16 2v7M16 23v7M2 16h7M23 16h7M6 6l5 5M21 21l5 5M26 6l-5 5M11 21l-5 5" stroke="currentColor" stroke-width="1.2"/></svg>
+                            <span class="tile-name">MINESWEEPER</span>
+                            <span class="tile-mode">STOCKPILE STEWARD</span>
+                            <span class="tile-sub">READ NUMBERS · FLAG MINES · CLEAR</span>
+                            
+                        </a>
+
+                        <a class="game-tile" style="--i:8; --accent:#00d8d8; --accent2:#f800f8; --accent3:#58d854" href="neon-invaders.html" data-game="invaders">
+                            <div class="tile-preview-frame" aria-hidden="true"></div>
+                            
+                            <svg class="tile-icon" viewBox="0 0 32 32"><path d="M8 6h4v4h8V6h4v4h4v12h-4v4h-5v-4h-6v4H8v-4H4V10h4V6Z" fill="none" stroke="currentColor" stroke-width="1.4"/><rect x="10" y="13" width="3" height="3" fill="currentColor"/><rect x="19" y="13" width="3" height="3" fill="currentColor"/></svg>
+                            <span class="tile-name">NEON<br>INVADERS</span>
+                            <span class="tile-mode">FIXED SHOOTER</span>
+                            <span class="tile-sub">MOVE · FIRE · BREAK FORMATIONS</span>
+                            
+                        </a>
+
+                        <a class="game-tile" style="--i:9; --accent:#f8b800; --accent2:#00d8d8; --accent3:#f800f8" href="packman.html" data-game="packman">
+                            <div class="tile-preview-frame" aria-hidden="true"></div>
+                            
+                            <svg class="tile-icon" viewBox="0 0 32 32"><path d="M16 16l12-7a13 13 0 1 0 0 14l-12-7Z" fill="currentColor"/><circle cx="13" cy="10" r="1.5" fill="#04040e"/><circle cx="4" cy="16" r="1.2" fill="currentColor" opacity=".5"/></svg>
+                            <span class="tile-name">PACKMAN</span>
+                            <span class="tile-mode">POSTAL MAZE</span>
+                            <span class="tile-sub">DELIVER · COLLECT PARCELS · EVADE GHOSTS</span>
+                            
+                        </a>
+
+                        <a class="game-tile" style="--i:10; --accent:#00eaff; --accent2:#ffee00; --accent3:#ff44ff" href="plinko.html" data-game="plinko">
+                            <div class="tile-preview-frame" aria-hidden="true"></div>
+                            
+                            <svg class="tile-icon" viewBox="0 0 32 32"><circle cx="16" cy="3" r="2" fill="currentColor"/><g fill="currentColor" opacity=".65"><circle cx="10" cy="10" r="1"/><circle cx="22" cy="10" r="1"/><circle cx="5" cy="17" r="1"/><circle cx="16" cy="17" r="1"/><circle cx="27" cy="17" r="1"/><circle cx="10" cy="24" r="1"/><circle cx="22" cy="24" r="1"/></g></svg>
+                            <span class="tile-name">PLINKO</span>
+                            <span class="tile-mode">PHYSICS CHANCE</span>
+                            <span class="tile-sub">DROP · BOUNCE · CHASE THE SCORE</span>
+                            
+                        </a>
+
+                        <a class="game-tile" style="--i:11; --accent:#ff0040; --accent2:#ff667c; --accent3:#f5fbff" href="redeye-hud.html" data-game="redeye">
+                            <div class="tile-preview-frame" aria-hidden="true"></div>
+                            
+                            <svg class="tile-icon" viewBox="0 0 32 32"><path d="M2 16Q16 4 30 16Q16 28 2 16Z" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="16" cy="16" r="5" fill="none" stroke="currentColor"/><circle cx="16" cy="16" r="2.3" fill="currentColor"/></svg>
+                            <span class="tile-name">RED EYE</span>
+                            <span class="tile-mode">TACTICAL STEALTH</span>
+                            <span class="tile-sub">SCAN · TARGET · MOVE UNSEEN</span>
+                            
+                        </a>
+
+                        <a class="game-tile" style="--i:12; --accent:#52dcff; --accent2:#ff3fa4; --accent3:#ffc14d" href="tetris.html" data-game="tetris">
+                            <div class="tile-preview-frame" aria-hidden="true"></div>
+                            
+                            <svg class="tile-icon" viewBox="0 0 32 32"><g fill="currentColor"><rect x="4" y="22" width="6" height="6"/><rect x="10" y="22" width="6" height="6"/><rect x="16" y="22" width="6" height="6"/><rect x="22" y="22" width="6" height="6"/><rect x="10" y="16" width="6" height="6"/><rect x="16" y="10" width="6" height="6"/><rect x="16" y="16" width="6" height="6"/></g></svg>
+                            <span class="tile-name">ZITTRIS</span>
+                            <span class="tile-mode">CHAIN STACKER</span>
+                            <span class="tile-sub">ROTATE · HOLD · SLAM · CLEAR</span>
+                            
+                        </a>
+
+                        <a class="game-tile" style="--i:13; --accent:#6ee7ff; --accent2:#ff476f; --accent3:#ffc857" href="underhall.html" data-game="underhall">
+                            <div class="tile-preview-frame" aria-hidden="true"></div>
+                            
+                            <svg class="tile-icon" viewBox="0 0 32 32"><path d="M5 30V14Q5 3 16 3t11 11v16" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10 30V17q0-6 6-6t6 6v13" fill="none" stroke="currentColor" opacity=".55"/><text x="16" y="26" text-anchor="middle" font-size="12" fill="currentColor">@</text></svg>
+                            <span class="tile-name">UNDERHALL</span>
+                            <span class="tile-mode">TURN-BASED DELVE</span>
+                            <span class="tile-sub">MOVE · REST · ATTACK · DESCEND</span>
+                            
+                        </a>
+
+                        <a class="game-tile is-new" style="--i:14; --accent:#00e5ff; --accent2:#ff445d; --accent3:#ff9a33" href="vector-siege.html" data-game="vector">
+                            <div class="tile-preview-frame" aria-hidden="true"></div>
+                            <span class="new-flag">NEW · JUST WIRED</span>
+                            <svg class="tile-icon" viewBox="0 0 32 32"><path d="M4 28l9-9 5 3 10-12" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="13" cy="19" r="3" fill="none" stroke="currentColor"/><path d="M24 6h6v6" fill="none" stroke="currentColor"/></svg>
+                            <span class="tile-name">VECTOR SIEGE</span>
+                            <span class="tile-mode">CITY AEGIS</span>
+                            <span class="tile-sub">AIM · INTERCEPT · SAVE SIX CITIES</span>
+                            
+                        </a>
+
+                        <a class="game-tile is-new" style="--i:15; --accent:#84cc16; --accent2:#c31f2b; --accent3:#d9b25c" href="zombie-golf-survival.html" data-game="zombie-golf">
+                            <div class="tile-preview-frame" aria-hidden="true"></div>
+                            <span class="new-flag">NEW · JUST WIRED</span>
+                            <svg class="tile-icon" viewBox="0 0 32 32"><path d="M4 20h20l4 5H7l-3-5Z" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="10" cy="26" r="3" fill="none" stroke="currentColor"/><circle cx="24" cy="26" r="3" fill="none" stroke="currentColor"/><path d="M20 4v12M20 4l8 3-8 3" fill="none" stroke="currentColor"/></svg>
+                            <span class="tile-name">SOVTHPAW'S<br>ZOMBIE GOLF</span>
+                            <span class="tile-mode">GOLF SURVIVAL</span>
+                            <span class="tile-sub">MOVE · MELEE · CHARGE PUTTS · SINK HOLES</span>
+                            
+                        </a>
+
+                        <div class="menu-section soon"><span>COMING SOON · 7 ON THE BENCH</span><small>playable workbench builds · warning before launch</small></div>
+
+                        <a class="game-tile coming-soon" style="--i:16; --accent:#18c8df; --accent2:#f2aa24; --accent3:#f4eedf" href="tournament.html" data-game="tournament">
+                            <div class="tile-preview-frame" aria-hidden="true"><span class="tile-preview-status">WIP BUILD</span></div>
+                            <span class="workbench-glyph">◇</span>
+                            <svg class="tile-icon" viewBox="0 0 32 32"><path d="M3 5h8v5H3zM3 22h8v5H3zM21 13h8v6h-8zM11 7.5h5v8.5h5M11 24.5h5V16" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>
+                            <span class="tile-name">TOURNAMENT<br>CONDUCTOR</span>
+                            <span class="tile-mode">TOURNAMENT OPS</span>
+                            <span class="tile-sub">BRACKETS · REFS · SCORE · BROADCAST</span>
+                            <div class="tile-badge badge-soon">COMING SOON</div>
+                        </a>
+
+                        <a class="game-tile coming-soon" style="--i:17; --accent:#fb7185; --accent2:#ffbe0b; --accent3:#38bdf8" href="excitebike.html" data-game="excite">
+                            <div class="tile-preview-frame" aria-hidden="true"><span class="tile-preview-status">WIP BUILD</span></div>
+                            <span class="workbench-glyph">◇</span>
+                            <svg class="tile-icon" viewBox="0 0 32 32"><circle cx="7" cy="24" r="5" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="25" cy="24" r="5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M7 24l8-11h6l4 11M15 13l-4-5h7" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>
+                            <span class="tile-name">EXCITE BIKE</span>
+                            <span class="tile-mode">MOTOCROSS</span>
+                            <span class="tile-sub">ACCELERATE · JUMP · LAND · RACE</span>
+                            <div class="tile-badge badge-soon">COMING SOON</div>
+                        </a>
+
+                        <a class="game-tile coming-soon" style="--i:18; --accent:#4a90d9; --accent2:#2ecc71; --accent3:#ff9ed2" href="hexpuzzle.html" data-game="hex">
+                            <div class="tile-preview-frame" aria-hidden="true"><span class="tile-preview-status">WIP BUILD</span></div>
+                            <span class="workbench-glyph">◇</span>
+                            <svg class="tile-icon" viewBox="0 0 32 32"><path d="M16 2l6 4v7l-6 4-6-4V6l6-4ZM9 15l6 4v7l-6 4-6-4v-7l6-4ZM23 15l6 4v7l-6 4-6-4v-7l6-4Z" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>
+                            <span class="tile-name">HEX PUZZLE</span>
+                            <span class="tile-mode">HEX ASSEMBLY</span>
+                            <span class="tile-sub">DRAG · ROTATE · MATCH EDGE SIGNALS</span>
+                            <div class="tile-badge badge-soon">COMING SOON</div>
+                        </a>
+
+                        <a class="game-tile coming-soon" style="--i:19; --accent:#ff4d9d; --accent2:#20eaff; --accent3:#f59e0b" href="rc-racer.html" data-game="rc">
+                            <div class="tile-preview-frame" aria-hidden="true"><span class="tile-preview-status">WIP BUILD</span></div>
+                            <span class="workbench-glyph">◇</span>
+                            <svg class="tile-icon" viewBox="0 0 32 32"><rect x="9" y="3" width="14" height="26" rx="5" fill="none" stroke="currentColor" stroke-width="1.4"/><rect x="12" y="8" width="8" height="6" rx="1" fill="none" stroke="currentColor"/><path d="M5 9h4M23 9h4M5 22h4M23 22h4" stroke="currentColor" stroke-width="3"/></svg>
+                            <span class="tile-name">RC RACER</span>
+                            <span class="tile-mode">REMOTE RACING</span>
+                            <span class="tile-sub">STEER · DRIFT · CHASE LAP TIMES</span>
+                            <div class="tile-badge badge-soon">COMING SOON</div>
+                        </a>
+
+                        <a class="game-tile coming-soon" style="--i:20; --accent:#c084fc; --accent2:#ffbe0b; --accent3:#38bdf8" href="ref-pinball.html" data-game="pinball">
+                            <div class="tile-preview-frame" aria-hidden="true"><span class="tile-preview-status">WIP BUILD</span></div>
+                            <span class="workbench-glyph">◇</span>
+                            <svg class="tile-icon" viewBox="0 0 32 32"><rect x="4" y="2" width="24" height="28" rx="3" fill="none" stroke="currentColor"/><circle cx="17" cy="8" r="2.5" fill="currentColor"/><path d="M6 25l8-4v5M26 25l-8-4v5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+                            <span class="tile-name">MOONSHOT<br>PINBALL</span>
+                            <span class="tile-mode">MOONSHOT PINBALL</span>
+                            <span class="tile-sub">FLIP · BANK · ORBIT · MULTIBALL</span>
+                            <div class="tile-badge badge-soon">COMING SOON</div>
+                        </a>
+
+                        <a class="game-tile coming-soon" style="--i:21; --accent:#00ffff; --accent2:#ff00ff; --accent3:#ffff00" href="starfox_shooter7.html" data-game="vulpis">
+                            <div class="tile-preview-frame" aria-hidden="true"><span class="tile-preview-status">WIP BUILD</span></div>
+                            <span class="workbench-glyph">◇</span>
+                            <svg class="tile-icon" viewBox="0 0 32 32"><path d="M16 4l5 10 8 3-8 3-5 8-5-8-8-3 8-3 5-10Z" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7l5 4M24 7l-5 4" stroke="currentColor"/></svg>
+                            <span class="tile-name">ASTRO VULPIS</span>
+                            <span class="tile-mode">3D SPACE SHOOTER</span>
+                            <span class="tile-sub">BANK · DODGE · LOCK · BLAST</span>
+                            <div class="tile-badge badge-soon">COMING SOON</div>
+                        </a>
+
+
+                        <a class="game-tile coming-soon" style="--i:22; --accent:#52dcff; --accent2:#ffc14d; --accent3:#ad73ff" href="auxor-studio.html" data-game="auxor">
+                            <div class="tile-preview-frame" aria-hidden="true"><span class="tile-preview-status">WIP BUILD</span></div>
+                            <span class="workbench-glyph">◇</span>
+                            <svg class="tile-icon" viewBox="0 0 32 32"><path d="M3 7h26v18H3zM7 11h18M7 16h18M7 21h18" fill="none" stroke="currentColor"/><path d="M10 10v12M16 10v12M22 10v12" stroke="currentColor" opacity=".55"/><path d="M5 27h22" stroke="currentColor"/></svg>
+                            <span class="tile-name">AUXor</span>
+                            <span class="tile-mode">DETERMINISTIC MIDI STUDIO</span>
+                            <span class="tile-sub">WRITE · ARRANGE · MIX · EXPORT</span>
+                            <div class="tile-badge badge-soon">COMING SOON</div>
+                        </a>
                     </div><!-- /.game-grid -->
                     </div><!-- /.game-grid-wrap -->
 
@@ -1181,6 +1605,20 @@
 
         </div><!-- /.arcade-container -->
     </div><!-- /.cabinet-wrapper -->
+
+
+
+    <div id="wip-gate" aria-hidden="true">
+        <div class="wip-card" role="dialog" aria-modal="true" aria-labelledby="wip-title">
+            <div class="wip-eyebrow">FTS ARCADE · WORKBENCH EXIT</div>
+            <div class="wip-title" id="wip-title">CABINET STILL ON THE BENCH</div>
+            <div class="wip-copy" id="wip-copy">This build is playable, but it is still being tuned. <strong>Expect unfinished art, balance, controls, or save behavior.</strong></div>
+            <div class="wip-actions">
+                <button type="button" id="wip-stay">STAY IN ARCADE</button>
+                <button type="button" id="wip-continue">PLAY WIP BUILD</button>
+            </div>
+        </div>
+    </div>
 
     <!-- ── CLOSE-UP TRANSITION LAYER ──────────────────────────────── -->
     <!-- cabinet-closeup.png = the Gemini cabinet screenshot           -->
@@ -1287,6 +1725,244 @@
     const closeupLayer   = document.getElementById('closeup-layer');
     const closeupScreen  = document.getElementById('closeup-screen');
     const closeupBgImg   = document.getElementById('closeup-bg-img');
+    const wipGate        = document.getElementById('wip-gate');
+    const wipStay        = document.getElementById('wip-stay');
+    const wipContinue    = document.getElementById('wip-continue');
+    const wipTitle       = document.getElementById('wip-title');
+    const wipCopy        = document.getElementById('wip-copy');
+    let pendingWipHref   = null;
+
+
+
+
+    const menuTitle = document.querySelector('.menu-title');
+    if (menuTitle) {
+        menuTitle.textContent = '── SELECT GAME · LINE DRAWING PREVIEWS · 23 CABINETS ──';
+    }
+
+    function lineArtMotif(game) {
+        switch (game) {
+            case 'astroids':
+                return `
+                    <text x="9" y="11">SCORE 025680</text><text x="120" y="11">L 03</text>
+                    <path class="primary" d="M69 50l10-18 8 16 11 4-11 4-8 14-5-14-12-4z"/>
+                    <path class="secondary" d="M18 24l9-5 8 4 4 9-5 8-11 1-7-6zM116 24l10-6 10 4 4 9-6 8-12-1-6-7zM111 61l7-4 8 3 2 7-5 6-9-1-5-5z"/>
+                    <path class="tertiary" d="M84 42l13-8M88 57l18 8M61 53l-15 9"/>
+                    <circle class="hot" cx="99" cy="34" r="1.6"/><circle class="hot" cx="45" cy="62" r="1.3"/>
+                `;
+            case 'cave-defender':
+                return `
+                    <rect class="paper" x="42" y="7" width="76" height="11" rx="1"/><path class="tertiary" d="M45 16l10-3 9 2 9-4 12 4 11-3 11 2 8-4"/>
+                    <path class="primary" d="M5 68l12-8 11 5 11-9 12 8 14-7 13 7 13-9 11 7 13-8 13 6 13-6 10 7"/>
+                    <path class="secondary" d="M65 42l10-6 12 5-4 5-14 1z"/>
+                    <path class="tertiary" d="M39 56v8m-3-4h6m76-24l-8 6 8 4 10-4z"/>
+                    <path class="hot" d="M81 44h17"/>
+                    <circle class="paper" cx="39" cy="54" r="2"/><circle class="paper" cx="32" cy="62" r="1.6"/>
+                `;
+            case 'cave-racer':
+                return `
+                    <path class="primary" d="M4 10l32 12 27 15 17 9M156 10l-32 12-27 15-17 9M4 81l34-19 26-12 16-6M156 81l-34-19-26-12-16-6"/>
+                    <path class="paper" d="M24 19l26 15 25 12M136 19l-26 15-25 12M24 72l26-14 25-9M136 72l-26-14-25-9"/>
+                    <path class="secondary" d="M63 48l10-5 12 3-7 5-9 1z"/>
+                    <path class="tertiary" d="M62 47l-16-8M61 51l-20 4M61 55l-18 10"/>
+                    <ellipse class="hot" cx="70" cy="49" rx="20" ry="9"/>
+                `;
+            case 'coven-blitz':
+                return `
+                    <rect class="paper" x="45" y="10" width="70" height="65" rx="2"/>
+                    <path class="ghost" d="M53.75 10v65M62.5 10v65M71.25 10v65M80 10v65M88.75 10v65M97.5 10v65M106.25 10v65M45 18.1h70M45 26.2h70M45 34.3h70M45 42.4h70M45 50.5h70M45 58.6h70M45 66.7h70"/>
+                    <path class="primary" d="M50 14h6v6h-6zM64 13l4 4-4 4-4-4zM75 13l5 8h-10zM90 13h7l2 3-2 5h-7l-2-5z"/>
+                    <path class="tertiary" d="M105 13l4 5-4 5-4-5zM55 29c-5 0-6 8 0 10-2-3-1-7 3-10zM68 29c5-3 9 3 5 7-2-3-5-4-8-2"/>
+                    <path class="secondary" d="M90 28c6 0 7 8 1 10m-2-8l4 4m-5 0l5-4"/>
+                    <path class="hot" d="M80 31l-5 9h5l-3 9 10-12h-5l4-6"/>
+                    <circle class="primary" cx="53" cy="81" r="3"/><circle class="tertiary" cx="67" cy="81" r="3"/><circle class="secondary" cx="81" cy="81" r="3"/><circle class="tertiary" cx="95" cy="81" r="3"/><circle class="primary" cx="109" cy="81" r="3"/>
+                `;
+            case 'crawford':
+                return `
+                    <path class="primary" d="M6 67c16-10 30-21 47-24 14-3 25 1 39-4 17-6 29-3 62 14"/>
+                    <path class="paper" d="M6 73c19-7 31-16 48-17 18-1 24 5 40 1 19-5 32-1 60 9"/>
+                    <path class="secondary" d="M106 62V31m-8 31h16M100 31h12l-2-12h-8zM103 19v-5h6v5"/>
+                    <rect class="tertiary" x="123" y="12" width="28" height="23" rx="2"/><path class="tertiary" d="M127 31l6-6 5 2 8-9"/>
+                    <text x="9" y="12">BOURBON · MO</text>
+                `;
+            case 'grace':
+                return `
+                    <path class="primary" d="M6 72h148M20 72v-8h22v8M116 72v-12h28v12"/>
+                    <circle class="secondary" cx="122" cy="34" r="18"/><path class="secondary" d="M122 18v16l9 6M103 34h6M135 34h6"/>
+                    <path class="tertiary" d="M34 55l4-11 6-4 4 6 7 2-4 5-8 1-4 8M105 58l5-18 9-7 10 6-1 17-8 6z"/>
+                    <path class="hot" d="M55 51h31M84 47l12 4-12 4"/>
+                    <text x="8" y="12">GRACE</text><text x="111" y="12">BARON</text>
+                `;
+            case 'grid':
+                return `
+                    <path class="primary" d="M0 26h38v30h35V30h34v46h53"/>
+                    <path class="paper" d="M0 30h34v30h43V34h26v46h57"/>
+                    <circle class="secondary" cx="18" cy="17" r="5"/><path class="secondary" d="M18 11v12M12 17h12"/>
+                    <path class="tertiary" d="M56 66l6-10 6 10zM88 23l5-9 5 9zM123 58h10v10h-10z"/>
+                    <circle class="hot" cx="38" cy="41" r="2"/><circle class="hot" cx="73" cy="50" r="2"/><circle class="hot" cx="107" cy="45" r="2"/>
+                    <text x="8" y="85">PULSE · ARC · SLOW</text>
+                `;
+            case 'minesweeper':
+                return `
+                    <text x="10" y="11">MINES 040</text><text x="115" y="11">TIME</text>
+                    <rect class="primary" x="24" y="18" width="82" height="58"/>
+                    <path class="ghost" d="M34 18v58M44 18v58M54 18v58M64 18v58M74 18v58M84 18v58M94 18v58M24 28h82M24 38h82M24 48h82M24 58h82M24 68h82"/>
+                    <path class="secondary" d="M37 34l3-4v8M56 52l5-5v10M78 28l4-5v10"/>
+                    <path class="tertiary" d="M92 58v-11l7 3-7 3"/>
+                    <circle class="hot" cx="121" cy="48" r="8"/><path class="hot" d="M121 34v8M121 54v8M107 48h8M127 48h8"/>
+                `;
+            case 'invaders':
+                return `
+                    <text x="8" y="10">SCORE</text><text x="126" y="10">WAVE 1/5</text>
+                    <g class="primary"><path d="M28 24h8v6h-8zM48 24h8v6h-8zM68 24h8v6h-8zM88 24h8v6h-8zM108 24h8v6h-8z"/><path d="M32 38h8v6h-8zM52 38h8v6h-8zM72 38h8v6h-8zM92 38h8v6h-8zM112 38h8v6h-8z"/></g>
+                    <g class="secondary"><path d="M28 52h8v6h-8zM48 52h8v6h-8zM68 52h8v6h-8zM88 52h8v6h-8zM108 52h8v6h-8z"/></g>
+                    <path class="tertiary" d="M23 73h22v7H23zM58 73h22v7H58zM93 73h22v7H93zM128 73h18v7h-18z"/>
+                    <path class="hot" d="M77 80l5-10 5 10zM82 68v-9"/>
+                `;
+            case 'packman':
+                return `
+                    <rect class="primary" x="20" y="14" width="120" height="64" rx="5"/>
+                    <path class="primary" d="M20 32h28V22h26v20H58v12h44V42H86V22h28v10h26M20 60h26V48h12M140 60h-26V48h-12"/>
+                    <path class="paper" d="M28 22h12M120 22h12M28 70h12M120 70h12"/>
+                    <path class="tertiary" d="M72 57a7 7 0 1 0 0-12l-7 6z"/>
+                    <path class="secondary" d="M88 46h6v9h-6zM98 46h6v9h-6zM108 46h6v9h-6z"/>
+                    <circle class="hot" cx="50" cy="51" r="1.1"/><circle class="hot" cx="118" cy="51" r="1.1"/><circle class="hot" cx="80" cy="25" r="1.1"/>
+                `;
+            case 'plinko':
+                return `
+                    <text x="8" y="10">VECTOR DROP</text><text x="119" y="10">BALLS 10</text>
+                    <path class="paper" d="M20 75h120M28 75v10M40 75v10M52 75v10M64 75v10M76 75v10M88 75v10M100 75v10M112 75v10M124 75v10M136 75v10"/>
+                    <g class="primary"><circle cx="80" cy="18" r="2"/><circle cx="68" cy="30" r="2"/><circle cx="92" cy="30" r="2"/><circle cx="56" cy="42" r="2"/><circle cx="80" cy="42" r="2"/><circle cx="104" cy="42" r="2"/><circle cx="44" cy="54" r="2"/><circle cx="68" cy="54" r="2"/><circle cx="92" cy="54" r="2"/><circle cx="116" cy="54" r="2"/><circle cx="32" cy="66" r="2"/><circle cx="56" cy="66" r="2"/><circle cx="80" cy="66" r="2"/><circle cx="104" cy="66" r="2"/><circle cx="128" cy="66" r="2"/></g>
+                    <circle class="tertiary" cx="92" cy="54" r="4"/><path class="secondary" d="M82 17c9 7 0 11 7 17 5 5-5 8 1 13"/>
+                `;
+            case 'redeye':
+                return `
+                    <text x="8" y="10">SCAN MODE</text><text x="126" y="10">REC ●</text>
+                    <path class="primary" d="M34 44c11-13 27-21 46-21s35 8 46 21c-11 13-27 21-46 21s-35-8-46-21z"/>
+                    <circle class="primary" cx="80" cy="44" r="12"/><circle class="hot" cx="80" cy="44" r="3"/>
+                    <path class="secondary" d="M18 26v12M18 26h12M142 26v12M142 26h-12M18 62V50M18 62h12M142 62V50M142 62h-12"/>
+                    <path class="tertiary" d="M80 13v11M80 64v11M49 44H31M129 44h-18"/>
+                `;
+            case 'tetris':
+                return `
+                    <rect class="paper" x="52" y="8" width="52" height="74"/>
+                    <path class="ghost" d="M57.2 8v74M62.4 8v74M67.6 8v74M72.8 8v74M78 8v74M83.2 8v74M88.4 8v74M93.6 8v74M98.8 8v74M52 15.4h52M52 22.8h52M52 30.2h52M52 37.6h52M52 45h52M52 52.4h52M52 59.8h52M52 67.2h52M52 74.6h52"/>
+                    <path class="primary" d="M52 75h16v7H52zM68 68h10v14H68zM78 73h15v9H78zM93 64h11v18H93z"/>
+                    <path class="secondary" d="M60 54h15v7H60z"/><path class="tertiary" d="M112 17h22v48h-22zM116 24h14M116 34h14M116 44h14"/>
+                    <text x="8" y="17">SCORE</text><text x="8" y="29">LINES</text><text x="8" y="41">COMBO</text>
+                `;
+            case 'underhall':
+                return `
+                    <rect class="paper" x="32" y="14" width="94" height="62"/>
+                    <path class="primary" d="M34 28h16v-8h18v16h15v-9h18v19h23M34 60h20V47h16v12h22V48h15v12h17"/>
+                    <path class="secondary" d="M76 44h8v8h-8zM55 34h4v4h-4zM102 56h4v4h-4z"/>
+                    <path class="tertiary" d="M47 62l3-6 3 6M112 34l4-6 4 6"/>
+                    <text x="9" y="12">HP 24/30</text><text x="114" y="12">DEPTH 12</text>
+                    <text x="77" y="50">@</text>
+                `;
+            case 'vector':
+                return `
+                    <text x="8" y="10">SCORE 025680</text><text x="124" y="10">WAVE 05</text>
+                    <path class="tertiary" d="M18 72h12v-8h8v8h13v-12h8v12h14v-9h9v9h14v-11h9v11h15v-8h8v8h14"/>
+                    <path class="primary" d="M26 18l30 38M56 16l19 38M83 20l-4 35M112 15L94 54M137 20l-25 35"/>
+                    <path class="secondary" d="M34 72l9-28M80 72l0-31M126 72l-8-27"/>
+                    <circle class="hot" cx="56" cy="56" r="5"/><circle class="hot" cx="94" cy="54" r="6"/><circle class="hot" cx="112" cy="55" r="4"/>
+                `;
+            case 'zombie-golf':
+                return `
+                    <path class="primary" d="M6 72c18-7 36-11 66-11 31 0 53 3 82 11"/>
+                    <circle class="paper" cx="77" cy="66" r="2.2"/>
+                    <path class="tertiary" d="M113 62V26l13 5-13 5"/>
+                    <path class="secondary" d="M42 61l5-13 6-4 5 8 7 2-5 7zM123 58l2-11 7-5 7 6-1 10-8 4zM139 61l2-10 6-4 6 5-1 9"/>
+                    <path class="hot" d="M54 58l20 6M73 63l10-3"/>
+                    <text x="8" y="11">HOLES 0</text><text x="118" y="11">UNDEAD 0</text>
+                `;
+            case 'tournament':
+                return `
+                    <path class="primary" d="M12 20h25v12H12zM12 54h25v12H12zM55 36h25v12H55zM98 36h25v12H98z"/>
+                    <path class="secondary" d="M37 26h9v34h9M37 60h18M80 42h18"/>
+                    <path class="tertiary" d="M131 18h18v18h-18zM131 50h18v18h-18z"/>
+                    <path class="paper" d="M136 23h8M136 27h8M136 55h8M136 59h8"/>
+                    <text x="10" y="82">BRACKET · STATIONS · BROADCAST</text>
+                `;
+            case 'excite':
+                return `
+                    <path class="primary" d="M4 70c18-20 28-6 44-17s27-22 42-11 27 3 39-7 18-6 27-2"/>
+                    <circle class="secondary" cx="61" cy="55" r="5"/><circle class="secondary" cx="82" cy="55" r="5"/>
+                    <path class="tertiary" d="M61 55l9-13 9 1 3 12M70 42l-6-7h9"/>
+                    <path class="paper" d="M17 76h125"/>
+                `;
+            case 'hex':
+                return `
+                    <path class="primary" d="M53 16l9-5 9 5v10l-9 5-9-5zM35 31l9-5 9 5v10l-9 5-9-5zM53 31l9-5 9 5v10l-9 5-9-5zM71 31l9-5 9 5v10l-9 5-9-5zM26 46l9-5 9 5v10l-9 5-9-5zM44 46l9-5 9 5v10l-9 5-9-5zM62 46l9-5 9 5v10l-9 5-9-5zM80 46l9-5 9 5v10l-9 5-9-5zM98 46l9-5 9 5v10l-9 5-9-5zM35 61l9-5 9 5v10l-9 5-9-5zM53 61l9-5 9 5v10l-9 5-9-5zM71 61l9-5 9 5v10l-9 5-9-5z"/>
+                    <path class="secondary" d="M121 22l9-5 9 5v10l-9 5-9-5zM121 44l9-5 9 5v10l-9 5-9-5zM121 66l9-5 9 5v10l-9 5-9-5z"/>
+                    <path class="tertiary" d="M58 16l4-2 4 2M40 31l4-2 4 2M126 44l4-2 4 2"/>
+                `;
+            case 'rc':
+                return `
+                    <path class="primary" d="M12 68c14-28 31-39 62-39 26 0 41 10 72-12M20 75c17-25 31-35 55-35 24 0 40 7 65-8"/>
+                    <path class="secondary" d="M48 55h23l7 7-7 7H48l-7-7z"/>
+                    <circle class="tertiary" cx="50" cy="69" r="3"/><circle class="tertiary" cx="70" cy="69" r="3"/>
+                    <path class="paper" d="M95 21l5 7M116 18l4 8M136 10l4 7"/>
+                `;
+            case 'pinball':
+                return `
+                    <path class="primary" d="M46 10h68l10 66H36z"/>
+                    <circle class="secondary" cx="67" cy="32" r="7"/><circle class="secondary" cx="94" cy="29" r="6"/><circle class="tertiary" cx="80" cy="47" r="5"/>
+                    <path class="primary" d="M55 68l20-10v7M105 68L85 58v7"/>
+                    <path class="paper" d="M54 20h52M45 72h70"/>
+                    <path class="tertiary" d="M102 16c7 8 2 15 9 20"/>
+                `;
+            case 'vulpis':
+                return `
+                    <path class="ghost" d="M80 24L18 78M80 24l62 54M80 24v54"/>
+                    <path class="primary" d="M64 58l16-17 16 17-10-3-6 11-6-11z"/>
+                    <path class="secondary" d="M80 34v-9M74 29h12M42 48l7 2M112 46l7-3M58 34l5 4M102 34l-5 4"/>
+                    <path class="tertiary" d="M40 70l16-7M120 70l-16-7"/>
+                    <text x="8" y="11">SCORE 0 · COMBO x1</text><text x="119" y="11">SPEED</text>
+                `;
+            case 'auxor':
+                return `
+                    <rect class="paper" x="10" y="12" width="31" height="60"/><rect class="primary" x="47" y="12" width="76" height="60"/><rect class="paper" x="129" y="12" width="21" height="60"/>
+                    <path class="secondary" d="M50 21h70M50 30h70M50 39h70M50 48h70M50 57h70M50 66h70M62 12v60M77 12v60M92 12v60M107 12v60"/>
+                    <path class="tertiary" d="M58 25h22v4H58zM82 34h17v4H82zM70 43h25v4H70zM98 52h17v4H98zM54 61h32v4H54z"/>
+                    <path class="primary" d="M14 20h22M14 29h22M14 38h22M14 47h22M14 56h22"/>
+                    <path class="hot" d="M133 20h13M133 29h9M133 38h11M133 47h7M133 56h12"/>
+                    <text x="10" y="83">PLAY · PIANO ROLL · STEM MIXER</text>
+                `;
+            default:
+                return `<path class="primary" d="M20 25h120M20 45h120M20 65h120"/>`;
+        }
+    }
+
+    function applyLineDrawingPreviews() {
+        tiles.forEach((tile) => {
+            const frame = tile.querySelector('.tile-preview-frame');
+            const icon = tile.querySelector('.tile-icon');
+            if (!frame || !icon || frame.querySelector('.tile-line-art')) return;
+
+            const art = document.createElement('div');
+            art.className = 'tile-line-art';
+            art.innerHTML = `
+                <svg class="tile-line-scaffold" viewBox="0 0 160 90" preserveAspectRatio="none" aria-hidden="true">
+                    <path class="ghost" d="M10 12h32M118 12h32M10 78h44M106 78h44"/>
+                    <path class="ghost" d="M16 18v54M144 18v54"/>
+                    <path class="ghost" d="M22 67h116"/>
+                    <path class="ghost" d="M76 8h8M80 4v8"/>
+                    ${lineArtMotif(tile.dataset.game || '')}
+                </svg>
+            `;
+
+            const symbol = icon.cloneNode(true);
+            symbol.classList.remove('tile-icon');
+            symbol.classList.add('tile-line-symbol');
+            symbol.setAttribute('aria-hidden', 'true');
+            art.appendChild(symbol);
+            frame.prepend(art);
+        });
+    }
+
+    applyLineDrawingPreviews();
 
     let menuOpen = false;
 
@@ -1392,13 +2068,13 @@
         const flash = document.createElement('div');
         flash.className = 'screen-flash';
         screen.appendChild(flash);
-        setTimeout(() => flash.remove(), 450);
+        setTimeout(() => flash.remove(), 560);
 
         // Phase 1 – cabinet zooms in toward viewer
         cabinetWrapper.classList.add('zoomed');
 
         // Phase 2 – close-up photo crossfades over the zoomed cabinet
-        setTimeout(() => closeupLayer.classList.add('visible'), 100);
+        setTimeout(() => closeupLayer.classList.add('visible'), 145);
 
         // Fade the idle screen out immediately
         idle.style.transition = 'opacity 0.25s ease';
@@ -1426,7 +2102,7 @@
             if (!closeupLayer.classList.contains('fallback-mode')) {
                 keyHint.classList.remove('hidden');
             }
-        }, 520);
+        }, 610);
     }
 
     function closeMenu() {
@@ -1454,7 +2130,7 @@
             void idle.offsetHeight;
             idle.style.transition = 'opacity 0.38s ease';
             idle.style.opacity    = '';
-        }, 460);
+        }, 520);
     }
 
 
@@ -1469,15 +2145,20 @@
 
         // Coin drop animation
         const coin = document.createElement('span');
-        coin.className   = 'coin-drop';
-        coin.textContent = '🪙';
-        coin.style.left  = (e.offsetX - 14) + 'px';
-        coin.style.top   = '-28px';
+        coin.className = 'coin-drop';
+        coin.style.left = (e.offsetX - 12) + 'px';
+        coin.style.top  = '-18px';
         screen.appendChild(coin);
-        setTimeout(() => coin.remove(), 780);
+        setTimeout(() => coin.remove(), 700);
 
         sfx.coin();
-        setTimeout(() => { sfx.start(); openMenu(); }, 390);
+        setTimeout(() => {
+            const impact = document.createElement('span');
+            impact.className = 'coin-impact';
+            screen.appendChild(impact);
+            setTimeout(() => impact.remove(), 420);
+        }, 300);
+        setTimeout(() => { sfx.start(); openMenu(); }, 335);
     });
 
     // ── Back / exit ──────────────────────────────────────────────
@@ -1489,15 +2170,19 @@
         if (!tile) return;
         wake();
 
-        if (tile.classList.contains('locked')) {
-            e.preventDefault(); // cabinet isn't wired up yet — don't navigate
-            sfx.denied();
-            // Shake the tile
-            tile.style.transition = 'transform 0.08s ease';
-            tile.style.transform  = 'translateX(-4px)';
-            setTimeout(() => tile.style.transform = 'translateX(4px)',  80);
-            setTimeout(() => tile.style.transform = 'translateX(-2px)', 160);
-            setTimeout(() => { tile.style.transform = ''; tile.style.transition = ''; }, 240);
+        if (tile.classList.contains('coming-soon')) {
+            e.preventDefault();
+            sfx.select();
+            pendingWipHref = tile.getAttribute('href');
+            const title = (tile.querySelector('.tile-name')?.textContent || 'THIS CABINET').replace(/\s+/g,' ').trim();
+            wipTitle.textContent = title + ' · WORKBENCH BUILD';
+            wipCopy.innerHTML = 'This cabinet is <strong>playable right now</strong>, but it is still being tuned. Expect unfinished art, balance, controls, content, or save behavior. You can continue anyway.';
+            const cs = getComputedStyle(tile);
+            wipGate.style.setProperty('--wip-accent', cs.getPropertyValue('--accent').trim() || '#52dcff');
+            wipGate.style.setProperty('--wip-accent3', cs.getPropertyValue('--accent3').trim() || '#ffc14d');
+            wipGate.classList.add('open');
+            wipGate.setAttribute('aria-hidden','false');
+            requestAnimationFrame(() => wipContinue.focus());
             return;
         }
 
@@ -1515,8 +2200,26 @@
         if (!menuOpen) { wake(); sfx.hover(); }
     });
 
+
+    function closeWipGate() {
+        pendingWipHref = null;
+        wipGate.classList.remove('open');
+        wipGate.setAttribute('aria-hidden','true');
+    }
+    wipStay.addEventListener('click', () => { wake(); sfx.exit(); closeWipGate(); });
+    wipContinue.addEventListener('click', () => {
+        wake(); sfx.start();
+        const href = pendingWipHref;
+        closeWipGate();
+        if (href) window.location.href = href;
+    });
+    wipGate.addEventListener('click', (e) => {
+        if (e.target === wipGate) { sfx.exit(); closeWipGate(); }
+    });
+
     // ── Keyboard ESC ─────────────────────────────────────────────
     document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && wipGate.classList.contains('open')) { closeWipGate(); return; }
         if (e.key === 'Escape' && menuOpen) closeMenu();
     });
 
