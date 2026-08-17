@@ -1552,7 +1552,7 @@
 
         /* ═══════════════════════════════════════════════════════════
            FTS SPRITE ATLAS MENU ART · 2026-08-17
-           5×5 transparent atlas: fts_sprites.png
+           4×4 transparent atlas: fts_sprites.png
            Every atlas cell is 10:7, matching the requested cabinet art
            aperture. Supplied game art takes precedence; unmatched cabinets
            retain the existing line-drawing fallback until art is supplied.
@@ -1579,7 +1579,7 @@
             display: block;
             background-image: url('fts_sprites.png');
             background-repeat: no-repeat;
-            background-size: 500% 500%;
+            background-size: 400% 400%;
             background-position: var(--sprite-x, 0%) var(--sprite-y, 0%);
             transform: scale(1.006);
             transform-origin: center;
@@ -1638,8 +1638,8 @@
             border-radius: 5%;
             background-image: url('fts_sprites.png');
             background-repeat: no-repeat;
-            background-size: 500% 500%;
-            background-position: 0% 25%;
+            background-size: 400% 400%;
+            background-position: 33.333333% 33.333333%;
             opacity: .32;
             filter: saturate(.72) brightness(.52) contrast(1.05);
             box-shadow: inset 0 0 26px rgba(0,0,0,.66);
@@ -1659,280 +1659,6 @@
 
         @media (prefers-reduced-motion: reduce) {
             .tile-sprite { transition: none !important; }
-        }
-
-
-        /* ═══════════════════════════════════════════════════════════
-           STANDARDIZED TILE TYPE SCALE · 2026-08-18
-           Previously: JS binary-searched a per-tile font-size (and picked
-           between two competing font families) to fit each title's own
-           text into its band. That made "ASTROIDS" render bigger than
-           "SOVTHPAW'S ZOMBIE GOLF" — every title a different size, some
-           in Bungee, some in Press Start 2P. Inconsistent by construction.
-           Fix: one face (Press Start 2P, matching every other UI chrome
-           element in the shell) and one size per breakpoint, driven by
-           cqi off .game-tile's own container width (see the container-type
-           declared on .game-tile above) — same mechanism already used for
-           menu-title/tile-preview elsewhere in this file, no JS required.
-           Title length becomes a line-count question, not a font-size
-           question — the fixed-height flex-centered band (kept from the
-           prior pass, that part was right) absorbs 1-line vs 2-line
-           titles without shifting the grid row height.
-           ═══════════════════════════════════════════════════════════ */
-        .tile-name,
-        .tile-mode,
-        .tile-sub {
-            width: 100%;
-            max-width: 100%;
-            overflow: hidden;
-            text-align: center;
-            text-wrap: balance;
-            font-family: 'Press Start 2P', monospace;
-        }
-        .tile-name {
-            font-size: clamp(9px, 9.5cqi, 20px);
-            line-height: 1.2;
-            height: clamp(25.38px, 26.79cqi, 56.4px);
-            min-height: clamp(25.38px, 26.79cqi, 56.4px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            letter-spacing: 0;
-            overflow-wrap: normal;
-            word-break: normal;
-        }
-        .tile-mode {
-            font-size: clamp(6px, 5.9cqi, 12.5px);
-            line-height: 1.25;
-            height: clamp(24.75px, 24.34cqi, 51.56px);
-            min-height: clamp(24.75px, 24.34cqi, 51.56px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-top: 2.4%;
-            letter-spacing: 0;
-        }
-        .tile-sub {
-            font-size: clamp(5px, 4.4cqi, 9.5px);
-            line-height: 1.3;
-            height: clamp(22.1px, 19.45cqi, 41.99px);
-            min-height: clamp(22.1px, 19.45cqi, 41.99px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-top: 2.2%;
-            letter-spacing: 0;
-        }
-        /* Close-up is a genuinely wider container (re-parented, not
-           transform-scaled), so cqi already picks up more room there.
-           Modest intentional bump on top, same ratio as the base scale.
-           Height clamp is written out to match this font clamp directly
-           (same floor/coefficient/ceiling ratio: lh * line-count) rather
-           than derived, so it can't drift out of sync with font-size. */
-        #closeup-screen .tile-name {
-            font-size: clamp(14px, 10cqi, 26px);
-            height: clamp(39.48px, 28.2cqi, 73.32px);
-            min-height: clamp(39.48px, 28.2cqi, 73.32px);
-        }
-        #closeup-screen .tile-mode {
-            font-size: clamp(9px, 6.2cqi, 15px);
-            height: clamp(37.13px, 25.58cqi, 61.88px);
-            min-height: clamp(37.13px, 25.58cqi, 61.88px);
-        }
-        #closeup-screen .tile-sub {
-            font-size: clamp(7px, 4.6cqi, 11.5px);
-            height: clamp(30.94px, 20.33cqi, 50.83px);
-            min-height: clamp(30.94px, 20.33cqi, 50.83px);
-        }
-
-        @media (max-width: 760px) {
-            .screen-menu { padding: 3% 3% 2.2%; }
-            .menu-title { font-size: clamp(7px, 2.0cqi, 10px); line-height: 1.16; }
-            .menu-legend { font-size: clamp(5px, 1.35cqi, 7px); }
-            .game-grid { gap: 3.4% 3%; }
-            .game-tile { padding-left: 3.4%; padding-right: 3.4%; }
-            .tile-name,
-            #closeup-screen .tile-name {
-                font-size: clamp(9px, 9.2cqi, 17px);
-                height: clamp(25.38px, 25.94cqi, 47.94px);
-                min-height: clamp(25.38px, 25.94cqi, 47.94px);
-            }
-            .tile-mode,
-            #closeup-screen .tile-mode {
-                font-size: clamp(6px, 5.7cqi, 11px);
-                height: clamp(24.75px, 23.51cqi, 45.38px);
-                min-height: clamp(24.75px, 23.51cqi, 45.38px);
-            }
-            .tile-sub,
-            #closeup-screen .tile-sub {
-                font-size: clamp(5px, 4.2cqi, 8.5px);
-                height: clamp(22.1px, 18.56cqi, 37.57px);
-                min-height: clamp(22.1px, 18.56cqi, 37.57px);
-            }
-
-            #arcade-settings {
-                padding: 0;
-                place-items: stretch;
-                background: rgba(0,3,10,.96);
-            }
-            .settings-panel {
-                width: 100vw;
-                height: 100dvh;
-                max-height: none;
-                border-width: 0;
-                clip-path: none;
-                border-radius: 0;
-                overscroll-behavior: contain;
-            }
-            .settings-head { padding: 14px 14px 12px; }
-            .settings-head h2 { font-size: clamp(16px, 5.4vw, 24px); }
-            .settings-head p { font-size: 6px; line-height: 1.4; }
-            .settings-x { width: 48px; height: 48px; min-width: 48px; }
-            .settings-route { margin: 10px 12px 0; font-size: 6px; }
-            .settings-grid { padding: 12px; gap: 12px; }
-            .settings-group { padding: 10px; gap: 8px; }
-            .setting-row { padding: 11px 10px; gap: 10px; }
-            .setting-copy strong { font-size: 9px; }
-            .setting-copy small { font-size: 7px; }
-            .setting-control { min-height: 44px; }
-            .switch { width: 68px; height: 38px; }
-            .switch span::before { width: 28px; height: 28px; }
-            .switch input:checked + span::before { transform: translateX(30px); }
-            .setting-control input[type=range] { min-height: 44px; }
-            .setting-control input[type=url] { min-height: 44px; font-size: 10px; }
-            .settings-test, .settings-action { min-height: 48px; }
-            .settings-foot { padding: 10px 12px max(10px, env(safe-area-inset-bottom)); }
-        }
-
-        /* While settings are open, the cabinet/menu are intentionally inert.
-           The settings layer is the only interactive surface, eliminating
-           accidental game launches from taps that land outside the panel. */
-        body.settings-open .cabinet-wrapper,
-        body.settings-open #closeup-layer,
-        body.settings-open #wip-gate {
-            pointer-events: none !important;
-        }
-        body.settings-open #arcade-settings {
-            pointer-events: auto !important;
-        }
-
-
-
-        /* ═══════════════════════════════════════════════════════════
-           TRANSPARENT CRT SPRITES + MINIMAL MENU CHROME · 2026-08-17
-           The artwork now carries its own old-school CRT bezel.  Keep the
-           art aperture itself frameless; reserve the subtle accent outline
-           for the complete cabinet/menu item so the hierarchy stays quiet.
-           ═══════════════════════════════════════════════════════════ */
-        .game-tile {
-            border: 1px solid color-mix(in srgb, var(--accent) 46%, rgba(255,255,255,.13));
-            border-radius: 2px;
-            background: linear-gradient(180deg, rgba(3,10,22,.20), rgba(1,4,11,.10));
-            box-shadow: inset 0 0 0 1px rgba(255,255,255,.014);
-            padding: 3.0% 3.2% 4.6%;
-        }
-
-        .game-tile:not(.locked):hover {
-            transform: translateY(-1px) scale(1.012);
-            border-color: color-mix(in srgb, var(--accent) 68%, rgba(255,255,255,.28));
-            background: linear-gradient(180deg, rgba(4,13,28,.27), rgba(1,5,13,.14));
-            box-shadow:
-                inset 0 0 0 1px rgba(255,255,255,.02),
-                0 0 11px color-mix(in srgb, var(--accent) 17%, transparent);
-        }
-
-        .game-tile.is-new { border-width: 1px; }
-
-        .game-tile.coming-soon {
-            border-style: solid;
-            opacity: .88;
-        }
-        .game-tile.coming-soon:hover {
-            transform: translateY(-1px) scale(1.01);
-            opacity: 1;
-        }
-
-        /* The CRT bezel is part of the transparent sprite itself. */
-        .tile-preview-frame.has-sprite,
-        #closeup-screen .tile-preview-frame.has-sprite,
-        .game-tile.coming-soon .tile-preview-frame.has-sprite,
-        .game-tile.is-new .tile-preview-frame.has-sprite {
-            border: 0;
-            border-radius: 0;
-            background: transparent;
-            box-shadow: none;
-            overflow: visible;
-            isolation: isolate;
-        }
-
-        .tile-preview-frame.has-sprite::before,
-        .tile-preview-frame.has-sprite::after {
-            display: none !important;
-        }
-
-        .tile-sprite {
-            inset: 0;
-            background-image: url('fts_sprites.png');
-            background-size: 500% 500%;
-            background-repeat: no-repeat;
-            filter: none;
-            transform: none;
-            image-rendering: auto;
-        }
-
-        .game-tile:not(.locked):hover .tile-preview-frame.has-sprite .tile-sprite {
-            transform: scale(1.012);
-            filter: saturate(1.035) brightness(1.02);
-        }
-
-        .game-tile.coming-soon .tile-preview-frame.has-sprite .tile-sprite {
-            filter: saturate(.90) brightness(.84);
-            opacity: .96;
-        }
-        .game-tile.coming-soon:hover .tile-preview-frame.has-sprite .tile-sprite {
-            filter: saturate(1.01) brightness(.98);
-            opacity: 1;
-        }
-
-        /* Small status labels float over the sprite without rebuilding a frame. */
-        .tile-preview-status {
-            border-color: color-mix(in srgb, var(--accent) 38%, rgba(255,255,255,.22));
-            background: rgba(1,5,12,.58);
-            box-shadow: none;
-        }
-
-        /* Close-up mode: let the photographed CRT glass remain the large-scale
-           frame; cards only need a hairline to separate neighboring cabinets. */
-        #closeup-screen .game-tile {
-            border-color: color-mix(in srgb, var(--accent) 40%, rgba(255,255,255,.12));
-            background: rgba(2,8,18,.13);
-            box-shadow: inset 0 0 0 1px rgba(255,255,255,.012);
-        }
-        #closeup-screen .game-tile:not(.locked):hover {
-            border-color: color-mix(in srgb, var(--accent) 64%, rgba(255,255,255,.24));
-            background: rgba(3,11,24,.21);
-            box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 14%, transparent);
-        }
-
-        /* The transparent atlas includes breathing room around each CRT, so
-           tighten the handoff to the title without drawing another aperture. */
-        .tile-preview-frame {
-            margin-bottom: 2.2%;
-        }
-
-        /* ═══════════════════════════════════════════════════════════
-           STRICT 5x5 ATLAS CELL FIX · 2026-08-17
-           The corrected atlas is physically repacked into exact 500x350
-           cells. Keep each preview isolated so hover transforms and WIP
-           overlays cannot expose a neighboring sprite.
-           ═══════════════════════════════════════════════════════════ */
-        .tile-preview-frame.has-sprite,
-        #closeup-screen .tile-preview-frame.has-sprite {
-            overflow: hidden;
-        }
-        .workbench-glyph,
-        .tile-preview-status {
-            pointer-events: none;
         }
 
 </style>
@@ -1988,7 +1714,7 @@
 
                         
 
-                        <a class="game-tile" style="--i:1; --accent:#ff2745; --accent2:#20eaff; --accent3:#ff28b7; --sprite-x:50%; --sprite-y:0%;" href="cave-racer.html" data-game="cave-racer">
+                        <a class="game-tile" style="--i:1; --accent:#ff2745; --accent2:#20eaff; --accent3:#ff28b7; --sprite-x:66.666667%; --sprite-y:0%;" href="cave-racer.html" data-game="cave-racer">
                             <div class="tile-preview-frame has-sprite" aria-hidden="true"><span class="tile-sprite" aria-hidden="true"></span></div>
                             
                             <svg class="tile-icon" viewBox="0 0 32 32"><path d="M1 1l7 5-4 6 4 6-5 13M31 1l-7 5 4 6-4 6 5 13" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M16 8l5 13-5-4-5 4 5-13Z" fill="currentColor"/></svg>
@@ -1998,7 +1724,7 @@
                             
                         </a>
 
-                        <a class="game-tile is-new" style="--i:2; --accent:#c084fc; --accent2:#ff3fa4; --accent3:#f5b62b; --sprite-x:75%; --sprite-y:0%;" href="coven-blitz.html" data-game="coven-blitz">
+                        <a class="game-tile is-new" style="--i:2; --accent:#c084fc; --accent2:#ff3fa4; --accent3:#f5b62b; --sprite-x:100%; --sprite-y:0%;" href="coven-blitz.html" data-game="coven-blitz">
                             <div class="tile-preview-frame has-sprite" aria-hidden="true"><span class="tile-sprite" aria-hidden="true"></span></div>
                             <span class="new-flag">NEW · JUST WIRED</span>
                             <svg class="tile-icon" viewBox="0 0 32 32"><path d="M16 2l6 7-6 9-6-9 6-7Z M8 15l5 6-5 8-5-8 5-6Z M24 15l5 6-5 8-5-8 5-6Z" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>
@@ -2008,7 +1734,7 @@
                             
                         </a>
 
-                        <a class="game-tile" style="--i:3; --accent:#e8b34b; --accent2:#f4f1e8; --accent3:#ff7a3d; --sprite-x:100%; --sprite-y:0%;" href="crawford-county.html" data-game="crawford">
+                        <a class="game-tile" style="--i:3; --accent:#e8b34b; --accent2:#f4f1e8; --accent3:#ff7a3d; --sprite-x:0%; --sprite-y:33.333333%;" href="crawford-county.html" data-game="crawford">
                             <div class="tile-preview-frame has-sprite" aria-hidden="true"><span class="tile-sprite" aria-hidden="true"></span></div>
                             
                             <svg class="tile-icon" viewBox="0 0 32 32"><path d="M11 31l3-29M21 31L18 2" stroke="currentColor" stroke-width="1.5"/><path d="M16 4v5m0 5v5m0 5v5" stroke="currentColor" stroke-width="1" stroke-dasharray="2 2"/><path d="M2 12q7-8 14 0 7-8 14 0" fill="none" stroke="currentColor" opacity=".45"/></svg>
@@ -2018,7 +1744,7 @@
                             
                         </a>
 
-                        <a class="game-tile" style="--i:4; --accent:#b98f4c; --accent2:#ffcf3d; --accent3:#f3e3c0; --sprite-x:25%; --sprite-y:25%;" href="grace_bland_clocktower1.html" data-game="grace">
+                        <a class="game-tile" style="--i:4; --accent:#b98f4c; --accent2:#ffcf3d; --accent3:#f3e3c0; --sprite-x:66.666667%; --sprite-y:33.333333%;" href="grace_bland_clocktower1.html" data-game="grace">
                             <div class="tile-preview-frame has-sprite" aria-hidden="true"><span class="tile-sprite" aria-hidden="true"></span></div>
                             
                             <svg class="tile-icon" viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M16 7v9l6 4M16 4v3M16 25v3M4 16h3M25 16h3" stroke="currentColor" stroke-width="1.2"/></svg>
@@ -2028,8 +1754,8 @@
                             
                         </a>
 
-                        <a class="game-tile" style="--i:5; --accent:#00e5ff; --accent2:#ff44ff; --accent3:#ffee00; --sprite-x:50%; --sprite-y:75%;" href="grid-warden.html" data-game="grid">
-                            <div class="tile-preview-frame has-sprite" aria-hidden="true"><span class="tile-sprite" aria-hidden="true"></span></div>
+                        <a class="game-tile" style="--i:5; --accent:#00e5ff; --accent2:#ff44ff; --accent3:#ffee00" href="grid-warden.html" data-game="grid">
+                            <div class="tile-preview-frame" aria-hidden="true"></div>
                             
                             <svg class="tile-icon" viewBox="0 0 32 32"><path d="M3 3h26v26H3zM3 12h26M3 21h26M12 3v26M21 3v26" fill="none" stroke="currentColor" stroke-width="1"/><path d="M16 7l6 3v6c0 5-3 8-6 10-3-2-6-5-6-10v-6l6-3Z" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>
                             <span class="tile-name">GRID WARDEN</span>
@@ -2038,7 +1764,7 @@
                             
                         </a>
 
-                        <a class="game-tile" style="--i:6; --accent:#67d9e8; --accent2:#ffb000; --accent3:#ff3c34; --sprite-x:50%; --sprite-y:25%;" href="minesweeper.html" data-game="minesweeper">
+                        <a class="game-tile" style="--i:6; --accent:#67d9e8; --accent2:#ffb000; --accent3:#ff3c34; --sprite-x:100%; --sprite-y:33.333333%;" href="minesweeper.html" data-game="minesweeper">
                             <div class="tile-preview-frame has-sprite" aria-hidden="true"><span class="tile-sprite" aria-hidden="true"></span></div>
                             
                             <svg class="tile-icon" viewBox="0 0 32 32"><circle cx="16" cy="16" r="6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M16 2v7M16 23v7M2 16h7M23 16h7M6 6l5 5M21 21l5 5M26 6l-5 5M11 21l-5 5" stroke="currentColor" stroke-width="1.2"/></svg>
@@ -2048,7 +1774,7 @@
                             
                         </a>
 
-                        <a class="game-tile" style="--i:7; --accent:#00d8d8; --accent2:#f800f8; --accent3:#58d854; --sprite-x:75%; --sprite-y:25%;" href="neon-invaders.html" data-game="invaders">
+                        <a class="game-tile" style="--i:7; --accent:#00d8d8; --accent2:#f800f8; --accent3:#58d854; --sprite-x:0%; --sprite-y:66.666667%;" href="neon-invaders.html" data-game="invaders">
                             <div class="tile-preview-frame has-sprite" aria-hidden="true"><span class="tile-sprite" aria-hidden="true"></span></div>
                             
                             <svg class="tile-icon" viewBox="0 0 32 32"><path d="M8 6h4v4h8V6h4v4h4v12h-4v4h-5v-4h-6v4H8v-4H4V10h4V6Z" fill="none" stroke="currentColor" stroke-width="1.4"/><rect x="10" y="13" width="3" height="3" fill="currentColor"/><rect x="19" y="13" width="3" height="3" fill="currentColor"/></svg>
@@ -2058,8 +1784,8 @@
                             
                         </a>
 
-                        <a class="game-tile" style="--i:8; --accent:#f8b800; --accent2:#00d8d8; --accent3:#f800f8; --sprite-x:75%; --sprite-y:75%;" href="packman.html" data-game="packman">
-                            <div class="tile-preview-frame has-sprite" aria-hidden="true"><span class="tile-sprite" aria-hidden="true"></span></div>
+                        <a class="game-tile" style="--i:8; --accent:#f8b800; --accent2:#00d8d8; --accent3:#f800f8" href="packman.html" data-game="packman">
+                            <div class="tile-preview-frame" aria-hidden="true"></div>
                             
                             <svg class="tile-icon" viewBox="0 0 32 32"><path d="M16 16l12-7a13 13 0 1 0 0 14l-12-7Z" fill="currentColor"/><circle cx="13" cy="10" r="1.5" fill="#04040e"/><circle cx="4" cy="16" r="1.2" fill="currentColor" opacity=".5"/></svg>
                             <span class="tile-name">PACKMAN</span>
@@ -2068,8 +1794,8 @@
                             
                         </a>
 
-                        <a class="game-tile" style="--i:9; --accent:#00eaff; --accent2:#ffee00; --accent3:#ff44ff; --sprite-x:100%; --sprite-y:75%;" href="plinko.html" data-game="plinko">
-                            <div class="tile-preview-frame has-sprite" aria-hidden="true"><span class="tile-sprite" aria-hidden="true"></span></div>
+                        <a class="game-tile" style="--i:9; --accent:#00eaff; --accent2:#ffee00; --accent3:#ff44ff" href="plinko.html" data-game="plinko">
+                            <div class="tile-preview-frame" aria-hidden="true"></div>
                             
                             <svg class="tile-icon" viewBox="0 0 32 32"><circle cx="16" cy="3" r="2" fill="currentColor"/><g fill="currentColor" opacity=".65"><circle cx="10" cy="10" r="1"/><circle cx="22" cy="10" r="1"/><circle cx="5" cy="17" r="1"/><circle cx="16" cy="17" r="1"/><circle cx="27" cy="17" r="1"/><circle cx="10" cy="24" r="1"/><circle cx="22" cy="24" r="1"/></g></svg>
                             <span class="tile-name">PLINKO</span>
@@ -2078,7 +1804,7 @@
                             
                         </a>
 
-                        <a class="game-tile" style="--i:10; --accent:#ff0040; --accent2:#ff667c; --accent3:#f5fbff; --sprite-x:0%; --sprite-y:50%;" href="redeye-hud.html" data-game="redeye">
+                        <a class="game-tile" style="--i:10; --accent:#ff0040; --accent2:#ff667c; --accent3:#f5fbff; --sprite-x:66.666667%; --sprite-y:66.666667%;" href="redeye-hud.html" data-game="redeye">
                             <div class="tile-preview-frame has-sprite" aria-hidden="true"><span class="tile-sprite" aria-hidden="true"></span></div>
                             
                             <svg class="tile-icon" viewBox="0 0 32 32"><path d="M2 16Q16 4 30 16Q16 28 2 16Z" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="16" cy="16" r="5" fill="none" stroke="currentColor"/><circle cx="16" cy="16" r="2.3" fill="currentColor"/></svg>
@@ -2088,7 +1814,7 @@
                             
                         </a>
 
-                        <a class="game-tile" style="--i:11; --accent:#52dcff; --accent2:#ff3fa4; --accent3:#ffc14d; --sprite-x:75%; --sprite-y:50%;" href="tetris.html" data-game="tetris">
+                        <a class="game-tile" style="--i:11; --accent:#52dcff; --accent2:#ff3fa4; --accent3:#ffc14d; --sprite-x:33.333333%; --sprite-y:100%;" href="tetris.html" data-game="tetris">
                             <div class="tile-preview-frame has-sprite" aria-hidden="true"><span class="tile-sprite" aria-hidden="true"></span></div>
                             
                             <svg class="tile-icon" viewBox="0 0 32 32"><g fill="currentColor"><rect x="4" y="22" width="6" height="6"/><rect x="10" y="22" width="6" height="6"/><rect x="16" y="22" width="6" height="6"/><rect x="22" y="22" width="6" height="6"/><rect x="10" y="16" width="6" height="6"/><rect x="16" y="10" width="6" height="6"/><rect x="16" y="16" width="6" height="6"/></g></svg>
@@ -2098,7 +1824,7 @@
                             
                         </a>
 
-                        <a class="game-tile" style="--i:12; --accent:#6ee7ff; --accent2:#ff476f; --accent3:#ffc857; --sprite-x:50%; --sprite-y:50%;" href="underhall.html" data-game="underhall">
+                        <a class="game-tile" style="--i:12; --accent:#6ee7ff; --accent2:#ff476f; --accent3:#ffc857; --sprite-x:0%; --sprite-y:100%;" href="underhall.html" data-game="underhall">
                             <div class="tile-preview-frame has-sprite" aria-hidden="true"><span class="tile-sprite" aria-hidden="true"></span></div>
                             
                             <svg class="tile-icon" viewBox="0 0 32 32"><path d="M5 30V14Q5 3 16 3t11 11v16" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10 30V17q0-6 6-6t6 6v13" fill="none" stroke="currentColor" opacity=".55"/><text x="16" y="26" text-anchor="middle" font-size="12" fill="currentColor">@</text></svg>
@@ -2108,7 +1834,7 @@
                             
                         </a>
 
-                        <a class="game-tile coming-soon" style="--i:15; --accent:#20eaff; --accent2:#ff2745; --accent3:#ff28b7; --sprite-x:0%; --sprite-y:75%;" href="vector-siege.html" data-game="vector-siege">
+                        <a class="game-tile coming-soon" style="--i:15; --accent:#20eaff; --accent2:#ff2745; --accent3:#ff28b7; --sprite-x:100%; --sprite-y:100%;" href="vector-siege.html" data-game="vector-siege">
                         
                             <div class="tile-preview-frame has-sprite" aria-hidden="true"><span class="tile-sprite" aria-hidden="true"></span></div>
                             <span class="new-flag">NEW · JUST WIRED</span>
@@ -2120,7 +1846,7 @@
                             
                         </a>
 
-                        <a class="game-tile is-new" style="--i:14; --accent:#84cc16; --accent2:#c31f2b; --accent3:#d9b25c; --sprite-x:100%; --sprite-y:50%;" href="zombie-golf-survival.html" data-game="zombie-golf">
+                        <a class="game-tile is-new" style="--i:14; --accent:#84cc16; --accent2:#c31f2b; --accent3:#d9b25c; --sprite-x:66.666667%; --sprite-y:100%;" href="zombie-golf-survival.html" data-game="zombie-golf">
                             <div class="tile-preview-frame has-sprite" aria-hidden="true"><span class="tile-sprite" aria-hidden="true"></span></div>
                             <span class="new-flag">NEW · JUST WIRED</span>
                             <svg class="tile-icon" viewBox="0 0 32 32"><path d="M4 20h20l4 5H7l-3-5Z" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="10" cy="26" r="3" fill="none" stroke="currentColor"/><circle cx="24" cy="26" r="3" fill="none" stroke="currentColor"/><path d="M20 4v12M20 4l8 3-8 3" fill="none" stroke="currentColor"/></svg>
@@ -2132,7 +1858,7 @@
 
                         <div class="menu-section soon"><span>COMING SOON · 8 ON THE BENCH</span><small>playable workbench builds · warning before launch</small></div>
 
-<a class="game-tile is-new coming-soon" style="--i:13; --accent:#00e5ff; --accent2:#ff445d; --accent3:#ff9a33; --sprite-x:0%; --sprite-y:100%;" href="cave-defender.html" data-game="cave-defender">
+<a class="game-tile is-new" style="--i:13; --accent:#00e5ff; --accent2:#ff445d; --accent3:#ff9a33" href="cave-defender.html" data-game="cave-defender">
                             <div class="tile-preview-frame has-sprite" aria-hidden="true"><span class="tile-sprite" aria-hidden="true"></span><span class="tile-preview-status">WIP BUILD</span></div>
                             <span class="workbench-glyph">◇</span>
 <svg class="tile-icon" viewBox="0 0 32 32"><path d="M4 28l9-9 5 3 10-12" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="13" cy="19" r="3" fill="none" stroke="currentColor"/><path d="M24 6h6v6" fill="none" stroke="currentColor"/></svg>
@@ -2142,8 +1868,8 @@
                             <div class="tile-badge badge-soon">COMING SOON</div>
                         </a>
 
-                        <a class="game-tile coming-soon" style="--i:16; --accent:#18c8df; --accent2:#f2aa24; --accent3:#f4eedf; --sprite-x:25%; --sprite-y:100%;" href="tournament.html" data-game="tournament">
-                            <div class="tile-preview-frame has-sprite" aria-hidden="true"><span class="tile-sprite" aria-hidden="true"></span><span class="tile-preview-status">WIP BUILD</span></div>
+                        <a class="game-tile coming-soon" style="--i:16; --accent:#18c8df; --accent2:#f2aa24; --accent3:#f4eedf" href="tournament.html" data-game="tournament">
+                            <div class="tile-preview-frame" aria-hidden="true"><span class="tile-preview-status">WIP BUILD</span></div>
                             <span class="workbench-glyph">◇</span>
                             <svg class="tile-icon" viewBox="0 0 32 32"><path d="M3 5h8v5H3zM3 22h8v5H3zM21 13h8v6h-8zM11 7.5h5v8.5h5M11 24.5h5V16" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>
                             <span class="tile-name">TOURNAMENT<br>CONDUCTOR</span>
@@ -2152,8 +1878,8 @@
                             <div class="tile-badge badge-soon">COMING SOON</div>
                         </a>
 
-                        <a class="game-tile coming-soon" style="--i:17; --accent:#fb7185; --accent2:#ffbe0b; --accent3:#38bdf8; --sprite-x:50%; --sprite-y:100%;" href="excitebike.html" data-game="excite">
-                            <div class="tile-preview-frame has-sprite" aria-hidden="true"><span class="tile-sprite" aria-hidden="true"></span><span class="tile-preview-status">WIP BUILD</span></div>
+                        <a class="game-tile coming-soon" style="--i:17; --accent:#fb7185; --accent2:#ffbe0b; --accent3:#38bdf8" href="excitebike.html" data-game="excite">
+                            <div class="tile-preview-frame" aria-hidden="true"><span class="tile-preview-status">WIP BUILD</span></div>
                             <span class="workbench-glyph">◇</span>
                             <svg class="tile-icon" viewBox="0 0 32 32"><circle cx="7" cy="24" r="5" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="25" cy="24" r="5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M7 24l8-11h6l4 11M15 13l-4-5h7" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>
                             <span class="tile-name">EXCITE BIKE</span>
@@ -2162,8 +1888,8 @@
                             <div class="tile-badge badge-soon">COMING SOON</div>
                         </a>
 
-                        <a class="game-tile coming-soon" style="--i:18; --accent:#4a90d9; --accent2:#2ecc71; --accent3:#ff9ed2; --sprite-x:75%; --sprite-y:100%;" href="hexpuzzle.html" data-game="hex">
-                            <div class="tile-preview-frame has-sprite" aria-hidden="true"><span class="tile-sprite" aria-hidden="true"></span><span class="tile-preview-status">WIP BUILD</span></div>
+                        <a class="game-tile coming-soon" style="--i:18; --accent:#4a90d9; --accent2:#2ecc71; --accent3:#ff9ed2" href="hexpuzzle.html" data-game="hex">
+                            <div class="tile-preview-frame" aria-hidden="true"><span class="tile-preview-status">WIP BUILD</span></div>
                             <span class="workbench-glyph">◇</span>
                             <svg class="tile-icon" viewBox="0 0 32 32"><path d="M16 2l6 4v7l-6 4-6-4V6l6-4ZM9 15l6 4v7l-6 4-6-4v-7l6-4ZM23 15l6 4v7l-6 4-6-4v-7l6-4Z" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>
                             <span class="tile-name">HEX PUZZLE</span>
@@ -2172,7 +1898,7 @@
                             <div class="tile-badge badge-soon">COMING SOON</div>
                         </a>
 
-                        <a class="game-tile coming-soon" style="--i:19; --accent:#ff4d9d; --accent2:#20eaff; --accent3:#f59e0b; --sprite-x:100%; --sprite-y:25%;" href="rc-racer.html" data-game="rc">
+                        <a class="game-tile coming-soon" style="--i:19; --accent:#ff4d9d; --accent2:#20eaff; --accent3:#f59e0b; --sprite-x:33.333333%; --sprite-y:66.666667%;" href="rc-racer.html" data-game="rc">
                             <div class="tile-preview-frame has-sprite" aria-hidden="true"><span class="tile-sprite" aria-hidden="true"></span><span class="tile-preview-status">WIP BUILD</span></div>
                             <span class="workbench-glyph">◇</span>
                             <svg class="tile-icon" viewBox="0 0 32 32"><rect x="9" y="3" width="14" height="26" rx="5" fill="none" stroke="currentColor" stroke-width="1.4"/><rect x="12" y="8" width="8" height="6" rx="1" fill="none" stroke="currentColor"/><path d="M5 9h4M23 9h4M5 22h4M23 22h4" stroke="currentColor" stroke-width="3"/></svg>
@@ -2182,8 +1908,8 @@
                             <div class="tile-badge badge-soon">COMING SOON</div>
                         </a>
 
-                        <a class="game-tile coming-soon" style="--i:20; --accent:#c084fc; --accent2:#ffbe0b; --accent3:#38bdf8; --sprite-x:100%; --sprite-y:100%;" href="ref-pinball.html" data-game="pinball">
-                            <div class="tile-preview-frame has-sprite" aria-hidden="true"><span class="tile-sprite" aria-hidden="true"></span><span class="tile-preview-status">WIP BUILD</span></div>
+                        <a class="game-tile coming-soon" style="--i:20; --accent:#c084fc; --accent2:#ffbe0b; --accent3:#38bdf8" href="ref-pinball.html" data-game="pinball">
+                            <div class="tile-preview-frame" aria-hidden="true"><span class="tile-preview-status">WIP BUILD</span></div>
                             <span class="workbench-glyph">◇</span>
                             <svg class="tile-icon" viewBox="0 0 32 32"><rect x="4" y="2" width="24" height="28" rx="3" fill="none" stroke="currentColor"/><circle cx="17" cy="8" r="2.5" fill="currentColor"/><path d="M6 25l8-4v5M26 25l-8-4v5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
                             <span class="tile-name">MOONSHOT<br>PINBALL</span>
@@ -2192,7 +1918,7 @@
                             <div class="tile-badge badge-soon">COMING SOON</div>
                         </a>
 
-                        <a class="game-tile coming-soon" style="--i:21; --accent:#00ffff; --accent2:#ff00ff; --accent3:#ffff00; --sprite-x:25%; --sprite-y:50%;" href="starfox_shooter7.html" data-game="vulpis">
+                        <a class="game-tile coming-soon" style="--i:21; --accent:#00ffff; --accent2:#ff00ff; --accent3:#ffff00; --sprite-x:100%; --sprite-y:66.666667%;" href="starfox_shooter7.html" data-game="vulpis">
                             <div class="tile-preview-frame has-sprite" aria-hidden="true"><span class="tile-sprite" aria-hidden="true"></span><span class="tile-preview-status">WIP BUILD</span></div>
                             <span class="workbench-glyph">◇</span>
                             <svg class="tile-icon" viewBox="0 0 32 32"><path d="M16 4l5 10 8 3-8 3-5 8-5-8-8-3 8-3 5-10Z" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7l5 4M24 7l-5 4" stroke="currentColor"/></svg>
@@ -2203,7 +1929,7 @@
                         </a>
 
 
-                        <a class="game-tile coming-soon" style="--i:22; --accent:#52dcff; --accent2:#ffc14d; --accent3:#ad73ff; --sprite-x:25%; --sprite-y:0%;" href="auxor-studio.html" data-game="auxor">
+                        <a class="game-tile coming-soon" style="--i:22; --accent:#52dcff; --accent2:#ffc14d; --accent3:#ad73ff; --sprite-x:33.333333%; --sprite-y:0%;" href="auxor-studio.html" data-game="auxor">
                             <div class="tile-preview-frame has-sprite" aria-hidden="true"><span class="tile-sprite" aria-hidden="true"></span><span class="tile-preview-status">WIP BUILD</span></div>
                             <span class="workbench-glyph">◇</span>
                             <svg class="tile-icon" viewBox="0 0 32 32"><path d="M3 7h26v18H3zM7 11h18M7 16h18M7 21h18" fill="none" stroke="currentColor"/><path d="M10 10v12M16 10v12M22 10v12" stroke="currentColor" opacity=".55"/><path d="M5 27h22" stroke="currentColor"/></svg>
@@ -2346,29 +2072,6 @@
     masterGain.connect(audioCtx.destination);
 
     const ARCADE_SETTINGS_KEY = 'fts-arcade-settings-v1';
-    const ARCADE_VISIT_KEY = 'fts-arcade-visit-count-v1';
-    const ARCADE_VISIT_SESSION_KEY = 'fts-arcade-visit-counted-v1';
-    const ARCADE_AUTOPLAY_PREF_KEY = 'fts-arcade-autoplay-pref-v1';
-
-    function registerArcadeVisit() {
-        let count = Math.max(0, parseInt(localStorage.getItem(ARCADE_VISIT_KEY) || '0', 10) || 0);
-        try {
-            if (!sessionStorage.getItem(ARCADE_VISIT_SESSION_KEY)) {
-                count += 1;
-                localStorage.setItem(ARCADE_VISIT_KEY, String(count));
-                sessionStorage.setItem(ARCADE_VISIT_SESSION_KEY, '1');
-            }
-        } catch (_) {
-            count += 1;
-            try { localStorage.setItem(ARCADE_VISIT_KEY, String(count)); } catch (_) {}
-        }
-        return count;
-    }
-
-    const arcadeVisitCount = registerArcadeVisit();
-    let ambientAutoplayPref = localStorage.getItem(ARCADE_AUTOPLAY_PREF_KEY) || 'auto'; // auto | on | off
-    const graceAutoplayExpired = arcadeVisitCount > 4 && ambientAutoplayPref === 'auto';
-
     const legacyVolume = Math.max(0, Math.min(100, parseFloat(localStorage.getItem('fts-volume') ?? '20') || 20));
     const DEFAULT_ARCADE_SETTINGS = Object.freeze({
         masterVolume: legacyVolume,
@@ -2399,57 +2102,15 @@
         catch (_) { return validateArcadeSettings(); }
     }
     let arcadeSettings = loadArcadeSettings();
-    // Visits 1–4 get the original ambient autoplay behavior. Beginning with
-    // visit 5, ambient sound starts OFF unless the player has explicitly
-    // opted back in through Settings. This runtime override is not persisted
-    // until the player saves an audio choice.
-    if (graceAutoplayExpired) arcadeSettings = {...arcadeSettings, crowdEnabled: false};
     let audioUnlocked = false;
 
     const crowdAudio = new Audio('crowd.mp3');
     crowdAudio.loop = true;
     crowdAudio.preload = 'auto';
-    crowdAudio.autoplay = false; // JS starts it after choosing a random seek point.
+    crowdAudio.autoplay = true;
     crowdAudio.playsInline = true;
     const jukeboxAudio = new Audio();
     jukeboxAudio.preload = 'none';
-    jukeboxAudio.loop = true;
-    jukeboxAudio.playsInline = true;
-
-    function randomizeMediaStart(media) {
-        const duration = Number(media.duration);
-        if (!Number.isFinite(duration) || duration <= 1) return false;
-        try {
-            media.currentTime = Math.random() * Math.max(0.1, duration - 0.25);
-            return true;
-        } catch (_) { return false; }
-    }
-    function armRandomStart(media) {
-        media.dataset.ftsRandomized = '0';
-        const seekRandom = () => {
-            if (media.dataset.ftsRandomized === '1') return;
-            if (randomizeMediaStart(media)) media.dataset.ftsRandomized = '1';
-        };
-        media.addEventListener('loadedmetadata', seekRandom);
-        if (media.readyState >= 1) seekRandom();
-        return seekRandom;
-    }
-    armRandomStart(crowdAudio);
-    const randomizeJukeboxStart = armRandomStart(jukeboxAudio);
-
-    async function ensureRandomStart(media) {
-        if (media.dataset.ftsRandomized === '1') return;
-        if (media.readyState < 1) {
-            await Promise.race([
-                new Promise(resolve => media.addEventListener('loadedmetadata', resolve, { once: true })),
-                new Promise(resolve => setTimeout(resolve, 1200))
-            ]);
-        }
-        if (media.dataset.ftsRandomized !== '1') randomizeMediaStart(media);
-        if (Number.isFinite(Number(media.duration)) && Number(media.duration) > 1) {
-            media.dataset.ftsRandomized = '1';
-        }
-    }
 
     function updateMediaVolumes() {
         crowdAudio.volume = (arcadeSettings.masterVolume / 100) * (arcadeSettings.crowdVolume / 100);
@@ -2475,7 +2136,6 @@
             return false;
         }
         try {
-            await ensureRandomStart(crowdAudio);
             await crowdAudio.play();
             crowdAutoplayBlocked = false;
             return true;
@@ -2498,40 +2158,18 @@
         if (!audioUnlocked) return;
 
         const url = arcadeSettings.jukeboxUrl.trim();
-        if (url && jukeboxAudio.dataset.sourceUrl !== url) {
-            jukeboxAudio.src = url;
-            jukeboxAudio.dataset.sourceUrl = url;
-            jukeboxAudio.dataset.ftsRandomized = '0';
-            jukeboxAudio.loop = true;
-            jukeboxAudio.load();
-            randomizeJukeboxStart();
-        }
+        if (url && jukeboxAudio.dataset.sourceUrl !== url) { jukeboxAudio.src = url; jukeboxAudio.dataset.sourceUrl = url; jukeboxAudio.load(); }
         if (!arcadeSettings.jukeboxEnabled || !url) {
             jukeboxAudio.pause();
             setAudioStatus(arcadeSettings.jukeboxEnabled && !url ? 'JUKEBOX SOURCE REQUIRED · CROWD / SFX READY.' : 'ARCADE AUDIO READY.', arcadeSettings.jukeboxEnabled && !url ? 'warn' : 'ready');
         } else {
-            try {
-                await ensureRandomStart(jukeboxAudio);
-                await jukeboxAudio.play();
-                setAudioStatus('ARCADE AUDIO READY · JUKEBOX STREAM ACTIVE.', 'ready');
-            }
+            try { await jukeboxAudio.play(); setAudioStatus('ARCADE AUDIO READY · JUKEBOX STREAM ACTIVE.', 'ready'); }
             catch (_) { setAudioStatus('JUKEBOX STREAM COULD NOT START · CHECK URL / BROWSER ACCESS.', 'warn'); }
         }
     }
-    function commitArcadeSettings(next, userInitiated = false) {
+    function commitArcadeSettings(next) {
         arcadeSettings = validateArcadeSettings(next);
-        if (userInitiated) {
-            // Saving audio controls is an explicit preference. If ambient
-            // sound is on, future visits may autoplay again; if it is off,
-            // future visits stay quiet. Other sound levels remain persisted
-            // in the normal settings object.
-            ambientAutoplayPref = (arcadeSettings.crowdEnabled || arcadeSettings.jukeboxEnabled) ? 'on' : 'off';
-            try { localStorage.setItem(ARCADE_AUTOPLAY_PREF_KEY, ambientAutoplayPref); } catch (_) {}
-        }
-        try {
-            localStorage.setItem(ARCADE_SETTINGS_KEY, JSON.stringify(arcadeSettings));
-            localStorage.setItem('fts-volume', String(arcadeSettings.masterVolume));
-        } catch (_) {}
+        try { localStorage.setItem(ARCADE_SETTINGS_KEY, JSON.stringify(arcadeSettings)); localStorage.setItem('fts-volume', String(arcadeSettings.masterVolume)); } catch (_) {}
         applyPresentationSettings(); updateMediaVolumes(); syncAmbientPlayback();
     }
     function wake() {
@@ -2542,9 +2180,9 @@
     applyPresentationSettings();
     updateMediaVolumes();
 
-    // Visits 1–4 attempt the room tone immediately. On visit 5+ the
-    // grace-period runtime override above keeps ambient audio off until the
-    // player explicitly enables and saves it again.
+    // Start the room tone at the earliest possible moment. If the browser
+    // allows audible autoplay, crowd.mp3 begins before the player touches the
+    // cabinet. If not, the first input retries immediately via wake().
     syncAmbientPlayback();
     window.addEventListener('pageshow', () => syncAmbientPlayback());
 
@@ -2980,11 +2618,7 @@
             if (el.type === 'checkbox') el.checked = !!value; else el.value = String(value);
         }
         updateSettingOutputs();
-        if (graceAutoplayExpired && ambientAutoplayPref === 'auto') {
-            setAudioStatus(`RETURN VISIT ${arcadeVisitCount} · AMBIENT AUTOPLAY IS OFF. ENABLE CROWD OR JUKEBOX AND SAVE TO OPT BACK IN.`, 'warn');
-        } else {
-            setAudioStatus(audioUnlocked ? 'ARCADE AUDIO READY.' : 'AUDIO WAITS FOR THE FIRST PLAYER INPUT.', audioUnlocked ? 'ready' : '');
-        }
+        setAudioStatus(audioUnlocked ? 'ARCADE AUDIO READY.' : 'AUDIO WAITS FOR THE FIRST PLAYER INPUT.', audioUnlocked ? 'ready' : '');
     }
     function readSettingsForm() {
         const out = {};
@@ -3009,23 +2643,15 @@
         if (settingsOpen) return; settingsOpen = true;
         settingsSnapshot = {...arcadeSettings};
         populateSettingsForm(arcadeSettings);
-        document.body.classList.add('settings-open');
-        cabinetWrapper.inert = true;
-        closeupLayer.inert = true;
-        wipGate.inert = true;
         settingsLayer.classList.add('open'); settingsLayer.setAttribute('aria-hidden','false');
         requestAnimationFrame(() => settingsForm?.elements.masterVolume?.focus());
     }
     function closeSettings(commit = false) {
         if (!settingsOpen) return;
-        if (commit) commitArcadeSettings(readSettingsForm(), true);
+        if (commit) commitArcadeSettings(readSettingsForm());
         else if (settingsSnapshot) { arcadeSettings = validateArcadeSettings(settingsSnapshot); applyPresentationSettings(); updateMediaVolumes(); syncAmbientPlayback(); }
         settingsOpen = false; settingsSnapshot = null;
         settingsLayer.classList.remove('open'); settingsLayer.setAttribute('aria-hidden','true');
-        document.body.classList.remove('settings-open');
-        cabinetWrapper.inert = false;
-        closeupLayer.inert = false;
-        wipGate.inert = false;
         menuSettings?.focus();
     }
     settingsForm?.addEventListener('input', (e) => {
