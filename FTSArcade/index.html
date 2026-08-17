@@ -38,6 +38,8 @@
     <meta name="twitter:description" content="15 free-play cabinets, fresh drops, and eight workbench builds coming soon at FishTacoStand Arcade.">
     <meta name="twitter:image"       content="https://frymatic.us/FTSArcade/FishTacoStand.png">
 
+    <link rel="preload" as="image" href="fts_sprites.png">
+
     <!-- ── Fonts ────────────────────────────────────────────────── -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1534,6 +1536,119 @@
         .game-tile.coming-soon {
             padding-bottom: 14%;
         }
+
+
+        /* ═══════════════════════════════════════════════════════════
+           FTS SPRITE ATLAS MENU ART · 2026-08-17
+           4×4 transparent atlas: fts_sprites.png
+           Every atlas cell is 10:7, matching the requested cabinet art
+           aperture. Supplied game art takes precedence; unmatched cabinets
+           retain the existing line-drawing fallback until art is supplied.
+           ═══════════════════════════════════════════════════════════ */
+        .tile-preview-frame {
+            aspect-ratio: 10 / 7;
+            border-radius: 8px;
+            clip-path: none;
+        }
+
+        .tile-preview-frame.has-sprite {
+            background: rgba(1, 5, 13, .48);
+            overflow: hidden;
+            border-color: color-mix(in srgb, var(--accent) 70%, rgba(255,255,255,.22));
+            box-shadow:
+                inset 0 0 20px rgba(0,0,0,.48),
+                0 0 12px color-mix(in srgb, var(--accent) 17%, transparent);
+        }
+
+        .tile-sprite {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            display: block;
+            background-image: url('fts_sprites.png');
+            background-repeat: no-repeat;
+            background-size: 400% 400%;
+            background-position: var(--sprite-x, 0%) var(--sprite-y, 0%);
+            transform: scale(1.006);
+            transform-origin: center;
+            filter: saturate(1.06) contrast(1.05) brightness(.96);
+            transition: transform .22s ease, filter .22s ease;
+            will-change: transform;
+        }
+
+        /* Keep CRT treatment above the art, but let the supplied imagery read. */
+        .tile-preview-frame.has-sprite::before {
+            opacity: .30;
+            mix-blend-mode: multiply;
+        }
+        .tile-preview-frame.has-sprite::after {
+            opacity: .62;
+        }
+
+        .tile-preview-frame.has-sprite .tile-line-art {
+            display: none !important;
+        }
+
+        .game-tile:not(.locked):hover .tile-preview-frame.has-sprite .tile-sprite {
+            transform: scale(1.035);
+            filter: saturate(1.13) contrast(1.075) brightness(1.035);
+        }
+
+        .game-tile.coming-soon .tile-preview-frame.has-sprite .tile-sprite {
+            filter: saturate(.88) contrast(1.02) brightness(.78);
+            opacity: .94;
+        }
+        .game-tile.coming-soon:hover .tile-preview-frame.has-sprite .tile-sprite {
+            filter: saturate(1.04) contrast(1.06) brightness(.96);
+            opacity: 1;
+        }
+
+        /* The compact card treatment from the preceding pass remains intact;
+           this tightens only the art-to-title handoff after moving from 16:9
+           diagrams to the taller 10:7 cabinet aperture. */
+        .game-tile {
+            padding-top: 3.2%;
+        }
+        .tile-preview-frame {
+            margin-bottom: 3.4%;
+        }
+
+        /* Use the atlas' FTS Arcade cell as the attract-state image so the
+           spritesheet is warmed before the menu opens. */
+        .screen-idle {
+            isolation: isolate;
+        }
+        .idle-attract-sprite {
+            position: absolute;
+            inset: 4.5%;
+            z-index: 0;
+            pointer-events: none;
+            border-radius: 5%;
+            background-image: url('fts_sprites.png');
+            background-repeat: no-repeat;
+            background-size: 400% 400%;
+            background-position: 33.333333% 33.333333%;
+            opacity: .32;
+            filter: saturate(.72) brightness(.52) contrast(1.05);
+            box-shadow: inset 0 0 26px rgba(0,0,0,.66);
+        }
+        .screen-idle .idle-logo,
+        .screen-idle .insert-coin {
+            position: relative;
+            z-index: 2;
+        }
+
+        #closeup-screen .tile-preview-frame.has-sprite {
+            background: rgba(1,5,13,.34);
+            box-shadow:
+                inset 0 0 18px rgba(0,0,0,.30),
+                0 0 14px color-mix(in srgb, var(--accent) 18%, transparent);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .tile-sprite { transition: none !important; }
+        }
+
 </style>
 </head>
 <body>
@@ -1553,6 +1668,7 @@
 
                 <!-- Idle / attract state -->
                 <div class="screen-idle" id="screenIdle">
+                    <div class="idle-attract-sprite" aria-hidden="true"></div>
                     <span class="idle-logo">FTS ARCADE</span>
                     <span class="insert-coin">▶ INSERT COIN ◀</span>
                 </div>
@@ -1561,7 +1677,7 @@
                 <div class="screen-menu" id="screenMenu">
 
                     <div class="menu-header">
-                        <span class="menu-title">── SELECT GAME · LINE DRAWING PREVIEWS · 23 CABINETS ──</span>
+                        <span class="menu-title">── SELECT GAME · CABINET ART · 23 CABINETS ──</span>
                         <div class="menu-legend">
                             <span class="legend-live"><i></i>FREE PLAY</span>
                             <span class="legend-new"><i></i>NEW · JUST WIRED</span>
@@ -1574,8 +1690,8 @@
 
                         <div class="menu-section free"><span>FREE PLAY · 15 LIVE</span><small>tap a cabinet to play</small></div>
 
-                        <a class="game-tile" style="--i:0; --accent:#00d9ff; --accent2:#ff8a2a; --accent3:#f5fbff" href="astroids.html" data-game="astroids">
-                            <div class="tile-preview-frame" aria-hidden="true"></div>
+                        <a class="game-tile" style="--i:0; --accent:#00d9ff; --accent2:#ff8a2a; --accent3:#f5fbff; --sprite-x:0%; --sprite-y:0%;" href="astroids.html" data-game="astroids">
+                            <div class="tile-preview-frame has-sprite" aria-hidden="true"><span class="tile-sprite" aria-hidden="true"></span></div>
                             
                             <svg class="tile-icon" viewBox="0 0 32 32"><path d="M16 3l5 20-5-4-5 4 5-20Z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 11l4-3 5 3-1 5-5 1-3-3Z M22 20l4-2 3 3-2 4-4 1-2-3Z" fill="none" stroke="currentColor" stroke-width="1.1"/></svg>
                             <span class="tile-name">ASTROIDS</span>
@@ -1586,8 +1702,8 @@
 
                         
 
-                        <a class="game-tile" style="--i:1; --accent:#ff2745; --accent2:#20eaff; --accent3:#ff28b7" href="cave-racer.html" data-game="cave-racer">
-                            <div class="tile-preview-frame" aria-hidden="true"></div>
+                        <a class="game-tile" style="--i:1; --accent:#ff2745; --accent2:#20eaff; --accent3:#ff28b7; --sprite-x:66.666667%; --sprite-y:0%;" href="cave-racer.html" data-game="cave-racer">
+                            <div class="tile-preview-frame has-sprite" aria-hidden="true"><span class="tile-sprite" aria-hidden="true"></span></div>
                             
                             <svg class="tile-icon" viewBox="0 0 32 32"><path d="M1 1l7 5-4 6 4 6-5 13M31 1l-7 5 4 6-4 6 5 13" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M16 8l5 13-5-4-5 4 5-13Z" fill="currentColor"/></svg>
                             <span class="tile-name">CAVE RACER</span>
@@ -1596,8 +1712,8 @@
                             
                         </a>
 
-                        <a class="game-tile is-new" style="--i:2; --accent:#c084fc; --accent2:#ff3fa4; --accent3:#f5b62b" href="coven-blitz.html" data-game="coven-blitz">
-                            <div class="tile-preview-frame" aria-hidden="true"></div>
+                        <a class="game-tile is-new" style="--i:2; --accent:#c084fc; --accent2:#ff3fa4; --accent3:#f5b62b; --sprite-x:100%; --sprite-y:0%;" href="coven-blitz.html" data-game="coven-blitz">
+                            <div class="tile-preview-frame has-sprite" aria-hidden="true"><span class="tile-sprite" aria-hidden="true"></span></div>
                             <span class="new-flag">NEW · JUST WIRED</span>
                             <svg class="tile-icon" viewBox="0 0 32 32"><path d="M16 2l6 7-6 9-6-9 6-7Z M8 15l5 6-5 8-5-8 5-6Z M24 15l5 6-5 8-5-8 5-6Z" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>
                             <span class="tile-name">COVEN BLITZ</span>
@@ -1606,8 +1722,8 @@
                             
                         </a>
 
-                        <a class="game-tile" style="--i:3; --accent:#e8b34b; --accent2:#f4f1e8; --accent3:#ff7a3d" href="crawford-county.html" data-game="crawford">
-                            <div class="tile-preview-frame" aria-hidden="true"></div>
+                        <a class="game-tile" style="--i:3; --accent:#e8b34b; --accent2:#f4f1e8; --accent3:#ff7a3d; --sprite-x:0%; --sprite-y:33.333333%;" href="crawford-county.html" data-game="crawford">
+                            <div class="tile-preview-frame has-sprite" aria-hidden="true"><span class="tile-sprite" aria-hidden="true"></span></div>
                             
                             <svg class="tile-icon" viewBox="0 0 32 32"><path d="M11 31l3-29M21 31L18 2" stroke="currentColor" stroke-width="1.5"/><path d="M16 4v5m0 5v5m0 5v5" stroke="currentColor" stroke-width="1" stroke-dasharray="2 2"/><path d="M2 12q7-8 14 0 7-8 14 0" fill="none" stroke="currentColor" opacity=".45"/></svg>
                             <span class="tile-name">CRAWFORD<br>COUNTY</span>
@@ -1616,8 +1732,8 @@
                             
                         </a>
 
-                        <a class="game-tile" style="--i:4; --accent:#b98f4c; --accent2:#ffcf3d; --accent3:#f3e3c0" href="grace_bland_clocktower1.html" data-game="grace">
-                            <div class="tile-preview-frame" aria-hidden="true"></div>
+                        <a class="game-tile" style="--i:4; --accent:#b98f4c; --accent2:#ffcf3d; --accent3:#f3e3c0; --sprite-x:66.666667%; --sprite-y:33.333333%;" href="grace_bland_clocktower1.html" data-game="grace">
+                            <div class="tile-preview-frame has-sprite" aria-hidden="true"><span class="tile-sprite" aria-hidden="true"></span></div>
                             
                             <svg class="tile-icon" viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M16 7v9l6 4M16 4v3M16 25v3M4 16h3M25 16h3" stroke="currentColor" stroke-width="1.2"/></svg>
                             <span class="tile-name">GRACE BLAND</span>
@@ -1636,8 +1752,8 @@
                             
                         </a>
 
-                        <a class="game-tile" style="--i:6; --accent:#67d9e8; --accent2:#ffb000; --accent3:#ff3c34" href="minesweeper.html" data-game="minesweeper">
-                            <div class="tile-preview-frame" aria-hidden="true"></div>
+                        <a class="game-tile" style="--i:6; --accent:#67d9e8; --accent2:#ffb000; --accent3:#ff3c34; --sprite-x:100%; --sprite-y:33.333333%;" href="minesweeper.html" data-game="minesweeper">
+                            <div class="tile-preview-frame has-sprite" aria-hidden="true"><span class="tile-sprite" aria-hidden="true"></span></div>
                             
                             <svg class="tile-icon" viewBox="0 0 32 32"><circle cx="16" cy="16" r="6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M16 2v7M16 23v7M2 16h7M23 16h7M6 6l5 5M21 21l5 5M26 6l-5 5M11 21l-5 5" stroke="currentColor" stroke-width="1.2"/></svg>
                             <span class="tile-name">MINESWEEPER</span>
@@ -1646,8 +1762,8 @@
                             
                         </a>
 
-                        <a class="game-tile" style="--i:7; --accent:#00d8d8; --accent2:#f800f8; --accent3:#58d854" href="neon-invaders.html" data-game="invaders">
-                            <div class="tile-preview-frame" aria-hidden="true"></div>
+                        <a class="game-tile" style="--i:7; --accent:#00d8d8; --accent2:#f800f8; --accent3:#58d854; --sprite-x:0%; --sprite-y:66.666667%;" href="neon-invaders.html" data-game="invaders">
+                            <div class="tile-preview-frame has-sprite" aria-hidden="true"><span class="tile-sprite" aria-hidden="true"></span></div>
                             
                             <svg class="tile-icon" viewBox="0 0 32 32"><path d="M8 6h4v4h8V6h4v4h4v12h-4v4h-5v-4h-6v4H8v-4H4V10h4V6Z" fill="none" stroke="currentColor" stroke-width="1.4"/><rect x="10" y="13" width="3" height="3" fill="currentColor"/><rect x="19" y="13" width="3" height="3" fill="currentColor"/></svg>
                             <span class="tile-name">NEON<br>INVADERS</span>
@@ -1676,8 +1792,8 @@
                             
                         </a>
 
-                        <a class="game-tile" style="--i:10; --accent:#ff0040; --accent2:#ff667c; --accent3:#f5fbff" href="redeye-hud.html" data-game="redeye">
-                            <div class="tile-preview-frame" aria-hidden="true"></div>
+                        <a class="game-tile" style="--i:10; --accent:#ff0040; --accent2:#ff667c; --accent3:#f5fbff; --sprite-x:66.666667%; --sprite-y:66.666667%;" href="redeye-hud.html" data-game="redeye">
+                            <div class="tile-preview-frame has-sprite" aria-hidden="true"><span class="tile-sprite" aria-hidden="true"></span></div>
                             
                             <svg class="tile-icon" viewBox="0 0 32 32"><path d="M2 16Q16 4 30 16Q16 28 2 16Z" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="16" cy="16" r="5" fill="none" stroke="currentColor"/><circle cx="16" cy="16" r="2.3" fill="currentColor"/></svg>
                             <span class="tile-name">RED EYE</span>
@@ -1686,8 +1802,8 @@
                             
                         </a>
 
-                        <a class="game-tile" style="--i:11; --accent:#52dcff; --accent2:#ff3fa4; --accent3:#ffc14d" href="tetris.html" data-game="tetris">
-                            <div class="tile-preview-frame" aria-hidden="true"></div>
+                        <a class="game-tile" style="--i:11; --accent:#52dcff; --accent2:#ff3fa4; --accent3:#ffc14d; --sprite-x:33.333333%; --sprite-y:100%;" href="tetris.html" data-game="tetris">
+                            <div class="tile-preview-frame has-sprite" aria-hidden="true"><span class="tile-sprite" aria-hidden="true"></span></div>
                             
                             <svg class="tile-icon" viewBox="0 0 32 32"><g fill="currentColor"><rect x="4" y="22" width="6" height="6"/><rect x="10" y="22" width="6" height="6"/><rect x="16" y="22" width="6" height="6"/><rect x="22" y="22" width="6" height="6"/><rect x="10" y="16" width="6" height="6"/><rect x="16" y="10" width="6" height="6"/><rect x="16" y="16" width="6" height="6"/></g></svg>
                             <span class="tile-name">ZITTRIS</span>
@@ -1696,8 +1812,8 @@
                             
                         </a>
 
-                        <a class="game-tile" style="--i:12; --accent:#6ee7ff; --accent2:#ff476f; --accent3:#ffc857" href="underhall.html" data-game="underhall">
-                            <div class="tile-preview-frame" aria-hidden="true"></div>
+                        <a class="game-tile" style="--i:12; --accent:#6ee7ff; --accent2:#ff476f; --accent3:#ffc857; --sprite-x:0%; --sprite-y:100%;" href="underhall.html" data-game="underhall">
+                            <div class="tile-preview-frame has-sprite" aria-hidden="true"><span class="tile-sprite" aria-hidden="true"></span></div>
                             
                             <svg class="tile-icon" viewBox="0 0 32 32"><path d="M5 30V14Q5 3 16 3t11 11v16" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10 30V17q0-6 6-6t6 6v13" fill="none" stroke="currentColor" opacity=".55"/><text x="16" y="26" text-anchor="middle" font-size="12" fill="currentColor">@</text></svg>
                             <span class="tile-name">UNDERHALL</span>
@@ -1706,18 +1822,20 @@
                             
                         </a>
 
-                        <a class="game-tile is-new" style="--i:13; --accent:#00e5ff; --accent2:#ff445d; --accent3:#ff9a33" href="vector-siege.html" data-game="vector">
-                            <div class="tile-preview-frame" aria-hidden="true"></div>
+                        <a class="game-tile coming-soon" style="--i:15; --accent:#20eaff; --accent2:#ff2745; --accent3:#ff28b7; --sprite-x:100%; --sprite-y:100%;" href="vector-siege.html" data-game="vector-siege">
+                        
+                            <div class="tile-preview-frame has-sprite" aria-hidden="true"><span class="tile-sprite" aria-hidden="true"></span></div>
                             <span class="new-flag">NEW · JUST WIRED</span>
-                            <svg class="tile-icon" viewBox="0 0 32 32"><path d="M4 28l9-9 5 3 10-12" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="13" cy="19" r="3" fill="none" stroke="currentColor"/><path d="M24 6h6v6" fill="none" stroke="currentColor"/></svg>
+                            <svg class="tile-icon" viewBox="0 0 32 32"><path d="M4 6v20M28 6v20" stroke="currentColor" stroke-width="1" opacity=".45"/><path d="M6 16l10-5 9 5-9 5-10-5Z" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="8" cy="25" r="2" fill="none" stroke="currentColor"/><path d="M8 23v-5" stroke="currentColor"/></svg>
+
                             <span class="tile-name">VECTOR SIEGE</span>
                             <span class="tile-mode">CITY AEGIS</span>
                             <span class="tile-sub">AIM · INTERCEPT · SAVE SIX CITIES</span>
                             
                         </a>
 
-                        <a class="game-tile is-new" style="--i:14; --accent:#84cc16; --accent2:#c31f2b; --accent3:#d9b25c" href="zombie-golf-survival.html" data-game="zombie-golf">
-                            <div class="tile-preview-frame" aria-hidden="true"></div>
+                        <a class="game-tile is-new" style="--i:14; --accent:#84cc16; --accent2:#c31f2b; --accent3:#d9b25c; --sprite-x:66.666667%; --sprite-y:100%;" href="zombie-golf-survival.html" data-game="zombie-golf">
+                            <div class="tile-preview-frame has-sprite" aria-hidden="true"><span class="tile-sprite" aria-hidden="true"></span></div>
                             <span class="new-flag">NEW · JUST WIRED</span>
                             <svg class="tile-icon" viewBox="0 0 32 32"><path d="M4 20h20l4 5H7l-3-5Z" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="10" cy="26" r="3" fill="none" stroke="currentColor"/><circle cx="24" cy="26" r="3" fill="none" stroke="currentColor"/><path d="M20 4v12M20 4l8 3-8 3" fill="none" stroke="currentColor"/></svg>
                             <span class="tile-name">SOVTHPAW'S<br>ZOMBIE GOLF</span>
@@ -1728,10 +1846,10 @@
 
                         <div class="menu-section soon"><span>COMING SOON · 8 ON THE BENCH</span><small>playable workbench builds · warning before launch</small></div>
 
-<a class="game-tile coming-soon" style="--i:15; --accent:#20eaff; --accent2:#ff2745; --accent3:#ff28b7" href="cave-defender.html" data-game="cave-defender">
-                            <div class="tile-preview-frame" aria-hidden="true"><span class="tile-preview-status">WIP BUILD</span></div>
+<a class="game-tile is-new" style="--i:13; --accent:#00e5ff; --accent2:#ff445d; --accent3:#ff9a33" href="cave-defender.html" data-game="cave-defender">
+                            <div class="tile-preview-frame has-sprite" aria-hidden="true"><span class="tile-sprite" aria-hidden="true"></span><span class="tile-preview-status">WIP BUILD</span></div>
                             <span class="workbench-glyph">◇</span>
-<svg class="tile-icon" viewBox="0 0 32 32"><path d="M4 6v20M28 6v20" stroke="currentColor" stroke-width="1" opacity=".45"/><path d="M6 16l10-5 9 5-9 5-10-5Z" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="8" cy="25" r="2" fill="none" stroke="currentColor"/><path d="M8 23v-5" stroke="currentColor"/></svg>
+<svg class="tile-icon" viewBox="0 0 32 32"><path d="M4 28l9-9 5 3 10-12" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="13" cy="19" r="3" fill="none" stroke="currentColor"/><path d="M24 6h6v6" fill="none" stroke="currentColor"/></svg>
                             <span class="tile-name">CAVE<br>DEFENDER</span>
                             <span class="tile-mode">WRAPAROUND RESCUE SHOOTER</span>
                             <span class="tile-sub">FLY · RESCUE · BREAK ABDUCTIONS · BOMB</span>
@@ -1768,8 +1886,8 @@
                             <div class="tile-badge badge-soon">COMING SOON</div>
                         </a>
 
-                        <a class="game-tile coming-soon" style="--i:19; --accent:#ff4d9d; --accent2:#20eaff; --accent3:#f59e0b" href="rc-racer.html" data-game="rc">
-                            <div class="tile-preview-frame" aria-hidden="true"><span class="tile-preview-status">WIP BUILD</span></div>
+                        <a class="game-tile coming-soon" style="--i:19; --accent:#ff4d9d; --accent2:#20eaff; --accent3:#f59e0b; --sprite-x:33.333333%; --sprite-y:66.666667%;" href="rc-racer.html" data-game="rc">
+                            <div class="tile-preview-frame has-sprite" aria-hidden="true"><span class="tile-sprite" aria-hidden="true"></span><span class="tile-preview-status">WIP BUILD</span></div>
                             <span class="workbench-glyph">◇</span>
                             <svg class="tile-icon" viewBox="0 0 32 32"><rect x="9" y="3" width="14" height="26" rx="5" fill="none" stroke="currentColor" stroke-width="1.4"/><rect x="12" y="8" width="8" height="6" rx="1" fill="none" stroke="currentColor"/><path d="M5 9h4M23 9h4M5 22h4M23 22h4" stroke="currentColor" stroke-width="3"/></svg>
                             <span class="tile-name">RC RACER</span>
@@ -1788,8 +1906,8 @@
                             <div class="tile-badge badge-soon">COMING SOON</div>
                         </a>
 
-                        <a class="game-tile coming-soon" style="--i:21; --accent:#00ffff; --accent2:#ff00ff; --accent3:#ffff00" href="starfox_shooter7.html" data-game="vulpis">
-                            <div class="tile-preview-frame" aria-hidden="true"><span class="tile-preview-status">WIP BUILD</span></div>
+                        <a class="game-tile coming-soon" style="--i:21; --accent:#00ffff; --accent2:#ff00ff; --accent3:#ffff00; --sprite-x:100%; --sprite-y:66.666667%;" href="starfox_shooter7.html" data-game="vulpis">
+                            <div class="tile-preview-frame has-sprite" aria-hidden="true"><span class="tile-sprite" aria-hidden="true"></span><span class="tile-preview-status">WIP BUILD</span></div>
                             <span class="workbench-glyph">◇</span>
                             <svg class="tile-icon" viewBox="0 0 32 32"><path d="M16 4l5 10 8 3-8 3-5 8-5-8-8-3 8-3 5-10Z" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7l5 4M24 7l-5 4" stroke="currentColor"/></svg>
                             <span class="tile-name">ASTRO VULPIS</span>
@@ -1799,8 +1917,8 @@
                         </a>
 
 
-                        <a class="game-tile coming-soon" style="--i:22; --accent:#52dcff; --accent2:#ffc14d; --accent3:#ad73ff" href="auxor-studio.html" data-game="auxor">
-                            <div class="tile-preview-frame" aria-hidden="true"><span class="tile-preview-status">WIP BUILD</span></div>
+                        <a class="game-tile coming-soon" style="--i:22; --accent:#52dcff; --accent2:#ffc14d; --accent3:#ad73ff; --sprite-x:33.333333%; --sprite-y:0%;" href="auxor-studio.html" data-game="auxor">
+                            <div class="tile-preview-frame has-sprite" aria-hidden="true"><span class="tile-sprite" aria-hidden="true"></span><span class="tile-preview-status">WIP BUILD</span></div>
                             <span class="workbench-glyph">◇</span>
                             <svg class="tile-icon" viewBox="0 0 32 32"><path d="M3 7h26v18H3zM7 11h18M7 16h18M7 21h18" fill="none" stroke="currentColor"/><path d="M10 10v12M16 10v12M22 10v12" stroke="currentColor" opacity=".55"/><path d="M5 27h22" stroke="currentColor"/></svg>
                             <span class="tile-name">AUXor</span>
@@ -2136,7 +2254,7 @@
 
     const menuTitle = document.querySelector('.menu-title');
     if (menuTitle) {
-        menuTitle.textContent = '── SELECT GAME · LINE DRAWING PREVIEWS · 23 CABINETS ──';
+        menuTitle.textContent = '── SELECT GAME · CABINET ART · 23 CABINETS ──';
     }
 
     function lineArtMotif(game) {
@@ -2376,7 +2494,7 @@
         tiles.forEach((tile) => {
             const frame = tile.querySelector('.tile-preview-frame');
             const icon = tile.querySelector('.tile-icon');
-            if (!frame || !icon || frame.querySelector('.tile-line-art')) return;
+            if (!frame || !icon || frame.classList.contains('has-sprite') || frame.querySelector('.tile-line-art')) return;
 
             const art = document.createElement('div');
             art.className = 'tile-line-art';
