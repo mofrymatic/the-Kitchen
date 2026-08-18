@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RED EYE — Stage 0 Prototype</title>
+<style>
+:root{
+  --bg:#07090c; --panel:#0d1117; --ink:#f3e7cc; --muted:#8d98a6; --red:#c61c28;
+  --gold:#d2a64a; --blue:#17334f; --green:#6bdc8b; --line:#242c35;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+button{font:inherit}
+.app{min-height:100vh;display:grid;grid-template-columns:320px 1fr}
+.sidebar{border-right:1px solid var(--line);padding:18px;background:#090c10;overflow:auto}
+.brand{font-size:24px;font-weight:900;letter-spacing:.22em;color:#fff}
+.sub{font-size:12px;color:var(--muted);margin-top:4px}
+.statgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:18px 0}
+.stat{border:1px solid var(--line);padding:10px;background:var(--panel);border-radius:10px}
+.stat b{display:block;font-size:18px;color:var(--gold)}
+.hdr{font-size:12px;color:#c9d1d9;letter-spacing:.15em;text-transform:uppercase;margin:20px 0 8px}
+.btnrow{display:flex;flex-wrap:wrap;gap:7px}
+.btn{border:1px solid #3a4654;color:#eef;background:#111923;border-radius:8px;padding:8px 10px;cursor:pointer}
+.btn:hover{border-color:#728197;background:#16202b}
+.btn.red{border-color:#7c2630;background:#2a1115}
+.btn.gold{border-color:#6f5925;background:#211b0e;color:#ffe7a0}
+.btn.green{border-color:#265f3a;background:#102116;color:#b9ffd0}
+.log{font-size:11px;color:#9da7b3;line-height:1.5;max-height:180px;overflow:auto;border:1px solid var(--line);padding:9px;border-radius:8px;background:#05070a}
+.main{display:flex;flex-direction:column;min-width:0}
+.topbar{height:56px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 18px;background:#090c10}
+.sceneName{font-weight:900;letter-spacing:.08em}
+.sceneWrap{padding:18px;display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:18px;min-height:calc(100vh - 56px)}
+.sceneCard{border:1px solid var(--line);background:#05070a;border-radius:16px;overflow:hidden;display:flex;flex-direction:column;min-height:640px}
+.viewport{position:relative;min-height:470px;overflow:hidden;background:
+radial-gradient(circle at 50% 70%, rgba(180,20,30,.13), transparent 28%),
+linear-gradient(#07111b 0 45%, #10151a 45% 100%)}
+.viewport::before{
+content:"";position:absolute;inset:45% 0 0;background:
+linear-gradient(90deg,transparent 0 20%,rgba(255,255,255,.035) 20% 21%,transparent 21% 50%,rgba(255,255,255,.035) 50% 51%,transparent 51%),
+linear-gradient(rgba(255,255,255,.04),transparent 18%);
+transform:perspective(400px) rotateX(58deg);transform-origin:top;opacity:.9}
+.skyGlow{position:absolute;inset:0;background:radial-gradient(circle at 70% 20%,rgba(255,205,130,.14),transparent 12%),radial-gradient(circle at 20% 35%,rgba(90,150,210,.12),transparent 18%)}
+.marquee{position:absolute;left:50%;top:18%;transform:translateX(-50%);padding:10px 16px;border:2px solid #8c6f37;color:#f4d27c;background:#17120d;box-shadow:0 0 22px rgba(255,196,70,.15);font-weight:900;letter-spacing:.12em;text-align:center;max-width:78%}
+.bigIcon{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);font-size:110px;filter:drop-shadow(0 10px 18px #000);user-select:none}
+.sceneOverlay{position:absolute;left:20px;right:20px;bottom:18px;border:1px solid rgba(255,255,255,.12);background:rgba(3,5,8,.82);padding:12px 14px;border-radius:10px;backdrop-filter:blur(4px)}
+.sceneOverlay h2{margin:0 0 4px;font-size:20px}
+.sceneOverlay p{margin:0;color:#b8c0ca;font-size:13px}
+.actions{padding:16px;border-top:1px solid var(--line);background:#0a0d11}
+.actionTitle{font-size:11px;color:#8994a1;text-transform:uppercase;letter-spacing:.14em;margin-bottom:8px}
+.actionGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px}
+.navbtn{padding:12px;text-align:left;border-radius:10px;border:1px solid #34404d;background:#111821;color:#f2f5f8;cursor:pointer}
+.navbtn small{display:block;color:#8f9baa;margin-top:4px}
+.navbtn.locked{opacity:.45;cursor:not-allowed}
+.navbtn:hover:not(.locked){background:#18222e;border-color:#6d7d91}
+.panel{border:1px solid var(--line);background:#0a0d11;border-radius:16px;padding:14px;height:max-content}
+.panel h3{margin:0 0 10px;font-size:13px;letter-spacing:.12em;text-transform:uppercase}
+.graph{display:flex;flex-wrap:wrap;gap:7px}
+.node{font-size:10px;border:1px solid #2b3541;background:#0f141a;padding:6px 8px;border-radius:7px;color:#98a3af}
+.node.current{color:#fff;border-color:#af2835;background:#2a1115}
+.node.unlocked{color:#cfe7d5}
+.keyline{font-size:11px;line-height:1.7;color:#9da7b3}
+.notice{margin-top:10px;padding:10px;border-radius:8px;background:#151109;border:1px solid #5f4d21;color:#ffe283;font-size:12px}
+.footer{font-size:10px;color:#626e7b;margin-top:12px}
+@media(max-width:900px){
+  .app{grid-template-columns:1fr}
+  .sidebar{border-right:0;border-bottom:1px solid var(--line)}
+  .sceneWrap{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">RED EYE</div>
+    <div class="sub">Stage 0 · standalone prototype</div>
+
+    <div class="statgrid">
+      <div class="stat"><span>Ducats</span><b id="ducats">0</b></div>
+      <div class="stat"><span>Access</span><b id="access">NONE</b></div>
+      <div class="stat"><span>Ticket</span><b id="ticket">NO</b></div>
+      <div class="stat"><span>Invite</span><b id="invite">NO</b></div>
+    </div>
+
+    <div class="hdr">Prototype economy</div>
+    <div class="btnrow">
+      <button class="btn gold" onclick="buyCurrency(5)">+5 Ducats</button>
+      <button class="btn gold" onclick="buyCurrency(20)">+20 Ducats</button>
+      <button class="btn gold" onclick="buyCurrency(100)">+100 Ducats</button>
+    </div>
+
+    <div class="hdr">Debug / abstracted backend</div>
+    <div class="btnrow">
+      <button class="btn" onclick="grantInvite()">Grant VIP Invite</button>
+      <button class="btn" onclick="resetGame()">Reset</button>
+    </div>
+
+    <div class="hdr">Event log</div>
+    <div id="log" class="log"></div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div id="sceneName" class="sceneName">SHOES</div>
+      <div class="sub">all persistence = localStorage · no backend</div>
+    </div>
+
+    <div class="sceneWrap">
+      <section class="sceneCard">
+        <div class="viewport" id="viewport">
+          <div class="skyGlow"></div>
+          <div class="marquee" id="marquee">BRAZEN THEATERS</div>
+          <div class="bigIcon" id="icon">👞</div>
+          <div class="sceneOverlay">
+            <h2 id="title">Shoes</h2>
+            <p id="desc">Choose a vibe, then look up.</p>
+          </div>
+        </div>
+        <div class="actions">
+          <div class="actionTitle">Available actions</div>
+          <div class="actionGrid" id="actions"></div>
+        </div>
+      </section>
+
+      <aside class="panel">
+        <h3>Scene graph</h3>
+        <div class="graph" id="graph"></div>
+
+        <h3 style="margin-top:18px">Rules</h3>
+        <div class="keyline">
+          Outdoor movement may randomly find Ducats.<br>
+          General admission: 20 Ducats.<br>
+          VIP access: 100 Ducats or invitation.<br>
+          Backend actions are represented as local prototype buttons.<br>
+          Scene state persists in this browser only.
+        </div>
+        <div id="notice" class="notice" style="display:none"></div>
+        <div class="footer">Prototype build: scene graph first, services later.</div>
+      </aside>
+    </div>
+  </main>
+</div>
+
+<script>
+const scenes = {
+  shoes:{title:"Shoes",icon:"👞",desc:"First-person avatar vibe selection. In this prototype, the choice is purely cosmetic.",marquee:"STAGE 0",region:"outside",
+    actions:[["street","Look up","Enter the night street"]]},
+  street:{title:"Street Start",icon:"🌃",desc:"Wet pavement, steam, traffic, and a distant hint that something is happening nearby.",marquee:"AFTER DARK",region:"outside",
+    actions:[["steam","Steam Vent","Walk toward the steam"],["storefronts","Storefronts","Browse the block"],["crosswalk","Crosswalk","Head across"],["marquee","Marquee Glimpse","Follow the warm lights"]]},
+  steam:{title:"Steam Vent",icon:"♨️",desc:"A plume of steam hides and reveals the block beyond.",marquee:"CITY GRID",region:"outside",
+    actions:[["alley","Alley","Take the narrow route"],["plaza","Plaza","Head toward open space"],["street","Street Start","Back"]]},
+  alley:{title:"Alley",icon:"🌒",desc:"Service doors, wet brick, dumpsters, and a possible shortcut.",marquee:"SERVICE WAY",region:"outside",
+    actions:[["corner","Corner","Follow the alley out"],["steam","Steam Vent","Back"]]},
+  plaza:{title:"Plaza",icon:"⛲",desc:"A quieter square. Foot traffic thins; reflected lights stretch across the pavement.",marquee:"PLAZA",region:"outside",
+    actions:[["bus","Bus Stop","Cross the plaza"],["storefronts","Storefronts","Loop toward shops"],["steam","Steam Vent","Back"]]},
+  bus:{title:"Bus Stop",icon:"🚌",desc:"A shelter, route map, and passing traffic. The theater district is close.",marquee:"6A DOWNTOWN",region:"outside",
+    actions:[["corner","Corner","Keep going"],["plaza","Plaza","Back"]]},
+  storefronts:{title:"Storefronts",icon:"🏪",desc:"Closed shops, late-night windows, flyers, and reflections.",marquee:"BRAZEN COFFEE",region:"outside",
+    actions:[["crosswalk","Crosswalk","Continue"],["plaza","Plaza","Back"],["boxoffice","Box Office","Follow ticket signage"]]},
+  crosswalk:{title:"Crosswalk",icon:"🚸",desc:"A major crossing in the Stage 0 maze.",marquee:"WALK",region:"outside",
+    actions:[["corner","Corner","Cross"],["storefronts","Storefronts","Back"]]},
+  corner:{title:"Corner",icon:"🛑",desc:"You round a corner. Warm marquee light starts to dominate the block.",marquee:"BRAZEN →",region:"outside",
+    actions:[["marquee","Marquee Glimpse","Approach the glow"],["alley","Alley","Back"],["bus","Bus Stop","Back"]]},
+  marquee:{title:"Marquee Glimpse",icon:"🎞️",desc:"The Obscure Case of Grace Bland · launching March 5, 2027.",marquee:"THE OBSCURE CASE OF GRACE BLAND",region:"outside",
+    actions:[["brazen","Brazen Exterior","Approach the theater"],["corner","Corner","Back"]]},
+  brazen:{title:"Brazen Theaters",icon:"🎭",desc:"The destination. Box office to one side, red carpet and ropes ahead.",marquee:"BRAZEN THEATERS",region:"outside",
+    actions:[["boxoffice","Box Office","Tickets / access"],["redcarpet","Red Carpet","Join the arrival flow"],["street","Street Maze","Walk away"]]},
+  boxoffice:{title:"Box Office",icon:"🎟️",desc:"The tiny attendant waits behind glass. General admission is 20 Ducats; VIP is 100.",marquee:"BOX OFFICE",region:"threshold",
+    actions:[["buyTicket","Buy General Ticket","20 Ducats"],["buyVip","Buy VIP Access","100 Ducats"],["redcarpet","Red Carpet","Continue toward entrance"],["brazen","Exterior","Back"]]},
+  redcarpet:{title:"Red Carpet",icon:"🔴",desc:"The path narrows into velvet ropes and social choreography.",marquee:"ARRIVALS",region:"threshold",
+    actions:[["lineRear","General Line","Queue normally"],["vipArrival","VIP Arrival Zone","Take the VIP branch"],["boxoffice","Box Office","Back"]]},
+  lineRear:{title:"General Line · Rear",icon:"👥",desc:"You join the back of the line.",marquee:"PLEASE WAIT",region:"threshold",
+    actions:[["lineMid","Advance","Move forward"],["redcarpet","Leave Line","Back"]]},
+  lineMid:{title:"General Line · Middle",icon:"👥",desc:"The doorman is visible now.",marquee:"ADMISSION 20",region:"threshold",
+    actions:[["lineFront","Advance","Move forward"],["lineRear","Back","Step back"]]},
+  lineFront:{title:"General Line · Front",icon:"🧍",desc:"One person ahead of you. The rope opens and closes deliberately.",marquee:"NEXT",region:"threshold",
+    actions:[["entryDoorman","Doorman","Present access"],["lineMid","Back","Step back"]]},
+  entryDoorman:{title:"Entry Doorman",icon:"🎩",desc:"The entrance attendant checks your admission state.",marquee:"ADMISSION",region:"threshold",
+    actions:[["enterLobby","Enter","Requires ticket or VIP"],["lineFront","Return to Line","Back"]]},
+  vipArrival:{title:"VIP Arrival Zone",icon:"✨",desc:"Spotlights, camera flashes, and a separate curbside path.",marquee:"VIP ARRIVALS",region:"threshold",
+    actions:[["limo","Limo Dropoff","Continue"],["redcarpet","Red Carpet","Back"]]},
+  limo:{title:"Limo Dropoff",icon:"🚘",desc:"A ceremonial point of arrival.",marquee:"VIP",region:"threshold",
+    actions:[["paparazzi","Paparazzi","Step onto the carpet"],["vipArrival","Back","Return"]]},
+  paparazzi:{title:"Paparazzi",icon:"📸",desc:"Flashbulbs explode around the arrival lane.",marquee:"ARRIVAL",region:"threshold",
+    actions:[["vipGate","VIP Gate","Approach the rope"],["limo","Back","Return"]]},
+  vipGate:{title:"VIP Gate",icon:"👑",desc:"A second threshold. VIP entitlement or invitation required.",marquee:"VIP ONLY",region:"threshold",
+    actions:[["vipCheckin","Pass VIP Gate","Requires VIP"],["paparazzi","Back","Return"]]},
+  vipCheckin:{title:"VIP Check-In",icon:"🛎️",desc:"Credential verification is abstracted locally for this prototype.",marquee:"VIP CHECK-IN",region:"inside",
+    actions:[["vipLounge","VIP Lounge","Enter"],["lobby","Lobby","Join main interior"]]},
+  lobby:{title:"Lobby",icon:"🛋️",desc:"The social hub. Auditorium ahead; VIP gate to one side.",marquee:"BRAZEN THEATERS",region:"inside",
+    actions:[["audEntry","Auditorium Entry","Find your seat"],["vipGate","VIP Gate","VIP wing"],["brazen","Exit Theater","Return outside"]]},
+  vipLounge:{title:"VIP Lounge",icon:"🥂",desc:"Prototype-only VIP hub: jukebox, photo booth, vending, food, invite-a-friend—all abstracted.",marquee:"VIP LOUNGE",region:"inside",
+    actions:[["vipAction","Prototype VIP Actions","Simulate integrations"],["lobby","Lobby","Main interior"],["audEntry","Auditorium","Head to the show"]]},
+  audEntry:{title:"Auditorium Entry",icon:"🚪",desc:"Double doors open onto the main aisle.",marquee:"AUDITORIUM",region:"auditorium",
+    actions:[["aisle","Main Aisle","Enter"],["lobby","Lobby","Back"]]},
+  aisle:{title:"Main Aisle",icon:"🟥",desc:"Rows of red seats lead toward the curtain.",marquee:"HOUSE OPEN",region:"auditorium",
+    actions:[["row","Find Row","Go to assigned row"],["balcony","Balcony Access","Head upstairs"],["audEntry","Back","Exit auditorium"]]},
+  row:{title:"Row Approach",icon:"↘️",desc:"Seat numbers glow faintly along the row.",marquee:"ROW 12",region:"auditorium",
+    actions:[["seat","Your Seat","Sit here"],["aisle","Aisle","Back"]]},
+  seat:{title:"Seat",icon:"💺",desc:"Your anchor point in the auditorium.",marquee:"SEAT 12",region:"auditorium",
+    actions:[["seated","Sit Down","Take your seat"],["row","Stand / Back","Return to row"]]},
+  seated:{title:"Seated View",icon:"🎭",desc:"The stage, curtain, audience, balcony, and projector booth are all discoverable from here.",marquee:"CURTAIN CLOSED",region:"auditorium",
+    actions:[["stage","Stage Overview","Look forward"],["lookback","Look Back","See balcony / booth"],["seat","Stand Up","Return to seat"]]},
+  lookback:{title:"Look Back",icon:"🔭",desc:"Balcony rail, projector aperture, rear doors, and the room behind you.",marquee:"BALCONY",region:"auditorium",
+    actions:[["balcony","Balcony Access","Explore upstairs"],["seated","Face Stage","Turn around"]]},
+  balcony:{title:"Balcony Access",icon:"🪜",desc:"A stair and upper landing lead toward better sightlines and technical spaces.",marquee:"BALCONY",region:"auditorium",
+    actions:[["balconyView","Balcony View","Look over the rail"],["projector","Projector Booth","Technical door"],["aisle","Main Floor","Back downstairs"]]},
+  balconyView:{title:"Balcony View",icon:"🏛️",desc:"The stage geometry reads differently from above.",marquee:"BALCONY VIEW",region:"auditorium",
+    actions:[["stage","Stage","Focus on stage"],["balcony","Landing","Back"]]},
+  projector:{title:"Projector Booth / Controls",icon:"📽️",desc:"Lighting, audio, projection, and event controls. Staff gating is abstracted for now.",marquee:"CONTROL",region:"auditorium",
+    actions:[["balcony","Exit Booth","Back"]]},
+  stage:{title:"Stage Overview",icon:"🎭",desc:"The room's ritual center. The curtain controls the reveal.",marquee:"CURTAIN CLOSED",region:"stage",
+    actions:[["curtainClosed","Curtain Closed","Inspect"],["stageAccess","Stage Access Gate","Try to approach"],["seated","Return to Seat","Back"]]},
+  curtainClosed:{title:"Curtain Closed",icon:"🟥",desc:"Heavy red curtain. The screen is behind it.",marquee:"WAIT",region:"stage",
+    actions:[["curtainOpen","Open Curtain","Prototype event trigger"],["stage","Stage Overview","Back"]]},
+  curtainOpen:{title:"Curtain Open",icon:"↔️",desc:"The curtain parts and reveals the screen.",marquee:"REVEAL",region:"stage",
+    actions:[["screen","Screen Revealed","Continue"],["curtainClosed","Close Curtain","Reset state"]]},
+  screen:{title:"Screen Revealed",icon:"⬜",desc:"Cinema / game / announcement surface.",marquee:"THE OBSCURE CASE OF GRACE BLAND",region:"stage",
+    actions:[["announcement","Announcement Mode","Show host setup"],["stage","Stage Overview","Back"]]},
+  announcement:{title:"Announcement Stage",icon:"🎙️",desc:"Podium, microphone, spotlight. Brazen can address the room.",marquee:"ANNOUNCEMENT",region:"stage",
+    actions:[["screen","Screen","Back"],["centerStage","Center Stage","Step onto stage"]]},
+  stageAccess:{title:"Stage Access Gate",icon:"⛔",desc:"A restricted threshold near the apron.",marquee:"STAGE ACCESS",region:"stage",
+    actions:[["centerStage","Enter Stage","Prototype allows access"],["stage","Back","Return"]]},
+  centerStage:{title:"Center Stage",icon:"⭐",desc:"The rare reverse perspective: the player faces the audience.",marquee:"CENTER STAGE",region:"stage",
+    actions:[["audienceView","View to Audience","Turn outward"],["stage","Stage Overview","Back"]]},
+  audienceView:{title:"View From Stage to Audience",icon:"👥",desc:"Rows, balcony, house lights, and the sense of being the one watched.",marquee:"HOUSE",region:"stage",
+    actions:[["centerStage","Center Stage","Back"]]}
+};
+
+const state = JSON.parse(localStorage.getItem("redeye_stage0") || '{"scene":"shoes","ducats":0,"ticket":false,"vip":false,"invite":false,"visited":[]}');
+
+function save(){ localStorage.setItem("redeye_stage0",JSON.stringify(state)); }
+function log(msg){
+  const el=document.getElementById("log");
+  const line=document.createElement("div");
+  line.textContent="› "+msg;
+  el.prepend(line);
+}
+function buyCurrency(n){ state.ducats+=n; log("Simulated purchase: +"+n+" Ducats."); save(); render(); }
+function grantInvite(){ state.invite=true; log("VIP invitation granted."); save(); render(); }
+function resetGame(){ localStorage.removeItem("redeye_stage0"); location.reload(); }
+
+function outdoorCoinRoll(from,to){
+  const a=scenes[from], b=scenes[to];
+  if(a && b && a.region==="outside" && b.region==="outside" && Math.random()<0.25){
+    const amt=Math.random()<0.75?1:(Math.random()<0.8?2:5);
+    state.ducats+=amt;
+    log("Found "+amt+" Ducat"+(amt>1?"s":"")+" on the ground.");
+  }
+}
+
+function gateCheck(target){
+  if(target==="enterLobby"){
+    if(state.ticket||state.vip||state.invite) return {ok:true,dest:"lobby"};
+    return {ok:false,msg:"The doorman needs a ticket, VIP access, or an invitation."};
+  }
+  if(target==="vipCheckin"){
+    if(state.vip||state.invite) return {ok:true,dest:"vipCheckin"};
+    return {ok:false,msg:"VIP gate: 100-Ducat access or an invitation required."};
+  }
+  if(target==="buyTicket"){
+    if(state.ticket) return {ok:false,msg:"You already have general admission."};
+    if(state.ducats<20) return {ok:false,msg:"General admission costs 20 Ducats."};
+    state.ducats-=20; state.ticket=true; log("Purchased general admission for 20 Ducats."); save(); return {ok:true,dest:"boxoffice"};
+  }
+  if(target==="buyVip"){
+    if(state.vip) return {ok:false,msg:"VIP already active."};
+    if(state.ducats<100) return {ok:false,msg:"VIP access costs 100 Ducats."};
+    state.ducats-=100; state.vip=true; log("Purchased VIP access for 100 Ducats."); save(); return {ok:true,dest:"boxoffice"};
+  }
+  if(target==="vipAction"){
+    log("VIP prototype actions simulated: food order, friend invite, jukebox, vending, photo booth.");
+    return {ok:true,dest:"vipLounge",msg:"Backend integrations are abstracted. Prototype action completed locally."};
+  }
+  return {ok:true,dest:target};
+}
+
+function move(target){
+  const result=gateCheck(target);
+  document.getElementById("notice").style.display="none";
+  if(!result.ok){
+    const n=document.getElementById("notice"); n.textContent=result.msg; n.style.display="block"; log(result.msg); return;
+  }
+  if(result.msg){
+    const n=document.getElementById("notice"); n.textContent=result.msg; n.style.display="block";
+  }
+  const from=state.scene;
+  const dest=result.dest;
+  if(scenes[dest]){
+    outdoorCoinRoll(from,dest);
+    state.scene=dest;
+    if(!state.visited.includes(dest)) state.visited.push(dest);
+    log("Scene → "+scenes[dest].title);
+    save(); render();
+  }
+}
+
+function actionLabel(target){
+  if(target==="enterLobby" && !(state.ticket||state.vip||state.invite)) return "LOCKED";
+  if(target==="vipCheckin" && !(state.vip||state.invite)) return "LOCKED";
+  if(target==="buyTicket") return state.ticket?"OWNED":"20 DUCATS";
+  if(target==="buyVip") return state.vip?"OWNED":"100 DUCATS";
+  return "";
+}
+function render(){
+  const s=scenes[state.scene] || scenes.shoes;
+  document.getElementById("sceneName").textContent=s.title.toUpperCase();
+  document.getElementById("title").textContent=s.title;
+  document.getElementById("desc").textContent=s.desc;
+  document.getElementById("icon").textContent=s.icon;
+  document.getElementById("marquee").textContent=s.marquee||"BRAZEN THEATERS";
+  document.getElementById("ducats").textContent=state.ducats;
+  document.getElementById("ticket").textContent=state.ticket?"YES":"NO";
+  document.getElementById("invite").textContent=state.invite?"YES":"NO";
+  document.getElementById("access").textContent=state.vip||state.invite?"VIP":state.ticket?"GA":"NONE";
+
+  const vp=document.getElementById("viewport");
+  const region=s.region;
+  const colors={
+    outside:["#06111d","#12181c"],threshold:["#12090b","#1c1010"],inside:["#100b08","#17120f"],
+    auditorium:["#0b0809","#1b0d0f"],stage:["#100608","#1f0a0d"]
+  }[region]||["#07111b","#10151a"];
+  vp.style.background=`radial-gradient(circle at 50% 70%, rgba(180,20,30,.16), transparent 28%),linear-gradient(${colors[0]} 0 45%,${colors[1]} 45% 100%)`;
+
+  const acts=document.getElementById("actions"); acts.innerHTML="";
+  s.actions.forEach(([target,label,desc])=>{
+    const locked=(target==="enterLobby" && !(state.ticket||state.vip||state.invite)) ||
+                 (target==="vipCheckin" && !(state.vip||state.invite)) ||
+                 (target==="buyTicket" && state.ticket) ||
+                 (target==="buyVip" && state.vip);
+    const b=document.createElement("button");
+    b.className="navbtn"+(locked?" locked":"");
+    b.innerHTML=`<b>${label}</b><small>${actionLabel(target)||desc||""}</small>`;
+    b.onclick=()=>move(target);
+    acts.appendChild(b);
+  });
+
+  const graph=document.getElementById("graph"); graph.innerHTML="";
+  Object.entries(scenes).forEach(([id,node])=>{
+    const e=document.createElement("span");
+    e.className="node"+(id===state.scene?" current":state.visited.includes(id)?" unlocked":"");
+    e.textContent=node.title;
+    graph.appendChild(e);
+  });
+}
+if(!state.visited.includes(state.scene)) state.visited.push(state.scene);
+log("Prototype loaded.");
+render();
+</script>
+</body>
+</html>
