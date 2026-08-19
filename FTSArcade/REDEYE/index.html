@@ -46,7 +46,7 @@
     <div class="res" id="resT"><canvas id="iconT"></canvas><div><div class="l">Admission</div><div class="v" id="valT">None</div></div></div>
     <div class="res" id="resV"><canvas id="iconV"></canvas><div><div class="l">VIP</div><div class="v" id="valV">None</div></div></div>
   </div>
-  <div class="topbtns"><button class="topbtn" onclick="toggleDrawer('inventory')">Inventory <span id="invMini">0</span></button><button class="topbtn" onclick="toggleDrawer('missions')">Missions <span id="missionMini"></span></button><button class="topbtn" onclick="toggleDrawer('dev')">Dev</button></div>
+  <div class="topbtns"><button class="topbtn" onclick="toggleDrawer('inventory')">Inventory <span id="invMini">0</span></button><button class="topbtn" onclick="toggleDrawer('missions')">Missions <span id="missionMini"></span></button><button class="topbtn" id="devBtn" style="display:none" onclick="toggleDrawer('dev')">Dev</button></div>
 </header>
 <section class="caption"><div class="region" id="region"></div><h1 id="title"></h1><p id="desc"></p><div class="marquee" id="marquee"></div></section>
 <section class="dock glass"><div class="dockhead"><b>Available Moves</b><span id="seen"></span></div><div id="jobs" class="jobs"></div></section>
@@ -122,6 +122,54 @@ const SCENES={
 const ITEMS={frymatic:{name:'the frymatic',art:'frymatic',rarity:'LEGENDARY · ARTIFACT',description:'A rare harmonic implement. Tunes probability, composition, and cuisine.',href:'https://www.x.com/mofrymatic'}};
 const OBJECTIVES=[['Find Brazen Theaters',s=>s.visited.includes('brazen')],['Buy General Admission',s=>s.entitlements.admission.purchased],['Enter the Lobby',s=>s.visited.includes('lobby')],['Take your seat',s=>s.visited.includes('seated')],['Open the curtain',s=>s.visited.includes('curtainOpen')],['Step onto Center Stage',s=>s.visited.includes('centerStage')],['Earn VIP Access',s=>s.entitlements.vip.purchased||s.entitlements.vip.invited],['Enter the VIP Lounge',s=>s.visited.includes('vipLounge')],['Reach the Gym Lounge',s=>s.visited.includes('gymLounge')],['Reach the Rooftop',s=>s.visited.includes('rooftop')]];
 const SAVE_KEY='redeye_stage0_v2';
+
+/* ── Developer mode ─────────────────────────────────────────────
+   Normal players: hidden.
+   Curious inspectors can enable it from DevTools:
+     enableDevMode()
+   Or visit with:
+     ?dev=1
+   Repo/local builders can make it permanently visible by setting:
+     const DEV_MODE_DEFAULT=true;
+---------------------------------------------------------------- */
+const DEV_MODE_DEFAULT=false;
+const DEV_MODE_STORAGE_KEY='redeye_dev_mode';
+
+function readDevMode(){
+  const q=new URLSearchParams(location.search).get('dev');
+  if(q==='1'||q==='true') return true;
+  if(q==='0'||q==='false') return false;
+  try{
+    const saved=localStorage.getItem(DEV_MODE_STORAGE_KEY);
+    if(saved==='true') return true;
+    if(saved==='false') return false;
+  }catch{}
+  return DEV_MODE_DEFAULT;
+}
+
+let devModeEnabled=readDevMode();
+
+function applyDevMode(){
+  const btn=$('devBtn');
+  if(btn) btn.style.display=devModeEnabled?'inline-block':'none';
+  if(!devModeEnabled) $('dev')?.classList.remove('open');
+}
+
+function setDevMode(enabled,{persist=true}={}){
+  devModeEnabled=!!enabled;
+  if(persist){
+    try{localStorage.setItem(DEV_MODE_STORAGE_KEY,String(devModeEnabled))}catch{}
+  }
+  applyDevMode();
+  if(typeof toast==='function') toast(devModeEnabled?'Dev Mode Enabled':'Dev Mode Disabled');
+  return devModeEnabled;
+}
+
+/* Intentionally global so someone who inspects source can discover/use these. */
+window.enableDevMode=()=>setDevMode(true);
+window.disableDevMode=()=>setDevMode(false);
+window.setRedEyeDevMode=setDevMode;
+
 const DEFAULT_STATE={scene:'shoes',wallet:{ducats:0,lifetimeDucats:0},entitlements:{admission:{purchased:false,redeemed:false},vip:{purchased:false,redeemed:false,invited:false}},inventory:[],visited:['shoes'],rolls:0};
 function clone(x){return JSON.parse(JSON.stringify(x))}function loadState(){try{const raw=localStorage.getItem(SAVE_KEY);return raw?Object.assign(clone(DEFAULT_STATE),JSON.parse(raw)):clone(DEFAULT_STATE)}catch{return clone(DEFAULT_STATE)}}const state=loadState();function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(state))}catch{}}
 function hasItem(id){return state.inventory.includes(id)}function addInventoryItem(id){if(!hasItem(id)){state.inventory.push(id);toast('LEGENDARY DROP: the frymatic');addLog('The frymatic dropped into inventory.');save()}}
@@ -137,9 +185,13 @@ function renderStats(){drawCrop($('iconD'),'ducat',false);drawCrop($('iconT'),'t
 function renderJobs(scene){$('jobs').innerHTML='';scene.actions.forEach(([target,label,hint])=>{const st=status(target);const b=document.createElement('button');b.className='job'+(st.locked?' locked':'');const c=document.createElement('canvas');b.appendChild(c);const badge=document.createElement('span');badge.className='badge';badge.textContent=st.badge;b.appendChild(badge);const body=document.createElement('div');body.className='body';body.innerHTML=`<div class="name">${label}</div><div class="hint">${hint||''}</div>`;b.appendChild(body);b.onclick=()=>move(target);$('jobs').appendChild(b);requestAnimationFrame(()=>drawCrop(c,actionArt(target),true))})}
 function renderObjectives(){let done=0;$('objectiveList').innerHTML='';OBJECTIVES.forEach(([label,check])=>{const ok=check(state);if(ok)done++;const d=document.createElement('div');d.className='obj'+(ok?' done':'');d.innerHTML=`<span class="box">${ok?'✓':''}</span><span>${label}</span>`;$('objectiveList').appendChild(d)});$('missionMini').textContent=`${done}/${OBJECTIVES.length}`;$('missionCount').textContent=`${done} / ${OBJECTIVES.length} complete`;$('missionFill').style.width=`${done/OBJECTIVES.length*100}%`}
 function renderInventory(){$('inventoryList').innerHTML='';$('invMini').textContent=state.inventory.length;if(!state.inventory.length){$('inventoryList').innerHTML='<div class="empty">Nothing strange enough to keep yet.</div>';return}state.inventory.forEach(id=>{const item=ITEMS[id];const d=document.createElement('div');d.className='invitem';const c=document.createElement('canvas');d.appendChild(c);const text=document.createElement('div');text.innerHTML=`<b>${item.name}</b><small>${item.rarity}</small><p>${item.description}</p><a href="${item.href}" target="_blank" rel="noopener">Follow the trail → @mofrymatic</a>`;d.appendChild(text);$('inventoryList').appendChild(d);requestAnimationFrame(()=>drawCrop(c,item.art,false))})}
-function render(){const scene=SCENES[state.scene]||SCENES.shoes;$('title').textContent=scene.title;$('desc').textContent=scene.desc;$('region').textContent=scene.region;$('marquee').textContent=scene.marquee;$('crumbRegion').textContent=scene.region+' · Stage 0';$('crumbScene').textContent=scene.title;$('seen').textContent=`${state.visited.length} / ${Object.keys(SCENES).length} scenes seen`;requestAnimationFrame(()=>drawCrop($('bg'),scene.art,true));renderStats();renderJobs(scene);renderObjectives();renderInventory()}
-function toggleDrawer(id){document.querySelectorAll('.drawer').forEach(d=>{if(d.id!==id)d.classList.remove('open')});$(id).classList.toggle('open')}addEventListener('resize',render);addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.drawer').forEach(d=>d.classList.remove('open'))});
-loadImages().then(()=>{addLog('Static atlas build loaded.');render()}).catch(err=>{$('title').textContent='Asset load error';$('desc').textContent='Check that the assets/ folder is deployed beside index.html.';console.error(err)});
+function render(){applyDevMode();const scene=SCENES[state.scene]||SCENES.shoes;$('title').textContent=scene.title;$('desc').textContent=scene.desc;$('region').textContent=scene.region;$('marquee').textContent=scene.marquee;$('crumbRegion').textContent=scene.region+' · Stage 0';$('crumbScene').textContent=scene.title;$('seen').textContent=`${state.visited.length} / ${Object.keys(SCENES).length} scenes seen`;requestAnimationFrame(()=>drawCrop($('bg'),scene.art,true));renderStats();renderJobs(scene);renderObjectives();renderInventory()}
+function toggleDrawer(id){
+  if(id==='dev'&&!devModeEnabled)return;
+  document.querySelectorAll('.drawer').forEach(d=>{if(d.id!==id)d.classList.remove('open')});
+  $(id).classList.toggle('open')
+}addEventListener('resize',render);addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.drawer').forEach(d=>d.classList.remove('open'))});
+applyDevMode();loadImages().then(()=>{addLog('Static atlas build loaded.');render()}).catch(err=>{$('title').textContent='Asset load error';$('desc').textContent='Check that the assets/ folder is deployed beside index.html.';console.error(err)});
 </script>
 </body>
 </html>
