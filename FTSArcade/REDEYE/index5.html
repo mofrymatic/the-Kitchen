@@ -52,13 +52,13 @@
 <section class="dock glass"><div class="dockhead"><b>Available Moves</b><span id="seen"></span></div><div id="jobs" class="jobs"></div></section>
 <aside id="missions" class="drawer right glass"><h2>Stage 0 Missions</h2><div class="sub">Explore · collect · access · discover.</div><div id="missionCount"></div><div class="progress"><span id="missionFill"></span></div><div id="objectiveList"></div></aside>
 <aside id="inventory" class="drawer right glass"><h2>Inventory</h2><div class="sub">Persistent local items and strange things you find.</div><div id="inventoryList"></div></aside>
-<aside id="dev" class="drawer left glass"><h2>Prototype Controls</h2><div class="sub">Static GitHub Pages build: all state is localStorage.</div><div class="devgrid"><button class="dev" onclick="buyCurrency(20)">+20 D</button><button class="dev" onclick="buyCurrency(100)">+100 D</button><button class="dev" onclick="buyCurrency(500)">+500 D</button><button class="dev wide" onclick="grantInvite()">Grant VIP Invitation</button><button class="dev wide" onclick="redeyeDev.secret('service')">Open Link-Only Room</button><button class="dev wide" onclick="redeyeDev.secret('unlisted')">Open Unlisted Room</button><button class="dev wide" onclick="redeyeDev.backroom(1,'linkServiceRoom')">Enter Backrooms</button><button class="dev wide" onclick="resetGame()">Reset Stage 0</button></div><div id="log" class="log"></div></aside>
+<aside id="dev" class="drawer left glass"><h2>Prototype Controls</h2><div class="sub">Static GitHub Pages build: all state is localStorage.</div><div class="devgrid"><button class="dev" onclick="buyCurrency(20)">+20 D</button><button class="dev" onclick="buyCurrency(100)">+100 D</button><button class="dev" onclick="buyCurrency(500)">+500 D</button><button class="dev wide" onclick="grantInvite()">Grant VIP Invitation</button><button class="dev wide" onclick="resetGame()">Reset Stage 0</button></div><div id="log" class="log"></div></aside>
 <div id="toast" class="toast glass"></div>
 </div>
 <script>
 const $=id=>document.getElementById(id);
 const SHEETS={
- s1:'assets/sheet01.png',s2:'assets/sheet02.png',s3:'assets/sheet03.png',s4:'assets/sheet04.png',s5:'assets/sheet05.png',s6:'assets/sheet06-expanded.png',s7:'assets/sheet07.png',fry:'assets/frymatic.png'
+ s1:'assets/sheet01.png',s2:'assets/sheet02.png',s3:'assets/sheet03.png',s4:'assets/sheet04.png',s5:'assets/sheet05.png',s6:'assets/sheet06-expanded.png',fry:'assets/frymatic.png'
 };
 const IMAGES={};
 function loadImages(){return Promise.all(Object.entries(SHEETS).map(([k,src])=>new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>{IMAGES[k]=im;resolve()};im.onerror=reject;im.src=src})));}
@@ -82,30 +82,7 @@ const ART={
  gymLobby:R('s6',12,650,145,90),gymLockers:R('s6',162,650,145,90),gymWeights:R('s6',315,650,145,90),gymCardio:R('s6',15,748,145,105),gymStudios:R('s6',160,748,145,105),gymSpa:R('s6',310,748,145,105),gymLounge:R('s6',15,860,145,80),
  cowork:R('s6',440,650,150,90),openFloor:R('s6',600,650,155,90),focusRooms:R('s6',765,650,145,90),meeting:R('s6',440,748,155,105),terrace:R('s6',600,748,155,105),restaurant:R('s6',765,748,145,105),
  parking:R('s6',440,860,210,75),corporate:R('s6',660,860,120,75),residence:R('s6',790,860,110,75),helipad:R('s6',800,748,100,105),tower:R('s6',810,820,80,120),windowRig:R('s6',860,820,80,120),
- frymatic:R('fry',0,0,1122,1402),
-
- /* Sheet 07 — locked Stage 0 style: street tenants / secret systems / backrooms */
- hellsChickenExterior:R('s7',20,24,275,270),
- hellsChickenCounter:R('s7',310,24,275,270),
- gypsyNuggets:R('s7',595,24,220,270),
- ftsTournamentKiosk:R('s7',820,24,280,270),
- linkService:R('s7',1105,24,315,270),
-
- unlisted:R('s7',20,307,275,232),
- secretKey:R('s7',335,307,215,232),
- backroomA:R('s7',556,307,257,232),
- backroomB:R('s7',818,307,296,232),
- backroomJunction:R('s7',1118,307,282,232),
-
- secretDoor:R('s7',20,553,238,262),
- frymaticSheet:R('s7',268,553,288,262),
- frymaticCard:R('s7',579,553,225,262),
- tenantParking:R('s7',813,553,300,262),
- publicParking:R('s7',1124,553,285,262),
-
- gameShop:R('s7',23,821,452,220),
- cellRepair:R('s7',482,821,462,220),
- hobbyShop:R('s7',958,821,453,220)
+ frymatic:R('fry',0,0,1122,1402)
 };
 function drawCrop(canvas,key,cover=true){const a=ART[key]||ART.brazen,im=IMAGES[a.sheet];if(!im)return;const rect=canvas.getBoundingClientRect();const dpr=Math.min(devicePixelRatio||1,2);const cw=Math.max(1,Math.floor(rect.width*dpr)),ch=Math.max(1,Math.floor(rect.height*dpr));if(canvas.width!==cw||canvas.height!==ch){canvas.width=cw;canvas.height=ch}const ctx=canvas.getContext('2d');ctx.clearRect(0,0,cw,ch);if(!cover){ctx.drawImage(im,a.x,a.y,a.w,a.h,0,0,cw,ch);return}const srcRatio=a.w/a.h,dstRatio=cw/ch;let sx=a.x,sy=a.y,sw=a.w,sh=a.h;if(srcRatio>dstRatio){sw=a.h*dstRatio;sx=a.x+(a.w-sw)/2}else{sh=a.w/dstRatio;sy=a.y+(a.h-sh)/2}ctx.drawImage(im,sx,sy,sw,sh,0,0,cw,ch)}
 const S=(title,desc,region,art,actions,marquee=title)=>({title,desc,region,art,actions,marquee});
@@ -116,29 +93,19 @@ const SCENES={
  alley:S('Alley','Service doors, wet brick, dumpsters, and a possible shortcut.','outside','alley',[['corner','Corner','Follow the alley out'],['steam','Steam Vent','Back']]),
  plaza:S('Plaza','A quieter square with reflected light.','outside','plaza',[['bus','Bus Stop','Cross the plaza'],['storefronts','Storefronts','Loop toward shops'],['steam','Steam Vent','Back']]),
  bus:S('Bus Stop','The theater district is close.','outside','bus',[['corner','Corner','Keep going'],['plaza','Plaza','Back']]),
- storefronts:S('Storefronts','Closed shops, late-night windows, flyers, and reflections. The Brazen block has several late-night tenants worth inspecting.','outside','storefronts',[['crosswalk','Crosswalk','Continue'],['plaza','Plaza','Back'],['blockShops','Around the Block','Explore street tenants'],['boxoffice','Box Office','Follow ticket signage']],'BRAZEN COFFEE'),
+ storefronts:S('Storefronts','Closed shops, late-night windows, flyers, and reflections.','outside','storefronts',[['crosswalk','Crosswalk','Continue'],['plaza','Plaza','Back'],['boxoffice','Box Office','Follow ticket signage']],'BRAZEN COFFEE'),
  crosswalk:S('Crosswalk','A major crossing in the Stage 0 maze.','outside','crosswalk',[['corner','Corner','Cross'],['storefronts','Storefronts','Back']],'WALK'),
  corner:S('Corner','Warm marquee light starts to dominate the block.','outside','corner',[['marquee','Marquee Glimpse','Approach the glow'],['alley','Alley','Back'],['bus','Bus Stop','Back']],'BRAZEN →'),
  marquee:S('Marquee Glimpse','The Obscure Case of Grace Bland · launching March 5, 2027.','outside','marquee',[['brazen','Brazen Exterior','Approach the theater'],['corner','Corner','Back']],'THE OBSCURE CASE OF GRACE BLAND'),
- brazen:S('Brazen Theaters','The destination. Box office and red carpet arrivals occupy the street-facing entrance. FTS Arcade is inside the theater lobby.','outside','brazen',[['boxoffice','Box Office','Tickets / access'],['redcarpet','Red Carpet','Join arrivals'],['hellsChicken','Hell\'s Chicken','Gypsy Nuggets on the block'],['blockShops','Around the Block','Explore neighboring tenants'],['street','Street Maze','Walk away']],'BRAZEN THEATERS'),
- hellsChicken:S('Hell\'s Chicken','Street-facing chicken counter powered by Blazin Kitchen, inventor/operators of the frymatic system. Home of the famous Gypsy Nuggets.','outside','hellsChickenExterior',[['hellsChickenCounter','Order Counter','Step inside'],['gypsyNuggets','Gypsy Nuggets','Inspect the famous nuggets'],['brazen','Brazen Theaters','Back to the marquee'],['blockShops','Around the Block','Explore neighboring tenants']],'HELL\'S CHICKEN · GYPSY NUGGETS'),
- hellsChickenCounter:S('Hell\'s Chicken · Counter','The working counter of Blazin Kitchen: hot lamps, fryers, order rail, and the system behind the famous Gypsy Nuggets.','outside','hellsChickenCounter',[['gypsyNuggets','Gypsy Nuggets','The house specialty'],['hellsChicken','Hell\'s Chicken Exterior','Back outside']],'BLAZIN KITCHEN'),
- gypsyNuggets:S('Gypsy Nuggets','Hell\'s Chicken\'s famous fried nuggets: a small edible landmark on the block.','outside','gypsyNuggets',[['hellsChickenCounter','Order Counter','Back'],['hellsChicken','Exterior','Back outside']],'GYPSY NUGGETS'),
- blockShops:S('Around the Block','Street-level tenants orbit the Brazen tower: games, repair, hobbies, food, parking, and other reasons to linger.','outside','storefronts',[['gameShop','Game Shop','Games, cards, collectibles'],['cellRepair','Cell Phone Repair','Screens, batteries, data'],['hobbyShop','Hobby Shop','Models, paints, figures'],['publicParking','Public Parking','Street-access garage'],['tenantParking','Tenant Parking','Residents and tenants'],['hellsChicken','Hell\'s Chicken','Gypsy Nuggets'],['brazen','Brazen Theaters','Return to theater']],'THE BLOCK'),
- gameShop:S('Game Shop','A neighborhood game shop carrying games, cards, collectibles, and tournament-adjacent curiosities.','outside','gameShop',[['blockShops','Around the Block','Back']],'GAMES · CARDS · COLLECTIBLES'),
- cellRepair:S('Cell Phone Repair','A late-night phone repair storefront: screens, batteries, data recovery, and emergency fixes.','outside','cellRepair',[['blockShops','Around the Block','Back']],'PHONE REPAIR'),
- hobbyShop:S('Hobby Shop','Models, paints, figures, miniatures, and shelves built for patient obsessions.','outside','hobbyShop',[['blockShops','Around the Block','Back']],'MODELS · PAINTS · FIGURES'),
- publicParking:S('Public Parking Garage','Public parking beneath the block, separately accessed from tenant circulation.','garage','publicParking',[['blockShops','Street Level','Return outside'],['parking','Garage Interior','Continue below theater']],'PUBLIC PARKING'),
- tenantParking:S('Tenant Parking Garage','Controlled garage access for building tenants and residents.','garage','tenantParking',[['blockShops','Street Level','Return outside'],['parking','Garage Interior','Continue below theater']],'TENANT PARKING'),
- ftsArcade:S('FTS Arcade','The arcade entrance lives inside the Brazen Theaters lobby: cabinets, tournament culture, and a portal into the wider FTS Arcade.','inside','fts',[['externalFTS','Enter FTS Arcade','Open frymatic.us/FTSArcade'],['ftsTournamentKiosk','FTS Tournament Series','Sign-up kiosk'],['lobby','Theater Lobby','Back']],'FTS ARCADE'),
- ftsTournamentKiosk:S('FTS Tournament Series · Sign-Up Kiosk','A lobby kiosk adjacent to FTS Arcade for joining the FTS Tournament Series. This static build records interest locally until a live registration endpoint is connected.','inside','ftsTournamentKiosk',[['joinTournamentSeries','Sign Up','Register this browser locally'],['ftsArcade','FTS Arcade','Back to the cabinets'],['lobby','Theater Lobby','Back']],'FTS TOURNAMENT SERIES'),
+ brazen:S('Brazen Theaters','The destination. Box office, red carpet, and FTS Arcade are all accessible from here.','outside','brazen',[['boxoffice','Box Office','Tickets / access'],['redcarpet','Red Carpet','Join arrivals'],['ftsArcade','FTS Arcade','Enter the wider arcade'],['street','Street Maze','Walk away']],'BRAZEN THEATERS'),
+ ftsArcade:S('FTS Arcade','A portal back into the wider FTS Arcade.','outside','fts',[['externalFTS','Enter FTS Arcade','Open frymatic.us/FTSArcade'],['brazen','Brazen Theaters','Back']],'FTS ARCADE'),
  boxoffice:S('Box Office','General admission is 20 Ducats; VIP is 100. Credentials are tracked separately from redemption.','threshold','boxoffice',[['buyTicket','Buy General Ticket','20 Ducats'],['buyVip','Buy VIP Access','100 Ducats'],['redcarpet','Red Carpet','Continue'],['brazen','Exterior','Back']],'BOX OFFICE'),
  redcarpet:S('Red Carpet','Velvet ropes and social choreography.','threshold','redcarpet',[['lineRear','General Line','Queue normally'],['vipArrival','VIP Arrival Zone','Take the VIP branch'],['brazen','Exterior','Back']],'ARRIVALS'),
  lineRear:S('General Line · Rear','You join the back of the line.','threshold','lineRear',[['lineMid','Advance','Move forward'],['redcarpet','Leave Line','Back']]),lineMid:S('General Line · Middle','The doorman is visible now.','threshold','lineMid',[['lineFront','Advance','Move forward'],['lineRear','Back','Step back']]),lineFront:S('General Line · Front','One person ahead of you.','threshold','lineFront',[['entryDoorman','Doorman','Present access'],['lineMid','Back','Step back']]),
  entryDoorman:S('Entry Doorman','The attendant checks your admission state.','threshold','entryDoorman',[['enterLobby','Enter','Requires admission, VIP, or invitation'],['lineFront','Return to Line','Back']]),
  vipArrival:S('VIP Arrival Zone','Spotlights, camera flashes, and a separate curbside path.','threshold','vipArrival',[['limo','Limo Dropoff','Continue'],['redcarpet','Red Carpet','Back']]),limo:S('Limo Dropoff','A ceremonial point of arrival.','threshold','limo',[['paparazzi','Paparazzi','Step onto the carpet'],['vipArrival','Back','Return']]),paparazzi:S('Paparazzi','Flashbulbs explode around the arrival lane.','threshold','paparazzi',[['vipGate','VIP Gate','Approach the rope'],['limo','Back','Return']]),
  vipGate:S('VIP Gate','VIP entitlement or invitation required. Entering redeems purchased VIP access.','threshold','vipGate',[['vipCheckin','Pass VIP Gate','Requires VIP'],['paparazzi','Back','Return']]),vipCheckin:S('VIP Check-In','Credential verification complete.','inside','vipCheckin',[['vipLounge','VIP Lounge','Enter'],['lobby','Lobby','Join main interior']]),
- lobby:S('Lobby','The social hub. Auditorium, concessions, bar, merch, pop-up programming, FTS Arcade, and the FTS Tournament Series kiosk radiate from here.','inside','lobby',[['audEntry','Auditorium Entry','Find your seat'],['ftsArcade','FTS Arcade','Enter the arcade'],['ftsTournamentKiosk','FTS Tournament Series','Sign-up kiosk'],['concessions','Concessions','Snacks & drinks'],['barGrill','Bar & Grill','Dinner and drinks'],['merch','Merch Storefront','Brazen / FTS goods'],['popUp','Pop-Up Stage','Small-format events'],['vipLounge','VIP Lounge','VIP access'],['brazen','Exit Theater','Return outside']]),
+ lobby:S('Lobby','The social hub. Auditorium, concessions, bar, merch, and pop-up programming radiate from here.','inside','lobby',[['audEntry','Auditorium Entry','Find your seat'],['concessions','Concessions','Snacks & drinks'],['barGrill','Bar & Grill','Dinner and drinks'],['merch','Merch Storefront','Brazen / FTS goods'],['popUp','Pop-Up Stage','Small-format events'],['vipLounge','VIP Lounge','VIP access'],['brazen','Exit Theater','Return outside']]),
  concessions:S('Concessions','Popcorn, drinks, candy, and theater rituals.','inside','concessions',[['lobby','Lobby','Back']]),barGrill:S('Bar & Grill','A full-service hospitality room attached to the theater.','inside','bar',[['lobby','Lobby','Back']]),merch:S('Merch Storefront','Physical goods from Brazen, FTS Arcade, and supported artists.','inside','merch',[['lobby','Lobby','Back']]),popUp:S('Pop-Up Stage','A flexible micro-stage for talks, demos, music, and strange one-offs.','inside','popup',[['lobby','Lobby','Back']]),
  vipLounge:S('VIP Lounge','The upper-access hub. A private stairwell leads deeper into the building.','vip','vipicon',[['vipStair','Private Stairwell','VIP only'],['lobby','Lobby','Main interior'],['audEntry','Auditorium','Head to the show']]),
  vipStair:S('Private Stairwell','A discrete vertical route beyond the public theater.','vip','stageStairs',[['gymLobby','Gym Lobby','Ascend'],['vipLounge','VIP Lounge','Back']]),
@@ -149,12 +116,10 @@ const SCENES={
  restaurant:S('Cowork · Restaurant','The upper amenity restaurant. From here, elevator and private vertical routes branch again.','cowork','restaurant',[['parking','Elevator to Parking Garage','Descend below theater'],['corporateElevators','Corporate Access','Private elevators'],['residenceElevators','Residence Access','Private elevators'],['coworkReception','Cowork Reception','Back']]),
  parking:S('Parking Garage','Below the theater: cars, service access, and an elevator back to the restaurant.','garage','parking',[['restaurant','Elevator Up','Return']]),corporateElevators:S('Corporate Access Elevators','Controlled access into Brazen corporate floors.','corporate','corporate',[['corporateOffice','Corporate Offices','Enter'],['restaurant','Restaurant','Back']]),corporateOffice:S('Corporate Offices','Executive and operating space above the public-facing complex.','corporate','cowork',[['corporateElevators','Elevators','Back']]),
  residenceElevators:S('Residence Access Elevators','Separate vertical access to private residential levels.','residence','residence',[['resLobby','Residence Lobby','Enter'],['restaurant','Restaurant','Back']]),resLobby:S('Residences · Lobby','Private residential arrival.','residence','residence',[['amenities','Amenities','Explore'],['units','Residential Floors','Ascend'],['residenceElevators','Elevators','Back']]),amenities:S('Residences · Amenities','Shared residential amenities.','residence','terrace',[['resLobby','Lobby','Back']]),units:S('Residences · Units','A stack of private residential floors.','residence','openFloor',[['penthouses','Penthouses','Ascend'],['resLobby','Lobby','Back']]),penthouses:S('Penthouses','The highest private residences.','residence','restaurant',[['rooftop','Rooftop','Continue upward'],['units','Residential Floors','Back']]),rooftop:S('Rooftop','Wind, skyline, technical structures, and access to the tower.','tower','helipad',[['tower','Tower','Climb'],['helipad','Helipad','Cross roof'],['penthouses','Penthouses','Back']]),tower:S('Tower','The crown structure above the roof.','tower','tower',[['windowRig','Window Cleaning Apparatus','Inspect'],['helipad','Helipad','Cross roof'],['rooftop','Rooftop','Back']]),helipad:S('Helipad','A private rooftop landing zone.','tower','helipad',[['tower','Tower','Return'],['rooftop','Rooftop','Back']]),windowRig:S('Window Cleaning Apparatus','A suspended maintenance system with a frankly unreasonable view.','tower','windowRig',[['tower','Tower','Back']]),
- linkServiceRoom:S('Link-Only Service Room','A room that does not appear in ordinary navigation. The link is the threshold. Beyond one unmarked door: the backrooms.','secret','linkService',[['enterBackrooms','Unmarked Door','Enter the backrooms'],['lobby','Return to Theater','Find your way back']],'LINK-ONLY ROOM'),
- unlistedRoom:S('The Unlisted Room','An invitation-only room with no directory listing. The corridor outside does not obey the building plan.','secret','unlisted',[['enterBackrooms','Open Hall Door','Enter the backrooms'],['vipLounge','Return to VIP Lounge','Back to mapped space']],'UNLISTED'),
  audEntry:S('Auditorium Entry','Double doors open onto the main aisle.','auditorium','audEntry',[['aisle','Main Aisle','Enter'],['lobby','Lobby','Back']]),aisle:S('Main Aisle','Rows of red seats lead toward the curtain.','auditorium','aisle',[['row','Find Row','Go to assigned row'],['balcony','Balcony Access','Head upstairs'],['audEntry','Back','Exit auditorium']]),row:S('Row Approach','Seat numbers glow faintly along the row.','auditorium','row',[['seat','Your Seat','Sit here'],['aisle','Aisle','Back']]),seat:S('Seat','Your anchor point in the auditorium.','auditorium','seat',[['seated','Sit Down','Take your seat'],['row','Stand / Back','Return to row']]),seated:S('Seated View','The stage, curtain, balcony, and projector booth are discoverable from here.','auditorium','seated',[['stage','Stage Overview','Look forward'],['lookback','Look Back','See balcony / booth'],['seat','Stand Up','Return to seat']]),lookback:S('Look Back','Balcony rail, projector aperture, rear doors, and the room behind you.','auditorium','lookback',[['balcony','Balcony Access','Explore upstairs'],['seated','Face Stage','Turn around']]),balcony:S('Balcony Access','Upper landing and technical spaces.','auditorium','balcony',[['balconyView','Balcony View','Look over rail'],['projector','Projector Booth','Technical door'],['aisle','Main Floor','Back downstairs']]),balconyView:S('Balcony View','The stage geometry reads differently from above.','auditorium','balconyView',[['stage','Stage','Focus on stage'],['balcony','Landing','Back']]),projector:S('Projector Booth / Controls','Lighting, audio, projection, and event controls.','auditorium','projector',[['balcony','Exit Booth','Back']]),
  stage:S('Stage Overview','The room’s ritual center.','stage','stage',[['curtainClosed','Curtain Closed','Inspect'],['stageAccess','Stage Access Gate','Approach'],['seated','Return to Seat','Back']]),curtainClosed:S('Curtain Closed','Heavy red curtain.','stage','curtainClosed',[['curtainOpen','Open Curtain','Trigger reveal'],['stage','Stage Overview','Back']]),curtainOpen:S('Curtain Open','The curtain parts and reveals the screen.','stage','curtainOpen',[['screen','Screen Revealed','Continue'],['curtainClosed','Close Curtain','Reset']]),screen:S('Screen Revealed','Cinema / game / announcement surface.','stage','screen',[['announcement','Announcement Mode','Show host setup'],['stage','Stage Overview','Back']],'THE OBSCURE CASE OF GRACE BLAND'),announcement:S('Announcement Stage','Podium, microphone, spotlight.','stage','announcement',[['screen','Screen','Back'],['centerStage','Center Stage','Step onto stage']]),stageAccess:S('Stage Access Gate','A restricted threshold near the apron.','stage','stageAccess',[['centerStage','Enter Stage','Prototype allows access'],['stage','Back','Return']]),centerStage:S('Center Stage','The rare reverse perspective: the player faces the audience.','stage','centerStage',[['audienceView','View to Audience','Turn outward'],['stage','Stage Overview','Back']]),audienceView:S('View From Stage to Audience','Rows, balcony, house lights, and the sense of being the one watched.','stage','audienceView',[['centerStage','Center Stage','Back']])
 };
-const ITEMS={frymatic:{name:'the frymatic',art:'frymatic',rarity:'LEGENDARY · ARTIFACT',description:'The canonical frymatic: an ornate mechanical clarinet/typewriter/sidearm hybrid attributed to the Blazin Kitchen system. Tunes probability, composition, and cuisine.',href:'https://www.x.com/mofrymatic'}};
+const ITEMS={frymatic:{name:'the frymatic',art:'frymatic',rarity:'LEGENDARY · ARTIFACT',description:'A rare harmonic implement. Tunes probability, composition, and cuisine.',href:'https://www.x.com/mofrymatic'}};
 const OBJECTIVES=[['Find Brazen Theaters',s=>s.visited.includes('brazen')],['Buy General Admission',s=>s.entitlements.admission.purchased],['Enter the Lobby',s=>s.visited.includes('lobby')],['Take your seat',s=>s.visited.includes('seated')],['Open the curtain',s=>s.visited.includes('curtainOpen')],['Step onto Center Stage',s=>s.visited.includes('centerStage')],['Earn VIP Access',s=>s.entitlements.vip.purchased||s.entitlements.vip.invited],['Enter the VIP Lounge',s=>s.visited.includes('vipLounge')],['Reach the Gym Lounge',s=>s.visited.includes('gymLounge')],['Reach the Rooftop',s=>s.visited.includes('rooftop')]];
 const SAVE_KEY='redeye_stage0_v2';
 
@@ -203,115 +168,29 @@ function setDevMode(enabled,{persist=true}={}){
 /* Intentionally global so someone who inspects source can discover/use these. */
 window.enableDevMode=()=>setDevMode(true);
 window.disableDevMode=()=>setDevMode(false);
-window.toggleDevMode=()=>setDevMode(!devModeEnabled);
 window.setRedEyeDevMode=setDevMode;
-window.devModeStatus=()=>devModeEnabled;
 
-const DEFAULT_STATE={scene:'shoes',wallet:{ducats:0,lifetimeDucats:0},entitlements:{admission:{purchased:false,redeemed:false},vip:{purchased:false,redeemed:false,invited:false}},inventory:[],visited:['shoes'],rolls:0,flags:{ftsTournamentSeries:false,playerSignal:null},backrooms:{origin:null,depth:0}};
-function clone(x){return JSON.parse(JSON.stringify(x))}function loadState(){try{const raw=localStorage.getItem(SAVE_KEY);const s=raw?Object.assign(clone(DEFAULT_STATE),JSON.parse(raw)):clone(DEFAULT_STATE);s.flags=Object.assign({},DEFAULT_STATE.flags,s.flags||{});s.backrooms=Object.assign({},DEFAULT_STATE.backrooms,s.backrooms||{});return s}catch{return clone(DEFAULT_STATE)}}const state=loadState();function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(state))}catch{}}
-
-/* Source-discoverable dev backdoors. These intentionally do not provide
-   security; they are conveniences for open-source inspection/testing. */
-window.redeyeDev={
-  status:()=>({enabled:devModeEnabled,scene:state.scene,ducats:state.wallet.ducats,lifetimeDucats:state.wallet.lifetimeDucats,inventory:[...state.inventory],backrooms:{...state.backrooms}}),
-  enable:()=>setDevMode(true),
-  disable:()=>setDevMode(false),
-  toggle:()=>setDevMode(!devModeEnabled),
-  go:(scene)=>{
-    if(scene==='backroom'){state.scene='backroom';state.backrooms.depth=Math.max(1,state.backrooms.depth||1)}
-    else if(SCENES[scene]){state.scene=scene;if(!state.visited.includes(scene))state.visited.push(scene)}
-    else return false;
-    save();render();return true
-  },
-  ducats:(n=500)=>{
-    n=Math.max(0,Number(n)||0);state.wallet.ducats+=n;state.wallet.lifetimeDucats+=n;save();render();return state.wallet.ducats
-  },
-  invite:()=>{state.entitlements.vip.invited=true;save();render();return true},
-  vip:()=>{state.entitlements.vip.purchased=true;state.entitlements.vip.redeemed=false;save();render();return true},
-  admission:()=>{state.entitlements.admission.purchased=true;state.entitlements.admission.redeemed=false;save();render();return true},
-  frymatic:()=>{if(!state.inventory.includes('frymatic'))state.inventory.push('frymatic');save();render();return true},
-  mark:(kind='windfish')=>{
-    state.flags.playerSignal=String(kind).toLowerCase();save();render();
-    addLog('Local player signal → '+state.flags.playerSignal);return state.flags.playerSignal
-  },
-  secret:(which='service')=>{
-    const scene=which==='unlisted'?'unlistedRoom':'linkServiceRoom';
-    state.scene=scene;if(!state.visited.includes(scene))state.visited.push(scene);save();render();return scene
-  },
-  backroom:(depth=1,origin)=>{
-    state.backrooms.origin=origin&&SCENES[origin]?origin:(state.backrooms.origin||'linkServiceRoom');
-    state.backrooms.depth=Math.max(1,Math.floor(Number(depth)||1));state.scene='backroom';save();render();return state.backrooms.depth
-  },
-  reset:()=>resetGame()
-};
+const DEFAULT_STATE={scene:'shoes',wallet:{ducats:0,lifetimeDucats:0},entitlements:{admission:{purchased:false,redeemed:false},vip:{purchased:false,redeemed:false,invited:false}},inventory:[],visited:['shoes'],rolls:0};
+function clone(x){return JSON.parse(JSON.stringify(x))}function loadState(){try{const raw=localStorage.getItem(SAVE_KEY);return raw?Object.assign(clone(DEFAULT_STATE),JSON.parse(raw)):clone(DEFAULT_STATE)}catch{return clone(DEFAULT_STATE)}}const state=loadState();function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(state))}catch{}}
 function hasItem(id){return state.inventory.includes(id)}function addInventoryItem(id){if(!hasItem(id)){state.inventory.push(id);toast('LEGENDARY DROP: the frymatic');addLog('The frymatic dropped into inventory.');save()}}
 function secureRandomInt(max){const a=new Uint32Array(1);crypto.getRandomValues(a);return Math.floor(a[0]/(2**32)*max)}
 function rollLegendaryDrop(){const e=state.entitlements.vip;const eligible=e.purchased&&!e.redeemed&&state.wallet.lifetimeDucats>=400&&!hasItem('frymatic');if(!eligible)return;state.rolls++;if(secureRandomInt(1000)===0)addInventoryItem('frymatic')}
 function buyCurrency(n){state.wallet.ducats+=n;state.wallet.lifetimeDucats+=n;addLog(`+${n} Ducats (simulated)`);rollLegendaryDrop();save();render()}function grantInvite(){state.entitlements.vip.invited=true;addLog('VIP invitation granted.');save();render()}function resetGame(){localStorage.removeItem(SAVE_KEY);location.reload()}
 function addLog(msg){const d=document.createElement('div');d.textContent='› '+msg;$('log').prepend(d);while($('log').children.length>40)$('log').lastChild.remove()}let toastTimer;function toast(msg){$('toast').textContent=msg;$('toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('show'),2600)}
 function canMove(target){if(target==='enterLobby'){return state.entitlements.admission.purchased||state.entitlements.vip.purchased||state.entitlements.vip.invited}if(target==='vipCheckin'){return state.entitlements.vip.purchased||state.entitlements.vip.invited}if(target==='vipLounge'||target==='vipStair'){return state.entitlements.vip.redeemed||state.entitlements.vip.invited}return true}
-function status(target){if(target==='buyTicket')return {locked:state.entitlements.admission.purchased,badge:state.entitlements.admission.purchased?'OWNED':'20 DUCATS'};if(target==='buyVip')return {locked:state.entitlements.vip.purchased,badge:state.entitlements.vip.purchased?'OWNED':'100 DUCATS'};if(['enterLobby','vipCheckin','vipLounge','vipStair'].includes(target)){const ok=canMove(target);return {locked:!ok,badge:ok?'ENTER':'LOCKED'}}if(target==='externalFTS')return {locked:false,badge:'OPEN'};if(target==='joinTournamentSeries')return {locked:state.flags.ftsTournamentSeries,badge:state.flags.ftsTournamentSeries?'SIGNED UP':'SIGN UP'};if(target==='enterBackrooms')return {locked:false,badge:'???'};if(target==='nextBackroom')return {locked:false,badge:'DEEPER'};if(target==='backroomDoor')return {locked:false,badge:'DOOR'};return {locked:false,badge:'GO'}}
-function backroomArt(depth=1){
-  const n=Math.max(1,Number(depth)||1);
-  return ['backroomA','backroomB','backroomJunction'][(n-1)%3];
-}
-function actionArt(target){return ({
-  buyTicket:'boxoffice',buyVip:'boxoffice',enterLobby:'lobby',externalFTS:'fts',
-  joinTournamentSeries:'ftsTournamentKiosk',enterBackrooms:'backroomA',
-  nextBackroom:backroomArt((state.backrooms?.depth||1)+1),backroomDoor:'secretDoor'
-}[target])||(SCENES[target]?.art)||(state.scene==='backroom'?backroomArt(state.backrooms?.depth):state.scene)}
-function move(target){
-  if(target==='externalFTS'){location.href='https://frymatic.us/FTSArcade';return}
-  if(target==='joinTournamentSeries'){
-    if(state.flags.ftsTournamentSeries){toast('This browser is already signed up.');return}
-    state.flags.ftsTournamentSeries=true;addLog('FTS Tournament Series interest recorded locally.');toast('FTS Tournament Series: signed up locally.');save();render();return
-  }
-  if(target==='enterBackrooms'){
-    state.backrooms.origin=state.scene;state.backrooms.depth=1;state.scene='backroom';
-    addLog('Entered Backroom 1 from '+(SCENES[state.backrooms.origin]?.title||'a secret room')+'.');save();render();return
-  }
-  if(target==='nextBackroom'){
-    state.backrooms.depth=Math.max(1,(state.backrooms.depth||1)+1);state.scene='backroom';
-    addLog('Backroom '+state.backrooms.depth+'.');save();render();return
-  }
-  if(target==='backroomDoor'){
-    const origin=state.backrooms.origin;
-    if(origin&&SCENES[origin]){state.scene=origin;addLog('The door returns to '+SCENES[origin].title+'.');save();render();return}
-    state.scene='shoes';save();render();return
-  }
-  if(target==='buyTicket'){if(state.entitlements.admission.purchased)return;if(state.wallet.ducats<20){toast('General admission costs 20 Ducats.');return}state.wallet.ducats-=20;state.entitlements.admission.purchased=true;addLog('Purchased general admission.');rollLegendaryDrop();save();render();return}
-  if(target==='buyVip'){if(state.entitlements.vip.purchased)return;if(state.wallet.ducats<100){toast('VIP access costs 100 Ducats.');return}state.wallet.ducats-=100;state.entitlements.vip.purchased=true;addLog('Purchased VIP access — not yet redeemed.');rollLegendaryDrop();save();render();return}
-  if(!canMove(target)){toast('Access requirement not satisfied.');return}
-  if(target==='enterLobby'&&state.entitlements.admission.purchased)state.entitlements.admission.redeemed=true;
-  if(target==='vipCheckin'&&state.entitlements.vip.purchased&&!state.entitlements.vip.redeemed){state.entitlements.vip.redeemed=true;addLog('VIP access redeemed at check-in.')}
-  if(!SCENES[target])return;
-  state.scene=target;if(!state.visited.includes(target))state.visited.push(target);addLog('Scene → '+SCENES[target].title);rollLegendaryDrop();save();render()
-}
+function status(target){if(target==='buyTicket')return {locked:state.entitlements.admission.purchased,badge:state.entitlements.admission.purchased?'OWNED':'20 DUCATS'};if(target==='buyVip')return {locked:state.entitlements.vip.purchased,badge:state.entitlements.vip.purchased?'OWNED':'100 DUCATS'};if(['enterLobby','vipCheckin','vipLounge','vipStair'].includes(target)){const ok=canMove(target);return {locked:!ok,badge:ok?'ENTER':'LOCKED'}}if(target==='externalFTS')return {locked:false,badge:'OPEN'};return {locked:false,badge:'GO'}}
+function actionArt(target){return ({buyTicket:'boxoffice',buyVip:'boxoffice',enterLobby:'lobby',externalFTS:'fts'}[target])||(SCENES[target]?.art)||state.scene}
+function move(target){if(target==='externalFTS'){location.href='https://frymatic.us/FTSArcade';return}if(target==='buyTicket'){if(state.entitlements.admission.purchased)return;if(state.wallet.ducats<20){toast('General admission costs 20 Ducats.');return}state.wallet.ducats-=20;state.entitlements.admission.purchased=true;addLog('Purchased general admission.');rollLegendaryDrop();save();render();return}if(target==='buyVip'){if(state.entitlements.vip.purchased)return;if(state.wallet.ducats<100){toast('VIP access costs 100 Ducats.');return}state.wallet.ducats-=100;state.entitlements.vip.purchased=true;addLog('Purchased VIP access — not yet redeemed.');rollLegendaryDrop();save();render();return}if(!canMove(target)){toast('Access requirement not satisfied.');return}if(target==='enterLobby'&&state.entitlements.admission.purchased)state.entitlements.admission.redeemed=true;if(target==='vipCheckin'&&state.entitlements.vip.purchased&&!state.entitlements.vip.redeemed){state.entitlements.vip.redeemed=true;addLog('VIP access redeemed at check-in.')}if(!SCENES[target])return;state.scene=target;if(!state.visited.includes(target))state.visited.push(target);addLog('Scene → '+SCENES[target].title);rollLegendaryDrop();save();render()}
 function renderStats(){drawCrop($('iconD'),'ducat',false);drawCrop($('iconT'),'ticket',false);drawCrop($('iconV'),'vippass',false);$('valD').textContent=state.wallet.ducats;$('valT').textContent=state.entitlements.admission.purchased?(state.entitlements.admission.redeemed?'Used':'Owned'):'None';$('valV').textContent=state.entitlements.vip.invited?'Invited':state.entitlements.vip.purchased?(state.entitlements.vip.redeemed?'Redeemed':'Owned'):'None';$('resD').classList.toggle('owned',state.wallet.ducats>0);$('resT').classList.toggle('owned',state.entitlements.admission.purchased);$('resV').classList.toggle('owned',state.entitlements.vip.purchased||state.entitlements.vip.invited)}
 function renderJobs(scene){$('jobs').innerHTML='';scene.actions.forEach(([target,label,hint])=>{const st=status(target);const b=document.createElement('button');b.className='job'+(st.locked?' locked':'');const c=document.createElement('canvas');b.appendChild(c);const badge=document.createElement('span');badge.className='badge';badge.textContent=st.badge;b.appendChild(badge);const body=document.createElement('div');body.className='body';body.innerHTML=`<div class="name">${label}</div><div class="hint">${hint||''}</div>`;b.appendChild(body);b.onclick=()=>move(target);$('jobs').appendChild(b);requestAnimationFrame(()=>drawCrop(c,actionArt(target),true))})}
 function renderObjectives(){let done=0;$('objectiveList').innerHTML='';OBJECTIVES.forEach(([label,check])=>{const ok=check(state);if(ok)done++;const d=document.createElement('div');d.className='obj'+(ok?' done':'');d.innerHTML=`<span class="box">${ok?'✓':''}</span><span>${label}</span>`;$('objectiveList').appendChild(d)});$('missionMini').textContent=`${done}/${OBJECTIVES.length}`;$('missionCount').textContent=`${done} / ${OBJECTIVES.length} complete`;$('missionFill').style.width=`${done/OBJECTIVES.length*100}%`}
 function renderInventory(){$('inventoryList').innerHTML='';$('invMini').textContent=state.inventory.length;if(!state.inventory.length){$('inventoryList').innerHTML='<div class="empty">Nothing strange enough to keep yet.</div>';return}state.inventory.forEach(id=>{const item=ITEMS[id];const d=document.createElement('div');d.className='invitem';const c=document.createElement('canvas');d.appendChild(c);const text=document.createElement('div');text.innerHTML=`<b>${item.name}</b><small>${item.rarity}</small><p>${item.description}</p><a href="${item.href}" target="_blank" rel="noopener">Follow the trail → @mofrymatic</a>`;d.appendChild(text);$('inventoryList').appendChild(d);requestAnimationFrame(()=>drawCrop(c,item.art,false))})}
-function render(){applyDevMode();const scene=state.scene==='backroom'?S('Backroom '+Math.max(1,state.backrooms.depth||1),'The architecture repeats without promising to repeat exactly. There is always another backroom, and always one ordinary-looking door. That door returns to the link-only room that first admitted you.','backrooms',backroomArt(state.backrooms.depth),[['nextBackroom','Another Backroom','Continue indefinitely'],['backroomDoor','The Door','Return to your originating secret room']],'NO DIRECTORY'):SCENES[state.scene]||SCENES.shoes;$('title').textContent=scene.title;$('desc').textContent=scene.desc;$('region').textContent=scene.region;$('marquee').textContent=scene.marquee;$('crumbRegion').textContent=scene.region+' · Stage 0';$('crumbScene').textContent=scene.title;$('seen').textContent=`${state.visited.length} / ${Object.keys(SCENES).length} mapped scenes seen`;requestAnimationFrame(()=>drawCrop($('bg'),scene.art,true));renderStats();renderJobs(scene);renderObjectives();renderInventory()}
+function render(){applyDevMode();const scene=SCENES[state.scene]||SCENES.shoes;$('title').textContent=scene.title;$('desc').textContent=scene.desc;$('region').textContent=scene.region;$('marquee').textContent=scene.marquee;$('crumbRegion').textContent=scene.region+' · Stage 0';$('crumbScene').textContent=scene.title;$('seen').textContent=`${state.visited.length} / ${Object.keys(SCENES).length} scenes seen`;requestAnimationFrame(()=>drawCrop($('bg'),scene.art,true));renderStats();renderJobs(scene);renderObjectives();renderInventory()}
 function toggleDrawer(id){
   if(id==='dev'&&!devModeEnabled)return;
   document.querySelectorAll('.drawer').forEach(d=>{if(d.id!==id)d.classList.remove('open')});
   $(id).classList.toggle('open')
-}addEventListener('resize',render);addEventListener('keydown',e=>{
-  if(e.key==='Escape')document.querySelectorAll('.drawer').forEach(d=>d.classList.remove('open'));
-  if((e.ctrlKey||e.metaKey)&&e.shiftKey&&e.key.toLowerCase()==='d'){
-    e.preventDefault();setDevMode(!devModeEnabled);
-  }
-});
-/* URL backdoors are composable:
-   ?dev=1
-   ?secret=service
-   ?secret=unlisted
-   ?dev=1&secret=service
-   ?dev=1&secret=unlisted
-*/
-const secretParam=new URLSearchParams(location.search).get('secret');
-if(secretParam==='service'){state.scene='linkServiceRoom';if(!state.visited.includes('linkServiceRoom'))state.visited.push('linkServiceRoom');save()}
-if(secretParam==='unlisted'){state.scene='unlistedRoom';if(!state.visited.includes('unlistedRoom'))state.visited.push('unlistedRoom');save()}
+}addEventListener('resize',render);addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.drawer').forEach(d=>d.classList.remove('open'))});
 applyDevMode();loadImages().then(()=>{addLog('Static atlas build loaded.');render()}).catch(err=>{$('title').textContent='Asset load error';$('desc').textContent='Check that the assets/ folder is deployed beside index.html.';console.error(err)});
 </script>
 </body>
