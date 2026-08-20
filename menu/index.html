@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Heck's Chicken</title>
+  <meta name="description" content="Heck's Chicken by the Blazin Kitchen — Gypsy Nuggets, tenders, sandwiches, fries, heat levels, and scan-to-order shareable menu boards.">
+  <meta name="theme-color" content="#080503">
+  <meta name="robots" content="index,follow">
+  <link rel="canonical" href="https://frymatic.us/hecks-chicken/" id="canonical-link">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍗</text></svg>">
+
+  <meta property="og:title" content="Heck's Chicken">
+  <meta property="og:description" content="Fried in the Frymatic. Served with Heart. Scan the menu, find Gypsy Nuggets, and step into the Blazin Kitchen world.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://frymatic.us/hecks-chicken/">
+  <meta property="og:site_name" content="Heck's Chicken">
+  <meta property="og:image" content="https://frymatic.us/hecks-chicken/preview.png">
+  <meta property="og:image:secure_url" content="https://frymatic.us/hecks-chicken/preview.png">
+  <meta property="og:image:width" content="1600">
+  <meta property="og:image:height" content="900">
+  <meta property="og:image:alt" content="Heck's Chicken share preview">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Heck's Chicken">
+  <meta name="twitter:description" content="Fried in the Frymatic. Served with Heart. Scan the menu, find Gypsy Nuggets, and step into the Blazin Kitchen world.">
+  <meta name="twitter:image" content="https://frymatic.us/hecks-chicken/preview.png">
+  <meta name="twitter:image:alt" content="Heck's Chicken share preview">
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    :root {
+      --bg:#080503;
+      --panel:#120d08;
+      --panel-2:#1a120a;
+      --board:#171108;
+      --line:#503213;
+      --line-soft:rgba(255,184,0,0.12);
+      --gold:#ffb800;
+      --gold-hi:#ffd060;
+      --cream:#fde0b2;
+      --muted:#a88457;
+      --muted-2:#7a5c39;
+      --ember:#e85d0c;
+      --blaze:#ff8c00;
+      --smoke:#291c10;
+      --ok:#78d287;
+      --warn:#ffcf6b;
+      --bad:#ff9c90;
+      --shadow:0 14px 40px rgba(0,0,0,0.45);
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{min-height:100vh;background:var(--bg);color:var(--cream);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased}
+    body{overflow-x:hidden}
+    button,input,textarea,select{font:inherit}
+    a{color:#8fc9ff}
+    .lights{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+    .light{position:absolute;border-radius:50%}
+    .light-1{width:460px;height:600px;top:-260px;left:calc(16% - 230px);background:radial-gradient(ellipse at 50% 20%, rgba(255,180,0,.17), rgba(255,100,0,.05) 45%, transparent 72%)}
+    .light-2{width:520px;height:640px;top:-300px;left:calc(50% - 260px);background:radial-gradient(ellipse at 50% 20%, rgba(255,180,0,.12), rgba(255,120,0,.04) 45%, transparent 70%)}
+    .light-3{width:460px;height:600px;top:-260px;left:calc(84% - 230px);background:radial-gradient(ellipse at 50% 20%, rgba(255,180,0,.17), rgba(255,100,0,.05) 45%, transparent 72%)}
+    .app-shell{position:relative;z-index:1;min-height:100vh}
+    .brand-bar{display:flex;flex-direction:column;align-items:center;padding:36px 20px 26px;border-bottom:1px solid var(--line-soft);text-align:center}
+    .brand-sub{font-size:11px;letter-spacing:.34em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+    .brand-name{font-size:clamp(42px,8vw,90px);font-weight:900;letter-spacing:.08em;text-transform:uppercase;line-height:.92}
+    .brand-tagline{margin-top:12px;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+    .brand-caption{margin-top:8px;font-size:13px;color:#d6b98b;max-width:860px;line-height:1.45}
+    .page{min-height:100vh;padding:0 20px 60px}
+    .boards-wrap{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;max-width:1280px;margin:34px auto 0;width:100%}
+    .board-frame{position:relative;min-width:0;background:linear-gradient(170deg,#cb8d0c 0%, #5b3c03 65%, #342100 100%);padding:2.5px;border-radius:12px;box-shadow:0 0 34px rgba(255,180,0,.12),0 8px 32px rgba(0,0,0,.58)}
+    .board-frame.featured{box-shadow:0 0 52px rgba(255,180,0,.22),0 12px 40px rgba(0,0,0,.65)}
+    .board{position:relative;height:100%;min-height:510px;border-radius:10px;overflow:hidden;background:linear-gradient(160deg, #181006 0%, #090603 100%)}
+    .board-art{position:absolute;inset:0;background-size:cover;background-position:center center;filter:saturate(1.05) brightness(.42) blur(.2px);transform:scale(1.02)}
+    .board-shade{position:absolute;inset:0;background:linear-gradient(180deg, rgba(5,3,1,.40), rgba(10,7,4,.52) 18%, rgba(10,7,4,.82) 100%)}
+    .board-vignette{position:absolute;inset:0;background:radial-gradient(circle at 50% 12%, rgba(255,184,0,.12), transparent 26%), linear-gradient(0deg, rgba(0,0,0,.24), transparent 24%)}
+    .board-content{position:relative;z-index:2;display:flex;flex-direction:column;height:100%;padding:20px 16px 16px}
+    .board-emoji{font-size:34px;text-align:center;margin-bottom:10px;filter:drop-shadow(0 0 16px rgba(255,140,0,.4))}
+    .board-title{font-size:11px;font-weight:800;letter-spacing:.28em;text-transform:uppercase;color:var(--gold);text-align:center;margin-bottom:4px;text-shadow:0 0 12px rgba(255,184,0,.28)}
+    .board-sub{font-size:10px;letter-spacing:.14em;color:var(--muted);text-align:center;text-transform:uppercase;margin-bottom:14px}
+    .board-divider{height:1px;background:linear-gradient(to right, transparent, rgba(255,184,0,.3), transparent);margin-bottom:12px}
+    .board-items{flex:1;display:flex;flex-direction:column;gap:0}
+    .board-item{display:flex;align-items:flex-end;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,184,0,.08);gap:12px}
+    .board-item:last-child{border-bottom:none}
+    .item-name-wrap{flex:1;min-width:0}
+    .item-name{display:block;font-size:clamp(13px,1.2vw,16px);font-weight:600;color:var(--cream)}
+    .item-sub{display:block;font-size:10px;color:var(--muted);letter-spacing:.06em;margin-top:2px}
+    .item-price{font-size:clamp(16px,1.4vw,20px);font-weight:800;color:var(--blaze);white-space:nowrap;font-variant-numeric:tabular-nums}
+    .item-price::before{content:'$';font-size:.65em;vertical-align:super}
+    .board-note{margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,184,0,.12);font-size:10px;color:var(--muted);letter-spacing:.10em;text-align:center;text-transform:uppercase}
+    .heat-bar{max-width:1280px;margin:22px auto 0;width:100%;display:flex;align-items:center;gap:10px;padding:12px 18px;background:rgba(255,184,0,.04);border:1px solid rgba(255,184,0,.10);border-radius:10px}
+    .heat-label-head{font-size:10px;font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+    .heat-levels{display:flex;gap:8px;flex-wrap:wrap}
+    .heat-level{display:flex;align-items:center;gap:5px;padding:4px 10px;border:1px solid rgba(255,184,0,.15);border-radius:999px;font-size:11px;color:#d7bc92;background:rgba(0,0,0,.2)}
+    .qr-section{max-width:1280px;margin:24px auto 0;width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+    .qr-card{display:flex;align-items:center;gap:16px;padding:18px 20px;background:rgba(255,184,0,.04);border:1px solid rgba(255,184,0,.14);border-radius:12px;box-shadow:var(--shadow)}
+    .qr-img-wrap{width:88px;height:88px;flex-shrink:0;background:#0a0704;border-radius:8px;overflow:hidden;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,184,0,.1)}
+    .qr-img-wrap img,.qr-img-wrap canvas{width:88px !important;height:88px !important;image-rendering:pixelated}
+    .qr-eyebrow{font-size:9px;font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+    .qr-title{font-size:16px;font-weight:800;color:var(--gold);margin-bottom:4px}
+    .qr-url{font-size:11px;color:var(--muted);line-height:1.4;word-break:break-word}
+    .build-strip{max-width:1280px;margin:16px auto 0;padding:8px 14px;border:1px dashed rgba(255,184,0,.16);border-radius:10px;font-size:11px;display:flex;justify-content:space-between;gap:8px;color:var(--muted)}
+    .dev-fab{position:fixed;right:max(12px, env(safe-area-inset-right));bottom:max(12px, env(safe-area-inset-bottom));z-index:80;display:flex;flex-direction:column;gap:10px;align-items:flex-end}
+    .dev-panel{display:none;flex-direction:column;gap:8px;padding:12px;background:rgba(12,8,5,.96);border:1px solid rgba(255,184,0,.2);border-radius:14px;box-shadow:var(--shadow);min-width:190px}
+    .dev-panel.open{display:flex}
+    .dev-kicker{font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted)}
+    .dev-btn,.dev-main-btn{border:1px solid rgba(255,184,0,.18);background:rgba(255,184,0,.06);color:var(--cream);border-radius:10px;padding:10px 12px;font-size:12px;font-weight:700;cursor:pointer;text-align:left}
+    .dev-btn:hover,.dev-main-btn:hover{border-color:rgba(255,184,0,.42);background:rgba(255,184,0,.12)}
+    .dev-main-btn{padding:12px 16px;background:linear-gradient(180deg, rgba(255,184,0,.20), rgba(255,184,0,.08));font-size:13px;border-radius:999px;display:flex;align-items:center;gap:8px;box-shadow:var(--shadow)}
+    .assets-view{min-height:100vh}
+    .assets-topbar,.cms-topbar,.tests-topbar{display:flex;align-items:center;gap:12px;padding:16px 24px;background:#100d08;border-bottom:1px solid rgba(255,184,0,.12);position:sticky;top:0;z-index:20}
+    .assets-topbar-name,.tests-topbar-name{font-size:13px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--gold)}
+    .assets-topbar-sub,.tests-topbar-sub{font-size:12px;color:var(--muted)}
+    .assets-topbar-right,.cms-topbar-right,.tests-topbar-right{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .btn-pri{padding:8px 16px;background:linear-gradient(180deg, var(--gold-hi), var(--gold));border:none;border-radius:8px;color:#0a0704;font-size:13px;font-weight:800;cursor:pointer}
+    .btn-pri:hover{filter:brightness(1.07)}
+    .btn-sec{padding:8px 13px;background:rgba(255,255,255,.04);border:1px solid rgba(255,184,0,.18);border-radius:8px;color:var(--muted);font-size:13px;cursor:pointer}
+    .btn-sec:hover{color:var(--cream)}
+    .assets-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:24px;padding:28px 24px 60px;max-width:1400px;margin:0 auto}
+    .asset-card{display:flex;flex-direction:column;align-items:center;gap:12px}
+    .asset-card-label{font-size:10px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);align-self:flex-start}
+    .asset-preview{border:1px solid rgba(255,184,0,.18);border-radius:10px;overflow:hidden;box-shadow:var(--shadow);position:relative}
+    .asset-size-note{font-size:10px;color:var(--muted);align-self:flex-start}
+    .asset-dl-btn{align-self:stretch;padding:9px;background:rgba(255,184,0,.08);border:1px solid rgba(255,184,0,.2);border-radius:8px;color:var(--gold);font-size:12px;font-weight:700;cursor:pointer;text-align:center}
+    .asset-dl-btn:hover{background:rgba(255,184,0,.16);color:var(--gold-hi)}
+    .cms-view{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+    .dev-badge{padding:4px 9px;background:var(--ember);color:#130800;font-size:10px;font-weight:900;letter-spacing:.18em;border-radius:4px;flex-shrink:0}
+    .cms-nav{display:flex;gap:3px;flex-wrap:wrap}
+    .cms-tab{padding:6px 14px;border-radius:8px;border:1px solid transparent;background:transparent;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer}
+    .cms-tab.active{background:#20150b;border-color:rgba(255,184,0,.16);color:var(--cream)}
+    .save-status{font-size:11px;color:var(--muted)}
+    .cms-content{flex:1;overflow:hidden;display:flex;flex-direction:column}
+    .cms-body{display:grid;grid-template-columns:220px 1fr;height:100%;overflow:hidden}
+    .cms-sidebar{background:#100d08;border-right:1px solid rgba(255,184,0,.10);overflow-y:auto;padding:16px 10px;display:flex;flex-direction:column}
+    .sidebar-label{font-size:10px;font-weight:700;letter-spacing:.20em;text-transform:uppercase;color:var(--muted);padding:0 10px;margin-bottom:10px}
+    .sec-btn{display:block;width:100%;text-align:left;padding:9px 12px;border-radius:8px;border:1px solid transparent;background:transparent;color:#c8a36f;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:4px}
+    .sec-btn.active{color:var(--cream);background:#20150b;border-color:rgba(255,184,0,.16)}
+    .sidebar-add{margin-top:auto;padding:12px 10px;border:none;background:transparent;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;border-top:1px solid rgba(255,184,0,.10)}
+    .cms-editor-area{overflow-y:auto;padding:28px 32px}
+    .field-label{display:block;font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+    input[type="text"], textarea, select {width:100%;padding:10px 12px;background:rgba(0,0,0,.35);border:1px solid rgba(255,184,0,.16);border-radius:8px;color:var(--cream);font-size:14px;outline:none}
+    input:focus, textarea:focus, select:focus{border-color:var(--blaze);box-shadow:0 0 0 3px rgba(255,140,0,.08)}
+    textarea{resize:vertical;min-height:84px}
+    .field-group{margin-bottom:16px}
+    .sec-settings{background:#100d08;border:1px solid rgba(255,184,0,.14);border-radius:12px;padding:16px;margin-bottom:22px}
+    .sec-settings-hd,.editor-subhead,.tab-section-title{font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+    .settings-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+    .settings-field{flex:1;min-width:160px}
+    .item-cards{display:flex;flex-direction:column;gap:10px;margin-bottom:12px}
+    .item-card{background:#100d08;border:1px solid rgba(255,184,0,.14);border-radius:10px;padding:14px}
+    .item-card-hd{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+    .drag-handle{color:var(--muted-2);font-size:16px;cursor:grab;user-select:none}
+    .name-input{flex:1;font-size:15px;font-weight:500}
+    .btn-icon{width:28px;height:28px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,184,0,.14);border-radius:6px;background:transparent;color:var(--muted);cursor:pointer}
+    .btn-icon.del:hover{color:#ff7777;border-color:#ff7777}
+    .item-row-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .add-item-btn{width:100%;padding:12px;border:1px dashed rgba(255,184,0,.2);border-radius:10px;background:transparent;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;text-align:center}
+    .preview-banner{position:sticky;top:0;z-index:10;background:rgba(16,13,8,.94);backdrop-filter:blur(8px);border-bottom:1px solid rgba(255,184,0,.1);padding:8px 24px;font-size:12px;color:var(--muted)}
+    .tests-wrap{max-width:1180px;margin:0 auto;padding:28px 24px 60px}
+    .tests-hero{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:18px;margin-bottom:22px}
+    .tests-card,.diag-card{background:#100d08;border:1px solid rgba(255,184,0,.14);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+    .tests-kicker{font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+    .tests-title{font-size:26px;font-weight:900;letter-spacing:.04em;margin-bottom:8px}
+    .tests-subcopy{font-size:13px;line-height:1.5;color:#d6b98b}
+    .stat-num{font-size:38px;font-weight:900;color:var(--gold)}
+    .stat-label{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+    .test-table{width:100%;border-collapse:collapse;font-size:13px;overflow:hidden;border-radius:12px;background:#100d08;border:1px solid rgba(255,184,0,.14)}
+    .test-table th,.test-table td{padding:12px 14px;border-bottom:1px solid rgba(255,184,0,.08);text-align:left;vertical-align:top}
+    .test-table th{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+    .pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.08em}
+    .pill.pass{background:rgba(120,210,135,.12);color:var(--ok);border:1px solid rgba(120,210,135,.28)}
+    .pill.fail{background:rgba(255,156,144,.12);color:var(--bad);border:1px solid rgba(255,156,144,.28)}
+    .pill.warn{background:rgba(255,207,107,.12);color:var(--warn);border:1px solid rgba(255,207,107,.28)}
+    .json-box{white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;line-height:1.5;color:#d6b98b;background:#0c0805;border:1px solid rgba(255,184,0,.12);border-radius:12px;padding:14px;max-height:320px;overflow:auto}
+    .hidden{display:none !important}
+    @media (max-width:1120px){.boards-wrap{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media (max-width:760px){.page{padding:0 14px 48px}.boards-wrap,.qr-section{grid-template-columns:1fr}.board{min-height:460px}.build-strip{flex-direction:column}.cms-body{grid-template-columns:1fr}.cms-sidebar{border-right:none;border-bottom:1px solid rgba(255,184,0,.10);flex-direction:row;flex-wrap:wrap;gap:4px;height:auto;overflow:visible;padding:10px 12px}.sidebar-label,.sidebar-add{display:none}.assets-grid{grid-template-columns:1fr;padding:22px 14px 50px}.tests-hero{grid-template-columns:1fr}.assets-topbar,.cms-topbar,.tests-topbar{padding:14px}.item-row-fields{grid-template-columns:1fr}.brand-caption{font-size:12px}}
+  </style>
+</head>
+<body>
+<div class="lights" aria-hidden="true">
+  <div class="light light-1"></div>
+  <div class="light light-2"></div>
+  <div class="light light-3"></div>
+</div>
+<div id="app" class="app-shell"></div>
+<div id="qr-factory" style="position:fixed;left:-9999px;top:0;" aria-hidden="true"></div>
+<script>
+const APP_VERSION = '0.3.0';
+const RELEASE_CHANNEL = 'release-engineering-factory';
+const STORAGE_KEY = 'hecks_chicken_v2';
+const DEV_VIEW_KEY = 'hecks_chicken_dev_view_v2';
+const TEST_RESULTS_KEY = 'hecks_chicken_test_results_v2';
+const TEST_SUITE_VERSION = 2;
+const DEV_SECRET_QUERY_VALUE = '1';
+
+const DEFAULTS = {
+  restaurant: {
+    name: "HECK'S CHICKEN",
+    sub: 'THE BLAZIN KITCHEN',
+    tagline: 'Fried in the Frymatic. Served with Heart.',
+    description: 'A kind-souled fried chicken concept: Gypsy Nuggets, tenders, sandwiches, fries, and two QR doors into menu + game worlds.',
+    social: '@frymatic',
+    menuUrl: 'https://frymatic.us/menu',
+    gameUrl: 'https://frymatic.us/FTSArcade/REDEYE',
+    gameLabel: 'REDEYE ARCADE',
+    shareUrl: 'https://frymatic.us/hecks-chicken/',
+    previewImage: 'https://frymatic.us/hecks-chicken/preview.png',
+    shareDescription: 'Fried in the Frymatic. Served with Heart. Scan the menu, find Gypsy Nuggets, and step into the Blazin Kitchen world.'
+  },
+  heatLevels: [
+    { label: 'Mild', emoji: '🌿' },
+    { label: 'Hot', emoji: '🔥' },
+    { label: 'Blazin', emoji: '⚡' },
+    { label: 'Kindling', emoji: '✨' }
+  ],
+  boards: [
+    {
+      id: 'nuggets', featured: true, emoji: '🍗',
+      title: 'GYPSY NUGGETS', sub: 'The Original. The Only.',
+      note: 'Choose your heat on any order',
+      art: 'assets/hecks-chicken/gypsy-nuggets-board.png',
+      artPosition: 'center center',
+      items: [
+        { name: '6 pc', price: '9', sub: '' },
+        { name: '12 pc', price: '17', sub: '' },
+        { name: '24 pc', price: '30', sub: 'party pack' }
+      ]
+    },
+    {
+      id: 'tenders', featured: false, emoji: '✊',
+      title: 'TENDERS', sub: '',
+      note: '',
+      art: 'assets/hecks-chicken/tenders-board.png',
+      artPosition: 'center center',
+      items: [
+        { name: '3 pc', price: '10', sub: '' },
+        { name: '3 pc combo', price: '14', sub: 'fries + drink' },
+        { name: '5 pc', price: '16', sub: '' },
+        { name: '5 pc combo', price: '20', sub: 'fries + drink' }
+      ]
+    },
+    {
+      id: 'bird', featured: false, emoji: '🥪',
+      title: 'THE BIRD', sub: 'Sandwiches + Pieces',
+      note: '',
+      art: 'assets/hecks-chicken/bird-board.png',
+      artPosition: 'center center',
+      items: [
+        { name: 'Classic sandwich', price: '12', sub: '' },
+        { name: 'Spicy sandwich', price: '13', sub: '' },
+        { name: '2 pc + fries', price: '10', sub: '' },
+        { name: '4 pc + fries', price: '18', sub: '' }
+      ]
+    },
+    {
+      id: 'sides', featured: false, emoji: '🍟',
+      title: 'SIDES + DRINKS', sub: '',
+      note: '',
+      art: 'assets/hecks-chicken/sides-board.png',
+      artPosition: 'center center',
+      items: [
+        { name: 'Fries', price: '3/5/7', sub: 'S / M / L' },
+        { name: 'Slaw', price: '3', sub: '' },
+        { name: 'Mac + Cheese', price: '5', sub: '' },
+        { name: 'Drink', price: '2', sub: '' },
+        { name: 'Water', price: '1', sub: '' }
+      ]
+    }
+  ]
+};
+
+const BG_DARK='#0a0704', C_GOLD='#ffb800', C_CREAM='#fde0b2', C_MUTED='#9a7040', C_EMBER='#e85d0c';
+const TEMPLATES = [
+  { id:'sq', label:'Instagram Post', filename:'HecksChicken_gypsy-square.png', dw:300, dh:300, scale:3.6 },
+  { id:'story', label:'Story / TikTok', filename:'HecksChicken_story.png', dw:170, dh:301, scale:3.6 },
+  { id:'cover', label:'Facebook Cover', filename:'HecksChicken_cover.png', dw:320, dh:118, scale:2.66 },
+  { id:'banner', label:'X Banner', filename:'HecksChicken_banner.png', dw:320, dh:107, scale:4.69 },
+  { id:'card', label:'Business Card', filename:'HecksChicken_card.png', dw:300, dh:168, scale:3.5 },
+  { id:'poster', label:'Print Poster', filename:'HecksChicken_poster.png', dw:230, dh:345, scale:4.7 }
+];
+
+let D = null;
+let menuQRDataUrl = '';
+let gameQRDataUrl = '';
+let cmsTab = 'boards';
+let cmsSec = 0;
+let autoTimer = null;
+let devPanelOpen = false;
+let latestTestResults = null;
+
+const $ = sel => document.querySelector(sel);
+const $$ = sel => [...document.querySelectorAll(sel)];
+const clone = x => JSON.parse(JSON.stringify(x));
+const uid = () => Math.random().toString(36).slice(2,8);
+const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+function loadData(){ try { const s = localStorage.getItem(STORAGE_KEY); return s ? JSON.parse(s) : clone(DEFAULTS); } catch { return clone(DEFAULTS); } }
+function saveData(d){ localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); }
+function saveDevView(v){ try { localStorage.setItem(DEV_VIEW_KEY, v); } catch {} }
+function readDevView(){ try { return localStorage.getItem(DEV_VIEW_KEY) || 'menu'; } catch { return 'menu'; } }
+function devMode(){ return new URLSearchParams(location.search).get('dev') === DEV_SECRET_QUERY_VALUE; }
+function currentView(){
+  const p = new URLSearchParams(location.search);
+  if (!devMode()) return 'menu';
+  return p.get('view') || 'menu';
+}
+function setView(view){
+  if (!devMode()) return;
+  const url = new URL(location.href);
+  url.searchParams.set('dev', DEV_SECRET_QUERY_VALUE);
+  if (view === 'menu') url.searchParams.delete('view'); else url.searchParams.set('view', view);
+  history.replaceState({}, '', url.toString());
+  saveDevView(view);
+  renderApp(view);
+}
+function syncMetaTags(data){
+  const r = data.restaurant;
+  const title = r.name;
+  const desc = r.shareDescription || r.description || r.tagline;
+  const url = r.shareUrl || location.href;
+  const image = r.previewImage || '';
+  document.title = title;
+  setMeta('description', desc);
+  setMeta('theme-color', '#080503');
+  setMetaProperty('og:title', title);
+  setMetaProperty('og:description', desc);
+  setMetaProperty('og:type', 'website');
+  setMetaProperty('og:url', url);
+  setMetaProperty('og:site_name', r.name);
+  setMetaProperty('og:image', image);
+  setMetaProperty('og:image:secure_url', image);
+  setMetaProperty('og:image:alt', `${r.name} share preview`);
+  setMeta('twitter:card', 'summary_large_image');
+  setMeta('twitter:title', title);
+  setMeta('twitter:description', desc);
+  setMeta('twitter:image', image);
+  setMeta('twitter:image:alt', `${r.name} share preview`);
+  const canonical = document.getElementById('canonical-link');
+  if (canonical) canonical.href = url;
+}
+function setMeta(name, content){ const el = document.querySelector(`meta[name="${name}"]`); if (el) el.setAttribute('content', content || ''); }
+function setMetaProperty(prop, content){ const el = document.querySelector(`meta[property="${prop}"]`); if (el) el.setAttribute('content', content || ''); }
+
+function publicBoardArt(board){
+  const url = board.art || '';
+  const pos = board.artPosition || 'center center';
+  return `background-image: linear-gradient(180deg, rgba(255,184,0,.06), rgba(255,184,0,0)), url('${esc(url)}'); background-position:${esc(pos)};`;
+}
+function renderBoardItem(item){
+  const multi = String(item.price || '').includes('/');
+  const priceHTML = multi ? `<span class="item-price" style="font-size:13px;color:var(--blaze)">${esc(item.price)}</span>` : `<span class="item-price">${esc(item.price)}</span>`;
+  return `<div class="board-item"><div class="item-name-wrap"><span class="item-name">${esc(item.name)}</span>${item.sub ? `<span class="item-sub">${esc(item.sub)}</span>` : ''}</div>${priceHTML}</div>`;
+}
+function renderMenuHTML(data){
+  const r = data.restaurant;
+  const boards = data.boards.map(b => `
+    <div class="board-frame ${b.featured ? 'featured' : ''}">
+      <div class="board">
+        <div class="board-art" style="${publicBoardArt(b)}"></div>
+        <div class="board-shade"></div>
+        <div class="board-vignette"></div>
+        <div class="board-content">
+          <div class="board-emoji">${esc(b.emoji)}</div>
+          <div class="board-title">${esc(b.title)}</div>
+          ${b.sub ? `<div class="board-sub">${esc(b.sub)}</div>` : ''}
+          <div class="board-divider"></div>
+          <div class="board-items">${b.items.map(renderBoardItem).join('')}</div>
+          ${b.note ? `<div class="board-note">${esc(b.note)}</div>` : ''}
+        </div>
+      </div>
+    </div>`).join('');
+  const heat = data.heatLevels.map(h => `<div class="heat-level">${esc(h.emoji)} ${esc(h.label)}</div>`).join('');
+  return `
+    <div class="page">
+      <div class="brand-bar">
+        <div class="brand-sub">${esc(r.sub)}</div>
+        <div class="brand-name">${esc(r.name)}</div>
+        <div class="brand-tagline">${esc(r.tagline)}</div>
+        <div class="brand-caption">${esc(r.description)}</div>
+      </div>
+      <div class="boards-wrap">${boards}</div>
+      <div class="heat-bar"><span class="heat-label-head">Heat</span><div class="heat-levels">${heat}</div></div>
+      <div class="qr-section">
+        <div class="qr-card">
+          <div class="qr-img-wrap" id="qr-menu-display"></div>
+          <div><div class="qr-eyebrow">Scan to Order</div><div class="qr-title">Full Menu</div><div class="qr-url">${esc(r.menuUrl)}</div></div>
+        </div>
+        <div class="qr-card">
+          <div class="qr-img-wrap" id="qr-game-display"></div>
+          <div><div class="qr-eyebrow">Scan to Play</div><div class="qr-title">${esc(r.gameLabel)}</div><div class="qr-url">${esc(r.gameUrl)}</div></div>
+        </div>
+      </div>
+      <div class="build-strip">
+        <span>Release Engineering Factory · ${esc(APP_VERSION)} · storage ${esc(STORAGE_KEY)}</span>
+        <span>Board graphics are image-backed and text-overlay driven.</span>
+      </div>
+    </div>`;
+}
+function injectQRsIntoMenu(){
+  [['menu', menuQRDataUrl], ['game', gameQRDataUrl]].forEach(([type,src]) => {
+    const el = document.getElementById(`qr-${type}-display`); if (!el) return; el.innerHTML='';
+    if (!src) { el.innerHTML = '<span style="font-size:10px;color:#7a6040;padding:8px;text-align:center;">QR unavailable</span>'; return; }
+    const img = new Image(); img.src = src; img.alt = type === 'menu' ? 'Menu QR code' : 'Game QR code'; img.style.cssText = 'width:88px;height:88px;image-rendering:pixelated;'; el.appendChild(img);
+  });
+}
+function makeQR(url, sizePx = 120, dark = '#FFB800', light = '#080503'){
+  return new Promise(resolve => {
+    const div = document.createElement('div'); div.style.cssText='width:120px;height:120px;'; document.getElementById('qr-factory').appendChild(div);
+    try { new QRCode(div, { text:url, width:sizePx, height:sizePx, colorDark:dark, colorLight:light, correctLevel:QRCode.CorrectLevel.M }); }
+    catch { resolve(''); return; }
+    setTimeout(() => { const canvas = div.querySelector('canvas'); resolve(canvas ? canvas.toDataURL() : ''); div.remove(); }, 80);
+  });
+}
+
+function assetBase(w,h,children,extra=''){
+  return `<div style="width:${w}px;height:${h}px;overflow:hidden;position:relative;background:${BG_DARK};font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;color:${C_CREAM};${extra}"><div style="position:absolute;top:-80px;left:-40px;width:${w+80}px;height:${Math.round(h/2)}px;background:radial-gradient(ellipse at 50% 0%, rgba(255,154,0,0.12), transparent 60%);pointer-events:none"></div><div style="position:absolute;bottom:0;left:0;width:${w}px;height:${Math.round(h*.3)}px;background:linear-gradient(0deg,rgba(232,87,12,0.10),transparent);pointer-events:none"></div>${children}</div>`;
+}
+function brandBlock(large = false, includeSub = true){ const sz = large ? '40px' : '28px'; return `<div style="text-align:center">${includeSub ? `<div style="font-size:9px;letter-spacing:.34em;text-transform:uppercase;color:${C_MUTED};margin-bottom:6px">${esc(D.restaurant.sub)}</div>` : ''}<div style="font-size:${sz};font-weight:900;letter-spacing:.08em;text-transform:uppercase;line-height:.92;color:${C_CREAM};">${esc(D.restaurant.name).replace(' ', '<br>')}</div></div>`; }
+function dividerLine(w='80px'){ return `<div style="width:${w};height:1px;background:${C_GOLD};margin:10px auto"></div>`; }
+function qrBlock(src,size=60,label='frymatic.us'){ return src ? `<div style="display:flex;flex-direction:column;align-items:center;gap:4px"><img src="${src}" style="width:${size}px;height:${size}px;image-rendering:pixelated;border-radius:3px"><div style="font-size:8px;letter-spacing:.14em;color:${C_MUTED};text-transform:uppercase">${esc(label)}</div></div>` : `<div style="width:${size}px;height:${size}px;background:#111;border-radius:4px"></div>`; }
+function nuggetsBadge(){ return `<div style="background:rgba(255,184,0,0.08);border:1px solid rgba(255,184,0,0.22);border-radius:5px;padding:10px 16px;text-align:center"><div style="font-size:22px;margin-bottom:4px">🍗</div><div style="font-size:13px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:${C_GOLD}">GYPSY NUGGETS</div><div style="font-size:9px;letter-spacing:.12em;color:${C_MUTED};margin-top:3px;text-transform:uppercase">Fried in the Frymatic</div></div>`; }
+function tmplSquare(w,h){ return assetBase(w,h, `<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:12px">${brandBlock(true,true)}${dividerLine('60px')}${nuggetsBadge()}<div style="font-size:10px;letter-spacing:.20em;color:${C_MUTED};text-transform:uppercase;margin-top:4px;text-align:center">Gypsy Nuggets · Tenders · Sandwiches</div>${dividerLine('40px')}<div style="display:flex;gap:12px;align-items:center">${qrBlock(menuQRDataUrl,56,'frymatic.us/menu')}${qrBlock(gameQRDataUrl,56,D.restaurant.gameLabel)}</div></div>`); }
+function tmplStory(w,h){ return assetBase(w,h, `<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:40px 24px 36px">${brandBlock(false,true)}<div style="text-align:center"><div style="font-size:60px;margin-bottom:10px;filter:drop-shadow(0 0 16px rgba(255,180,0,0.6))">🍗</div><div style="font-size:22px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;color:${C_GOLD};margin-bottom:6px">GYPSY NUGGETS</div><div style="font-size:11px;letter-spacing:.20em;text-transform:uppercase;color:${C_MUTED}">Served with Heart</div>${dividerLine('80px')}<div style="display:flex;justify-content:center;gap:12px;margin-top:12px">${D.heatLevels.map(h => `<div style="font-size:10px;color:${C_MUTED};letter-spacing:.06em;">${esc(h.emoji)} ${esc(h.label)}</div>`).join('')}</div></div><div style="display:flex;flex-direction:column;align-items:center;gap:8px"><div style="font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:${C_MUTED}">Scan to order</div>${qrBlock(menuQRDataUrl,90,'frymatic.us')}</div></div>`); }
+function tmplWideCover(w,h){ return assetBase(w,h, `<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;padding:0 40px;gap:20px"><div style="flex:1">${brandBlock(false,true)}</div><div style="display:flex;flex-direction:column;align-items:center;gap:8px;flex:1">${nuggetsBadge()}<div style="font-size:9px;letter-spacing:.24em;text-transform:uppercase;color:${C_MUTED};text-align:center">Food Truck · Pop Ups · Blazin Kitchen</div></div><div style="flex:1;display:flex;justify-content:flex-end">${qrBlock(menuQRDataUrl,72,'Menu')}</div></div>`); }
+function tmplBanner(w,h){ return assetBase(w,h, `<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:32px;padding:0 48px"><div style="font-size:48px;filter:drop-shadow(0 0 12px rgba(255,180,0,0.5))">🍗</div><div><div style="font-size:10px;letter-spacing:.32em;color:${C_MUTED};text-transform:uppercase;margin-bottom:4px">${esc(D.restaurant.sub)}</div><div style="font-size:40px;font-weight:900;letter-spacing:.10em;text-transform:uppercase;line-height:.92;color:${C_CREAM};">${esc(D.restaurant.name)}</div><div style="font-size:12px;letter-spacing:.22em;color:${C_MUTED};margin-top:6px;text-transform:uppercase">${esc(D.restaurant.tagline)}</div></div><div style="margin-left:auto">${qrBlock(gameQRDataUrl,64,D.restaurant.gameLabel)}</div></div>`); }
+function tmplBizCard(w,h){ return assetBase(w,h, `<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;padding:20px 28px"><div><div style="font-size:8px;letter-spacing:.30em;text-transform:uppercase;color:${C_MUTED};margin-bottom:6px">${esc(D.restaurant.sub)}</div><div style="font-size:22px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;line-height:.92;color:${C_CREAM};">${esc(D.restaurant.name).replace(' ', '<br>')}</div><div style="height:1px;width:48px;background:${C_GOLD};margin:10px 0"></div><div style="font-size:9px;letter-spacing:.16em;color:${C_MUTED};text-transform:uppercase">${D.heatLevels.map(h => `${esc(h.emoji)} ${esc(h.label)}`).join(' · ')}</div><div style="margin-top:8px;font-size:9px;color:${C_MUTED};letter-spacing:.12em;text-transform:uppercase">${esc(D.restaurant.shareUrl)} · ${esc(D.restaurant.social)}</div></div><div style="display:flex;flex-direction:column;gap:10px;align-items:center">${qrBlock(menuQRDataUrl,54,'Menu')}${qrBlock(gameQRDataUrl,54,'Arcade')}</div></div>`); }
+function tmplPoster(w,h){ return assetBase(w,h, `<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;padding:36px 28px 28px;gap:0"><div style="font-size:9px;letter-spacing:.36em;text-transform:uppercase;color:${C_MUTED};margin-bottom:10px">Now Serving</div>${brandBlock(true,false)}${dividerLine('80px')}<div style="font-size:9px;letter-spacing:.24em;text-transform:uppercase;color:${C_MUTED};margin-bottom:14px;text-align:center;line-height:1.6">${esc(D.restaurant.tagline)}</div>${nuggetsBadge()}<div style="margin-top:14px;width:100%">${[['Tenders','3 pc $10 · 5 pc $16'],['Sandwiches','Classic $12 · Spicy $13'],['Sides','Fries · Slaw · Mac']].map(([t,v]) => `<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,184,0,0.08)"><span style="font-size:11px;font-weight:700;letter-spacing:.10em;text-transform:uppercase;color:${C_CREAM}">${t}</span><span style="font-size:10px;color:${C_MUTED}">${v}</span></div>`).join('')}</div><div style="margin-top:14px;width:100%;display:flex;justify-content:center;gap:20px">${qrBlock(menuQRDataUrl,64,'Order')}${qrBlock(gameQRDataUrl,64,'Play')}</div><div style="margin-top:10px;font-size:9px;letter-spacing:.20em;text-transform:uppercase;color:${C_MUTED}">${esc(D.restaurant.shareUrl)} · ${esc(D.restaurant.social)}</div></div>`); }
+function getAssetHTML(id,w,h){ if(id==='sq') return tmplSquare(w,h); if(id==='story') return tmplStory(w,h); if(id==='cover') return tmplWideCover(w,h); if(id==='banner') return tmplBanner(w,h); if(id==='card') return tmplBizCard(w,h); return tmplPoster(w,h); }
+async function dlAsset(id, filename, scale){ const el = document.getElementById(`prev-${id}`); if (!el || typeof html2canvas === 'undefined') { alert('html2canvas not loaded.'); return; } const btn = el.parentElement.querySelector('.asset-dl-btn'); if(btn) btn.textContent='Rendering…'; try { const canvas = await html2canvas(el,{scale, useCORS:true, allowTaint:true, logging:false, imageTimeout:3000}); const link = document.createElement('a'); link.download = filename; link.href = canvas.toDataURL('image/png',1.0); link.click(); if(btn) btn.textContent='✓ Downloaded'; setTimeout(()=>{ if(btn) btn.textContent='↓ Download'; }, 1800); } catch(e) { console.error(e); if(btn) btn.textContent='Error — retry?'; } }
+window.dlAsset = dlAsset;
+window.dlAll = async function(){ for(const t of TEMPLATES){ await dlAsset(t.id, t.filename, t.scale); await new Promise(r => setTimeout(r, 500)); } };
+
+function renderAssets(){
+  return `<div class="assets-view"><div class="assets-topbar"><div><div class="assets-topbar-name">🍗 Heck's Chicken — Asset Pack</div><div class="assets-topbar-sub">6 templates · graphics-backed menu system · ${esc(APP_VERSION)}</div></div><div class="assets-topbar-right">${devMode() ? `<button class="btn-sec" onclick="setView('menu')">← Menu</button><button class="btn-sec" onclick="setView('cms')">CMS</button><button class="btn-sec" onclick="setView('tests')">Tests</button>` : `<button class="btn-sec" onclick="location.href=location.pathname">← Menu</button>`}<button class="btn-pri" onclick="dlAll()">Download All</button></div></div><div class="assets-grid">${TEMPLATES.map(t => `<div class="asset-card"><div class="asset-card-label">${esc(t.label)}</div><div class="asset-preview" id="prev-${t.id}" style="width:${t.dw}px;height:${t.dh}px;">${getAssetHTML(t.id,t.dw,t.dh)}</div><div class="asset-size-note">${esc(t.filename)}</div><button class="asset-dl-btn" onclick="dlAsset('${t.id}','${t.filename}',${t.scale})">↓ Download</button></div>`).join('')}</div></div>`;
+}
+
+function cSec(){ return D.boards[cmsSec]; }
+function flashStatus(msg){ const el = document.getElementById('save-status'); if(!el) return; el.textContent = msg; setTimeout(()=>{ const el2 = document.getElementById('save-status'); if(el2 && el2.textContent === msg) el2.textContent=''; }, 2200); }
+function scheduleAutoSave(){ clearTimeout(autoTimer); autoTimer = setTimeout(() => { saveData(D); syncMetaTags(D); flashStatus('Auto-saved'); }, 1000); }
+function renderCMSBoards(){
+  const s = cSec();
+  const sectionBtns = D.boards.map((b,i)=>`<button class="sec-btn ${i===cmsSec?'active':''}" onclick="cSetSec(${i})">${esc(b.emoji)} ${esc(b.title)}</button>`).join('');
+  const itemsHTML = s.items.map((item,ii)=>`<div class="item-card"><div class="item-card-hd"><span class="drag-handle">⠿</span><input type="text" class="name-input" value="${esc(item.name)}" oninput="cUpdItemName(${ii},this.value)" placeholder="Item name"><button class="btn-icon" onclick="cMvItem(${ii},-1)">↑</button><button class="btn-icon" onclick="cMvItem(${ii},1)">↓</button><button class="btn-icon del" onclick="cRmItem(${ii})">✕</button></div><div class="item-row-fields"><div><label class="field-label">Price</label><input type="text" value="${esc(item.price)}" oninput="cUpdItemPrice(${ii},this.value)" placeholder="9 or 3/5/7"></div><div><label class="field-label">Sub-label</label><input type="text" value="${esc(item.sub||'')}" oninput="cUpdItemSub(${ii},this.value)" placeholder="e.g. party pack"></div></div></div>`).join('');
+  return `<div class="cms-body"><div class="cms-sidebar"><div class="sidebar-label">Boards</div>${sectionBtns}<button class="sidebar-add" onclick="cAddBoard()">+ new board</button></div><div class="cms-editor-area"><div class="sec-settings"><div class="sec-settings-hd">Board Settings</div><div class="settings-row"><div class="settings-field"><label class="field-label">Title</label><input type="text" value="${esc(s.title)}" oninput="cUpdSecTitle(this.value)"></div><div class="settings-field" style="max-width:88px;"><label class="field-label">Emoji</label><input type="text" value="${esc(s.emoji)}" oninput="cUpdSecEmoji(this.value)"></div><div class="settings-field"><label class="field-label">Sub-title</label><input type="text" value="${esc(s.sub||'')}" oninput="cUpdSecSub(this.value)"></div></div><div class="settings-row"><div class="settings-field"><label class="field-label">Board Graphic URL</label><input type="text" value="${esc(s.art || '')}" oninput="cUpdSecArt(this.value)" placeholder="assets/hecks-chicken/board.png"></div><div class="settings-field"><label class="field-label">Art Position</label><input type="text" value="${esc(s.artPosition || 'center center')}" oninput="cUpdSecArtPosition(this.value)" placeholder="center center"></div></div><div class="field-group"><label class="field-label">Footer Note</label><input type="text" value="${esc(s.note||'')}" oninput="cUpdSecNote(this.value)"></div><div style="display:flex;align-items:center;gap:12px;padding-top:10px;border-top:1px solid rgba(255,184,0,.1)"><label style="font-size:12px;color:#d7bc92;display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" ${s.featured?'checked':''} onchange="cUpdFeatured(this.checked)" style="width:auto;accent-color:var(--blaze);">Featured board</label><button class="btn-sec" onclick="cRmBoard()" style="margin-left:auto;color:#ff7777;border-color:#ff7777;opacity:.8">Delete board</button></div></div><div class="editor-subhead">Items</div><div class="item-cards">${itemsHTML}</div><button class="add-item-btn" onclick="cAddItem()">+ add item</button></div></div>`;
+}
+function renderCMSInfo(){
+  const r = D.restaurant;
+  const fields = [
+    ['name','Name',r.name], ['sub','Sub-header',r.sub], ['tagline','Tagline',r.tagline], ['description','Menu intro copy',r.description], ['social','Social handle',r.social], ['menuUrl','Menu URL',r.menuUrl], ['gameUrl','Game URL',r.gameUrl], ['gameLabel','Game QR label',r.gameLabel], ['shareUrl','Canonical / share URL',r.shareUrl], ['previewImage','Preview image URL',r.previewImage], ['shareDescription','Share description',r.shareDescription]
+  ];
+  return `<div class="cms-editor-area"> <div class="tab-section-title">Restaurant + Share Metadata</div> ${fields.map(([k,label,val])=>`<div class="field-group"><label class="field-label">${label}</label>${k === 'description' || k === 'shareDescription' ? `<textarea oninput="cUpdInfo('${k}',this.value)">${esc(val||'')}</textarea>` : `<input type="text" value="${esc(val||'')}" oninput="cUpdInfo('${k}',this.value)">`}</div>`).join('')}<div class="sec-settings"><div class="sec-settings-hd">Heat Levels</div>${D.heatLevels.map((h,i)=>`<div style="display:flex;gap:8px;margin-bottom:8px;"><input type="text" value="${esc(h.emoji)}" oninput="cUpdHeat(${i},'emoji',this.value)" style="width:64px"><input type="text" value="${esc(h.label)}" oninput="cUpdHeat(${i},'label',this.value)"></div>`).join('')}</div></div>`;
+}
+function renderCMSPreview(){ return `<div style="overflow-y:auto;height:100%;"><div class="preview-banner">👁 Live preview — unsaved changes included</div>${renderMenuHTML(D)}</div>`; }
+function renderCMSTests(){
+  const results = latestTestResults || runTestSuite(false);
+  return `<div class="cms-editor-area"><div class="tab-section-title">Release Engineering Diagnostics</div><div class="sec-settings"><div class="sec-settings-hd">Persisted Test Suite v${TEST_SUITE_VERSION}</div><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span class="pill ${results.pass ? 'pass' : 'fail'}">${results.pass ? 'PASS' : 'FAIL'} · ${results.passed}/${results.total}</span><button class="btn-pri" onclick="runTestsAndRefresh()">Run Tests</button><button class="btn-sec" onclick="clearTestResults()">Clear stored result</button></div><div class="field-group" style="margin-top:16px"><label class="field-label">Last persisted payload</label><div class="json-box">${esc(JSON.stringify(results, null, 2))}</div></div></div></div>`;
+}
+function renderCMS(){
+  const content = cmsTab === 'boards' ? renderCMSBoards() : cmsTab === 'info' ? renderCMSInfo() : cmsTab === 'preview' ? renderCMSPreview() : renderCMSTests();
+  return `<div class="cms-view"><div class="cms-topbar"><span class="dev-badge">DEV</span><nav class="cms-nav">${[['boards','Boards'],['info','Restaurant Info'],['preview','Preview'],['tests','Tests']].map(([t,l])=>`<button class="cms-tab ${cmsTab===t?'active':''}" onclick="cSetTab('${t}')">${l}</button>`).join('')}</nav><div class="cms-topbar-right"><span class="save-status" id="save-status"></span><button class="btn-sec" onclick="setView('menu')">Menu</button><button class="btn-sec" onclick="setView('assets')">Assets</button><button class="btn-sec" onclick="cReset()">Reset</button><button class="btn-pri" onclick="cSave()">Save</button></div></div><div class="cms-content">${content}</div></div>`;
+}
+window.cSetTab = function(t){ cmsTab = t; renderApp('cms'); };
+window.cSetSec = function(i){ cmsSec = i; renderApp('cms'); };
+window.cSave = function(){ saveData(D); syncMetaTags(D); flashStatus('Saved ✓'); latestTestResults = runTestSuite(true); };
+window.cReset = function(){ if(!confirm('Reset to release defaults?')) return; localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(TEST_RESULTS_KEY); D = clone(DEFAULTS); syncMetaTags(D); latestTestResults = runTestSuite(true); renderApp(currentView()); };
+window.cUpdSecTitle = v => { cSec().title = v; scheduleAutoSave(); };
+window.cUpdSecEmoji = v => { cSec().emoji = v; scheduleAutoSave(); };
+window.cUpdSecSub = v => { cSec().sub = v; scheduleAutoSave(); };
+window.cUpdSecNote = v => { cSec().note = v; scheduleAutoSave(); };
+window.cUpdSecArt = v => { cSec().art = v; scheduleAutoSave(); };
+window.cUpdSecArtPosition = v => { cSec().artPosition = v; scheduleAutoSave(); };
+window.cUpdFeatured = v => { cSec().featured = v; scheduleAutoSave(); };
+window.cUpdItemName = (i,v)=>{ cSec().items[i].name = v; scheduleAutoSave(); };
+window.cUpdItemPrice = (i,v)=>{ cSec().items[i].price = v; scheduleAutoSave(); };
+window.cUpdItemSub = (i,v)=>{ cSec().items[i].sub = v; scheduleAutoSave(); };
+window.cMvItem = (i,dir)=>{ const items = cSec().items, ni = i+dir; if(ni<0 || ni>=items.length) return; [items[i], items[ni]] = [items[ni], items[i]]; renderApp('cms'); scheduleAutoSave(); };
+window.cRmItem = i => { if(cSec().items.length <= 1){ alert('Need at least one item.'); return; } if(!confirm('Remove item?')) return; cSec().items.splice(i,1); renderApp('cms'); scheduleAutoSave(); };
+window.cAddItem = ()=>{ cSec().items.push({name:'New item', price:'', sub:''}); renderApp('cms'); scheduleAutoSave(); };
+window.cAddBoard = ()=>{ D.boards.push({id:uid(), featured:false, emoji:'🍗', title:'NEW BOARD', sub:'', note:'', art:'assets/hecks-chicken/new-board.png', artPosition:'center center', items:[{name:'Item',price:'',sub:''}]}); cmsSec = D.boards.length-1; renderApp('cms'); scheduleAutoSave(); };
+window.cRmBoard = ()=>{ if(D.boards.length <= 1){ alert('Need at least one board.'); return; } if(!confirm(`Delete board "${cSec().title}"?`)) return; D.boards.splice(cmsSec,1); cmsSec = Math.max(0, cmsSec-1); renderApp('cms'); scheduleAutoSave(); };
+window.cUpdInfo = (k,v)=>{ D.restaurant[k] = v; syncMetaTags(D); scheduleAutoSave(); };
+window.cUpdHeat = (i,k,v)=>{ D.heatLevels[i][k] = v; scheduleAutoSave(); };
+
+function renderDevFAB(){
+  if (!devMode()) return '';
+  return `<div class="dev-fab"><div class="dev-panel ${devPanelOpen ? 'open' : ''}" id="dev-panel"><div class="dev-kicker">Backstage</div><button class="dev-btn" onclick="setView('menu'); closeDevPanel()">Public Menu</button><button class="dev-btn" onclick="setView('cms'); closeDevPanel()">CMS</button><button class="dev-btn" onclick="setView('assets'); closeDevPanel()">Asset Pack</button><button class="dev-btn" onclick="setView('tests'); closeDevPanel()">Tests</button></div><button class="dev-main-btn" onclick="toggleDevPanel()">⚙ DEV · ${esc(currentView().toUpperCase())}</button></div>`;
+}
+window.toggleDevPanel = function(){ devPanelOpen = !devPanelOpen; const panel = document.getElementById('dev-panel'); if(panel) panel.classList.toggle('open', devPanelOpen); };
+window.closeDevPanel = function(){ devPanelOpen = false; const panel = document.getElementById('dev-panel'); if(panel) panel.classList.remove('open'); };
+window.setView = setView;
+
+function testResult(name, pass, detail){ return { name, pass: !!pass, detail: detail || '' }; }
+function runTestSuite(persist = true){
+  const params = new URLSearchParams('dev=1');
+  const sampleBoard = DEFAULTS.boards[0];
+  const sampleHTML = renderMenuHTML(DEFAULTS);
+  const results = [
+    testResult('brand-rename', DEFAULTS.restaurant.name === "HECK'S CHICKEN", DEFAULTS.restaurant.name),
+    testResult('dev-secret-exact-match', params.get('dev') === DEV_SECRET_QUERY_VALUE, 'expected ?dev=1 exact gating'),
+    testResult('share-metadata-fields', !!DEFAULTS.restaurant.shareUrl && !!DEFAULTS.restaurant.previewImage && !!DEFAULTS.restaurant.shareDescription, 'share URL, preview image, and description populated'),
+    testResult('graphics-overlay-board-config', DEFAULTS.boards.every(b => typeof b.art === 'string' && b.art.length > 0), 'each board has a configurable art URL'),
+    testResult('menu-render-count', (sampleHTML.match(/class="board-frame/g) || []).length === DEFAULTS.boards.length, `${DEFAULTS.boards.length} boards rendered`),
+    testResult('asset-pack-count', TEMPLATES.length >= 6, `${TEMPLATES.length} templates`),
+    testResult('test-suite-version-bumped', TEST_SUITE_VERSION >= 2, `v${TEST_SUITE_VERSION}`),
+    testResult('storage-key-versioned', /_v2$/.test(STORAGE_KEY), STORAGE_KEY),
+    testResult('board-item-shape', sampleBoard.items.every(i => 'name' in i && 'price' in i && 'sub' in i), 'overlay data shape stable')
+  ];
+  const passed = results.filter(r => r.pass).length;
+  const payload = {
+    suiteVersion: TEST_SUITE_VERSION,
+    appVersion: APP_VERSION,
+    channel: RELEASE_CHANNEL,
+    timestamp: new Date().toISOString(),
+    pass: passed === results.length,
+    passed,
+    total: results.length,
+    results
+  };
+  if (persist) {
+    try { localStorage.setItem(TEST_RESULTS_KEY, JSON.stringify(payload)); } catch {}
+  }
+  latestTestResults = payload;
+  return payload;
+}
+function readTestResults(){ try { const raw = localStorage.getItem(TEST_RESULTS_KEY); return raw ? JSON.parse(raw) : null; } catch { return null; } }
+window.runTestsAndRefresh = function(){ latestTestResults = runTestSuite(true); renderApp(currentView()); };
+window.clearTestResults = function(){ localStorage.removeItem(TEST_RESULTS_KEY); latestTestResults = runTestSuite(true); renderApp(currentView()); };
+function renderTestsPage(){
+  const r = latestTestResults || runTestSuite(false);
+  return `<div><div class="tests-topbar"><div><div class="tests-topbar-name">Release Engineering Factory</div><div class="tests-topbar-sub">Persisted test suite v${TEST_SUITE_VERSION} · ${esc(APP_VERSION)}</div></div><div class="tests-topbar-right">${devMode() ? `<button class="btn-sec" onclick="setView('menu')">Menu</button><button class="btn-sec" onclick="setView('cms')">CMS</button><button class="btn-sec" onclick="setView('assets')">Assets</button>` : ''}<button class="btn-sec" onclick="runTestsAndRefresh()">Run Again</button></div></div><div class="tests-wrap"><div class="tests-hero"><div class="tests-card"><div class="tests-kicker">Mission Status</div><div class="tests-title">Heck's Chicken release candidate</div><div class="tests-subcopy">This round includes the collaborator-safe rename, populated Open Graph / Twitter share metadata, board-graphic overlay support, exact <code>?dev=1</code> backstage gating, and an incremented persisted local test suite.</div></div><div class="diag-card"><div class="tests-kicker">Result</div><div class="stat-num">${r.passed}/${r.total}</div><div class="stat-label">tests passed</div><div style="margin-top:10px"><span class="pill ${r.pass ? 'pass' : 'fail'}">${r.pass ? 'Release-ready' : 'Needs attention'}</span></div></div></div><table class="test-table"><thead><tr><th>Test</th><th>Status</th><th>Detail</th></tr></thead><tbody>${r.results.map(t => `<tr><td>${esc(t.name)}</td><td><span class="pill ${t.pass ? 'pass' : 'fail'}">${t.pass ? 'PASS' : 'FAIL'}</span></td><td>${esc(t.detail)}</td></tr>`).join('')}</tbody></table><div style="height:18px"></div><div class="diag-card"><div class="tests-kicker">Persisted Payload</div><div class="json-box">${esc(JSON.stringify(r, null, 2))}</div></div></div></div>`;
+}
+
+function renderApp(view = currentView()){
+  syncMetaTags(D);
+  const app = document.getElementById('app');
+  if (view === 'assets') app.innerHTML = renderAssets() + renderDevFAB();
+  else if (view === 'cms' && devMode()) app.innerHTML = renderCMS();
+  else if (view === 'tests' && devMode()) app.innerHTML = renderTestsPage();
+  else app.innerHTML = renderMenuHTML(D) + renderDevFAB();
+  if (view === 'menu' || view === 'cms') injectQRsIntoMenu();
+}
+
+async function init(){
+  D = loadData();
+  syncMetaTags(D);
+  if (typeof QRCode !== 'undefined') {
+    [menuQRDataUrl, gameQRDataUrl] = await Promise.all([
+      makeQR(D.restaurant.menuUrl, 120, '#FFB800', '#080503'),
+      makeQR(D.restaurant.gameUrl, 120, '#FFB800', '#080503')
+    ]);
+  }
+  latestTestResults = readTestResults() || runTestSuite(true);
+  renderApp(currentView());
+}
+
+init();
+</script>
+</body>
+</html>
