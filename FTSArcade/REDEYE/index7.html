@@ -32,8 +32,6 @@
 .dock{position:absolute;z-index:16;left:14px;right:14px;bottom:max(12px,env(safe-area-inset-bottom));height:187px;border-radius:18px;padding:9px 11px 11px;overflow:hidden}.dockhead{height:27px;display:flex;align-items:center;justify-content:space-between}.dockhead b{font-family:Impact,"Arial Narrow",sans-serif;font-size:14px;letter-spacing:.12em;text-transform:uppercase;color:#f5e1b5}.dockhead span{font-size:9px;color:#9f9279;letter-spacing:.09em}.jobs{height:138px;display:grid;grid-auto-flow:column;grid-auto-columns:238px;grid-auto-rows:100%;gap:9px;overflow-x:auto;padding:2px 1px 4px}.job{position:relative;border:1px solid rgba(255,255,255,.13);background:#080503;border-radius:12px;overflow:hidden;color:#fff;text-align:left;cursor:pointer;transition:.14s;padding:0}.job:hover:not(.locked){transform:translateY(-2px);border-color:var(--gold)}.job canvas{position:absolute;inset:0;width:100%;height:100%}.job:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.05),rgba(0,0,0,.15) 40%,rgba(0,0,0,.95))}.job .body{position:absolute;z-index:2;left:10px;right:10px;bottom:8px}.job .name{font-size:14px;font-weight:900;text-shadow:0 2px 8px #000}.job .hint{font-size:10px;color:#d2c5aa;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}.badge{position:absolute;z-index:3;top:7px;right:7px;border-radius:99px;padding:3px 6px;background:rgba(24,16,5,.88);border:1px solid rgba(225,182,90,.55);color:#ffe09b;font-size:8px;font-weight:900;letter-spacing:.1em;text-transform:uppercase}.job.locked{cursor:not-allowed;border-color:rgba(185,44,54,.44)}.job.locked canvas{filter:grayscale(.8) brightness(.35)}.job.locked .badge{border-color:#8d2f35;background:rgba(62,8,12,.9);color:#ff9da5}
 .drawer{position:absolute;z-index:40;top:91px;bottom:212px;width:min(370px,90vw);border-radius:16px;padding:14px;overflow:auto;transition:transform .24s ease}.drawer.right{right:14px;transform:translateX(calc(100% + 28px))}.drawer.right.open{transform:none}.drawer.left{left:14px;transform:translateX(calc(-100% - 28px))}.drawer.left.open{transform:none}.drawer h2{font-family:Impact,"Arial Narrow",sans-serif;font-size:18px;letter-spacing:.1em;margin:0 0 3px;text-transform:uppercase}.drawer .sub{font-size:10px;color:#a79980;margin-bottom:11px}.obj{display:flex;gap:8px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.07);font-size:12px;line-height:1.3;color:#bdb19d}.obj .box{width:18px;height:18px;border-radius:5px;border:1px solid #65502a;display:grid;place-items:center;flex:0 0 auto}.obj.done{color:#d6f3dd}.obj.done .box{background:#4ca866;border-color:#68cc83;color:#06180b}.progress{height:7px;border-radius:99px;overflow:hidden;background:#1a120a;border:1px solid rgba(255,255,255,.08);margin:7px 0 11px}.progress span{display:block;height:100%;background:linear-gradient(90deg,#bd1c28,#ddb158)}.devgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:10px 0}.dev{border-radius:9px;padding:9px 5px;border:1px solid #6f5423;background:#1c1408;color:#f1d28a;font-weight:850;font-size:11px;cursor:pointer}.dev.wide{grid-column:span 3}.log{font-size:10px;color:#b7aa94;line-height:1.5}.log div{padding:5px 0;border-bottom:1px dashed rgba(255,255,255,.07)}
 .invitem{display:grid;grid-template-columns:72px 1fr;gap:11px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.08)}.invitem canvas{width:72px;height:72px;border-radius:10px;border:1px solid rgba(225,182,90,.28);background:#080503}.invitem b{display:block;color:#ffe09b}.invitem p{font-size:11px;line-height:1.45;color:#c9bda6;margin:5px 0}.invitem a{color:#7fc7ff;font-size:11px}.empty{font-size:12px;color:#a99b83;padding:12px 0}.toast{position:absolute;z-index:70;top:93px;left:50%;transform:translate(-50%,-10px);opacity:0;pointer-events:none;transition:.2s;max-width:min(560px,90vw);padding:9px 13px;border-radius:12px;font-size:12px}.toast.show{opacity:1;transform:translate(-50%,0)}
-.inv-badge{display:inline-flex;align-items:center;justify-content:center;min-width:15px;height:15px;border-radius:99px;background:var(--red);color:#fff;font-size:8px;font-weight:900;line-height:1;padding:0 3px;margin-left:5px;vertical-align:middle;animation:inv-pulse 1.4s ease-in-out infinite;}
-@keyframes inv-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.75;transform:scale(1.2)}}
 .graph-overlay{position:absolute;z-index:90;inset:10px;display:none;border-radius:18px;overflow:hidden;background:rgba(7,5,3,.97);border:1px solid rgba(225,182,90,.38);box-shadow:0 20px 80px rgba(0,0,0,.72)}
 .graph-overlay.open{display:grid;grid-template-rows:auto 1fr}
 .graph-head{display:flex;align-items:center;gap:10px;padding:11px 13px;border-bottom:1px solid rgba(225,182,90,.22);background:rgba(23,15,8,.92)}
@@ -71,7 +69,7 @@
     <div class="res" id="resT"><canvas id="iconT"></canvas><div><div class="l">Admission</div><div class="v" id="valT">None</div></div></div>
     <div class="res" id="resV"><canvas id="iconV"></canvas><div><div class="l">VIP</div><div class="v" id="valV">None</div></div></div>
   </div>
-  <div class="topbtns"><button class="topbtn" onclick="toggleDrawer('inventory')">Inventory <span id="invMini">0</span><span id="invBadge" class="inv-badge" style="display:none">!</span></button><button class="topbtn" onclick="toggleDrawer('missions')">Missions <span id="missionMini"></span></button><button class="topbtn" id="devBtn" style="display:none" onclick="toggleDrawer('dev')">Dev</button></div>
+  <div class="topbtns"><button class="topbtn" onclick="toggleDrawer('inventory')">Inventory <span id="invMini">0</span></button><button class="topbtn" onclick="toggleDrawer('missions')">Missions <span id="missionMini"></span></button><button class="topbtn" id="devBtn" style="display:none" onclick="toggleDrawer('dev')">Dev</button></div>
 </header>
 <section class="caption"><div class="region" id="region"></div><h1 id="title"></h1><p id="desc"></p><div class="marquee" id="marquee"></div></section>
 <section class="dock glass"><div class="dockhead"><b>Available Moves</b><span id="seen"></span></div><div id="jobs" class="jobs"></div></section>
@@ -283,7 +281,7 @@ window.toggleDevMode=()=>setDevMode(!devModeEnabled);
 window.setRedEyeDevMode=setDevMode;
 window.devModeStatus=()=>devModeEnabled;
 
-const DEFAULT_STATE={scene:'shoes',wallet:{ducats:25,lifetimeDucats:0},entitlements:{admission:{purchased:false,redeemed:false},vip:{purchased:false,redeemed:false,invited:false}},access:{gym:false,cowork:false,corporate:false,residence:false,tenantParking:false,rooftop:false,maintenance:false},inventory:[],visited:['shoes'],rolls:0,flags:{ftsTournamentSeries:false,playerSignal:null},outsideWalks:0,backrooms:{origin:null,depth:0},unseenInv:0};
+const DEFAULT_STATE={scene:'shoes',wallet:{ducats:25,lifetimeDucats:0},entitlements:{admission:{purchased:false,redeemed:false},vip:{purchased:false,redeemed:false,invited:false}},access:{gym:false,cowork:false,corporate:false,residence:false,tenantParking:false,rooftop:false,maintenance:false},inventory:[],visited:['shoes'],rolls:0,flags:{ftsTournamentSeries:false,playerSignal:null},outsideWalks:0,backrooms:{origin:null,depth:0}};
 function clone(x){return JSON.parse(JSON.stringify(x))}function loadState(){try{const raw=localStorage.getItem(SAVE_KEY);const s=raw?Object.assign(clone(DEFAULT_STATE),JSON.parse(raw)):clone(DEFAULT_STATE);s.flags=Object.assign({},DEFAULT_STATE.flags,s.flags||{});s.access=Object.assign({},DEFAULT_STATE.access,s.access||{});s.outsideWalks=Number(s.outsideWalks||0);s.backrooms=Object.assign({},DEFAULT_STATE.backrooms,s.backrooms||{});return s}catch{return clone(DEFAULT_STATE)}}const state=loadState();function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(state))}catch{}}
 
 /* Source-discoverable dev backdoors. These intentionally do not provide
@@ -328,7 +326,7 @@ window.redeyeDev={
   },
   reset:()=>resetGame()
 };
-function hasItem(id){return state.inventory.includes(id)}function addInventoryItem(id){if(!hasItem(id)){state.inventory.push(id);state.unseenInv=(state.unseenInv||0)+1;toast('LEGENDARY DROP: the frymatic');addLog('The frymatic dropped into inventory.');save()}}
+function hasItem(id){return state.inventory.includes(id)}function addInventoryItem(id){if(!hasItem(id)){state.inventory.push(id);toast('LEGENDARY DROP: the frymatic');addLog('The frymatic dropped into inventory.');save()}}
 function secureRandomInt(max){const a=new Uint32Array(1);crypto.getRandomValues(a);return Math.floor(a[0]/(2**32)*max)}
 function rollLegendaryDrop(){const e=state.entitlements.vip;const eligible=e.purchased&&!e.redeemed&&state.wallet.lifetimeDucats>=400&&!hasItem('frymatic');if(!eligible)return;state.rolls++;if(secureRandomInt(1000)===0)addInventoryItem('frymatic')}
 function buyCurrency(n){state.wallet.ducats+=n;state.wallet.lifetimeDucats+=n;addLog(`+${n} Ducats (simulated)`);rollLegendaryDrop();save();render()}function grantInvite(){state.entitlements.vip.invited=true;addLog('VIP invitation granted.');save();render()}function resetGame(){localStorage.removeItem(SAVE_KEY);location.reload()}
@@ -394,10 +392,10 @@ function move(target){
     if(origin&&SCENES[origin]){state.scene=origin;addLog('The door returns to '+SCENES[origin].title+'.');save();render();return}
     state.scene='shoes';save();render();return
   }
-  if(target==='buyTicket'){if(state.entitlements.admission.purchased)return;if(state.wallet.ducats<20){toast('General admission costs 20 Ducats.');return}state.wallet.ducats-=20;state.entitlements.admission.purchased=true;state.unseenInv=(state.unseenInv||0)+1;addLog('Purchased general admission.');rollLegendaryDrop();save();render();return}
-  if(target==='buyVip'){if(state.entitlements.vip.purchased)return;if(state.wallet.ducats<100){toast('VIP access costs 100 Ducats.');return}state.wallet.ducats-=100;state.entitlements.vip.purchased=true;state.unseenInv=(state.unseenInv||0)+1;addLog('Purchased VIP access — not yet redeemed.');rollLegendaryDrop();save();render();return}
+  if(target==='buyTicket'){if(state.entitlements.admission.purchased)return;if(state.wallet.ducats<20){toast('General admission costs 20 Ducats.');return}state.wallet.ducats-=20;state.entitlements.admission.purchased=true;addLog('Purchased general admission.');rollLegendaryDrop();save();render();return}
+  if(target==='buyVip'){if(state.entitlements.vip.purchased)return;if(state.wallet.ducats<100){toast('VIP access costs 100 Ducats.');return}state.wallet.ducats-=100;state.entitlements.vip.purchased=true;addLog('Purchased VIP access — not yet redeemed.');rollLegendaryDrop();save();render();return}
   if(!canMove(target)){toast('Access requirement not satisfied.');return}
-  if(target==='enterLobby'){if(state.entitlements.admission.purchased){state.entitlements.admission.redeemed=true;addLog('General admission redeemed at entry.');}target='lobby';}
+  if(target==='enterLobby'&&state.entitlements.admission.purchased)state.entitlements.admission.redeemed=true;
   if(target==='vipCheckin'&&state.entitlements.vip.purchased&&!state.entitlements.vip.redeemed){state.entitlements.vip.redeemed=true;addLog('VIP access redeemed at check-in.')}
   if(!SCENES[target])return;
   const fromScene=state.scene;rewardExteriorWalk(fromScene,target);
@@ -406,51 +404,8 @@ function move(target){
 function renderStats(){drawCrop($('iconD'),'ducat',false);drawCrop($('iconT'),'ticket',false);drawCrop($('iconV'),'vippass',false);$('valD').textContent=state.wallet.ducats;$('valT').textContent=state.entitlements.admission.purchased?(state.entitlements.admission.redeemed?'Used':'Owned'):'None';$('valV').textContent=state.entitlements.vip.invited?'Invited':state.entitlements.vip.purchased?(state.entitlements.vip.redeemed?'Redeemed':'Owned'):'None';$('resD').classList.toggle('owned',state.wallet.ducats>0);$('resT').classList.toggle('owned',state.entitlements.admission.purchased);$('resV').classList.toggle('owned',state.entitlements.vip.purchased||state.entitlements.vip.invited)}
 function renderJobs(scene){$('jobs').innerHTML='';scene.actions.forEach(([target,label,hint])=>{const st=status(target);const b=document.createElement('button');b.className='job'+(st.locked?' locked':'');const c=document.createElement('canvas');b.appendChild(c);const badge=document.createElement('span');badge.className='badge';badge.textContent=st.badge;b.appendChild(badge);const body=document.createElement('div');body.className='body';body.innerHTML=`<div class="name">${label}</div><div class="hint">${hint||''}</div>`;b.appendChild(body);b.onclick=()=>move(target);$('jobs').appendChild(b);requestAnimationFrame(()=>drawCrop(c,actionArt(target),true))})}
 function renderObjectives(){let done=0;$('objectiveList').innerHTML='';OBJECTIVES.forEach(([label,check])=>{const ok=check(state);if(ok)done++;const d=document.createElement('div');d.className='obj'+(ok?' done':'');d.innerHTML=`<span class="box">${ok?'✓':''}</span><span>${label}</span>`;$('objectiveList').appendChild(d)});$('missionMini').textContent=`${done}/${OBJECTIVES.length}`;$('missionCount').textContent=`${done} / ${OBJECTIVES.length} complete`;$('missionFill').style.width=`${done/OBJECTIVES.length*100}%`}
-function renderInvBadge(){const b=$('invBadge');if(!b)return;const n=state.unseenInv||0;b.style.display=n>0?'inline-flex':'none';b.textContent=n>9?'!':String(n);}
-function renderInventory(){
-  const list=$('inventoryList');list.innerHTML='';
-  const inv=state.inventory,adm=state.entitlements.admission,vip=state.entitlements.vip;
-  const hasEnts=adm.purchased||vip.purchased||vip.invited;
-  $('invMini').textContent=inv.length;
-  if(!inv.length&&!hasEnts){list.innerHTML='<div class="empty">Nothing strange enough to keep yet.</div>';return}
-  if(hasEnts){
-    const sec=document.createElement('div');
-    sec.style.cssText='margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid rgba(225,182,90,.2)';
-    const lbl=document.createElement('div');
-    lbl.style.cssText='font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:#a79980;margin-bottom:8px';
-    lbl.textContent='Tickets & Access';sec.appendChild(lbl);
-    if(adm.purchased){
-      const row=document.createElement('div');row.className='invitem';
-      const c=document.createElement('canvas');row.appendChild(c);
-      const txt=document.createElement('div');
-      txt.innerHTML=`<b>General Admission</b><small>TICKET</small><p>${adm.redeemed?'Redeemed at entry.':'Valid for entry — present at the door.'}</p>`;
-      row.appendChild(txt);sec.appendChild(row);requestAnimationFrame(()=>drawCrop(c,'ticket',false));
-    }
-    if(vip.invited){
-      const row=document.createElement('div');row.className='invitem';
-      const c=document.createElement('canvas');row.appendChild(c);
-      const txt=document.createElement('div');
-      txt.innerHTML=`<b>VIP Invitation</b><small>INVITATION · COMPLIMENTARY</small><p>Grants full VIP access. Report to the VIP gate.</p>`;
-      row.appendChild(txt);sec.appendChild(row);requestAnimationFrame(()=>drawCrop(c,'invitation',false));
-    } else if(vip.purchased){
-      const row=document.createElement('div');row.className='invitem';
-      const c=document.createElement('canvas');row.appendChild(c);
-      const txt=document.createElement('div');
-      txt.innerHTML=`<b>VIP Access Pass</b><small>VIP PASS</small><p>${vip.redeemed?'Redeemed at VIP check-in.':'Not yet redeemed — enter via the VIP gate.'}</p>`;
-      row.appendChild(txt);sec.appendChild(row);requestAnimationFrame(()=>drawCrop(c,'vippass',false));
-    }
-    list.appendChild(sec);
-  }
-  inv.forEach(id=>{
-    const item=ITEMS[id];if(!item)return;
-    const d=document.createElement('div');d.className='invitem';
-    const c=document.createElement('canvas');d.appendChild(c);
-    const text=document.createElement('div');
-    text.innerHTML=`<b>${item.name}</b><small>${item.rarity}</small><p>${item.description}</p><a href="${item.href}" target="_blank" rel="noopener">Follow the trail → @mofrymatic</a>`;
-    d.appendChild(text);list.appendChild(d);requestAnimationFrame(()=>drawCrop(c,item.art,false));
-  });
-}
-function render(){applyDevMode();const scene=state.scene==='backroom'?S('Backroom '+Math.max(1,state.backrooms.depth||1),'The architecture repeats without promising to repeat exactly. There is always another backroom, and always one ordinary-looking door. That door returns to the link-only room that first admitted you.','backrooms',backroomArt(state.backrooms.depth),[['nextBackroom','Another Backroom','Continue indefinitely'],['backroomDoor','The Door','Return to your originating secret room']],'NO DIRECTORY'):SCENES[state.scene]||SCENES.shoes;$('title').textContent=scene.title;$('desc').textContent=scene.desc;$('region').textContent=scene.region;$('marquee').textContent=scene.marquee;$('crumbRegion').textContent=scene.region+' · Stage 0';$('crumbScene').textContent=scene.title;$('seen').textContent=`${state.visited.length} / ${Object.keys(SCENES).length} mapped scenes seen`;requestAnimationFrame(()=>drawCrop($('bg'),scene.art,true));renderStats();renderJobs(scene);renderObjectives();renderInventory();renderInvBadge()}
+function renderInventory(){$('inventoryList').innerHTML='';$('invMini').textContent=state.inventory.length;if(!state.inventory.length){$('inventoryList').innerHTML='<div class="empty">Nothing strange enough to keep yet.</div>';return}state.inventory.forEach(id=>{const item=ITEMS[id];const d=document.createElement('div');d.className='invitem';const c=document.createElement('canvas');d.appendChild(c);const text=document.createElement('div');text.innerHTML=`<b>${item.name}</b><small>${item.rarity}</small><p>${item.description}</p><a href="${item.href}" target="_blank" rel="noopener">Follow the trail → @mofrymatic</a>`;d.appendChild(text);$('inventoryList').appendChild(d);requestAnimationFrame(()=>drawCrop(c,item.art,false))})}
+function render(){applyDevMode();const scene=state.scene==='backroom'?S('Backroom '+Math.max(1,state.backrooms.depth||1),'The architecture repeats without promising to repeat exactly. There is always another backroom, and always one ordinary-looking door. That door returns to the link-only room that first admitted you.','backrooms',backroomArt(state.backrooms.depth),[['nextBackroom','Another Backroom','Continue indefinitely'],['backroomDoor','The Door','Return to your originating secret room']],'NO DIRECTORY'):SCENES[state.scene]||SCENES.shoes;$('title').textContent=scene.title;$('desc').textContent=scene.desc;$('region').textContent=scene.region;$('marquee').textContent=scene.marquee;$('crumbRegion').textContent=scene.region+' · Stage 0';$('crumbScene').textContent=scene.title;$('seen').textContent=`${state.visited.length} / ${Object.keys(SCENES).length} mapped scenes seen`;requestAnimationFrame(()=>drawCrop($('bg'),scene.art,true));renderStats();renderJobs(scene);renderObjectives();renderInventory()}
 
 const GRAPH_SPECIAL_DEST={enterLobby:'lobby',enterBackrooms:'backroom',nextBackroom:'backroom'};
 const GRAPH_NONSPATIAL=new Set(['buyTicket','buyVip','joinTournamentSeries']);
@@ -575,8 +530,7 @@ $('graphRegion').addEventListener('change',renderSceneGraph);
 function toggleDrawer(id){
   if(id==='dev'&&!devModeEnabled)return;
   document.querySelectorAll('.drawer').forEach(d=>{if(d.id!==id)d.classList.remove('open')});
-  $(id).classList.toggle('open');
-  if(id==='inventory'&&$(id).classList.contains('open')){state.unseenInv=0;save();renderInvBadge();}
+  $(id).classList.toggle('open')
 }addEventListener('resize',render);addEventListener('keydown',e=>{
   if(e.key==='Escape'){if($('sceneGraph').classList.contains('open'))closeSceneGraph();else document.querySelectorAll('.drawer').forEach(d=>d.classList.remove('open'));}
   if((e.ctrlKey||e.metaKey)&&e.shiftKey&&e.key.toLowerCase()==='d'){
