@@ -290,37 +290,6 @@ body::after{
 .mini-cell{border:0;box-shadow:inset 0 0 0 1px rgba(255,255,255,.42),inset 0 -3px 0 rgba(0,0,0,.35),0 0 8px currentColor}
 .settings-panel,.how-panel{border-width:2px;background:linear-gradient(180deg,rgba(2,10,26,.99),rgba(1,4,12,.995))}
 .settings-group{clip-path:polygon(0 10px,10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%)}
-/* ── Ornate corners — settings menu primitives ─────────────────────────
-   Small glowing L-brackets pinned to each corner of the settings shell
-   and its setting-groups, echoing the corner-tick motif already used on
-   the in-game HUD rail (drawRailPanel, canvas-side). Built from 8 solid
-   background-layer rectangles (2 per corner) on a single ::after — no
-   extra DOM, no JS, and — since it's absolutely positioned against the
-   scrollport rather than the scrolled content — it stays pinned to the
-   panel's corners even while settings-grid scrolls internally. */
-.settings-panel,.settings-group{position:relative}
-.settings-panel::after,.settings-group::after{
-  content:"";position:absolute;inset:0;pointer-events:none;z-index:3;
-  --ok-len:16px;--ok-th:2px;--ok-in:7px;--ok-col:rgba(255,189,40,.85);
-  background-image:
-    linear-gradient(var(--ok-col),var(--ok-col)),linear-gradient(var(--ok-col),var(--ok-col)),
-    linear-gradient(var(--ok-col),var(--ok-col)),linear-gradient(var(--ok-col),var(--ok-col)),
-    linear-gradient(var(--ok-col),var(--ok-col)),linear-gradient(var(--ok-col),var(--ok-col)),
-    linear-gradient(var(--ok-col),var(--ok-col)),linear-gradient(var(--ok-col),var(--ok-col));
-  background-repeat:no-repeat;
-  background-size:
-    var(--ok-len) var(--ok-th),var(--ok-th) var(--ok-len),
-    var(--ok-len) var(--ok-th),var(--ok-th) var(--ok-len),
-    var(--ok-len) var(--ok-th),var(--ok-th) var(--ok-len),
-    var(--ok-len) var(--ok-th),var(--ok-th) var(--ok-len);
-  background-position:
-    top var(--ok-in) left var(--ok-in),top var(--ok-in) left var(--ok-in),
-    top var(--ok-in) right var(--ok-in),top var(--ok-in) right var(--ok-in),
-    bottom var(--ok-in) right var(--ok-in),bottom var(--ok-in) right var(--ok-in),
-    bottom var(--ok-in) left var(--ok-in),bottom var(--ok-in) left var(--ok-in);
-  filter:drop-shadow(0 0 3px rgba(255,189,40,.55));
-}
-.settings-group::after{--ok-len:10px;--ok-in:3px;--ok-col:rgba(199,108,255,.85);filter:drop-shadow(0 0 2px rgba(199,108,255,.5))}
 .setting-row{transition:border-color .12s,background .12s,transform .12s}.setting-row:focus-within,.setting-row:hover{border-color:rgba(67,225,255,.5);background:rgba(6,24,48,.82);transform:translateX(2px)}
 .nb,#nui-pause{clip-path:polygon(0 8px,8px 0,calc(100% - 8px) 0,100% 8px,100% calc(100% - 8px),calc(100% - 8px) 100%,8px 100%,0 calc(100% - 8px))}
 #crt{background:repeating-linear-gradient(rgba(0,0,0,0) 0 2px,rgba(0,0,0,.13) 3px 4px),radial-gradient(ellipse at center,rgba(0,0,0,0) 52%,rgba(0,0,0,.64) 100%);mix-blend-mode:normal}
@@ -402,7 +371,6 @@ body::after{
         </section>
 
         <section class="settings-group"><h3>Display & Accessibility</h3>
-          <label class="setting-row"><span class="setting-copy"><strong>Brick Style</strong><small>Obliteratus is the faceted chamfer-jewel default. Classic is the original flat-bevel brick. Glass and Alloy are two more directions off the Brick Evolution concept sheet. Grey LCD is a flat, glow-free monochrome panel look.</small></span><span class="setting-control"><select name="brickStyle"><option value="obliteratus">OBLITERATUS</option><option value="classic">CLASSIC</option><option value="glass">GLASS</option><option value="alloy">ALLOY</option><option value="lcd">GREY LCD</option></select></span></label>
           <label class="setting-row"><span class="setting-copy"><strong>CRT Treatment</strong><small>Scanline and vignette overlay above the pixel-scaled game field.</small></span><span class="setting-control"><span class="switch"><input name="crtEnabled" type="checkbox"><span></span></span></span></label>
           <label class="setting-row"><span class="setting-copy"><strong>Reduced Motion</strong><small>Suppress screen-filling shockwaves, excess particles, and interface animation.</small></span><span class="setting-control"><span class="switch"><input name="reducedMotion" type="checkbox"><span></span></span></span></label>
         </section>
@@ -519,14 +487,13 @@ const DEFAULT_SETTINGS = Object.freeze({
   ghostEnabled:true, rotate180Enabled:false, irsEnabled:true, hardDropMode:'lock',
   dasMs:160, arrMs:40, softDropFactor:10, lockDelayMs:500, lockResetLimit:15,
   musicTheme:'theme_a', musicStyle:'med_wave', sfxEnabled:false, bgmEnabled:false, hapticsEnabled:true, crtEnabled:true,
-  reducedMotion:false, brickStyle:'obliteratus'
+  reducedMotion:false
 });
 const SETTING_ENUMS = {
   rotationSystem:['srs','ars'], randomizer:['bag','history'], hardDropMode:['lock','sonic'],
   musicTheme:['theme_a','theme_b','theme_c'],
   musicStyle:['med_wave','witch_house','g_funk','klezmer','jungle','uk_rnb','acidcore','deep_house','trap','uk_drill','psytrance','triphop','dubstep','liquid_dnb','viking_metal','industrial_techno'],
-  queueCount:[1,2,3,4,5], softDropFactor:[5,10,20,40,999], lockResetLimit:[0,8,15,30],
-  brickStyle:['obliteratus','classic','glass','alloy','lcd']
+  queueCount:[1,2,3,4,5], softDropFactor:[5,10,20,40,999], lockResetLimit:[0,8,15,30]
 };
 const LEGACY_MUSIC_STYLES=Object.freeze({
   neon_lagoon:'med_wave',west_coast_bass:'g_funk',rnb:'uk_rnb',acid_core:'acidcore',
@@ -539,7 +506,7 @@ function parseStoredBool(v,fallback){ return v===true||v==='true'?true:v===false
 function validateSettings(candidate={}){
   const d=DEFAULT_SETTINGS, out={...d};
   candidate={...candidate,musicStyle:LEGACY_MUSIC_STYLES[candidate.musicStyle]||candidate.musicStyle};
-  for(const k of ['rotationSystem','randomizer','hardDropMode','musicTheme','musicStyle','brickStyle']) if(SETTING_ENUMS[k].includes(candidate[k])) out[k]=candidate[k];
+  for(const k of ['rotationSystem','randomizer','hardDropMode','musicTheme','musicStyle']) if(SETTING_ENUMS[k].includes(candidate[k])) out[k]=candidate[k];
   for(const k of ['queueCount','softDropFactor','lockResetLimit']) { const n=Number(candidate[k]); if(SETTING_ENUMS[k].includes(n)) out[k]=n; }
   out.dasMs=settingClamp(Number(candidate.dasMs)||d.dasMs,60,300);
   out.arrMs=settingClamp(Number.isFinite(Number(candidate.arrMs))?Number(candidate.arrMs):d.arrMs,0,100);
@@ -2319,312 +2286,41 @@ function spawnGameOverEffect() {
 }
 
 // ── Draw helpers ──────────────────────────────────────────────────────
-// Brick Evolution v2.0 — four selectable brick art directions pulled off
-// the concept sheet, registered in BRICK_STYLES and dispatched from
-// drawFacetedBrick() by settings.brickStyle. Every style shares the same
-// entry contract — (g, x, y, w, h, size, col, glo, alpha, flash, dimmed)
-// against a common gapped cell rect — so board cells, ghost/current
-// piece, and the HOLD/NEXT rail previews all repaint correctly the
-// instant the setting changes, with zero per-style special-casing
-// upstream. `dimmed` (used-hold / queued-next look) is each style's own
-// responsibility to interpret, same contract as before.
-//
-//  · obliteratus — chamfer-jewel (B2 Luminous Core + B3 Circuit Etch +
-//    B4 Chamfer Frame fused). Current default, unchanged from last pass.
-//  · classic     — the original pre-refactor Zittris brick: rectangular
-//    silhouette, top/bottom trapezoid bevel only, flat face gradient.
-//    Brought back verbatim as an explicit "old style" option.
-//  · glass       — B1 Beveled Glass: rounded silhouette, translucent
-//    fill, one big diagonal specular streak, faint scanline texture.
-//  · alloy       — B6 Composite Alloy: hard rectangular corners, matte
-//    brushed-metal fill, minimal glow, four corner rivets standing in
-//    for "reinforced corners."
-function chamferPath(g, x, y, w, h, c) {
-  g.beginPath();
-  g.moveTo(x+c, y);       g.lineTo(x+w-c, y);
-  g.lineTo(x+w, y+c);     g.lineTo(x+w, y+h-c);
-  g.lineTo(x+w-c, y+h);   g.lineTo(x+c, y+h);
-  g.lineTo(x, y+h-c);     g.lineTo(x, y+c);
-  g.closePath();
-}
-
-function drawBrick_obliteratus(g,x,y,w,h,size,col,glo,alpha,flash,dimmed) {
-  const fillCol = dimmed ? '#4b5968' : col;
-  const glowCol = dimmed ? '#263443' : glo;
-  const fa = dimmed ? 0.5 : 1; // facet-contrast multiplier when dimmed
-  const bevel=Math.max(1.5,size*.17), chamfer=bevel*.6;
-
-  g.save();g.globalAlpha=alpha;
-  g.shadowColor=flash?'#ffffff':glowCol;g.shadowBlur=flash?size*1.15:(dimmed?0:size*.62);
-  if(flash){g.fillStyle='#ffffff';g.fillRect(x,y,w,h);g.restore();return;}
-
-  chamferPath(g,x,y,w,h,chamfer);
-  const shell=g.createLinearGradient(x,y,x+w,y+h);
-  shell.addColorStop(0,lighten(fillCol,dimmed?.14:.55));shell.addColorStop(.32,lighten(fillCol,dimmed?.05:.16));
-  shell.addColorStop(.66,fillCol);shell.addColorStop(1,darken(fillCol,dimmed?.14:.5));
-  g.fillStyle=shell;g.fill();
-
-  g.shadowBlur=0;
-  g.save();
-  chamferPath(g,x,y,w,h,chamfer);g.clip();
-
-  g.fillStyle=`rgba(255,255,255,${.32*fa})`;
-  g.beginPath();g.moveTo(x,y);g.lineTo(x+w,y);g.lineTo(x+w-bevel,y+bevel);g.lineTo(x+bevel,y+bevel);g.closePath();g.fill();
-  g.fillStyle=`rgba(0,0,0,${.36*fa})`;
-  g.beginPath();g.moveTo(x,y+h);g.lineTo(x+w,y+h);g.lineTo(x+w-bevel,y+h-bevel);g.lineTo(x+bevel,y+h-bevel);g.closePath();g.fill();
-  g.fillStyle=`rgba(0,0,0,${.24*fa})`;
-  g.beginPath();g.moveTo(x,y);g.lineTo(x+bevel,y+bevel);g.lineTo(x+bevel,y+h-bevel);g.lineTo(x,y+h);g.closePath();g.fill();
-  g.fillStyle=`rgba(255,255,255,${.13*fa})`;
-  g.beginPath();g.moveTo(x+w,y);g.lineTo(x+w-bevel,y+bevel);g.lineTo(x+w-bevel,y+h-bevel);g.lineTo(x+w,y+h);g.closePath();g.fill();
-
-  const cx=x+bevel+(w-bevel*2)*.36, cy=y+bevel+(h-bevel*2)*.32, cr=(w-bevel*2)*.68;
-  const core=g.createRadialGradient(cx,cy,0,cx,cy,Math.max(1,cr));
-  core.addColorStop(0,lighten(fillCol,dimmed?.10:.48));core.addColorStop(.55,darken(fillCol,.04));core.addColorStop(1,darken(fillCol,dimmed?.14:.34));
-  g.fillStyle=core;
-  g.fillRect(x+bevel,y+bevel,Math.max(1,w-bevel*2),Math.max(1,h-bevel*2));
-
-  g.strokeStyle=`rgba(255,255,255,${.22*fa})`;
-  g.lineWidth=Math.max(.5,size*.032);
-  g.beginPath();
-  g.moveTo(x+w*.56,y+h*.84);g.lineTo(x+w*.56,y+h*.66);g.lineTo(x+w*.76,y+h*.66);
-  g.stroke();
-
-  g.fillStyle=`rgba(255,255,255,${.17*fa})`;
-  g.fillRect(x+bevel,y+h*.42,w-bevel*2,Math.max(1,size*.05));
-  g.restore();
-
-  g.globalAlpha=alpha*(dimmed?.32:.62);
-  g.strokeStyle=dimmed?'#91a0ad':lighten(fillCol,.65);g.lineWidth=Math.max(.6,size*.05);
-  chamferPath(g,x+.35,y+.35,w-.7,h-.7,Math.max(1,chamfer-.35));
-  g.stroke();
-  g.restore();
-}
-
-function drawBrick_classic(g,x,y,w,h,size,col,glo,alpha,flash,dimmed) {
-  const fillCol = dimmed ? '#4b5968' : col;
-  const glowCol = dimmed ? '#263443' : glo;
-  const bevel = Math.max(1,size*.14);
-
-  g.save();g.globalAlpha=alpha;
-  g.shadowColor=flash?'#ffffff':glowCol;g.shadowBlur=flash?size*1.1:(dimmed?0:size*.58);
-  if(flash){g.fillStyle='#ffffff';g.fillRect(x,y,w,h);g.restore();return;}
-
-  const shell=g.createLinearGradient(x,y,x,y+h);
-  shell.addColorStop(0,lighten(fillCol,dimmed?.15:.5));shell.addColorStop(.18,lighten(fillCol,dimmed?.06:.18));
-  shell.addColorStop(.62,fillCol);shell.addColorStop(1,darken(fillCol,dimmed?.16:.48));
-  g.fillStyle=shell;g.fillRect(x,y,w,h);
-
-  g.shadowBlur=0;
-  g.fillStyle=`rgba(255,255,255,${dimmed?.14:.30})`;
-  g.beginPath();g.moveTo(x,y);g.lineTo(x+w,y);g.lineTo(x+w-bevel,y+bevel);g.lineTo(x+bevel,y+bevel);g.closePath();g.fill();
-  g.fillStyle=`rgba(0,0,0,${dimmed?.16:.34})`;
-  g.beginPath();g.moveTo(x,y+h);g.lineTo(x+w,y+h);g.lineTo(x+w-bevel,y+h-bevel);g.lineTo(x+bevel,y+h-bevel);g.closePath();g.fill();
-  g.fillStyle=`rgba(0,0,0,${dimmed?.10:.22})`;
-  g.beginPath();g.moveTo(x,y);g.lineTo(x+bevel,y+bevel);g.lineTo(x+bevel,y+h-bevel);g.lineTo(x,y+h);g.closePath();g.fill();
-  g.fillStyle=`rgba(255,255,255,${dimmed?.05:.11})`;
-  g.beginPath();g.moveTo(x+w,y);g.lineTo(x+w-bevel,y+bevel);g.lineTo(x+w-bevel,y+h-bevel);g.lineTo(x+w,y+h);g.closePath();g.fill();
-
-  const face=g.createLinearGradient(x+bevel,y+bevel,x+bevel,y+h-bevel);
-  face.addColorStop(0,lighten(fillCol,dimmed?.04:.12));face.addColorStop(.48,darken(fillCol,dimmed?.03:.06));face.addColorStop(1,darken(fillCol,dimmed?.12:.30));
-  g.fillStyle=face;g.fillRect(x+bevel,y+bevel,Math.max(1,w-bevel*2),Math.max(1,h-bevel*2));
-  g.fillStyle=`rgba(255,255,255,${dimmed?.06:.16})`;g.fillRect(x+bevel,y+h*.43,w-bevel*2,Math.max(1,size*.045));
-  g.strokeStyle=dimmed?'#91a0ad':lighten(fillCol,.62);g.globalAlpha=alpha*(dimmed?.28:.58);g.lineWidth=Math.max(.6,size*.045);g.strokeRect(x+.35,y+.35,w-.7,h-.7);
-  g.restore();
-}
-
-function brickPath_rounded(g,x,y,w,h,r) {
-  if (typeof g.roundRect === 'function') { g.beginPath(); g.roundRect(x,y,w,h,r); }
-  else { g.beginPath(); g.rect(x,y,w,h); }
-}
-function drawBrick_glass(g,x,y,w,h,size,col,glo,alpha,flash,dimmed) {
-  const fillCol = dimmed ? '#4b5968' : col;
-  const glowCol = dimmed ? '#263443' : glo;
-  const r = Math.max(2,size*.16);
-
-  g.save();g.globalAlpha=alpha;
-  g.shadowColor=flash?'#ffffff':glowCol;g.shadowBlur=flash?size*1.1:(dimmed?0:size*.5);
-  if(flash){brickPath_rounded(g,x,y,w,h,r);g.fillStyle='#ffffff';g.fill();g.restore();return;}
-
-  brickPath_rounded(g,x,y,w,h,r);
-  const base=g.createLinearGradient(x,y,x+w,y+h);
-  base.addColorStop(0,lighten(fillCol,dimmed?.10:.35));base.addColorStop(1,darken(fillCol,dimmed?.10:.3));
-  g.globalAlpha=alpha*(dimmed?.62:.8);
-  g.fillStyle=base;g.fill();
-
-  g.globalAlpha=alpha;g.shadowBlur=0;
-  g.save();brickPath_rounded(g,x,y,w,h,r);g.clip();
-  const hi=g.createLinearGradient(x,y,x+w*.6,y+h*.6);
-  hi.addColorStop(0,`rgba(255,255,255,${dimmed?.22:.55})`);
-  hi.addColorStop(1,'rgba(255,255,255,0)');
-  g.fillStyle=hi;
-  g.beginPath();g.moveTo(x,y);g.lineTo(x+w*.7,y);g.lineTo(x+w*.25,y+h);g.lineTo(x,y+h);g.closePath();g.fill();
-  g.globalAlpha=alpha*(dimmed?.04:.08);
-  g.fillStyle='#ffffff';
-  for(let ly=y+2; ly<y+h; ly+=Math.max(2,size*.14)) g.fillRect(x,ly,w,1);
-  g.restore();
-
-  g.globalAlpha=alpha*(dimmed?.35:.72);
-  g.strokeStyle=dimmed?'#91a0ad':lighten(fillCol,.6);
-  g.lineWidth=Math.max(.6,size*.045);
-  brickPath_rounded(g,x+.4,y+.4,w-.8,h-.8,Math.max(1,r-.4));g.stroke();
-  g.restore();
-}
-
-function drawBrick_alloy(g,x,y,w,h,size,col,glo,alpha,flash,dimmed) {
-  const fillCol = dimmed ? '#4b5968' : col;
-  const glowCol = dimmed ? '#263443' : glo;
-
-  g.save();g.globalAlpha=alpha;
-  g.shadowColor=flash?'#ffffff':glowCol;g.shadowBlur=flash?size:(dimmed?0:size*.3);
-  if(flash){g.fillStyle='#ffffff';g.fillRect(x,y,w,h);g.restore();return;}
-
-  const grad=g.createLinearGradient(x,y,x,y+h);
-  grad.addColorStop(0,lighten(fillCol,dimmed?.08:.22));
-  grad.addColorStop(.5,darken(fillCol,dimmed?.02:.05));
-  grad.addColorStop(1,darken(fillCol,dimmed?.12:.32));
-  g.fillStyle=grad;g.fillRect(x,y,w,h);
-
-  g.shadowBlur=0;
-  g.globalAlpha=alpha*(dimmed?.05:.1);
-  g.fillStyle='#000000';
-  for(let ly=y+size*.12; ly<y+h; ly+=Math.max(2,size*.18)) g.fillRect(x,ly,w,Math.max(.5,size*.02));
-
-  g.globalAlpha=alpha;
-  g.strokeStyle=dimmed?'#6b7885':darken(fillCol,.4);
-  g.lineWidth=Math.max(.75,size*.055);
-  g.strokeRect(x+.4,y+.4,w-.8,h-.8);
-
-  const rv=Math.max(1,size*.07);
-  g.fillStyle=dimmed?'#7c8894':lighten(fillCol,.15);
-  g.globalAlpha=alpha*(dimmed?.5:.85);
-  for (const [rx,ry] of [[x+rv*1.6,y+rv*1.6],[x+w-rv*1.6,y+rv*1.6],[x+rv*1.6,y+h-rv*1.6],[x+w-rv*1.6,y+h-rv*1.6]]) {
-    g.beginPath();g.arc(rx,ry,rv,0,Math.PI*2);g.fill();
-  }
-  g.restore();
-}
-
-// B-lcd — old-school grey LCD panel (Game Boy-era handheld, not on the
-// concept sheet but the obvious sixth direction). Real LCD Tetris had no
-// hue at all — pieces read apart by a fixed icon baked into the block
-// face, not color, since the panel had none. lcdGlyphIndex() gets the
-// same effect for free: it hashes the (already piece-unique) hex color
-// into one of five icons, so every cell belonging to a given piece
-// always draws the same glyph without threading a piece key through the
-// whole render path just for this one style. No shadowBlur, no
-// gradients, no chamfer — hard rects only, on purpose.
-function lcdRamp(col, dimmed) {
-  const n=parseInt(col.slice(1),16);
-  const r=(n>>16)&255, gc=(n>>8)&255, b=n&255;
-  const lum=(0.299*r+0.587*gc+0.114*b)/255;
-  const base = dimmed ? 66 : Math.round(72+lum*118);
-  const shade=(v)=>{ v=Math.max(0,Math.min(255,Math.round(v))); return `rgb(${v},${Math.min(255,v+Math.round(v*.04))},${Math.max(0,v-4)})`; };
-  return { base, light:shade(base+46), mid:shade(base), dark:shade(base-52), border:shade(base-70) };
-}
-function lcdGlyphIndex(col) {
-  let h=0; for(let i=0;i<col.length;i++) h=(h*31+col.charCodeAt(i))|0;
-  return Math.abs(h)%5;
-}
-function drawLcdGlyph(g, idx, x, y, w, h, size, ink) {
-  const cx=x+w/2, cy=y+h/2, s=Math.min(w,h)*.32;
-  if (s < 1.5) return; // too small to read at this scale — skip, don't smear
-  g.fillStyle=ink; g.strokeStyle=ink;
-  switch(idx) {
-    case 0: g.fillRect(cx-s*.6,cy-s*.6,s*1.2,s*1.2); break;                        // solid square
-    case 1: g.beginPath();g.moveTo(cx,cy-s);g.lineTo(cx+s,cy);g.lineTo(cx,cy+s);g.lineTo(cx-s,cy);g.closePath();g.fill(); break; // diamond
-    case 2: g.beginPath();g.moveTo(cx+s*.2,cy-s);g.lineTo(cx+s,cy-s*.2);g.lineTo(cx+s,cy+s);g.lineTo(cx-s*.2,cy+s);g.closePath();g.fill(); break; // folded corner
-    case 3: { const t=Math.max(1,s*.5); g.fillRect(cx-t/2,cy-s,t,s*2); g.fillRect(cx-s,cy-t/2,s*2,t); break; } // plus
-    default: g.lineWidth=Math.max(1,size*.05); g.strokeRect(cx-s*.72,cy-s*.72,s*1.44,s*1.44); break;          // hollow ring
-  }
-}
-function drawBrick_lcd(g,x,y,w,h,size,col,glo,alpha,flash,dimmed) {
-  g.save();g.globalAlpha=alpha;
-  if(flash){g.fillStyle='#eef2ee';g.fillRect(x,y,w,h);g.restore();return;}
-
-  const { light, mid, dark, border } = lcdRamp(col, dimmed);
-
-  g.fillStyle=dark;
-  g.fillRect(x,y,w,h);
-  const bez=Math.max(1,Math.round(size*.09));
-  g.fillStyle=mid;
-  g.fillRect(x+bez,y+bez,Math.max(1,w-bez*2),Math.max(1,h-bez*2));
-  // Hard top/left highlight — flat pixel-art bevel, no gradient.
-  g.fillStyle=light;
-  g.fillRect(x+bez,y+bez,Math.max(1,w-bez*2),bez);
-  g.fillRect(x+bez,y+bez,bez,Math.max(1,h-bez*2));
-
-  if (!dimmed) drawLcdGlyph(g, lcdGlyphIndex(col), x, y, w, h, size, border);
-
-  // Dot-matrix grid — the seams between physical LCD segments. Skipped
-  // below a legibility floor so it doesn't turn into mush at rail-preview
-  // sizes; the glyph is doing the identity work there anyway.
-  if (size >= 12) {
-    g.globalAlpha=alpha*(dimmed?.08:.16);
-    g.fillStyle='#000000';
-    const step=Math.max(2,Math.round(size*.16));
-    for(let gy=y; gy<y+h; gy+=step) g.fillRect(x,gy,w,Math.max(.5,size*.02));
-    for(let gx=x; gx<x+w; gx+=step) g.fillRect(gx,y,Math.max(.5,size*.02),h);
-  }
-
-  g.globalAlpha=alpha;
-  g.strokeStyle=border;
-  g.lineWidth=Math.max(1,size*.05);
-  g.strokeRect(x+.5,y+.5,w-1,h-1);
-  g.restore();
-}
-
-const BRICK_STYLES = {
-  obliteratus: drawBrick_obliteratus,
-  classic: drawBrick_classic,
-  glass: drawBrick_glass,
-  alloy: drawBrick_alloy,
-  lcd: drawBrick_lcd,
-};
-
-function drawFacetedBrick(g, px, py, size, col, glo, alpha=1, opts={}) {
-  const { flash=false, dimmed=false } = opts;
-  const gap=Math.max(1,size*.04);
-  const x=px+gap,y=py+gap,w=size-gap*2,h=size-gap*2;
-  const styleFn = BRICK_STYLES[settings.brickStyle] || drawBrick_obliteratus;
-  styleFn(g,x,y,w,h,size,col,glo,alpha,flash,dimmed);
-}
 function drawBlock(px, py, size, col, glo, alpha=1, flash=false) {
-  drawFacetedBrick(ctx, px, py, size, col, glo, alpha, { flash });
+  // Obliteratus brick: luminous bevel, dark structural core, inset face,
+  // and a restrained horizontal energy band. The geometry scales with CELL
+  // so it remains legible on both desktop and mobile backbuffers.
+  const gap=Math.max(1,size*.045), bevel=Math.max(1,size*.14);
+  const x=px+gap,y=py+gap,w=size-gap*2,h=size-gap*2;
+  ctx.save();ctx.globalAlpha=alpha;
+  ctx.shadowColor=flash?'#ffffff':glo;ctx.shadowBlur=flash?size*1.1:size*.58;
+  if(flash){ctx.fillStyle='#ffffff';ctx.fillRect(x,y,w,h);ctx.restore();return;}
+
+  const shell=ctx.createLinearGradient(x,y,x,y+h);
+  shell.addColorStop(0,lighten(col,.5));shell.addColorStop(.18,lighten(col,.18));
+  shell.addColorStop(.62,col);shell.addColorStop(1,darken(col,.48));
+  ctx.fillStyle=shell;ctx.fillRect(x,y,w,h);
+
+  ctx.shadowBlur=0;
+  ctx.fillStyle='rgba(255,255,255,.30)';
+  ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+w,y);ctx.lineTo(x+w-bevel,y+bevel);ctx.lineTo(x+bevel,y+bevel);ctx.closePath();ctx.fill();
+  ctx.fillStyle='rgba(0,0,0,.34)';
+  ctx.beginPath();ctx.moveTo(x,y+h);ctx.lineTo(x+w,y+h);ctx.lineTo(x+w-bevel,y+h-bevel);ctx.lineTo(x+bevel,y+h-bevel);ctx.closePath();ctx.fill();
+  ctx.fillStyle='rgba(0,0,0,.22)';
+  ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+bevel,y+bevel);ctx.lineTo(x+bevel,y+h-bevel);ctx.lineTo(x,y+h);ctx.closePath();ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,.11)';
+  ctx.beginPath();ctx.moveTo(x+w,y);ctx.lineTo(x+w-bevel,y+bevel);ctx.lineTo(x+w-bevel,y+h-bevel);ctx.lineTo(x+w,y+h);ctx.closePath();ctx.fill();
+
+  const face=ctx.createLinearGradient(x+bevel,y+bevel,x+bevel,y+h-bevel);
+  face.addColorStop(0,lighten(col,.12));face.addColorStop(.48,darken(col,.06));face.addColorStop(1,darken(col,.30));
+  ctx.fillStyle=face;ctx.fillRect(x+bevel,y+bevel,Math.max(1,w-bevel*2),Math.max(1,h-bevel*2));
+  ctx.fillStyle='rgba(255,255,255,.16)';ctx.fillRect(x+bevel,y+h*.43,w-bevel*2,Math.max(1,size*.045));
+  ctx.strokeStyle=lighten(col,.62);ctx.globalAlpha=alpha*.58;ctx.lineWidth=Math.max(.6,size*.045);ctx.strokeRect(x+.35,y+.35,w-.7,h-.7);
+  ctx.restore();
 }
 function drawCell(c, r, col, glo, alpha=1, flash=false) {
   drawBlock(BOARD_X + c*CELL, BOARD_Y + r*CELL, CELL, col, glo, alpha, flash);
 }
-
-// Ghost piece — shares each style's own silhouette and color logic
-// instead of a fixed colored fillRect, so it's pulled from the same
-// brick set as the board and preview. This is the fix for the Grey LCD
-// ghost showing raw piece hue: under 'lcd' the fill now runs through
-// lcdRamp() same as the locked bricks, so it reads as a faint grey
-// silhouette instead of a stray cyan/yellow/etc. rectangle. Deliberately
-// NOT full drawFacetedBrick detail (no bevel facets, no glyph, no glow)
-// — a ghost is a landing indicator, not another brick to read.
-function ghostShapePath(g, styleKey, x, y, w, h, size) {
-  if (styleKey === 'obliteratus') { chamferPath(g, x, y, w, h, Math.max(1.5,size*.17)*.6); return; }
-  if (styleKey === 'glass') { brickPath_rounded(g, x, y, w, h, Math.max(2,size*.16)); return; }
-  g.beginPath(); g.rect(x, y, w, h); // classic, alloy, lcd — rectangular silhouettes
-}
-function drawGhostBrick(g, px, py, size, col, alpha=0.16) {
-  const gap = Math.max(1, size*.04);
-  const x = px+gap, y = py+gap, w = size-gap*2, h = size-gap*2;
-  const styleKey = settings.brickStyle;
-  const fillCol = styleKey === 'lcd' ? lcdRamp(col, false).mid : col;
-  g.save();
-  ghostShapePath(g, styleKey, x, y, w, h, size);
-  g.globalAlpha = alpha;
-  g.fillStyle = fillCol;
-  g.fill();
-  g.globalAlpha = Math.min(1, alpha*1.7);
-  g.strokeStyle = fillCol;
-  g.lineWidth = Math.max(.6, size*.05);
-  g.stroke();
-  g.restore();
-}
-
-
 
 function lighten(hex, amt) {
   let n=parseInt(hex.slice(1),16);
@@ -2639,17 +2335,6 @@ function darken(hex, amt) {
   let g=Math.max(0,((n>>8)&255)-Math.round(amt*180));
   let b=Math.max(0,(n&255)-Math.round(amt*180));
   return `rgb(${r},${g},${b})`;
-}
-
-// Highest occupied row in the well (0 = top). Returns ROWS when empty.
-// Used to keep event callouts off the active/spawn zone once the stack
-// climbs past the midline, per Frymatic's polish note (2026-09-01).
-function stackTopRow() {
-  for (let r = 0; r < ROWS; r++) {
-    const row = gs.board[r];
-    for (let c = 0; c < COLS; c++) if (row[c]) return r;
-  }
-  return ROWS;
 }
 
 function drawBoard() {
@@ -2706,7 +2391,11 @@ function drawBoard() {
       for(const [dc,dr] of shape) {
         const c=gs.current.x+dc, r=gy+dr;
         if(r>=0&&r<ROWS&&c>=0&&c<COLS) {
-          drawGhostBrick(ctx, BOARD_X+c*CELL, BOARD_Y+r*CELL, CELL, col, 0.16);
+          ctx.save();
+          ctx.globalAlpha=0.15;
+          ctx.fillStyle=col;
+          ctx.fillRect(BOARD_X+c*CELL+1,BOARD_Y+r*CELL+1,CELL-2,CELL-2);
+          ctx.restore();
         }
       }
     }
@@ -2750,7 +2439,25 @@ function uiText(g, text, x, y, size, opts={}) {
 }
 
 function drawUIBlock(g, px, py, size, col, glo, alpha=1, dimmed=false) {
-  drawFacetedBrick(g, px, py, size, col, glo, alpha, { dimmed });
+  const pad=Math.max(.75,size*.055);
+  g.save();
+  g.globalAlpha=alpha;
+  const fill=dimmed?'#4b5968':col;
+  const glow=dimmed?'#263443':glo;
+  g.shadowColor=glow;
+  g.shadowBlur=dimmed?0:Math.min(5,size*.25);
+  const grad=g.createLinearGradient(px,py,px,py+size);
+  grad.addColorStop(0,lighten(fill,dimmed?.12:.28));
+  grad.addColorStop(.52,fill);
+  grad.addColorStop(1,darken(fill,dimmed?.16:.28));
+  g.fillStyle=grad;
+  g.fillRect(px+pad,py+pad,size-pad*2,size-pad*2);
+  g.shadowBlur=0;
+  g.globalAlpha=alpha*(dimmed?.28:.62);
+  g.strokeStyle=dimmed?'#91a0ad':lighten(fill,.5);
+  g.lineWidth=Math.max(.65,size*.045);
+  g.strokeRect(px+pad+.35,py+pad+.35,size-pad*2-.7,size-pad*2-.7);
+  g.restore();
 }
 
 function drawUIPiecePreview(g,key,bx,by,boxW,cell,alpha=1,dimmed=false) {
@@ -2847,20 +2554,12 @@ function drawHUD() {
   });
 
   // Event callout uses an opaque plate, so it never competes with the stack.
-  // Placement is stack-aware: while the well is under half full, the plate
-  // sits mid-board where there's nothing but open air behind it. Once the
-  // stack passes the midline, that same mid-board spot starts covering the
-  // spawn zone and the top of the stack — the two things you most need to
-  // see (topping-out danger, incoming piece). So instead it drops into the
-  // bottom quarter, over cells that already locked and aren't moving.
   if(gs.msgTimer>0) {
     const fa=Math.min(1,gs.msgTimer)*Math.min(1,(2-gs.msgTimer)*3);
     const isLevel=gs.msg.startsWith('LEVEL');
     const fs=isLevel?clamp(CELL*.94,19,36):clamp(CELL*.72,15,27);
     const col=isLevel?'#ffe450':(gs.msg==='ZITTRIS ⬡'?'#ff9a24':'#52ffd9');
-    const stackFrac=(ROWS-stackTopRow())/ROWS;
-    const cyFrac=stackFrac>0.5?0.84:0.46;
-    const cx=BOARD_X+BOARD_W/2, cy=BOARD_Y+BOARD_H*cyFrac;
+    const cx=BOARD_X+BOARD_W/2, cy=BOARD_Y+BOARD_H*.46;
     g.save();g.globalAlpha=fa;
     const plateW=Math.min(BOARD_W*.88,Math.max(CELL*5,gs.msg.length*fs*.62));
     const plateH=fs*1.75;
