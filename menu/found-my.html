@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111111">
+<meta name="description" content="Found My — private, client-side emergency wallpaper generator for festivals and events.">
+<meta property="og:title" content="Found My">
+<meta property="og:description" content="Make a lock-screen wallpaper that helps a finder get your phone back to you.">
+<meta property="og:url" content="https://frymatic.us/menu/found-my.html">
+<title>Found My — event lock-screen wallpaper</title>
+<style>
+:root{
+  --bg:#e9e5de;--paper:#fffdf8;--ink:#151515;--muted:#6d6962;--line:#cbc4ba;
+  --accent:#d96c2f;--accent2:#f4c55b;--dark:#171717;--good:#315f45;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;
+  --sans:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+*{box-sizing:border-box} html{scroll-behavior:smooth} body{margin:0;background:linear-gradient(#e4dfd7,#f0ede7);color:var(--ink);font-family:var(--sans)}
+button,input,select,textarea{font:inherit} button{cursor:pointer} a{color:inherit}
+.wrap{max-width:1180px;margin:auto;padding:18px}
+.app{background:var(--paper);border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:0 18px 60px rgba(40,30,20,.10)}
+header{display:grid;grid-template-columns:1fr 260px;border-bottom:1px solid var(--dark)}
+.hero{padding:28px}.kicker{font:700 11px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+h1{font-size:clamp(46px,8vw,90px);line-height:.86;letter-spacing:-.065em;margin:8px 0 14px}.hero p{max-width:760px;color:var(--muted);margin:0;font-size:15px}
+.idbox{border-left:1px solid var(--dark);padding:20px;display:flex;flex-direction:column;justify-content:space-between;background:repeating-linear-gradient(-45deg,#f7ecd6,#f7ecd6 9px,#fffdf8 9px,#fffdf8 18px)}
+.idbox b{font:800 22px var(--mono)}.idbox small{font:11px/1.45 var(--mono);color:var(--muted)}
+.notice{padding:11px 16px;background:#efe6d2;border-bottom:1px solid var(--dark);font:12px/1.45 var(--mono)}
+.main{display:grid;grid-template-columns:minmax(0,1fr) minmax(320px,460px)}
+.controls{border-right:1px solid var(--dark)}
+.section{border-bottom:1px solid var(--dark)} .section:last-child{border-bottom:0}
+.stitle{display:grid;grid-template-columns:50px 1fr auto;background:#f3eee6;border-bottom:1px solid var(--dark)}
+.stitle>*{padding:10px 12px}.num{border-right:1px solid var(--dark);font:700 11px var(--mono)}.name{font-weight:850;text-transform:uppercase;letter-spacing:.04em}.help{font:11px var(--mono);color:var(--muted)}
+.grid{display:grid;grid-template-columns:1fr 1fr}.cell{padding:14px;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}.cell:nth-child(2n){border-right:0}.wide{grid-column:1/-1}
+label{display:block;font:700 10px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+input,select,textarea{width:100%;border:1px solid var(--line);border-radius:9px;background:#fbf8f2;padding:11px 12px;outline:none} input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(217,108,47,.13)}
+textarea{min-height:76px;resize:vertical}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;padding:14px}.btn{border:1px solid var(--line);background:#fff;padding:10px 13px;border-radius:9px;font-weight:800;font-size:12px}.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}.btn.dark{background:#171717;border-color:#171717;color:#fff}.btn:disabled{opacity:.45;cursor:not-allowed}
+.photoarea{padding:14px}.camera{display:none;gap:10px}.camera.on{display:grid}.camera video{width:100%;aspect-ratio:4/3;object-fit:cover;background:#111;border-radius:12px;border:1px solid var(--line)}
+.previewPane{padding:18px;position:sticky;top:0;align-self:start;background:#ddd7cd;min-height:100%}.phone{max-width:340px;margin:auto;background:#111;border-radius:42px;padding:10px;box-shadow:0 18px 42px rgba(0,0,0,.22)}.phone canvas{width:100%;display:block;border-radius:34px;background:#252525;aspect-ratio:9/19.5;object-fit:cover}
+.previewNote{margin:12px auto 0;max-width:340px;font:11px/1.45 var(--mono);color:#575149}.status{display:inline-block;padding:3px 6px;border:1px solid currentColor;border-radius:999px;color:var(--good);font-weight:800}
+.rangeRow{display:grid;grid-template-columns:1fr 72px;gap:8px;align-items:center}.rangeRow input[type=range]{padding:0;border:0;background:transparent}.rangeVal{font:11px var(--mono);text-align:right;color:var(--muted)}
+.privacy{padding:14px;background:#eff4ef;border-top:1px solid var(--line);font:11px/1.55 var(--mono)}
+footer{padding:12px 16px;border-top:1px solid var(--dark);font:10px var(--mono);color:var(--muted);background:#eee8df}
+.hidden{display:none!important}
+@media(max-width:850px){header{grid-template-columns:1fr}.idbox{border-left:0;border-top:1px solid var(--dark);min-height:120px}.main{grid-template-columns:1fr}.controls{border-right:0}.previewPane{position:relative;border-top:1px solid var(--dark)}.help{display:none}}
+@media(max-width:560px){.wrap{padding:0}.app{border-radius:0;border-left:0;border-right:0}.grid{grid-template-columns:1fr}.cell,.cell:nth-child(2n){border-right:0}.phone{max-width:300px}.hero{padding:22px 18px}.idbox{padding:16px}.btnrow{position:sticky;bottom:0;z-index:3;background:rgba(255,253,248,.94);backdrop-filter:blur(8px);border-top:1px solid var(--line)}}
+</style>
+</head>
+<body>
+<div class="wrap"><main class="app">
+<header>
+  <div class="hero">
+    <div class="kicker">event utility · privacy by architecture</div>
+    <h1>FOUND MY</h1>
+    <p>Make a lock-screen wallpaper that tells a finder who this phone belongs to and where to bring it. Your portrait and personal information are processed locally in this browser.</p>
+  </div>
+  <div class="idbox"><div><small>UTILITY</small><br><b>FM-01</b></div><small>NO ACCOUNT<br>NO UPLOAD<br>NO SERVER-SIDE IMAGE PROCESSING</small></div>
+</header>
+<div class="notice"><b>Recommended:</b> use a recognizable photo of yourself. The finished wallpaper includes a QR code and <b>frymatic.us/menu/found-my.html</b> so the finder can make one too.</div>
+<div class="main">
+<div class="controls">
+<section class="section">
+  <div class="stitle"><div class="num">01</div><div class="name">Your image</div><div class="help">camera or local file</div></div>
+  <div class="photoarea">
+    <input id="fileInput" type="file" accept="image/*" capture="user" class="hidden">
+    <div class="btnrow" style="padding:0 0 12px">
+      <button class="btn primary" id="takePhoto">Use camera</button>
+      <button class="btn" id="uploadPhoto">Choose photo</button>
+      <button class="btn hidden" id="stopCamera">Close camera</button>
+    </div>
+    <div id="cameraBox" class="camera"><video id="video" playsinline autoplay muted></video><button class="btn dark" id="capture">Capture this frame</button></div>
+  </div>
+  <div class="grid">
+    <div class="cell"><label>Photo zoom</label><div class="rangeRow"><input id="zoom" type="range" min="1" max="3" value="1" step="0.01"><span class="rangeVal" id="zoomVal">1.00×</span></div></div>
+    <div class="cell"><label>Vertical position</label><div class="rangeRow"><input id="photoY" type="range" min="-1" max="1" value="0" step="0.01"><span class="rangeVal" id="photoYVal">0%</span></div></div>
+  </div>
+</section>
+<section class="section">
+  <div class="stitle"><div class="num">02</div><div class="name">Finder information</div><div class="help">put only what you want visible</div></div>
+  <div class="grid">
+    <div class="cell"><label for="name">Name / playa name</label><input id="name" placeholder="frymatic"></div>
+    <div class="cell"><label for="camp">Camp</label><input id="camp" placeholder="Camp name"></div>
+    <div class="cell wide"><label for="location">Where I am camped</label><input id="location" placeholder="5:45 &amp; Esplanade · blue shade structure"></div>
+    <div class="cell"><label for="event">Event</label><input id="event" value="Burning Man"></div>
+    <div class="cell"><label for="year">Year</label><input id="year" inputmode="numeric" maxlength="4"></div>
+    <div class="cell wide"><label for="contact">Optional contact / return note</label><textarea id="contact" placeholder="Bring this phone to camp, or text my campmate at …"></textarea></div>
+  </div>
+</section>
+<section class="section">
+  <div class="stitle"><div class="num">03</div><div class="name">Wallpaper</div><div class="help">device and styling</div></div>
+  <div class="grid">
+    <div class="cell"><label for="sizePreset">Canvas size</label><select id="sizePreset"><option value="1179x2556">iPhone 15/16 Pro — 1179×2556</option><option value="1290x2796">iPhone Pro Max — 1290×2796</option><option value="1080x2400">Android — 1080×2400</option><option value="1440x3200">Android QHD — 1440×3200</option></select></div>
+    <div class="cell"><label for="accent">Accent</label><input id="accent" type="color" value="#ff6b35" style="height:43px;padding:4px"></div>
+    <div class="cell"><label for="shade">Photo darkening</label><div class="rangeRow"><input id="shade" type="range" min="0" max="0.75" value="0.22" step="0.01"><span class="rangeVal" id="shadeVal">22%</span></div></div>
+    <div class="cell"><label for="qrToggle">Finder QR</label><select id="qrToggle"><option value="yes">Include QR + URL</option><option value="no">URL only</option></select></div>
+  </div>
+  <div class="btnrow"><button class="btn primary" id="download">Download wallpaper</button><button class="btn dark" id="share">Share image</button><button class="btn" id="reset">Reset</button></div>
+  <div class="privacy"><b>Privacy:</b> images remain in browser memory. Nothing in this app uploads your photo or entered PII. Reloading the page clears the working image. The only network requests are those required to load the page itself.</div>
+</section>
+</div>
+<aside class="previewPane">
+  <div class="phone"><canvas id="wallpaper" width="1179" height="2556"></canvas></div>
+  <div class="previewNote"><span class="status">LOCAL</span> Live preview. For a lost phone, the most important information should remain readable without unlocking it.</div>
+</aside>
+</div>
+<footer>FOUND MY · FM-01 · https://frymatic.us/menu/found-my.html · Generated entirely client-side.</footer>
+</main></div>
+<script>
+const $=id=>document.getElementById(id);
+const canvas=$('wallpaper'),ctx=canvas.getContext('2d',{alpha:false});
+let sourceImage=null, stream=null;
+$('year').value=new Date().getFullYear();
+
+// Camp/template hook: ?camp=...&location=...&event=...&accent=%23ff6b35
+const q=new URLSearchParams(location.search);
+for(const id of ['camp','location','event','year']) if(q.has(id)) $(id).value=q.get(id);
+if(q.has('accent')) $('accent').value=q.get('accent');
+
+function roundedRect(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath()}
+function fitImage(img,w,h,zoom=1,shiftY=0){
+  const s=Math.max(w/img.width,h/img.height)*zoom;
+  const dw=img.width*s,dh=img.height*s;
+  return {x:(w-dw)/2,y:(h-dh)/2+shiftY*Math.max(0,(dh-h)/2),w:dw,h:dh};
+}
+function wrapText(c,text,x,y,maxWidth,lineHeight,maxLines=3){
+  const words=(text||'').trim().split(/\s+/).filter(Boolean); let line='',lines=[];
+  for(const word of words){const test=line?line+' '+word:word;if(c.measureText(test).width>maxWidth&&line){lines.push(line);line=word}else line=test}
+  if(line)lines.push(line); lines=lines.slice(0,maxLines);
+  lines.forEach((ln,i)=>c.fillText(ln,x,y+i*lineHeight)); return lines.length;
+}
+
+// Compact QR encoder: QR Version 3-L (29x29), byte mode, one RS block (55 data + 15 ECC).
+function qrMatrix(text){
+  const size=29, dataCW=55, eccCW=15, bytes=[...new TextEncoder().encode(text)];
+  if(bytes.length>53) throw new Error('QR payload too long');
+  const bits=[]; const push=(v,n)=>{for(let i=n-1;i>=0;i--)bits.push((v>>i)&1)};
+  push(0b0100,4); push(bytes.length,8); bytes.forEach(b=>push(b,8));
+  for(let i=0;i<4&&bits.length<dataCW*8;i++)bits.push(0); while(bits.length%8)bits.push(0);
+  const data=[]; for(let i=0;i<bits.length;i+=8){let v=0;for(let j=0;j<8;j++)v=(v<<1)|(bits[i+j]||0);data.push(v)}
+  for(let pad=0;data.length<dataCW;pad++)data.push(pad%2?0x11:0xec);
+  const exp=new Array(512),log=new Array(256); let x=1; for(let i=0;i<255;i++){exp[i]=x;log[x]=i;x<<=1;if(x&0x100)x^=0x11d} for(let i=255;i<512;i++)exp[i]=exp[i-255];
+  const mul=(a,b)=>a&&b?exp[log[a]+log[b]]:0;
+  let gen=[1]; for(let i=0;i<eccCW;i++){const ng=new Array(gen.length+1).fill(0);for(let j=0;j<gen.length;j++){ng[j]^=gen[j];ng[j+1]^=mul(gen[j],exp[i])}gen=ng}
+  const rem=new Array(eccCW).fill(0); for(const b of data){const f=b^rem[0];rem.shift();rem.push(0);for(let j=0;j<eccCW;j++)rem[j]^=mul(gen[j+1],f)}
+  const code=data.concat(rem), streamBits=[]; code.forEach(b=>{for(let i=7;i>=0;i--)streamBits.push((b>>i)&1)});
+  const m=Array.from({length:size},()=>Array(size).fill(null)), reserved=Array.from({length:size},()=>Array(size).fill(false));
+  const set=(r,c,v,res=true)=>{if(r>=0&&r<size&&c>=0&&c<size){m[r][c]=v;if(res)reserved[r][c]=true}};
+  const finder=(r,c)=>{for(let y=-1;y<=7;y++)for(let x=-1;x<=7;x++){const rr=r+y,cc=c+x;if(rr<0||cc<0||rr>=size||cc>=size)continue;const on=x>=0&&x<=6&&y>=0&&y<=6&&(x===0||x===6||y===0||y===6||(x>=2&&x<=4&&y>=2&&y<=4));set(rr,cc,on?1:0,true)}};
+  finder(0,0);finder(0,size-7);finder(size-7,0);
+  for(let i=8;i<size-8;i++){set(6,i,i%2===0?1:0,true);set(i,6,i%2===0?1:0,true)}
+  // alignment pattern center 22,22 for version 3
+  for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++){const a=Math.max(Math.abs(dx),Math.abs(dy));set(22+dy,22+dx,a===2||a===0?1:0,true)}
+  // reserve format areas
+  for(let i=0;i<9;i++){if(i!==6){reserved[8][i]=true;reserved[i][8]=true}} for(let i=0;i<8;i++){reserved[8][size-1-i]=true;reserved[size-1-i][8]=true} reserved[size-8][8]=true;
+  set(size-8,8,1,true); // dark module
+  let k=0,up=true; for(let col=size-1;col>0;col-=2){if(col===6)col--;for(let t=0;t<size;t++){const row=up?size-1-t:t;for(let dc=0;dc<2;dc++){const c=col-dc;if(reserved[row][c])continue;let bit=streamBits[k++]||0;if((row+c)%2===0)bit^=1;m[row][c]=bit}}up=!up}
+  // format info for EC=L (01), mask=0 => 0b01000, BCH ^ 0x5412
+  let fmt=0b01000<<10, v=fmt; const g=0x537; for(let i=14;i>=10;i--)if((v>>i)&1)v^=g<<(i-10); fmt=(fmt|v)^0x5412;
+  const fb=[];for(let i=0;i<15;i++)fb.push((fmt>>i)&1);
+  const a=[[8,0],[8,1],[8,2],[8,3],[8,4],[8,5],[8,7],[8,8],[7,8],[5,8],[4,8],[3,8],[2,8],[1,8],[0,8]];
+  const b=[[size-1,8],[size-2,8],[size-3,8],[size-4,8],[size-5,8],[size-6,8],[size-7,8],[8,size-8],[8,size-7],[8,size-6],[8,size-5],[8,size-4],[8,size-3],[8,size-2],[8,size-1]];
+  for(let i=0;i<15;i++){m[a[i][0]][a[i][1]]=fb[i];m[b[i][0]][b[i][1]]=fb[i]}
+  return m;
+}
+function drawQR(c,text,x,y,w){
+  try{const m=qrMatrix(text),n=m.length,pad=4,cell=w/(n+pad*2);c.save();c.fillStyle='#fff';c.fillRect(x,y,w,w);c.fillStyle='#000';for(let r=0;r<n;r++)for(let col=0;col<n;col++)if(m[r][col])c.fillRect(x+(col+pad)*cell,y+(r+pad)*cell,Math.ceil(cell),Math.ceil(cell));c.restore()}catch(e){console.warn(e)}
+}
+function draw(){
+  const [W,H]=$('sizePreset').value.split('x').map(Number); if(canvas.width!==W||canvas.height!==H){canvas.width=W;canvas.height=H}
+  ctx.fillStyle='#222';ctx.fillRect(0,0,W,H);
+  if(sourceImage){const p=fitImage(sourceImage,W,H,+$('zoom').value,+$('photoY').value);ctx.drawImage(sourceImage,p.x,p.y,p.w,p.h)}
+  else{const g=ctx.createLinearGradient(0,0,W,H);g.addColorStop(0,'#202020');g.addColorStop(1,'#4b4038');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);ctx.fillStyle='rgba(255,255,255,.12)';ctx.font=`900 ${W*.17}px sans-serif`;ctx.textAlign='center';ctx.fillText('FOUND',W/2,H*.40);ctx.fillText('MY',W/2,H*.54)}
+  ctx.fillStyle=`rgba(0,0,0,${+$('shade').value})`;ctx.fillRect(0,0,W,H);
+  const accent=$('accent').value; const margin=W*.075; const panelH=H*.34; const py=H-panelH;
+  const grad=ctx.createLinearGradient(0,py,0,H);grad.addColorStop(0,'rgba(0,0,0,.05)');grad.addColorStop(.18,'rgba(0,0,0,.84)');grad.addColorStop(1,'rgba(0,0,0,.97)');ctx.fillStyle=grad;ctx.fillRect(0,py,W,panelH);
+  ctx.fillStyle=accent;ctx.fillRect(0,py,W,H*.012);
+  ctx.textAlign='left';ctx.textBaseline='alphabetic';ctx.fillStyle='#fff';ctx.font=`900 ${W*.076}px system-ui,sans-serif`;const nm=$('name').value.trim()||'YOUR NAME';ctx.fillText(nm,margin,py+H*.095);
+  ctx.font=`800 ${W*.040}px system-ui,sans-serif`;ctx.fillStyle=accent;const camp=$('camp').value.trim();if(camp)ctx.fillText(camp.toUpperCase(),margin,py+H*.137);
+  ctx.fillStyle='#fff';ctx.font=`800 ${W*.047}px system-ui,sans-serif`;const loc=$('location').value.trim()||'WHERE I AM CAMPED';wrapText(ctx,loc,margin,py+H*.195,W*.70,H*.050,2);
+  ctx.font=`600 ${W*.031}px system-ui,sans-serif`;ctx.fillStyle='rgba(255,255,255,.88)';const note=$('contact').value.trim();if(note)wrapText(ctx,note,margin,py+H*.285,W*.69,H*.038,2);
+  const ev=[$('event').value.trim(),$('year').value.trim()].filter(Boolean).join(' · ');ctx.font=`700 ${W*.026}px ${getComputedStyle(document.documentElement).getPropertyValue('--mono')}`;ctx.fillStyle='rgba(255,255,255,.60)';ctx.fillText(ev||'EVENT',margin,H-H*.045);
+  const url='https://frymatic.us/menu/found-my.html'; const qrW=W*.22, qx=W-margin-qrW, qy=py+H*.075;
+  if($('qrToggle').value==='yes')drawQR(ctx,url,qx,qy,qrW);
+  ctx.textAlign='right';ctx.font=`700 ${W*.020}px ui-monospace,monospace`;ctx.fillStyle='rgba(255,255,255,.72)';ctx.fillText('frymatic.us/menu/found-my.html',W-margin,H-H*.045);
+}
+function setSource(src){const img=new Image();img.onload=()=>{sourceImage=img;draw()};img.src=src}
+$('uploadPhoto').onclick=()=>$('fileInput').click();
+$('fileInput').onchange=e=>{const f=e.target.files?.[0];if(!f)return;const u=URL.createObjectURL(f);setSource(u)};
+$('takePhoto').onclick=async()=>{try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false});$('video').srcObject=stream;$('cameraBox').classList.add('on');$('stopCamera').classList.remove('hidden')}catch(e){alert('Camera access was unavailable. Choose a photo instead.') }};
+function stopCam(){stream?.getTracks().forEach(t=>t.stop());stream=null;$('video').srcObject=null;$('cameraBox').classList.remove('on');$('stopCamera').classList.add('hidden')}
+$('stopCamera').onclick=stopCam;
+$('capture').onclick=()=>{const v=$('video'),c=document.createElement('canvas');c.width=v.videoWidth;c.height=v.videoHeight;c.getContext('2d').drawImage(v,0,0);setSource(c.toDataURL('image/jpeg',.94));stopCam()};
+for(const id of ['name','camp','location','event','year','contact','sizePreset','accent','shade','qrToggle','zoom','photoY']) $(id).addEventListener('input',()=>{updateRanges();draw()});
+function updateRanges(){$('zoomVal').textContent=(+$('zoom').value).toFixed(2)+'×';$('photoYVal').textContent=Math.round(+$('photoY').value*100)+'%';$('shadeVal').textContent=Math.round(+$('shade').value*100)+'%'}
+function blob(){return new Promise(r=>canvas.toBlob(r,'image/png'))}
+$('download').onclick=async()=>{draw();const b=await blob(),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='found-my-wallpaper.png';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
+$('share').onclick=async()=>{draw();const b=await blob(),f=new File([b],'found-my-wallpaper.png',{type:'image/png'});if(navigator.canShare?.({files:[f]})){await navigator.share({files:[f],title:'Found My wallpaper'})}else{alert('Image sharing is not available in this browser. Use Download wallpaper instead.')}};
+$('reset').onclick=()=>{sourceImage=null;['name','camp','location','contact'].forEach(id=>$(id).value='');$('event').value='Burning Man';$('year').value=new Date().getFullYear();$('zoom').value=1;$('photoY').value=0;$('shade').value=.22;updateRanges();draw()};
+updateRanges();draw();
+</script>
+</body>
+</html>
