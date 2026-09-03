@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -38,18 +38,7 @@
 <meta name="twitter:image:alt" content="SNAKIA on a rugged early-2000s monochrome mobile phone display">
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-/* ── ZOOM AUTHORITY, LAYER 1 ─────────────────────────────────────────
-   touch-action is NOT an inherited property. Setting it on html/body
-   alone leaves every descendant at `auto`, so a two-finger pinch that
-   lands on the console panel, the HUD strip, or a menu button is handled
-   by the browser as a page zoom before any JS sees it. That is the exact
-   escape hatch that let a pinch on the control pad zoom the cabinet.
-   Declared on the universal selector so it actually covers everything,
-   then handed back only to the two surfaces that legitimately scroll. ── */
-*{touch-action:none}
-#menu-layer,.g-how,.menu-card{touch-action:pan-y}
-html,body{width:100%;height:100%;background:#0c100d;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;overscroll-behavior:none;
-  -webkit-text-size-adjust:100%;text-size-adjust:100%}
+html,body{width:100%;height:100%;background:#0c100d;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;overscroll-behavior:none}
 body{transition:background .25s ease;background:
   radial-gradient(circle at 50% -10%,var(--body-bg-radial),transparent 34%),
   repeating-linear-gradient(90deg,rgba(255,255,255,.012) 0 1px,transparent 1px 5px),
@@ -62,11 +51,7 @@ canvas{display:block;position:fixed;top:0;left:0;touch-action:none;image-renderi
   --ui-cyan:#b7d67a;--ui-blue:#8caf56;--ui-violet:#667d66;--ui-gold:#dfe7ab;
   --ui-green:#cce08a;--ui-red:#d8a183;--ui-ink:#11181b;--ui-panel:rgba(26,35,44,.96);
   --ui-line:rgba(180,212,140,.34);--ui-text:#e8f4cc;--ui-muted:#a7bca0;
-  /* Glass + ink sampled from a real early-2000s reflective panel:
-     glass #dade4a, deepest energised segment #3d4517 — a 7.0:1 ratio.
-     Kept in sync with LCD_DAY in the script; the canvas is the source
-     of truth for gameplay, these vars only dress the DOM chrome. */
-  --lcd:#dade4a;--lcd-deep:#2f3612;--shell:#9c9787;--shell-hi:#d9d4c2;--rubber:#4d4a3d;
+  --lcd:#9fca1f;--lcd-deep:#213109;--shell:#9c9787;--shell-hi:#d9d4c2;--rubber:#4d4a3d;
   --bg-grad:linear-gradient(180deg,#dcd8c9 0%,#c1bca8 24%,#8a8570 100%);
   --glow:none;--panel-title-alert:#d8a183;--body-bg-radial:rgba(225,220,195,.2);
 }
@@ -109,13 +94,13 @@ body.theme-night{
   font-size:clamp(42px,10vw,66px);line-height:.88;letter-spacing:.06em;color:#e0dfcb;
   text-shadow:0 2px 0 #cfc9b4,0 4px 0 #6b6650,0 0 16px rgba(218,220,190,.08)}
 .g-sub{margin:12px auto 0;width:max-content;padding:5px 10px;border:1px solid rgba(24,37,24,.7);background:var(--lcd);color:#1b260a;font-size:10px;font-weight:900;letter-spacing:.28em;box-shadow:inset 0 0 12px rgba(49,70,23,.22)}
-.g-hi{margin:18px 0 4px;padding:10px 12px;background:linear-gradient(180deg,#dade4a,#bcc134);border:4px solid #171f08;outline:1px solid #e9efa8;color:#2f3612;font-size:9px;font-weight:900;letter-spacing:.18em;box-shadow:inset 0 0 18px rgba(50,70,12,.25),0 5px 12px rgba(0,0,0,.28)}
+.g-hi{margin:18px 0 4px;padding:10px 12px;background:linear-gradient(180deg,#b7d63c,#95be18);border:4px solid #151f0b;outline:1px solid #d3e9a2;color:#223108;font-size:9px;font-weight:900;letter-spacing:.18em;box-shadow:inset 0 0 18px rgba(50,70,12,.25),0 5px 12px rgba(0,0,0,.28)}
 .g-hi b{display:block;color:#111a06;font-family:ui-monospace,monospace;font-size:clamp(22px,5vw,30px);letter-spacing:.08em;margin-top:2px;text-shadow:1px 1px 0 rgba(225,240,170,.45)}
 .stepper{display:grid;grid-template-columns:38px 1fr 38px;gap:8px;margin:18px 0 6px;align-items:stretch}
 .step-btn{border:0;min-height:42px;font-size:18px;font-weight:900;cursor:pointer;
   background:linear-gradient(180deg,#77786d,#3c4039 45%,#262b27 100%);
   border:1px solid #8c8b7d;color:#e4e3d0;border-radius:16px 16px 11px 11px;box-shadow:inset 0 2px 0 rgba(255,255,255,.16),0 4px 0 #111511,0 7px 12px rgba(0,0,0,.24)}
-.step-value{display:grid;place-items:center;background:#d2d845;color:#2f3612;
+.step-value{display:grid;place-items:center;background:#abd42b;color:#162108;
   font-size:14px;font-weight:900;letter-spacing:.1em;border:3px solid #101510;border-radius:3px;box-shadow:inset 0 0 10px rgba(40,55,35,.22)}
 .step-label{margin-top:-2px;margin-bottom:10px;color:var(--ui-muted);font-size:9px;letter-spacing:.2em;text-align:center}
 .arcade-btn{
@@ -340,32 +325,6 @@ body.theme-night .tt-track{background:linear-gradient(180deg,#1c3e4c,#0c1b22 70%
   .theme-toggle[aria-checked="true"] .tt-knob{transform:translateX(19px)}
 }
 
-/* ── ZOOM AUTHORITY, LAYER 4 — the escape hatch ───────────────────────
-   Every zoom block below is best-effort: iOS Safari has ignored
-   user-scalable=no since iOS 10, and a determined pinch on an OS-level
-   accessibility zoom is outside the page's reach entirely. So the last
-   layer is not another block — it's a way out. The moment the visual
-   viewport reports a scale above 1, this chip appears above everything
-   and offers one tap to snap back. Highest z-index in the document by
-   design: if the cabinet is zoomed, this is the one control that must
-   still be reachable. ── */
-#zoom-reset{
-  position:fixed;left:50%;top:max(56px,calc(env(safe-area-inset-top) + 52px));
-  transform:translateX(-50%) translateY(-8px);z-index:9999;display:none;opacity:0;
-  appearance:none;cursor:pointer;pointer-events:all;touch-action:none;
-  -webkit-tap-highlight-color:transparent;
-  font-family:ui-monospace,'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
-  font-size:11px;font-weight:900;letter-spacing:.16em;padding:11px 18px;border-radius:13px;
-  color:#2f3612;background:linear-gradient(180deg,#dade4a,#bcc134);
-  border:2px solid #171f08;box-shadow:0 6px 18px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.35);
-  transition:opacity .18s ease,transform .18s ease;
-}
-#zoom-reset.show{display:block;opacity:1;transform:translateX(-50%) translateY(0)}
-body.theme-night #zoom-reset{
-  color:#02090c;background:linear-gradient(180deg,#92fbff,#38dbff);
-  border-color:#0d3d48;box-shadow:0 6px 18px rgba(0,0,0,.6),0 0 16px rgba(56,219,255,.45);
-}
-
 /* ── In-game center panel (paused / game over) — DOM, always crisp ── */
 #panel-overlay{
   position:fixed;inset:0;z-index:25;display:none;align-items:center;justify-content:center;
@@ -415,9 +374,6 @@ body.theme-night #zoom-reset{
 <body>
 <canvas id="c"></canvas>
 <div id="crt"></div>
-
-<!-- ── Zoom recovery — hidden until the visual viewport reports scale>1 ── -->
-<button id="zoom-reset" type="button" aria-label="Reset zoom to fit the cabinet">RESET VIEW</button>
 
 <!-- ── Attract / landing menu ─────────────────────────────────────── -->
 <div id="menu-layer">
@@ -502,122 +458,24 @@ body.theme-night #zoom-reset{
 (function boot(){
   if (typeof window === 'undefined' || typeof document === 'undefined') return; // jsdom / non-DOM safety
 
-  // ── ZOOM AUTHORITY ──────────────────────────────────────────────────
-  //  A zoomed cabinet is an unplayable cabinet: the board is sized to the
-  //  viewport at resize() time, so any scale above 1 crops the field of
-  //  play and strands the d-pad off-screen. Four layers, each covering a
-  //  hole the layer above it leaves open:
-  //
-  //   L1 (CSS)  `*{touch-action:none}` — the fix for the reported bug.
-  //             touch-action does not inherit, so the previous
-  //             `html,body{touch-action:none}` left every descendant at
-  //             `auto`. A pinch starting on the console panel around the
-  //             d-pad was therefore consumed by the browser as a page
-  //             zoom before a single line of this file ran.
-  //   L2 (meta) viewport user-scalable=no — honoured by Android Chrome,
-  //             IGNORED by iOS Safari since iOS 10. Kept, not trusted.
-  //   L3 (JS)   the handlers below: iOS's proprietary gesture* events,
-  //             multi-touch start/move, double-tap, and ctrl+wheel
-  //             (desktop trackpad pinch).
-  //   L4 (JS)   the watchdog + RESET VIEW chip. Everything above is a
-  //             block; this one is a recovery, because on iOS a block
-  //             can always lose and the user is then stuck — which is
-  //             precisely the "no clear way to zoom back out" half of
-  //             the report. Blocks fail silently; the way out must not.
-  const ZoomAuthority = (function(){
-    const vpMeta = document.querySelector('meta[name="viewport"]');
-    const chip   = document.getElementById('zoom-reset');
-    // Two content strings that render identically but differ as strings.
-    // Safari only re-evaluates scale constraints when the attribute VALUE
-    // changes, so a snap-back has to alternate rather than re-set the
-    // same text. The 1.0/1.0001 pair is visually indistinguishable.
-    const VP_A = 'width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover';
-    const VP_B = 'width=device-width, initial-scale=1.0001, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover';
-    let flip = false;
-
-    // N=1 FLAG: 1.02 is a first-pass hypothesis, not a measured value.
-    // Low enough to catch a deliberate pinch, high enough to ignore the
-    // sub-percent scale jitter some Android keyboards/URL bars produce.
-    // If the chip ever flickers on a real device, raise this first.
-    const SCALE_EPS = 1.02;
-
-    function scale(){
-      const vv = window.visualViewport;
-      return vv && typeof vv.scale === 'number' ? vv.scale : 1;
-    }
-    function zoomed(){ return scale() > SCALE_EPS; }
-
-    // Best-effort snap-back. On Android Chrome the meta rewrite is
-    // authoritative. On iOS Safari it usually works and sometimes does
-    // not — hence the chip stays up until the watchdog SEES scale return
-    // to 1, rather than optimistically hiding itself after one attempt.
-    function snapBack(){
-      if (vpMeta){
-        flip = !flip;
-        vpMeta.setAttribute('content', flip ? VP_B : VP_A);
-      }
-      try { window.scrollTo(0, 0); } catch(e){}
-      if (typeof resize === 'function') { try { resize(); } catch(e){} }
-    }
-
-    function syncChip(){
-      if (!chip) return;
-      chip.classList.toggle('show', zoomed());
-    }
-
-    // ── L3: gesture blocks ──
-    const block = e => { if (e.cancelable) e.preventDefault(); };
-    ['gesturestart','gesturechange','gestureend'].forEach(n =>
-      document.addEventListener(n, block, { passive:false }));
-
-    // Multi-touch is blocked at touchSTART as well as touchmove. Safari
-    // commits to a pinch on the second finger landing, so cancelling only
-    // at touchmove is already a frame too late.
-    const multi = e => { if (e.touches.length > 1 && e.cancelable) e.preventDefault(); };
-    document.addEventListener('touchstart', multi, { passive:false });
-    document.addEventListener('touchmove',  multi, { passive:false });
-
-    // Double-tap-to-zoom. Scoped to non-interactive targets: the previous
-    // pass cancelled EVERY touchend within 300ms of another, anywhere in
-    // the document, which also suppressed the synthetic click on a second
-    // rapid tap — so double-tapping PAUSE, or +/− on the speed stepper,
-    // silently dropped the second press. Buttons keep their taps.
-    const INTERACTIVE = 'button,a,input,select,textarea,[role="switch"],[role="button"]';
+  // ── zoom authority — pinch/double-tap zoom would reframe the whole
+  // cabinet and make it unplayable, so it's blocked at every layer:
+  // the viewport meta (user-scalable=no) is the first line, touch-action:
+  // none in CSS is the second, and these two guard the browsers/gestures
+  // that ignore both (notably iOS Safari's proprietary gesture events and
+  // its double-tap-to-zoom, which are independent of touch-action).
+  (function lockZoom(){
+    const block = e => e.preventDefault();
+    document.addEventListener('gesturestart', block, { passive:false });
+    document.addEventListener('gesturechange', block, { passive:false });
+    document.addEventListener('gestureend', block, { passive:false });
+    document.addEventListener('touchmove', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive:false });
     let lastTapEnd = 0;
     document.addEventListener('touchend', e => {
       const now = Date.now();
-      const onControl = e.target && e.target.closest && e.target.closest(INTERACTIVE);
-      if (!onControl && now - lastTapEnd <= 300 && e.cancelable) e.preventDefault();
+      if (now - lastTapEnd <= 300) e.preventDefault();
       lastTapEnd = now;
     }, { passive:false });
-
-    // Desktop: trackpad pinch and ctrl+scroll arrive as a wheel event.
-    // Deliberately NOT blocking ctrl/cmd +/-/0 keyboard zoom — that is a
-    // considered accessibility action with an obvious, discoverable undo,
-    // unlike an accidental pinch.
-    document.addEventListener('wheel', e => {
-      if ((e.ctrlKey || e.metaKey) && e.cancelable) e.preventDefault();
-    }, { passive:false });
-    document.addEventListener('dblclick', block, { passive:false });
-
-    // ── L4: watchdog ──
-    const vv = window.visualViewport;
-    if (vv && typeof vv.addEventListener === 'function'){
-      vv.addEventListener('resize', syncChip);
-      vv.addEventListener('scroll', syncChip);
-    }
-    if (chip){
-      chip.addEventListener('click', e => {
-        e.preventDefault();
-        snapBack();
-        // Re-check rather than assume success; if iOS refused, the chip
-        // correctly stays visible and the user can tap again.
-        setTimeout(syncChip, 220);
-      });
-    }
-    syncChip();
-
-    return { scale, zoomed, snapBack, syncChip, SCALE_EPS, VP_A, VP_B };
   })();
 
   // ── mulberry32 — deterministic seeded RNG (food placement + future replay) ──
@@ -730,89 +588,28 @@ body.theme-night #zoom-reset{
   }
   window.addEventListener('resize', resize);
 
-  // ── LCD renderer — TWO PANELS, TWO POLARITIES ───────────────────────
-  //
-  //  The bug this replaces: both themes shared ONE ramp in which a higher
-  //  `lum` always meant a LIGHTER swatch. That is correct for the night
-  //  panel, which is emissive — a backlit segment glows, so more energy
-  //  means more light. It is exactly backwards for the day panel, which
-  //  is reflective. A reflective segment has no light of its own; it
-  //  ABSORBS. More energy means DARKER.
-  //
-  //  Running the emissive ramp on the reflective panel pushed the day ink
-  //  UP toward the glass instead of down away from it. Measured, the head
-  //  segment's body tone against the old #9fca1f glass came out at a
-  //  1.36:1 contrast ratio — near-invisible, and desaturated enough to
-  //  read as grey rather than as ink. That is the reported "ashy grey".
-  //
-  //  Reference target (sampled from a real early-2000s panel): glass
-  //  #dade4a, deepest energised segment #3d4517 — 7.0:1.
-  //
-  //  So: night keeps the original emissive ramp VERBATIM (it was never
-  //  wrong and the night look is already signed off). Day gets a new
-  //  absorptive ramp that interpolates DOWN from glass toward ink.
-  //
-  //  N=1 FLAG: every constant in LCD_DAY is a first-pass hypothesis fitted
-  //  to one screenshot, not a theory-crafted value. Tune INK and GHOST
-  //  together first — they set the two ends of the whole ramp; everything
-  //  else is derived from them.
-  const LCD_DAY = {
-    GLASS: [218, 222,  74],  // #dade4a — sampled, unenergised glass
-    INK:   [ 47,  54,  18],  // #2f3612 — sampled floor, a touch below #3d4517
-    GHOST: [155, 163,  58],  // #9ba33a — a barely-energised segment
-    BEVEL_LIFT: 0.30,        // how far the highlight edge rises toward glass
-    DARK_SINK:  0.45,        // how far the outer ring sinks toward ink
-    BORDER_SINK:0.85,        // outline is nearly full ink — it carries the read
-    DIM_FADE:   0.62,        // paused segments relax back toward the glass
-    FLASH:     [ 32,  38,  12], // an eat-flash SATURATES the segment, not blows it out
-  };
-
-  function mix(a, b, t){
-    return [
-      Math.round(a[0] + (b[0]-a[0])*t),
-      Math.round(a[1] + (b[1]-a[1])*t),
-      Math.round(a[2] + (b[2]-a[2])*t),
-    ];
-  }
-  const rgbStr = c => `rgb(${c[0]},${c[1]},${c[2]})`;
-
-  // Day: absorptive. lum 0 = ghost (barely there), lum 1 = full ink.
-  function lcdRampDay(lum, dimmed){
-    const D = LCD_DAY;
-    let t = Math.max(0, Math.min(1, lum));
-    if (dimmed) t *= (1 - D.DIM_FADE);       // fade toward the glass, don't jump to a fixed grey
-    const core = mix(D.GHOST, D.INK, t);
-    return {
-      light : rgbStr(mix(core, D.GLASS, D.BEVEL_LIFT)),
-      mid   : rgbStr(core),
-      dark  : rgbStr(mix(core, D.INK, D.DARK_SINK)),
-      border: rgbStr(mix(core, D.INK, D.BORDER_SINK)),
-    };
-  }
-
-  // Night: emissive. Unchanged from the shipped build, byte for byte —
-  // the night panel was never the complaint and is pinned by the harness
-  // against a golden table so this refactor cannot have drifted it.
-  function lcdRampNight(lum, dimmed){
-    const base = dimmed ? 58 : Math.round(72 + lum*118);
-    const shade = v => {
-      v = Math.max(0, Math.min(255, Math.round(v)));
-      const r = Math.round(v*.18), g = Math.min(255,Math.round(v*.86)), b = Math.min(255,Math.round(v*1.02));
-      return `rgb(${r},${g},${b})`;
-    };
-    return { light:shade(base+38), mid:shade(base), dark:shade(base-48), border:shade(base-72) };
-  }
-
+  // ── grey-LCD renderer — ported from ZITTRIS drawBrick_lcd/lcdRamp ──
   function lcdRamp(lum, dimmed){
-    return (theme === 'night' ? lcdRampNight : lcdRampDay)(lum, dimmed);
-  }
-
-  // The eat-flash has a polarity too. Night blows the backlight out to
-  // near-white; day drives the segment to full absorption. The old shared
-  // '#eef2ee' punched a white hole in the daytime glass — a reflective
-  // panel physically cannot go brighter than its own unlit surface.
-  function lcdFlash(){
-    return theme === 'night' ? '#eef2ee' : rgbStr(LCD_DAY.FLASH);
+    const base = dimmed ? 58 : Math.round(72 + lum*118);
+    // Real handheld LCDs read as one tinted hue at every luminance step —
+    // there's no true grey in the glass, just how dark the tint gets.
+    // Splitting the ink into a neutral charcoal (previous pass) broke that
+    // illusion and read as unbalanced against the khaki glass; back to a
+    // single ramp, tinted differently per theme.
+    const shade = (theme === 'night')
+      // night: near-black glass lit by a cyan backlight
+      ? v => {
+          v = Math.max(0, Math.min(255, Math.round(v)));
+          const r = Math.round(v*.18), g = Math.min(255,Math.round(v*.86)), b = Math.min(255,Math.round(v*1.02));
+          return `rgb(${r},${g},${b})`;
+        }
+      // day: the original khaki-green LCD tint
+      : v => {
+          v = Math.max(0, Math.min(255, Math.round(v)));
+          const r = Math.round(v*.86), g = Math.min(255,Math.round(v*.94)), b = Math.round(v*.66);
+          return `rgb(${r},${g},${b})`;
+        };
+    return { light:shade(base+38), mid:shade(base), dark:shade(base-48), border:shade(base-72) };
   }
   function drawLcdCell(gx, gy, lum, opts){
     opts = opts || {};
@@ -820,7 +617,7 @@ body.theme-night #zoom-reset{
     const gap = Math.max(1, CELL*.08);
     const px = x+gap, py = y+gap, w = CELL-gap*2, h = CELL-gap*2;
     const { light, mid, dark, border } = lcdRamp(lum, !!opts.dimmed);
-    if (opts.flash){ ctx.fillStyle = lcdFlash(); ctx.fillRect(px,py,w,h); return; }
+    if (opts.flash){ ctx.fillStyle = '#eef2ee'; ctx.fillRect(px,py,w,h); return; }
     ctx.fillStyle = dark; ctx.fillRect(px,py,w,h);
     const bez = Math.max(1, Math.round(CELL*.12));
     ctx.fillStyle = mid; ctx.fillRect(px+bez,py+bez,Math.max(1,w-bez*2),Math.max(1,h-bez*2));
@@ -947,7 +744,7 @@ body.theme-night #zoom-reset{
     ctx.rotate(angle);
 
     if (opts.flash){
-      wedgePathAt(half, flatFrac); ctx.fillStyle = lcdFlash(); ctx.fill();
+      wedgePathAt(half, flatFrac); ctx.fillStyle = '#eef2ee'; ctx.fill();
       ctx.restore(); return;
     }
     wedgePathAt(half, flatFrac); ctx.fillStyle = dark; ctx.fill();
@@ -1151,11 +948,7 @@ body.theme-night #zoom-reset{
       const t=e.touches[0]; sx=t.clientX; sy=t.clientY; t0=Date.now();
     }, {passive:true});
     dispCanvas.addEventListener('touchend', e=>{
-      // Precautionary, not a fix for observed browser behaviour: a real
-      // TouchEvent always carries changedTouches. Synthetic events relayed
-      // by an embedding shell may not, and an exception thrown here would
-      // escape into the listener and abort the tap.
-      if (!e.changedTouches || !e.changedTouches.length) return;
+      if (!e.changedTouches.length) return;
       if (gs.state !== 'playing'){ if (gs.state==='title'||gs.state==='gameover') startFromOverlay(); return; }
       const t=e.changedTouches[0];
       const dx=t.clientX-sx, dy=t.clientY-sy, dur=(Date.now()-t0)/1000;
@@ -1265,11 +1058,9 @@ body.theme-night #zoom-reset{
     // Nokia-era LCD: glass inside a thick, abuse-proof bezel — khaki-green
     // by day, near-black lit by cyan backlight at night (see lcdRamp).
     const bezelOuter = theme==='night' ? '#040a0c' : '#5f5b4c';
-    const bezelGlass  = theme==='night' ? '#071a21' : rgbStr(LCD_DAY.GLASS);
+    const bezelGlass  = theme==='night' ? '#071a21' : '#9fca1f';
     const bezelEdge   = theme==='night' ? '#0d3d48' : '#c9c4b0';
-    // Seam lines are the same ink the segments use, just at 8% alpha —
-    // one constant, so retuning INK can never leave the grid behind.
-    const seamInk     = theme==='night' ? '#1ce7ff' : rgbStr(LCD_DAY.INK);
+    const seamInk     = theme==='night' ? '#1ce7ff' : '#203208';
     ctx.fillStyle = bezelOuter;
     ctx.fillRect(GX-4, GY-4, COLS*CELL+8, ROWS*CELL+8);
     ctx.fillStyle = bezelGlass;
@@ -1374,12 +1165,7 @@ body.theme-night #zoom-reset{
       while (gs.acc >= ms){ gs.acc -= ms; step(); if (gs.state!=='playing') break; }
     }
 
-    // Surround = the plastic the glass is set into, not a backdrop. Day
-    // was a blue-grey (#6f85ad) that fought the beige NUI shell directly
-    // beneath it and pushed the whole daytime frame toward that same
-    // ashy read; pulled to the shell's own mid-tone so bezel, surround
-    // and console panel are one continuous piece of moulded plastic.
-    ctx.fillStyle = theme==='night' ? '#020507' : '#8a8570'; ctx.fillRect(0,0,W,H);
+    ctx.fillStyle = theme==='night' ? '#020507' : '#6f85ad'; ctx.fillRect(0,0,W,H);
     if (gs.state==='playing' || gs.state==='paused' || gs.state==='gameover'){
       drawBoard();
     }
@@ -1395,18 +1181,8 @@ body.theme-night #zoom-reset{
 
   // ── go ───────────────────────────────────────────────────────────
   function setupNUI(){
-    // matchMedia is missing or throws in some sandboxed WebViews (and in
-    // jsdom). It was called bare here, so a single missing API took the
-    // ENTIRE cabinet down at boot — not just the touch console. Same
-    // sandbox-safety posture as the localStorage wrapper above: probe,
-    // fall back, never let a host-environment gap be fatal.
-    let coarse = false;
-    try {
-      if (typeof window.matchMedia === 'function') {
-        coarse = !!window.matchMedia('(pointer:coarse)').matches;
-      }
-    } catch(e){ coarse = false; }
-    nuiActive = coarse || ('ontouchstart' in window && (navigator.maxTouchPoints || 0) > 0);
+    nuiActive = window.matchMedia('(pointer:coarse)').matches
+      || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
   }
   setupNUI();
   refreshMenu();
@@ -1422,14 +1198,7 @@ body.theme-night #zoom-reset{
   // Reserved test surface — not exercised by any harness yet, but kept
   // stable so a future jsdom behavioral gate can import real logic
   // instead of stubbing it (see ZITTRIS harness-integrity learnings).
-  window.SNAKIA_TEST = {
-    mulberry32, gs, step, resetGame, queueDir, speedMs,
-    // Renderer surface — the harness asserts contrast/polarity against the
-    // SAME functions the browser paints with, never a re-derived copy.
-    lcdRamp, lcdRampDay, lcdRampNight, lcdFlash, LCD_DAY, mix, rgbStr,
-    getTheme: () => theme, applyTheme,
-    ZoomAuthority,
-  };
+  window.SNAKIA_TEST = { mulberry32, gs, step, resetGame, queueDir, speedMs };
 })();
 </script>
 </body>
