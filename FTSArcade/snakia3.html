@@ -1,15 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-D01RHXEG3Y"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-D01RHXEG3Y');
-</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="mobile-web-app-capable" content="yes">
@@ -178,93 +169,77 @@ body.theme-night #nui::before{opacity:.26}
   position:relative;display:flex;align-items:center;justify-content:center;
   width:100%;height:100%;pointer-events:none;
 }
-/* ── SKEUOMORPHIC D-PAD ──────────────────────────────────────────────
-   The touch target is deliberately larger than the visible key, so a
-   thumb landing near — not on — an arm still registers. Everything
-   below is material description; the input model lives in setupDpad.
-
-   All colour lives in custom properties so the night panel is a value
-   swap rather than a second copy of the whole stylesheet. That was the
-   failure mode of the previous ring/knob: every gradient existed twice
-   and the two copies had already drifted. */
+/* the actual touch target — deliberately larger than the visible ring
+   so a thumb landing near, not on, the ring still registers a move */
 #dpad{
   position:relative;width:232px;height:232px;pointer-events:all;touch-action:none;
-  -webkit-tap-highlight-color:transparent;cursor:pointer;flex:0 0 auto;margin:0 auto;
-  --dp-shell-hi:#f2efe7; --dp-shell-mid:#e3dfd4; --dp-shell-lo:#cbc6b8;
-  --dp-olive-hi:#c2c66a; --dp-olive-lo:#6d7136;
-  --dp-well-mid:#2b2d2c; --dp-well-lo:#101211;
-  /* Warm charcoal, not neutral. The reference part is pigmented ABS;
-     a neutral grey key next to a warm cream shell reads as two
-     different materials photographed separately. */
-  --dp-key-hi:#787672;   --dp-key-mid:#50504e;  --dp-key-lo:#2d2e2e;
-  --dp-arrow:#9ca2a5;    --dp-arrow-on:#f4f8f6;
+  -webkit-tap-highlight-color:transparent;display:flex;align-items:center;justify-content:center;
+  cursor:grab;flex:0 0 auto;margin:0 auto;
 }
-body.theme-night #dpad{
-  --dp-shell-hi:#20415a; --dp-shell-mid:#12293a; --dp-shell-lo:#07141d;
-  --dp-olive-hi:#7ef6ff; --dp-olive-lo:#14505f;
-  --dp-well-mid:#06171e; --dp-well-lo:#010708;
-  --dp-key-hi:#35586a;   --dp-key-mid:#1f3b48;  --dp-key-lo:#0c1d25;
-  --dp-arrow:#79bccb;    --dp-arrow-on:var(--ui-cyan);
+#dpad::before{
+  content:"";position:absolute;inset:14px;border-radius:50%;pointer-events:none;
+  background:
+    repeating-linear-gradient(0deg,rgba(255,255,255,.02) 0 2px,transparent 2px 8px),
+    repeating-linear-gradient(90deg,rgba(255,255,255,.018) 0 2px,transparent 2px 8px),
+    radial-gradient(circle at 35% 30%,rgba(255,255,255,.14),transparent 24%),
+    linear-gradient(180deg,rgba(255,255,255,.1),rgba(0,0,0,.2));
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.14),inset 0 -8px 14px rgba(0,0,0,.26);
 }
-#dpad-art{
-  display:block;width:100%;height:100%;overflow:visible;
-  /* A d-pad pivots at its hub. It does not slide — which is why the
-     previous translating knob read as a joystick however it was
-     styled. Rock the whole key instead. */
-  transform:perspective(560px) rotateX(0deg) rotateY(0deg);
-  transition:transform .11s cubic-bezier(.2,.9,.3,1);
+#dpad.grabbed #dpad-ring{border-color:var(--ui-cyan);box-shadow:0 10px 16px rgba(0,0,0,.42),0 0 0 6px rgba(184,200,142,.12)}
+#dpad-ring{
+  position:absolute;width:182px;height:182px;border-radius:50%;pointer-events:none;
+  background:
+    repeating-linear-gradient(0deg,rgba(255,255,255,.025) 0 2px,transparent 2px 7px),
+    repeating-linear-gradient(90deg,rgba(255,255,255,.02) 0 2px,transparent 2px 7px),
+    radial-gradient(circle at 50% 50%,transparent 0 41%,rgba(255,255,255,.05) 42% 43%,transparent 44%),
+    linear-gradient(180deg,#c9c3ae 0%,#a49d84 46%,#5f5a48 100%);
+  border:2px solid rgba(230,225,205,.4);
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.16),inset 0 -8px 12px rgba(0,0,0,.28),0 10px 14px rgba(0,0,0,.32);
+  transition:border-color .1s ease,box-shadow .1s ease;
 }
-#dpad-art[data-dir="up"]   {transform:perspective(560px) rotateX(7deg)}
-#dpad-art[data-dir="down"] {transform:perspective(560px) rotateX(-7deg)}
-#dpad-art[data-dir="left"] {transform:perspective(560px) rotateY(-7deg)}
-#dpad-art[data-dir="right"]{transform:perspective(560px) rotateY(7deg)}
-
-.dp-grain{opacity:.10;mix-blend-mode:overlay;pointer-events:none}
-.dp-grain-key{opacity:.17}
-body.theme-night .dp-grain{opacity:.14}
-.dp-olive{opacity:.92}
-body.theme-night .dp-olive{opacity:.7}
-
-.dp-cast{fill:rgba(0,0,0,.5)}
-body.theme-night .dp-cast{fill:rgba(0,0,0,.72)}
-.dp-face{fill:url(#dpCross)}
-.dp-bevel{fill:none;stroke:url(#dpBevel);stroke-width:5.5}
-
-/* Pressed arm sinks into shadow; the opposite arm catches light. Both
-   are clipped to the key, so neither can bleed onto the housing. */
-.dp-press-shade,.dp-press-lift{
-  opacity:0;transition:opacity .1s ease,transform .11s cubic-bezier(.2,.9,.3,1);
+body.theme-night #dpad-ring{
+  background:
+    repeating-linear-gradient(0deg,rgba(126,246,255,.02) 0 2px,transparent 2px 7px),
+    repeating-linear-gradient(90deg,rgba(126,246,255,.018) 0 2px,transparent 2px 7px),
+    radial-gradient(circle at 50% 50%,transparent 0 41%,rgba(126,246,255,.05) 42% 43%,transparent 44%),
+    linear-gradient(180deg,#1a3a50 0%,#102535 46%,#061118 100%);
+  border-color:rgba(126,246,255,.28);
+  box-shadow:inset 0 2px 0 rgba(180,245,255,.1),inset 0 -8px 12px rgba(0,0,0,.46),0 10px 14px rgba(0,0,0,.48);
 }
-#dpad-art[data-dir]     .dp-press-shade,
-#dpad-art[data-dir]     .dp-press-lift{opacity:1}
-#dpad-art[data-dir="up"]    .dp-press-shade{transform:translate(0,-44px)}
-#dpad-art[data-dir="down"]  .dp-press-shade{transform:translate(0,44px)}
-#dpad-art[data-dir="left"]  .dp-press-shade{transform:translate(-44px,0)}
-#dpad-art[data-dir="right"] .dp-press-shade{transform:translate(44px,0)}
-#dpad-art[data-dir="up"]    .dp-press-lift{transform:translate(0,40px)}
-#dpad-art[data-dir="down"]  .dp-press-lift{transform:translate(0,-40px)}
-#dpad-art[data-dir="left"]  .dp-press-lift{transform:translate(40px,0)}
-#dpad-art[data-dir="right"] .dp-press-lift{transform:translate(-40px,0)}
-
-/* Hub detent is embossed INWARD — a shallow dish — so its highlight
-   sits below its shadow. Swapping those two is the single tell that
-   separates a dish from a dome. */
-.dp-detent-light{fill:none;stroke:rgba(255,255,255,.20);stroke-width:1.6}
-.dp-detent-shade{fill:none;stroke:rgba(0,0,0,.34);stroke-width:1.4}
-
-.dp-arrow{
-  fill:var(--dp-arrow);opacity:.82;
-  transition:fill .1s ease,opacity .1s ease;
+#dpad-knob{
+  position:absolute;width:72px;height:72px;border-radius:50%;pointer-events:none;
+  background:
+    repeating-linear-gradient(0deg,rgba(255,255,255,.022) 0 2px,transparent 2px 6px),
+    repeating-linear-gradient(90deg,rgba(255,255,255,.018) 0 2px,transparent 2px 6px),
+    radial-gradient(circle at 38% 30%,#b4b8aa 0%,#818677 34%,#50574c 64%,#242b26 100%);
+  border:1px solid rgba(242,245,237,.72);
+  box-shadow:inset 0 3px 0 rgba(255,255,255,.3),inset 0 -9px 13px rgba(0,0,0,.34),0 3px 0 rgba(16,21,16,.55),0 10px 16px rgba(0,0,0,.44);
+  transition:transform .15s cubic-bezier(.2,1.4,.4,1);
 }
-#dpad-art[data-dir="up"]    .dp-arrow[data-arrow="up"],
-#dpad-art[data-dir="down"]  .dp-arrow[data-arrow="down"],
-#dpad-art[data-dir="left"]  .dp-arrow[data-arrow="left"],
-#dpad-art[data-dir="right"] .dp-arrow[data-arrow="right"]{fill:var(--dp-arrow-on);opacity:1}
-body.theme-night #dpad-art[data-dir] .dp-arrow[data-arrow]{filter:none}
-
-@media (prefers-reduced-motion:reduce){
-  #dpad-art,.dp-press-shade,.dp-press-lift{transition:none}
+body.theme-night #dpad-knob{
+  background:
+    repeating-linear-gradient(0deg,rgba(126,246,255,.02) 0 2px,transparent 2px 6px),
+    repeating-linear-gradient(90deg,rgba(126,246,255,.016) 0 2px,transparent 2px 6px),
+    radial-gradient(circle at 38% 30%,#73858d 0%,#455960 34%,#22333a 64%,#0b1518 100%);
+  border-color:rgba(214,252,255,.52);
+  box-shadow:inset 0 3px 0 rgba(220,252,255,.2),inset 0 -9px 13px rgba(0,0,0,.46),0 3px 0 rgba(0,0,0,.65),0 10px 16px rgba(0,0,0,.54);
 }
+#dpad.grabbed #dpad-knob{transition:none;border-color:var(--ui-cyan)}
+.db-glyph{
+  position:absolute;pointer-events:none;color:rgba(233,245,228,.72);font-size:18px;font-weight:900;
+  text-shadow:0 1px 0 rgba(0,0,0,.28),0 -1px 0 rgba(255,255,255,.12);
+  transition:color .1s ease,transform .1s ease,text-shadow .1s ease;
+}
+body.theme-night .db-glyph{color:rgba(164,238,247,.74);text-shadow:0 0 6px rgba(74,224,255,.24)}
+.db-glyph.active{color:var(--ui-cyan);text-shadow:var(--glow);transform:scale(1.2)}
+#glyph-up{top:7px;left:50%;transform:translateX(-50%)}
+#glyph-down{bottom:7px;left:50%;transform:translateX(-50%)}
+#glyph-left{left:7px;top:50%;transform:translateY(-50%)}
+#glyph-right{right:7px;top:50%;transform:translateY(-50%)}
+.db-glyph.active#glyph-up{transform:translateX(-50%) scale(1.2)}
+.db-glyph.active#glyph-down{transform:translateX(-50%) scale(1.2)}
+.db-glyph.active#glyph-left{transform:translateY(-50%) scale(1.2)}
+.db-glyph.active#glyph-right{transform:translateY(-50%) scale(1.2)}
 #nui-pause{
   position:absolute;right:max(18px,env(safe-area-inset-right));bottom:max(14px,env(safe-area-inset-bottom));
   display:flex;width:54px;height:42px;align-items:center;justify-content:center;
@@ -495,142 +470,13 @@ body.theme-night #zoom-reset{
 <!-- ── Touch controls ─────────────────────────────────────────────── -->
 <div id="nui">
   <div id="nui-cluster">
-    <div id="dpad" role="group" aria-label="Direction pad">
-      <!-- ══ SKEUOMORPHIC D-PAD ═══════════════════════════════════════
-           A cruciform pad seated in a machined recess, not a joystick.
-           SVG rather than divs because the shape needs concave fillets
-           where the arms meet the hub, and neither border-radius nor
-           clip-path can produce a concave corner — the old ring/knob was
-           round partly because a round thing is the only thing plain CSS
-           can actually draw here.
-
-           Geometry (viewBox 0 0 200 200, centre 100,100), measured off
-           the reference photo and normalised to the olive ring:
-             arm half-width  w  = 26     outer corner radius ro = 15
-             arm half-length L  = 72     inner fillet radius  ri = 12
-             hub detent      r  = 17     recess inner radius     = 82
-           The path below is generated from exactly those six numbers; if
-           they change, regenerate rather than hand-editing 24 segments.
-      ══════════════════════════════════════════════════════════════ -->
-      <svg id="dpad-art" viewBox="0 0 200 200" aria-hidden="true" focusable="false">
-        <defs>
-          <!-- Fine matte grain. feTurbulence is the only thing here that
-               costs a raster pass; it renders on class change, not per
-               frame, because nothing in this pad animates continuously.
-               N=1 FLAG: baseFrequency 0.85 reads as moulded ABS at 232px.
-               Below ~0.6 it becomes visible mottling. -->
-          <filter id="dpGrain" x="0" y="0" width="100%" height="100%">
-            <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="7"/>
-            <feColorMatrix type="saturate" values="0"/>
-          </filter>
-
-          <linearGradient id="dpShell" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0"   stop-color="var(--dp-shell-hi)"/>
-            <stop offset="0.55" stop-color="var(--dp-shell-mid)"/>
-            <stop offset="1"   stop-color="var(--dp-shell-lo)"/>
-          </linearGradient>
-          <!-- Lip and wall are deliberate inverses. A raised rim is light
-               on top and shadowed below; a sunken wall is the opposite.
-               Running the same gradient on both is what makes a CSS
-               "recess" read as a flat printed circle. -->
-          <!-- N=1 FLAG: the lip started at .95 white and shouted, reading
-               as a chrome bezel rather than as moulded plastic catching
-               light. Moulded ABS has a soft specular, so the top stop is
-               well short of white and the shadow end carries more of the
-               shape. Tune it against the shell highlight property, not
-               in isolation.
-               (Note for anyone editing SVG comments here: XML forbids a
-               double hyphen inside a comment, so custom-property names
-               cannot be written literally. The HTML parser tolerates it;
-               the preview rasteriser does not, which is how this was
-               caught rather than shipped.) -->
-          <linearGradient id="dpLip" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0"   stop-color="rgba(255,255,255,.62)"/>
-            <stop offset="0.5" stop-color="rgba(255,255,255,.10)"/>
-            <stop offset="1"   stop-color="rgba(0,0,0,.26)"/>
-          </linearGradient>
-          <linearGradient id="dpWall" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stop-color="rgba(0,0,0,.42)"/>
-            <stop offset="1" stop-color="rgba(255,255,255,.55)"/>
-          </linearGradient>
-          <linearGradient id="dpOlive" x1="0.2" y1="0" x2="0.8" y2="1">
-            <stop offset="0"   stop-color="var(--dp-olive-lo)"/>
-            <stop offset="0.5" stop-color="var(--dp-olive-hi)"/>
-            <stop offset="1"   stop-color="var(--dp-olive-lo)"/>
-          </linearGradient>
-          <radialGradient id="dpWell" cx="0.5" cy="0.42" r="0.62">
-            <stop offset="0"   stop-color="var(--dp-well-mid)"/>
-            <stop offset="1"   stop-color="var(--dp-well-lo)"/>
-          </radialGradient>
-
-          <linearGradient id="dpCross" x1="0.18" y1="0" x2="0.72" y2="1">
-            <stop offset="0"    stop-color="var(--dp-key-hi)"/>
-            <stop offset="0.42" stop-color="var(--dp-key-mid)"/>
-            <stop offset="1"    stop-color="var(--dp-key-lo)"/>
-          </linearGradient>
-          <linearGradient id="dpBevel" x1="0" y1="0" x2="0.35" y2="1">
-            <stop offset="0"    stop-color="rgba(255,255,255,.55)"/>
-            <stop offset="0.45" stop-color="rgba(255,255,255,.06)"/>
-            <stop offset="1"    stop-color="rgba(0,0,0,.45)"/>
-          </linearGradient>
-          <radialGradient id="dpPress" cx="0.5" cy="0.5" r="0.5">
-            <stop offset="0"    stop-color="rgba(0,0,0,.55)"/>
-            <stop offset="0.55" stop-color="rgba(0,0,0,.24)"/>
-            <stop offset="1"    stop-color="rgba(0,0,0,0)"/>
-          </radialGradient>
-          <radialGradient id="dpLift" cx="0.5" cy="0.5" r="0.5">
-            <stop offset="0"   stop-color="rgba(255,255,255,.34)"/>
-            <stop offset="1"   stop-color="rgba(255,255,255,0)"/>
-          </radialGradient>
-
-          <clipPath id="dpCrossClip">
-            <path d="M74 43 A15 15 0 0 1 89 28 L111 28 A15 15 0 0 1 126 43 L126 62 A12 12 0 0 0 138 74 L157 74 A15 15 0 0 1 172 89 L172 111 A15 15 0 0 1 157 126 L138 126 A12 12 0 0 0 126 138 L126 157 A15 15 0 0 1 111 172 L89 172 A15 15 0 0 1 74 157 L74 138 A12 12 0 0 0 62 126 L43 126 A15 15 0 0 1 28 111 L28 89 A15 15 0 0 1 43 74 L62 74 A12 12 0 0 0 74 62 Z"/>
-          </clipPath>
-          <clipPath id="dpShellClip"><circle cx="100" cy="100" r="100"/></clipPath>
-        </defs>
-
-        <!-- ── housing ────────────────────────────────────────────── -->
-        <g class="dp-housing">
-          <rect x="0" y="0" width="200" height="200" fill="url(#dpShell)"/>
-          <g clip-path="url(#dpShellClip)">
-            <rect x="0" y="0" width="200" height="200" class="dp-grain" filter="url(#dpGrain)"/>
-          </g>
-          <circle cx="100" cy="100" r="94" fill="none" stroke="url(#dpLip)"  stroke-width="2.2"/>
-          <circle cx="100" cy="100" r="89" fill="none" stroke="url(#dpWall)" stroke-width="6"/>
-          <circle cx="100" cy="100" r="84" fill="none" stroke="url(#dpLip)"  stroke-width="2"/>
-          <circle cx="100" cy="100" r="81" fill="none" stroke="url(#dpOlive)" stroke-width="3.4" class="dp-olive"/>
-          <circle cx="100" cy="100" r="79" fill="url(#dpWell)"/>
-          <circle cx="100" cy="100" r="79" fill="none" stroke="rgba(0,0,0,.6)" stroke-width="2.2"/>
-        </g>
-
-        <!-- ── the key ────────────────────────────────────────────── -->
-        <g id="dp-key">
-          <path class="dp-cast" transform="translate(0 3.5)" d="M74 43 A15 15 0 0 1 89 28 L111 28 A15 15 0 0 1 126 43 L126 62 A12 12 0 0 0 138 74 L157 74 A15 15 0 0 1 172 89 L172 111 A15 15 0 0 1 157 126 L138 126 A12 12 0 0 0 126 138 L126 157 A15 15 0 0 1 111 172 L89 172 A15 15 0 0 1 74 157 L74 138 A12 12 0 0 0 62 126 L43 126 A15 15 0 0 1 28 111 L28 89 A15 15 0 0 1 43 74 L62 74 A12 12 0 0 0 74 62 Z"/>
-          <path class="dp-face" d="M74 43 A15 15 0 0 1 89 28 L111 28 A15 15 0 0 1 126 43 L126 62 A12 12 0 0 0 138 74 L157 74 A15 15 0 0 1 172 89 L172 111 A15 15 0 0 1 157 126 L138 126 A12 12 0 0 0 126 138 L126 157 A15 15 0 0 1 111 172 L89 172 A15 15 0 0 1 74 157 L74 138 A12 12 0 0 0 62 126 L43 126 A15 15 0 0 1 28 111 L28 89 A15 15 0 0 1 43 74 L62 74 A12 12 0 0 0 74 62 Z"/>
-
-          <g clip-path="url(#dpCrossClip)">
-            <!-- Rocking feedback: the pressed arm sinks into shadow and
-                 the opposite arm catches the light. A d-pad pivots at its
-                 hub; it does not slide, which is why the old translating
-                 knob read as a joystick however it was styled. -->
-            <circle class="dp-press-shade" cx="100" cy="100" r="74" fill="url(#dpPress)"/>
-            <circle class="dp-press-lift"  cx="100" cy="100" r="66" fill="url(#dpLift)"/>
-            <rect x="0" y="0" width="200" height="200" class="dp-grain dp-grain-key" filter="url(#dpGrain)"/>
-            <path class="dp-bevel" d="M74 43 A15 15 0 0 1 89 28 L111 28 A15 15 0 0 1 126 43 L126 62 A12 12 0 0 0 138 74 L157 74 A15 15 0 0 1 172 89 L172 111 A15 15 0 0 1 157 126 L138 126 A12 12 0 0 0 126 138 L126 157 A15 15 0 0 1 111 172 L89 172 A15 15 0 0 1 74 157 L74 138 A12 12 0 0 0 62 126 L43 126 A15 15 0 0 1 28 111 L28 89 A15 15 0 0 1 43 74 L62 74 A12 12 0 0 0 74 62 Z"/>
-          </g>
-
-          <!-- hub detent — embossed, so its highlight sits BELOW its shadow -->
-          <circle class="dp-detent-light" cx="100" cy="101" r="17"/>
-          <circle class="dp-detent-shade" cx="100" cy="100" r="17"/>
-
-          <g class="dp-arrows">
-            <path class="dp-arrow" data-arrow="up"    d="M100 43 L109 57 L91 57 Z"/>
-            <path class="dp-arrow" data-arrow="down"  d="M100 157 L91 143 L109 143 Z"/>
-            <path class="dp-arrow" data-arrow="left"  d="M43 100 L57 91 L57 109 Z"/>
-            <path class="dp-arrow" data-arrow="right" d="M157 100 L143 109 L143 91 Z"/>
-          </g>
-        </g>
-      </svg>
+    <div id="dpad">
+      <div id="dpad-ring"></div>
+      <div class="db-glyph" id="glyph-up">▲</div>
+      <div class="db-glyph" id="glyph-down">▼</div>
+      <div class="db-glyph" id="glyph-left">◀</div>
+      <div class="db-glyph" id="glyph-right">▶</div>
+      <div id="dpad-knob"></div>
     </div>
     <button id="nui-pause" aria-label="Pause game">||</button>
   </div>
@@ -638,7 +484,7 @@ body.theme-night #zoom-reset{
 
 <script>
 // ═══════════════════════════════════════════════════════════════════════
-//  SNAKIA · FTS ARCADE — circa-2002 indestructible-phone monochrome Snake · continuous serpent / labyrinth-skin pass
+//  SNAKIA · FTS ARCADE — circa-2002 indestructible-phone monochrome Snake
 //
 //  Style brief: the "B-lcd" grey-glass brick renderer from ZITTRIS
 //  (tetris.html) is the reference, not a decoration — real handheld LCDs
@@ -845,7 +691,7 @@ body.theme-night #zoom-reset{
   const dispCanvas = document.getElementById('c');
   const dispCtx = dispCanvas.getContext('2d');
   if (!dispCtx) return; // no 2D context available — nothing to boot
-  const PIXEL_SCALE = 1.5; // denser micro-pixel backbuffer for ornate scales while retaining hard LCD pixels
+  const PIXEL_SCALE = 2; // slightly finer backbuffer for a denser early-phone LCD look
   const back = document.createElement('canvas');
   const ctx = back.getContext('2d');
 
@@ -997,255 +843,66 @@ body.theme-night #zoom-reset{
     ctx.strokeRect(px+.5,py+.5,w-1,h-1);
   }
 
-  // ── organic snake renderer ─────────────────────────────────────────
-  // The logical snake still occupies one grid cell per segment, but its
-  // *visual* anatomy now changes continuously along the body: a broad neck,
-  // muscular midsection, tapering posterior, and a filigreed terminal tip.
-  // Every segment is rasterized on a denser micro-pixel lattice so the snake
-  // reads as a single scaled organism rather than a chain of square blocks.
-  function clamp01(v){ return v < 0 ? 0 : (v > 1 ? 1 : v); }
-  function lerp(a,b,t){ return a + (b-a)*t; }
-  function smooth01(t){ t = clamp01(t); return t*t*(3 - 2*t); }
-  function snakeProfile(i, n){
-    // i=0 head, i=n-1 tail. Real snakes carry most of their mass through the
-    // forward/middle trunk: a slight neck pinch behind the head, a swelling to
-    // the broadest girth around the first third, then a long, patient taper,
-    // and finally a sharper tail taper. The profile stays cell-based, but the
-    // visual stroke is allowed to overlap cells so the body reads continuously.
-    if (n <= 1) return 0.70;
-    const t = i / (n - 1);
-    const growth = Math.min(1, Math.max(0, (n - 3) / 34));
-    const maxWidth   = 0.76 + growth * 0.17;
-    const neckWidth  = 0.54 + growth * 0.04;
-    const chestWidth = 0.66 + growth * 0.09;
-    const tailBase   = 0.34 + growth * 0.03;
-
-    if (t <= 0.08){
-      // slight neck pinch directly behind the head
-      return lerp(0.68 + growth*0.08, neckWidth, smooth01(t / 0.08));
-    }
-    if (t <= 0.26){
-      // swell from neck into the muscular forward body
-      return lerp(neckWidth, maxWidth, smooth01((t - 0.08) / 0.18));
-    }
-    if (t <= 0.62){
-      // broad middle trunk holds its volume for a while rather than peaking
-      // and immediately collapsing; a very mild drift keeps it organic.
-      return lerp(maxWidth, chestWidth, smooth01((t - 0.26) / 0.36));
-    }
-    if (t <= 0.90){
-      // main taper toward the posterior body
-      return lerp(chestWidth, tailBase, Math.pow((t - 0.62) / 0.28, 1.18));
-    }
-    // final tail taper before the ornate terminal tip renderer takes over
-    return lerp(tailBase, 0.14, Math.pow((t - 0.90) / 0.10, 0.72));
-  }
-
-  function snakeMicroPixel(){
-    // Higher granularity than the cell grid, but still intentionally chunky.
-    // 18–26 micro-pixels across a cell depending on physical cell size.
-    return Math.max(0.55, CELL / Math.max(18, Math.min(26, Math.floor(CELL*2.2))));
-  }
-
-  function snakePatternStage(n){
-    // Advance the ornament with growth so each pellet subtly matures the skin.
-    return Math.max(0, Math.min(6, Math.floor(Math.max(0, n-3) / 2)));
-  }
-
-  function drawScaleField(cx, cy, dir, width, length, lum, index, dimmed, alpha, stage){
-    stage = stage || 0;
-    const { light, mid, dark, border } = lcdRamp(lum, !!dimmed);
-    const px = snakeMicroPixel();
-    const angle = Math.atan2(dir.y, dir.x);
-    const ca = Math.cos(angle), sa = Math.sin(angle);
-    const halfW = width/2, halfL = length/2;
-    const density = 1 + stage*0.085;
-    const rows = Math.max(3, Math.floor(width / ((px*1.7) / density)));
-    const cols = Math.max(4, Math.floor(length / ((px*1.7) / density)));
-
-    ctx.save();
-    ctx.globalAlpha = alpha == null ? 1 : alpha;
-    // lay scales in alternating staggered rows; each scale is a tiny diamond
-    // with a dark root and bright crown, recalling the old Nokia snake bitmap.
-    for (let ry=0; ry<rows; ry++){
-      const ny = rows===1 ? 0 : (ry/(rows-1))*2-1;
-      const bodyFalloff = Math.sqrt(Math.max(0, 1-ny*ny));
-      const rowHalfL = halfL * (0.84 + 0.16*bodyFalloff);
-      for (let rx=0; rx<cols; rx++){
-        const stagger = (ry & 1) ? 0.5 : 0;
-        const nx = ((rx + stagger) / cols) * 2 - 1;
-        if (Math.abs(nx) > 1) continue;
-        const lx = nx * rowHalfL;
-        const ly = ny * halfW;
-        const wx = cx + lx*ca - ly*sa;
-        const wy = cy + lx*sa + ly*ca;
-        const q = ((rx + ry + index + stage) % 4);
-        const ink = q===0 ? light : (q===1 ? mid : (q===2 ? dark : border));
-        const d = Math.max(0.75, px * (0.94 + bodyFalloff*0.34) * (1 - stage*0.018));
-        ctx.fillStyle = ink;
-        ctx.beginPath();
-        ctx.moveTo(wx, wy-d);
-        ctx.lineTo(wx+d, wy);
-        ctx.lineTo(wx, wy+d);
-        ctx.lineTo(wx-d, wy);
-        ctx.closePath();
-        ctx.fill();
-
-        // As the snake grows, each pellet adds more elaborate micro-markings:
-        // first bright crowns, then tiny dorsal beads, then little crossbars.
-        if (stage >= 1 && ((rx + index + ry) % 3 === 0)){
-          ctx.fillStyle = light;
-          ctx.fillRect(wx - px*0.32*sa, wy + px*0.32*ca, Math.max(1, px*0.55), Math.max(1, px*0.55));
-        }
-        if (stage >= 3 && ((rx*2 + ry + index) % 5 === 0)){
-          ctx.fillStyle = border;
-          ctx.fillRect(wx - px*0.22, wy - px*0.22, Math.max(1, px*0.44), Math.max(1, px*0.44));
-        }
-        if (stage >= 5 && ((rx + ry + index) % 6 === 0)){
-          ctx.fillStyle = mid;
-          const bar = Math.max(1, px*0.62);
-          ctx.fillRect(wx - bar/2, wy - Math.max(1, px*0.18), bar, Math.max(1, px*0.36));
-        }
-      }
-    }
-    ctx.restore();
-  }
-
-  function drawOrganicBodySegment(gx, gy, towardHead, towardTail, lum, opts){
+  function drawSnakeBodySegment(gx, gy, prevDir, nextDir, lum, opts){
     opts = opts || {};
-    const i = opts.index || 0, n = opts.length || 2;
-    const stage = snakePatternStage(n);
-    const cx = GX + (gx+.5)*CELL, cy = GY + (gy+.5)*CELL;
-    const width = CELL * snakeProfile(i, n);
+    const x = GX + gx*CELL, y = GY + gy*CELL;
+    const gap = Math.max(1, CELL*.08);
+    const px = x+gap, py = y+gap, w = CELL-gap*2, h = CELL-gap*2;
     const { light, mid, dark, border } = lcdRamp(lum, !!opts.dimmed);
+    const cols = Math.max(8, Math.floor(w / Math.max(1, Math.floor(CELL/10) || 1)));
+    const rows = Math.max(8, Math.floor(h / Math.max(1, Math.floor(CELL/10) || 1)));
+    const sx = w / cols, sy = h / rows;
+    const x0 = Math.floor(cols * 0.28), x1 = Math.ceil(cols * 0.72);
+    const y0 = Math.floor(rows * 0.28), y1 = Math.ceil(rows * 0.72);
+    const dirs = [];
+    if (prevDir) dirs.push(prevDir);
+    if (nextDir) dirs.push(nextDir);
 
-    // Local centerline directions. At a corner, bend mass outward and compress
-    // the inner radius so the turn reads as flexed tissue, not plumbing.
-    const dx = towardHead.x - towardTail.x;
-    const dy = towardHead.y - towardTail.y;
-    const straight = towardHead.x === -towardTail.x && towardHead.y === -towardTail.y;
+    function inMask(ix, iy){
+      let on = (ix >= x0 && ix < x1 && iy >= y0 && iy < y1);
+      for (const d of dirs){
+        if (d.x < 0 && ix < x1 && iy >= y0 && iy < y1) on = true;
+        if (d.x > 0 && ix >= x0 && iy >= y0 && iy < y1) on = true;
+        if (d.y < 0 && iy < y1 && ix >= x0 && ix < x1) on = true;
+        if (d.y > 0 && iy >= y0 && ix >= x0 && ix < x1) on = true;
+      }
+      return on;
+    }
+    function toneFor(ix, iy){
+      const stripe = ((ix + iy) % 3 === 0);
+      const ridge = ((ix - iy + 64) % 4 === 0);
+      if (ridge) return light;
+      if (stripe) return mid;
+      return dark;
+    }
 
-    ctx.save();
-    ctx.translate(cx, cy);
-    ctx.lineJoin = 'round';
-    ctx.lineCap = 'round';
-
-    if (straight){
-      ctx.strokeStyle = dark;
-      ctx.lineWidth = width;
-      ctx.beginPath();
-      ctx.moveTo(towardTail.x*CELL*.55, towardTail.y*CELL*.55);
-      ctx.lineTo(towardHead.x*CELL*.55, towardHead.y*CELL*.55);
-      ctx.stroke();
-
-      ctx.globalAlpha = 0.78;
-      ctx.strokeStyle = mid;
-      ctx.lineWidth = Math.max(1, width*0.72);
-      ctx.beginPath();
-      ctx.moveTo(towardTail.x*CELL*.55, towardTail.y*CELL*.55);
-      ctx.lineTo(towardHead.x*CELL*.55, towardHead.y*CELL*.55);
-      ctx.stroke();
-      ctx.globalAlpha = 0.46;
-      ctx.strokeStyle = light;
-      ctx.lineWidth = Math.max(1, width*0.16);
-      ctx.beginPath();
-      ctx.moveTo(towardTail.x*CELL*.55, towardTail.y*CELL*.55);
-      ctx.lineTo(towardHead.x*CELL*.55, towardHead.y*CELL*.55);
-      ctx.stroke();
-    } else {
-      const turn = { x: towardHead.x + towardTail.x, y: towardHead.y + towardTail.y };
-      const mag = Math.hypot(turn.x, turn.y) || 1;
-      const outer = { x: turn.x / mag, y: turn.y / mag };
-      const inner = { x: -outer.x, y: -outer.y };
-      const end = CELL * 0.56;
-      const control = width * 0.16;
-
-      // Main elbow, hugging the inner radius a bit so the outside can bulge.
-      ctx.strokeStyle = dark;
-      ctx.lineWidth = width * 0.96;
-      ctx.beginPath();
-      ctx.moveTo(towardTail.x*end, towardTail.y*end);
-      ctx.quadraticCurveTo(inner.x*control, inner.y*control, towardHead.x*end, towardHead.y*end);
-      ctx.stroke();
-
-      // Outer-turn flesh bunches outward.
-      ctx.globalAlpha = 0.92;
-      ctx.fillStyle = dark;
-      ctx.beginPath();
-      ctx.ellipse(outer.x*width*0.10, outer.y*width*0.10, width*0.44, width*0.36, Math.atan2(outer.y, outer.x), 0, Math.PI*2);
-      ctx.fill();
-
-      // Slight inner pinch carves a crease rather than a pipe elbow.
-      ctx.save();
-      ctx.globalCompositeOperation = 'destination-out';
-      ctx.globalAlpha = 0.92;
-      ctx.beginPath();
-      ctx.ellipse(inner.x*width*0.22, inner.y*width*0.22, width*0.14, width*0.12, 0, 0, Math.PI*2);
-      ctx.fill();
-      ctx.restore();
-
-      ctx.globalAlpha = 0.78;
-      ctx.strokeStyle = mid;
-      ctx.lineWidth = Math.max(1, width*0.66);
-      ctx.beginPath();
-      ctx.moveTo(towardTail.x*end, towardTail.y*end);
-      ctx.quadraticCurveTo(inner.x*control*0.8, inner.y*control*0.8, towardHead.x*end, towardHead.y*end);
-      ctx.stroke();
-
-      ctx.globalAlpha = 0.40;
-      ctx.strokeStyle = light;
-      ctx.lineWidth = Math.max(1, width*0.15);
-      ctx.beginPath();
-      ctx.moveTo(towardTail.x*end, towardTail.y*end);
-      ctx.quadraticCurveTo(inner.x*control*0.72, inner.y*control*0.72, towardHead.x*end, towardHead.y*end);
-      ctx.stroke();
-
-      // Compression wrinkles along the inside of the bend.
-      ctx.globalAlpha = 0.38;
-      ctx.strokeStyle = border;
-      ctx.lineWidth = Math.max(1, CELL*.022);
-      for (let k=0; k<2; k++){
-        const pull = width*(0.07 + k*0.07);
-        ctx.beginPath();
-        ctx.moveTo(inner.x*pull + towardTail.x*CELL*0.10, inner.y*pull + towardTail.y*CELL*0.10);
-        ctx.quadraticCurveTo(inner.x*width*(0.18 + k*0.03), inner.y*width*(0.18 + k*0.03), inner.x*pull + towardHead.x*CELL*0.10, inner.y*pull + towardHead.y*CELL*0.10);
-        ctx.stroke();
+    for (let iy = 0; iy < rows; iy++){
+      for (let ix = 0; ix < cols; ix++){
+        if (!inMask(ix, iy)) continue;
+        const fx = px + ix * sx, fy = py + iy * sy;
+        ctx.fillStyle = toneFor(ix, iy);
+        ctx.fillRect(fx, fy, Math.ceil(sx), Math.ceil(sy));
       }
     }
-    ctx.restore();
 
-    // Pattern follows the local body axis; at corners, separate fields are
-    // staggered to feel stretched outside and bunched inside.
-    const bodyDir = straight ? towardHead : (Math.abs(dx)+Math.abs(dy) ? {x:dx,y:dy} : towardHead);
-    drawScaleField(cx, cy, bodyDir, width*.88, CELL*1.06, lum, i, opts.dimmed, 0.94, stage);
-    if (!straight){
-      const turn = { x: towardHead.x + towardTail.x, y: towardHead.y + towardTail.y };
-      const mag = Math.hypot(turn.x, turn.y) || 1;
-      const outer = { x: turn.x / mag, y: turn.y / mag };
-      const inner = { x: -outer.x, y: -outer.y };
-      drawScaleField(cx + outer.x*width*0.08, cy + outer.y*width*0.08, towardHead, width*.78, CELL*.76, lum, i+3, opts.dimmed, 0.60, stage);
-      drawScaleField(cx + inner.x*width*0.04, cy + inner.y*width*0.04, towardTail, width*.66, CELL*.62, lum, i+5, opts.dimmed, 0.42, stage);
-    }
-
-    // Fine outer ink makes adjoining segments resolve as one snake at a glance.
-    if (straight){
-      ctx.strokeStyle = border;
-      ctx.lineWidth = Math.max(1, CELL*.032);
-      ctx.beginPath();
-      ctx.moveTo(cx+towardTail.x*CELL*.46, cy+towardTail.y*CELL*.46);
-      ctx.lineTo(cx+towardHead.x*CELL*.46, cy+towardHead.y*CELL*.46);
-      ctx.stroke();
-    } else {
-      ctx.strokeStyle = border;
-      ctx.globalAlpha = 0.42;
-      ctx.lineWidth = Math.max(1, CELL*.028);
-      ctx.beginPath();
-      ctx.arc(cx, cy, Math.max(1,width*.30), 0, Math.PI*2);
-      ctx.stroke();
-      ctx.globalAlpha = 1;
+    ctx.strokeStyle = border;
+    ctx.lineWidth = Math.max(1, CELL*.05);
+    for (let iy = 0; iy < rows; iy++){
+      for (let ix = 0; ix < cols; ix++){
+        if (!inMask(ix, iy)) continue;
+        const left = ix === 0 || !inMask(ix-1, iy);
+        const right = ix === cols-1 || !inMask(ix+1, iy);
+        const up = iy === 0 || !inMask(ix, iy-1);
+        const down = iy === rows-1 || !inMask(ix, iy+1);
+        if (!(left || right || up || down)) continue;
+        const fx = px + ix * sx, fy = py + iy * sy;
+        if (left){ ctx.beginPath(); ctx.moveTo(fx, fy); ctx.lineTo(fx, fy + sy); ctx.stroke(); }
+        if (right){ ctx.beginPath(); ctx.moveTo(fx + sx, fy); ctx.lineTo(fx + sx, fy + sy); ctx.stroke(); }
+        if (up){ ctx.beginPath(); ctx.moveTo(fx, fy); ctx.lineTo(fx + sx, fy); ctx.stroke(); }
+        if (down){ ctx.beginPath(); ctx.moveTo(fx, fy + sy); ctx.lineTo(fx + sx, fy + sy); ctx.stroke(); }
+      }
     }
   }
-
   function drawGlyph(kind, x, y, w, h, ink){
     const cx=x+w/2, cy=y+h/2, s=Math.min(w,h)*.3;
     if (s < 1) return;
@@ -1275,547 +932,42 @@ body.theme-night #zoom-reset{
     ctx.moveTo(-h,-h); ctx.lineTo(xFlat,-h); ctx.lineTo(h,0);
     ctx.lineTo(xFlat,h); ctx.lineTo(-h,h); ctx.closePath();
   }
-  function drawOrganicHead(gx, gy, dir, lum, opts){
+  function drawWedgeSegment(gx, gy, dir, lum, opts){
     opts = opts || {};
-    const n = opts.length || 3;
-    const growth = Math.min(1, Math.max(0, (n-3)/34));
-    const x = GX + (gx+.5)*CELL, y = GY + (gy+.5)*CELL;
-    const angle = Math.atan2(dir.y, dir.x);
-    const neckRef = CELL * snakeProfile(Math.min(n-1, 1), n);
-    const trunkRef = CELL * snakeProfile(Math.max(1, Math.round((n-1)*0.28)), n);
-    const headW = Math.max(neckRef * 1.16, CELL * (0.74 + growth*0.12));
-    const headL = Math.max(headW * 1.10, CELL * (0.98 + growth*0.26));
-    const { light, mid, dark, border } = lcdRamp(lum, !!opts.dimmed);
-
-    ctx.save(); ctx.translate(x,y); ctx.rotate(angle);
-    // Prominent, but still believable from overhead: narrower than the broadest
-    // trunk, with a defined snout and a little shoulder-like mass at the rear.
-    function headPath(scaleX, scaleY){
-      const L=headL*scaleX, WW=headW*scaleY;
-      ctx.beginPath();
-      ctx.moveTo(-L*.50,-WW*.30);
-      ctx.quadraticCurveTo(-L*.28,-WW*.50,-L*.04,-WW*.44);
-      ctx.quadraticCurveTo(L*.18,-WW*.42,L*.48,-WW*.12);
-      ctx.lineTo(L*.62,0);
-      ctx.lineTo(L*.48,WW*.12);
-      ctx.quadraticCurveTo(L*.18,WW*.42,-L*.04,WW*.44);
-      ctx.quadraticCurveTo(-L*.28,WW*.50,-L*.50,WW*.30);
-      ctx.closePath();
-    }
-    headPath(1,1); ctx.fillStyle = opts.flash ? lcdFlash() : dark; ctx.fill();
-    if (!opts.flash){
-      ctx.globalAlpha=.84; headPath(.86,.80); ctx.fillStyle=mid; ctx.fill();
-      ctx.globalAlpha=.48; headPath(.70,.62); ctx.fillStyle=light; ctx.fill();
-      ctx.globalAlpha=1;
-      headPath(1,1); ctx.strokeStyle=border; ctx.lineWidth=Math.max(1,CELL*.035); ctx.stroke();
-      // hint of the cranial-to-trunk transition
-      ctx.globalAlpha = 0.42;
-      ctx.strokeStyle = border;
-      ctx.lineWidth = Math.max(1, CELL*.026);
-      ctx.beginPath();
-      ctx.moveTo(-headL*.16,-Math.min(headW*.22, trunkRef*.20));
-      ctx.quadraticCurveTo(-headL*.24,0,-headL*.16,Math.min(headW*.22, trunkRef*.20));
-      ctx.stroke();
-      ctx.globalAlpha = 1;
-    }
-    ctx.restore();
-
-    if (!opts.flash){
-      drawScaleField(x-dir.x*CELL*.02, y-dir.y*CELL*.02, dir, headW*.68, headL*.78, lum, 0, opts.dimmed, 0.9, snakePatternStage(n));
-      // two tiny LCD eyes, placed orthogonally to direction
-      const px = -dir.y, py = dir.x;
-      const ex = x + dir.x*headL*.24, ey = y + dir.y*headL*.24;
-      const sep = headW*.17;
-      const er = Math.max(1, CELL*.045);
-      ctx.fillStyle = border;
-      ctx.beginPath(); ctx.arc(ex+px*sep,ey+py*sep,er,0,Math.PI*2); ctx.fill();
-      ctx.beginPath(); ctx.arc(ex-px*sep,ey-py*sep,er,0,Math.PI*2); ctx.fill();
-      // small brow ridge gives the head a more serpentine overhead read
-      ctx.strokeStyle = border; ctx.lineWidth=Math.max(1,CELL*.028);
-      ctx.beginPath();
-      ctx.moveTo(ex+px*sep*1.45-dir.x*CELL*.03, ey+py*sep*1.45-dir.y*CELL*.03);
-      ctx.lineTo(ex-px*sep*1.45-dir.x*CELL*.03, ey-py*sep*1.45-dir.y*CELL*.03);
-      ctx.stroke();
-    }
-  }
-
-  function drawOrnateTail(gx, gy, dir, lum, opts){
-    opts = opts || {};
-    const n = opts.length || 3;
-    const tailBase = CELL * snakeProfile(Math.max(1, n-2), n);
-    const x = GX + (gx+.5)*CELL, y = GY + (gy+.5)*CELL;
+    const x = GX + gx*CELL, y = GY + gy*CELL;
+    const cx = x + CELL/2, cy = y + CELL/2;
+    const gap = Math.max(1, CELL*.08);
+    const half = (CELL - gap*2) / 2;
+    const flatFrac = opts.flatFrac != null ? opts.flatFrac : 0.5;
     const angle = Math.atan2(dir.y, dir.x);
     const { light, mid, dark, border } = lcdRamp(lum, !!opts.dimmed);
-    const L = CELL*1.04, W = Math.max(CELL*0.22, tailBase*0.50);
-    ctx.save(); ctx.translate(x,y); ctx.rotate(angle);
-    // terminal spear/leaf tip with a tiny split flourish inspired by the ornate
-    // Nokia-era tail bitmap rather than a plain triangular wedge.
-    ctx.fillStyle = dark;
-    ctx.beginPath();
-    ctx.moveTo(-L*.48,-W*.36); ctx.lineTo(-L*.10,-W*.46);
-    ctx.lineTo(L*.28,-W*.18); ctx.lineTo(L*.54,0);
-    ctx.lineTo(L*.28,W*.18); ctx.lineTo(-L*.10,W*.46);
-    ctx.lineTo(-L*.48,W*.36); ctx.lineTo(-L*.26,0); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = mid;
-    ctx.beginPath(); ctx.moveTo(-L*.18,0); ctx.lineTo(L*.34,-W*.08); ctx.lineTo(L*.48,0); ctx.lineTo(L*.34,W*.08); ctx.closePath(); ctx.fill();
-    ctx.strokeStyle = border; ctx.lineWidth=Math.max(1,CELL*.035); ctx.stroke();
-    // paired finial dots/notches make the very last pixel cluster ornamental.
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(angle);
+
+    if (opts.flash){
+      wedgePathAt(half, flatFrac); ctx.fillStyle = lcdFlash(); ctx.fill();
+      ctx.restore(); return;
+    }
+    wedgePathAt(half, flatFrac); ctx.fillStyle = dark; ctx.fill();
+    const bez = Math.max(1, CELL*.14);
+    wedgePathAt(Math.max(1,half-bez), flatFrac); ctx.fillStyle = mid; ctx.fill();
     ctx.fillStyle = light;
-    const d=Math.max(1,CELL*.05);
-    ctx.fillRect(L*.14,-W*.30,d,d); ctx.fillRect(L*.14,W*.24,d,d);
-    ctx.restore();
-    drawScaleField(x-dir.x*CELL*.10,y-dir.y*CELL*.10,dir,W*.72,L*.56,lum,999,opts.dimmed,0.72,snakePatternStage(n));
-  }
+    ctx.fillRect(-half+bez, -half+bez, Math.max(1, half*flatFrac*1.1), bez);
 
-
-  // ── continuous serpent renderer ───────────────────────────────────
-  // The game remains perfectly orthodox Snake underneath: one logical cell
-  // per segment, cardinal motion, grid collision. Rendering no longer paints
-  // those cells as the animal. They are merely control points for a rounded,
-  // variable-girth ribbon. This is the key distinction between a pipe and a
-  // snake: the grid describes where the animal has been; a continuous spine
-  // describes the flesh currently occupying that history.
-  function vunit(x,y){
-    const m = Math.hypot(x,y) || 1;
-    return { x:x/m, y:y/m };
-  }
-  function vcross(a,b){ return a.x*b.y - a.y*b.x; }
-  function vdot(a,b){ return a.x*b.x + a.y*b.y; }
-  function cellCenter(seg){ return { x:GX + (seg.x+.5)*CELL, y:GY + (seg.y+.5)*CELL }; }
-
-  function pushSpinePoint(out, x, y, bend, bendSign){
-    const last = out[out.length-1];
-    if (last && Math.hypot(last.x-x,last.y-y) < 0.025){
-      if ((bend||0) > (last.bend||0)) last.bend = bend||0;
-      if (bendSign) last.bendSign = bendSign;
-      return;
-    }
-    out.push({ x, y, bend:bend||0, bendSign:bendSign||0 });
-  }
-
-  function appendLineSpine(out, a, b, step, bend, bendSign){
-    const d = Math.hypot(b.x-a.x,b.y-a.y);
-    const count = Math.max(1, Math.ceil(d/step));
-    for (let i=1;i<=count;i++){
-      const t=i/count;
-      pushSpinePoint(out, lerp(a.x,b.x,t), lerp(a.y,b.y,t), bend||0, bendSign||0);
-    }
-  }
-
-  function appendQuadSpine(out, a, c, b, step, bendSign){
-    // Estimate length from the control polygon; enough for a visually uniform
-    // micro-pixel sampling rate without the cost of an arc-length solver.
-    const est = Math.hypot(c.x-a.x,c.y-a.y) + Math.hypot(b.x-c.x,b.y-c.y);
-    const count = Math.max(3, Math.ceil(est/step));
-    for (let i=1;i<=count;i++){
-      const t=i/count, q=1-t;
-      const x=q*q*a.x + 2*q*t*c.x + t*t*b.x;
-      const y=q*q*a.y + 2*q*t*c.y + t*t*b.y;
-      // Bend mass peaks at the actual corner and relaxes into both straights.
-      const bend=Math.sin(Math.PI*t);
-      pushSpinePoint(out,x,y,bend,bendSign);
-    }
-  }
-
-  function annotateSpine(spine, allowWave){
-    if (!spine.length) return spine;
-    let total=0;
-    spine[0].s=0;
-    for (let i=1;i<spine.length;i++){
-      total += Math.hypot(spine[i].x-spine[i-1].x,spine[i].y-spine[i-1].y);
-      spine[i].s=total;
-    }
-    const denom=total||1;
-
-    // A nominally straight snake is still not a ruler. The tiny deterministic
-    // side-to-side displacement is sub-cell, growth-sensitive, and suppressed
-    // around bends. Because its phase depends on length rather than time, the
-    // animal never shimmers between frames; its skin only reconfigures when it
-    // actually grows.
-    if (allowWave && spine.length>3){
-      const n=gs.snake.length;
-      const growth=clamp01((n-3)/30);
-      const amp=CELL*(0.022 + growth*0.040);
-      const phase=n*0.713;
-      const shifted=spine.map((p,i)=>({ ...p }));
-      for (let i=1;i<spine.length-1;i++){
-        const a=spine[Math.max(0,i-1)], b=spine[Math.min(spine.length-1,i+1)];
-        const tan=vunit(b.x-a.x,b.y-a.y), nor={x:-tan.y,y:tan.x};
-        const u=spine[i].s/denom;
-        const envelope=Math.pow(Math.sin(Math.PI*u),0.72);
-        const calm=1-Math.min(0.92,(spine[i].bend||0)*0.90);
-        const wiggle=Math.sin((spine[i].s/Math.max(1,CELL))*2.15 + phase) * amp * envelope * calm;
-        // A turning snake does not wrap itself around an invisible plumbing
-        // elbow. Its center of mass leans slightly toward the OUTSIDE of the
-        // bend while the inside folds. This small offset breaks the perfect
-        // quarter-circle geometry before width deformation even begins.
-        const bend=clamp01(spine[i].bend||0), bendSign=spine[i].bendSign||0;
-        const outsideLean=bendSign ? (-Math.sign(bendSign))*CELL*.055*bend : 0;
-        // Half-pixel quantization keeps the result looking like LCD drafting,
-        // not antialiased vector art accidentally dropped into an LCD game.
-        shifted[i].x += Math.round(nor.x*(wiggle+outsideLean)*2)/2;
-        shifted[i].y += Math.round(nor.y*(wiggle+outsideLean)*2)/2;
-      }
-      for (let i=0;i<spine.length;i++){ spine[i].x=shifted[i].x; spine[i].y=shifted[i].y; }
+    if (opts.eyes){
+      const er = Math.max(.6, half*.14), ex = half*0.4;
+      ctx.fillStyle = border;
+      ctx.beginPath(); ctx.arc(ex, -half*0.32, er, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(ex,  half*0.32, er, 0, Math.PI*2); ctx.fill();
     }
 
-    total=0; spine[0].s=0;
-    for (let i=1;i<spine.length;i++){
-      total += Math.hypot(spine[i].x-spine[i-1].x,spine[i].y-spine[i-1].y);
-      spine[i].s=total;
-    }
-    const d2=total||1;
-    for (let i=0;i<spine.length;i++){
-      const a=spine[Math.max(0,i-1)], b=spine[Math.min(spine.length-1,i+1)];
-      const tan=vunit(b.x-a.x,b.y-a.y);
-      spine[i].tangent=tan;
-      spine[i].normal={x:-tan.y,y:tan.x};
-      spine[i].u=spine[i].s/d2;
-    }
-    spine.total=total;
-    return spine;
-  }
-
-  function buildSnakeSpine(snake){
-    if (!snake || !snake.length) return [];
-    const pts=snake.map(cellCenter); // head -> tail
-    if (pts.length===1) return annotateSpine([{x:pts[0].x,y:pts[0].y,bend:0,bendSign:0}],false);
-
-    const out=[{x:pts[0].x,y:pts[0].y,bend:0,bendSign:0}];
-    const step=Math.max(1.15,CELL*0.105);
-    const roundR=CELL*0.44;
-    let cursor=pts[0];
-
-    for (let i=1;i<pts.length-1;i++){
-      const prev=pts[i-1], cur=pts[i], next=pts[i+1];
-      const incoming=vunit(cur.x-prev.x,cur.y-prev.y);
-      const outgoing=vunit(next.x-cur.x,next.y-cur.y);
-      const straight=vdot(incoming,outgoing) > 0.999;
-      if (straight){
-        appendLineSpine(out,cursor,cur,step,0,0);
-        cursor=cur;
-      } else {
-        const entry={x:cur.x-incoming.x*roundR,y:cur.y-incoming.y*roundR};
-        const exit ={x:cur.x+outgoing.x*roundR,y:cur.y+outgoing.y*roundR};
-        appendLineSpine(out,cursor,entry,step,0,0);
-        const sign=Math.sign(vcross(incoming,outgoing))||1;
-        appendQuadSpine(out,entry,cur,exit,step,sign);
-        cursor=exit;
-      }
-    }
-    appendLineSpine(out,cursor,pts[pts.length-1],step,0,0);
-    return annotateSpine(out,true);
-  }
-
-  function snakeWidthFracAt(u,n){
-    const growth=clamp01((n-3)/30);
-    const join = 0.66 + growth*0.05; // body disappearing under the head
-    const neck = 0.50 + growth*0.04;
-    const trunk= 0.82 + growth*0.11;
-    const ribs = 0.78 + growth*0.08;
-    const hip  = 0.57 + growth*0.05;
-    if (u <= 0.075) return lerp(join,neck,smooth01(u/0.075));
-    if (u <= 0.27)  return lerp(neck,trunk,smooth01((u-0.075)/0.195));
-    if (u <= 0.60)  return lerp(trunk,ribs,smooth01((u-0.27)/0.33));
-    if (u <= 0.79)  return lerp(ribs,hip,smooth01((u-0.60)/0.19));
-    // The posterior taper occupies a meaningful amount of the body rather
-    // than collapsing in the final cell. That long taper is a major snake cue.
-    return lerp(hip,0.055,Math.pow(clamp01((u-0.79)/0.21),0.72));
-  }
-
-  function ribbonHalfWidths(p,n,scale){
-    const bend=clamp01(p.bend||0);
-    const base=CELL*snakeWidthFracAt(p.u||0,n)*(scale==null?1:scale);
-    const half=base*0.5*(1+bend*0.08);
-    const compress=0.25*bend, bulge=0.22*bend;
-    let left=half,right=half;
-    // Positive signed curvature is a left turn: left side is the compressed
-    // inside radius, right side is the stretched/bulging outside flesh.
-    if ((p.bendSign||0) > 0){ left*=1-compress; right*=1+bulge; }
-    else if ((p.bendSign||0) < 0){ right*=1-compress; left*=1+bulge; }
-    return {left,right,base};
-  }
-
-  function ribbonEdges(spine,n,scale){
-    const left=[],right=[];
-    for (let i=0;i<spine.length;i++){
-      const p=spine[i], w=ribbonHalfWidths(p,n,scale);
-      left.push({x:p.x+p.normal.x*w.left,y:p.y+p.normal.y*w.left});
-      right.push({x:p.x-p.normal.x*w.right,y:p.y-p.normal.y*w.right});
-    }
-    return {left,right};
-  }
-
-  function traceRibbon(spine,n,scale){
-    if (!spine.length) return;
-    const e=ribbonEdges(spine,n,scale);
-    ctx.beginPath();
-    ctx.moveTo(e.left[0].x,e.left[0].y);
-    for (let i=1;i<e.left.length;i++) ctx.lineTo(e.left[i].x,e.left[i].y);
-    for (let i=e.right.length-1;i>=0;i--) ctx.lineTo(e.right[i].x,e.right[i].y);
-    ctx.closePath();
-  }
-
-  function drawMeanderMotif(kind,L,H,strokeA,strokeB,stage){
-    const lw=Math.max(1.0,Math.min(1.65,CELL*.040));
-    ctx.lineCap='square';ctx.lineJoin='miter';ctx.lineWidth=lw;
-    ctx.strokeStyle=strokeA;
-    ctx.beginPath();
-    if (kind===0){
-      ctx.moveTo(-L*.50,-H*.34);ctx.lineTo(-L*.14,-H*.34);ctx.lineTo(-L*.14,H*.10);
-      ctx.lineTo(L*.12,H*.10);ctx.lineTo(L*.12,-H*.20);ctx.lineTo(L*.48,-H*.20);
-    } else if (kind===1){
-      ctx.moveTo(-L*.48,H*.28);ctx.lineTo(-L*.24,H*.28);ctx.lineTo(-L*.24,-H*.18);
-      ctx.lineTo(L*.06,-H*.18);ctx.lineTo(L*.06,H*.34);ctx.lineTo(L*.48,H*.34);
-    } else if (kind===2){
-      ctx.moveTo(-L*.46,-H*.30);ctx.lineTo(L*.42,-H*.30);ctx.lineTo(L*.42,H*.30);
-      ctx.lineTo(-L*.20,H*.30);ctx.lineTo(-L*.20,-H*.02);ctx.lineTo(L*.14,-H*.02);ctx.lineTo(L*.14,-H*.15);
-    } else if (kind===3){
-      ctx.moveTo(-L*.50,0);ctx.lineTo(-L*.28,-H*.34);ctx.lineTo(-L*.02,0);ctx.lineTo(L*.20,H*.34);ctx.lineTo(L*.48,0);
-      ctx.moveTo(-L*.22,H*.34);ctx.lineTo(L*.02,H*.08);ctx.lineTo(L*.26,-H*.30);
-    } else {
-      ctx.moveTo(-L*.48,-H*.30);ctx.lineTo(-L*.10,-H*.30);ctx.lineTo(-L*.10,H*.30);
-      ctx.moveTo(-L*.10,0);ctx.lineTo(L*.18,0);ctx.lineTo(L*.18,-H*.30);ctx.lineTo(L*.48,-H*.30);
-      ctx.moveTo(L*.18,H*.12);ctx.lineTo(L*.42,H*.30);
-    }
+    wedgePathAt(half, flatFrac);
+    ctx.strokeStyle = border; ctx.lineWidth = Math.max(1, CELL*.06);
     ctx.stroke();
-
-    if (stage>=4){
-      ctx.globalAlpha*=0.62;
-      ctx.strokeStyle=strokeB;
-      ctx.beginPath();
-      ctx.moveTo(-L*.36,H*.02);ctx.lineTo(-L*.02,H*.02);ctx.lineTo(-L*.02,-H*.14);ctx.lineTo(L*.30,-H*.14);
-      ctx.stroke();
-      ctx.globalAlpha/=0.62;
-    }
-  }
-
-  function drawPlateOutline(L,H,stroke){
-    ctx.strokeStyle=stroke;
-    ctx.lineWidth=Math.max(0.9,Math.min(1.45,CELL*.034));
-    ctx.beginPath();
-    ctx.moveTo(-L*.52,0);ctx.lineTo(-L*.31,-H*.58);ctx.lineTo(L*.22,-H*.58);
-    ctx.lineTo(L*.52,-H*.08);ctx.lineTo(L*.34,H*.56);ctx.lineTo(-L*.28,H*.56);ctx.closePath();
-    ctx.stroke();
-  }
-
-  function drawLabyrinthSkin(spine,n,dimmed){
-    if (spine.length<2) return;
-    const stage=Math.min(6,Math.floor(Math.max(0,n-3)/2));
-    const ornament=Math.max(0,n-3); // changes only when a pellet is consumed
-    const ink=lcdRamp(0.78,dimmed);
-    // The reference treatment is essentially luminous linework on dark hide.
-    // On a reflective LCD that becomes NEGATIVE engraving: internal pattern
-    // pixels relax back toward the green glass while the animal itself remains
-    // fully energised and dark. Night mode keeps the same logic as cyan light.
-    const bright = theme==='night'
-      ? lcdRamp(0.98,dimmed).light
-      : rgbStr(mix(LCD_DAY.INK,LCD_DAY.GLASS,dimmed?0.40:0.74));
-    const bright2 = theme==='night'
-      ? lcdRamp(0.86,dimmed).light
-      : rgbStr(mix(LCD_DAY.INK,LCD_DAY.GLASS,dimmed?0.30:0.56));
-
-    ctx.save();
-    traceRibbon(spine,n,0.91);
-    ctx.clip();
-
-    let rows = ornament<2 ? 2 : 3;
-    if (CELL<8) rows=2;
-    const rowSet = rows===2 ? [-0.24,0.24] : [-0.31,0,0.31];
-    // Larger, readable labyrinths rather than texture-noise. Each mark still
-    // lives below one logical cell, but now the eye can actually follow it.
-    const spacing=Math.max(2.25,CELL*(0.33-Math.min(0.035,ornament*0.0012)));
-    let next=CELL*.12, k=0;
-
-    for (let i=0;i<spine.length;i++){
-      const p=spine[i];
-      if (p.s+0.001<next) continue;
-      while (next<=p.s) next+=spacing;
-      if (p.u<0.035 || p.u>0.955) continue;
-      const width=CELL*snakeWidthFracAt(p.u,n);
-      if (width<2.8) continue;
-      const angle=Math.atan2(p.tangent.y,p.tangent.x);
-      const motifL=Math.max(3.2,CELL*(0.40 + Math.min(0.05,stage*.009)));
-      const bandH=Math.max(1.55,width/(rows+1)*0.92);
-
-      for (let r=0;r<rowSet.length;r++){
-        const off=rowSet[r]*width;
-        const x=Math.round((p.x+p.normal.x*off)*2)/2;
-        const y=Math.round((p.y+p.normal.y*off)*2)/2;
-        ctx.save();ctx.translate(x,y);ctx.rotate(angle);
-        if ((k+r+ornament)&1) ctx.scale(1,-1);
-
-        // Larger polygonal scale plates appear among the micro-meanders as the
-        // snake grows, echoing the outlined panels in the visual reference.
-        const centerRow=(rows===3 && r===1);
-        if (stage>=1 && width>5.5 && ((k+r+ornament)%3===0 || (centerRow && k%2===0))){
-          ctx.globalAlpha=0.56;
-          drawPlateOutline(motifL*1.18,bandH*1.78,bright2);
-        }
-        ctx.globalAlpha=0.96;
-        drawMeanderMotif((k*3+r*5+ornament)%5,motifL,bandH,bright,bright2,stage);
-        ctx.restore();
-      }
-      k++;
-    }
-
-    // Sparse transverse contour locks divide the flowing maze into larger
-    // anatomical scale-fields. They are intentionally imperfectly spaced.
-    if (CELL>=7){
-      const plateEvery=Math.max(CELL*1.12,6.0);
-      let mark=plateEvery*(0.44 + (ornament%3)*0.10);
-      ctx.strokeStyle=bright2;ctx.globalAlpha=0.38;ctx.lineWidth=Math.max(0.9,CELL*.030);
-      for (let i=0;i<spine.length;i++){
-        const p=spine[i]; if (p.s<mark) continue; mark+=plateEvery;
-        if (p.u<0.08||p.u>0.88) continue;
-        const w=CELL*snakeWidthFracAt(p.u,n)*0.40;
-        ctx.beginPath();
-        ctx.moveTo(p.x-p.normal.x*w,p.y-p.normal.y*w);
-        ctx.lineTo(p.x+p.normal.x*w,p.y+p.normal.y*w);
-        ctx.stroke();
-      }
-    }
     ctx.restore();
   }
-
-  function traceHeadShape(L,W,neckW){
-    // Deliberately more angular than the trunk: a broad temporal region and
-    // tapered rostrum make the head read instantly at tiny LCD resolution.
-    // The corners are softened by the low-res raster itself, not by turning
-    // the whole skull into a capsule.
-    ctx.beginPath();
-    ctx.moveTo(-L*.60,-neckW*.44);
-    ctx.lineTo(-L*.20,-W*.50);
-    ctx.lineTo(L*.18,-W*.38);
-    ctx.lineTo(L*.54,-W*.13);
-    ctx.lineTo(L*.70,0);
-    ctx.lineTo(L*.54,W*.13);
-    ctx.lineTo(L*.18,W*.38);
-    ctx.lineTo(-L*.20,W*.50);
-    ctx.lineTo(-L*.60,neckW*.44);
-    ctx.closePath();
-  }
-
-  function drawSerpentHead(spine,n,dimmed,flash){
-    const head=cellCenter(gs.snake[0]);
-    const dir=vunit(gs.dir.x,gs.dir.y), angle=Math.atan2(dir.y,dir.x);
-    const growth=clamp01((n-3)/30);
-    const neckW=CELL*snakeWidthFracAt(0.02,n);
-    const W=CELL*(1.02+growth*0.18);
-    const L=CELL*(1.28+growth*0.16);
-    const ink=lcdRamp(0.92,dimmed);
-    const headBright = theme==='night'
-      ? ink.light
-      : rgbStr(mix(LCD_DAY.INK,LCD_DAY.GLASS,dimmed?0.40:0.72));
-    const headBright2 = theme==='night'
-      ? lcdRamp(0.82,dimmed).light
-      : rgbStr(mix(LCD_DAY.INK,LCD_DAY.GLASS,dimmed?0.30:0.54));
-
-    ctx.save();ctx.translate(head.x,head.y);ctx.rotate(angle);
-    traceHeadShape(L,W,neckW);
-    ctx.fillStyle=flash?lcdFlash():ink.dark;ctx.fill();
-    if (!flash){
-      ctx.save();ctx.scale(.86,.76);traceHeadShape(L,W,neckW);ctx.globalAlpha=.34;ctx.fillStyle=ink.mid;ctx.fill();ctx.restore();
-
-      // Large outlined head plates with tiny labyrinths inside: the reference
-      // image translated into a one-bit reflective-LCD vocabulary.
-      ctx.globalAlpha=.92;ctx.strokeStyle=headBright;ctx.lineWidth=Math.max(1.0,CELL*.040);
-      for (const side of [-1,1]){
-        const sy=side*W*.21;
-        ctx.beginPath();
-        ctx.moveTo(-L*.14,sy-side*W*.12);ctx.lineTo(L*.18,sy-side*W*.14);
-        ctx.lineTo(L*.38,sy);ctx.lineTo(L*.16,sy+side*W*.14);ctx.lineTo(-L*.16,sy+side*W*.10);ctx.closePath();ctx.stroke();
-        ctx.save();ctx.translate(L*.04,sy);if(side<0)ctx.scale(1,-1);
-        ctx.globalAlpha=.98;drawMeanderMotif((n+side+9)%5,L*.30,W*.12,headBright,headBright2,Math.min(6,Math.floor((n-3)/2)));ctx.restore();
-      }
-      // Rear crown bridge visually dissolves the neck/head seam into the
-      // same labyrinth system instead of letting it read as a collar.
-      ctx.save();ctx.translate(-L*.29,0);ctx.globalAlpha=.88;
-      drawMeanderMotif((n+3)%5,L*.26,W*.18,headBright,headBright2,Math.min(6,Math.floor((n-3)/2)));ctx.restore();
-
-      // Frontal crown/keel.
-      ctx.globalAlpha=.78;ctx.strokeStyle=headBright;
-      ctx.beginPath();ctx.moveTo(-L*.20,0);ctx.lineTo(L*.04,-W*.08);ctx.lineTo(L*.27,0);ctx.lineTo(L*.04,W*.08);ctx.closePath();ctx.stroke();
-
-      // Tiny lateral eyes: not cartoon dots; little inset optical marks in the
-      // head plates, enough to establish which end is alive and watching.
-      const ex=L*.18, ey=W*.235, er=Math.max(.8,CELL*.045);
-      ctx.globalAlpha=1;ctx.fillStyle=headBright;
-      ctx.beginPath();ctx.arc(ex,-ey,er*1.35,0,Math.PI*2);ctx.fill();
-      ctx.beginPath();ctx.arc(ex, ey,er*1.35,0,Math.PI*2);ctx.fill();
-      ctx.fillStyle=ink.border;
-      ctx.beginPath();ctx.arc(ex,-ey,er*.58,0,Math.PI*2);ctx.fill();
-      ctx.beginPath();ctx.arc(ex, ey,er*.58,0,Math.PI*2);ctx.fill();
-    }
-    ctx.restore();
-
-    if (!flash && gs.state==='playing' && (gs.tick%7)<3){
-      // Momentary forked tongue. It is intentionally thin enough to disappear
-      // on the smallest LCDs rather than becoming a huge cartoon appendage.
-      const side={x:-dir.y,y:dir.x};
-      const start={x:head.x+dir.x*L*.59,y:head.y+dir.y*L*.59};
-      const fork={x:head.x+dir.x*L*.85,y:head.y+dir.y*L*.85};
-      const tongue=theme==='night'?ink.light:ink.border;
-      ctx.strokeStyle=tongue;ctx.globalAlpha=.76;ctx.lineWidth=Math.max(.7,CELL*.021);ctx.lineCap='square';
-      ctx.beginPath();ctx.moveTo(start.x,start.y);ctx.lineTo(fork.x,fork.y);
-      ctx.lineTo(fork.x+dir.x*CELL*.11+side.x*CELL*.055,fork.y+dir.y*CELL*.11+side.y*CELL*.055);
-      ctx.moveTo(fork.x,fork.y);ctx.lineTo(fork.x+dir.x*CELL*.11-side.x*CELL*.055,fork.y+dir.y*CELL*.11-side.y*CELL*.055);ctx.stroke();
-      ctx.globalAlpha=1;
-    }
-  }
-
-  function drawNeedleTail(spine,n,dimmed){
-    if (spine.length<2) return;
-    const p=spine[spine.length-1], t=p.tangent, nor=p.normal;
-    const ink=lcdRamp(0.42,dimmed);
-    const base=CELL*.070, ext=CELL*.44;
-    const back={x:p.x-t.x*CELL*.07,y:p.y-t.y*CELL*.07};
-    const tip={x:p.x+t.x*ext,y:p.y+t.y*ext};
-    ctx.fillStyle=ink.dark;ctx.beginPath();
-    ctx.moveTo(back.x+nor.x*base,back.y+nor.y*base);
-    ctx.lineTo(tip.x,tip.y);
-    ctx.lineTo(back.x-nor.x*base,back.y-nor.y*base);ctx.closePath();ctx.fill();
-    ctx.strokeStyle=ink.border;ctx.lineWidth=Math.max(.7,CELL*.020);ctx.stroke();
-    // Two microscopic alternating notches = ornament, not a biologically
-    // impossible fork. At phone resolution they read like a hand-etched tip.
-    ctx.fillStyle=ink.light;const d=Math.max(.7,CELL*.030);
-    for (let k=0;k<2;k++){
-      const q=.38+k*.22, s=k? -1:1;
-      const x=lerp(back.x,tip.x,q)+nor.x*s*d*.9, y=lerp(back.y,tip.y,q)+nor.y*s*d*.9;
-      ctx.fillRect(Math.round(x),Math.round(y),Math.max(1,d),Math.max(1,d));
-    }
-  }
-
-  function drawContinuousSnake(){
-    const n=gs.snake.length;
-    if (!n) return;
-    if (n===1){ drawSerpentHead([],n,gs.state==='paused',gs.flashHead>0&&gs.flashHead%2===0); return; }
-    const spine=buildSnakeSpine(gs.snake);
-    const dimmed=gs.state==='paused';
-    const ink=lcdRamp(0.76,dimmed);
-
-    // Three nested ribbons create a soft cylindrical mass without gradients or
-    // antialiasing: an ink-heavy outline, a body field, then a slightly lighter
-    // dorsal interior. The maze skin is clipped into that living silhouette.
-    ctx.save();
-    traceRibbon(spine,n,1.065);ctx.fillStyle=ink.border;ctx.fill();
-    traceRibbon(spine,n,1.00);ctx.fillStyle=ink.dark;ctx.fill();
-    traceRibbon(spine,n,.72);ctx.globalAlpha=.18;ctx.fillStyle=ink.mid;ctx.fill();
-    ctx.globalAlpha=1;
-    drawLabyrinthSkin(spine,n,dimmed);
-
-    // A faint interrupted dorsal rail gives the eye one more continuous cue
-    // through especially dense patterning and makes the animal read as a body,
-    // not a textile strip.
-    ctx.strokeStyle=ink.light;ctx.globalAlpha=.20;ctx.lineWidth=Math.max(.8,CELL*.028);
-    ctx.beginPath();ctx.moveTo(spine[0].x,spine[0].y);
-    for (let i=1;i<spine.length;i++) ctx.lineTo(spine[i].x,spine[i].y);
-    ctx.stroke();ctx.restore();ctx.globalAlpha=1;
-
-    drawNeedleTail(spine,n,dimmed);
-    drawSerpentHead(spine,n,dimmed,gs.flashHead>0&&gs.flashHead%2===0);
-  }
-
 
   // ── game state ────────────────────────────────────────────────────
   const SPEED_MS = [260,225,195,168,144,122,102,86,72,60]; // index = start speed 0..9
@@ -2022,36 +1174,38 @@ body.theme-night #zoom-reset{
   // far more forgiving than four small discrete buttons.
   (function setupDpad(){
     const zone = document.getElementById('dpad');
-    const art  = document.getElementById('dpad-art');
-    if (!zone || !art) return;
+    const knob = document.getElementById('dpad-knob');
+    if (!zone || !knob) return;
+    const glyphs = {
+      up: document.getElementById('glyph-up'), down: document.getElementById('glyph-down'),
+      left: document.getElementById('glyph-left'), right: document.getElementById('glyph-right'),
+    };
     const DIR_VEC = { up:{x:0,y:-1}, down:{x:0,y:1}, left:{x:-1,y:0}, right:{x:1,y:0} };
-    // px from centre before a direction registers — flag for playtest.
-    // Sized against the key, not the touch box: the hub is 60px across
-    // and a thumb resting on the hub should commit to nothing.
-    const DEADZONE = 16;
+    const DEADZONE = 16;   // px from center before a direction registers — flag for playtest
+    const KNOB_RANGE = 42; // px the visual knob can travel from center
 
     let activePointerId = null, activeDir = null;
 
-    // One attribute drives every visual response: the rock, the pressed
-    // arm's shadow, the opposite arm's highlight, and the lit arrow. CSS
-    // owns all four, so a contributor adding a fifth never touches this.
     function setActive(dir){
       if (dir === activeDir) return;
       activeDir = dir;
-      if (dir) art.setAttribute('data-dir', dir);
-      else     art.removeAttribute('data-dir');
+      for (const k in glyphs) glyphs[k].classList.toggle('active', k === dir);
     }
-    function clearActive(){ setActive(null); }
+    function clearActive(){ activeDir = null; for (const k in glyphs) glyphs[k].classList.remove('active'); }
+    function moveKnob(dx, dy){
+      const mag = Math.hypot(dx, dy) || 1;
+      const clamped = Math.min(mag, KNOB_RANGE);
+      knob.style.transform = `translate(${(dx/mag)*clamped}px, ${(dy/mag)*clamped}px)`;
+    }
+    function resetKnob(){ knob.style.transform = 'translate(0,0)'; }
     function angleToDir(dx, dy){
       return Math.abs(dx) > Math.abs(dy) ? (dx>0?'right':'left') : (dy>0?'down':'up');
     }
     function applyPoint(clientX, clientY){
       const r = zone.getBoundingClientRect();
       const dx = clientX - (r.left + r.width/2), dy = clientY - (r.top + r.height/2);
-      // Inside the deadzone nothing is pressed, so the key returns to
-      // level. The old knob drifted continuously here, which is joystick
-      // behaviour — a real pad is either rocked or it is flat.
-      if (Math.hypot(dx, dy) < DEADZONE){ clearActive(); return; }
+      moveKnob(dx, dy);
+      if (Math.hypot(dx, dy) < DEADZONE) return;
       const dir = angleToDir(dx, dy);
       if (dir !== activeDir){
         setActive(dir);
@@ -2082,7 +1236,7 @@ body.theme-night #zoom-reset{
       if (e.pointerId !== activePointerId) return;
       activePointerId = null;
       zone.classList.remove('grabbed');
-      clearActive();
+      resetKnob(); clearActive();
     };
     zone.addEventListener('pointerup', release, {passive:false});
     zone.addEventListener('pointercancel', release, {passive:false});
@@ -2137,10 +1291,35 @@ body.theme-night #zoom-reset{
       if (!blinking) drawLcdCell(gs.bonus.x, gs.bonus.y, 0.9, { glyph:'bonus', pixelGrid:true });
     }
 
-    // One continuous animal: logical grid cells are control points for a
-    // rounded anatomical spine, then flesh, maze-like scale engraving, head,
-    // and a long taper are rasterized back into the Nokia/Game Boy LCD.
-    drawContinuousSnake();
+    const last = gs.snake.length - 1;
+    for (let i=last; i>=0; i--){
+      const seg = gs.snake[i];
+      const dimmed = i!==0 && gs.state==='paused';
+      if (i === 0){
+        // Head — nose points along current travel direction, mostly a
+        // stout block (flatFrac .6) so it still reads as "the front" at
+        // very small cell sizes, with a bright flash on the frame it eats.
+        const lum = (gs.flashHead>0 && gs.flashHead%2===0) ? 1 : 0.9;
+        drawWedgeSegment(seg.x, seg.y, gs.dir, lum, { flatFrac:0.6, eyes:true, dimmed });
+      } else if (i === last && last > 0){
+        // Tail tip — direction is derived from the segment ahead of it,
+        // which (by construction) always points away from the body, so
+        // the taper trails backward like a wisp. Thin (flatFrac .22) and
+        // dim so it visually fades out at the very end of the line.
+        const before = gs.snake[i-1];
+        const tdir = { x: seg.x-before.x, y: seg.y-before.y };
+        drawWedgeSegment(seg.x, seg.y, tdir, 0.3, { flatFrac:0.22, dimmed });
+      } else {
+        // Middle body — render an articulated pixel-elbow / trunk tile so
+        // the snake reads as one patterned organism rather than a train of
+        // disconnected squares. Straight runs stay banded; turns become
+        // chunky L-joints, all with a repeating scaley matrix.
+        const towardHead = { x: gs.snake[i-1].x - seg.x, y: gs.snake[i-1].y - seg.y };
+        const towardTail = { x: gs.snake[i+1].x - seg.x, y: gs.snake[i+1].y - seg.y };
+        const lum = Math.max(0.32, 0.68 - i*0.012);
+        drawSnakeBodySegment(seg.x, seg.y, towardHead, towardTail, lum, { dimmed });
+      }
+    }
     if (gs.flashHead>0) gs.flashHead--;
   }
 
@@ -2247,8 +1426,7 @@ body.theme-night #zoom-reset{
     mulberry32, gs, step, resetGame, queueDir, speedMs,
     // Renderer surface — the harness asserts contrast/polarity against the
     // SAME functions the browser paints with, never a re-derived copy.
-    lcdRamp, lcdRampDay, lcdRampNight, lcdFlash, LCD_DAY, mix, rgbStr, snakeProfile,
-    buildSnakeSpine, snakeWidthFracAt, drawContinuousSnake,
+    lcdRamp, lcdRampDay, lcdRampNight, lcdFlash, LCD_DAY, mix, rgbStr,
     getTheme: () => theme, applyTheme,
     ZoomAuthority,
   };
