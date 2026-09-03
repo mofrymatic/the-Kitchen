@@ -256,6 +256,16 @@ body.theme-night #nui-pause:active{box-shadow:inset 0 2px 5px rgba(0,0,0,.5),0 2
   #nui-pause{display:flex;position:fixed;right:18px;bottom:18px}
 }
 
+/* ── Menu-over-controls: while the attract screen is up (title state,
+   menu-layer visible), the touch d-pad and the fine-pointer pause button
+   both sit at a higher z-index than the menu and poke out from behind
+   it / block taps on it. Gate them off the menu's own hidden state
+   instead of duplicating a "has the game started" flag in JS — this
+   selector's specificity (2 IDs) already beats the pointer:coarse /
+   pointer:fine rules above without needing !important. ── */
+#menu-layer:not(.hidden) ~ #nui,
+#menu-layer:not(.hidden) ~ #nui #nui-pause{display:none}
+
 /* ── HUD bar — score, sound, best & theme all live in one crisp strip,
    rendered as real DOM text (never the pixel-scaled game backbuffer) so
    it stays sharp at any zoom or device pixel ratio ────────────────── */
