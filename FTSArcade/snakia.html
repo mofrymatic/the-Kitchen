@@ -119,61 +119,116 @@ body.theme-night{
 .g-how b{color:var(--ui-gold)}
 
 /* ── Touch NUI — d-pad/joystick hybrid console, docked below the LCD
-   glass so it never sits over the field of play, with a big forgiving
-   hit zone (bigger than the visible ring) for imprecise thumb input ── */
+   glass so it never sits over the field of play. Controls lean further
+   into a physical handheld feel: molded shell, beveled ring, inset well,
+   and a small pause key beside the stick. ── */
 #nui,#nui-pause{display:none}
-@media(pointer:coarse){#nui,#nui-pause{display:flex}}
+@media(pointer:coarse){#nui{display:flex}}
 #nui{
-  position:fixed;left:0;right:0;bottom:0;z-index:50;height:var(--nui-h,222px);
+  position:fixed;left:0;right:0;bottom:0;z-index:50;height:var(--nui-h,232px);
   pointer-events:none;align-items:center;justify-content:center;
-  padding-bottom:max(14px,env(safe-area-inset-bottom));
-  background:linear-gradient(180deg,var(--shell-hi) 0%,var(--shell) 16%,var(--ui-ink) 100%);
-  border-top:2px solid var(--ui-line);
-  box-shadow:0 -12px 26px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.08);
+  padding:10px max(18px,env(safe-area-inset-right)) max(18px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left));
+  background:
+    radial-gradient(circle at 50% -28%,rgba(255,255,255,.28),transparent 34%),
+    linear-gradient(180deg,#b9c7df 0%,#89a0c7 16%,#536c97 50%,#2c3a57 100%);
+  border-top:2px solid rgba(232,244,255,.45);
+  box-shadow:0 -14px 32px rgba(0,0,0,.44),inset 0 2px 0 rgba(255,255,255,.28),inset 0 -10px 20px rgba(0,0,0,.22);
   transition:background .25s ease,border-color .25s ease;
+}
+body.theme-night #nui{
+  background:
+    radial-gradient(circle at 50% -28%,rgba(125,245,255,.18),transparent 34%),
+    linear-gradient(180deg,#284760 0%,#173347 16%,#0d2030 50%,#041017 100%);
+  border-top-color:rgba(126,246,255,.35);
+  box-shadow:0 -14px 32px rgba(0,0,0,.5),inset 0 2px 0 rgba(180,245,255,.14),inset 0 -10px 20px rgba(0,0,0,.34);
+}
+#nui-cluster{
+  position:relative;display:flex;align-items:center;justify-content:center;gap:18px;
+  min-width:min(92vw,370px);pointer-events:none;
 }
 /* the actual touch target — deliberately larger than the visible ring
    so a thumb landing near, not on, the ring still registers a move */
 #dpad{
-  position:relative;width:224px;height:224px;pointer-events:all;touch-action:none;
+  position:relative;width:232px;height:232px;pointer-events:all;touch-action:none;
   -webkit-tap-highlight-color:transparent;display:flex;align-items:center;justify-content:center;
   cursor:grab;
 }
-#dpad.grabbed #dpad-ring{border-color:var(--ui-cyan);box-shadow:0 7px 10px rgba(0,0,0,.4),0 0 0 5px rgba(184,200,142,.12)}
+#dpad::before{
+  content:"";position:absolute;inset:18px;border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.10),transparent 24%),linear-gradient(180deg,rgba(255,255,255,.08),rgba(0,0,0,.18));
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.12),inset 0 -6px 12px rgba(0,0,0,.24);
+}
+#dpad.grabbed #dpad-ring{border-color:var(--ui-cyan);box-shadow:0 10px 16px rgba(0,0,0,.42),0 0 0 6px rgba(184,200,142,.12)}
 #dpad-ring{
-  position:absolute;width:172px;height:172px;border-radius:50%;pointer-events:none;
-  background:radial-gradient(circle,#303630 0 28%,#171c18 29% 48%,transparent 49%);
-  border:2px solid var(--ui-line);filter:drop-shadow(0 7px 8px rgba(0,0,0,.35));
+  position:absolute;width:182px;height:182px;border-radius:50%;pointer-events:none;
+  background:
+    radial-gradient(circle at 50% 50%,transparent 0 41%,rgba(255,255,255,.03) 42% 43%,transparent 44%),
+    linear-gradient(180deg,#8ea2c6 0%,#5d759d 48%,#344565 100%);
+  border:2px solid rgba(214,232,236,.34);
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.25),inset 0 -6px 10px rgba(0,0,0,.28),0 9px 12px rgba(0,0,0,.35);
   transition:border-color .1s ease,box-shadow .1s ease;
 }
+body.theme-night #dpad-ring{
+  background:
+    radial-gradient(circle at 50% 50%,transparent 0 41%,rgba(126,246,255,.04) 42% 43%,transparent 44%),
+    linear-gradient(180deg,#17364b 0%,#0f2332 48%,#071219 100%);
+  border-color:rgba(126,246,255,.24);
+  box-shadow:inset 0 2px 0 rgba(180,245,255,.08),inset 0 -6px 10px rgba(0,0,0,.44),0 9px 12px rgba(0,0,0,.45);
+}
 #dpad-knob{
-  position:absolute;width:64px;height:64px;border-radius:50%;pointer-events:none;
-  background:linear-gradient(180deg,#8c9080,#4a4f45 55%,#2a2f28);border:1px solid #a3a493;
-  box-shadow:inset 0 2px 0 rgba(255,255,255,.2),0 4px 8px rgba(0,0,0,.4);
+  position:absolute;width:72px;height:72px;border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle at 38% 30%,#aaae9f 0%,#777c6d 36%,#4c5349 66%,#242b26 100%);
+  border:1px solid rgba(235,239,228,.65);
+  box-shadow:inset 0 3px 0 rgba(255,255,255,.26),inset 0 -8px 12px rgba(0,0,0,.32),0 3px 0 rgba(16,21,16,.55),0 8px 14px rgba(0,0,0,.42);
   transition:transform .15s cubic-bezier(.2,1.4,.4,1);
+}
+body.theme-night #dpad-knob{
+  background:radial-gradient(circle at 38% 30%,#6a7b82 0%,#3e5158 36%,#203138 66%,#0b1518 100%);
+  border-color:rgba(203,252,255,.46);
+  box-shadow:inset 0 3px 0 rgba(220,252,255,.18),inset 0 -8px 12px rgba(0,0,0,.44),0 3px 0 rgba(0,0,0,.65),0 8px 14px rgba(0,0,0,.52);
 }
 #dpad.grabbed #dpad-knob{transition:none;border-color:var(--ui-cyan)}
 .db-glyph{
-  position:absolute;pointer-events:none;color:var(--ui-muted);font-size:16px;
-  transition:color .1s ease,transform .1s ease;
+  position:absolute;pointer-events:none;color:rgba(233,245,228,.72);font-size:18px;font-weight:900;
+  text-shadow:0 1px 0 rgba(0,0,0,.28),0 -1px 0 rgba(255,255,255,.12);
+  transition:color .1s ease,transform .1s ease,text-shadow .1s ease;
 }
+body.theme-night .db-glyph{color:rgba(164,238,247,.74);text-shadow:0 0 6px rgba(74,224,255,.24)}
 .db-glyph.active{color:var(--ui-cyan);text-shadow:var(--glow);transform:scale(1.2)}
-#glyph-up{top:10px;left:50%;transform:translateX(-50%)}
-#glyph-down{bottom:10px;left:50%;transform:translateX(-50%)}
-#glyph-left{left:10px;top:50%;transform:translateY(-50%)}
-#glyph-right{right:10px;top:50%;transform:translateY(-50%)}
+#glyph-up{top:7px;left:50%;transform:translateX(-50%)}
+#glyph-down{bottom:7px;left:50%;transform:translateX(-50%)}
+#glyph-left{left:7px;top:50%;transform:translateY(-50%)}
+#glyph-right{right:7px;top:50%;transform:translateY(-50%)}
 .db-glyph.active#glyph-up{transform:translateX(-50%) scale(1.2)}
 .db-glyph.active#glyph-down{transform:translateX(-50%) scale(1.2)}
 .db-glyph.active#glyph-left{transform:translateY(-50%) scale(1.2)}
 .db-glyph.active#glyph-right{transform:translateY(-50%) scale(1.2)}
 #nui-pause{
-  position:fixed;top:14px;right:14px;z-index:60;pointer-events:all;touch-action:none;
+  position:relative;display:flex;width:58px;height:46px;align-items:center;justify-content:center;
+  align-self:flex-end;margin-bottom:30px;pointer-events:all;touch-action:none;
   -webkit-tap-highlight-color:transparent;appearance:none;border:0;cursor:pointer;
-  width:44px;height:36px;border-radius:15px;background:linear-gradient(180deg,#6f7168,#343a34);
-  border:1px solid #88897c;color:#e2e2cf;font-weight:900;
-  font-family:ui-monospace,monospace;font-size:12px;letter-spacing:1.5px;align-items:center;justify-content:center;
+  border-radius:18px;background:linear-gradient(180deg,#b6b9af 0%,#7b8075 50%,#4b5248 100%);
+  border:1px solid rgba(244,244,232,.62);color:#e6e8da;font-weight:900;
+  font-family:ui-monospace,monospace;font-size:16px;letter-spacing:2px;
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.26),inset 0 -6px 10px rgba(0,0,0,.26),0 4px 0 rgba(21,26,20,.55),0 10px 16px rgba(0,0,0,.28);
 }
-#nui-pause:active{background:rgba(60,190,255,.14);color:#00ffff}
+#nui-pause::before{
+  content:"PAUSE";position:absolute;bottom:-16px;left:50%;transform:translateX(-50%);
+  font-size:8px;letter-spacing:.18em;color:rgba(230,240,224,.66);font-weight:900;pointer-events:none;
+}
+body.theme-night #nui-pause{
+  background:linear-gradient(180deg,#2f5563 0%,#183846 50%,#0c1b22 100%);
+  border-color:rgba(199,252,255,.36);color:#dffcff;
+  box-shadow:inset 0 2px 0 rgba(225,253,255,.14),inset 0 -6px 10px rgba(0,0,0,.42),0 4px 0 rgba(0,0,0,.65),0 10px 16px rgba(0,0,0,.42);
+}
+#nui-pause:active{transform:translateY(2px);box-shadow:inset 0 2px 5px rgba(0,0,0,.28),0 2px 0 rgba(21,26,20,.55)}
+body.theme-night #nui-pause:active{box-shadow:inset 0 2px 5px rgba(0,0,0,.5),0 2px 0 rgba(0,0,0,.65)}
+@media(pointer:fine){
+  #nui-pause{
+    display:flex;position:fixed;right:18px;bottom:18px;z-index:60;pointer-events:all;
+    width:54px;height:44px;margin:0;
+  }
+}
 
 /* ── HUD bar — score, sound, best & theme all live in one crisp strip,
    rendered as real DOM text (never the pixel-scaled game backbuffer) so
@@ -199,9 +254,6 @@ body.theme-night{
 #mute-btn.on{color:var(--ui-ink);background:linear-gradient(180deg,var(--ui-cyan),var(--ui-blue) 70%);border-color:var(--ui-gold)}
 #theme-btn{min-width:44px;text-align:center}
 
-@media(pointer:coarse){
-  #nui-pause{top:calc(var(--hud-h,44px) + max(8px,env(safe-area-inset-top)))}
-}
 @media(max-width:380px){
   .hud-score,.hud-best{font-size:10px}
   .hud-btn{padding:5px 7px;font-size:8.5px}
@@ -244,11 +296,12 @@ body.theme-night{
   .arcade-btn{min-height:42px;margin-top:5px}.g-how{margin-top:8px;padding-top:8px;max-height:22vh;overflow:auto}
 }
 @media(pointer:coarse) and (orientation:landscape){
-  #nui{--nui-h:128px;justify-content:flex-end;padding-right:max(18px,env(safe-area-inset-right))}
-  #dpad{transform:scale(.72);transform-origin:center}
+  #nui{--nui-h:138px;justify-content:center;padding-right:max(18px,env(safe-area-inset-right))}
+  #nui-cluster{gap:14px;min-width:min(86vw,320px)}
+  #dpad{transform:scale(.72);transform-origin:center;width:204px;height:204px}
+  #nui-pause{transform:scale(.92);transform-origin:center;margin-bottom:12px}
   #hud-bar{--hud-h:38px}
   .hud-btn{padding:5px 8px;font-size:8.5px}
-  #nui-pause{top:calc(var(--hud-h,38px) + max(8px,env(safe-area-inset-top)));right:max(8px,env(safe-area-inset-right))}
 }
 </style>
 </head>
@@ -299,15 +352,17 @@ body.theme-night{
 </div>
 
 <!-- ── Touch controls ─────────────────────────────────────────────── -->
-<button id="nui-pause">II</button>
 <div id="nui">
-  <div id="dpad">
-    <div id="dpad-ring"></div>
-    <div class="db-glyph" id="glyph-up">▲</div>
-    <div class="db-glyph" id="glyph-down">▼</div>
-    <div class="db-glyph" id="glyph-left">◀</div>
-    <div class="db-glyph" id="glyph-right">▶</div>
-    <div id="dpad-knob"></div>
+  <div id="nui-cluster">
+    <div id="dpad">
+      <div id="dpad-ring"></div>
+      <div class="db-glyph" id="glyph-up">▲</div>
+      <div class="db-glyph" id="glyph-down">▼</div>
+      <div class="db-glyph" id="glyph-left">◀</div>
+      <div class="db-glyph" id="glyph-right">▶</div>
+      <div id="dpad-knob"></div>
+    </div>
+    <button id="nui-pause" aria-label="Pause game">II</button>
   </div>
 </div>
 
