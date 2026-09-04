@@ -79,44 +79,26 @@
       linear-gradient(90deg,rgba(19,34,63,.28),transparent 26%,transparent 74%,rgba(19,34,63,.22));
   }
 
-  /* Brazen Studios corner device: a small FTS-style technical monogram. */
+  /* corner monogram, echoes the Brazen Studios folded-corner mark */
   .monogram{
     position:absolute;
-    top:18px; left:18px;
-    z-index:6;
-    width:48px; height:48px;
+    top:0; left:0;
+    z-index:4;
+    width:52px; height:52px;
+    background:var(--navy);
+    clip-path:polygon(0 0,100% 0,0 100%);
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    justify-content:flex-start;
+    padding:7px 0 0 8px;
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:12px;
+    line-height:1.05;
+    letter-spacing:.02em;
     color:var(--paper);
-    background:
-      linear-gradient(135deg,rgba(19,34,63,.98),rgba(9,13,22,.88));
-    border-right:1px solid var(--hairline-strong);
-    border-bottom:1px solid var(--hairline-strong);
-    clip-path:polygon(14px 0,100% 0,100% 100%,0 100%,0 14px);
-    font:600 11px/1 'Inter',sans-serif;
-    letter-spacing:.08em;
-    text-transform:uppercase;
-    box-shadow:0 10px 30px rgba(0,0,0,.22);
-    pointer-events:none;
   }
-  .monogram::before{
-    content:"";
-    position:absolute;
-    left:10px; right:10px; top:23px;
-    height:1px;
-    background:linear-gradient(90deg,transparent,var(--navy-bright),transparent);
-    transform:rotate(-45deg);
-    transform-origin:center;
-    opacity:.85;
-  }
-  .monogram::after{
-    content:"";
-    position:absolute;
-    inset:5px;
-    border:1px solid rgba(245,242,234,.08);
-    clip-path:polygon(9px 0,100% 0,100% 100%,0 100%,0 9px);
-  }
-  .monogram span{position:absolute;z-index:1}
-  .monogram .mono-b{top:9px;left:11px}
-  .monogram .mono-s{right:9px;bottom:8px}
 
   .page-tab{
     position:absolute;
@@ -138,7 +120,6 @@
 
   .chrome{
     margin:18px;
-    padding-right:34px;
     border:1px solid var(--hairline);
     clip-path:polygon(var(--cut) 0,100% 0,100% calc(100% - var(--cut)),calc(100% - var(--cut)) 100%,0 100%,0 var(--cut));
     background:linear-gradient(180deg,rgba(11,22,38,.16),rgba(11,22,38,.06));
@@ -155,7 +136,7 @@
     opacity:.8;
   }
   .chrome::before{left:18px;top:-1px}
-  .chrome::after{right:52px;bottom:-1px;transform:rotate(180deg)}
+  .chrome::after{right:18px;bottom:-1px;transform:rotate(180deg)}
 
   header{
     display:flex;
@@ -371,40 +352,22 @@
   }
   .pill:hover{border-color:var(--navy-bright);background:rgba(85,120,194,.14)}
 
-  /* Dedicated signal rail: vertical typography gets its own lane. */
   .ticker{
     position:absolute;
-    top:0; right:0; bottom:0;
-    width:34px;
-    z-index:3;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    overflow:hidden;
-    border-left:1px solid rgba(245,242,234,.13);
-    background:linear-gradient(180deg,rgba(11,22,38,.32),rgba(7,7,10,.42));
-    color:rgba(245,242,234,.34);
-    writing-mode:vertical-rl;
-    transform:rotate(180deg);
-    white-space:nowrap;
-    font:500 9px/1 'Inter',sans-serif;
+    top:50%;
+    right:-108px;
+    transform:rotate(90deg) translateY(-50%);
+    transform-origin:center;
+    color:rgba(245,242,234,.32);
+    font:500 10px/1 'Inter',sans-serif;
     letter-spacing:.18em;
     text-transform:uppercase;
+    z-index:2;
     pointer-events:none;
-  }
-  .ticker::before,
-  .ticker::after{
-    content:"";
-    width:1px;
-    height:28px;
-    background:linear-gradient(180deg,transparent,var(--navy-bright),transparent);
-    margin:12px 0;
-    opacity:.8;
   }
 
   @media(max-width:900px){
-    .chrome{margin:10px;padding-right:0}
-    .monogram{top:10px;left:10px}
+    .chrome{margin:10px}
     main{grid-template-columns:1fr;align-items:end;padding-top:64px}
     .console{justify-self:stretch;width:100%;max-width:none}
     .ticker{display:none}
@@ -422,10 +385,7 @@
     .declaration{font-size:19px}
     footer{padding:13px}
     .linkrow{grid-template-columns:34px 1fr auto;padding-left:10px;padding-right:10px}
-    .monogram{width:42px;height:42px;font-size:10px}
-    .monogram::before{top:20px;left:8px;right:8px}
-    .monogram .mono-b{top:8px;left:9px}
-    .monogram .mono-s{right:8px;bottom:7px}
+    .monogram{width:44px;height:44px;font-size:10px}
     .page-tab{width:46px;height:46px;font-size:9px}
   }
 
@@ -438,11 +398,11 @@
 <body>
 
 <section class="stage">
-  <div class="monogram" aria-label="Brazen Studios monogram"><span class="mono-b">B</span><span class="mono-s">S</span></div>
+  <div class="monogram" aria-hidden="true">B<br>S</div>
   <div class="page-tab" aria-hidden="true">01</div>
+  <div class="ticker">BRAZEN STUDIOS / FRYMATIC / SIGNAL ACTIVE / LIVERMORE → ELSEWHERE</div>
 
   <div class="chrome">
-    <div class="ticker" aria-hidden="true">BRAZEN STUDIOS / FRYMATIC / SIGNAL ACTIVE / LIVERMORE → ELSEWHERE</div>
     <header>
       <div class="brandlock">
         <b>frymatic</b>
