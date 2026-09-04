@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>frymatic — Brazen Studios</title>
+<meta name="description" content="frymatic — games, systems, sound, field experiments, and other Brazen properties.">
+<meta name="theme-color" content="#0d1b33">
+
+<meta property="og:title" content="frymatic">
+<meta property="og:description" content="Games, systems, sound, field experiments, and other Brazen properties.">
+<meta property="og:image" content="jaguar-fry.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Trattatello&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --ink:#07070a;
+    --navy:#13223f;
+    --navy-deep:#0b1626;
+    --navy-bright:#5578c2;
+    --paper:#f5f2ea;
+    --soft:#9aa1ac;
+    --hairline:rgba(245,242,234,.22);
+    --hairline-strong:rgba(245,242,234,.34);
+    --glass:rgba(9,13,22,.5);
+    --glass-heavy:rgba(9,13,22,.8);
+    --shadow:0 24px 64px rgba(0,0,0,.42);
+    --cut:14px;
+  }
+
+  *{box-sizing:border-box}
+  html{background:var(--ink);scroll-behavior:smooth}
+  body{
+    margin:0;
+    min-height:100svh;
+    color:var(--paper);
+    font-family:'Inter',sans-serif;
+    background:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  a{color:inherit;text-decoration:none}
+  button,a{font:inherit}
+  ::selection{background:var(--navy-bright);color:#fff}
+
+  .stage{
+    position:relative;
+    min-height:100svh;
+    display:grid;
+    grid-template-rows:auto 1fr auto;
+    isolation:isolate;
+    overflow:hidden;
+  }
+
+  .stage::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    z-index:-4;
+    background:
+      linear-gradient(180deg,rgba(7,7,10,.10),rgba(7,7,10,.16) 38%,rgba(7,7,10,.80) 86%,rgba(7,7,10,.97)),
+      url('jaguar-fry.png') center 30% / cover no-repeat;
+    transform:scale(1.012);
+  }
+
+  .stage::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    z-index:-3;
+    pointer-events:none;
+    background:
+      radial-gradient(80% 58% at 50% 30%,transparent 0 54%,rgba(0,0,0,.32) 100%),
+      linear-gradient(90deg,rgba(19,34,63,.28),transparent 26%,transparent 74%,rgba(19,34,63,.22));
+  }
+
+  /* Brazen Studios corner device: a small FTS-style technical monogram. */
+  .monogram{
+    position:absolute;
+    top:18px; left:18px;
+    z-index:6;
+    width:48px; height:48px;
+    color:var(--paper);
+    background:
+      linear-gradient(135deg,rgba(19,34,63,.98),rgba(9,13,22,.88));
+    border-right:1px solid var(--hairline-strong);
+    border-bottom:1px solid var(--hairline-strong);
+    clip-path:polygon(14px 0,100% 0,100% 100%,0 100%,0 14px);
+    font:600 11px/1 'Inter',sans-serif;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    box-shadow:0 10px 30px rgba(0,0,0,.22);
+    pointer-events:none;
+  }
+  .monogram::before{
+    content:"";
+    position:absolute;
+    left:10px; right:10px; top:23px;
+    height:1px;
+    background:linear-gradient(90deg,transparent,var(--navy-bright),transparent);
+    transform:rotate(-45deg);
+    transform-origin:center;
+    opacity:.85;
+  }
+  .monogram::after{
+    content:"";
+    position:absolute;
+    inset:5px;
+    border:1px solid rgba(245,242,234,.08);
+    clip-path:polygon(9px 0,100% 0,100% 100%,0 100%,0 9px);
+  }
+  .monogram span{position:absolute;z-index:1}
+  .monogram .mono-b{top:9px;left:11px}
+  .monogram .mono-s{right:9px;bottom:8px}
+
+  .page-tab{
+    position:absolute;
+    bottom:0; right:0;
+    z-index:4;
+    width:56px; height:56px;
+    background:var(--navy);
+    clip-path:polygon(100% 0,100% 100%,0 100%);
+    display:flex;
+    align-items:flex-end;
+    justify-content:flex-end;
+    padding:0 8px 7px 0;
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:11px;
+    letter-spacing:.06em;
+    color:var(--paper);
+  }
+
+  .chrome{
+    margin:18px;
+    padding-right:34px;
+    border:1px solid var(--hairline);
+    clip-path:polygon(var(--cut) 0,100% 0,100% calc(100% - var(--cut)),calc(100% - var(--cut)) 100%,0 100%,0 var(--cut));
+    background:linear-gradient(180deg,rgba(11,22,38,.16),rgba(11,22,38,.06));
+    box-shadow:inset 0 0 0 1px rgba(0,0,0,.28);
+    position:relative;
+  }
+  .chrome::before,
+  .chrome::after{
+    content:"";
+    position:absolute;
+    width:54px;
+    height:1px;
+    background:linear-gradient(90deg,var(--navy-bright),transparent);
+    opacity:.8;
+  }
+  .chrome::before{left:18px;top:-1px}
+  .chrome::after{right:52px;bottom:-1px;transform:rotate(180deg)}
+
+  header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:20px;
+    padding:16px 20px 16px 68px;
+    background:linear-gradient(90deg,rgba(11,22,38,.62),rgba(11,22,38,.12));
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--hairline);
+  }
+
+  .brandlock{ min-width:0; }
+  .brandlock b{
+    display:block;
+    font:600 12px/1 'Inter',sans-serif;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+  }
+  .brandlock span{
+    display:block;
+    margin-top:5px;
+    color:var(--soft);
+    font:500 10px/1.1 'Inter',sans-serif;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    white-space:nowrap;
+  }
+
+  .status{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    color:var(--soft);
+    font:500 10px/1 'Inter',sans-serif;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+  }
+  .status::before{
+    content:"";
+    width:6px;height:6px;border-radius:50%;
+    background:var(--navy-bright);
+    box-shadow:0 0 12px var(--navy-bright);
+  }
+
+  main{
+    display:grid;
+    grid-template-columns:minmax(0,1.2fr) minmax(300px,.8fr);
+    align-items:end;
+    gap:32px;
+    padding:clamp(40px,7vw,88px) clamp(24px,4vw,60px) 30px;
+  }
+
+  .identity{
+    align-self:end;
+    max-width:900px;
+    display:flex;
+    flex-direction:column;
+  }
+
+  .eyebrow{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin:0 0 20px;
+    color:var(--navy-bright);
+    font:600 11px/1 'Inter',sans-serif;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+  }
+  .eyebrow::before{content:"";width:36px;height:1px;background:currentColor}
+
+  h1{
+    margin:0;
+    padding:0.12em 0 0.2em;
+    font-family:'Trattatello','Inter',cursive;
+    font-weight:400;
+    line-height:1;
+    font-size:clamp(58px,10.5vw,148px);
+    color:var(--paper);
+    text-shadow:0 10px 34px rgba(0,0,0,.45);
+    letter-spacing:.01em;
+  }
+
+  .declaration{
+    max-width:38ch;
+    margin:22px 0 0;
+    font-family:'EB Garamond',serif;
+    font-style:italic;
+    font-size:clamp(20px,2vw,28px);
+    line-height:1.28;
+    font-weight:500;
+    color:var(--paper);
+  }
+  .declaration strong{ font-style:normal; color:var(--navy-bright); font-weight:500; }
+
+  .smallprint{
+    max-width:58ch;
+    margin:20px 0 0;
+    color:var(--soft);
+    font:400 13px/1.6 'Inter',sans-serif;
+    letter-spacing:.01em;
+  }
+
+  .console{
+    width:min(100%,430px);
+    justify-self:end;
+    background:var(--glass-heavy);
+    border:1px solid var(--hairline);
+    backdrop-filter:blur(18px) saturate(1.1);
+    box-shadow:var(--shadow);
+    clip-path:polygon(14px 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,0 100%,0 14px);
+  }
+  .console-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    padding:13px 16px;
+    border-bottom:1px solid var(--hairline);
+    font:600 10px/1 'Inter',sans-serif;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+  }
+  .console-head span:last-child{ color:var(--soft); font-weight:500; font-variant-numeric:tabular-nums; }
+
+  .linkstack{display:grid}
+  .linkrow{
+    min-height:58px;
+    display:grid;
+    grid-template-columns:38px 1fr auto;
+    align-items:center;
+    gap:12px;
+    padding:9px 16px;
+    border-bottom:1px solid rgba(245,242,234,.1);
+    transition:background .16s ease,transform .16s ease;
+    position:relative;
+  }
+  .linkrow:last-child{border-bottom:0}
+  .linkrow:hover{background:rgba(245,242,234,.06)}
+  .linkrow:focus-visible{outline:2px solid var(--navy-bright);outline-offset:-2px}
+  .linkrow::before{
+    content:"";
+    position:absolute;left:0;top:0;bottom:0;width:2px;
+    background:var(--navy-bright);
+    transform:scaleY(0);
+    transform-origin:center;
+    transition:transform .16s ease;
+  }
+  .linkrow:hover::before{transform:scaleY(1)}
+  .link-icon{
+    width:34px;height:34px;
+    display:grid;place-items:center;
+    border:1px solid var(--hairline-strong);
+    font:600 11px/1 'Inter',sans-serif;
+    letter-spacing:.02em;
+    background:rgba(0,0,0,.2);
+    color:var(--paper);
+  }
+  .link-copy b{
+    display:block;
+    font-family:'EB Garamond',serif;
+    font-weight:500;
+    font-size:18px;
+    line-height:1.1;
+    letter-spacing:.01em;
+  }
+  .link-copy span{
+    display:block;
+    margin-top:4px;
+    color:var(--soft);
+    font:500 10px/1.2 'Inter',sans-serif;
+    letter-spacing:.05em;
+    text-transform:uppercase;
+  }
+  .arrow{
+    font:600 13px/1 'Inter',sans-serif;
+    color:var(--soft);
+    transition:transform .16s ease,color .16s ease;
+  }
+  .linkrow:hover .arrow{transform:translateX(3px);color:var(--paper)}
+
+  footer{
+    display:flex;
+    align-items:end;
+    justify-content:space-between;
+    gap:24px;
+    padding:16px 20px;
+    border-top:1px solid var(--hairline);
+    background:var(--navy-deep);
+  }
+  .footer-left{
+    color:var(--soft);
+    font:400 10px/1.6 'Inter',sans-serif;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+  }
+  .footer-left b{ color:var(--paper); font-weight:600; letter-spacing:.1em; }
+  .network{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:flex-end;
+    gap:8px;
+  }
+  .pill{
+    padding:7px 11px;
+    border:1px solid var(--hairline-strong);
+    background:rgba(0,0,0,.2);
+    font:500 10px/1 'Inter',sans-serif;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    transition:border-color .15s ease,background .15s ease;
+  }
+  .pill:hover{border-color:var(--navy-bright);background:rgba(85,120,194,.14)}
+
+  /* Dedicated signal rail: vertical typography gets its own lane. */
+  .ticker{
+    position:absolute;
+    top:0; right:0; bottom:0;
+    width:34px;
+    z-index:3;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+    border-left:1px solid rgba(245,242,234,.13);
+    background:linear-gradient(180deg,rgba(11,22,38,.32),rgba(7,7,10,.42));
+    color:rgba(245,242,234,.34);
+    writing-mode:vertical-rl;
+    transform:rotate(180deg);
+    white-space:nowrap;
+    font:500 9px/1 'Inter',sans-serif;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+    pointer-events:none;
+  }
+  .ticker::before,
+  .ticker::after{
+    content:"";
+    width:1px;
+    height:28px;
+    background:linear-gradient(180deg,transparent,var(--navy-bright),transparent);
+    margin:12px 0;
+    opacity:.8;
+  }
+
+  @media(max-width:900px){
+    .chrome{margin:10px;padding-right:0}
+    .monogram{top:10px;left:10px}
+    main{grid-template-columns:1fr;align-items:end;padding-top:64px}
+    .console{justify-self:stretch;width:100%;max-width:none}
+    .ticker{display:none}
+    h1{font-size:clamp(54px,15vw,104px)}
+    footer{align-items:flex-start;flex-direction:column}
+    .network{justify-content:flex-start}
+  }
+
+  @media(max-width:560px){
+    header{padding:14px 14px 14px 60px}
+    .brandlock span{display:none}
+    .status{font-size:9px}
+    main{padding:48px 14px 14px;gap:24px}
+    h1{font-size:clamp(48px,17vw,80px)}
+    .declaration{font-size:19px}
+    footer{padding:13px}
+    .linkrow{grid-template-columns:34px 1fr auto;padding-left:10px;padding-right:10px}
+    .monogram{width:42px;height:42px;font-size:10px}
+    .monogram::before{top:20px;left:8px;right:8px}
+    .monogram .mono-b{top:8px;left:9px}
+    .monogram .mono-s{right:8px;bottom:7px}
+    .page-tab{width:46px;height:46px;font-size:9px}
+  }
+
+  @media(prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    *{transition:none!important}
+  }
+</style>
+</head>
+<body>
+
+<section class="stage">
+  <div class="monogram" aria-label="Brazen Studios monogram"><span class="mono-b">B</span><span class="mono-s">S</span></div>
+  <div class="page-tab" aria-hidden="true">01</div>
+
+  <div class="chrome">
+    <div class="ticker" aria-hidden="true">BRAZEN STUDIOS / FRYMATIC / SIGNAL ACTIVE / LIVERMORE → ELSEWHERE</div>
+    <header>
+      <div class="brandlock">
+        <b>frymatic</b>
+        <span>a Brazen Studios property</span>
+      </div>
+      <div class="status">signal active</div>
+    </header>
+
+    <main>
+      <section class="identity" aria-labelledby="title">
+        <div class="eyebrow">field node 001</div>
+        <h1 id="title">frymatic</h1>
+        <p class="declaration">Games, systems, sound, publishing, and <strong>strange machinery that insists on becoming real.</strong></p>
+        <p class="smallprint">A live index of current work, experiments, playable properties, recordings, and transmissions from the Brazen Studios network.</p>
+      </section>
+
+      <aside class="console" aria-label="Current properties and channels">
+        <div class="console-head"><span>current signals</span><span>07 routes</span></div>
+        <nav class="linkstack">
+          <a class="linkrow" href="/menu">
+            <span class="link-icon">HC</span>
+            <span class="link-copy"><b>Hell's Chicken</b><span>digital menu &amp; marketing</span></span>
+            <span class="arrow">→</span>
+          </a>
+          <a class="linkrow" href="/FTSArcade">
+            <span class="link-icon">FTS</span>
+            <span class="link-copy"><b>FTS Arcade</b><span>playable cabinet network</span></span>
+            <span class="arrow">→</span>
+          </a>
+          <a class="linkrow" href="/FTSArcade/REDEYE">
+            <span class="link-icon">RE</span>
+            <span class="link-copy"><b>Red Eye</b><span>real-world game server</span></span>
+            <span class="arrow">→</span>
+          </a>
+          <a class="linkrow" href="/found-my">
+            <span class="link-icon">FM</span>
+            <span class="link-copy"><b>Found My</b><span>identity wallpaper utility</span></span>
+            <span class="arrow">→</span>
+          </a>
+          <a class="linkrow" href="https://soundcloud.com/mofrymatic" target="_blank" rel="noopener">
+            <span class="link-icon">SC</span>
+            <span class="link-copy"><b>SoundCloud</b><span>music + audio experiments</span></span>
+            <span class="arrow">↗</span>
+          </a>
+          <a class="linkrow" href="https://open.spotify.com/episode/2eqoxhbQeGRqBv6AeEtAYS" target="_blank" rel="noopener">
+            <span class="link-icon">SP</span>
+            <span class="link-copy"><b>Spotify</b><span>featured transmission</span></span>
+            <span class="arrow">↗</span>
+          </a>
+          <a class="linkrow" href="https://www.x.com/mofrymatic" target="_blank" rel="noopener">
+            <span class="link-icon">X</span>
+            <span class="link-copy"><b>@mofrymatic</b><span>dispatches + public signal</span></span>
+            <span class="arrow">↗</span>
+          </a>
+        </nav>
+      </aside>
+    </main>
+
+    <footer>
+      <div class="footer-left">
+        <b>© 2026 Frymatic / Brazen Studios, Inc.</b><br>
+        instantiate the world. then move the camera.
+      </div>
+      <nav class="network" aria-label="Network links">
+        <a class="pill" href="/menu">Menu</a>
+        <a class="pill" href="/FTSArcade">Arcade</a>
+        <a class="pill" href="/FTSArcade/REDEYE">Red Eye</a>
+        <a class="pill" href="https://soundcloud.com/mofrymatic" target="_blank" rel="noopener">Sound</a>
+        <a class="pill" href="https://www.x.com/mofrymatic" target="_blank" rel="noopener">X</a>
+        <a class="pill" href="https://github.com/frymatic" target="_blank" rel="noopener">GitHub</a>
+      </nav>
+    </footer>
+  </div>
+</section>
+
+</body>
+</html>
