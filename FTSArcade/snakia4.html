@@ -126,7 +126,6 @@ body.theme-night{
   border:1px solid #8c8b7d;color:#e4e3d0;border-radius:16px 16px 11px 11px;box-shadow:inset 0 2px 0 rgba(255,255,255,.16),0 4px 0 #111511,0 7px 12px rgba(0,0,0,.24)}
 .step-value{display:grid;place-items:center;background:#d2d845;color:#2f3612;
   font-size:14px;font-weight:900;letter-spacing:.1em;border:3px solid #101510;border-radius:3px;box-shadow:inset 0 0 10px rgba(40,55,35,.22)}
-.pattern-stepper{margin-top:10px;margin-bottom:4px}.pattern-stepper .step-value{font-size:11px;letter-spacing:.07em}
 .step-label{margin-top:-2px;margin-bottom:10px;color:var(--ui-muted);font-size:9px;letter-spacing:.2em;text-align:center}
 .arcade-btn{
   width:100%;min-height:48px;margin-top:8px;border-radius:18px 18px 12px 12px;font-family:inherit;
@@ -456,12 +455,6 @@ body.theme-night #zoom-reset{
       <div class="step-value" id="level-value">SPEED 3</div>
       <button class="step-btn" id="level-up">+</button>
     </div>
-    <div class="stepper pattern-stepper">
-      <button class="step-btn" id="pattern-down">−</button>
-      <div class="step-value" id="pattern-value">PATTERN PYTHON</div>
-      <button class="step-btn" id="pattern-up">+</button>
-    </div>
-    <div class="step-label">SKIN MORPH · PROCEDURAL SEED</div>
     <button class="arcade-btn primary" id="menu-start">START</button>
     <button class="arcade-btn ghost" id="menu-how">HOW TO PLAY</button>
     <div class="g-how" id="how-panel">
@@ -1442,13 +1435,8 @@ body.theme-night #zoom-reset{
     if (allowWave && spine.length>3){
       const n=gs.snake.length;
       const growth=clamp01((n-3)/30);
-      // Lateral undulation is a travelling wave, not static decorative wiggle.
-      // Phase advances with real time while increasing down-body lag makes curvature
-      // propagate from head to tail. Steering history remains the large-scale spine.
-      const amp=CELL*(0.030 + growth*0.055);
-      // Locomotor phase belongs to the animal, not wall-clock time. It advances
-      // only while alive and moving, so PAUSE and DEATH freeze every scale.
-      const phase=gs.motionPhase + n*0.173;
+      const amp=CELL*(0.022 + growth*0.040);
+      const phase=n*0.713;
       const shifted=spine.map((p,i)=>({ ...p }));
       for (let i=1;i<spine.length-1;i++){
         const a=spine[Math.max(0,i-1)], b=spine[Math.min(spine.length-1,i+1)];
@@ -1456,10 +1444,7 @@ body.theme-night #zoom-reset{
         const u=spine[i].s/denom;
         const envelope=Math.pow(Math.sin(Math.PI*u),0.72);
         const calm=1-Math.min(0.92,(spine[i].bend||0)*0.90);
-        const wavelength=Math.max(3.4, 5.2-growth*.7);
-        const wavePhase=(spine[i].s/Math.max(1,CELL))*(Math.PI*2/wavelength) - phase;
-        const posteriorGain=.72 + .38*u;
-        const wiggle=Math.sin(wavePhase) * amp * envelope * calm * posteriorGain;
+        const wiggle=Math.sin((spine[i].s/Math.max(1,CELL))*2.15 + phase) * amp * envelope * calm;
         // A turning snake does not wrap itself around an invisible plumbing
         // elbow. Its center of mass leans slightly toward the OUTSIDE of the
         // bend while the inside folds. This small offset breaks the perfect
@@ -1629,7 +1614,6 @@ body.theme-night #zoom-reset{
     const bright2 = theme==='night'
       ? lcdRamp(0.86,dimmed).light
       : rgbStr(mix(LCD_DAY.INK,LCD_DAY.GLASS,dimmed?0.30:0.56));
-    const morph=currentPattern();
 
     ctx.save();
     traceRibbon(spine,n,0.91);
@@ -1640,17 +1624,13 @@ body.theme-night #zoom-reset{
     const rowSet = rows===2 ? [-0.24,0.24] : [-0.31,0,0.31];
     // Larger, readable labyrinths rather than texture-noise. Each mark still
     // lives below one logical cell, but now the eye can actually follow it.
-    // MATERIAL SKIN COORDINATES. Pattern stations are indexed by anatomical
-    // distance from head to tail, not by the current wiggling arc length.
-    // The centerline may bend, compress and stretch underneath them, but the
-    // markings cannot conveyor-belt along the animal.
-    const materialStep=Math.max(0.030, 0.055-Math.min(0.010,ornament*0.00035));
-    let nextU=0.045, k=0;
+    const spacing=Math.max(2.25,CELL*(0.33-Math.min(0.035,ornament*0.0012)));
+    let next=CELL*.12, k=0;
 
     for (let i=0;i<spine.length;i++){
       const p=spine[i];
-      if (p.u+0.0001<nextU) continue;
-      while (nextU<=p.u) nextU+=materialStep;
+      if (p.s+0.001<next) continue;
+      while (next<=p.s) next+=spacing;
       if (p.u<0.035 || p.u>0.955) continue;
       const width=CELL*snakeWidthFracAt(p.u,n);
       if (width<2.8) continue;
@@ -1673,43 +1653,7 @@ body.theme-night #zoom-reset{
           drawPlateOutline(motifL*1.18,bandH*1.78,bright2);
         }
         ctx.globalAlpha=0.96;
-        const hv=skinHash(k,r,ornament);
-        if (morph==='PYTHON'){
-          // Python morph: large pale dorsal islands bounded by dark, irregular
-          // hourglass/arrowhead seams. Fine scale pixels are subordinate.
-          const dorsal = rows===3 ? r===1 : r===0;
-          const period = 4 + ((skinSeed>>>3)&1);
-          const phaseK = k % period;
-          const island = dorsal ? (phaseK===0 || phaseK===1) : ((k+r+(skinSeed&3))%6===0);
-          if(island){
-            const sw=motifL*(.62+hv*.24), sh=bandH*(.72+skinHash(k,r,2)*.24);
-            ctx.fillStyle=bright;
-            ctx.beginPath();
-            ctx.moveTo(-sw*.58,0);ctx.lineTo(-sw*.30,-sh*.82);ctx.lineTo(sw*.18,-sh);
-            ctx.lineTo(sw*.58,-sh*.18);ctx.lineTo(sw*.50,sh*.28);ctx.lineTo(sw*.12,sh);
-            ctx.lineTo(-sw*.34,sh*.78);ctx.closePath();ctx.fill();
-            ctx.globalAlpha=.82; ctx.strokeStyle=ink.border; ctx.lineWidth=Math.max(1,CELL*.045); ctx.stroke();
-            // A restrained stipple suggests individual scales without muddying
-            // the macro blotch silhouette.
-            if(stage>=2 && hv>.34){ctx.fillStyle=bright2;ctx.globalAlpha=.55;const d=Math.max(1,CELL*.026);ctx.fillRect(-sw*.10,-d*.5,d,d);}
-          } else if(!dorsal && stage>=3 && hv>.82){
-            ctx.fillStyle=bright2;ctx.globalAlpha=.65;ctx.beginPath();ctx.moveTo(-2,0);ctx.lineTo(0,-2);ctx.lineTo(2,0);ctx.lineTo(0,2);ctx.closePath();ctx.fill();
-          }
-        } else if(morph==='DIAMOND'){
-          ctx.strokeStyle=bright;ctx.lineWidth=Math.max(1,CELL*.035);ctx.beginPath();ctx.moveTo(-motifL*.32,0);ctx.lineTo(0,-bandH*.58);ctx.lineTo(motifL*.32,0);ctx.lineTo(0,bandH*.58);ctx.closePath();ctx.stroke();
-        } else if(morph==='BANDED'){
-          ctx.strokeStyle=bright;ctx.lineWidth=Math.max(1,CELL*.07);ctx.beginPath();ctx.moveTo(0,-bandH*.8);ctx.lineTo(0,bandH*.8);ctx.stroke();
-        } else if(morph==='CHAIN'){
-          ctx.strokeStyle=bright;ctx.lineWidth=Math.max(1,CELL*.034);ctx.beginPath();ctx.ellipse(0,0,motifL*.23,bandH*.48,0,0,Math.PI*2);ctx.stroke();
-        } else if(morph==='SPECKLED'){
-          ctx.fillStyle=bright; const rr=Math.max(.8,CELL*(.025+hv*.035)); ctx.beginPath();ctx.arc((hv-.5)*motifL*.45,(skinHash(k,r,5)-.5)*bandH,rr,0,Math.PI*2);ctx.fill();
-        } else if(morph==='STRIPED'){
-          ctx.strokeStyle=bright;ctx.lineWidth=Math.max(1,CELL*.045);ctx.beginPath();ctx.moveTo(-motifL*.55,0);ctx.lineTo(motifL*.55,0);ctx.stroke();
-        } else if(morph==='ROSETTE'){
-          ctx.strokeStyle=bright;ctx.lineWidth=Math.max(1,CELL*.032);ctx.beginPath();ctx.arc(0,0,Math.max(1,bandH*.42),0,Math.PI*2);ctx.stroke();ctx.fillStyle=bright2;ctx.fillRect(-1,-1,2,2);
-        } else {
-          drawMeanderMotif((k*3+r*5+ornament)%5,motifL,bandH,bright,bright2,stage);
-        }
+        drawMeanderMotif((k*3+r*5+ornament)%5,motifL,bandH,bright,bright2,stage);
         ctx.restore();
       }
       k++;
@@ -1717,7 +1661,7 @@ body.theme-night #zoom-reset{
 
     // Sparse transverse contour locks divide the flowing maze into larger
     // anatomical scale-fields. They are intentionally imperfectly spaced.
-    if (CELL>=7 && morph==='SIGIL'){
+    if (CELL>=7){
       const plateEvery=Math.max(CELL*1.12,6.0);
       let mark=plateEvery*(0.44 + (ornament%3)*0.10);
       ctx.strokeStyle=bright2;ctx.globalAlpha=0.38;ctx.lineWidth=Math.max(0.9,CELL*.030);
@@ -1873,17 +1817,6 @@ body.theme-night #zoom-reset{
   }
 
 
-  // ── procedural skin morphs ───────────────────────────────────────
-  const PATTERNS = ['PYTHON','DIAMOND','BANDED','CHAIN','SPECKLED','STRIPED','ROSETTE','SIGIL'];
-  let patternIndex = Math.max(0, PATTERNS.indexOf(Store.get('fts_snakia_pattern','PYTHON')));
-  let skinSeed = bootSeed ^ 0x51A7C0DE;
-  function skinHash(a,b,c){
-    let x=(skinSeed ^ Math.imul((a|0)+1,0x9e3779b1) ^ Math.imul((b|0)+7,0x85ebca6b) ^ Math.imul((c|0)+13,0xc2b2ae35))>>>0;
-    x^=x>>>16; x=Math.imul(x,0x7feb352d); x^=x>>>15; x=Math.imul(x,0x846ca68b); x^=x>>>16;
-    return (x>>>0)/4294967296;
-  }
-  function currentPattern(){ return PATTERNS[patternIndex] || 'PYTHON'; }
-
   // ── game state ────────────────────────────────────────────────────
   const SPEED_MS = [260,225,195,168,144,122,102,86,72,60]; // index = start speed 0..9
   let gs = {
@@ -1893,7 +1826,7 @@ body.theme-night #zoom-reset{
     food: null, bonus: null, bonusTicks: 0,
     score: 0, best: parseInt(Store.get(HI_KEY,'0'),10) || 0,
     startSpeed: 3, tick: 0, acc: 0, growth: 0,
-    justAte: 0, flashHead: 0, motionPhase: 0,
+    justAte: 0, flashHead: 0,
   };
 
   function occupied(x,y,skipTail){
@@ -1915,11 +1848,10 @@ body.theme-night #zoom-reset{
     const cx = Math.floor(COLS/2), cy = Math.floor(ROWS/2);
     gs.snake = [{x:cx,y:cy},{x:cx-1,y:cy},{x:cx-2,y:cy}];
     gs.dir = {x:1,y:0}; gs.queuedDirs = [];
-    gs.score = 0; gs.tick = 0; gs.acc = 0; gs.growth = 0; gs.motionPhase = 0;
+    gs.score = 0; gs.tick = 0; gs.acc = 0; gs.growth = 0;
     gs.bonus = null; gs.bonusTicks = 0; gs.justAte = 0;
     runSeed = ((Date.now() ^ ((performance.now()*1000)|0)) >>> 0);
     rng = mulberry32(runSeed);
-    skinSeed = (runSeed ^ Math.imul(patternIndex+1,0x9e3779b1))>>>0;
     inputLog.length = 0;
     gs.food = placeFood();
     gs.state = 'playing';
@@ -2160,12 +2092,9 @@ body.theme-night #zoom-reset{
   function refreshMenu(){
     document.getElementById('menu-hiscore').textContent = String(gs.best);
     document.getElementById('level-value').textContent = 'SPEED ' + gs.startSpeed;
-    const pv=document.getElementById('pattern-value'); if(pv) pv.textContent='PATTERN ' + currentPattern();
   }
   document.getElementById('level-down').addEventListener('click', ()=>{ gs.startSpeed = Math.max(0,gs.startSpeed-1); refreshMenu(); });
   document.getElementById('level-up').addEventListener('click', ()=>{ gs.startSpeed = Math.min(9,gs.startSpeed+1); refreshMenu(); });
-  document.getElementById('pattern-down').addEventListener('click', ()=>{ patternIndex=(patternIndex+PATTERNS.length-1)%PATTERNS.length; Store.set('fts_snakia_pattern',currentPattern()); refreshMenu(); });
-  document.getElementById('pattern-up').addEventListener('click', ()=>{ patternIndex=(patternIndex+1)%PATTERNS.length; Store.set('fts_snakia_pattern',currentPattern()); refreshMenu(); });
   document.getElementById('menu-start').addEventListener('click', ()=>{
     document.getElementById('menu-layer').classList.add('hidden');
     startFromOverlay();
@@ -2261,9 +2190,6 @@ body.theme-night #zoom-reset{
     const dt = Math.min((ts-lastTs)/1000, 0.05); lastTs = ts;
 
     if (gs.state === 'playing'){
-      // Coherent head-to-tail muscle wave. Never advance this clock when the
-      // snake is paused or dead: skin is materially attached to the body.
-      gs.motionPhase += dt * 4.15;
       gs.acc += dt*1000;
       const ms = speedMs();
       while (gs.acc >= ms){ gs.acc -= ms; step(); if (gs.state!=='playing') break; }
@@ -2322,7 +2248,7 @@ body.theme-night #zoom-reset{
     // Renderer surface — the harness asserts contrast/polarity against the
     // SAME functions the browser paints with, never a re-derived copy.
     lcdRamp, lcdRampDay, lcdRampNight, lcdFlash, LCD_DAY, mix, rgbStr, snakeProfile,
-    buildSnakeSpine, snakeWidthFracAt, drawContinuousSnake, PATTERNS, currentPattern,
+    buildSnakeSpine, snakeWidthFracAt, drawContinuousSnake,
     getTheme: () => theme, applyTheme,
     ZoomAuthority,
   };
