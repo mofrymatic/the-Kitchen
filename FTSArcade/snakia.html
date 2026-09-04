@@ -150,9 +150,11 @@ body.theme-night{
 #nui,#nui-pause{display:none}
 @media(pointer:coarse){#nui{display:flex}}
 #nui{
-  position:fixed;left:0;right:0;bottom:0;z-index:50;height:var(--nui-h,236px);
-  pointer-events:none;align-items:center;justify-content:center;overflow:visible;
-  padding:10px max(18px,env(safe-area-inset-right)) max(18px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left));
+  position:fixed;left:0;right:0;bottom:0;z-index:50;height:var(--nui-h,252px);
+  pointer-events:none;align-items:flex-end;justify-content:center;overflow:visible;
+  /* The playfield reserves this entire measured region. The control itself
+     sits lower inside it so its circular bezel never intrudes into the LCD. */
+  padding:24px max(18px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left));
   background:
     radial-gradient(circle at 50% -30%,rgba(255,255,255,.16),transparent 35%),
     linear-gradient(180deg,#d6d1c0 0%,#bcb6a1 18%,#948e77 50%,#68634f 100%);
@@ -176,7 +178,7 @@ body.theme-night #nui{
 }
 body.theme-night #nui::before{opacity:.26}
 #nui-cluster{
-  position:relative;display:flex;align-items:center;justify-content:center;
+  position:relative;display:flex;align-items:flex-end;justify-content:center;
   width:100%;height:100%;pointer-events:none;
 }
 /* ── SKEUOMORPHIC D-PAD ──────────────────────────────────────────────
@@ -189,7 +191,9 @@ body.theme-night #nui::before{opacity:.26}
    failure mode of the previous ring/knob: every gradient existed twice
    and the two copies had already drifted. */
 #dpad{
-  position:relative;width:232px;height:232px;pointer-events:all;touch-action:none;
+  /* 90% of the previous 232px control. Width/height, rather than a CSS scale,
+     keep its touch geometry and visual geometry identical. */
+  position:relative;width:209px;height:209px;pointer-events:all;touch-action:none;
   -webkit-tap-highlight-color:transparent;cursor:pointer;flex:0 0 auto;margin:0 auto;
   --dp-shell-hi:#f2efe7; --dp-shell-mid:#e3dfd4; --dp-shell-lo:#cbc6b8;
   --dp-olive-hi:#c2c66a; --dp-olive-lo:#6d7136;
@@ -429,9 +433,11 @@ body.theme-night #zoom-reset{
   .arcade-btn{min-height:42px;margin-top:5px}.g-how{margin-top:8px;padding-top:8px;max-height:22vh;overflow:auto}
 }
 @media(pointer:coarse) and (orientation:landscape){
-  #nui{--nui-h:138px;justify-content:center;padding-right:max(18px,env(safe-area-inset-right))}
-  #nui-cluster{width:100%}
-  #dpad{transform:scale(.72);transform-origin:center;width:204px;height:204px}
+  #nui{--nui-h:144px;align-items:flex-end;justify-content:center;padding:12px max(18px,env(safe-area-inset-right)) max(4px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left))}
+  #nui-cluster{width:100%;align-items:flex-end}
+  /* 184px is 90% of the old 204px landscape box; the retained .72 visual
+     scale keeps the entire circular hardware below the game field. */
+  #dpad{width:184px;height:184px;transform:scale(.72);transform-origin:center bottom}
   #nui-pause{right:max(10px,env(safe-area-inset-right));bottom:max(8px,env(safe-area-inset-bottom));transform:none}
   #hud-bar{--hud-h:38px}
   .hud-btn{padding:5px 8px;font-size:8.5px}
@@ -598,7 +604,9 @@ body.theme-night #zoom-reset{
 
         <!-- ── housing ────────────────────────────────────────────── -->
         <g class="dp-housing">
-          <rect x="0" y="0" width="200" height="200" fill="url(#dpShell)"/>
+          <!-- Circular hardware only. The old full-viewBox rectangle was the
+               light/dark square visible around the d-pad on mobile. -->
+          <circle cx="100" cy="100" r="100" fill="url(#dpShell)"/>
           <g clip-path="url(#dpShellClip)">
             <rect x="0" y="0" width="200" height="200" class="dp-grain" filter="url(#dpGrain)"/>
           </g>
@@ -645,7 +653,7 @@ body.theme-night #zoom-reset{
 
 <script>
 // ═══════════════════════════════════════════════════════════════════════
-//  SNAKIA · FTS ARCADE — circa-2002 indestructible-phone monochrome Snake · continuous serpent / curvilinear UV skin-field pass
+//  SNAKIA · FTS ARCADE — circa-2002 indestructible-phone monochrome Snake · continuous serpent / curvilinear UV skin-field + ornate SIGIL pass
 //
 //  Style brief: the "B-lcd" grey-glass brick renderer from ZITTRIS
 //  (tetris.html) is the reference, not a decoration — real handheld LCDs
@@ -1730,13 +1738,30 @@ body.theme-night #zoom-reset{
   }
 
   function drawSigilStation(L,H,k,bright,bright2){
-    // One half-language, mirrored. SIGIL can stay strange without looking like
-    // two unrelated snakes stitched together along the dorsal axis.
-    ctx.save();ctx.translate(0,-H*.28);ctx.scale(1,.72);
-    drawMeanderMotif((k*3+(skinSeed&7))%5,L,H*.72,bright,bright2,4+((skinSeed>>>5)&1));ctx.restore();
-    ctx.save();ctx.translate(0,H*.28);ctx.scale(1,-.72);
-    drawMeanderMotif((k*3+(skinSeed&7))%5,L,H*.72,bright,bright2,4+((skinSeed>>>5)&1));ctx.restore();
-    if ((k&1)===0){ctx.strokeStyle=bright2;ctx.globalAlpha=.42;ctx.lineWidth=Math.max(.8,CELL*.026);ctx.beginPath();ctx.moveTo(0,-H*.72);ctx.lineTo(0,H*.72);ctx.stroke();ctx.globalAlpha=.96;}
+    // Head-scale SIGIL: nested mirrored stepped labyrinths inspired by the
+    // dense geometric line language of Shipibo textiles, translated into the
+    // game's one-bit LCD vocabulary rather than copied as a fixed motif.
+    ctx.lineJoin='miter';ctx.lineCap='square';
+    const phase=((k+(skinSeed&3))&1)?1:-1;
+    for (let tier=0;tier<3;tier++){
+      const inset=tier*.13;
+      const x0=-L*(.46-inset*.35), x1=-L*(.18-inset*.18), x2=L*(.08+inset*.12), x3=L*(.43-inset*.22);
+      const yy=H*(.58-tier*.17);
+      ctx.strokeStyle=tier===1?bright2:bright;
+      ctx.globalAlpha=tier===0?.92:(tier===1?.66:.48);
+      ctx.lineWidth=Math.max(.8,CELL*(.034-tier*.004));
+      for (const side of [-1,1]){
+        ctx.beginPath();
+        ctx.moveTo(x0,side*yy*.18);
+        ctx.lineTo(x1,side*yy);
+        ctx.lineTo(x2,side*yy*.36*phase);
+        ctx.lineTo(x3,side*yy*.72);
+        ctx.stroke();
+      }
+    }
+    ctx.globalAlpha=.68;ctx.strokeStyle=bright;ctx.lineWidth=Math.max(.8,CELL*.030);
+    ctx.beginPath();ctx.moveTo(-L*.14,0);ctx.lineTo(0,-H*.24);ctx.lineTo(L*.16,0);ctx.lineTo(0,H*.24);ctx.closePath();ctx.stroke();
+    ctx.globalAlpha=.96;
   }
 
   function drawStripedSkin(spine,n,bright,bright2){
@@ -1778,6 +1803,10 @@ body.theme-night #zoom-reset{
   }
   function skinNoiseSigned(x,channel){ return skinNoise1(x,channel)*2-1; }
   function skinFract(x){ return x-Math.floor(x); }
+  function skinTriWave(x){
+    const f=skinFract(x);
+    return 1-Math.abs(f*2-1);
+  }
   function skinSoftInside(value,edge,feather){
     return 1-smooth01((value-edge)/Math.max(.0001,feather));
   }
@@ -1887,31 +1916,58 @@ body.theme-night #zoom-reset{
   }
 
   function sigilField(s,v){
-    // A mirrored UV maze, not a row of glyphs. Each material cell chooses a
-    // path primitive; neighboring cells meet at shared midpoints so the result
-    // reads as continuous circuitry engraved across the whole hide.
+    // Ornate continuous SIGIL field. Rather than choosing isolated maze tiles,
+    // several mirrored stepped/meandering paths share the same material UV
+    // surface. Nested echoes, diamonds and flank rails create the dense
+    // Shipibo-inspired visual rhythm while remaining deterministic and
+    // materially attached to the animal.
     const q=Math.abs(v);
-    const sx=s/.34, sy=q*5.2;
-    const ix=Math.floor(sx), iy=Math.floor(sy);
-    const fx=skinFract(sx), fy=skinFract(sy);
-    const o=skinHash(ix,iy,761);
-    let d=1;
-    if (o<.26){
-      d=Math.abs(fy-.5);
-    } else if (o<.52){
-      d=Math.abs(fx-.5);
-    } else if (o<.76){
-      const a=fx<.56?Math.abs(fy-.5):1;
-      const b=fy>.44?Math.abs(fx-.5):1;
-      d=Math.min(a,b);
-    } else {
-      const a=fx>.44?Math.abs(fy-.5):1;
-      const b=fy<.56?Math.abs(fx-.5):1;
-      d=Math.min(a,b);
+    const x=s + skinNoiseSigned(s*.19,8)*.035;
+    let mark=0;
+
+    // Long primary meander: broad triangular excursions from dorsal center to
+    // the flanks, with two nested parallel echoes.
+    const a=skinTriWave(x/1.08 + .07);
+    const primary=.10 + .66*a;
+    const d0=Math.abs(q-primary);
+    mark=Math.max(mark,skinSoftInside(d0,.042,.026));
+    mark=Math.max(mark,skinSoftRing(d0,.105,.024,.022)*.72);
+    mark=Math.max(mark,skinSoftRing(d0,.185,.020,.022)*.46);
+
+    // Counter-running meander creates the characteristic interlocking field
+    // instead of a single decorative stripe.
+    const b=skinTriWave(x/.74 + .41);
+    const counter=.89 - .47*b;
+    const d1=Math.abs(q-counter);
+    mark=Math.max(mark,skinSoftInside(d1,.034,.024)*.88);
+    mark=Math.max(mark,skinSoftRing(d1,.090,.020,.020)*.50);
+
+    // Periodic nested lozenges bridge dorsal and lateral tracks. These are
+    // outlines, not centerline emblems; the outer ring deliberately reaches
+    // toward the projected silhouette and is clipped by the living body.
+    const period=.70;
+    const p=skinFract(x/period);
+    const dx=Math.abs(p-.5)*2;
+    const diamondMetric=dx + Math.abs(q-.50)*1.46;
+    mark=Math.max(mark,skinSoftRing(diamondMetric,.82,.050,.036)*.84);
+    mark=Math.max(mark,skinSoftRing(diamondMetric,.49,.028,.026)*.46);
+
+    // Fine stepped flank key: alternating high/low rails make a second-order
+    // maze visible in long snakes without turning the whole hide solid.
+    const stairCell=Math.floor(x/.22);
+    const stair=((stairCell&1)===0) ? .77 : .91;
+    const gate=skinFract(x/.22);
+    const stairLine=skinSoftInside(Math.abs(q-stair),.022,.018);
+    const riser=(gate>.43&&gate<.57) ? skinSoftInside(Math.abs(q-.84),.15,.025) : 0;
+    mark=Math.max(mark,stairLine*.58,riser*.42);
+
+    // Small junction eyes provide punctuation at some crossings.
+    const cell=Math.floor(x/period);
+    if ((cell&1)===0){
+      const eye=Math.hypot((p-.5)/.17,(q-.50)/.17);
+      mark=Math.max(mark,skinSoftRing(eye,1,.10,.10)*.52);
     }
-    const main=skinSoftInside(d,.070,.045);
-    const node=(Math.abs(fx-.5)<.13&&Math.abs(fy-.5)<.13)?(.42+skinHash(ix,iy,762)*.30):0;
-    return Math.max(main,node);
+    return Math.min(1,mark);
   }
 
   function skinMorphField(morph,s,v){
@@ -1970,10 +2026,10 @@ body.theme-night #zoom-reset{
     // is carried through the local tangent/normal frame, so turns stretch the
     // outer hide, compress the inner hide, and naturally send markings off the
     // silhouette instead of keeping every motif pinned to the centerline.
-    const step=(morph==='SPECKLED'||morph==='SIGIL') ? .115 : .145;
+    const step=morph==='SIGIL' ? .092 : (morph==='SPECKLED' ? .115 : .145);
     const frames=materialSamples(spine,step,.16,.34);
     if (frames.length>1){
-      const lanes=(CELL>=9?12:10);
+      const lanes=morph==='SIGIL' ? (CELL>=9?16:14) : (CELL>=9?12:10);
       for (let i=0;i<frames.length-1;i++){
         const a=frames[i], b=frames[i+1];
         const s=((a.materialS+b.materialS)*.5)/Math.max(1,CELL);
