@@ -461,7 +461,7 @@ body.theme-night #zoom-reset{
       <div class="step-value" id="pattern-value">PATTERN PYTHON</div>
       <button class="step-btn" id="pattern-up">+</button>
     </div>
-    <div class="step-label">SKIN MORPH · PROCEDURAL SEED</div>
+    <div class="step-label">MATERIAL SKIN · SURFACE MORPH</div>
     <button class="arcade-btn primary" id="menu-start">START</button>
     <button class="arcade-btn ghost" id="menu-how">HOW TO PLAY</button>
     <div class="g-how" id="how-panel">
@@ -645,7 +645,7 @@ body.theme-night #zoom-reset{
 
 <script>
 // ═══════════════════════════════════════════════════════════════════════
-//  SNAKIA · FTS ARCADE — circa-2002 indestructible-phone monochrome Snake · continuous serpent / labyrinth-skin pass
+//  SNAKIA · FTS ARCADE — circa-2002 indestructible-phone monochrome Snake · continuous serpent / curvilinear UV skin-field pass
 //
 //  Style brief: the "B-lcd" grey-glass brick renderer from ZITTRIS
 //  (tetris.html) is the reference, not a decoration — real handheld LCDs
@@ -1426,55 +1426,51 @@ body.theme-night #zoom-reset{
 
   function annotateSpine(spine, allowWave){
     if (!spine.length) return spine;
-    let total=0;
-    spine[0].s=0;
-    for (let i=1;i<spine.length;i++){
-      total += Math.hypot(spine[i].x-spine[i-1].x,spine[i].y-spine[i-1].y);
-      spine[i].s=total;
-    }
-    const denom=total||1;
 
-    // A nominally straight snake is still not a ruler. The tiny deterministic
-    // side-to-side displacement is sub-cell, growth-sensitive, and suppressed
-    // around bends. Because its phase depends on length rather than time, the
-    // animal never shimmers between frames; its skin only reconfigures when it
-    // actually grows.
+    // MATERIAL COORDINATES are computed before locomotor deformation. They are
+    // the snake's anatomical ruler: pattern stations live here permanently.
+    // The travelling wave may move those stations through world space, but it
+    // never changes which patch of skin a station belongs to.
+    let materialTotal=0;
+    spine[0].materialS=0;
+    for (let i=1;i<spine.length;i++){
+      materialTotal += Math.hypot(spine[i].x-spine[i-1].x,spine[i].y-spine[i-1].y);
+      spine[i].materialS=materialTotal;
+    }
+    const materialDenom=materialTotal||1;
+    for (let i=0;i<spine.length;i++) spine[i].materialU=spine[i].materialS/materialDenom;
+
     if (allowWave && spine.length>3){
       const n=gs.snake.length;
       const growth=clamp01((n-3)/30);
-      // Lateral undulation is a travelling wave, not static decorative wiggle.
-      // Phase advances with real time while increasing down-body lag makes curvature
-      // propagate from head to tail. Steering history remains the large-scale spine.
-      const amp=CELL*(0.030 + growth*0.055);
-      // Locomotor phase belongs to the animal, not wall-clock time. It advances
-      // only while alive and moving, so PAUSE and DEATH freeze every scale.
-      const phase=gs.motionPhase + n*0.173;
-      const shifted=spine.map((p,i)=>({ ...p }));
+      const amp=CELL*(0.034 + growth*0.060);
+      // Locomotor phase advances only while PLAYING. No n-dependent phase jump:
+      // eating a pellet lengthens the animal without teleporting its muscle wave.
+      const phase=gs.motionPhase + (((skinSeed>>>8)&255)/255)*0.55;
+      const shifted=spine.map(p=>({ ...p }));
       for (let i=1;i<spine.length-1;i++){
         const a=spine[Math.max(0,i-1)], b=spine[Math.min(spine.length-1,i+1)];
         const tan=vunit(b.x-a.x,b.y-a.y), nor={x:-tan.y,y:tan.x};
-        const u=spine[i].s/denom;
-        const envelope=Math.pow(Math.sin(Math.PI*u),0.72);
-        const calm=1-Math.min(0.92,(spine[i].bend||0)*0.90);
-        const wavelength=Math.max(3.4, 5.2-growth*.7);
-        const wavePhase=(spine[i].s/Math.max(1,CELL))*(Math.PI*2/wavelength) - phase;
-        const posteriorGain=.72 + .38*u;
-        const wiggle=Math.sin(wavePhase) * amp * envelope * calm * posteriorGain;
-        // A turning snake does not wrap itself around an invisible plumbing
-        // elbow. Its center of mass leans slightly toward the OUTSIDE of the
-        // bend while the inside folds. This small offset breaks the perfect
-        // quarter-circle geometry before width deformation even begins.
+        const u=spine[i].materialU;
+        const envelope=Math.pow(Math.sin(Math.PI*u),0.70);
+        const calm=1-Math.min(0.93,(spine[i].bend||0)*0.90);
+        const wavelength=Math.max(3.25, 5.0-growth*.65);
+        const wavePhase=(spine[i].materialS/Math.max(1,CELL))*(Math.PI*2/wavelength)-phase;
+        // Posterior flesh trails the head slightly farther, giving the tail a
+        // readable delayed whip instead of translating the whole spline at once.
+        const posteriorGain=.68 + .44*u;
+        const wiggle=Math.sin(wavePhase)*amp*envelope*calm*posteriorGain;
         const bend=clamp01(spine[i].bend||0), bendSign=spine[i].bendSign||0;
         const outsideLean=bendSign ? (-Math.sign(bendSign))*CELL*.055*bend : 0;
-        // Half-pixel quantization keeps the result looking like LCD drafting,
-        // not antialiased vector art accidentally dropped into an LCD game.
         shifted[i].x += Math.round(nor.x*(wiggle+outsideLean)*2)/2;
         shifted[i].y += Math.round(nor.y*(wiggle+outsideLean)*2)/2;
       }
       for (let i=0;i<spine.length;i++){ spine[i].x=shifted[i].x; spine[i].y=shifted[i].y; }
     }
 
-    total=0; spine[0].s=0;
+    // WORLD ARC LENGTH is recomputed after deformation for drawing geometry.
+    // Pattern placement never uses it; that separation is the anti-crawling rule.
+    let total=0; spine[0].s=0;
     for (let i=1;i<spine.length;i++){
       total += Math.hypot(spine[i].x-spine[i-1].x,spine[i].y-spine[i-1].y);
       spine[i].s=total;
@@ -1488,6 +1484,7 @@ body.theme-night #zoom-reset{
       spine[i].u=spine[i].s/d2;
     }
     spine.total=total;
+    spine.materialTotal=materialTotal;
     return spine;
   }
 
@@ -1540,7 +1537,8 @@ body.theme-night #zoom-reset{
 
   function ribbonHalfWidths(p,n,scale){
     const bend=clamp01(p.bend||0);
-    const base=CELL*snakeWidthFracAt(p.u||0,n)*(scale==null?1:scale);
+    const axialU=(p.materialU!=null?p.materialU:(p.u||0));
+    const base=CELL*snakeWidthFracAt(axialU,n)*(scale==null?1:scale);
     const half=base*0.5*(1+bend*0.08);
     const compress=0.25*bend, bulge=0.22*bend;
     let left=half,right=half;
@@ -1614,15 +1612,344 @@ body.theme-night #zoom-reset{
     ctx.stroke();
   }
 
+  function materialSamples(spine, spacingCells, startCells, endCells){
+    const out=[];
+    if (!spine || spine.length<2) return out;
+    const maxCells=(spine.materialTotal||0)/Math.max(1,CELL);
+    const start=Math.max(0,startCells==null?.32:startCells);
+    const end=Math.max(0,endCells==null?.42:endCells);
+    const step=Math.max(.18,spacingCells||.68);
+    let j=1, k=0;
+    for (let mc=start; mc<=maxCells-end+1e-6; mc+=step, k++){
+      const target=mc*CELL;
+      while (j<spine.length-1 && spine[j].materialS<target) j++;
+      const a=spine[Math.max(0,j-1)], b=spine[j];
+      const span=Math.max(.0001,b.materialS-a.materialS);
+      const t=clamp01((target-a.materialS)/span);
+      const tangent=vunit(lerp(a.tangent.x,b.tangent.x,t),lerp(a.tangent.y,b.tangent.y,t));
+      const normal={x:-tangent.y,y:tangent.x};
+      const materialU=clamp01(target/Math.max(1,spine.materialTotal));
+      out.push({
+        x:lerp(a.x,b.x,t), y:lerp(a.y,b.y,t), tangent, normal,
+        bend:lerp(a.bend||0,b.bend||0,t),
+        bendSign:Math.abs(a.bend||0)>Math.abs(b.bend||0)?(a.bendSign||0):(b.bendSign||0),
+        materialS:target, materialU, k
+      });
+    }
+    return out;
+  }
+
+  function localSkinFrame(p, fn){
+    ctx.save();
+    ctx.translate(Math.round(p.x*2)/2,Math.round(p.y*2)/2);
+    ctx.rotate(Math.atan2(p.tangent.y,p.tangent.x));
+    fn();
+    ctx.restore();
+  }
+
+  function drawPythonStation(L,H,k,bright,bright2,dark,stage){
+    const a=.64+skinHash(k,1,11)*.20;
+    const b=.46+skinHash(k,2,12)*.22;
+    const c=.68+skinHash(k,3,13)*.18;
+    ctx.fillStyle=bright;
+    ctx.strokeStyle=dark;
+    ctx.lineWidth=Math.max(1,CELL*.042);
+    ctx.beginPath();
+    ctx.moveTo(-L*.56,0);
+    ctx.lineTo(-L*.34,-H*a); ctx.lineTo(L*.02,-H*b); ctx.lineTo(L*.42,-H*c); ctx.lineTo(L*.58,0);
+    ctx.lineTo(L*.42,H*c);  ctx.lineTo(L*.02,H*b);  ctx.lineTo(-L*.34,H*a); ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    // Paired lateral wedges: same random decision on both flanks = bilateral hide.
+    if (skinHash(k,4,14)>.34){
+      ctx.fillStyle=bright2; ctx.globalAlpha=.72;
+      for (const side of [-1,1]){
+        ctx.beginPath();
+        ctx.moveTo(-L*.18,side*H*.76);ctx.lineTo(L*.08,side*H*.42);ctx.lineTo(L*.34,side*H*.80);ctx.closePath();ctx.fill();
+      }
+      ctx.globalAlpha=.96;
+    }
+  }
+
+  function drawDiamondStation(L,H,k,bright,bright2){
+    const aspect=.78+skinHash(k,0,21)*.22;
+    ctx.strokeStyle=bright;ctx.lineWidth=Math.max(1,CELL*.040);
+    ctx.beginPath();ctx.moveTo(-L*.52,0);ctx.lineTo(0,-H*aspect);ctx.lineTo(L*.52,0);ctx.lineTo(0,H*aspect);ctx.closePath();ctx.stroke();
+    if (skinHash(k,1,22)>.48){
+      ctx.strokeStyle=bright2;ctx.globalAlpha=.58;
+      ctx.beginPath();ctx.moveTo(-L*.24,0);ctx.lineTo(0,-H*.44);ctx.lineTo(L*.24,0);ctx.lineTo(0,H*.44);ctx.closePath();ctx.stroke();ctx.globalAlpha=.96;
+    }
+  }
+
+  function drawBandStation(L,H,k,bright,bright2){
+    const thick=L*(.20+skinHash(k,0,31)*.15);
+    ctx.fillStyle=bright;ctx.globalAlpha=.86;
+    ctx.fillRect(-thick*.5,-H,thick,H*2);
+    if (skinHash(k,1,32)>.62){
+      ctx.fillStyle=bright2;ctx.globalAlpha=.60;
+      const gap=Math.max(1,CELL*.035);
+      ctx.fillRect(-gap*.5,-H,gap,H*2);
+    }
+    ctx.globalAlpha=.96;
+  }
+
+  function drawChainStation(L,H,k,bright,bright2){
+    const alt=(k&1)?1:-1;
+    ctx.strokeStyle=bright;ctx.lineWidth=Math.max(1,CELL*.038);
+    ctx.beginPath();ctx.ellipse(0,0,L*.34,H*.58,0,0,Math.PI*2);ctx.stroke();
+    ctx.strokeStyle=bright2;ctx.globalAlpha=.65;
+    for (const side of [-1,1]){
+      ctx.beginPath();ctx.ellipse(alt*L*.22,side*H*.58,L*.21,H*.27,0,0,Math.PI*2);ctx.stroke();
+    }
+    ctx.globalAlpha=.96;
+  }
+
+  function drawSpeckledStation(L,H,k,bright,bright2){
+    const pairs=2+(skinHash(k,0,41)>.45?1:0);
+    for (let j=0;j<pairs;j++){
+      const x=(skinHash(k,j,42)-.5)*L*.82;
+      const y=H*(.18+skinHash(k,j,43)*.62);
+      const r=Math.max(.65,CELL*(.020+skinHash(k,j,44)*.020));
+      ctx.fillStyle=j&1?bright2:bright;ctx.globalAlpha=.68+(j&1)*.12;
+      for (const side of [-1,1]){ctx.beginPath();ctx.arc(x,side*y,r,0,Math.PI*2);ctx.fill();}
+    }
+    if (skinHash(k,7,45)>.55){const r=Math.max(.65,CELL*.023);ctx.fillStyle=bright;ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.fill();}
+    ctx.globalAlpha=.96;
+  }
+
+  function drawRosetteStation(L,H,k,bright,bright2){
+    const rx=L*(.34+skinHash(k,0,51)*.10), ry=H*(.58+skinHash(k,1,52)*.16);
+    ctx.strokeStyle=bright;ctx.lineWidth=Math.max(1,CELL*.036);
+    ctx.beginPath();
+    ctx.moveTo(-rx,0);
+    ctx.bezierCurveTo(-rx*.72,-ry,-rx*.12,-ry,0,-ry*.72);
+    ctx.bezierCurveTo(rx*.20,-ry,rx*.74,-ry*.72,rx,0);
+    ctx.bezierCurveTo(rx*.74,ry*.72,rx*.20,ry,0,ry*.72);
+    ctx.bezierCurveTo(-rx*.12,ry,-rx*.72,ry,-rx,0);ctx.closePath();ctx.stroke();
+    ctx.fillStyle=bright2;ctx.globalAlpha=.54;
+    const rr=Math.max(.7,CELL*.028);ctx.beginPath();ctx.arc(0,0,rr,0,Math.PI*2);ctx.fill();ctx.globalAlpha=.96;
+  }
+
+  function drawSigilStation(L,H,k,bright,bright2){
+    // One half-language, mirrored. SIGIL can stay strange without looking like
+    // two unrelated snakes stitched together along the dorsal axis.
+    ctx.save();ctx.translate(0,-H*.28);ctx.scale(1,.72);
+    drawMeanderMotif((k*3+(skinSeed&7))%5,L,H*.72,bright,bright2,4+((skinSeed>>>5)&1));ctx.restore();
+    ctx.save();ctx.translate(0,H*.28);ctx.scale(1,-.72);
+    drawMeanderMotif((k*3+(skinSeed&7))%5,L,H*.72,bright,bright2,4+((skinSeed>>>5)&1));ctx.restore();
+    if ((k&1)===0){ctx.strokeStyle=bright2;ctx.globalAlpha=.42;ctx.lineWidth=Math.max(.8,CELL*.026);ctx.beginPath();ctx.moveTo(0,-H*.72);ctx.lineTo(0,H*.72);ctx.stroke();ctx.globalAlpha=.96;}
+  }
+
+  function drawStripedSkin(spine,n,bright,bright2){
+    const rails=[0,.26,-.26];
+    ctx.lineCap='round';ctx.lineJoin='round';
+    rails.forEach((r,ri)=>{
+      ctx.beginPath();
+      let started=false;
+      for (let i=0;i<spine.length;i++){
+        const p=spine[i];
+        if (p.materialU<.04 || p.materialU>.965) continue;
+        const width=CELL*snakeWidthFracAt(p.materialU,n);
+        const x=p.x+p.normal.x*width*r, y=p.y+p.normal.y*width*r;
+        if (!started){ctx.moveTo(x,y);started=true;} else ctx.lineTo(x,y);
+      }
+      ctx.strokeStyle=ri===0?bright2:bright;ctx.globalAlpha=ri===0?.54:.82;
+      ctx.lineWidth=Math.max(1,CELL*(ri===0?.030:.040));
+      if (started) ctx.stroke();
+    });
+    ctx.globalAlpha=1;
+  }
+
+  function skinPoint(p,n,v,scale){
+    // The pattern is parameterized on a generalized cylinder. `v` is skin
+    // latitude, not screen-space offset. Projecting it through sin() gives
+    // cylindrical foreshortening: markings visibly compress as they roll
+    // toward the silhouette instead of behaving like stickers on a flat strip.
+    const vv=Math.max(-1,Math.min(1,v));
+    const projected=Math.sin(vv*Math.PI*.5);
+    const w=ribbonHalfWidths(p,n,scale==null ? .94 : scale);
+    const lateral=projected>=0 ? projected*w.left : projected*w.right;
+    return {x:p.x+p.normal.x*lateral,y:p.y+p.normal.y*lateral};
+  }
+
+  function skinNoise1(x,channel){
+    const i=Math.floor(x), f=x-i, t=smooth01(f);
+    const a=skinHash(i,channel,701), b=skinHash(i+1,channel,701);
+    return lerp(a,b,t);
+  }
+  function skinNoiseSigned(x,channel){ return skinNoise1(x,channel)*2-1; }
+  function skinFract(x){ return x-Math.floor(x); }
+  function skinSoftInside(value,edge,feather){
+    return 1-smooth01((value-edge)/Math.max(.0001,feather));
+  }
+  function skinSoftRing(value,center,halfWidth,feather){
+    return 1-smooth01((Math.abs(value-center)-halfWidth)/Math.max(.0001,feather));
+  }
+
+  function pythonField(s,v){
+    const q=Math.abs(v);
+    const period=1.34+skinHash(0,1,711)*.22;
+    const phase=s/period + skinNoiseSigned(s*.33,1)*.070;
+    const crest=.5+.5*Math.cos(Math.PI*2*phase);
+    const presence=smooth01((crest-.28)/.42);
+    // Dorsal islands repeatedly bloom all the way to and past the silhouette.
+    // The clip, not an arbitrary motif boundary, decides where the marking ends.
+    const edge=.12 + 1.08*Math.pow(crest,1.46) + skinNoiseSigned(s*.61,2)*.075;
+    const dorsal=presence*skinSoftInside(q,edge,.11);
+    // In the dark gap between saddles, paired lateral arrowheads climb in from
+    // the flanks. This is what makes PYTHON read like hide rather than polka dots.
+    const seam=.5+.5*Math.cos(Math.PI*2*(phase+.50));
+    const lateral=smooth01((seam-.52)/.38)*skinSoftRing(q,.78,.27,.11);
+    return Math.max(dorsal,lateral*.78);
+  }
+
+  function diamondField(s,v){
+    const q=Math.abs(v);
+    const period=.78+skinHash(0,2,721)*.12;
+    const p=skinFract(s/period + skinNoiseSigned(s*.20,3)*.035);
+    const x=Math.abs(p-.5)*2;
+    const d=x+q*.92;
+    let mark=skinSoftRing(d,.84,.055,.070);
+    if (skinHash(Math.floor(s/period),1,722)>.48) mark=Math.max(mark,skinSoftRing(d,.47,.040,.055)*.58);
+    return mark;
+  }
+
+  function bandedField(s,v){
+    const period=.70+skinHash(0,3,731)*.12;
+    const wob=skinNoiseSigned(s*.31,4)*.045*(.35+.65*Math.abs(v));
+    const p=skinFract(s/period+wob);
+    const d=Math.abs(p-.5);
+    const k=Math.floor(s/period);
+    const half=.115+skinHash(k,1,732)*.070;
+    return skinSoftInside(d,half,.045);
+  }
+
+  function chainField(s,v){
+    const period=.96;
+    const k=Math.floor(s/period);
+    const local=(skinFract(s/period)-.5)*2;
+    let best=0;
+    for (const side of [-1,1]){
+      const shift=((k&1)?side:-side)*.20;
+      const dx=(local-shift)/.76;
+      const dy=(v-side*.56)/.46;
+      const r=Math.hypot(dx,dy);
+      best=Math.max(best,skinSoftRing(r,1,.075,.085));
+    }
+    // A small dorsal bridge makes the two flank links read as one chain.
+    const bridge=skinSoftRing(Math.hypot(local/.56,v/.42),1,.055,.075)*.58;
+    return Math.max(best,bridge);
+  }
+
+  function speckledField(s,v){
+    // Mirrored cellular stipple with slow density drift. The spots live on the
+    // entire hide, including near the silhouette, instead of in a dorsal lane.
+    const q=Math.abs(v);
+    const si=Math.floor(s*6.2), vi=Math.floor(q*8.5);
+    const h=skinHash(si,vi,741);
+    const cluster=.5+.5*skinNoiseSigned(s*.42,5);
+    const density=.19+.15*(1-q*.35)+.11*cluster;
+    if (h<1-density) return 0;
+    return .52+.48*skinHash(si,vi,742);
+  }
+
+  function stripedField(s,v){
+    const q=Math.abs(v);
+    const drift=skinNoiseSigned(s*.38,6)*.035;
+    const centers=[.08+drift*.25,.48+drift,.84+drift*.55];
+    let d=9;
+    for (const c of centers) d=Math.min(d,Math.abs(q-c));
+    let mark=skinSoftInside(d,.050,.032);
+    // Rare interruptions stop the rails from looking mechanically extruded.
+    const gap=skinNoise1(s*.72,7);
+    if (gap<.09 && q>.28) mark*=smooth01(gap/.09);
+    return mark;
+  }
+
+  function rosetteField(s,v){
+    const period=.88;
+    const k0=Math.floor(s/period);
+    let best=0;
+    for (let k=k0-1;k<=k0+1;k++){
+      const cs=(k+.5)*period+(skinHash(k,0,751)-.5)*.18;
+      const sideRow=(k%3)!==0;
+      const centers=sideRow?[-.68,.68]:[0];
+      for (const cv of centers){
+        const rx=period*(.27+skinHash(k,1,752)*.08);
+        const ry=.30+skinHash(k,2,753)*.10;
+        const dx=(s-cs)/rx, dy=(v-cv)/ry;
+        const ang=Math.atan2(dy,dx);
+        const irregular=.075*Math.sin(ang*5+skinHash(k,3,754)*Math.PI*2);
+        const r=Math.hypot(dx,dy)+irregular;
+        best=Math.max(best,skinSoftRing(r,1,.085,.095));
+      }
+    }
+    return best;
+  }
+
+  function sigilField(s,v){
+    // A mirrored UV maze, not a row of glyphs. Each material cell chooses a
+    // path primitive; neighboring cells meet at shared midpoints so the result
+    // reads as continuous circuitry engraved across the whole hide.
+    const q=Math.abs(v);
+    const sx=s/.34, sy=q*5.2;
+    const ix=Math.floor(sx), iy=Math.floor(sy);
+    const fx=skinFract(sx), fy=skinFract(sy);
+    const o=skinHash(ix,iy,761);
+    let d=1;
+    if (o<.26){
+      d=Math.abs(fy-.5);
+    } else if (o<.52){
+      d=Math.abs(fx-.5);
+    } else if (o<.76){
+      const a=fx<.56?Math.abs(fy-.5):1;
+      const b=fy>.44?Math.abs(fx-.5):1;
+      d=Math.min(a,b);
+    } else {
+      const a=fx>.44?Math.abs(fy-.5):1;
+      const b=fy<.56?Math.abs(fx-.5):1;
+      d=Math.min(a,b);
+    }
+    const main=skinSoftInside(d,.070,.045);
+    const node=(Math.abs(fx-.5)<.13&&Math.abs(fy-.5)<.13)?(.42+skinHash(ix,iy,762)*.30):0;
+    return Math.max(main,node);
+  }
+
+  function skinMorphField(morph,s,v){
+    if (morph==='PYTHON') return pythonField(s,v);
+    if (morph==='DIAMOND') return diamondField(s,v);
+    if (morph==='BANDED') return bandedField(s,v);
+    if (morph==='CHAIN') return chainField(s,v);
+    if (morph==='SPECKLED') return speckledField(s,v);
+    if (morph==='STRIPED') return stripedField(s,v);
+    if (morph==='ROSETTE') return rosetteField(s,v);
+    return sigilField(s,v);
+  }
+
+  function drawScaleLattice(spine,n,bright2){
+    if (CELL<6) return;
+    const samples=materialSamples(spine,.29,.18,.42);
+    const lanes=CELL>=9?[-.86,-.60,-.32,0,.32,.60,.86]:[-.74,-.38,0,.38,.74];
+    ctx.fillStyle=bright2;ctx.globalAlpha=.13;
+    for (const p of samples){
+      for (let li=0;li<lanes.length;li++){
+        let v=lanes[li];
+        if ((p.k+li)&1) v+=Math.sign(v||1)*.025;
+        const pt=skinPoint(p,n,v,.91);
+        const d=Math.max(.48,CELL*.015*(1-.32*Math.abs(v)));
+        const t=p.tangent, no=p.normal;
+        ctx.beginPath();
+        ctx.moveTo(pt.x-t.x*d,pt.y-t.y*d);
+        ctx.lineTo(pt.x+no.x*d,pt.y+no.y*d);
+        ctx.lineTo(pt.x+t.x*d,pt.y+t.y*d);
+        ctx.lineTo(pt.x-no.x*d,pt.y-no.y*d);
+        ctx.closePath();ctx.fill();
+      }
+    }
+    ctx.globalAlpha=1;
+  }
+
   function drawLabyrinthSkin(spine,n,dimmed){
     if (spine.length<2) return;
-    const stage=Math.min(6,Math.floor(Math.max(0,n-3)/2));
-    const ornament=Math.max(0,n-3); // changes only when a pellet is consumed
-    const ink=lcdRamp(0.78,dimmed);
-    // The reference treatment is essentially luminous linework on dark hide.
-    // On a reflective LCD that becomes NEGATIVE engraving: internal pattern
-    // pixels relax back toward the green glass while the animal itself remains
-    // fully energised and dark. Night mode keeps the same logic as cyan light.
     const bright = theme==='night'
       ? lcdRamp(0.98,dimmed).light
       : rgbStr(mix(LCD_DAY.INK,LCD_DAY.GLASS,dimmed?0.40:0.74));
@@ -1632,105 +1959,42 @@ body.theme-night #zoom-reset{
     const morph=currentPattern();
 
     ctx.save();
-    traceRibbon(spine,n,0.91);
-    ctx.clip();
+    traceRibbon(spine,n,.93);ctx.clip();
 
-    let rows = ornament<2 ? 2 : 3;
-    if (CELL<8) rows=2;
-    const rowSet = rows===2 ? [-0.24,0.24] : [-0.31,0,0.31];
-    // Larger, readable labyrinths rather than texture-noise. Each mark still
-    // lives below one logical cell, but now the eye can actually follow it.
-    // MATERIAL SKIN COORDINATES. Pattern stations are indexed by anatomical
-    // distance from head to tail, not by the current wiggling arc length.
-    // The centerline may bend, compress and stretch underneath them, but the
-    // markings cannot conveyor-belt along the animal.
-    const materialStep=Math.max(0.030, 0.055-Math.min(0.010,ornament*0.00035));
-    let nextU=0.045, k=0;
+    // First: actual scale grain over the entire projected dorsal surface.
+    drawScaleLattice(spine,n,bright2);
 
-    for (let i=0;i<spine.length;i++){
-      const p=spine[i];
-      if (p.u+0.0001<nextU) continue;
-      while (nextU<=p.u) nextU+=materialStep;
-      if (p.u<0.035 || p.u>0.955) continue;
-      const width=CELL*snakeWidthFracAt(p.u,n);
-      if (width<2.8) continue;
-      const angle=Math.atan2(p.tangent.y,p.tangent.x);
-      const motifL=Math.max(3.2,CELL*(0.40 + Math.min(0.05,stage*.009)));
-      const bandH=Math.max(1.55,width/(rows+1)*0.92);
-
-      for (let r=0;r<rowSet.length;r++){
-        const off=rowSet[r]*width;
-        const x=Math.round((p.x+p.normal.x*off)*2)/2;
-        const y=Math.round((p.y+p.normal.y*off)*2)/2;
-        ctx.save();ctx.translate(x,y);ctx.rotate(angle);
-        if ((k+r+ornament)&1) ctx.scale(1,-1);
-
-        // Larger polygonal scale plates appear among the micro-meanders as the
-        // snake grows, echoing the outlined panels in the visual reference.
-        const centerRow=(rows===3 && r===1);
-        if (stage>=1 && width>5.5 && ((k+r+ornament)%3===0 || (centerRow && k%2===0))){
-          ctx.globalAlpha=0.56;
-          drawPlateOutline(motifL*1.18,bandH*1.78,bright2);
+    // Then: a procedural texture field in material (s,v) coordinates. This is
+    // the same idea used to UV-map a texture onto a swept/generalized cylinder:
+    // s runs head-to-tail, v runs around the visible cross-section. Each texel
+    // is carried through the local tangent/normal frame, so turns stretch the
+    // outer hide, compress the inner hide, and naturally send markings off the
+    // silhouette instead of keeping every motif pinned to the centerline.
+    const step=(morph==='SPECKLED'||morph==='SIGIL') ? .115 : .145;
+    const frames=materialSamples(spine,step,.16,.34);
+    if (frames.length>1){
+      const lanes=(CELL>=9?12:10);
+      for (let i=0;i<frames.length-1;i++){
+        const a=frames[i], b=frames[i+1];
+        const s=((a.materialS+b.materialS)*.5)/Math.max(1,CELL);
+        for (let j=0;j<lanes;j++){
+          const v0=-1+(j/lanes)*2;
+          const v1=-1+((j+1)/lanes)*2;
+          const vm=(v0+v1)*.5;
+          const strength=skinMorphField(morph,s,vm);
+          if (strength<.24) continue;
+          const p00=skinPoint(a,n,v0,.955), p01=skinPoint(a,n,v1,.955);
+          const p10=skinPoint(b,n,v0,.955), p11=skinPoint(b,n,v1,.955);
+          ctx.fillStyle=strength>.70?bright:bright2;
+          // Edge texels are foreshortened and slightly quieter, which gives a
+          // top-down cylindrical read without introducing smooth shading.
+          ctx.globalAlpha=(strength>.70?.88:.62)*(1-.16*Math.pow(Math.abs(vm),1.7));
+          ctx.beginPath();
+          ctx.moveTo(p00.x,p00.y);ctx.lineTo(p10.x,p10.y);ctx.lineTo(p11.x,p11.y);ctx.lineTo(p01.x,p01.y);ctx.closePath();ctx.fill();
         }
-        ctx.globalAlpha=0.96;
-        const hv=skinHash(k,r,ornament);
-        if (morph==='PYTHON'){
-          // Python morph: large pale dorsal islands bounded by dark, irregular
-          // hourglass/arrowhead seams. Fine scale pixels are subordinate.
-          const dorsal = rows===3 ? r===1 : r===0;
-          const period = 4 + ((skinSeed>>>3)&1);
-          const phaseK = k % period;
-          const island = dorsal ? (phaseK===0 || phaseK===1) : ((k+r+(skinSeed&3))%6===0);
-          if(island){
-            const sw=motifL*(.62+hv*.24), sh=bandH*(.72+skinHash(k,r,2)*.24);
-            ctx.fillStyle=bright;
-            ctx.beginPath();
-            ctx.moveTo(-sw*.58,0);ctx.lineTo(-sw*.30,-sh*.82);ctx.lineTo(sw*.18,-sh);
-            ctx.lineTo(sw*.58,-sh*.18);ctx.lineTo(sw*.50,sh*.28);ctx.lineTo(sw*.12,sh);
-            ctx.lineTo(-sw*.34,sh*.78);ctx.closePath();ctx.fill();
-            ctx.globalAlpha=.82; ctx.strokeStyle=ink.border; ctx.lineWidth=Math.max(1,CELL*.045); ctx.stroke();
-            // A restrained stipple suggests individual scales without muddying
-            // the macro blotch silhouette.
-            if(stage>=2 && hv>.34){ctx.fillStyle=bright2;ctx.globalAlpha=.55;const d=Math.max(1,CELL*.026);ctx.fillRect(-sw*.10,-d*.5,d,d);}
-          } else if(!dorsal && stage>=3 && hv>.82){
-            ctx.fillStyle=bright2;ctx.globalAlpha=.65;ctx.beginPath();ctx.moveTo(-2,0);ctx.lineTo(0,-2);ctx.lineTo(2,0);ctx.lineTo(0,2);ctx.closePath();ctx.fill();
-          }
-        } else if(morph==='DIAMOND'){
-          ctx.strokeStyle=bright;ctx.lineWidth=Math.max(1,CELL*.035);ctx.beginPath();ctx.moveTo(-motifL*.32,0);ctx.lineTo(0,-bandH*.58);ctx.lineTo(motifL*.32,0);ctx.lineTo(0,bandH*.58);ctx.closePath();ctx.stroke();
-        } else if(morph==='BANDED'){
-          ctx.strokeStyle=bright;ctx.lineWidth=Math.max(1,CELL*.07);ctx.beginPath();ctx.moveTo(0,-bandH*.8);ctx.lineTo(0,bandH*.8);ctx.stroke();
-        } else if(morph==='CHAIN'){
-          ctx.strokeStyle=bright;ctx.lineWidth=Math.max(1,CELL*.034);ctx.beginPath();ctx.ellipse(0,0,motifL*.23,bandH*.48,0,0,Math.PI*2);ctx.stroke();
-        } else if(morph==='SPECKLED'){
-          ctx.fillStyle=bright; const rr=Math.max(.8,CELL*(.025+hv*.035)); ctx.beginPath();ctx.arc((hv-.5)*motifL*.45,(skinHash(k,r,5)-.5)*bandH,rr,0,Math.PI*2);ctx.fill();
-        } else if(morph==='STRIPED'){
-          ctx.strokeStyle=bright;ctx.lineWidth=Math.max(1,CELL*.045);ctx.beginPath();ctx.moveTo(-motifL*.55,0);ctx.lineTo(motifL*.55,0);ctx.stroke();
-        } else if(morph==='ROSETTE'){
-          ctx.strokeStyle=bright;ctx.lineWidth=Math.max(1,CELL*.032);ctx.beginPath();ctx.arc(0,0,Math.max(1,bandH*.42),0,Math.PI*2);ctx.stroke();ctx.fillStyle=bright2;ctx.fillRect(-1,-1,2,2);
-        } else {
-          drawMeanderMotif((k*3+r*5+ornament)%5,motifL,bandH,bright,bright2,stage);
-        }
-        ctx.restore();
-      }
-      k++;
-    }
-
-    // Sparse transverse contour locks divide the flowing maze into larger
-    // anatomical scale-fields. They are intentionally imperfectly spaced.
-    if (CELL>=7 && morph==='SIGIL'){
-      const plateEvery=Math.max(CELL*1.12,6.0);
-      let mark=plateEvery*(0.44 + (ornament%3)*0.10);
-      ctx.strokeStyle=bright2;ctx.globalAlpha=0.38;ctx.lineWidth=Math.max(0.9,CELL*.030);
-      for (let i=0;i<spine.length;i++){
-        const p=spine[i]; if (p.s<mark) continue; mark+=plateEvery;
-        if (p.u<0.08||p.u>0.88) continue;
-        const w=CELL*snakeWidthFracAt(p.u,n)*0.40;
-        ctx.beginPath();
-        ctx.moveTo(p.x-p.normal.x*w,p.y-p.normal.y*w);
-        ctx.lineTo(p.x+p.normal.x*w,p.y+p.normal.y*w);
-        ctx.stroke();
       }
     }
+    ctx.globalAlpha=1;
     ctx.restore();
   }
 
@@ -1750,6 +2014,31 @@ body.theme-night #zoom-reset{
     ctx.lineTo(-L*.20,W*.50);
     ctx.lineTo(-L*.60,neckW*.44);
     ctx.closePath();
+  }
+
+  function drawHeadMorphPattern(morph,L,W,bright,bright2,dark,n){
+    ctx.lineCap='round';ctx.lineJoin='round';
+    if (morph==='PYTHON'){
+      drawPythonStation(L*.64,W*.48,0,bright,bright2,dark,0);
+    } else if (morph==='DIAMOND'){
+      drawDiamondStation(L*.64,W*.48,0,bright,bright2);
+    } else if (morph==='BANDED'){
+      ctx.fillStyle=bright;ctx.globalAlpha=.80;
+      for (const x of [-L*.18,L*.14]) ctx.fillRect(x-L*.045,-W*.32,L*.09,W*.64);
+      ctx.globalAlpha=1;
+    } else if (morph==='CHAIN'){
+      drawChainStation(L*.62,W*.46,0,bright,bright2);
+    } else if (morph==='SPECKLED'){
+      drawSpeckledStation(L*.70,W*.46,0,bright,bright2);
+    } else if (morph==='STRIPED'){
+      ctx.strokeStyle=bright;ctx.lineWidth=Math.max(1,CELL*.038);ctx.globalAlpha=.84;
+      for (const y of [-W*.18,0,W*.18]){ctx.beginPath();ctx.moveTo(-L*.40,y);ctx.lineTo(L*.42,y*.45);ctx.stroke();}
+      ctx.globalAlpha=1;
+    } else if (morph==='ROSETTE'){
+      drawRosetteStation(L*.64,W*.46,0,bright,bright2);
+    } else {
+      drawSigilStation(L*.64,W*.44,0,bright,bright2);
+    }
   }
 
   function drawSerpentHead(spine,n,dimmed,flash){
@@ -1773,25 +2062,16 @@ body.theme-night #zoom-reset{
     if (!flash){
       ctx.save();ctx.scale(.86,.76);traceHeadShape(L,W,neckW);ctx.globalAlpha=.34;ctx.fillStyle=ink.mid;ctx.fill();ctx.restore();
 
-      // Large outlined head plates with tiny labyrinths inside: the reference
-      // image translated into a one-bit reflective-LCD vocabulary.
-      ctx.globalAlpha=.92;ctx.strokeStyle=headBright;ctx.lineWidth=Math.max(1.0,CELL*.040);
-      for (const side of [-1,1]){
-        const sy=side*W*.21;
-        ctx.beginPath();
-        ctx.moveTo(-L*.14,sy-side*W*.12);ctx.lineTo(L*.18,sy-side*W*.14);
-        ctx.lineTo(L*.38,sy);ctx.lineTo(L*.16,sy+side*W*.14);ctx.lineTo(-L*.16,sy+side*W*.10);ctx.closePath();ctx.stroke();
-        ctx.save();ctx.translate(L*.04,sy);if(side<0)ctx.scale(1,-1);
-        ctx.globalAlpha=.98;drawMeanderMotif((n+side+9)%5,L*.30,W*.12,headBright,headBright2,Math.min(6,Math.floor((n-3)/2)));ctx.restore();
-      }
-      // Rear crown bridge visually dissolves the neck/head seam into the
-      // same labyrinth system instead of letting it read as a collar.
-      ctx.save();ctx.translate(-L*.29,0);ctx.globalAlpha=.88;
-      drawMeanderMotif((n+3)%5,L*.26,W*.18,headBright,headBright2,Math.min(6,Math.floor((n-3)/2)));ctx.restore();
+      // The head now belongs to the same morph as the body. Every grammar is
+      // constructed around the dorsal axis, then mirrored laterally where it
+      // has side features; asymmetry comes from station spacing/shape, never
+      // from the left and right flanks disagreeing about the animal.
+      ctx.save();ctx.translate(-L*.02,0);ctx.globalAlpha=.92;
+      drawHeadMorphPattern(currentPattern(),L,W,headBright,headBright2,ink.border,n);ctx.restore();
 
-      // Frontal crown/keel.
-      ctx.globalAlpha=.78;ctx.strokeStyle=headBright;
-      ctx.beginPath();ctx.moveTo(-L*.20,0);ctx.lineTo(L*.04,-W*.08);ctx.lineTo(L*.27,0);ctx.lineTo(L*.04,W*.08);ctx.closePath();ctx.stroke();
+      // Frontal crown/keel stays common to every morph as an anatomical cue.
+      ctx.globalAlpha=.62;ctx.strokeStyle=headBright;ctx.lineWidth=Math.max(1,CELL*.032);
+      ctx.beginPath();ctx.moveTo(-L*.15,0);ctx.lineTo(L*.06,-W*.065);ctx.lineTo(L*.28,0);ctx.lineTo(L*.06,W*.065);ctx.closePath();ctx.stroke();
 
       // Tiny lateral eyes: not cartoon dots; little inset optical marks in the
       // head plates, enough to establish which end is alive and watching.
