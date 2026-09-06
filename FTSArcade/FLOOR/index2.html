@@ -1,25 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- REF 0.4.1: analytics only on hosted HTTP(S); file:// stays console-clean. -->
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-M9CD6TWFZE"></script>
     <script>
-    if (/^https?:$/.test(location.protocol)) {
-      window.dataLayer = window.dataLayer || [];
-      window.gtag = function(){ dataLayer.push(arguments); };
-      gtag('js', new Date()); gtag('config', 'G-M9CD6TWFZE');
-      const ga=document.createElement('script'); ga.async=true;
-      ga.src='https://www.googletagmanager.com/gtag/js?id=G-M9CD6TWFZE';
-      document.head.appendChild(ga);
-    }
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-M9CD6TWFZE');
     </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<link rel="preload" as="image" href="fts-arcade-world-atlas.png">
-<link rel="preload" as="image" href="fts-arcade-cabinet-skins.png">
-<link rel="preload" as="image" href="fts_sprites.png">
-<link rel="preload" as="image" href="fts-arcade-fixture-atlas.png">
-<title>FTS Arcade Floor 0.5.1 Starting Grid</title>
-<!-- Release Engineering Factory 0.4.1: embedded atlases, landscape CRT previews, accumulated UAT. -->
+<title>FTS Arcade Ring 0.2 - First Person</title>
 
 <!-- ── FA3D Meta ─────────────────────────────────────────── -->
 <meta name="description" content="FTS Arcade - a first-person 2.5D cabinet portal hub.">
@@ -30,6 +23,9 @@
 
 
     <!-- ── Favicons ─────────────────────────────────────────────── -->
+    <link rel="icon" type="image/png" href="../fts-favicon.png">
+    <link rel="shortcut icon" type="image/png" href="../fts-favicon.png">
+    <link rel="apple-touch-icon" href="../fts-favicon.png">
 
     <!-- ── Open Graph ───────────────────────────────────────────── -->
     <meta property="og:title"       content="FTS Arcade Floor">
@@ -48,6 +44,9 @@
     <meta name="twitter:image"       content="https://frymatic.us/FTSArcade/FishTacoStand.png">
 
 
+<link rel="preload" as="image" href="fts-arcade-world-atlas.png">
+<link rel="preload" as="image" href="fts-arcade-cabinet-skins.png">
+<link rel="preload" as="image" href="fts-arcade-screen-atlas.png">
 <style>
 :root{--pink:#ff59d5;--blue:#71b8ff;--gold:#ffc95f;--red:#ff5b45;--ink:#05070b;--panel:rgba(7,9,14,.88)}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -96,16 +95,12 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;image-renderi
 <script>
 'use strict';
 
-const RUNTIME_ERRORS=[];
-addEventListener('error',e=>{if(e.error||e.message)RUNTIME_ERRORS.push(String(e.error&&e.error.stack||e.message||e.error));});
-addEventListener('unhandledrejection',e=>RUNTIME_ERRORS.push(String(e.reason&&e.reason.stack||e.reason||'unhandled rejection')));
-
-const VERSION='fts-arcade-floor-0.5.1-starting-grid';
+const VERSION='fts-arcade-ring-0.3.1';
 const TAU=Math.PI*2, DEG=Math.PI/180;
 // Dimensional contract: 1 engine unit = 1 inch.
 const RING={outer:430,inner:118,sides:32,ceil:132};
 const PLAYER_R=11,PLAYER_H=74,EYE=69,SPEED_WALK=84,SPEED_RUN=387.2,ACCEL=10; // 22 mph sprint
-const CABINET_DIM={w:30,d:34,h:84,control:45,screenBayTop:76,screenCenter:62,screenW:24};
+const CABINET_DIM={w:30,d:34,h:74,control:45,screenTop:69};
 const AISLE={secondary:47.25,primary:70.87,merge:141.73}; // 1.2m / 1.8m / 3.6m references, inches
 const FOV=76*Math.PI/180,NEAR=.6,SHADES=11,TILE_H=256,LOOK_UP=180,LOOK_DOWN=320;
 const PORTALS={
@@ -116,12 +111,11 @@ const PORTALS={
  adDeal:'https://frymatic.us/menu/gas-works.html'
 };
 
-const ASSET_NAMES={world:'fts-arcade-world-atlas.png',skin:'fts-arcade-cabinet-skins.png',screen:'fts_sprites.png',fixture:'fts-arcade-fixture-atlas.png'};
 const ASSET_FILES={
- world:ASSET_NAMES.world,
- skin:ASSET_NAMES.skin,
- screen:ASSET_NAMES.screen,
- fixture:ASSET_NAMES.fixture
+ world:'fts-arcade-world-atlas.png',
+ skin:'fts-arcade-cabinet-skins.png',
+ screen:'fts-arcade-screen-atlas.png',
+ fixture:'fts-arcade-fixture-atlas.png'
 };
 const WORLD_RECTS={
  WALL_MARBLE:[16,16,64,64],WALL_BLACK_GOLD:[96,16,64,64],WALL_LIGHT:[176,16,64,64],WALL_RIB:[256,16,64,64],WALL_GOLD:[336,16,64,64],
@@ -136,13 +130,7 @@ function skinRect(letter,part){
  const li=letter.charCodeAt(0)-65,pi=SKIN_PARTS.indexOf(part),idx=li*5+pi;
  return[(idx%SKIN_COLS)*SKIN_TILE,Math.floor(idx/SKIN_COLS)*SKIN_TILE,SKIN_TILE,SKIN_TILE];
 }
-const SCREEN_ATLAS_META={width:2048,height:1433,cols:5,rows:5,count:25};
-const SCREEN_X=[[5,400],[414,401],[824,400],[1233,401],[1643,400]];
-const SCREEN_Y=[[10,266],[291,278],[586,260],[870,267],[1152,277]];
-function screenRect(n){
- const i=Math.max(0,Math.min(SCREEN_ATLAS_META.count-1,n-1)),c=i%5,r=Math.floor(i/5),x=SCREEN_X[c],y=SCREEN_Y[r];
- return[x[0],y[0],x[1],y[1]];
-}
+function screenRect(n){const i=Math.max(0,Math.min(24,n-1));return[(i%5)*128,Math.floor(i/5)*128,128,128];}
 const BLACK_RECT=[(130%SKIN_COLS)*SKIN_TILE,Math.floor(130/SKIN_COLS)*SKIN_TILE,SKIN_TILE,SKIN_TILE];
 
 const MATERIALS=[];
@@ -213,7 +201,7 @@ function ringDefs(){
 }
 
 // 26 cabinet identities, A-Z. Artwork and resting-screen pairings are centralized here.
-// screen is the 1-based tile index in the supplied fts_sprites landscape CRT atlas.
+// screen is the 1-based tile index in fts-arcade-screen-atlas.png.
 const CABINET_ROSTER=[
  ['A','ASTROIDS OBLITERATUS','../astroids.html',1, '_blank'],
  ['B','BRAZEN TOWER','../BRAZENTOWER',17, '_blank'],
@@ -246,9 +234,6 @@ const CABINET_ROSTER=[
 function cabinetSolid(letter,slot,x,y,faceAng,title,url,screenIndex,target='_blank'){
  const K=p=>MAT['SKIN_'+letter+'_'+p], black=MAT.CAB_BLACK;
  const screen=MAT['SCREEN_'+String(screenIndex||17).padStart(2,'0')];
- // Preserve each supplied CRT sprite's landscape aspect ratio in physical cabinet geometry.
- const sr=screenRect(screenIndex||17),screenH=CABINET_DIM.screenW*(sr[3]/sr[2]);
- const screenZ0=CABINET_DIM.screenCenter-screenH/2,screenZ1=CABINET_DIM.screenCenter+screenH/2;
  // Cabinet shell: full-height art outside, black-lined cavity inside, recessed CRT plane, extra lower blockers.
  return{id:'CAB_'+letter,kind:'cabinet',letter,slot,title,url,target,screenIndex,x,y,ang:faceAng,w:CABINET_DIM.w,d:CABINET_DIM.d,collision:true,light:1,
   parts:[
@@ -261,12 +246,12 @@ function cabinetSolid(letter,slot,x,y,faceAng,title,url,screenIndex,target='_bla
    {role:'control',w:30,d:18,of:7,ro:0,z0:42,z1:48,front:K('CONTROL'),left:black,right:black,back:black,stretch:true},
    {role:'inner-left',w:2,d:22,of:5,ro:-12,z0:0,z1:48,front:black,left:black,right:black,back:black,stretch:true},
    {role:'inner-right',w:2,d:22,of:5,ro:12,z0:0,z1:48,front:black,left:black,right:black,back:black,stretch:true},
-   {role:'backdrop',w:26,d:2,of:5,ro:0,z0:48,z1:CABINET_DIM.screenBayTop,front:black,left:black,right:black,back:black,stretch:true},
-   {role:'screen',w:CABINET_DIM.screenW,d:2,of:7,ro:0,z0:screenZ0,z1:screenZ1,front:screen,left:black,right:black,back:black,stretch:true},
-   {role:'jamb-left',w:2,d:18,of:7,ro:-13,z0:48,z1:CABINET_DIM.screenBayTop,front:black,left:black,right:black,back:black,stretch:true},
-   {role:'jamb-right',w:2,d:18,of:7,ro:13,z0:48,z1:CABINET_DIM.screenBayTop,front:black,left:black,right:black,back:black,stretch:true},
+   {role:'backdrop',w:26,d:2,of:5,ro:0,z0:48,z1:CABINET_DIM.screenTop,front:black,left:black,right:black,back:black,stretch:true},
+   {role:'screen',w:24,d:2,of:7,ro:0,z0:50,z1:CABINET_DIM.screenTop,front:screen,left:black,right:black,back:black,stretch:true},
+   {role:'jamb-left',w:2,d:18,of:7,ro:-13,z0:48,z1:CABINET_DIM.screenTop,front:black,left:black,right:black,back:black,stretch:true},
+   {role:'jamb-right',w:2,d:18,of:7,ro:13,z0:48,z1:CABINET_DIM.screenTop,front:black,left:black,right:black,back:black,stretch:true},
    {role:'hood-bottom',w:26,d:18,of:7,ro:0,z0:48,z1:50,front:black,left:black,right:black,back:black,stretch:true},
-   {role:'marquee',w:30,d:24,of:-1,ro:0,z0:CABINET_DIM.screenBayTop,z1:CABINET_DIM.h,front:K('MARQUEE'),left:black,right:black,back:black,stretch:true},
+   {role:'marquee',w:30,d:24,of:-1,ro:0,z0:CABINET_DIM.screenTop,z1:CABINET_DIM.h,front:K('MARQUEE'),left:black,right:black,back:black,stretch:true},
    {role:'back-block',w:26,d:2,of:-16,ro:0,z0:0,z1:CABINET_DIM.h,front:black,left:black,right:black,back:black,stretch:true}
   ]};
 }
@@ -283,35 +268,14 @@ function buildLevel(){
   else{const ang=Math.atan2(my,mx);ln.mid=Math.abs(Math.sin(ang*3))>.72?MAT.WALL_BLACK_GOLD:MAT.WALL_RIB;ln.tag='OUTER_WALL';}
  }
  const addCab=(letter,x,y,ang)=>{const row=CABINET_ROSTER.find(r=>r[0]===letter),slot=letter.charCodeAt(0)-64,c=cabinetSolid(letter,slot,x,y,ang,row[1],row[2],row[3],row[4]);map.solids.push(c);map.cabinets.push(c);map.targets.push(c);};
- // Cabinet topology 0.4: clustered back-to-back pods. The shared backs form protected
- // power/data spines, player faces point into sheltered gathering pockets, and the pods
- // deliberately interrupt long cross-arcade sightlines. Texture assignments are unchanged.
- const pod4=(front,back,cx,cy,ang,fsep=20,rsep=17)=>{
-  const f={x:Math.cos(ang),y:Math.sin(ang)},r={x:Math.sin(ang),y:-Math.cos(ang)};
-  front.forEach((L,i)=>{const rs=i? rsep:-rsep;addCab(L,cx+f.x*fsep+r.x*rs,cy+f.y*fsep+r.y*rs,ang);});
-  back.forEach((L,i)=>{const rs=i? rsep:-rsep;addCab(L,cx-f.x*fsep+r.x*rs,cy-f.y*fsep+r.y*rs,ang+Math.PI);});
- };
-
- // Northwest and northeast neighborhood pods.
- pod4(['C','A'],['D','B'],-300,210,60*DEG);
- pod4(['F','G'],['E','H'], 300,210,120*DEG);
-
- // North wall of the office island: three machines share one service chase.
- addCab('O',-62,154,Math.PI/2);
- addCab('I',  0,154,Math.PI/2);
- addCab('P', 62,154,Math.PI/2);
-
- // West island: J acts as a visual baffle; K/L share backs along the office wall.
- addCab('J',-232,0,Math.PI);
- addCab('K',-154, 38, Math.PI/2);
- addCab('L',-154,-38,-Math.PI/2);
-
- // East island: two-by-two back-to-back bank with a generous cable/service void.
- pod4(['Q','S'],['R','T'],185,0,Math.PI/2,36,31);
-
- // Southwest and southeast pods leave the southern arrival/egress axis porous.
- pod4(['U','N'],['V','M'],-285,-245,135*DEG);
- pod4(['Z','X'],['Y','W'], 285,-245, 45*DEG);
+ const polarCab=(letter,deg,r=374)=>{const a=deg*DEG;addCab(letter,Math.cos(a)*r,Math.sin(a)*r,a+Math.PI);};
+ // Outer ring: A-H north arc, U-X south arc.
+ [['A',112],['B',128],['C',144],['D',160],['E',68],['F',52],['G',36],['H',20],['U',220],['V',238],['W',302],['X',320]].forEach(q=>polarCab(q[0],q[1]));
+ // Square-island stations: backs toward the office core, faces into circulation.
+ addCab('I',-78,154,Math.PI/2); addCab('J',-30,154,Math.PI/2); addCab('O',30,154,Math.PI/2); addCab('P',78,154,Math.PI/2);
+ addCab('K',-154,32,Math.PI); addCab('L',-154,-28,Math.PI); addCab('Q',154,32,0); addCab('R',154,-28,0);
+ addCab('M',-142,-92,Math.PI*1.25); addCab('N',-96,-142,Math.PI*1.25); addCab('S',142,-92,-Math.PI*.25); addCab('T',96,-142,-Math.PI*.25);
+ addCab('Y',-34,-154,-Math.PI/2); addCab('Z',34,-154,-Math.PI/2);
 
  // North performance zone. Stage and DJ booth remain geometry.
  map.solids.push(boxSolid('STAGE_BACK',0,366,-Math.PI/2,190,16,96,MAT.STAGE_RED,MAT.WALL_BLACK_GOLD,{collision:true}));
@@ -402,21 +366,15 @@ const RenderCore={
 const canvas=document.getElementById('c'),ctx=canvas.getContext('2d'),telemetry=document.getElementById('telemetry'),promptEl=document.getElementById('prompt'),lockEl=document.getElementById('lock'),modal=document.getElementById('modal'),modalEyebrow=document.getElementById('modalEyebrow'),modalTitle=document.getElementById('modalTitle'),modalCopy=document.getElementById('modalCopy'),confirmBtn=document.getElementById('confirmBtn'),cancelBtn=document.getElementById('cancelBtn'),mapBtn=document.getElementById('mapBtn'),audioBtn=document.getElementById('audioBtn');
 const IMG={world:null,skin:null,screen:null,fixture:null,ready:false,errors:[]};let texBank=[],flatBank=[],RW=0,RH=0,RSCALE=1,dl=null,showMap=false,activeTarget=null,modalTarget=null;
 
-function loadImage(src,label){return new Promise(resolve=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=()=>{IMG.errors.push(label||'asset');resolve(null);};im.src=src;});}
+function loadImage(src){return new Promise(resolve=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=()=>{IMG.errors.push(src);resolve(null);};im.src=src;});}
 function cropCanvas(im,r){const cv=document.createElement('canvas');cv.width=cv.height=64;const g=cv.getContext('2d');g.imageSmoothingEnabled=false;if(im&&r)g.drawImage(im,r[0],r[1],r[2],r[3],0,0,64,64);else{g.fillStyle='#222833';g.fillRect(0,0,64,64);g.strokeStyle='#ff4a98';g.strokeRect(2,2,60,60);}return cv;}
 function shadeStrip(src,level){const cv=document.createElement('canvas');cv.width=64;cv.height=TILE_H;const g=cv.getContext('2d');g.imageSmoothingEnabled=false;for(let y=0;y<TILE_H;y+=64)g.drawImage(src,0,y,64,64);const k=level/(SHADES-1);g.globalCompositeOperation='source-atop';g.fillStyle='rgba(2,4,8,'+(k*.9)+')';g.fillRect(0,0,64,TILE_H);return cv;}
 function shadeTile(src,level){const cv=document.createElement('canvas');cv.width=cv.height=64;const g=cv.getContext('2d');g.imageSmoothingEnabled=false;g.drawImage(src,0,0);const k=level/(SHADES-1);g.globalCompositeOperation='source-atop';g.fillStyle='rgba(2,4,8,'+(k*.9)+')';g.fillRect(0,0,64,64);return cv;}
-function buildTextures(){texBank=new Array(MATERIALS.length);flatBank=new Array(MATERIALS.length);IMG.ready=!!(IMG.world&&IMG.skin&&IMG.screen&&IMG.fixture);}
-function ensureTextureBank(i){
- if(texBank[i]&&flatBank[i])return;
- const m=MATERIALS[i],src=cropCanvas(IMG[m.sheet],m.rect),row=[],prow=[];
- for(let sh=0;sh<SHADES;sh++){row.push(shadeStrip(src,sh));prow.push(ctx.createPattern(shadeTile(src,sh),'repeat'));}
- texBank[i]=row;flatBank[i]=prow;
-}
+function buildTextures(){texBank=[];flatBank=[];for(const m of MATERIALS){const src=cropCanvas(IMG[m.sheet],m.rect),row=[],prow=[];for(let sh=0;sh<SHADES;sh++){row.push(shadeStrip(src,sh));prow.push(ctx.createPattern(shadeTile(src,sh),'repeat'));}texBank.push(row);flatBank.push(prow);}IMG.ready=!!(IMG.world&&IMG.skin&&IMG.screen&&IMG.fixture);}
 
 function paint(sim,d){const v=d.view,w=v.w,h=v.h;ctx.fillStyle='#03050a';ctx.fillRect(0,0,w,h);ctx.imageSmoothingEnabled=false;const zbuf=d.pixelDepth;zbuf.fill(Infinity);const shadeOf=(dist,light)=>Math.min(SHADES-1,Math.max(0,((Math.min(1,dist/780+(1-light)*.7))*(SHADES-1))|0));
- const plane=i=>{const y=d.sY[i],x0=d.sX0[i],x1=d.sX1[i],dist=d.sDist[i];if(y<0||y>=h||x1<x0)return;ensureTextureBank(d.sFlat[i]);const p=flatBank[d.sFlat[i]]&&flatBank[d.sFlat[i]][shadeOf(dist,d.sLight[i])];if(!p)return;const m=Geom.planePatternTransform(sim.x,sim.y,v.cosA,v.sinA,v.halfW,v.projDist,y,dist);if(m&&p.setTransform){const pm=typeof DOMMatrix==='function'?new DOMMatrix([m.a,m.b,m.c,m.d,m.e,m.f]):m;p.setTransform(pm);}ctx.fillStyle=p;ctx.fillRect(x0,y,x1-x0+1,1);const off=y*w;for(let x=Math.max(0,x0);x<=Math.min(w-1,x1);x++)if(dist<zbuf[off+x])zbuf[off+x]=dist;};
- const wall=i=>{ensureTextureBank(d.wTex[i]);const bank=texBank[d.wTex[i]];if(!bank)return;const tex=bank[shadeOf(d.wDist[i],d.wLight[i])];let u=d.wU[i]%1;if(u<0)u+=1;const sx=Math.min(63,(u*64)|0),y0=d.wY0[i],y1=d.wY1[i],span=d.wF1[i]-d.wF0[i];if(span<=.001||y1<=y0)return;let sy0,sy1;if(d.wStretch[i]){sy0=Math.max(0,Math.min(64,((y0-d.wF0[i])/span)*64));sy1=Math.max(sy0,Math.min(64,((y1-d.wF0[i])/span)*64));}else{const wh=Math.max(1,Math.min(TILE_H,Math.abs(d.wTop[i]-d.wBot[i])));sy0=Math.max(0,Math.min(TILE_H,((y0-d.wF0[i])/span)*wh));sy1=Math.max(sy0,Math.min(TILE_H,((y1-d.wF0[i])/span)*wh));}ctx.drawImage(tex,sx,sy0,1,Math.max(.05,sy1-sy0),d.wX[i],y0,1,Math.max(1,y1-y0));const x=d.wX[i],ya=Math.max(0,Math.floor(y0)),yb=Math.min(h,Math.ceil(y1));if(x>=0&&x<w)for(let y=ya;y<yb;y++)if(d.wDist[i]<zbuf[y*w+x])zbuf[y*w+x]=d.wDist[i];};
+ const plane=i=>{const y=d.sY[i],x0=d.sX0[i],x1=d.sX1[i],dist=d.sDist[i];if(y<0||y>=h||x1<x0)return;const p=flatBank[d.sFlat[i]]&&flatBank[d.sFlat[i]][shadeOf(dist,d.sLight[i])];if(!p)return;const m=Geom.planePatternTransform(sim.x,sim.y,v.cosA,v.sinA,v.halfW,v.projDist,y,dist);if(m&&p.setTransform){const pm=typeof DOMMatrix==='function'?new DOMMatrix([m.a,m.b,m.c,m.d,m.e,m.f]):m;p.setTransform(pm);}ctx.fillStyle=p;ctx.fillRect(x0,y,x1-x0+1,1);const off=y*w;for(let x=Math.max(0,x0);x<=Math.min(w-1,x1);x++)if(dist<zbuf[off+x])zbuf[off+x]=dist;};
+ const wall=i=>{const bank=texBank[d.wTex[i]];if(!bank)return;const tex=bank[shadeOf(d.wDist[i],d.wLight[i])];let u=d.wU[i]%1;if(u<0)u+=1;const sx=Math.min(63,(u*64)|0),y0=d.wY0[i],y1=d.wY1[i],span=d.wF1[i]-d.wF0[i];if(span<=.001||y1<=y0)return;let sy0,sy1;if(d.wStretch[i]){sy0=Math.max(0,Math.min(64,((y0-d.wF0[i])/span)*64));sy1=Math.max(sy0,Math.min(64,((y1-d.wF0[i])/span)*64));}else{const wh=Math.max(1,Math.min(TILE_H,Math.abs(d.wTop[i]-d.wBot[i])));sy0=Math.max(0,Math.min(TILE_H,((y0-d.wF0[i])/span)*wh));sy1=Math.max(sy0,Math.min(TILE_H,((y1-d.wF0[i])/span)*wh));}ctx.drawImage(tex,sx,sy0,1,Math.max(.05,sy1-sy0),d.wX[i],y0,1,Math.max(1,y1-y0));const x=d.wX[i],ya=Math.max(0,Math.floor(y0)),yb=Math.min(h,Math.ceil(y1));if(x>=0&&x<w)for(let y=ya;y<yb;y++)if(d.wDist[i]<zbuf[y*w+x])zbuf[y*w+x]=d.wDist[i];};
  const ops=[];for(let i=0;i<d.sN;i++)ops.push({k:0,i,dist:d.sDist[i]});for(let i=0;i<d.wN;i++)ops.push({k:1,i,dist:d.wDist[i]});ops.sort((a,b)=>b.dist-a.dist||a.k-b.k);for(const op of ops)op.k?wall(op.i):plane(op.i);
  // subtle CRT vignette and crosshair
  const grad=ctx.createRadialGradient(w/2,h/2,Math.min(w,h)*.2,w/2,h/2,Math.max(w,h)*.72);grad.addColorStop(0,'rgba(0,0,0,0)');grad.addColorStop(1,'rgba(0,0,0,.34)');ctx.fillStyle=grad;ctx.fillRect(0,0,w,h);ctx.fillStyle='rgba(220,238,255,.62)';ctx.fillRect(w/2-5,h/2,3,1);ctx.fillRect(w/2+3,h/2,3,1);ctx.fillRect(w/2,h/2-5,1,3);ctx.fillRect(w/2,h/2+3,1,3);
@@ -458,60 +416,11 @@ canvas.addEventListener('pointerdown',e=>{if(e.pointerType==='touch'&&e.clientX>
 let last=0,fpsAcc=0,fpsN=0,fps=0,frames=0;
 function loop(ts){const dt=Math.min((ts-last)/1000||.016,.05);last=ts;sim.step(dt,input);RenderCore.solve(sim,dl,RW,RH);paint(sim,dl);if(showMap)drawMap(sim,RW,RH);updatePrompt();fpsAcc+=dt;fpsN++;if(fpsAcc>.45){fps=fpsN/fpsAcc;fpsAcc=0;fpsN=0;}if((frames++&7)===0)telemetry.textContent=VERSION+' | '+RW+'x'+RH+' | '+fps.toFixed(0)+' fps | SEC '+(sim.sector+1)+'/'+map.sectors.length+' | CAB '+map.cabinets.length+' A-Z | FIX '+map.fixtures.length+' | ADS '+map.ads.length+' | VIS '+dl.stats.sectors+'s '+dl.stats.solidFaces+'g | ART '+(IMG.ready?'ATLAS':'FALLBACK')+(MAP_ERRORS.length?' | MAP ERR '+MAP_ERRORS.length:'');requestAnimationFrame(loop);}
 addEventListener('resize',resize);
-Promise.all([loadImage(ASSET_FILES.world,'world'),loadImage(ASSET_FILES.skin,'skin'),loadImage(ASSET_FILES.screen,'screen'),loadImage(ASSET_FILES.fixture,'fixture')]).then(([w,s,sc,f])=>{IMG.world=w;IMG.skin=s;IMG.screen=sc;IMG.fixture=f;buildTextures();if(IMG.errors.length){telemetry.textContent=VERSION+' | ASSET ERROR: '+IMG.errors.join(', ');console.error('[FTS ARCADE] atlas load failure',IMG.errors,ASSET_FILES);}});
+Promise.all([loadImage(ASSET_FILES.world),loadImage(ASSET_FILES.skin),loadImage(ASSET_FILES.screen),loadImage(ASSET_FILES.fixture)]).then(([w,s,sc,f])=>{IMG.world=w;IMG.skin=s;IMG.screen=sc;IMG.fixture=f;buildTextures();});
 resize();buildTextures();
 if(MAP_ERRORS.length)console.error('[FTS ARCADE] map validation',MAP_ERRORS);
-function screenPart(c){return c.parts.find(p=>p.role==='screen');}
-const REF_TESTS={
- mapValid:()=>MAP_ERRORS.length===0,
- cabinetCount:()=>map.cabinets.length===26,
- cabinetAlphabet:()=>map.cabinets.map(c=>c.letter).sort().join('')==='ABCDEFGHIJKLMNOPQRSTUVWXYZ',
- exitCount:()=>map.exits.length===3,
- geometryCabinets:()=>map.cabinets.every(c=>c.parts&&c.parts.length>=10),
- concaveCabinets:()=>map.cabinets.every(c=>c.parts.some(p=>p.role==='backdrop')&&c.parts.some(p=>p.role==='screen')&&c.parts.some(p=>p.role==='jamb-left')&&c.parts.some(p=>p.role==='jamb-right')),
- screenPairings:()=>map.cabinets.every(c=>c.screenIndex>=1&&c.screenIndex<=25),
- screenAtlasGrid:()=>SCREEN_ATLAS_META.count===25&&SCREEN_X.length===5&&SCREEN_Y.length===5,
- screenRectsInBounds:()=>Array.from({length:25},(_,i)=>screenRect(i+1)).every(r=>r[0]>=0&&r[1]>=0&&r[0]+r[2]<=SCREEN_ATLAS_META.width&&r[1]+r[3]<=SCREEN_ATLAS_META.height),
- screenSpritesLandscape:()=>Array.from({length:25},(_,i)=>screenRect(i+1)).every(r=>r[2]/r[3]>1.35),
- cabinetScreensLandscape:()=>map.cabinets.every(c=>{const p=screenPart(c);return p&&p.w/(p.z1-p.z0)>1.35;}),
- screenAspectPreserved:()=>map.cabinets.every(c=>{const p=screenPart(c),r=screenRect(c.screenIndex);return p&&Math.abs(p.w/(p.z1-p.z0)-r[2]/r[3])<1e-6;}),
- screenMaterialPairings:()=>map.cabinets.every(c=>{const p=screenPart(c);return p&&MATERIALS[p.front]&&MATERIALS[p.front].name==='SCREEN_'+String(c.screenIndex).padStart(2,'0');}),
- cabinetProportions:()=>CABINET_DIM.control===45&&CABINET_DIM.screenBayTop===76&&CABINET_DIM.h===84&&CABINET_DIM.screenW===24,
- runSpeed22mph:()=>Math.abs(SPEED_RUN-387.2)<.001,
- ringSectors:()=>map.sectors.length===RING.sides,
- spawnInsideMap:()=>sim.sectorAt(map.spawn.x,map.spawn.y)>=0,
- fixturesPresent:()=>map.fixtures.some(f=>f.id==='TOKEN_VEND')&&map.fixtures.some(f=>f.id==='JUKEBOX')&&map.fixtures.some(f=>f.id==='WHITEBOARD')&&map.fixtures.some(f=>f.id==='BULLETIN'),
- adInventory:()=>map.ads.length===8&&map.ads.every(a=>a.url.includes('inventory=')),
- offsiteExits:()=>map.exits.every(e=>/^https:\/\//.test(e.url)),
- standaloneAssets:()=>Object.values(ASSET_FILES).every(s=>s.startsWith('data:image/png;base64,')),
- assetDimensions:()=>!!IMG.world&&IMG.world.naturalWidth===1024&&IMG.world.naturalHeight===1024&&!!IMG.skin&&IMG.skin.naturalWidth===2048&&IMG.skin.naturalHeight===1152&&!!IMG.screen&&IMG.screen.naturalWidth===2048&&IMG.screen.naturalHeight===1433&&!!IMG.fixture&&IMG.fixture.naturalWidth===1024&&IMG.fixture.naturalHeight===256,
- assetsReady:()=>IMG.ready&&IMG.errors.length===0,
- noFrameOriginTrap:()=>document.querySelectorAll('iframe,frame').length===0,
- renderProducesGeometry:()=>!!dl&&dl.wN>0&&dl.sN>0&&dl.stats.solidFaces>0,
- runtimeClean:()=>RUNTIME_ERRORS.length===0
-};
-function runRefTests(){
- const results={},failures=[];
- for(const [name,fn] of Object.entries(REF_TESTS)){
-  try{results[name]=!!fn();}catch(err){results[name]=false;results[name+'_error']=String(err&&err.stack||err);}
-  if(results[name]===false)failures.push(name);
- }
- return{version:VERSION,pass:failures.length===0,passed:Object.values(results).filter(v=>v===true).length,total:Object.keys(REF_TESTS).length,failures,results,mapErrors:MAP_ERRORS.slice(),assetErrors:IMG.errors.slice(),runtimeErrors:RUNTIME_ERRORS.slice(),screenAtlas:SCREEN_ATLAS_META};
-}
-window.__FTS_ARCADE__={VERSION,map,sim,MapBuilder,Geom,RenderCore,DrawLists,MATERIALS,MAP_ERRORS,CABINET_ROSTER,CABINET_DIM,AISLE,PORTALS,ASSET_NAMES,SCREEN_ATLAS_META,screenRect,tests:REF_TESTS,runTests:runRefTests};
-const qs=new URLSearchParams(location.search);
-if(qs.get('preview')==='1')lockEl.classList.add('hidden');
-if(qs.get('map')==='1'){showMap=true;mapBtn.textContent='MAP: ON';mapBtn.classList.add('on');}
-if(qs.get('test')==='1'){
- const showTests=()=>{
-  const r=runRefTests();
-  const pre=document.createElement('pre');pre.id='fts-tests';
-  pre.dataset.pass=String(r.pass);
-  pre.style.cssText='position:fixed;z-index:99;left:0;top:0;max-width:100vw;max-height:100vh;overflow:auto;background:#000;color:'+(r.pass?'#53ff8a':'#ff667a')+';padding:10px;font:12px/1.45 monospace;white-space:pre-wrap';
-  pre.textContent=JSON.stringify(r,null,2);document.body.appendChild(pre);
- };
- const waitAssets=()=>{if(IMG.ready||IMG.errors.length){setTimeout(showTests,180);}else setTimeout(waitAssets,60);};waitAssets();
-}
+window.__FTS_ARCADE__={VERSION,map,sim,MapBuilder,Geom,RenderCore,DrawLists,MATERIALS,MAP_ERRORS,CABINET_ROSTER,CABINET_DIM,AISLE,PORTALS,tests:{mapValid:()=>MAP_ERRORS.length===0,cabinetCount:()=>map.cabinets.length===26,cabinetAlphabet:()=>map.cabinets.map(c=>c.letter).sort().join('')==='ABCDEFGHIJKLMNOPQRSTUVWXYZ',exitCount:()=>map.exits.length===3,geometryCabinets:()=>map.cabinets.every(c=>c.parts&&c.parts.length>=10),concaveCabinets:()=>map.cabinets.every(c=>c.parts.some(p=>p.role==='backdrop')&&c.parts.some(p=>p.role==='screen')&&c.parts.some(p=>p.role==='jamb-left')&&c.parts.some(p=>p.role==='jamb-right')),screenPairings:()=>map.cabinets.every(c=>c.screenIndex>=1&&c.screenIndex<=25),cabinetProportions:()=>CABINET_DIM.control===45&&CABINET_DIM.screenTop===EYE&&CABINET_DIM.h===74,runSpeed22mph:()=>Math.abs(SPEED_RUN-387.2)<.001,ringSectors:()=>map.sectors.length===RING.sides,fixturesPresent:()=>map.fixtures.some(f=>f.id==='TOKEN_VEND')&&map.fixtures.some(f=>f.id==='JUKEBOX')&&map.fixtures.some(f=>f.id==='WHITEBOARD')&&map.fixtures.some(f=>f.id==='BULLETIN'),adInventory:()=>map.ads.length===8&&map.ads.every(a=>a.url.includes('inventory=')),offsiteExits:()=>map.exits.every(e=>/^https:\/\//.test(e.url)),assetsReferenced:()=>ASSET_FILES.world==='fts-arcade-world-atlas.png'&&ASSET_FILES.skin==='fts-arcade-cabinet-skins.png'&&ASSET_FILES.screen==='fts-arcade-screen-atlas.png'&&ASSET_FILES.fixture==='fts-arcade-fixture-atlas.png'}};
+const qs=new URLSearchParams(location.search);if(qs.get('preview')==='1')lockEl.classList.add('hidden');if(qs.get('map')==='1'){showMap=true;mapBtn.textContent='MAP: ON';mapBtn.classList.add('on');}if(qs.get('test')==='1')setTimeout(()=>{const t=window.__FTS_ARCADE__.tests,r={version:VERSION,mapValid:t.mapValid(),cabinetCount:t.cabinetCount(),cabinetAlphabet:t.cabinetAlphabet(),exitCount:t.exitCount(),geometryCabinets:t.geometryCabinets(),cabinetProportions:t.cabinetProportions(),runSpeed22mph:t.runSpeed22mph(),ringSectors:t.ringSectors(),fixturesPresent:t.fixturesPresent(),adInventory:t.adInventory(),offsiteExits:t.offsiteExits(),assetsReferenced:t.assetsReferenced(),mapErrors:MAP_ERRORS,assetErrors:IMG.errors};const pre=document.createElement('pre');pre.id='fts-tests';pre.style.cssText='position:fixed;z-index:99;left:0;top:0;background:#000;color:#0f0;padding:8px;font:12px monospace';pre.textContent=JSON.stringify(r);document.body.appendChild(pre);},900);
 requestAnimationFrame(loop);
 </script>
 </body>
