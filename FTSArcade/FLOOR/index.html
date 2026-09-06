@@ -22,7 +22,7 @@
 <link rel="preload" as="image" href="fts_sprites.png">
 <link rel="preload" as="image" href="fts-arcade-fixture-atlas.png">
 <link rel="preload" as="image" href="the-Cabinet.png">
-<title>FTS Arcade Floor 0.5.5 Cabinet Evolved</title>
+<title>FTS Arcade Floor 0.5.6 Cabinet Evolved 42</title>
 <!-- 0.5.2 art fit: external world/fixture/screen atlases + Cabinets01-Cabinets04, exact per-CRT crops. -->
 
 <!-- ── FA3D Meta ─────────────────────────────────────────── -->
@@ -104,12 +104,12 @@ const RUNTIME_ERRORS=[];
 addEventListener('error',e=>{if(e.error||e.message)RUNTIME_ERRORS.push(String(e.error&&e.error.stack||e.message||e.error));});
 addEventListener('unhandledrejection',e=>RUNTIME_ERRORS.push(String(e.reason&&e.reason.stack||e.reason||'unhandled rejection')));
 
-const VERSION='fts-arcade-floor-0.5.5-cabinet-evolved';
+const VERSION='fts-arcade-floor-0.5.6-cabinet-evolved-42';
 const TAU=Math.PI*2, DEG=Math.PI/180;
 // Dimensional contract: 1 engine unit = 1 inch.
 const RING={outer:430,inner:118,sides:32,ceil:132};
 const PLAYER_R=11,PLAYER_H=74,EYE=69,SPEED_WALK=84,SPEED_RUN=387.2,ACCEL=10; // 22 mph sprint
-const CABINET_DIM={w:31,d:36,h:72,control:39.25,screenBayTop:63.5,screenCenter:52.5,screenW:26.2,controlW:27.5,controlD:14.5};
+const CABINET_DIM={w:40,d:40,h:78,control:40,screenBayTop:68.5,screenCenter:55.5,screenW:35,controlW:36.5,controlD:17.5};
 const AISLE={secondary:47.25,primary:70.87,merge:141.73}; // 1.2m / 1.8m / 3.6m references, inches
 const FOV=76*Math.PI/180,NEAR=.6,SHADES=11,TILE_H=256,LOOK_UP=180,LOOK_DOWN=320;
 const PORTALS={
@@ -140,13 +140,11 @@ const WORLD_RECTS={
 const FIXTURE_RECTS={VEND_DRINK:[16,16,64,64],VEND_SNACK:[96,16,64,64],JUKEBOX:[176,16,64,64],WHITEBOARD:[256,16,64,64],BULLETIN:[336,16,64,64],TOKEN:[416,16,64,64],POSTER_1:[496,16,64,64],POSTER_2:[576,16,64,64],POSTER_3:[656,16,64,64],AD_SPACE:[736,16,64,64],AD_DEAL:[816,16,64,64],WAYFIND:[896,16,64,64],OFFICE_DOOR:[16,96,64,64],STAGE_SIGN:[96,96,64,64],DJ_SIGN:[176,96,64,64],POSTER_4:[256,96,64,64]};
 const SKIN_PARTS=['MARQUEE','LEFT','RIGHT','CONTROL','FRONT'];
 
-// Generic cabinet-detail crops borrowed from the-Cabinet.png. These are intentionally
-// structural details shared by every machine; game identity remains in Cabinets01-04.
+// the-Cabinet.png is now a micro-detail source only. The game atlases already provide
+// the cabinet silhouette, edge language, control art, marquee, and lower-front identity.
+// Keep only the authentic coin-door crop from the photographic reference.
 const CABINET_REF_RECTS={
- COIN_DOOR:[330,978,112,214],
- BLACK_BODY:[118,850,535,430],
- WOOD_TRIM:[34,8,56,1380],
- CONTROL_EDGE:[72,714,620,143]
+ COIN_DOOR:[330,978,112,214]
 };
 
 // Crops measured from Cabinets01-Cabinets04. Transparent helper-label bands are excluded.
@@ -307,12 +305,12 @@ const AUTHORING={
   {front:['Z','X'],back:['Y','W'],cx:285,cy:-245,deg:45}
  ],
  cabinetSingles:[
-  {letter:'O',x:-30.5,y:135.5,deg:90},
-  {letter:'I',x:0,y:135.5,deg:90},
-  {letter:'P',x:30.5,y:135.5,deg:90},
-  {letter:'J',x:-166,y:0,deg:180},
-  {letter:'K',x:-133.5,y:17.25,deg:90},
-  {letter:'L',x:-133.5,y:-17.25,deg:-90}
+  {letter:'O',x:-40.25,y:138.5,deg:90},
+  {letter:'I',x:0,y:138.5,deg:90},
+  {letter:'P',x:40.25,y:138.5,deg:90},
+  {letter:'J',x:-168,y:0,deg:180},
+  {letter:'K',x:-138.5,y:20.25,deg:90},
+  {letter:'L',x:-138.5,y:-20.25,deg:-90}
  ],
  officeEntry:[
   {id:'WHITEBOARD',x:-53,y:-119,deg:-90,w:48,z0:36,z1:80,mat:'FIX_WHITEBOARD',label:'WHITEBOARD',url:'https://frymatic.us/FTSArcade/',cta:'VIEW ARCADE NOTES'},
@@ -339,42 +337,40 @@ const AUTHORING={
 
 function cabinetSolid(letter,slot,x,y,faceAng,title,url,screenIndex,target='_blank'){
  const K=p=>MAT['SKIN_'+letter+'_'+p], black=MAT.CAB_BLACK;
- const ref={coin:MAT.CAB_REF_COIN_DOOR,body:MAT.CAB_REF_BLACK_BODY,trim:MAT.CAB_REF_WOOD_TRIM,edge:MAT.CAB_REF_CONTROL_EDGE};
+ const coin=MAT.CAB_REF_COIN_DOOR;
  const screen=MAT['SCREEN_'+String(screenIndex||17).padStart(2,'0')];
- // 30-inch HD CRT target: keep the supplied landscape sprite aspect ratio while giving
- // the cabinet a physically larger 6-foot upright presentation.
+ // "42-inch equivalent" is interpreted against each supplied landscape CRT crop.
+ // At the atlas' ~1.45-1.55 aspect ratios, a 35-inch physical width lands near a
+ // 42-inch diagonal while preserving the artwork without distortion.
  const sr=screenRect(screenIndex||17),screenH=CABINET_DIM.screenW*(sr[3]/sr[2]);
  const screenZ0=CABINET_DIM.screenCenter-screenH/2,screenZ1=CABINET_DIM.screenCenter+screenH/2;
- const controlTop=CABINET_DIM.control;
- const controlBase=controlTop-.9;
- const pedestalTop=controlBase-.7;
- const screenInset=5.5;
- const hoodDepth=15.5;
+ const controlTop=CABINET_DIM.control, controlBase=controlTop-.9, pedestalTop=controlBase-.7;
+ const screenInset=5.8, hoodDepth=18.5;
  return{id:'CAB_'+letter,kind:'cabinet',letter,slot,title,url,target,screenIndex,x,y,ang:faceAng,w:CABINET_DIM.w,d:CABINET_DIM.d,collision:true,light:1,
   parts:[
-   {role:'plinth',w:31,d:36,of:-1,ro:0,z0:0,z1:4.75,front:ref.body,left:black,right:black,back:black,stretch:true},
-   {role:'left-shell', w:2.2,d:27,of:-1,ro:-14.4,z0:0,z1:CABINET_DIM.screenBayTop,front:ref.trim,left:K('LEFT'),right:black,back:black,stretch:true},
-   {role:'right-shell',w:2.2,d:27,of:-1,ro: 14.4,z0:0,z1:CABINET_DIM.screenBayTop,front:ref.trim,left:black,right:K('RIGHT'),back:black,stretch:true},
-   {role:'lower-core',w:25.4,d:23.5,of:1.4,ro:0,z0:4.75,z1:35.4,front:ref.body,left:black,right:black,back:black,stretch:true},
-   {role:'front-brand',w:24.6,d:1.6,of:12.1,ro:0,z0:3.2,z1:15.8,front:K('FRONT'),left:black,right:black,back:black,stretch:true},
-   {role:'coin-door',w:7.75,d:1.15,of:12.7,ro:0,z0:16.5,z1:31.75,front:ref.coin,left:black,right:black,back:black,stretch:true},
-   {role:'coin-boss',w:12.2,d:1.05,of:12.25,ro:0,z0:14.8,z1:34.3,front:ref.body,left:black,right:black,back:black,stretch:true},
-   {role:'kick-plate',w:22.8,d:1.2,of:12.1,ro:0,z0:32,z1:37.2,front:ref.body,left:black,right:black,back:black,stretch:true},
-   {role:'control-pedestal',w:26.4,d:15.25,of:5.5,ro:0,z0:37.2,z1:pedestalTop,front:ref.edge,left:black,right:black,back:black,stretch:true},
-   // Horizontal control deck: near-floor parallel, wide, and centered like a conventional upright cabinet.
-   {role:'control',w:CABINET_DIM.controlW,d:CABINET_DIM.controlD,of:7.3,ro:0,z0:controlBase,z1:controlTop,front:ref.edge,left:black,right:black,back:black,top:K('CONTROL'),stretch:true},
-   {role:'jamb-left',w:1.9,d:hoodDepth,of:screenInset,ro:-12.3,z0:controlTop-.3,z1:CABINET_DIM.screenBayTop,front:ref.body,left:black,right:black,back:black,stretch:true},
-   {role:'jamb-right',w:1.9,d:hoodDepth,of:screenInset,ro:12.3,z0:controlTop-.3,z1:CABINET_DIM.screenBayTop,front:ref.body,left:black,right:black,back:black,stretch:true},
-   {role:'backdrop',w:25.2,d:2.4,of:3.5,ro:0,z0:controlTop,z1:CABINET_DIM.screenBayTop,front:ref.body,left:black,right:black,back:black,stretch:true},
-   // The renderer cannot pitch a quad in elevation, so the "standard CRT mounting angle"
-   // is approximated by a deeper recess, a lower screen center, and a more pronounced hood.
+   // Structural faces are deliberately plain black. Cabinets01-04 own the visible outline.
+   {role:'plinth',w:40,d:40,of:-1,ro:0,z0:0,z1:5,front:black,left:black,right:black,back:black,stretch:true},
+   {role:'left-shell', w:2,d:31,of:-1,ro:-19,z0:0,z1:CABINET_DIM.screenBayTop,front:black,left:K('LEFT'),right:black,back:black,stretch:true},
+   {role:'right-shell',w:2,d:31,of:-1,ro: 19,z0:0,z1:CABINET_DIM.screenBayTop,front:black,left:black,right:K('RIGHT'),back:black,stretch:true},
+   {role:'lower-core',w:34,d:27,of:1.5,ro:0,z0:5,z1:36.5,front:black,left:black,right:black,back:black,stretch:true},
+   // Let the game-specific lower-front art do the visual framing instead of the-Cabinet.png.
+   {role:'front-brand',w:32,d:1.7,of:14.2,ro:0,z0:2.5,z1:16,front:K('FRONT'),left:black,right:black,back:black,stretch:true},
+   {role:'coin-door',w:8.4,d:1.15,of:14.85,ro:0,z0:17,z1:32.5,front:coin,left:black,right:black,back:black,stretch:true},
+   {role:'coin-boss',w:13,d:1.0,of:14.45,ro:0,z0:15.5,z1:34.5,front:black,left:black,right:black,back:black,stretch:true},
+   {role:'kick-plate',w:31,d:1.2,of:14.3,ro:0,z0:32.5,z1:37.5,front:black,left:black,right:black,back:black,stretch:true},
+   {role:'control-pedestal',w:35,d:18.2,of:6.3,ro:0,z0:37.5,z1:pedestalTop,front:black,left:black,right:black,back:black,stretch:true},
+   {role:'control',w:CABINET_DIM.controlW,d:CABINET_DIM.controlD,of:8.3,ro:0,z0:controlBase,z1:controlTop,front:black,left:black,right:black,back:black,top:K('CONTROL'),stretch:true},
+   {role:'jamb-left',w:1.65,d:hoodDepth,of:screenInset,ro:-17.9,z0:controlTop-.2,z1:CABINET_DIM.screenBayTop,front:black,left:black,right:black,back:black,stretch:true},
+   {role:'jamb-right',w:1.65,d:hoodDepth,of:screenInset,ro:17.9,z0:controlTop-.2,z1:CABINET_DIM.screenBayTop,front:black,left:black,right:black,back:black,stretch:true},
+   {role:'backdrop',w:36.5,d:2.4,of:3.7,ro:0,z0:controlTop,z1:CABINET_DIM.screenBayTop,front:black,left:black,right:black,back:black,stretch:true},
    {role:'screen',w:CABINET_DIM.screenW,d:2,of:screenInset,ro:0,z0:screenZ0,z1:screenZ1,front:screen,left:black,right:black,back:black,stretch:true},
-   {role:'bezel-left',w:1.4,d:hoodDepth,of:screenInset,ro:-11.9,z0:screenZ0-1.2,z1:screenZ1+1.2,front:ref.body,left:black,right:black,back:black,stretch:true},
-   {role:'bezel-right',w:1.4,d:hoodDepth,of:screenInset,ro:11.9,z0:screenZ0-1.2,z1:screenZ1+1.2,front:ref.body,left:black,right:black,back:black,stretch:true},
-   {role:'bezel-bottom',w:27.2,d:hoodDepth,of:screenInset,ro:0,z0:screenZ0-1.35,z1:screenZ0+.85,front:ref.body,left:black,right:black,back:black,stretch:true},
-   {role:'bezel-top',w:27.2,d:13.4,of:2.8,ro:0,z0:screenZ1+.6,z1:CABINET_DIM.screenBayTop,front:ref.body,left:black,right:black,back:black,stretch:true},
-   {role:'marquee',w:31,d:17.5,of:-2.2,ro:0,z0:CABINET_DIM.screenBayTop,z1:CABINET_DIM.h,front:K('MARQUEE'),left:ref.trim,right:ref.trim,back:black,stretch:true},
-   {role:'back-block',w:25.4,d:2.2,of:-16.7,ro:0,z0:0,z1:CABINET_DIM.h,front:black,left:black,right:black,back:black,stretch:true}
+   // Slim black bezel only: no photographic edge texture competing with game art.
+   {role:'bezel-left',w:1.2,d:hoodDepth,of:screenInset,ro:-17.45,z0:screenZ0-.9,z1:screenZ1+.9,front:black,left:black,right:black,back:black,stretch:true},
+   {role:'bezel-right',w:1.2,d:hoodDepth,of:screenInset,ro:17.45,z0:screenZ0-.9,z1:screenZ1+.9,front:black,left:black,right:black,back:black,stretch:true},
+   {role:'bezel-bottom',w:37.2,d:hoodDepth,of:screenInset,ro:0,z0:screenZ0-1.1,z1:screenZ0+.55,front:black,left:black,right:black,back:black,stretch:true},
+   {role:'bezel-top',w:37.2,d:15.5,of:2.4,ro:0,z0:screenZ1+.45,z1:CABINET_DIM.screenBayTop,front:black,left:black,right:black,back:black,stretch:true},
+   {role:'marquee',w:40,d:18.5,of:-2,ro:0,z0:CABINET_DIM.screenBayTop,z1:CABINET_DIM.h,front:K('MARQUEE'),left:black,right:black,back:black,stretch:true},
+   {role:'back-block',w:34,d:2.2,of:-18.5,ro:0,z0:0,z1:CABINET_DIM.h,front:black,left:black,right:black,back:black,stretch:true}
   ]};
 }
 function boxSolid(id,x,y,ang,w,d,h,front,side,opts){return Object.assign({id,kind:'box',x,y,ang,w,d,collision:true,light:.96,parts:[{w,d,of:0,z0:0,z1:h,front,side,back:side}]},opts||{});}
@@ -572,7 +568,8 @@ const REF_TESTS={
  cabinetScreensLandscape:()=>map.cabinets.every(c=>{const p=screenPart(c);return p&&p.w/(p.z1-p.z0)>1.35;}),
  screenAspectPreserved:()=>map.cabinets.every(c=>{const p=screenPart(c),r=screenRect(c.screenIndex);return p&&Math.abs(p.w/(p.z1-p.z0)-r[2]/r[3])<1e-6;}),
  screenMaterialPairings:()=>map.cabinets.every(c=>{const p=screenPart(c);return p&&MATERIALS[p.front]&&MATERIALS[p.front].name==='SCREEN_'+String(c.screenIndex).padStart(2,'0');}),
- cabinetProportions:()=>CABINET_DIM.control===39.25&&CABINET_DIM.screenBayTop===63.5&&CABINET_DIM.h===72&&CABINET_DIM.screenW===26.2,
+ cabinetProportions:()=>CABINET_DIM.control===40&&CABINET_DIM.screenBayTop===68.5&&CABINET_DIM.h===78&&CABINET_DIM.screenW===35,
+ cabinetRefMinimal:()=>Object.keys(CABINET_REF_RECTS).join(',')==='COIN_DOOR',
  cabinetRefDeclared:()=>!!ASSET_NAMES.cabinetRef&&Array.isArray(ASSET_NAMES.cabinetRef)&&ASSET_NAMES.cabinetRef.some(x=>/the-Cabinet\.png$/i.test(x)),
  cabinetControlsHorizontal:()=>map.cabinets.every(c=>{const p=c.parts.find(x=>x.role==='control');return p&&p.top!=null&&(p.z1-p.z0)<=1.01;}),
  officeEntryFlanked:()=>{const d=AUTHORING.officeEntry.find(x=>x.id==='OFFICE_DOOR'),w=AUTHORING.officeEntry.find(x=>x.id==='WHITEBOARD'),b=AUTHORING.officeEntry.find(x=>x.id==='BULLETIN');return !!(d&&w&&b&&w.x<d.x&&b.x>d.x&&w.y===d.y&&b.y===d.y);},
