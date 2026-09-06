@@ -22,7 +22,7 @@
 <link rel="preload" as="image" href="fts_sprites.png">
 <link rel="preload" as="image" href="fts-arcade-fixture-atlas.png">
 <link rel="preload" as="image" href="the-Cabinet.png">
-<title>FTS Arcade Floor 0.5.6 Cabinet Evolved 42</title>
+<title>FTS Arcade Floor 0.5.7 Clean Control Deck</title>
 <!-- 0.5.2 art fit: external world/fixture/screen atlases + Cabinets01-Cabinets04, exact per-CRT crops. -->
 
 <!-- ── FA3D Meta ─────────────────────────────────────────── -->
@@ -33,7 +33,11 @@
 
 
 
+    
     <!-- ── Favicons ─────────────────────────────────────────────── -->
+    <link rel="icon" type="image/png" href="../fts-favicon.png">
+    <link rel="shortcut icon" type="image/png" href="../fts-favicon.png">
+    <link rel="apple-touch-icon" href="../fts-favicon.png">
 
     <!-- ── Open Graph ───────────────────────────────────────────── -->
     <meta property="og:title"       content="FTS Arcade Floor">
@@ -104,7 +108,7 @@ const RUNTIME_ERRORS=[];
 addEventListener('error',e=>{if(e.error||e.message)RUNTIME_ERRORS.push(String(e.error&&e.error.stack||e.message||e.error));});
 addEventListener('unhandledrejection',e=>RUNTIME_ERRORS.push(String(e.reason&&e.reason.stack||e.reason||'unhandled rejection')));
 
-const VERSION='fts-arcade-floor-0.5.6-cabinet-evolved-42';
+const VERSION='fts-arcade-floor-0.5.7-clean-control-deck';
 const TAU=Math.PI*2, DEG=Math.PI/180;
 // Dimensional contract: 1 engine unit = 1 inch.
 const RING={outer:430,inner:118,sides:32,ceil:132};
@@ -344,7 +348,7 @@ function cabinetSolid(letter,slot,x,y,faceAng,title,url,screenIndex,target='_bla
  // 42-inch diagonal while preserving the artwork without distortion.
  const sr=screenRect(screenIndex||17),screenH=CABINET_DIM.screenW*(sr[3]/sr[2]);
  const screenZ0=CABINET_DIM.screenCenter-screenH/2,screenZ1=CABINET_DIM.screenCenter+screenH/2;
- const controlTop=CABINET_DIM.control, controlBase=controlTop-.9, pedestalTop=controlBase-.7;
+ const controlTop=CABINET_DIM.control, controlBase=controlTop-.08;
  const screenInset=5.8, hoodDepth=18.5;
  return{id:'CAB_'+letter,kind:'cabinet',letter,slot,title,url,target,screenIndex,x,y,ang:faceAng,w:CABINET_DIM.w,d:CABINET_DIM.d,collision:true,light:1,
   parts:[
@@ -358,7 +362,6 @@ function cabinetSolid(letter,slot,x,y,faceAng,title,url,screenIndex,target='_bla
    {role:'coin-door',w:8.4,d:1.15,of:14.85,ro:0,z0:17,z1:32.5,front:coin,left:black,right:black,back:black,stretch:true},
    {role:'coin-boss',w:13,d:1.0,of:14.45,ro:0,z0:15.5,z1:34.5,front:black,left:black,right:black,back:black,stretch:true},
    {role:'kick-plate',w:31,d:1.2,of:14.3,ro:0,z0:32.5,z1:37.5,front:black,left:black,right:black,back:black,stretch:true},
-   {role:'control-pedestal',w:35,d:18.2,of:6.3,ro:0,z0:37.5,z1:pedestalTop,front:black,left:black,right:black,back:black,stretch:true},
    {role:'control',w:CABINET_DIM.controlW,d:CABINET_DIM.controlD,of:8.3,ro:0,z0:controlBase,z1:controlTop,front:black,left:black,right:black,back:black,top:K('CONTROL'),stretch:true},
    {role:'jamb-left',w:1.65,d:hoodDepth,of:screenInset,ro:-17.9,z0:controlTop-.2,z1:CABINET_DIM.screenBayTop,front:black,left:black,right:black,back:black,stretch:true},
    {role:'jamb-right',w:1.65,d:hoodDepth,of:screenInset,ro:17.9,z0:controlTop-.2,z1:CABINET_DIM.screenBayTop,front:black,left:black,right:black,back:black,stretch:true},
@@ -572,6 +575,7 @@ const REF_TESTS={
  cabinetRefMinimal:()=>Object.keys(CABINET_REF_RECTS).join(',')==='COIN_DOOR',
  cabinetRefDeclared:()=>!!ASSET_NAMES.cabinetRef&&Array.isArray(ASSET_NAMES.cabinetRef)&&ASSET_NAMES.cabinetRef.some(x=>/the-Cabinet\.png$/i.test(x)),
  cabinetControlsHorizontal:()=>map.cabinets.every(c=>{const p=c.parts.find(x=>x.role==='control');return p&&p.top!=null&&(p.z1-p.z0)<=1.01;}),
+ cabinetControlDeckClean:()=>map.cabinets.every(c=>!c.parts.some(p=>p.role==='control-pedestal')&&(()=>{const p=c.parts.find(x=>x.role==='control');return p&&(p.z1-p.z0)<=.1;})()),
  officeEntryFlanked:()=>{const d=AUTHORING.officeEntry.find(x=>x.id==='OFFICE_DOOR'),w=AUTHORING.officeEntry.find(x=>x.id==='WHITEBOARD'),b=AUTHORING.officeEntry.find(x=>x.id==='BULLETIN');return !!(d&&w&&b&&w.x<d.x&&b.x>d.x&&w.y===d.y&&b.y===d.y);},
  tightCabinetPacking:()=>AUTHORING.packing.sideGap<=.5&&AUTHORING.packing.backGap<=.5,
  wallDressingsInteractive:()=>map.fixtures.filter(f=>f.kind==='dressing').length>=AUTHORING.posters.length+AUTHORING.wallPortals.length+2&&map.fixtures.filter(f=>f.kind==='dressing').every(f=>f.url&&f.cta),
