@@ -15,11 +15,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <link rel="preload" as="image" href="fts-arcade-world-atlas.png">
-<link rel="preload" as="image" href="fts-arcade-cabinet-skins.png">
+<link rel="preload" as="image" href="Cabinets01.png">
+<link rel="preload" as="image" href="Cabinets02.png">
+<link rel="preload" as="image" href="Cabinets03.png">
+<link rel="preload" as="image" href="Cabinets04.png">
 <link rel="preload" as="image" href="fts_sprites.png">
 <link rel="preload" as="image" href="fts-arcade-fixture-atlas.png">
-<title>FTS Arcade Floor 0.5.1 Starting Grid</title>
-<!-- Release Engineering Factory 0.4.1: embedded atlases, landscape CRT previews, accumulated UAT. -->
+<title>FTS Arcade Floor 0.5.2 Cabinet Art</title>
+<!-- 0.5.2 art fit: external world/fixture/screen atlases + Cabinets01-Cabinets04, exact per-CRT crops. -->
 
 <!-- ── FA3D Meta ─────────────────────────────────────────── -->
 <meta name="description" content="FTS Arcade - a first-person 2.5D cabinet portal hub.">
@@ -30,9 +33,6 @@
 
 
     <!-- ── Favicons ─────────────────────────────────────────────── -->
-    <link rel="icon" type="image/png" href="../fts-favicon.png">
-    <link rel="shortcut icon" type="image/png" href="../fts-favicon.png">
-    <link rel="apple-touch-icon" href="../fts-favicon.png">
 
     <!-- ── Open Graph ───────────────────────────────────────────── -->
     <meta property="og:title"       content="FTS Arcade Floor">
@@ -49,12 +49,6 @@
     <meta name="twitter:title"       content="FTS Arcade Floor">
     <meta name="twitter:description" content="Walk the arcade. Enter a cabinet. Go somewhere else.">
     <meta name="twitter:image"       content="https://frymatic.us/FTSArcade/FishTacoStand.png">
-
-
-<link rel="preload" as="image" href="fts-arcade-world-atlas.png">
-<link rel="preload" as="image" href="fts-arcade-cabinet-skins.png">
-<link rel="preload" as="image" href="fts-arcade-screen-atlas.png">
-<link rel="preload" as="image" href="fts-sprites.png">
 
 
 <style>
@@ -109,12 +103,12 @@ const RUNTIME_ERRORS=[];
 addEventListener('error',e=>{if(e.error||e.message)RUNTIME_ERRORS.push(String(e.error&&e.error.stack||e.message||e.error));});
 addEventListener('unhandledrejection',e=>RUNTIME_ERRORS.push(String(e.reason&&e.reason.stack||e.reason||'unhandled rejection')));
 
-const VERSION='fts-arcade-floor-0.5.1-starting-grid';
+const VERSION='fts-arcade-floor-0.5.2-cabinet-art';
 const TAU=Math.PI*2, DEG=Math.PI/180;
 // Dimensional contract: 1 engine unit = 1 inch.
 const RING={outer:430,inner:118,sides:32,ceil:132};
 const PLAYER_R=11,PLAYER_H=74,EYE=69,SPEED_WALK=84,SPEED_RUN=387.2,ACCEL=10; // 22 mph sprint
-const CABINET_DIM={w:30,d:34,h:84,control:45,screenBayTop:76,screenCenter:62,screenW:24};
+const CABINET_DIM={w:30,d:34,h:84,control:45,screenBayTop:74,screenCenter:62.5,screenW:22.5};
 const AISLE={secondary:47.25,primary:70.87,merge:141.73}; // 1.2m / 1.8m / 3.6m references, inches
 const FOV=76*Math.PI/180,NEAR=.6,SHADES=11,TILE_H=256,LOOK_UP=180,LOOK_DOWN=320;
 const PORTALS={
@@ -125,13 +119,16 @@ const PORTALS={
  adDeal:'https://frymatic.us/menu/gas-works.html'
 };
 
-const ASSET_NAMES={world:'fts-arcade-world-atlas.png',skin:'fts-arcade-cabinet-skins.png',screen:'fts_sprites.png',fixture:'fts-arcade-fixture-atlas.png'};
-const ASSET_FILES={
- world:ASSET_NAMES.world,
- skin:ASSET_NAMES.skin,
- screen:ASSET_NAMES.screen,
- fixture:ASSET_NAMES.fixture
+const ASSET_NAMES={
+ world:'fts-arcade-world-atlas.png',
+ cab1:['Cabinets01.png','cabinets01.png'],
+ cab2:['Cabinets02.png','cabinets02.png'],
+ cab3:['Cabinets03.png','cabinets03.png'],
+ cab4:['Cabinets04.png','cabinets04.png'],
+ screen:'fts_sprites.png',
+ fixture:'fts-arcade-fixture-atlas.png'
 };
+const ASSET_FILES=ASSET_NAMES;
 const WORLD_RECTS={
  WALL_MARBLE:[16,16,64,64],WALL_BLACK_GOLD:[96,16,64,64],WALL_LIGHT:[176,16,64,64],WALL_RIB:[256,16,64,64],WALL_GOLD:[336,16,64,64],
  FLOOR_BLACK:[416,16,64,64],FLOOR_ALT:[496,16,64,64],FLOOR_RED:[576,16,64,64],OFFICE_WOOD:[656,16,64,64],OFFICE_DARK:[736,16,64,64],
@@ -139,20 +136,49 @@ const WORLD_RECTS={
  STAGE:[256,96,64,64],DJ:[336,96,64,64],FTS:[416,96,64,64],NEON_PINK:[496,96,64,64],NEON_BLUE:[576,96,64,64],NEON_GOLD:[656,96,64,64]
 };
 const FIXTURE_RECTS={VEND_DRINK:[16,16,64,64],VEND_SNACK:[96,16,64,64],JUKEBOX:[176,16,64,64],WHITEBOARD:[256,16,64,64],BULLETIN:[336,16,64,64],TOKEN:[416,16,64,64],POSTER_1:[496,16,64,64],POSTER_2:[576,16,64,64],POSTER_3:[656,16,64,64],AD_SPACE:[736,16,64,64],AD_DEAL:[816,16,64,64],WAYFIND:[896,16,64,64],OFFICE_DOOR:[16,96,64,64],STAGE_SIGN:[96,96,64,64],DJ_SIGN:[176,96,64,64],POSTER_4:[256,96,64,64]};
-const SKIN_TILE=128,SKIN_COLS=16;
 const SKIN_PARTS=['MARQUEE','LEFT','RIGHT','CONTROL','FRONT'];
-function skinRect(letter,part){
- const li=letter.charCodeAt(0)-65,pi=SKIN_PARTS.indexOf(part),idx=li*5+pi;
- return[(idx%SKIN_COLS)*SKIN_TILE,Math.floor(idx/SKIN_COLS)*SKIN_TILE,SKIN_TILE,SKIN_TILE];
-}
+// Crops measured from Cabinets01-Cabinets04. Transparent helper-label bands are excluded.
+const CABINET_PART_RECTS={
+ A:['cab1',{MARQUEE:[60,90,341,92],LEFT:[13,172,115,368],RIGHT:[316,172,113,368],CONTROL:[124,363,192,94],FRONT:[142,496,161,103]}],
+ B:['cab1',{MARQUEE:[471,90,316,88],LEFT:[440,172,115,369],RIGHT:[703,172,113,369],CONTROL:[544,365,167,95],FRONT:[547,490,162,108]}],
+ C:['cab1',{MARQUEE:[866,89,342,119],LEFT:[826,173,127,368],RIGHT:[1121,173,127,368],CONTROL:[944,366,185,94],FRONT:[950,481,172,117]}],
+ D:['cab1',{MARQUEE:[49,704,352,118],LEFT:[14,785,119,355],RIGHT:[312,785,117,357],CONTROL:[125,971,191,93],FRONT:[130,1105,181,90]}],
+ E:['cab1',{MARQUEE:[468,704,322,92],LEFT:[435,785,118,356],RIGHT:[706,785,115,356],CONTROL:[542,973,172,96],FRONT:[550,1105,156,89]}],
+ F:['cab1',{MARQUEE:[865,704,341,118],LEFT:[829,785,122,359],RIGHT:[1122,785,122,359],CONTROL:[943,971,188,93],FRONT:[946,1105,181,89]}],
+ G:['cab2',{MARQUEE:[42,76,354,140],LEFT:[8,172,121,385],RIGHT:[308,172,115,385],CONTROL:[122,384,190,76],FRONT:[126,504,181,113]}],
+ H:['cab2',{MARQUEE:[455,76,345,136],LEFT:[432,171,116,386],RIGHT:[704,171,117,386],CONTROL:[542,383,168,77],FRONT:[546,508,158,109]}],
+ I:['cab2',{MARQUEE:[861,76,358,136],LEFT:[830,170,121,387],RIGHT:[1126,169,120,388],CONTROL:[945,383,186,77],FRONT:[948,504,180,113]}],
+ J:['cab2',{MARQUEE:[17,703,382,146],LEFT:[13,785,128,392],RIGHT:[306,785,118,365],CONTROL:[127,970,184,113],FRONT:[133,1105,171,110]}],
+ K:['cab2',{MARQUEE:[435,703,365,146],LEFT:[431,785,128,362],RIGHT:[711,785,112,362],CONTROL:[538,970,177,84],FRONT:[542,1105,170,106]}],
+ L:['cab2',{MARQUEE:[853,703,353,146],LEFT:[831,785,146,362],RIGHT:[1124,785,118,363],CONTROL:[944,970,185,113],FRONT:[953,1105,170,77]}],
+ M:['cab3',{MARQUEE:[51,76,348,136],LEFT:[13,173,119,372],RIGHT:[313,173,115,372],CONTROL:[125,360,191,94],FRONT:[139,485,167,132]}],
+ N:['cab3',{MARQUEE:[441,76,372,146],LEFT:[434,158,125,387],RIGHT:[695,158,125,387],CONTROL:[544,362,166,89],FRONT:[549,488,156,108]}],
+ O:['cab3',{MARQUEE:[858,76,375,146],LEFT:[827,174,117,370],RIGHT:[1113,158,128,386],CONTROL:[938,360,187,94],FRONT:[947,486,172,131]}],
+ P:['cab3',{MARQUEE:[50,703,351,146],LEFT:[16,785,114,359],RIGHT:[313,785,114,359],CONTROL:[125,970,191,77],FRONT:[134,1105,177,87]}],
+ Q:['cab3',{MARQUEE:[438,703,378,146],LEFT:[434,785,125,358],RIGHT:[695,785,125,358],CONTROL:[543,970,168,77],FRONT:[545,1105,163,87]}],
+ R:['cab3',{MARQUEE:[872,703,330,113],LEFT:[827,785,120,359],RIGHT:[1122,785,117,360],CONTROL:[938,970,190,76],FRONT:[942,1105,181,86]}],
+ S:['cab4',{MARQUEE:[60,88,302,134],LEFT:[12,174,123,366],RIGHT:[241,158,121,382],CONTROL:[114,370,150,79],FRONT:[114,484,150,115]}],
+ T:['cab4',{MARQUEE:[364,73,281,149],LEFT:[361,158,89,382],RIGHT:[556,158,90,382],CONTROL:[444,370,120,79],FRONT:[444,483,120,114]}],
+ U:['cab4',{MARQUEE:[651,87,280,135],LEFT:[644,174,91,366],RIGHT:[841,158,91,382],CONTROL:[724,370,127,79],FRONT:[724,483,127,115]}],
+ V:['cab4',{MARQUEE:[944,87,303,135],LEFT:[932,174,106,366],RIGHT:[1144,158,106,382],CONTROL:[1023,370,137,79],FRONT:[1023,484,137,115]}],
+ W:['cab4',{MARQUEE:[35,703,304,146],LEFT:[18,785,108,353],RIGHT:[232,785,107,353],CONTROL:[111,967,137,76],FRONT:[111,1077,137,115]}],
+ X:['cab4',{MARQUEE:[356,704,273,121],LEFT:[342,785,96,353],RIGHT:[544,785,95,353],CONTROL:[429,967,124,76],FRONT:[429,1077,124,115]}],
+ Y:['cab4',{MARQUEE:[653,703,267,122],LEFT:[640,787,92,351],RIGHT:[838,787,93,351],CONTROL:[723,967,126,76],FRONT:[723,1077,126,115]}],
+ Z:['cab4',{MARQUEE:[943,703,301,146],LEFT:[931,785,104,353],RIGHT:[1141,785,103,353],CONTROL:[1026,967,125,76],FRONT:[1026,1076,125,116]}]
+};
+function cabinetArt(letter,part){const a=CABINET_PART_RECTS[letter];return{sheet:a[0],rect:a[1][part]};}
+
 const SCREEN_ATLAS_META={width:2048,height:1433,cols:5,rows:5,count:25};
-const SCREEN_X=[[5,400],[414,401],[824,400],[1233,401],[1643,400]];
-const SCREEN_Y=[[10,266],[291,278],[586,260],[870,267],[1152,277]];
-function screenRect(n){
- const i=Math.max(0,Math.min(SCREEN_ATLAS_META.count-1,n-1)),c=i%5,r=Math.floor(i/5),x=SCREEN_X[c],y=SCREEN_Y[r];
- return[x[0],y[0],x[1],y[1]];
-}
-const BLACK_RECT=[(130%SKIN_COLS)*SKIN_TILE,Math.floor(130/SKIN_COLS)*SKIN_TILE,SKIN_TILE,SKIN_TILE];
+// Per-sprite content bounds measured from fts_sprites.png. Individual crops matter:
+// the CRT art does not share one exact X/Y box per row/column.
+const SCREEN_RECTS=[
+ [5,10,400,266],[414,14,401,259],[824,11,400,265],[1233,10,401,266],[1643,12,400,263],
+ [8,291,393,278],[415,291,399,278],[827,291,394,278],[1238,291,392,278],[1645,291,395,278],
+ [5,586,400,260],[414,590,401,254],[824,587,400,259],[1233,587,401,260],[1643,588,400,257],
+ [5,870,400,267],[414,872,401,263],[824,871,400,264],[1233,870,401,267],[1643,871,400,265],
+ [10,1152,388,277],[415,1151,398,278],[829,1152,389,277],[1241,1151,385,278],[1648,1151,391,278]
+];
+function screenRect(n){return SCREEN_RECTS[Math.max(0,Math.min(SCREEN_ATLAS_META.count-1,n-1))].slice();}
 
 const MATERIALS=[];
 const MAT={};
@@ -161,9 +187,9 @@ Object.keys(WORLD_RECTS).forEach(k=>mat(k,'world',WORLD_RECTS[k]));
 Object.keys(FIXTURE_RECTS).forEach(k=>mat('FIX_'+k,'fixture',FIXTURE_RECTS[k]));
 for(let cc=65;cc<=90;cc++){
  const L=String.fromCharCode(cc);
- for(const p of SKIN_PARTS)mat('SKIN_'+L+'_'+p,'skin',skinRect(L,p),{stretch:true});
+ for(const p of SKIN_PARTS){const a=cabinetArt(L,p);mat('SKIN_'+L+'_'+p,a.sheet,a.rect,{stretch:true});}
 }
-mat('CAB_BLACK','skin',BLACK_RECT,{stretch:true});
+mat('CAB_BLACK','solid',null,{stretch:true});
 for(let i=1;i<=25;i++)mat('SCREEN_'+String(i).padStart(2,'0'),'screen',screenRect(i),{stretch:true});
 
 const Geom={
@@ -262,21 +288,21 @@ function cabinetSolid(letter,slot,x,y,faceAng,title,url,screenIndex,target='_bla
  return{id:'CAB_'+letter,kind:'cabinet',letter,slot,title,url,target,screenIndex,x,y,ang:faceAng,w:CABINET_DIM.w,d:CABINET_DIM.d,collision:true,light:1,
   parts:[
    {role:'plinth',w:30,d:34,of:-1,ro:0,z0:0,z1:8,front:black,left:black,right:black,back:black,stretch:true},
-   {role:'left-shell', w:2,d:34,of:-1,ro:-14,z0:0,z1:CABINET_DIM.h,front:black,left:K('LEFT'),right:black,back:black,stretch:true},
-   {role:'right-shell',w:2,d:34,of:-1,ro: 14,z0:0,z1:CABINET_DIM.h,front:black,left:black,right:K('RIGHT'),back:black,stretch:true},
-   {role:'lower-core',w:26,d:22,of:1,ro:0,z0:8,z1:40,front:black,left:black,right:black,back:black,stretch:true},
-   {role:'front-brand',w:26,d:2,of:12,ro:0,z0:0,z1:14,front:K('FRONT'),left:black,right:black,back:black,stretch:true},
-   {role:'control-pedestal',w:28,d:16,of:5,ro:0,z0:14,z1:42,front:black,left:black,right:black,back:black,stretch:true},
-   {role:'control',w:30,d:18,of:7,ro:0,z0:42,z1:48,front:K('CONTROL'),left:black,right:black,back:black,stretch:true},
-   {role:'inner-left',w:2,d:22,of:5,ro:-12,z0:0,z1:48,front:black,left:black,right:black,back:black,stretch:true},
-   {role:'inner-right',w:2,d:22,of:5,ro:12,z0:0,z1:48,front:black,left:black,right:black,back:black,stretch:true},
-   {role:'backdrop',w:26,d:2,of:5,ro:0,z0:48,z1:CABINET_DIM.screenBayTop,front:black,left:black,right:black,back:black,stretch:true},
+   {role:'left-shell', w:2,d:23,of:-1,ro:-14,z0:0,z1:CABINET_DIM.screenBayTop,front:black,left:K('LEFT'),right:black,back:black,stretch:true},
+   {role:'right-shell',w:2,d:23,of:-1,ro: 14,z0:0,z1:CABINET_DIM.screenBayTop,front:black,left:black,right:K('RIGHT'),back:black,stretch:true},
+   {role:'lower-core',w:24,d:20,of:1,ro:0,z0:8,z1:39,front:black,left:black,right:black,back:black,stretch:true},
+   {role:'front-brand',w:24,d:2,of:11,ro:0,z0:0,z1:15,front:K('FRONT'),left:black,right:black,back:black,stretch:true},
+   {role:'control-pedestal',w:26,d:15,of:5,ro:0,z0:15,z1:39,front:black,left:black,right:black,back:black,stretch:true},
+   {role:'control',w:26,d:16,of:7,ro:0,z0:39,z1:51,front:K('CONTROL'),left:black,right:black,back:black,stretch:true},
+   {role:'inner-left',w:2,d:20,of:5,ro:-12,z0:0,z1:51,front:black,left:black,right:black,back:black,stretch:true},
+   {role:'inner-right',w:2,d:20,of:5,ro:12,z0:0,z1:51,front:black,left:black,right:black,back:black,stretch:true},
+   {role:'backdrop',w:24,d:2,of:5,ro:0,z0:51,z1:CABINET_DIM.screenBayTop,front:black,left:black,right:black,back:black,stretch:true},
    {role:'screen',w:CABINET_DIM.screenW,d:2,of:7,ro:0,z0:screenZ0,z1:screenZ1,front:screen,left:black,right:black,back:black,stretch:true},
-   {role:'jamb-left',w:2,d:18,of:7,ro:-13,z0:48,z1:CABINET_DIM.screenBayTop,front:black,left:black,right:black,back:black,stretch:true},
-   {role:'jamb-right',w:2,d:18,of:7,ro:13,z0:48,z1:CABINET_DIM.screenBayTop,front:black,left:black,right:black,back:black,stretch:true},
-   {role:'hood-bottom',w:26,d:18,of:7,ro:0,z0:48,z1:50,front:black,left:black,right:black,back:black,stretch:true},
-   {role:'marquee',w:30,d:24,of:-1,ro:0,z0:CABINET_DIM.screenBayTop,z1:CABINET_DIM.h,front:K('MARQUEE'),left:black,right:black,back:black,stretch:true},
-   {role:'back-block',w:26,d:2,of:-16,ro:0,z0:0,z1:CABINET_DIM.h,front:black,left:black,right:black,back:black,stretch:true}
+   {role:'jamb-left',w:2,d:16,of:7,ro:-12,z0:51,z1:CABINET_DIM.screenBayTop,front:black,left:black,right:black,back:black,stretch:true},
+   {role:'jamb-right',w:2,d:16,of:7,ro:12,z0:51,z1:CABINET_DIM.screenBayTop,front:black,left:black,right:black,back:black,stretch:true},
+   {role:'hood-bottom',w:24,d:16,of:7,ro:0,z0:51,z1:53,front:black,left:black,right:black,back:black,stretch:true},
+   {role:'marquee',w:30,d:20,of:-1,ro:0,z0:CABINET_DIM.screenBayTop,z1:CABINET_DIM.h,front:K('MARQUEE'),left:black,right:black,back:black,stretch:true},
+   {role:'back-block',w:24,d:2,of:-16,ro:0,z0:0,z1:CABINET_DIM.h,front:black,left:black,right:black,back:black,stretch:true}
   ]};
 }
 function boxSolid(id,x,y,ang,w,d,h,front,side,opts){return Object.assign({id,kind:'box',x,y,ang,w,d,collision:true,light:.96,parts:[{w,d,of:0,z0:0,z1:h,front,side,back:side}]},opts||{});}
@@ -409,16 +435,19 @@ const RenderCore={
 };
 
 const canvas=document.getElementById('c'),ctx=canvas.getContext('2d'),telemetry=document.getElementById('telemetry'),promptEl=document.getElementById('prompt'),lockEl=document.getElementById('lock'),modal=document.getElementById('modal'),modalEyebrow=document.getElementById('modalEyebrow'),modalTitle=document.getElementById('modalTitle'),modalCopy=document.getElementById('modalCopy'),confirmBtn=document.getElementById('confirmBtn'),cancelBtn=document.getElementById('cancelBtn'),mapBtn=document.getElementById('mapBtn'),audioBtn=document.getElementById('audioBtn');
-const IMG={world:null,skin:null,screen:null,fixture:null,ready:false,errors:[]};let texBank=[],flatBank=[],RW=0,RH=0,RSCALE=1,dl=null,showMap=false,activeTarget=null,modalTarget=null;
+const IMG={world:null,cab1:null,cab2:null,cab3:null,cab4:null,screen:null,fixture:null,ready:false,errors:[]};let texBank=[],flatBank=[],RW=0,RH=0,RSCALE=1,dl=null,showMap=false,activeTarget=null,modalTarget=null;
 
-function loadImage(src,label){return new Promise(resolve=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=()=>{IMG.errors.push(label||'asset');resolve(null);};im.src=src;});}
-function cropCanvas(im,r){const cv=document.createElement('canvas');cv.width=cv.height=64;const g=cv.getContext('2d');g.imageSmoothingEnabled=false;if(im&&r)g.drawImage(im,r[0],r[1],r[2],r[3],0,0,64,64);else{g.fillStyle='#222833';g.fillRect(0,0,64,64);g.strokeStyle='#ff4a98';g.strokeRect(2,2,60,60);}return cv;}
+function loadImage(src,label){
+ const candidates=Array.isArray(src)?src:[src];
+ return new Promise(resolve=>{let i=0;const attempt=()=>{if(i>=candidates.length){IMG.errors.push(label||'asset');resolve(null);return;}const im=new Image();im.onload=()=>resolve(im);im.onerror=()=>{i++;attempt();};im.src=candidates[i];};attempt();});
+}
+function cropCanvas(im,r,sheet){const cv=document.createElement('canvas');cv.width=cv.height=64;const g=cv.getContext('2d');g.imageSmoothingEnabled=false;if(sheet==='solid'){g.fillStyle='#03050a';g.fillRect(0,0,64,64);}else if(im&&r)g.drawImage(im,r[0],r[1],r[2],r[3],0,0,64,64);else{g.fillStyle='#222833';g.fillRect(0,0,64,64);g.strokeStyle='#ff4a98';g.strokeRect(2,2,60,60);}return cv;}
 function shadeStrip(src,level){const cv=document.createElement('canvas');cv.width=64;cv.height=TILE_H;const g=cv.getContext('2d');g.imageSmoothingEnabled=false;for(let y=0;y<TILE_H;y+=64)g.drawImage(src,0,y,64,64);const k=level/(SHADES-1);g.globalCompositeOperation='source-atop';g.fillStyle='rgba(2,4,8,'+(k*.9)+')';g.fillRect(0,0,64,TILE_H);return cv;}
 function shadeTile(src,level){const cv=document.createElement('canvas');cv.width=cv.height=64;const g=cv.getContext('2d');g.imageSmoothingEnabled=false;g.drawImage(src,0,0);const k=level/(SHADES-1);g.globalCompositeOperation='source-atop';g.fillStyle='rgba(2,4,8,'+(k*.9)+')';g.fillRect(0,0,64,64);return cv;}
-function buildTextures(){texBank=new Array(MATERIALS.length);flatBank=new Array(MATERIALS.length);IMG.ready=!!(IMG.world&&IMG.skin&&IMG.screen&&IMG.fixture);}
+function buildTextures(){texBank=new Array(MATERIALS.length);flatBank=new Array(MATERIALS.length);IMG.ready=!!(IMG.world&&IMG.cab1&&IMG.cab2&&IMG.cab3&&IMG.cab4&&IMG.screen&&IMG.fixture);}
 function ensureTextureBank(i){
  if(texBank[i]&&flatBank[i])return;
- const m=MATERIALS[i],src=cropCanvas(IMG[m.sheet],m.rect),row=[],prow=[];
+ const m=MATERIALS[i],src=cropCanvas(IMG[m.sheet],m.rect,m.sheet),row=[],prow=[];
  for(let sh=0;sh<SHADES;sh++){row.push(shadeStrip(src,sh));prow.push(ctx.createPattern(shadeTile(src,sh),'repeat'));}
  texBank[i]=row;flatBank[i]=prow;
 }
@@ -467,7 +496,9 @@ canvas.addEventListener('pointerdown',e=>{if(e.pointerType==='touch'&&e.clientX>
 let last=0,fpsAcc=0,fpsN=0,fps=0,frames=0;
 function loop(ts){const dt=Math.min((ts-last)/1000||.016,.05);last=ts;sim.step(dt,input);RenderCore.solve(sim,dl,RW,RH);paint(sim,dl);if(showMap)drawMap(sim,RW,RH);updatePrompt();fpsAcc+=dt;fpsN++;if(fpsAcc>.45){fps=fpsN/fpsAcc;fpsAcc=0;fpsN=0;}if((frames++&7)===0)telemetry.textContent=VERSION+' | '+RW+'x'+RH+' | '+fps.toFixed(0)+' fps | SEC '+(sim.sector+1)+'/'+map.sectors.length+' | CAB '+map.cabinets.length+' A-Z | FIX '+map.fixtures.length+' | ADS '+map.ads.length+' | VIS '+dl.stats.sectors+'s '+dl.stats.solidFaces+'g | ART '+(IMG.ready?'ATLAS':'FALLBACK')+(MAP_ERRORS.length?' | MAP ERR '+MAP_ERRORS.length:'');requestAnimationFrame(loop);}
 addEventListener('resize',resize);
-Promise.all([loadImage(ASSET_FILES.world,'world'),loadImage(ASSET_FILES.skin,'skin'),loadImage(ASSET_FILES.screen,'screen'),loadImage(ASSET_FILES.fixture,'fixture')]).then(([w,s,sc,f])=>{IMG.world=w;IMG.skin=s;IMG.screen=sc;IMG.fixture=f;buildTextures();if(IMG.errors.length){telemetry.textContent=VERSION+' | ASSET ERROR: '+IMG.errors.join(', ');console.error('[FTS ARCADE] atlas load failure',IMG.errors,ASSET_FILES);}});
+Promise.all([
+ loadImage(ASSET_FILES.world,'world'),loadImage(ASSET_FILES.cab1,'Cabinets01'),loadImage(ASSET_FILES.cab2,'Cabinets02'),loadImage(ASSET_FILES.cab3,'Cabinets03'),loadImage(ASSET_FILES.cab4,'Cabinets04'),loadImage(ASSET_FILES.screen,'screen'),loadImage(ASSET_FILES.fixture,'fixture')
+]).then(([w,c1,c2,c3,c4,sc,f])=>{IMG.world=w;IMG.cab1=c1;IMG.cab2=c2;IMG.cab3=c3;IMG.cab4=c4;IMG.screen=sc;IMG.fixture=f;buildTextures();if(IMG.errors.length){telemetry.textContent=VERSION+' | ASSET ERROR: '+IMG.errors.join(', ');console.error('[FTS ARCADE] atlas load failure',IMG.errors,ASSET_FILES);}});
 resize();buildTextures();
 if(MAP_ERRORS.length)console.error('[FTS ARCADE] map validation',MAP_ERRORS);
 function screenPart(c){return c.parts.find(p=>p.role==='screen');}
@@ -479,7 +510,7 @@ const REF_TESTS={
  geometryCabinets:()=>map.cabinets.every(c=>c.parts&&c.parts.length>=10),
  concaveCabinets:()=>map.cabinets.every(c=>c.parts.some(p=>p.role==='backdrop')&&c.parts.some(p=>p.role==='screen')&&c.parts.some(p=>p.role==='jamb-left')&&c.parts.some(p=>p.role==='jamb-right')),
  screenPairings:()=>map.cabinets.every(c=>c.screenIndex>=1&&c.screenIndex<=25),
- screenAtlasGrid:()=>SCREEN_ATLAS_META.count===25&&SCREEN_X.length===5&&SCREEN_Y.length===5,
+ screenAtlasGrid:()=>SCREEN_ATLAS_META.count===25&&SCREEN_RECTS.length===25,
  screenRectsInBounds:()=>Array.from({length:25},(_,i)=>screenRect(i+1)).every(r=>r[0]>=0&&r[1]>=0&&r[0]+r[2]<=SCREEN_ATLAS_META.width&&r[1]+r[3]<=SCREEN_ATLAS_META.height),
  screenSpritesLandscape:()=>Array.from({length:25},(_,i)=>screenRect(i+1)).every(r=>r[2]/r[3]>1.35),
  cabinetScreensLandscape:()=>map.cabinets.every(c=>{const p=screenPart(c);return p&&p.w/(p.z1-p.z0)>1.35;}),
@@ -492,8 +523,8 @@ const REF_TESTS={
  fixturesPresent:()=>map.fixtures.some(f=>f.id==='TOKEN_VEND')&&map.fixtures.some(f=>f.id==='JUKEBOX')&&map.fixtures.some(f=>f.id==='WHITEBOARD')&&map.fixtures.some(f=>f.id==='BULLETIN'),
  adInventory:()=>map.ads.length===8&&map.ads.every(a=>a.url.includes('inventory=')),
  offsiteExits:()=>map.exits.every(e=>/^https:\/\//.test(e.url)),
- standaloneAssets:()=>Object.values(ASSET_FILES).every(s=>s.startsWith('data:image/png;base64,')),
- assetDimensions:()=>!!IMG.world&&IMG.world.naturalWidth===1024&&IMG.world.naturalHeight===1024&&!!IMG.skin&&IMG.skin.naturalWidth===2048&&IMG.skin.naturalHeight===1152&&!!IMG.screen&&IMG.screen.naturalWidth===2048&&IMG.screen.naturalHeight===1433&&!!IMG.fixture&&IMG.fixture.naturalWidth===1024&&IMG.fixture.naturalHeight===256,
+ sameDirectoryAssets:()=>Object.values(ASSET_FILES).every(v=>(Array.isArray(v)?v:[v]).every(s=>!/^https?:/i.test(s))),
+ assetDimensions:()=>!!IMG.world&&IMG.world.naturalWidth===1024&&IMG.world.naturalHeight===1024&&['cab1','cab2','cab3','cab4'].every(k=>IMG[k]&&IMG[k].naturalWidth===1254&&IMG[k].naturalHeight===1254)&&!!IMG.screen&&IMG.screen.naturalWidth===2048&&IMG.screen.naturalHeight===1433&&!!IMG.fixture&&IMG.fixture.naturalWidth===1024&&IMG.fixture.naturalHeight===256,
  assetsReady:()=>IMG.ready&&IMG.errors.length===0,
  noFrameOriginTrap:()=>document.querySelectorAll('iframe,frame').length===0,
  renderProducesGeometry:()=>!!dl&&dl.wN>0&&dl.sN>0&&dl.stats.solidFaces>0,
@@ -507,7 +538,7 @@ function runRefTests(){
  }
  return{version:VERSION,pass:failures.length===0,passed:Object.values(results).filter(v=>v===true).length,total:Object.keys(REF_TESTS).length,failures,results,mapErrors:MAP_ERRORS.slice(),assetErrors:IMG.errors.slice(),runtimeErrors:RUNTIME_ERRORS.slice(),screenAtlas:SCREEN_ATLAS_META};
 }
-window.__FTS_ARCADE__={VERSION,map,sim,MapBuilder,Geom,RenderCore,DrawLists,MATERIALS,MAP_ERRORS,CABINET_ROSTER,CABINET_DIM,AISLE,PORTALS,ASSET_NAMES,SCREEN_ATLAS_META,screenRect,tests:REF_TESTS,runTests:runRefTests};
+window.__FTS_ARCADE__={VERSION,map,sim,MapBuilder,Geom,RenderCore,DrawLists,MATERIALS,MAP_ERRORS,CABINET_ROSTER,CABINET_DIM,AISLE,PORTALS,ASSET_NAMES,CABINET_PART_RECTS,SCREEN_ATLAS_META,SCREEN_RECTS,screenRect,tests:REF_TESTS,runTests:runRefTests};
 const qs=new URLSearchParams(location.search);
 if(qs.get('preview')==='1')lockEl.classList.add('hidden');
 if(qs.get('map')==='1'){showMap=true;mapBtn.textContent='MAP: ON';mapBtn.classList.add('on');}
