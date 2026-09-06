@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-M9CD6TWFZE"></script>
+    <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-M9CD6TWFZE');
+    </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>FTS Arcade Ring 0.2 - First Person</title>
@@ -167,39 +176,39 @@ function ringDefs(){
 // 26 cabinet identities, A-Z. Artwork and resting-screen pairings are centralized here.
 // screen is the 1-based tile index in fts-arcade-screen-atlas.png.
 const CABINET_ROSTER=[
- ['A','ASTROIDS OBLITERATUS','../astroids.html',1],
- ['B','BRAZEN TOWER','../BRAZENTOWER',17],
- ['C','CAMELOT','../camelot.html',18],
- ['D','CAVE RACER','../cave-racer.html',3],
- ['E','COVEN BLITZ','../coven-blitz.html',4],
- ['F','CRAWFORD COUNTY','../crawford-county.html',5],
- ['G','GRACE BLAND','../grace_bland_clocktower.html',7],
- ['H','MINESWEEPER','../minesweeper.html',8],
- ['I','NEON INVADERS','../neon-invaders.html',9],
- ['J','RC RACER','../rc-racer.html',10],
- ['K','RED EYE','../REDEYE/',11],
- ['L','SNAKIA','../snakia.html',17],
- ['M','UNDERHALL','../underhall.html',13],
- ['N','VECTOR SIEGE','../vector-siege.html',16],
- ['O','ZOMBIE GOLF SURVIVAL','../zombie-golf-survival.html',15],
- ['P','AUXOR','../auxigen.html',2],
- ['Q','VECTOR SQUADRON','../starfox_shooten7.html',12],
- ['R','FTS ARCADE HUB','https://frymatic.us/FTSArcade/',6],
- ['S','MOONSHOT PINBALL','../ref-pinball.html',25],
- ['T','GRID WARDEN','../grid-warden.html',24],
- ['U','PLINKO','../plinko.html',20],
- ['V','TOURNAMENT CONDUCTOR','../tournament.html',22],
- ['W','FREE PLAY','https://frymatic.us/FTSArcade/',6],
- ['X','COMING SOON','https://frymatic.us/FTSArcade/',17],
- ['Y','EVENT SERIES','../tournament.html',22],
- ['Z','BRAZEN INDEX','https://frymatic.us/',6]
+ ['A','ASTROIDS OBLITERATUS','../astroids.html',1, '_blank'],
+ ['B','BRAZEN TOWER','../BRAZENTOWER',17, '_blank'],
+ ['C','CAMELOT','../camelot.html',18, '_blank'],
+ ['D','CAVE RACER','../cave-racer.html',3, '_blank'],
+ ['E','COVEN BLITZ','../coven-blitz.html',4, '_blank'],
+ ['F','CRAWFORD COUNTY','../crawford-county.html',5, '_blank'],
+ ['G','GRACE BLAND','../grace_bland_clocktower.html',7, '_blank'],
+ ['H','MINESWEEPER','../minesweeper.html',8, '_blank'],
+ ['I','NEON INVADERS','../neon-invaders.html',9, '_blank'],
+ ['J','RC RACER','../rc-racer.html',10, '_blank'],
+ ['K','RED EYE','../REDEYE/',11, '_blank'],
+ ['L','SNAKIA','../snakia.html',17, '_blank'],
+ ['M','UNDERHALL','../underhall.html',13, '_blank'],
+ ['N','VECTOR SIEGE','../vector-siege.html',16, '_blank'],
+ ['O','ZOMBIE GOLF SURVIVAL','../zombie-golf-survival.html',15, '_blank'],
+ ['P','AUXOR','../auxigen.html',2, '_blank'],
+ ['Q','VECTOR SQUADRON','../starfox-shooter7.html',12, '_blank'],
+ ['R','FTS ARCADE HUB','https://frymatic.us/FTSArcade/',6, '_blank'],
+ ['S','MOONSHOT PINBALL','../moonshot-pinball.html',25, '_blank'],
+ ['T','GRID WARDEN','../grid-warden.html',24, '_blank'],
+ ['U','PLINKO','../plinko.html',20, '_blank'],
+ ['V','TOURNAMENT CONDUCTOR','../tournament.html',22, '_blank'],
+ ['W','FREE PLAY','https://frymatic.us/FTSArcade/',6, '_blank'],
+ ['X','COMING SOON','https://frymatic.us/FTSArcade/',17, '_blank'],
+ ['Y','EVENT SERIES','../adapter-test.html',22, '_blank'],
+ ['Z','BRAZEN INDEX','https://frymatic.us/',6, '_blank']
 ];
 
-function cabinetSolid(letter,slot,x,y,faceAng,title,url,screenIndex){
+function cabinetSolid(letter,slot,x,y,faceAng,title,url,screenIndex,target='_blank'){
  const K=p=>MAT['SKIN_'+letter+'_'+p], black=MAT.CAB_BLACK;
  const screen=MAT['SCREEN_'+String(screenIndex||17).padStart(2,'0')];
  // Cabinet shell: full-height art outside, black-lined cavity inside, recessed CRT plane, extra lower blockers.
- return{id:'CAB_'+letter,kind:'cabinet',letter,slot,title,url,screenIndex,x,y,ang:faceAng,w:CABINET_DIM.w,d:CABINET_DIM.d,collision:true,light:1,
+ return{id:'CAB_'+letter,kind:'cabinet',letter,slot,title,url,target,screenIndex,x,y,ang:faceAng,w:CABINET_DIM.w,d:CABINET_DIM.d,collision:true,light:1,
   parts:[
    {role:'plinth',w:30,d:34,of:-1,ro:0,z0:0,z1:8,front:black,left:black,right:black,back:black,stretch:true},
    {role:'left-shell', w:2,d:34,of:-1,ro:-14,z0:0,z1:CABINET_DIM.h,front:black,left:K('LEFT'),right:black,back:black,stretch:true},
@@ -231,7 +240,7 @@ function buildLevel(){
   if(Math.max(Math.abs(mx),Math.abs(my))<RING.inner+14){ln.mid=MAT.OFFICE_DARK;ln.tag='OFFICE_CORE';}
   else{const ang=Math.atan2(my,mx);ln.mid=Math.abs(Math.sin(ang*3))>.72?MAT.WALL_BLACK_GOLD:MAT.WALL_RIB;ln.tag='OUTER_WALL';}
  }
- const addCab=(letter,x,y,ang)=>{const row=CABINET_ROSTER.find(r=>r[0]===letter),slot=letter.charCodeAt(0)-64,c=cabinetSolid(letter,slot,x,y,ang,row[1],row[2],row[3]);map.solids.push(c);map.cabinets.push(c);map.targets.push(c);};
+ const addCab=(letter,x,y,ang)=>{const row=CABINET_ROSTER.find(r=>r[0]===letter),slot=letter.charCodeAt(0)-64,c=cabinetSolid(letter,slot,x,y,ang,row[1],row[2],row[3],row[4]);map.solids.push(c);map.cabinets.push(c);map.targets.push(c);};
  const polarCab=(letter,deg,r=374)=>{const a=deg*DEG;addCab(letter,Math.cos(a)*r,Math.sin(a)*r,a+Math.PI);};
  // Outer ring: A-H north arc, U-X south arc.
  [['A',112],['B',128],['C',144],['D',160],['E',68],['F',52],['G',36],['H',20],['U',220],['V',238],['W',302],['X',320]].forEach(q=>polarCab(q[0],q[1]));
@@ -257,11 +266,11 @@ function buildLevel(){
  map.solids.push(white,board);map.fixtures.push(white,board);
 
  // Empty cabinet bays become real placeholder geometry.
- const fixture=(id,label,deg,r,w,d,h,matFront,kind='fixture',url='')=>{const a=deg*DEG,x=Math.cos(a)*r,y=Math.sin(a)*r,s=boxSolid(id,x,y,a+Math.PI,w,d,h,matFront,MAT.WALL_RIB,{kind,label,url,collision:true});map.solids.push(s);map.fixtures.push(s);if(url){map.targets.push(s);}return s;};
+ const fixture=(id,label,deg,r,w,d,h,matFront,kind='fixture',url='',target='_blank')=>{const a=deg*DEG,x=Math.cos(a)*r,y=Math.sin(a)*r,s=boxSolid(id,x,y,a+Math.PI,w,d,h,matFront,MAT.WALL_RIB,{kind,label,url,target,collision:true});map.solids.push(s);map.fixtures.push(s);if(url){map.targets.push(s);}return s;};
  fixture('VEND_DRINK','DRINK VENDING',198,372,30,28,72,MAT.FIX_VEND_DRINK);
  fixture('VEND_SNACK','SNACK VENDING',342,372,30,28,72,MAT.FIX_VEND_SNACK);
  fixture('JUKEBOX','JUKEBOX',97,294,34,22,60,MAT.FIX_JUKEBOX);
- fixture('TOKEN_VEND','FTS TOKEN VENDING',258,344,28,24,68,MAT.FIX_TOKEN,'token',PORTALS.tokens);
+ fixture('TOKEN_VEND','FTS TOKEN VENDING',258,344,28,24,68,MAT.FIX_TOKEN,'token',PORTALS.tokens, '_blank');
 
  // Upcoming-event poster campaign: visual inventory, deliberately non-interactive.
  const posterAngles=[8,82,98,172,188,208,252,288,332,352];
@@ -269,15 +278,15 @@ function buildLevel(){
 
  // Programmatic ad inventory. Every unit has a stable ID and its own deal-form URL.
  const adAngles=[14,76,104,166,194,244,296,346];
- adAngles.forEach((deg,i)=>{const unit='FTS-RING-'+String(i+1).padStart(2,'0'),a=deg*DEG,r=420,x=Math.cos(a)*r,y=Math.sin(a)*r,p=panelSolid('AD_'+unit,x,y,a+Math.PI,32,34,92,i%2?MAT.FIX_AD_DEAL:MAT.FIX_AD_SPACE,{kind:'ad',label:'AD SPACE '+unit,url:dealUrl(unit),inventory:unit});map.solids.push(p);map.ads.push(p);map.targets.push(p);});
+ adAngles.forEach((deg,i)=>{const unit='FTS-RING-'+String(i+1).padStart(2,'0'),a=deg*DEG,r=420,x=Math.cos(a)*r,y=Math.sin(a)*r,p=panelSolid('AD_'+unit,x,y,a+Math.PI,32,34,92,i%2?MAT.FIX_AD_DEAL:MAT.FIX_AD_SPACE,{kind:'ad',label:'AD SPACE '+unit,url:dealUrl(unit),target:'_blank',inventory:unit});map.solids.push(p);map.ads.push(p);map.targets.push(p);});
 
  // Three world exits: all use absolute URLs and always confirm before navigation.
  const exitDefs=[
-  {id:'EXIT_LOBBY',label:'LOBBY / OFF-SITE',url:PORTALS.lobby,a:0},
-  {id:'EXIT_THEATERS',label:'BRAZEN THEATERS / OFF-SITE',url:PORTALS.theaters,a:Math.PI},
-  {id:'EXIT_REDEYE',label:'REDEYE / OFF-SITE',url:PORTALS.redeye,a:-Math.PI/2}
+  {id:'EXIT_LOBBY',label:'LOBBY / OFF-SITE',url:PORTALS.lobby,target:'_blank',a:0},
+  {id:'EXIT_THEATERS',label:'BRAZEN THEATERS / OFF-SITE',url:PORTALS.theaters,target:'_blank',a:Math.PI},
+  {id:'EXIT_REDEYE',label:'REDEYE / OFF-SITE',url:PORTALS.redeye,target:'_blank',a:-Math.PI/2}
  ];
- exitDefs.forEach(e=>{const r=418,x=Math.cos(e.a)*r,y=Math.sin(e.a)*r,face=e.a+Math.PI,s=boxSolid(e.id,x,y,face,72,8,84,MAT.EXIT,MAT.WALL_GOLD,{kind:'exit',label:e.label,url:e.url,collision:true});map.solids.push(s);map.exits.push(s);map.targets.push(s);});
+ exitDefs.forEach(e=>{const r=418,x=Math.cos(e.a)*r,y=Math.sin(e.a)*r,face=e.a+Math.PI,s=boxSolid(e.id,x,y,face,72,8,84,MAT.EXIT,MAT.WALL_GOLD,{kind:'exit',label:e.label,url:e.url,target:e.target,collision:true});map.solids.push(s);map.exits.push(s);map.targets.push(s);});
  return map;
 }
 
@@ -354,7 +363,7 @@ function targetKind(t){return t.kind==='cabinet'?'CABINET '+t.letter:t.kind==='e
 function updatePrompt(){activeTarget=findTarget();if(!activeTarget){promptEl.classList.remove('show');return;}const name=activeTarget.kind==='cabinet'?activeTarget.title:activeTarget.label,verb=activeTarget.kind==='cabinet'?'ENTER GAME':activeTarget.kind==='token'?'BUY TOKENS':activeTarget.kind==='ad'?'OPEN DEAL FORM':'LEAVE FTS ARCADE';promptEl.innerHTML='<span class="kind">'+targetKind(activeTarget)+'</span> '+name+' &nbsp; <span class="key">[E / CLICK]</span> '+verb;promptEl.classList.add('show');}
 function openConfirm(t){if(!t||!t.url)return;modalTarget=t;if(document.pointerLockElement===canvas)document.exitPointerLock();const name=t.kind==='cabinet'?(t.letter+' / '+t.title):t.label;modalTitle.textContent=name;if(t.kind==='cabinet'){modalEyebrow.textContent='LEAVE FTS ARCADE?';modalCopy.textContent='Enter cabinet '+t.letter+' and navigate to '+t.title+'? Your browser will load '+t.url+'.';confirmBtn.textContent='ENTER CABINET';}else if(t.kind==='token'){modalEyebrow.textContent='TOKEN PURCHASE';modalCopy.textContent='Open the FTS token purchase portal? This leaves the arcade floor and loads '+t.url+'.';confirmBtn.textContent='BUY TOKENS';}else if(t.kind==='ad'){modalEyebrow.textContent='PROGRAMMATIC INVENTORY';modalCopy.textContent='Open the deal form for '+t.inventory+'? This leaves the arcade floor.';confirmBtn.textContent='OPEN DEAL FORM';}else{modalEyebrow.textContent='LEAVE FTS ARCADE?';modalCopy.textContent='Use this exit for '+name+'? This destination is off the arcade floor.';confirmBtn.textContent='LEAVE ARCADE';}modal.classList.add('show');}
 function closeConfirm(relock){modal.classList.remove('show');modalTarget=null;if(relock&&!coarse())setTimeout(()=>canvas.requestPointerLock&&canvas.requestPointerLock(),60);}
-function leaveArcade(){if(!modalTarget)return;const t=modalTarget;try{sessionStorage.setItem('fts.arcade.return',JSON.stringify({x:sim.x,y:sim.y,ang:sim.ang,t:Date.now()}));}catch(e){}location.href=t.url;}
+function leaveArcade(){if(!modalTarget)return;const t=modalTarget;try{sessionStorage.setItem('fts.arcade.return',JSON.stringify({x:sim.x,y:sim.y,ang:sim.ang,t:Date.now()}));}catch(e){}window.open(t.url, t.target || '_blank');closeConfirm(true);}
 confirmBtn.addEventListener('click',leaveArcade);cancelBtn.addEventListener('click',()=>closeConfirm(true));
 
 function resize(){const w=innerWidth||960,h=innerHeight||600;RSCALE=h>900?1.9:1.55;RW=Math.max(240,Math.round(w/RSCALE));RH=Math.max(150,Math.round(h/RSCALE));canvas.width=RW;canvas.height=RH;canvas.style.width=w+'px';canvas.style.height=h+'px';dl=new DrawLists(RW,RH);ctx.imageSmoothingEnabled=false;}
