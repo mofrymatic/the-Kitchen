@@ -21,7 +21,8 @@
 <link rel="preload" as="image" href="Cabinets04.png">
 <link rel="preload" as="image" href="fts_sprites.png">
 <link rel="preload" as="image" href="fts-arcade-fixture-atlas.png">
-<title>FTS Arcade Floor 0.5.3 Authoring Layout</title>
+<link rel="preload" as="image" href="the-Cabinet.png">
+<title>FTS Arcade Floor 0.5.5 Cabinet Evolved</title>
 <!-- 0.5.2 art fit: external world/fixture/screen atlases + Cabinets01-Cabinets04, exact per-CRT crops. -->
 
 <!-- ── FA3D Meta ─────────────────────────────────────────── -->
@@ -103,12 +104,12 @@ const RUNTIME_ERRORS=[];
 addEventListener('error',e=>{if(e.error||e.message)RUNTIME_ERRORS.push(String(e.error&&e.error.stack||e.message||e.error));});
 addEventListener('unhandledrejection',e=>RUNTIME_ERRORS.push(String(e.reason&&e.reason.stack||e.reason||'unhandled rejection')));
 
-const VERSION='fts-arcade-floor-0.5.3-authoring-layout';
+const VERSION='fts-arcade-floor-0.5.5-cabinet-evolved';
 const TAU=Math.PI*2, DEG=Math.PI/180;
 // Dimensional contract: 1 engine unit = 1 inch.
 const RING={outer:430,inner:118,sides:32,ceil:132};
 const PLAYER_R=11,PLAYER_H=74,EYE=69,SPEED_WALK=84,SPEED_RUN=387.2,ACCEL=10; // 22 mph sprint
-const CABINET_DIM={w:30,d:34,h:84,control:44.5,screenBayTop:74,screenCenter:62.5,screenW:22.5,controlW:26,controlD:15};
+const CABINET_DIM={w:31,d:36,h:72,control:39.25,screenBayTop:63.5,screenCenter:52.5,screenW:26.2,controlW:27.5,controlD:14.5};
 const AISLE={secondary:47.25,primary:70.87,merge:141.73}; // 1.2m / 1.8m / 3.6m references, inches
 const FOV=76*Math.PI/180,NEAR=.6,SHADES=11,TILE_H=256,LOOK_UP=180,LOOK_DOWN=320;
 const PORTALS={
@@ -126,7 +127,8 @@ const ASSET_NAMES={
  cab3:['Cabinets03.png','cabinets03.png'],
  cab4:['Cabinets04.png','cabinets04.png'],
  screen:'fts_sprites.png',
- fixture:'fts-arcade-fixture-atlas.png'
+ fixture:'fts-arcade-fixture-atlas.png',
+ cabinetRef:['the-Cabinet.png','the-cabinet.png','./the-Cabinet.png','./the-cabinet.png']
 };
 const ASSET_FILES=ASSET_NAMES;
 const WORLD_RECTS={
@@ -137,6 +139,16 @@ const WORLD_RECTS={
 };
 const FIXTURE_RECTS={VEND_DRINK:[16,16,64,64],VEND_SNACK:[96,16,64,64],JUKEBOX:[176,16,64,64],WHITEBOARD:[256,16,64,64],BULLETIN:[336,16,64,64],TOKEN:[416,16,64,64],POSTER_1:[496,16,64,64],POSTER_2:[576,16,64,64],POSTER_3:[656,16,64,64],AD_SPACE:[736,16,64,64],AD_DEAL:[816,16,64,64],WAYFIND:[896,16,64,64],OFFICE_DOOR:[16,96,64,64],STAGE_SIGN:[96,96,64,64],DJ_SIGN:[176,96,64,64],POSTER_4:[256,96,64,64]};
 const SKIN_PARTS=['MARQUEE','LEFT','RIGHT','CONTROL','FRONT'];
+
+// Generic cabinet-detail crops borrowed from the-Cabinet.png. These are intentionally
+// structural details shared by every machine; game identity remains in Cabinets01-04.
+const CABINET_REF_RECTS={
+ COIN_DOOR:[330,978,112,214],
+ BLACK_BODY:[118,850,535,430],
+ WOOD_TRIM:[34,8,56,1380],
+ CONTROL_EDGE:[72,714,620,143]
+};
+
 // Crops measured from Cabinets01-Cabinets04. Transparent helper-label bands are excluded.
 const CABINET_PART_RECTS={
  A:['cab1',{MARQUEE:[60,90,341,92],LEFT:[13,172,115,368],RIGHT:[316,172,113,368],CONTROL:[124,363,192,94],FRONT:[142,496,161,103]}],
@@ -190,6 +202,7 @@ for(let cc=65;cc<=90;cc++){
  for(const p of SKIN_PARTS){const a=cabinetArt(L,p);mat('SKIN_'+L+'_'+p,a.sheet,a.rect,{stretch:true});}
 }
 mat('CAB_BLACK','solid',null,{stretch:true});
+Object.keys(CABINET_REF_RECTS).forEach(k=>mat('CAB_REF_'+k,'cabinetRef',CABINET_REF_RECTS[k],{stretch:true}));
 for(let i=1;i<=25;i++)mat('SCREEN_'+String(i).padStart(2,'0'),'screen',screenRect(i),{stretch:true});
 
 const Geom={
@@ -326,30 +339,42 @@ const AUTHORING={
 
 function cabinetSolid(letter,slot,x,y,faceAng,title,url,screenIndex,target='_blank'){
  const K=p=>MAT['SKIN_'+letter+'_'+p], black=MAT.CAB_BLACK;
+ const ref={coin:MAT.CAB_REF_COIN_DOOR,body:MAT.CAB_REF_BLACK_BODY,trim:MAT.CAB_REF_WOOD_TRIM,edge:MAT.CAB_REF_CONTROL_EDGE};
  const screen=MAT['SCREEN_'+String(screenIndex||17).padStart(2,'0')];
- // Preserve each supplied CRT sprite's landscape aspect ratio in physical cabinet geometry.
+ // 30-inch HD CRT target: keep the supplied landscape sprite aspect ratio while giving
+ // the cabinet a physically larger 6-foot upright presentation.
  const sr=screenRect(screenIndex||17),screenH=CABINET_DIM.screenW*(sr[3]/sr[2]);
  const screenZ0=CABINET_DIM.screenCenter-screenH/2,screenZ1=CABINET_DIM.screenCenter+screenH/2;
- // Cabinet shell: full-height art outside, black-lined cavity inside, recessed CRT plane, extra lower blockers.
+ const controlTop=CABINET_DIM.control;
+ const controlBase=controlTop-.9;
+ const pedestalTop=controlBase-.7;
+ const screenInset=5.5;
+ const hoodDepth=15.5;
  return{id:'CAB_'+letter,kind:'cabinet',letter,slot,title,url,target,screenIndex,x,y,ang:faceAng,w:CABINET_DIM.w,d:CABINET_DIM.d,collision:true,light:1,
   parts:[
-   {role:'plinth',w:30,d:34,of:-1,ro:0,z0:0,z1:8,front:black,left:black,right:black,back:black,stretch:true},
-   {role:'left-shell', w:2,d:23,of:-1,ro:-14,z0:0,z1:CABINET_DIM.screenBayTop,front:black,left:K('LEFT'),right:black,back:black,stretch:true},
-   {role:'right-shell',w:2,d:23,of:-1,ro: 14,z0:0,z1:CABINET_DIM.screenBayTop,front:black,left:black,right:K('RIGHT'),back:black,stretch:true},
-   {role:'lower-core',w:24,d:20,of:1,ro:0,z0:8,z1:39,front:black,left:black,right:black,back:black,stretch:true},
-   {role:'front-brand',w:24,d:2,of:11,ro:0,z0:0,z1:15,front:K('FRONT'),left:black,right:black,back:black,stretch:true},
-   {role:'control-pedestal',w:26,d:15,of:5,ro:0,z0:15,z1:43.5,front:black,left:black,right:black,back:black,stretch:true},
-   // Game pad: shallow horizontal slab. CONTROL art is mapped to the top face, not a vertical wall.
-   {role:'control',w:CABINET_DIM.controlW,d:CABINET_DIM.controlD,of:7,ro:0,z0:43.5,z1:CABINET_DIM.control,front:black,left:black,right:black,back:black,top:K('CONTROL'),stretch:true},
-   {role:'inner-left',w:2,d:20,of:5,ro:-12,z0:0,z1:CABINET_DIM.control,front:black,left:black,right:black,back:black,stretch:true},
-   {role:'inner-right',w:2,d:20,of:5,ro:12,z0:0,z1:CABINET_DIM.control,front:black,left:black,right:black,back:black,stretch:true},
-   {role:'backdrop',w:24,d:2,of:5,ro:0,z0:CABINET_DIM.control,z1:CABINET_DIM.screenBayTop,front:black,left:black,right:black,back:black,stretch:true},
-   {role:'screen',w:CABINET_DIM.screenW,d:2,of:7,ro:0,z0:screenZ0,z1:screenZ1,front:screen,left:black,right:black,back:black,stretch:true},
-   {role:'jamb-left',w:2,d:16,of:7,ro:-12,z0:CABINET_DIM.control,z1:CABINET_DIM.screenBayTop,front:black,left:black,right:black,back:black,stretch:true},
-   {role:'jamb-right',w:2,d:16,of:7,ro:12,z0:CABINET_DIM.control,z1:CABINET_DIM.screenBayTop,front:black,left:black,right:black,back:black,stretch:true},
-   {role:'hood-bottom',w:24,d:16,of:7,ro:0,z0:CABINET_DIM.control,z1:CABINET_DIM.control+2,front:black,left:black,right:black,back:black,stretch:true},
-   {role:'marquee',w:30,d:20,of:-1,ro:0,z0:CABINET_DIM.screenBayTop,z1:CABINET_DIM.h,front:K('MARQUEE'),left:black,right:black,back:black,stretch:true},
-   {role:'back-block',w:24,d:2,of:-16,ro:0,z0:0,z1:CABINET_DIM.h,front:black,left:black,right:black,back:black,stretch:true}
+   {role:'plinth',w:31,d:36,of:-1,ro:0,z0:0,z1:4.75,front:ref.body,left:black,right:black,back:black,stretch:true},
+   {role:'left-shell', w:2.2,d:27,of:-1,ro:-14.4,z0:0,z1:CABINET_DIM.screenBayTop,front:ref.trim,left:K('LEFT'),right:black,back:black,stretch:true},
+   {role:'right-shell',w:2.2,d:27,of:-1,ro: 14.4,z0:0,z1:CABINET_DIM.screenBayTop,front:ref.trim,left:black,right:K('RIGHT'),back:black,stretch:true},
+   {role:'lower-core',w:25.4,d:23.5,of:1.4,ro:0,z0:4.75,z1:35.4,front:ref.body,left:black,right:black,back:black,stretch:true},
+   {role:'front-brand',w:24.6,d:1.6,of:12.1,ro:0,z0:3.2,z1:15.8,front:K('FRONT'),left:black,right:black,back:black,stretch:true},
+   {role:'coin-door',w:7.75,d:1.15,of:12.7,ro:0,z0:16.5,z1:31.75,front:ref.coin,left:black,right:black,back:black,stretch:true},
+   {role:'coin-boss',w:12.2,d:1.05,of:12.25,ro:0,z0:14.8,z1:34.3,front:ref.body,left:black,right:black,back:black,stretch:true},
+   {role:'kick-plate',w:22.8,d:1.2,of:12.1,ro:0,z0:32,z1:37.2,front:ref.body,left:black,right:black,back:black,stretch:true},
+   {role:'control-pedestal',w:26.4,d:15.25,of:5.5,ro:0,z0:37.2,z1:pedestalTop,front:ref.edge,left:black,right:black,back:black,stretch:true},
+   // Horizontal control deck: near-floor parallel, wide, and centered like a conventional upright cabinet.
+   {role:'control',w:CABINET_DIM.controlW,d:CABINET_DIM.controlD,of:7.3,ro:0,z0:controlBase,z1:controlTop,front:ref.edge,left:black,right:black,back:black,top:K('CONTROL'),stretch:true},
+   {role:'jamb-left',w:1.9,d:hoodDepth,of:screenInset,ro:-12.3,z0:controlTop-.3,z1:CABINET_DIM.screenBayTop,front:ref.body,left:black,right:black,back:black,stretch:true},
+   {role:'jamb-right',w:1.9,d:hoodDepth,of:screenInset,ro:12.3,z0:controlTop-.3,z1:CABINET_DIM.screenBayTop,front:ref.body,left:black,right:black,back:black,stretch:true},
+   {role:'backdrop',w:25.2,d:2.4,of:3.5,ro:0,z0:controlTop,z1:CABINET_DIM.screenBayTop,front:ref.body,left:black,right:black,back:black,stretch:true},
+   // The renderer cannot pitch a quad in elevation, so the "standard CRT mounting angle"
+   // is approximated by a deeper recess, a lower screen center, and a more pronounced hood.
+   {role:'screen',w:CABINET_DIM.screenW,d:2,of:screenInset,ro:0,z0:screenZ0,z1:screenZ1,front:screen,left:black,right:black,back:black,stretch:true},
+   {role:'bezel-left',w:1.4,d:hoodDepth,of:screenInset,ro:-11.9,z0:screenZ0-1.2,z1:screenZ1+1.2,front:ref.body,left:black,right:black,back:black,stretch:true},
+   {role:'bezel-right',w:1.4,d:hoodDepth,of:screenInset,ro:11.9,z0:screenZ0-1.2,z1:screenZ1+1.2,front:ref.body,left:black,right:black,back:black,stretch:true},
+   {role:'bezel-bottom',w:27.2,d:hoodDepth,of:screenInset,ro:0,z0:screenZ0-1.35,z1:screenZ0+.85,front:ref.body,left:black,right:black,back:black,stretch:true},
+   {role:'bezel-top',w:27.2,d:13.4,of:2.8,ro:0,z0:screenZ1+.6,z1:CABINET_DIM.screenBayTop,front:ref.body,left:black,right:black,back:black,stretch:true},
+   {role:'marquee',w:31,d:17.5,of:-2.2,ro:0,z0:CABINET_DIM.screenBayTop,z1:CABINET_DIM.h,front:K('MARQUEE'),left:ref.trim,right:ref.trim,back:black,stretch:true},
+   {role:'back-block',w:25.4,d:2.2,of:-16.7,ro:0,z0:0,z1:CABINET_DIM.h,front:black,left:black,right:black,back:black,stretch:true}
   ]};
 }
 function boxSolid(id,x,y,ang,w,d,h,front,side,opts){return Object.assign({id,kind:'box',x,y,ang,w,d,collision:true,light:.96,parts:[{w,d,of:0,z0:0,z1:h,front,side,back:side}]},opts||{});}
@@ -455,7 +480,7 @@ const RenderCore={
 };
 
 const canvas=document.getElementById('c'),ctx=canvas.getContext('2d'),telemetry=document.getElementById('telemetry'),promptEl=document.getElementById('prompt'),lockEl=document.getElementById('lock'),modal=document.getElementById('modal'),modalEyebrow=document.getElementById('modalEyebrow'),modalTitle=document.getElementById('modalTitle'),modalCopy=document.getElementById('modalCopy'),confirmBtn=document.getElementById('confirmBtn'),cancelBtn=document.getElementById('cancelBtn'),mapBtn=document.getElementById('mapBtn'),audioBtn=document.getElementById('audioBtn');
-const IMG={world:null,cab1:null,cab2:null,cab3:null,cab4:null,screen:null,fixture:null,ready:false,errors:[]};let texBank=[],flatBank=[],RW=0,RH=0,RSCALE=1,dl=null,showMap=false,activeTarget=null,modalTarget=null;
+const IMG={world:null,cab1:null,cab2:null,cab3:null,cab4:null,screen:null,fixture:null,cabinetRef:null,ready:false,errors:[]};let texBank=[],flatBank=[],RW=0,RH=0,RSCALE=1,dl=null,showMap=false,activeTarget=null,modalTarget=null;
 
 function loadImage(src,label){
  const candidates=Array.isArray(src)?src:[src];
@@ -464,7 +489,7 @@ function loadImage(src,label){
 function cropCanvas(im,r,sheet){const cv=document.createElement('canvas');cv.width=cv.height=64;const g=cv.getContext('2d');g.imageSmoothingEnabled=false;if(sheet==='solid'){g.fillStyle='#03050a';g.fillRect(0,0,64,64);}else if(im&&r)g.drawImage(im,r[0],r[1],r[2],r[3],0,0,64,64);else{g.fillStyle='#222833';g.fillRect(0,0,64,64);g.strokeStyle='#ff4a98';g.strokeRect(2,2,60,60);}return cv;}
 function shadeStrip(src,level){const cv=document.createElement('canvas');cv.width=64;cv.height=TILE_H;const g=cv.getContext('2d');g.imageSmoothingEnabled=false;for(let y=0;y<TILE_H;y+=64)g.drawImage(src,0,y,64,64);const k=level/(SHADES-1);g.globalCompositeOperation='source-atop';g.fillStyle='rgba(2,4,8,'+(k*.9)+')';g.fillRect(0,0,64,TILE_H);return cv;}
 function shadeTile(src,level){const cv=document.createElement('canvas');cv.width=cv.height=64;const g=cv.getContext('2d');g.imageSmoothingEnabled=false;g.drawImage(src,0,0);const k=level/(SHADES-1);g.globalCompositeOperation='source-atop';g.fillStyle='rgba(2,4,8,'+(k*.9)+')';g.fillRect(0,0,64,64);return cv;}
-function buildTextures(){texBank=new Array(MATERIALS.length);flatBank=new Array(MATERIALS.length);IMG.ready=!!(IMG.world&&IMG.cab1&&IMG.cab2&&IMG.cab3&&IMG.cab4&&IMG.screen&&IMG.fixture);}
+function buildTextures(){texBank=new Array(MATERIALS.length);flatBank=new Array(MATERIALS.length);IMG.ready=!!(IMG.world&&IMG.cab1&&IMG.cab2&&IMG.cab3&&IMG.cab4&&IMG.screen&&IMG.fixture&&IMG.cabinetRef);}
 function ensureTextureBank(i){
  if(texBank[i]&&flatBank[i])return;
  const m=MATERIALS[i],src=cropCanvas(IMG[m.sheet],m.rect,m.sheet),row=[],prow=[];
@@ -526,8 +551,8 @@ let last=0,fpsAcc=0,fpsN=0,fps=0,frames=0;
 function loop(ts){const dt=Math.min((ts-last)/1000||.016,.05);last=ts;sim.step(dt,input);RenderCore.solve(sim,dl,RW,RH);paint(sim,dl);if(showMap)drawMap(sim,RW,RH);updatePrompt();fpsAcc+=dt;fpsN++;if(fpsAcc>.45){fps=fpsN/fpsAcc;fpsAcc=0;fpsN=0;}if((frames++&7)===0)telemetry.textContent=VERSION+' | '+RW+'x'+RH+' | '+fps.toFixed(0)+' fps | SEC '+(sim.sector+1)+'/'+map.sectors.length+' | CAB '+map.cabinets.length+' A-Z | FIX '+map.fixtures.length+' | ADS '+map.ads.length+' | VIS '+dl.stats.sectors+'s '+dl.stats.solidFaces+'g | ART '+(IMG.ready?'ATLAS':'FALLBACK')+(MAP_ERRORS.length?' | MAP ERR '+MAP_ERRORS.length:'');requestAnimationFrame(loop);}
 addEventListener('resize',resize);
 Promise.all([
- loadImage(ASSET_FILES.world,'world'),loadImage(ASSET_FILES.cab1,'Cabinets01'),loadImage(ASSET_FILES.cab2,'Cabinets02'),loadImage(ASSET_FILES.cab3,'Cabinets03'),loadImage(ASSET_FILES.cab4,'Cabinets04'),loadImage(ASSET_FILES.screen,'screen'),loadImage(ASSET_FILES.fixture,'fixture')
-]).then(([w,c1,c2,c3,c4,sc,f])=>{IMG.world=w;IMG.cab1=c1;IMG.cab2=c2;IMG.cab3=c3;IMG.cab4=c4;IMG.screen=sc;IMG.fixture=f;buildTextures();if(IMG.errors.length){telemetry.textContent=VERSION+' | ASSET ERROR: '+IMG.errors.join(', ');console.error('[FTS ARCADE] atlas load failure',IMG.errors,ASSET_FILES);}});
+ loadImage(ASSET_FILES.world,'world'),loadImage(ASSET_FILES.cab1,'Cabinets01'),loadImage(ASSET_FILES.cab2,'Cabinets02'),loadImage(ASSET_FILES.cab3,'Cabinets03'),loadImage(ASSET_FILES.cab4,'Cabinets04'),loadImage(ASSET_FILES.screen,'screen'),loadImage(ASSET_FILES.fixture,'fixture'),loadImage(ASSET_FILES.cabinetRef,'the-Cabinet')
+]).then(([w,c1,c2,c3,c4,sc,f,cr])=>{IMG.world=w;IMG.cab1=c1;IMG.cab2=c2;IMG.cab3=c3;IMG.cab4=c4;IMG.screen=sc;IMG.fixture=f;IMG.cabinetRef=cr;buildTextures();if(IMG.errors.length){telemetry.textContent=VERSION+' | ASSET ERROR: '+IMG.errors.join(', ');console.error('[FTS ARCADE] atlas load failure',IMG.errors,ASSET_FILES);}});
 resize();buildTextures();
 if(MAP_ERRORS.length)console.error('[FTS ARCADE] map validation',MAP_ERRORS);
 function screenPart(c){return c.parts.find(p=>p.role==='screen');}
@@ -536,7 +561,9 @@ const REF_TESTS={
  cabinetCount:()=>map.cabinets.length===26,
  cabinetAlphabet:()=>map.cabinets.map(c=>c.letter).sort().join('')==='ABCDEFGHIJKLMNOPQRSTUVWXYZ',
  exitCount:()=>map.exits.length===3,
- geometryCabinets:()=>map.cabinets.every(c=>c.parts&&c.parts.length>=10),
+ geometryCabinets:()=>map.cabinets.every(c=>c.parts&&c.parts.length>=16),
+ cabinetCoinDoors:()=>map.cabinets.every(c=>{const p=c.parts.find(x=>x.role==='coin-door');return p&&p.front===MAT.CAB_REF_COIN_DOOR&&p.z0>=12&&p.z1<=34;}),
+ cabinetClassicDetails:()=>map.cabinets.every(c=>['kick-plate','bezel-left','bezel-right','bezel-bottom','bezel-top'].every(r=>c.parts.some(p=>p.role===r))),
  concaveCabinets:()=>map.cabinets.every(c=>c.parts.some(p=>p.role==='backdrop')&&c.parts.some(p=>p.role==='screen')&&c.parts.some(p=>p.role==='jamb-left')&&c.parts.some(p=>p.role==='jamb-right')),
  screenPairings:()=>map.cabinets.every(c=>c.screenIndex>=1&&c.screenIndex<=25),
  screenAtlasGrid:()=>SCREEN_ATLAS_META.count===25&&SCREEN_RECTS.length===25,
@@ -545,7 +572,8 @@ const REF_TESTS={
  cabinetScreensLandscape:()=>map.cabinets.every(c=>{const p=screenPart(c);return p&&p.w/(p.z1-p.z0)>1.35;}),
  screenAspectPreserved:()=>map.cabinets.every(c=>{const p=screenPart(c),r=screenRect(c.screenIndex);return p&&Math.abs(p.w/(p.z1-p.z0)-r[2]/r[3])<1e-6;}),
  screenMaterialPairings:()=>map.cabinets.every(c=>{const p=screenPart(c);return p&&MATERIALS[p.front]&&MATERIALS[p.front].name==='SCREEN_'+String(c.screenIndex).padStart(2,'0');}),
- cabinetProportions:()=>CABINET_DIM.control===44.5&&CABINET_DIM.screenBayTop===74&&CABINET_DIM.h===84&&CABINET_DIM.screenW===22.5,
+ cabinetProportions:()=>CABINET_DIM.control===39.25&&CABINET_DIM.screenBayTop===63.5&&CABINET_DIM.h===72&&CABINET_DIM.screenW===26.2,
+ cabinetRefDeclared:()=>!!ASSET_NAMES.cabinetRef&&Array.isArray(ASSET_NAMES.cabinetRef)&&ASSET_NAMES.cabinetRef.some(x=>/the-Cabinet\.png$/i.test(x)),
  cabinetControlsHorizontal:()=>map.cabinets.every(c=>{const p=c.parts.find(x=>x.role==='control');return p&&p.top!=null&&(p.z1-p.z0)<=1.01;}),
  officeEntryFlanked:()=>{const d=AUTHORING.officeEntry.find(x=>x.id==='OFFICE_DOOR'),w=AUTHORING.officeEntry.find(x=>x.id==='WHITEBOARD'),b=AUTHORING.officeEntry.find(x=>x.id==='BULLETIN');return !!(d&&w&&b&&w.x<d.x&&b.x>d.x&&w.y===d.y&&b.y===d.y);},
  tightCabinetPacking:()=>AUTHORING.packing.sideGap<=.5&&AUTHORING.packing.backGap<=.5,
@@ -557,7 +585,7 @@ const REF_TESTS={
  adInventory:()=>map.ads.length===8&&map.ads.every(a=>a.url.includes('inventory=')),
  offsiteExits:()=>map.exits.every(e=>/^https:\/\//.test(e.url)),
  sameDirectoryAssets:()=>Object.values(ASSET_FILES).every(v=>(Array.isArray(v)?v:[v]).every(s=>!/^https?:/i.test(s))),
- assetDimensions:()=>!!IMG.world&&IMG.world.naturalWidth===1024&&IMG.world.naturalHeight===1024&&['cab1','cab2','cab3','cab4'].every(k=>IMG[k]&&IMG[k].naturalWidth===1254&&IMG[k].naturalHeight===1254)&&!!IMG.screen&&IMG.screen.naturalWidth===2048&&IMG.screen.naturalHeight===1433&&!!IMG.fixture&&IMG.fixture.naturalWidth===1024&&IMG.fixture.naturalHeight===256,
+ assetDimensions:()=>!!IMG.world&&IMG.world.naturalWidth===1024&&IMG.world.naturalHeight===1024&&['cab1','cab2','cab3','cab4'].every(k=>IMG[k]&&IMG[k].naturalWidth===1254&&IMG[k].naturalHeight===1254)&&!!IMG.screen&&IMG.screen.naturalWidth===2048&&IMG.screen.naturalHeight===1433&&!!IMG.fixture&&IMG.fixture.naturalWidth===1024&&IMG.fixture.naturalHeight===256&&!!IMG.cabinetRef&&IMG.cabinetRef.naturalWidth===767&&IMG.cabinetRef.naturalHeight===1432,
  assetsReady:()=>IMG.ready&&IMG.errors.length===0,
  noFrameOriginTrap:()=>document.querySelectorAll('iframe,frame').length===0,
  renderProducesGeometry:()=>!!dl&&dl.wN>0&&dl.sN>0&&dl.stats.solidFaces>0,
@@ -571,7 +599,7 @@ function runRefTests(){
  }
  return{version:VERSION,pass:failures.length===0,passed:Object.values(results).filter(v=>v===true).length,total:Object.keys(REF_TESTS).length,failures,results,mapErrors:MAP_ERRORS.slice(),assetErrors:IMG.errors.slice(),runtimeErrors:RUNTIME_ERRORS.slice(),screenAtlas:SCREEN_ATLAS_META};
 }
-window.__FTS_ARCADE__={VERSION,map,sim,MapBuilder,Geom,RenderCore,DrawLists,MATERIALS,MAP_ERRORS,CABINET_ROSTER,CABINET_DIM,AISLE,PORTALS,ASSET_NAMES,CABINET_PART_RECTS,SCREEN_ATLAS_META,SCREEN_RECTS,screenRect,AUTHORING,exportAuthoring:()=>JSON.stringify(AUTHORING,null,2),tests:REF_TESTS,runTests:runRefTests};
+window.__FTS_ARCADE__={VERSION,map,sim,MapBuilder,Geom,RenderCore,DrawLists,MATERIALS,MAP_ERRORS,CABINET_ROSTER,CABINET_DIM,AISLE,PORTALS,ASSET_NAMES,CABINET_PART_RECTS,CABINET_REF_RECTS,SCREEN_ATLAS_META,SCREEN_RECTS,screenRect,AUTHORING,exportAuthoring:()=>JSON.stringify(AUTHORING,null,2),tests:REF_TESTS,runTests:runRefTests};
 const qs=new URLSearchParams(location.search);
 if(qs.get('preview')==='1')lockEl.classList.add('hidden');
 if(qs.get('map')==='1'){showMap=true;mapBtn.textContent='MAP: ON';mapBtn.classList.add('on');}
