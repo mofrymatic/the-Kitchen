@@ -21,7 +21,7 @@
 <link rel="preload" as="image" href="Cabinets04.png">
 <link rel="preload" as="image" href="fts_sprites.png">
 <link rel="preload" as="image" href="fts-arcade-fixture-atlas.png">
-<title>FTS Arcade Floor 0.5.2 Cabinet Art</title>
+<title>FTS Arcade Floor 0.5.3 Authoring Layout</title>
 <!-- 0.5.2 art fit: external world/fixture/screen atlases + Cabinets01-Cabinets04, exact per-CRT crops. -->
 
 <!-- ── FA3D Meta ─────────────────────────────────────────── -->
@@ -103,12 +103,12 @@ const RUNTIME_ERRORS=[];
 addEventListener('error',e=>{if(e.error||e.message)RUNTIME_ERRORS.push(String(e.error&&e.error.stack||e.message||e.error));});
 addEventListener('unhandledrejection',e=>RUNTIME_ERRORS.push(String(e.reason&&e.reason.stack||e.reason||'unhandled rejection')));
 
-const VERSION='fts-arcade-floor-0.5.2-cabinet-art';
+const VERSION='fts-arcade-floor-0.5.3-authoring-layout';
 const TAU=Math.PI*2, DEG=Math.PI/180;
 // Dimensional contract: 1 engine unit = 1 inch.
 const RING={outer:430,inner:118,sides:32,ceil:132};
 const PLAYER_R=11,PLAYER_H=74,EYE=69,SPEED_WALK=84,SPEED_RUN=387.2,ACCEL=10; // 22 mph sprint
-const CABINET_DIM={w:30,d:34,h:84,control:45,screenBayTop:74,screenCenter:62.5,screenW:22.5};
+const CABINET_DIM={w:30,d:34,h:84,control:44.5,screenBayTop:74,screenCenter:62.5,screenW:22.5,controlW:26,controlD:15};
 const AISLE={secondary:47.25,primary:70.87,merge:141.73}; // 1.2m / 1.8m / 3.6m references, inches
 const FOV=76*Math.PI/180,NEAR=.6,SHADES=11,TILE_H=256,LOOK_UP=180,LOOK_DOWN=320;
 const PORTALS={
@@ -278,6 +278,52 @@ const CABINET_ROSTER=[
  ['Z','BRAZEN INDEX','https://frymatic.us/',6, '_blank']
 ];
 
+// -----------------------------------------------------------------------------
+// DETERMINISTIC AUTHORING SURFACE v1
+// Layout/content edits belong here first. Geometry builders consume this manifest.
+// Angles are degrees; positions are inches; links/CTAs are explicit data.
+// -----------------------------------------------------------------------------
+const AUTHORING={
+ schema:'fts-arcade-floor-authoring-1',
+ packing:{sideGap:.5,backGap:.5},
+ cabinetPods:[
+  {front:['C','A'],back:['D','B'],cx:-300,cy:210,deg:60},
+  {front:['F','G'],back:['E','H'],cx:300,cy:210,deg:120},
+  {front:['Q','S'],back:['R','T'],cx:148.75,cy:0,deg:90},
+  {front:['U','N'],back:['V','M'],cx:-285,cy:-245,deg:135},
+  {front:['Z','X'],back:['Y','W'],cx:285,cy:-245,deg:45}
+ ],
+ cabinetSingles:[
+  {letter:'O',x:-30.5,y:135.5,deg:90},
+  {letter:'I',x:0,y:135.5,deg:90},
+  {letter:'P',x:30.5,y:135.5,deg:90},
+  {letter:'J',x:-166,y:0,deg:180},
+  {letter:'K',x:-133.5,y:17.25,deg:90},
+  {letter:'L',x:-133.5,y:-17.25,deg:-90}
+ ],
+ officeEntry:[
+  {id:'WHITEBOARD',x:-53,y:-119,deg:-90,w:48,z0:36,z1:80,mat:'FIX_WHITEBOARD',label:'WHITEBOARD',url:'https://frymatic.us/FTSArcade/',cta:'VIEW ARCADE NOTES'},
+  {id:'OFFICE_DOOR',x:0,y:-119,deg:-90,w:50,z0:0,z1:82,mat:'FIX_OFFICE_DOOR',label:'OFFICE',url:'',cta:''},
+  {id:'BULLETIN',x:53,y:-119,deg:-90,w:48,z0:36,z1:80,mat:'FIX_BULLETIN',label:'BULLETIN BOARD',url:'../tournament.html',cta:'VIEW EVENTS'}
+ ],
+ wallPortals:[
+  {id:'STAGE_SIGN',x:0,y:387,deg:-90,w:92,z0:78,z1:106,mat:'FIX_STAGE_SIGN',label:'PERFORMANCE ZONE',url:'../tournament.html',cta:'VIEW EVENTS'},
+  {id:'DJ_SIGN',x:104,y:320,deg:-90,w:54,z0:48,z1:68,mat:'FIX_DJ_SIGN',label:'DJ / PERFORMANCE',url:'https://frymatic.us/FTSArcade/',cta:'OPEN ARCADE HUB'}
+ ],
+ posters:[
+  {deg:8,label:'BRAZEN TOWER',url:'../BRAZENTOWER',cta:'CLIMB THE TOWER'},
+  {deg:82,label:'RED EYE',url:'../REDEYE/',cta:'ENTER RED EYE'},
+  {deg:98,label:'TOURNAMENT',url:'../tournament.html',cta:'VIEW TOURNAMENTS'},
+  {deg:172,label:'FTS ARCADE',url:'https://frymatic.us/FTSArcade/',cta:'OPEN ARCADE HUB'},
+  {deg:188,label:'MOONSHOT PINBALL',url:'../moonshot-pinball.html',cta:'PLAY MOONSHOT'},
+  {deg:208,label:'GRID WARDEN',url:'../grid-warden.html',cta:'PLAY GRID WARDEN'},
+  {deg:252,label:'CAVE RACER',url:'../cave-racer.html',cta:'RACE CAVE RACER'},
+  {deg:288,label:'PLINKO',url:'../plinko.html',cta:'DROP INTO PLINKO'},
+  {deg:332,label:'EVENT SERIES',url:'../adapter-test.html',cta:'OPEN EVENT SERIES'},
+  {deg:352,label:'BRAZEN INDEX',url:'https://frymatic.us/',cta:'OPEN BRAZEN INDEX'}
+ ]
+};
+
 function cabinetSolid(letter,slot,x,y,faceAng,title,url,screenIndex,target='_blank'){
  const K=p=>MAT['SKIN_'+letter+'_'+p], black=MAT.CAB_BLACK;
  const screen=MAT['SCREEN_'+String(screenIndex||17).padStart(2,'0')];
@@ -292,15 +338,16 @@ function cabinetSolid(letter,slot,x,y,faceAng,title,url,screenIndex,target='_bla
    {role:'right-shell',w:2,d:23,of:-1,ro: 14,z0:0,z1:CABINET_DIM.screenBayTop,front:black,left:black,right:K('RIGHT'),back:black,stretch:true},
    {role:'lower-core',w:24,d:20,of:1,ro:0,z0:8,z1:39,front:black,left:black,right:black,back:black,stretch:true},
    {role:'front-brand',w:24,d:2,of:11,ro:0,z0:0,z1:15,front:K('FRONT'),left:black,right:black,back:black,stretch:true},
-   {role:'control-pedestal',w:26,d:15,of:5,ro:0,z0:15,z1:39,front:black,left:black,right:black,back:black,stretch:true},
-   {role:'control',w:26,d:16,of:7,ro:0,z0:39,z1:51,front:K('CONTROL'),left:black,right:black,back:black,stretch:true},
-   {role:'inner-left',w:2,d:20,of:5,ro:-12,z0:0,z1:51,front:black,left:black,right:black,back:black,stretch:true},
-   {role:'inner-right',w:2,d:20,of:5,ro:12,z0:0,z1:51,front:black,left:black,right:black,back:black,stretch:true},
-   {role:'backdrop',w:24,d:2,of:5,ro:0,z0:51,z1:CABINET_DIM.screenBayTop,front:black,left:black,right:black,back:black,stretch:true},
+   {role:'control-pedestal',w:26,d:15,of:5,ro:0,z0:15,z1:43.5,front:black,left:black,right:black,back:black,stretch:true},
+   // Game pad: shallow horizontal slab. CONTROL art is mapped to the top face, not a vertical wall.
+   {role:'control',w:CABINET_DIM.controlW,d:CABINET_DIM.controlD,of:7,ro:0,z0:43.5,z1:CABINET_DIM.control,front:black,left:black,right:black,back:black,top:K('CONTROL'),stretch:true},
+   {role:'inner-left',w:2,d:20,of:5,ro:-12,z0:0,z1:CABINET_DIM.control,front:black,left:black,right:black,back:black,stretch:true},
+   {role:'inner-right',w:2,d:20,of:5,ro:12,z0:0,z1:CABINET_DIM.control,front:black,left:black,right:black,back:black,stretch:true},
+   {role:'backdrop',w:24,d:2,of:5,ro:0,z0:CABINET_DIM.control,z1:CABINET_DIM.screenBayTop,front:black,left:black,right:black,back:black,stretch:true},
    {role:'screen',w:CABINET_DIM.screenW,d:2,of:7,ro:0,z0:screenZ0,z1:screenZ1,front:screen,left:black,right:black,back:black,stretch:true},
-   {role:'jamb-left',w:2,d:16,of:7,ro:-12,z0:51,z1:CABINET_DIM.screenBayTop,front:black,left:black,right:black,back:black,stretch:true},
-   {role:'jamb-right',w:2,d:16,of:7,ro:12,z0:51,z1:CABINET_DIM.screenBayTop,front:black,left:black,right:black,back:black,stretch:true},
-   {role:'hood-bottom',w:24,d:16,of:7,ro:0,z0:51,z1:53,front:black,left:black,right:black,back:black,stretch:true},
+   {role:'jamb-left',w:2,d:16,of:7,ro:-12,z0:CABINET_DIM.control,z1:CABINET_DIM.screenBayTop,front:black,left:black,right:black,back:black,stretch:true},
+   {role:'jamb-right',w:2,d:16,of:7,ro:12,z0:CABINET_DIM.control,z1:CABINET_DIM.screenBayTop,front:black,left:black,right:black,back:black,stretch:true},
+   {role:'hood-bottom',w:24,d:16,of:7,ro:0,z0:CABINET_DIM.control,z1:CABINET_DIM.control+2,front:black,left:black,right:black,back:black,stretch:true},
    {role:'marquee',w:30,d:20,of:-1,ro:0,z0:CABINET_DIM.screenBayTop,z1:CABINET_DIM.h,front:K('MARQUEE'),left:black,right:black,back:black,stretch:true},
    {role:'back-block',w:24,d:2,of:-16,ro:0,z0:0,z1:CABINET_DIM.h,front:black,left:black,right:black,back:black,stretch:true}
   ]};
@@ -318,73 +365,44 @@ function buildLevel(){
   else{const ang=Math.atan2(my,mx);ln.mid=Math.abs(Math.sin(ang*3))>.72?MAT.WALL_BLACK_GOLD:MAT.WALL_RIB;ln.tag='OUTER_WALL';}
  }
  const addCab=(letter,x,y,ang)=>{const row=CABINET_ROSTER.find(r=>r[0]===letter),slot=letter.charCodeAt(0)-64,c=cabinetSolid(letter,slot,x,y,ang,row[1],row[2],row[3],row[4]);map.solids.push(c);map.cabinets.push(c);map.targets.push(c);};
- // Cabinet topology 0.4: clustered back-to-back pods. The shared backs form protected
- // power/data spines, player faces point into sheltered gathering pockets, and the pods
- // deliberately interrupt long cross-arcade sightlines. Texture assignments are unchanged.
- const pod4=(front,back,cx,cy,ang,fsep=20,rsep=17)=>{
-  const f={x:Math.cos(ang),y:Math.sin(ang)},r={x:Math.sin(ang),y:-Math.cos(ang)};
-  front.forEach((L,i)=>{const rs=i? rsep:-rsep;addCab(L,cx+f.x*fsep+r.x*rs,cy+f.y*fsep+r.y*rs,ang);});
-  back.forEach((L,i)=>{const rs=i? rsep:-rsep;addCab(L,cx-f.x*fsep+r.x*rs,cy-f.y*fsep+r.y*rs,ang+Math.PI);});
- };
+ const sideSep=(CABINET_DIM.w+AUTHORING.packing.sideGap)/2;
+ const backSep=(CABINET_DIM.d+AUTHORING.packing.backGap)/2;
+ const pod4=(def)=>{const ang=def.deg*DEG,f={x:Math.cos(ang),y:Math.sin(ang)},r={x:Math.sin(ang),y:-Math.cos(ang)};def.front.forEach((L,i)=>{const rs=i?sideSep:-sideSep;addCab(L,def.cx+f.x*backSep+r.x*rs,def.cy+f.y*backSep+r.y*rs,ang);});def.back.forEach((L,i)=>{const rs=i?sideSep:-sideSep;addCab(L,def.cx-f.x*backSep+r.x*rs,def.cy-f.y*backSep+r.y*rs,ang+Math.PI);});};
+ AUTHORING.cabinetPods.forEach(pod4);
+ AUTHORING.cabinetSingles.forEach(c=>addCab(c.letter,c.x,c.y,c.deg*DEG));
 
- // Northwest and northeast neighborhood pods.
- pod4(['C','A'],['D','B'],-300,210,60*DEG);
- pod4(['F','G'],['E','H'], 300,210,120*DEG);
-
- // North wall of the office island: three machines share one service chase.
- addCab('O',-62,154,Math.PI/2);
- addCab('I',  0,154,Math.PI/2);
- addCab('P', 62,154,Math.PI/2);
-
- // West island: J acts as a visual baffle; K/L share backs along the office wall.
- addCab('J',-232,0,Math.PI);
- addCab('K',-154, 38, Math.PI/2);
- addCab('L',-154,-38,-Math.PI/2);
-
- // East island: two-by-two back-to-back bank with a generous cable/service void.
- pod4(['Q','S'],['R','T'],185,0,Math.PI/2,36,31);
-
- // Southwest and southeast pods leave the southern arrival/egress axis porous.
- pod4(['U','N'],['V','M'],-285,-245,135*DEG);
- pod4(['Z','X'],['Y','W'], 285,-245, 45*DEG);
-
- // North performance zone. Stage and DJ booth remain geometry.
+ // North performance zone. Stage/DJ geometry stays fixed; their dressings are portals below.
  map.solids.push(boxSolid('STAGE_BACK',0,366,-Math.PI/2,190,16,96,MAT.STAGE_RED,MAT.WALL_BLACK_GOLD,{collision:true}));
  map.solids.push(boxSolid('STAGE_LIP',0,326,-Math.PI/2,210,48,18,MAT.STAGE,MAT.WALL_GOLD,{collision:true}));
  map.solids.push(boxSolid('DJ_BOOTH',104,304,-Math.PI/2,62,26,45,MAT.DJ,MAT.WALL_RIB,{collision:true}));
  map.solids.push(boxSolid('SPEAKER_L',-82,337,-Math.PI/2,24,20,74,MAT.WALL_RIB,MAT.WALL_BLACK_GOLD,{collision:true}));
  map.solids.push(boxSolid('SPEAKER_R',82,337,-Math.PI/2,24,20,74,MAT.WALL_RIB,MAT.WALL_BLACK_GOLD,{collision:true}));
- map.solids.push(panelSolid('STAGE_SIGN',0,387,-Math.PI/2,92,78,106,MAT.FIX_STAGE_SIGN));
- map.solids.push(panelSolid('DJ_SIGN',104,320,-Math.PI/2,54,48,68,MAT.FIX_DJ_SIGN));
 
- // Office door + informational boards on the square core.
- map.solids.push(panelSolid('OFFICE_DOOR',0,-119,-Math.PI/2,50,0,82,MAT.FIX_OFFICE_DOOR,{collision:false}));
- const white=panelSolid('WHITEBOARD',-119,28,Math.PI,54,40,82,MAT.FIX_WHITEBOARD,{label:'WHITEBOARD'});
- const board=panelSolid('BULLETIN',119,28,0,50,38,82,MAT.FIX_BULLETIN,{label:'BULLETIN BOARD'});
- map.solids.push(white,board);map.fixtures.push(white,board);
+ const addPortalPanel=(d)=>{const p=panelSolid(d.id,d.x,d.y,d.deg*DEG,d.w,d.z0,d.z1,MAT[d.mat],{kind:'dressing',label:d.label,url:d.url||'',cta:d.cta||'OPEN',target:'_blank'});map.solids.push(p);map.fixtures.push(p);if(p.url)map.targets.push(p);return p;};
+ AUTHORING.wallPortals.forEach(addPortalPanel);
+ AUTHORING.officeEntry.forEach(d=>{if(d.id==='OFFICE_DOOR'){map.solids.push(panelSolid(d.id,d.x,d.y,d.deg*DEG,d.w,d.z0,d.z1,MAT[d.mat],{collision:false,label:d.label}));}else addPortalPanel(d);});
 
- // Empty cabinet bays become real placeholder geometry.
- const fixture=(id,label,deg,r,w,d,h,matFront,kind='fixture',url='',target='_blank')=>{const a=deg*DEG,x=Math.cos(a)*r,y=Math.sin(a)*r,s=boxSolid(id,x,y,a+Math.PI,w,d,h,matFront,MAT.WALL_RIB,{kind,label,url,target,collision:true});map.solids.push(s);map.fixtures.push(s);if(url){map.targets.push(s);}return s;};
+ // Freestanding fixtures.
+ const fixture=(id,label,deg,r,w,d,h,matFront,kind='fixture',url='',target='_blank',cta='OPEN')=>{const a=deg*DEG,x=Math.cos(a)*r,y=Math.sin(a)*r,s=boxSolid(id,x,y,a+Math.PI,w,d,h,matFront,MAT.WALL_RIB,{kind,label,url,target,cta,collision:true});map.solids.push(s);map.fixtures.push(s);if(url)map.targets.push(s);return s;};
  fixture('VEND_DRINK','DRINK VENDING',198,372,30,28,72,MAT.FIX_VEND_DRINK);
  fixture('VEND_SNACK','SNACK VENDING',342,372,30,28,72,MAT.FIX_VEND_SNACK);
  fixture('JUKEBOX','JUKEBOX',97,294,34,22,60,MAT.FIX_JUKEBOX);
- fixture('TOKEN_VEND','FTS TOKEN VENDING',258,344,28,24,68,MAT.FIX_TOKEN,'token',PORTALS.tokens, '_blank');
+ fixture('TOKEN_VEND','FTS TOKEN VENDING',258,344,28,24,68,MAT.FIX_TOKEN,'token',PORTALS.tokens,'_blank','BUY TOKENS');
 
- // Upcoming-event poster campaign: visual inventory, deliberately non-interactive.
- const posterAngles=[8,82,98,172,188,208,252,288,332,352];
- posterAngles.forEach((deg,i)=>{const a=deg*DEG,r=416,x=Math.cos(a)*r,y=Math.sin(a)*r,p=panelSolid('POSTER_'+String(i+1).padStart(2,'0'),x,y,a+Math.PI,30,42,86,MAT['FIX_POSTER_'+(1+i%4)],{label:'UPCOMING EVENT'});map.solids.push(p);map.fixtures.push(p);});
+ // Every poster is now content inventory: art + destination + CTA live in AUTHORING.posters.
+ AUTHORING.posters.forEach((d,i)=>{const a=d.deg*DEG,r=416,x=Math.cos(a)*r,y=Math.sin(a)*r,p=panelSolid('POSTER_'+String(i+1).padStart(2,'0'),x,y,a+Math.PI,30,42,86,MAT['FIX_POSTER_'+(1+i%4)],{kind:'dressing',label:d.label,url:d.url,cta:d.cta,target:'_blank'});map.solids.push(p);map.fixtures.push(p);map.targets.push(p);});
 
  // Programmatic ad inventory. Every unit has a stable ID and its own deal-form URL.
  const adAngles=[14,76,104,166,194,244,296,346];
- adAngles.forEach((deg,i)=>{const unit='FTS-RING-'+String(i+1).padStart(2,'0'),a=deg*DEG,r=420,x=Math.cos(a)*r,y=Math.sin(a)*r,p=panelSolid('AD_'+unit,x,y,a+Math.PI,32,34,92,i%2?MAT.FIX_AD_DEAL:MAT.FIX_AD_SPACE,{kind:'ad',label:'AD SPACE '+unit,url:dealUrl(unit),target:'_blank',inventory:unit});map.solids.push(p);map.ads.push(p);map.targets.push(p);});
+ adAngles.forEach((deg,i)=>{const unit='FTS-RING-'+String(i+1).padStart(2,'0'),a=deg*DEG,r=420,x=Math.cos(a)*r,y=Math.sin(a)*r,p=panelSolid('AD_'+unit,x,y,a+Math.PI,32,34,92,i%2?MAT.FIX_AD_DEAL:MAT.FIX_AD_SPACE,{kind:'ad',label:'AD SPACE '+unit,url:dealUrl(unit),target:'_blank',inventory:unit,cta:'OPEN DEAL FORM'});map.solids.push(p);map.ads.push(p);map.targets.push(p);});
 
  // Three world exits: all use absolute URLs and always confirm before navigation.
  const exitDefs=[
-  {id:'EXIT_LOBBY',label:'LOBBY / OFF-SITE',url:PORTALS.lobby,target:'_blank',a:0},
-  {id:'EXIT_THEATERS',label:'BRAZEN THEATERS / OFF-SITE',url:PORTALS.theaters,target:'_blank',a:Math.PI},
-  {id:'EXIT_REDEYE',label:'REDEYE / OFF-SITE',url:PORTALS.redeye,target:'_blank',a:-Math.PI/2}
+  {id:'EXIT_LOBBY',label:'LOBBY / OFF-SITE',url:PORTALS.lobby,target:'_blank',cta:'LEAVE ARCADE',a:0},
+  {id:'EXIT_THEATERS',label:'BRAZEN THEATERS / OFF-SITE',url:PORTALS.theaters,target:'_blank',cta:'LEAVE ARCADE',a:Math.PI},
+  {id:'EXIT_REDEYE',label:'REDEYE / OFF-SITE',url:PORTALS.redeye,target:'_blank',cta:'LEAVE ARCADE',a:-Math.PI/2}
  ];
- exitDefs.forEach(e=>{const r=418,x=Math.cos(e.a)*r,y=Math.sin(e.a)*r,face=e.a+Math.PI,s=boxSolid(e.id,x,y,face,72,8,84,MAT.EXIT,MAT.WALL_GOLD,{kind:'exit',label:e.label,url:e.url,target:e.target,collision:true});map.solids.push(s);map.exits.push(s);map.targets.push(s);});
+ exitDefs.forEach(e=>{const r=418,x=Math.cos(e.a)*r,y=Math.sin(e.a)*r,face=e.a+Math.PI,s=boxSolid(e.id,x,y,face,72,8,84,MAT.EXIT,MAT.WALL_GOLD,{kind:'exit',label:e.label,url:e.url,target:e.target,cta:e.cta,collision:true});map.solids.push(s);map.exits.push(s);map.targets.push(s);});
  return map;
 }
 
@@ -404,8 +422,8 @@ class Sim{
 
 class DrawLists{
  constructor(w,h){this.alloc(w,h);}
- alloc(w,h){this.w=w;this.h=h;const cap=w*120;this.wN=0;this.wX=new Int16Array(cap);this.wY0=new Float32Array(cap);this.wY1=new Float32Array(cap);this.wTex=new Uint8Array(cap);this.wU=new Float32Array(cap);this.wTop=new Float32Array(cap);this.wBot=new Float32Array(cap);this.wF0=new Float32Array(cap);this.wF1=new Float32Array(cap);this.wDist=new Float32Array(cap);this.wLight=new Float32Array(cap);this.wStretch=new Uint8Array(cap);const scap=w*h/2|0;this.sN=0;this.sY=new Int16Array(scap);this.sX0=new Int16Array(scap);this.sX1=new Int16Array(scap);this.sFlat=new Uint8Array(scap);this.sDist=new Float32Array(scap);this.sLight=new Float32Array(scap);this.pixelDepth=new Float32Array(w*h);this.stats={sectors:0,portals:0,lines:0,solidFaces:0,dropped:0};}
- reset(){this.wN=0;this.sN=0;this.stats.sectors=0;this.stats.portals=0;this.stats.lines=0;this.stats.solidFaces=0;this.stats.dropped=0;}
+ alloc(w,h){this.w=w;this.h=h;const cap=w*120;this.wN=0;this.wX=new Int16Array(cap);this.wY0=new Float32Array(cap);this.wY1=new Float32Array(cap);this.wTex=new Uint8Array(cap);this.wU=new Float32Array(cap);this.wTop=new Float32Array(cap);this.wBot=new Float32Array(cap);this.wF0=new Float32Array(cap);this.wF1=new Float32Array(cap);this.wDist=new Float32Array(cap);this.wLight=new Float32Array(cap);this.wStretch=new Uint8Array(cap);const scap=w*h/2|0;this.sN=0;this.sY=new Int16Array(scap);this.sX0=new Int16Array(scap);this.sX1=new Int16Array(scap);this.sFlat=new Uint8Array(scap);this.sDist=new Float32Array(scap);this.sLight=new Float32Array(scap);this.pixelDepth=new Float32Array(w*h);this.hFaces=[];this.stats={sectors:0,portals:0,lines:0,solidFaces:0,dropped:0};}
+ reset(){this.wN=0;this.sN=0;this.hFaces.length=0;this.stats.sectors=0;this.stats.portals=0;this.stats.lines=0;this.stats.solidFaces=0;this.stats.dropped=0;}
  wall(x,y0,y1,tex,u,top,bot,dist,light,f0,f1,stretch){if(this.wN>=this.wX.length){this.stats.dropped++;return;}const i=this.wN++;this.wX[i]=x;this.wY0[i]=y0;this.wY1[i]=y1;this.wTex[i]=tex;this.wU[i]=u;this.wTop[i]=top;this.wBot[i]=bot;this.wDist[i]=dist;this.wLight[i]=light;this.wF0[i]=f0;this.wF1[i]=f1;this.wStretch[i]=stretch?1:0;}
  span(y,x0,x1,flat,dist,light){if(x1<x0||this.sN>=this.sY.length){if(this.sN>=this.sY.length)this.stats.dropped++;return;}const i=this.sN++;this.sY[i]=y;this.sX0[i]=x0;this.sX1[i]=x1;this.sFlat[i]=flat;this.sDist[i]=dist;this.sLight[i]=light;}
 }
@@ -429,7 +447,9 @@ const RenderCore={
   out.view={projDist:pd,horizon:hor,pz,halfW:hw,w,h,cosA:ca,sinA:sa};this._solids(sim,out);return out;
  },
  _plane(out,top,bot,x0,x1,flat,z,pz,hor,pd,light,h){const ss=out._ss,dz=Math.abs(z-pz);let pt=h,pb=-1;const cb=(row,a,b)=>{const dy=Math.abs(row+.5-hor),dist=dy<.5?1e6:(dz*pd)/dy;out.span(row,a,b,flat,dist,light);};for(let x=x0;x<=x1+1;x++){let t=x>x1?h:top[x],b=x>x1?-1:bot[x];while(pt<t&&pt<=pb){cb(pt,ss[pt],x-1);pt++;}while(pb>b&&pb>=pt){cb(pb,ss[pb],x-1);pb--;}while(t<pt&&t<=b){ss[t]=x;t++;}while(b>pb&&b>=t){ss[b]=x;b--;}pt=x>x1?h:top[x];pb=x>x1?-1:bot[x];}},
- _solids(sim,out){const v=out.view;for(const s of sim.map.solids){const d=Math.hypot(s.x-sim.x,s.y-sim.y);if(d>860)continue;const bs=basis(s.ang);for(const part of s.parts){const cx=s.x+bs.f.x*(part.of||0)+bs.r.x*(part.ro||0),cy=s.y+bs.f.y*(part.of||0)+bs.r.y*(part.ro||0),hf=part.d/2,hr=part.w/2,F=bs.f,R=bs.r,FL={x:cx+F.x*hf-R.x*hr,y:cy+F.y*hf-R.y*hr},FR={x:cx+F.x*hf+R.x*hr,y:cy+F.y*hf+R.y*hr},BR={x:cx-F.x*hf+R.x*hr,y:cy-F.y*hf+R.y*hr},BL={x:cx-F.x*hf-R.x*hr,y:cy-F.y*hf-R.y*hr};const side=part.side==null?part.front:part.side,left=part.left==null?side:part.left,right=part.right==null?side:part.right,back=part.back==null?side:part.back,stretch=!!part.stretch;this._face(sim,out,FL,FR,F,part.z0,part.z1,part.front,s.light,stretch);this._face(sim,out,FR,BR,R,part.z0,part.z1,right,s.light,stretch);this._face(sim,out,BR,BL,{x:-F.x,y:-F.y},part.z0,part.z1,back,s.light,stretch);this._face(sim,out,BL,FL,{x:-R.x,y:-R.y},part.z0,part.z1,left,s.light,stretch);}}
+ _solids(sim,out){const v=out.view;for(const s of sim.map.solids){const d=Math.hypot(s.x-sim.x,s.y-sim.y);if(d>860)continue;const bs=basis(s.ang);for(const part of s.parts){const cx=s.x+bs.f.x*(part.of||0)+bs.r.x*(part.ro||0),cy=s.y+bs.f.y*(part.of||0)+bs.r.y*(part.ro||0),hf=part.d/2,hr=part.w/2,F=bs.f,R=bs.r,FL={x:cx+F.x*hf-R.x*hr,y:cy+F.y*hf-R.y*hr},FR={x:cx+F.x*hf+R.x*hr,y:cy+F.y*hf+R.y*hr},BR={x:cx-F.x*hf+R.x*hr,y:cy-F.y*hf+R.y*hr},BL={x:cx-F.x*hf-R.x*hr,y:cy-F.y*hf-R.y*hr};const side=part.side==null?part.front:part.side,left=part.left==null?side:part.left,right=part.right==null?side:part.right,back=part.back==null?side:part.back,stretch=!!part.stretch;this._face(sim,out,FL,FR,F,part.z0,part.z1,part.front,s.light,stretch);this._face(sim,out,FR,BR,R,part.z0,part.z1,right,s.light,stretch);this._face(sim,out,BR,BL,{x:-F.x,y:-F.y},part.z0,part.z1,back,s.light,stretch);this._face(sim,out,BL,FL,{x:-R.x,y:-R.y},part.z0,part.z1,left,s.light,stretch);if(part.top!=null&&v.pz>part.z1+.01)this._topFace(sim,out,BL,BR,FR,FL,part.z1,part.top,s.light);}}
+ },
+ _topFace(sim,out,BL,BR,FR,FL,z,tex,light){const v=out.view,pts=[BL,BR,FR,FL],p=[];let dist=0;for(const q of pts){const a=Geom.view(sim.x,sim.y,v.cosA,v.sinA,q.x,q.y);if(a.tz<NEAR)return;dist+=a.tz;p.push({x:Geom.projX(a.tx,a.tz,v.halfW,v.projDist),y:Geom.projY(z,v.pz,a.tz,v.horizon,v.projDist)});}dist/=4;const minX=Math.min(...p.map(q=>q.x)),maxX=Math.max(...p.map(q=>q.x)),minY=Math.min(...p.map(q=>q.y)),maxY=Math.max(...p.map(q=>q.y));if(maxX<0||minX>=v.w||maxY<0||minY>=v.h)return;out.hFaces.push({p,tex,light,dist});out.stats.solidFaces++;
  },
  _face(sim,out,p,q,n,z0,z1,tex,light,stretch){const mx=(p.x+q.x)/2,my=(p.y+q.y)/2;if((sim.x-mx)*n.x+(sim.y-my)*n.y<=0)return;const v=out.view,a0=Geom.view(sim.x,sim.y,v.cosA,v.sinA,p.x,p.y),b0=Geom.view(sim.x,sim.y,v.cosA,v.sinA,q.x,q.y),cl=Geom.clipNear(a0,b0,NEAR);if(!cl)return;let A=cl[0],B=cl[1],xa=Geom.projX(A.tx,A.tz,v.halfW,v.projDist),xb=Geom.projX(B.tx,B.tz,v.halfW,v.projDist);if(xa>xb){const t=A;A=B;B=t;const xx=xa;xa=xb;xb=xx;}const sx0=Math.max(0,Math.ceil(xa)),sx1=Math.min(v.w-1,Math.ceil(xb)-1);if(sx1<sx0)return;out.stats.solidFaces++;const len=Math.hypot(q.x-p.x,q.y-p.y)||1,iza=1/A.tz,izb=1/B.tz,ua=A.t*iza,ub=B.t*izb;for(let x=sx0;x<=sx1;x++){const f=(x+.5-xa)/(xb-xa),iz=iza+(izb-iza)*f,z=1/iz,u=(ua+(ub-ua)*f)*z*len,yT=Geom.projY(z1,v.pz,z,v.horizon,v.projDist),yB=Geom.projY(z0,v.pz,z,v.horizon,v.projDist);if(yB<=0||yT>=v.h)continue;const texU=stretch?(1-u/len):(-u/64);out.wall(x,Math.max(-2,yT),Math.min(v.h+2,yB),tex,texU,z1,z0,z,light,yT,yB,stretch);}}
 };
@@ -452,10 +472,19 @@ function ensureTextureBank(i){
  texBank[i]=row;flatBank[i]=prow;
 }
 
+function drawAffineTri(tex,s0,s1,s2,d0,d1,d2){
+ const u0=s0[0],v0=s0[1],u1=s1[0],v1=s1[1],u2=s2[0],v2=s2[1],x0=d0.x,y0=d0.y,x1=d1.x,y1=d1.y,x2=d2.x,y2=d2.y;
+ const den=u0*(v1-v2)+u1*(v2-v0)+u2*(v0-v1);if(Math.abs(den)<1e-6)return;
+ const a=(x0*(v1-v2)+x1*(v2-v0)+x2*(v0-v1))/den,c=(x0*(u2-u1)+x1*(u0-u2)+x2*(u1-u0))/den,e=(x0*(u1*v2-u2*v1)+x1*(u2*v0-u0*v2)+x2*(u0*v1-u1*v0))/den;
+ const b=(y0*(v1-v2)+y1*(v2-v0)+y2*(v0-v1))/den,d=(y0*(u2-u1)+y1*(u0-u2)+y2*(u1-u0))/den,f=(y0*(u1*v2-u2*v1)+y1*(u2*v0-u0*v2)+y2*(u0*v1-u1*v0))/den;
+ ctx.save();ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x1,y1);ctx.lineTo(x2,y2);ctx.closePath();ctx.clip();ctx.setTransform(a,b,c,d,e,f);ctx.drawImage(tex,0,0,64,64,0,0,64,64);ctx.restore();
+}
+function paintHorizontalFace(hf,shadeOf){ensureTextureBank(hf.tex);const bank=texBank[hf.tex];if(!bank)return;const tex=bank[shadeOf(hf.dist,hf.light)],p=hf.p;drawAffineTri(tex,[0,0],[64,0],[64,64],p[0],p[1],p[2]);drawAffineTri(tex,[0,0],[64,64],[0,64],p[0],p[2],p[3]);}
+
 function paint(sim,d){const v=d.view,w=v.w,h=v.h;ctx.fillStyle='#03050a';ctx.fillRect(0,0,w,h);ctx.imageSmoothingEnabled=false;const zbuf=d.pixelDepth;zbuf.fill(Infinity);const shadeOf=(dist,light)=>Math.min(SHADES-1,Math.max(0,((Math.min(1,dist/780+(1-light)*.7))*(SHADES-1))|0));
  const plane=i=>{const y=d.sY[i],x0=d.sX0[i],x1=d.sX1[i],dist=d.sDist[i];if(y<0||y>=h||x1<x0)return;ensureTextureBank(d.sFlat[i]);const p=flatBank[d.sFlat[i]]&&flatBank[d.sFlat[i]][shadeOf(dist,d.sLight[i])];if(!p)return;const m=Geom.planePatternTransform(sim.x,sim.y,v.cosA,v.sinA,v.halfW,v.projDist,y,dist);if(m&&p.setTransform){const pm=typeof DOMMatrix==='function'?new DOMMatrix([m.a,m.b,m.c,m.d,m.e,m.f]):m;p.setTransform(pm);}ctx.fillStyle=p;ctx.fillRect(x0,y,x1-x0+1,1);const off=y*w;for(let x=Math.max(0,x0);x<=Math.min(w-1,x1);x++)if(dist<zbuf[off+x])zbuf[off+x]=dist;};
  const wall=i=>{ensureTextureBank(d.wTex[i]);const bank=texBank[d.wTex[i]];if(!bank)return;const tex=bank[shadeOf(d.wDist[i],d.wLight[i])];let u=d.wU[i]%1;if(u<0)u+=1;const sx=Math.min(63,(u*64)|0),y0=d.wY0[i],y1=d.wY1[i],span=d.wF1[i]-d.wF0[i];if(span<=.001||y1<=y0)return;let sy0,sy1;if(d.wStretch[i]){sy0=Math.max(0,Math.min(64,((y0-d.wF0[i])/span)*64));sy1=Math.max(sy0,Math.min(64,((y1-d.wF0[i])/span)*64));}else{const wh=Math.max(1,Math.min(TILE_H,Math.abs(d.wTop[i]-d.wBot[i])));sy0=Math.max(0,Math.min(TILE_H,((y0-d.wF0[i])/span)*wh));sy1=Math.max(sy0,Math.min(TILE_H,((y1-d.wF0[i])/span)*wh));}ctx.drawImage(tex,sx,sy0,1,Math.max(.05,sy1-sy0),d.wX[i],y0,1,Math.max(1,y1-y0));const x=d.wX[i],ya=Math.max(0,Math.floor(y0)),yb=Math.min(h,Math.ceil(y1));if(x>=0&&x<w)for(let y=ya;y<yb;y++)if(d.wDist[i]<zbuf[y*w+x])zbuf[y*w+x]=d.wDist[i];};
- const ops=[];for(let i=0;i<d.sN;i++)ops.push({k:0,i,dist:d.sDist[i]});for(let i=0;i<d.wN;i++)ops.push({k:1,i,dist:d.wDist[i]});ops.sort((a,b)=>b.dist-a.dist||a.k-b.k);for(const op of ops)op.k?wall(op.i):plane(op.i);
+ const ops=[];for(let i=0;i<d.sN;i++)ops.push({k:0,i,dist:d.sDist[i]});for(let i=0;i<d.wN;i++)ops.push({k:1,i,dist:d.wDist[i]});for(let i=0;i<d.hFaces.length;i++)ops.push({k:2,i,dist:d.hFaces[i].dist});ops.sort((a,b)=>b.dist-a.dist||a.k-b.k);for(const op of ops){if(op.k===0)plane(op.i);else if(op.k===1)wall(op.i);else paintHorizontalFace(d.hFaces[op.i],shadeOf);}
  // subtle CRT vignette and crosshair
  const grad=ctx.createRadialGradient(w/2,h/2,Math.min(w,h)*.2,w/2,h/2,Math.max(w,h)*.72);grad.addColorStop(0,'rgba(0,0,0,0)');grad.addColorStop(1,'rgba(0,0,0,.34)');ctx.fillStyle=grad;ctx.fillRect(0,0,w,h);ctx.fillStyle='rgba(220,238,255,.62)';ctx.fillRect(w/2-5,h/2,3,1);ctx.fillRect(w/2+3,h/2,3,1);ctx.fillRect(w/2,h/2-5,1,3);ctx.fillRect(w/2,h/2+3,1,3);
 }
@@ -466,9 +495,9 @@ const map=buildLevel(),MAP_ERRORS=MapBuilder.validate(map),sim=new Sim(map);cons
 
 function interactionPoint(t){const b=basis(t.ang),d=(t.d||10)/2+24;return{x:t.x+b.f.x*d,y:t.y+b.f.y*d};}
 function findTarget(){const ca=Math.cos(sim.ang),sa=Math.sin(sim.ang),all=map.targets;let best=null,bscore=1e9;for(const t of all){const p=interactionPoint(t),dx=p.x-sim.x,dy=p.y-sim.y,dist=Math.hypot(dx,dy);if(dist>78)continue;const dot=(dx*ca+dy*sa)/(dist||1);if(dot<.28)continue;const score=dist-dot*16;if(score<bscore){bscore=score;best=t;}}return best;}
-function targetKind(t){return t.kind==='cabinet'?'CABINET '+t.letter:t.kind==='exit'?'EXIT':t.kind==='token'?'TOKEN VENDING':'AD INVENTORY';}
-function updatePrompt(){activeTarget=findTarget();if(!activeTarget){promptEl.classList.remove('show');return;}const name=activeTarget.kind==='cabinet'?activeTarget.title:activeTarget.label,verb=activeTarget.kind==='cabinet'?'ENTER GAME':activeTarget.kind==='token'?'BUY TOKENS':activeTarget.kind==='ad'?'OPEN DEAL FORM':'LEAVE FTS ARCADE';promptEl.innerHTML='<span class="kind">'+targetKind(activeTarget)+'</span> '+name+' &nbsp; <span class="key">[E / CLICK]</span> '+verb;promptEl.classList.add('show');}
-function openConfirm(t){if(!t||!t.url)return;modalTarget=t;if(document.pointerLockElement===canvas)document.exitPointerLock();const name=t.kind==='cabinet'?(t.letter+' / '+t.title):t.label;modalTitle.textContent=name;if(t.kind==='cabinet'){modalEyebrow.textContent='LEAVE FTS ARCADE?';modalCopy.textContent='Enter cabinet '+t.letter+' and navigate to '+t.title+'? Your browser will load '+t.url+'.';confirmBtn.textContent='ENTER CABINET';}else if(t.kind==='token'){modalEyebrow.textContent='TOKEN PURCHASE';modalCopy.textContent='Open the FTS token purchase portal? This leaves the arcade floor and loads '+t.url+'.';confirmBtn.textContent='BUY TOKENS';}else if(t.kind==='ad'){modalEyebrow.textContent='PROGRAMMATIC INVENTORY';modalCopy.textContent='Open the deal form for '+t.inventory+'? This leaves the arcade floor.';confirmBtn.textContent='OPEN DEAL FORM';}else{modalEyebrow.textContent='LEAVE FTS ARCADE?';modalCopy.textContent='Use this exit for '+name+'? This destination is off the arcade floor.';confirmBtn.textContent='LEAVE ARCADE';}modal.classList.add('show');}
+function targetKind(t){return t.kind==='cabinet'?'CABINET '+t.letter:t.kind==='exit'?'EXIT':t.kind==='token'?'TOKEN VENDING':t.kind==='ad'?'AD INVENTORY':'WALL PORTAL';}
+function updatePrompt(){activeTarget=findTarget();if(!activeTarget){promptEl.classList.remove('show');return;}const name=activeTarget.kind==='cabinet'?activeTarget.title:activeTarget.label,verb=activeTarget.cta||(activeTarget.kind==='cabinet'?'ENTER GAME':'OPEN');promptEl.innerHTML='<span class="kind">'+targetKind(activeTarget)+'</span> '+name+' &nbsp; <span class="key">[E / CLICK]</span> '+verb;promptEl.classList.add('show');}
+function openConfirm(t){if(!t||!t.url)return;modalTarget=t;if(document.pointerLockElement===canvas)document.exitPointerLock();const name=t.kind==='cabinet'?(t.letter+' / '+t.title):t.label;modalTitle.textContent=name;if(t.kind==='cabinet'){modalEyebrow.textContent='LEAVE FTS ARCADE?';modalCopy.textContent='Enter cabinet '+t.letter+' and navigate to '+t.title+'? Your browser will load '+t.url+'.';confirmBtn.textContent='ENTER CABINET';}else if(t.kind==='token'){modalEyebrow.textContent='TOKEN PURCHASE';modalCopy.textContent='Open the FTS token purchase portal? This leaves the arcade floor and loads '+t.url+'.';confirmBtn.textContent='BUY TOKENS';}else if(t.kind==='ad'){modalEyebrow.textContent='PROGRAMMATIC INVENTORY';modalCopy.textContent='Open the deal form for '+t.inventory+'? This leaves the arcade floor.';confirmBtn.textContent=t.cta||'OPEN DEAL FORM';}else if(t.kind==='dressing'){modalEyebrow.textContent='WALL PORTAL';modalCopy.textContent=(t.cta||'Open this link')+' — '+t.label+'.';confirmBtn.textContent=t.cta||'OPEN';}else{modalEyebrow.textContent='LEAVE FTS ARCADE?';modalCopy.textContent='Use this exit for '+name+'? This destination is off the arcade floor.';confirmBtn.textContent=t.cta||'LEAVE ARCADE';}modal.classList.add('show');}
 function closeConfirm(relock){modal.classList.remove('show');modalTarget=null;if(relock&&!coarse())setTimeout(()=>canvas.requestPointerLock&&canvas.requestPointerLock(),60);}
 function leaveArcade(){if(!modalTarget)return;const t=modalTarget;try{sessionStorage.setItem('fts.arcade.return',JSON.stringify({x:sim.x,y:sim.y,ang:sim.ang,t:Date.now()}));}catch(e){}window.open(t.url, t.target || '_blank');closeConfirm(true);}
 confirmBtn.addEventListener('click',leaveArcade);cancelBtn.addEventListener('click',()=>closeConfirm(true));
@@ -516,7 +545,11 @@ const REF_TESTS={
  cabinetScreensLandscape:()=>map.cabinets.every(c=>{const p=screenPart(c);return p&&p.w/(p.z1-p.z0)>1.35;}),
  screenAspectPreserved:()=>map.cabinets.every(c=>{const p=screenPart(c),r=screenRect(c.screenIndex);return p&&Math.abs(p.w/(p.z1-p.z0)-r[2]/r[3])<1e-6;}),
  screenMaterialPairings:()=>map.cabinets.every(c=>{const p=screenPart(c);return p&&MATERIALS[p.front]&&MATERIALS[p.front].name==='SCREEN_'+String(c.screenIndex).padStart(2,'0');}),
- cabinetProportions:()=>CABINET_DIM.control===45&&CABINET_DIM.screenBayTop===76&&CABINET_DIM.h===84&&CABINET_DIM.screenW===24,
+ cabinetProportions:()=>CABINET_DIM.control===44.5&&CABINET_DIM.screenBayTop===74&&CABINET_DIM.h===84&&CABINET_DIM.screenW===22.5,
+ cabinetControlsHorizontal:()=>map.cabinets.every(c=>{const p=c.parts.find(x=>x.role==='control');return p&&p.top!=null&&(p.z1-p.z0)<=1.01;}),
+ officeEntryFlanked:()=>{const d=AUTHORING.officeEntry.find(x=>x.id==='OFFICE_DOOR'),w=AUTHORING.officeEntry.find(x=>x.id==='WHITEBOARD'),b=AUTHORING.officeEntry.find(x=>x.id==='BULLETIN');return !!(d&&w&&b&&w.x<d.x&&b.x>d.x&&w.y===d.y&&b.y===d.y);},
+ tightCabinetPacking:()=>AUTHORING.packing.sideGap<=.5&&AUTHORING.packing.backGap<=.5,
+ wallDressingsInteractive:()=>map.fixtures.filter(f=>f.kind==='dressing').length>=AUTHORING.posters.length+AUTHORING.wallPortals.length+2&&map.fixtures.filter(f=>f.kind==='dressing').every(f=>f.url&&f.cta),
  runSpeed22mph:()=>Math.abs(SPEED_RUN-387.2)<.001,
  ringSectors:()=>map.sectors.length===RING.sides,
  spawnInsideMap:()=>sim.sectorAt(map.spawn.x,map.spawn.y)>=0,
@@ -538,7 +571,7 @@ function runRefTests(){
  }
  return{version:VERSION,pass:failures.length===0,passed:Object.values(results).filter(v=>v===true).length,total:Object.keys(REF_TESTS).length,failures,results,mapErrors:MAP_ERRORS.slice(),assetErrors:IMG.errors.slice(),runtimeErrors:RUNTIME_ERRORS.slice(),screenAtlas:SCREEN_ATLAS_META};
 }
-window.__FTS_ARCADE__={VERSION,map,sim,MapBuilder,Geom,RenderCore,DrawLists,MATERIALS,MAP_ERRORS,CABINET_ROSTER,CABINET_DIM,AISLE,PORTALS,ASSET_NAMES,CABINET_PART_RECTS,SCREEN_ATLAS_META,SCREEN_RECTS,screenRect,tests:REF_TESTS,runTests:runRefTests};
+window.__FTS_ARCADE__={VERSION,map,sim,MapBuilder,Geom,RenderCore,DrawLists,MATERIALS,MAP_ERRORS,CABINET_ROSTER,CABINET_DIM,AISLE,PORTALS,ASSET_NAMES,CABINET_PART_RECTS,SCREEN_ATLAS_META,SCREEN_RECTS,screenRect,AUTHORING,exportAuthoring:()=>JSON.stringify(AUTHORING,null,2),tests:REF_TESTS,runTests:runRefTests};
 const qs=new URLSearchParams(location.search);
 if(qs.get('preview')==='1')lockEl.classList.add('hidden');
 if(qs.get('map')==='1'){showMap=true;mapBtn.textContent='MAP: ON';mapBtn.classList.add('on');}

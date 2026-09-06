@@ -1,25 +1,56 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-M9CD6TWFZE"></script>
+    <!-- REF 0.4.1: analytics only on hosted HTTP(S); file:// stays console-clean. -->
     <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-
-    gtag('config', 'G-M9CD6TWFZE');
+    if (/^https?:$/.test(location.protocol)) {
+      window.dataLayer = window.dataLayer || [];
+      window.gtag = function(){ dataLayer.push(arguments); };
+      gtag('js', new Date()); gtag('config', 'G-M9CD6TWFZE');
+      const ga=document.createElement('script'); ga.async=true;
+      ga.src='https://www.googletagmanager.com/gtag/js?id=G-M9CD6TWFZE';
+      document.head.appendChild(ga);
+    }
     </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>FTS Arcade Ring 0.2 - First Person</title>
+<link rel="preload" as="image" href="fts-arcade-world-atlas.png">
+<link rel="preload" as="image" href="Cabinets01.png">
+<link rel="preload" as="image" href="Cabinets02.png">
+<link rel="preload" as="image" href="Cabinets03.png">
+<link rel="preload" as="image" href="Cabinets04.png">
+<link rel="preload" as="image" href="fts_sprites.png">
+<link rel="preload" as="image" href="fts-arcade-fixture-atlas.png">
+<title>FTS Arcade Floor 0.5.2 Cabinet Art</title>
+<!-- 0.5.2 art fit: external world/fixture/screen atlases + Cabinets01-Cabinets04, exact per-CRT crops. -->
+
+<!-- ── FA3D Meta ─────────────────────────────────────────── -->
 <meta name="description" content="FTS Arcade - a first-person 2.5D cabinet portal hub.">
 <meta property="og:title" content="FTS Arcade">
 <meta property="og:description" content="Walk the arcade. Enter a cabinet. Go somewhere else.">
 <meta property="og:type" content="website">
-<link rel="preload" as="image" href="fts-arcade-world-atlas.png">
-<link rel="preload" as="image" href="fts-arcade-cabinet-skins.png">
-<link rel="preload" as="image" href="fts-arcade-screen-atlas.png">
+
+
+
+    <!-- ── Favicons ─────────────────────────────────────────────── -->
+
+    <!-- ── Open Graph ───────────────────────────────────────────── -->
+    <meta property="og:title"       content="FTS Arcade Floor">
+    <meta property="og:description" content="FTS Arcade Floor - a first-person 2.5D cabinet portal hub.">
+    <meta property="og:url"         content="https://frymatic.us/FTSArcade/">
+    <meta property="og:type"        content="website">
+    <meta property="og:site_name"   content="FishTacoStand Arcade">
+    <meta property="og:image"       content="https://frymatic.us/FTSArcade/FishTacoStand.png">
+    <meta property="og:image:alt"   content="Walk the arcade. Enter a cabinet. Go somewhere else.">
+    <meta property="og:image:type"  content="image/png">
+
+    <!-- ── Twitter / X ──────────────────────────────────────────── -->
+    <meta name="twitter:card"        content="summary_large_image">
+    <meta name="twitter:title"       content="FTS Arcade Floor">
+    <meta name="twitter:description" content="Walk the arcade. Enter a cabinet. Go somewhere else.">
+    <meta name="twitter:image"       content="https://frymatic.us/FTSArcade/FishTacoStand.png">
+
+
 <style>
 :root{--pink:#ff59d5;--blue:#71b8ff;--gold:#ffc95f;--red:#ff5b45;--ink:#05070b;--panel:rgba(7,9,14,.88)}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -68,28 +99,36 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;image-renderi
 <script>
 'use strict';
 
-const VERSION='fts-arcade-ring-0.3.1';
+const RUNTIME_ERRORS=[];
+addEventListener('error',e=>{if(e.error||e.message)RUNTIME_ERRORS.push(String(e.error&&e.error.stack||e.message||e.error));});
+addEventListener('unhandledrejection',e=>RUNTIME_ERRORS.push(String(e.reason&&e.reason.stack||e.reason||'unhandled rejection')));
+
+const VERSION='fts-arcade-floor-0.5.2-cabinet-art';
 const TAU=Math.PI*2, DEG=Math.PI/180;
 // Dimensional contract: 1 engine unit = 1 inch.
 const RING={outer:430,inner:118,sides:32,ceil:132};
 const PLAYER_R=11,PLAYER_H=74,EYE=69,SPEED_WALK=84,SPEED_RUN=387.2,ACCEL=10; // 22 mph sprint
-const CABINET_DIM={w:30,d:34,h:74,control:45,screenTop:69};
+const CABINET_DIM={w:30,d:34,h:84,control:45,screenBayTop:74,screenCenter:62.5,screenW:22.5};
 const AISLE={secondary:47.25,primary:70.87,merge:141.73}; // 1.2m / 1.8m / 3.6m references, inches
 const FOV=76*Math.PI/180,NEAR=.6,SHADES=11,TILE_H=256,LOOK_UP=180,LOOK_DOWN=320;
 const PORTALS={
- lobby:'https://frymatic.us/',
- theaters:'https://discord.gg/F2U6GT8g0',
+ lobby:'https://frymatic.us/FTSArcade/REDEYE',
+ theaters:'https://frymatic.us/FTSArcade/REDEYE',
  redeye:'https://frymatic.us/FTSArcade/REDEYE/',
  tokens:'https://frymatic.us/FTSArcade/tokens/',
- adDeal:'https://frymatic.us/FTSArcade/advertise/'
+ adDeal:'https://frymatic.us/menu/gas-works.html'
 };
 
-const ASSET_FILES={
+const ASSET_NAMES={
  world:'fts-arcade-world-atlas.png',
- skin:'fts-arcade-cabinet-skins.png',
- screen:'fts-arcade-screen-atlas.png',
+ cab1:['Cabinets01.png','cabinets01.png'],
+ cab2:['Cabinets02.png','cabinets02.png'],
+ cab3:['Cabinets03.png','cabinets03.png'],
+ cab4:['Cabinets04.png','cabinets04.png'],
+ screen:'fts_sprites.png',
  fixture:'fts-arcade-fixture-atlas.png'
 };
+const ASSET_FILES=ASSET_NAMES;
 const WORLD_RECTS={
  WALL_MARBLE:[16,16,64,64],WALL_BLACK_GOLD:[96,16,64,64],WALL_LIGHT:[176,16,64,64],WALL_RIB:[256,16,64,64],WALL_GOLD:[336,16,64,64],
  FLOOR_BLACK:[416,16,64,64],FLOOR_ALT:[496,16,64,64],FLOOR_RED:[576,16,64,64],OFFICE_WOOD:[656,16,64,64],OFFICE_DARK:[736,16,64,64],
@@ -97,14 +136,49 @@ const WORLD_RECTS={
  STAGE:[256,96,64,64],DJ:[336,96,64,64],FTS:[416,96,64,64],NEON_PINK:[496,96,64,64],NEON_BLUE:[576,96,64,64],NEON_GOLD:[656,96,64,64]
 };
 const FIXTURE_RECTS={VEND_DRINK:[16,16,64,64],VEND_SNACK:[96,16,64,64],JUKEBOX:[176,16,64,64],WHITEBOARD:[256,16,64,64],BULLETIN:[336,16,64,64],TOKEN:[416,16,64,64],POSTER_1:[496,16,64,64],POSTER_2:[576,16,64,64],POSTER_3:[656,16,64,64],AD_SPACE:[736,16,64,64],AD_DEAL:[816,16,64,64],WAYFIND:[896,16,64,64],OFFICE_DOOR:[16,96,64,64],STAGE_SIGN:[96,96,64,64],DJ_SIGN:[176,96,64,64],POSTER_4:[256,96,64,64]};
-const SKIN_TILE=128,SKIN_COLS=16;
 const SKIN_PARTS=['MARQUEE','LEFT','RIGHT','CONTROL','FRONT'];
-function skinRect(letter,part){
- const li=letter.charCodeAt(0)-65,pi=SKIN_PARTS.indexOf(part),idx=li*5+pi;
- return[(idx%SKIN_COLS)*SKIN_TILE,Math.floor(idx/SKIN_COLS)*SKIN_TILE,SKIN_TILE,SKIN_TILE];
-}
-function screenRect(n){const i=Math.max(0,Math.min(24,n-1));return[(i%5)*128,Math.floor(i/5)*128,128,128];}
-const BLACK_RECT=[(130%SKIN_COLS)*SKIN_TILE,Math.floor(130/SKIN_COLS)*SKIN_TILE,SKIN_TILE,SKIN_TILE];
+// Crops measured from Cabinets01-Cabinets04. Transparent helper-label bands are excluded.
+const CABINET_PART_RECTS={
+ A:['cab1',{MARQUEE:[60,90,341,92],LEFT:[13,172,115,368],RIGHT:[316,172,113,368],CONTROL:[124,363,192,94],FRONT:[142,496,161,103]}],
+ B:['cab1',{MARQUEE:[471,90,316,88],LEFT:[440,172,115,369],RIGHT:[703,172,113,369],CONTROL:[544,365,167,95],FRONT:[547,490,162,108]}],
+ C:['cab1',{MARQUEE:[866,89,342,119],LEFT:[826,173,127,368],RIGHT:[1121,173,127,368],CONTROL:[944,366,185,94],FRONT:[950,481,172,117]}],
+ D:['cab1',{MARQUEE:[49,704,352,118],LEFT:[14,785,119,355],RIGHT:[312,785,117,357],CONTROL:[125,971,191,93],FRONT:[130,1105,181,90]}],
+ E:['cab1',{MARQUEE:[468,704,322,92],LEFT:[435,785,118,356],RIGHT:[706,785,115,356],CONTROL:[542,973,172,96],FRONT:[550,1105,156,89]}],
+ F:['cab1',{MARQUEE:[865,704,341,118],LEFT:[829,785,122,359],RIGHT:[1122,785,122,359],CONTROL:[943,971,188,93],FRONT:[946,1105,181,89]}],
+ G:['cab2',{MARQUEE:[42,76,354,140],LEFT:[8,172,121,385],RIGHT:[308,172,115,385],CONTROL:[122,384,190,76],FRONT:[126,504,181,113]}],
+ H:['cab2',{MARQUEE:[455,76,345,136],LEFT:[432,171,116,386],RIGHT:[704,171,117,386],CONTROL:[542,383,168,77],FRONT:[546,508,158,109]}],
+ I:['cab2',{MARQUEE:[861,76,358,136],LEFT:[830,170,121,387],RIGHT:[1126,169,120,388],CONTROL:[945,383,186,77],FRONT:[948,504,180,113]}],
+ J:['cab2',{MARQUEE:[17,703,382,146],LEFT:[13,785,128,392],RIGHT:[306,785,118,365],CONTROL:[127,970,184,113],FRONT:[133,1105,171,110]}],
+ K:['cab2',{MARQUEE:[435,703,365,146],LEFT:[431,785,128,362],RIGHT:[711,785,112,362],CONTROL:[538,970,177,84],FRONT:[542,1105,170,106]}],
+ L:['cab2',{MARQUEE:[853,703,353,146],LEFT:[831,785,146,362],RIGHT:[1124,785,118,363],CONTROL:[944,970,185,113],FRONT:[953,1105,170,77]}],
+ M:['cab3',{MARQUEE:[51,76,348,136],LEFT:[13,173,119,372],RIGHT:[313,173,115,372],CONTROL:[125,360,191,94],FRONT:[139,485,167,132]}],
+ N:['cab3',{MARQUEE:[441,76,372,146],LEFT:[434,158,125,387],RIGHT:[695,158,125,387],CONTROL:[544,362,166,89],FRONT:[549,488,156,108]}],
+ O:['cab3',{MARQUEE:[858,76,375,146],LEFT:[827,174,117,370],RIGHT:[1113,158,128,386],CONTROL:[938,360,187,94],FRONT:[947,486,172,131]}],
+ P:['cab3',{MARQUEE:[50,703,351,146],LEFT:[16,785,114,359],RIGHT:[313,785,114,359],CONTROL:[125,970,191,77],FRONT:[134,1105,177,87]}],
+ Q:['cab3',{MARQUEE:[438,703,378,146],LEFT:[434,785,125,358],RIGHT:[695,785,125,358],CONTROL:[543,970,168,77],FRONT:[545,1105,163,87]}],
+ R:['cab3',{MARQUEE:[872,703,330,113],LEFT:[827,785,120,359],RIGHT:[1122,785,117,360],CONTROL:[938,970,190,76],FRONT:[942,1105,181,86]}],
+ S:['cab4',{MARQUEE:[60,88,302,134],LEFT:[12,174,123,366],RIGHT:[241,158,121,382],CONTROL:[114,370,150,79],FRONT:[114,484,150,115]}],
+ T:['cab4',{MARQUEE:[364,73,281,149],LEFT:[361,158,89,382],RIGHT:[556,158,90,382],CONTROL:[444,370,120,79],FRONT:[444,483,120,114]}],
+ U:['cab4',{MARQUEE:[651,87,280,135],LEFT:[644,174,91,366],RIGHT:[841,158,91,382],CONTROL:[724,370,127,79],FRONT:[724,483,127,115]}],
+ V:['cab4',{MARQUEE:[944,87,303,135],LEFT:[932,174,106,366],RIGHT:[1144,158,106,382],CONTROL:[1023,370,137,79],FRONT:[1023,484,137,115]}],
+ W:['cab4',{MARQUEE:[35,703,304,146],LEFT:[18,785,108,353],RIGHT:[232,785,107,353],CONTROL:[111,967,137,76],FRONT:[111,1077,137,115]}],
+ X:['cab4',{MARQUEE:[356,704,273,121],LEFT:[342,785,96,353],RIGHT:[544,785,95,353],CONTROL:[429,967,124,76],FRONT:[429,1077,124,115]}],
+ Y:['cab4',{MARQUEE:[653,703,267,122],LEFT:[640,787,92,351],RIGHT:[838,787,93,351],CONTROL:[723,967,126,76],FRONT:[723,1077,126,115]}],
+ Z:['cab4',{MARQUEE:[943,703,301,146],LEFT:[931,785,104,353],RIGHT:[1141,785,103,353],CONTROL:[1026,967,125,76],FRONT:[1026,1076,125,116]}]
+};
+function cabinetArt(letter,part){const a=CABINET_PART_RECTS[letter];return{sheet:a[0],rect:a[1][part]};}
+
+const SCREEN_ATLAS_META={width:2048,height:1433,cols:5,rows:5,count:25};
+// Per-sprite content bounds measured from fts_sprites.png. Individual crops matter:
+// the CRT art does not share one exact X/Y box per row/column.
+const SCREEN_RECTS=[
+ [5,10,400,266],[414,14,401,259],[824,11,400,265],[1233,10,401,266],[1643,12,400,263],
+ [8,291,393,278],[415,291,399,278],[827,291,394,278],[1238,291,392,278],[1645,291,395,278],
+ [5,586,400,260],[414,590,401,254],[824,587,400,259],[1233,587,401,260],[1643,588,400,257],
+ [5,870,400,267],[414,872,401,263],[824,871,400,264],[1233,870,401,267],[1643,871,400,265],
+ [10,1152,388,277],[415,1151,398,278],[829,1152,389,277],[1241,1151,385,278],[1648,1151,391,278]
+];
+function screenRect(n){return SCREEN_RECTS[Math.max(0,Math.min(SCREEN_ATLAS_META.count-1,n-1))].slice();}
 
 const MATERIALS=[];
 const MAT={};
@@ -113,9 +187,9 @@ Object.keys(WORLD_RECTS).forEach(k=>mat(k,'world',WORLD_RECTS[k]));
 Object.keys(FIXTURE_RECTS).forEach(k=>mat('FIX_'+k,'fixture',FIXTURE_RECTS[k]));
 for(let cc=65;cc<=90;cc++){
  const L=String.fromCharCode(cc);
- for(const p of SKIN_PARTS)mat('SKIN_'+L+'_'+p,'skin',skinRect(L,p),{stretch:true});
+ for(const p of SKIN_PARTS){const a=cabinetArt(L,p);mat('SKIN_'+L+'_'+p,a.sheet,a.rect,{stretch:true});}
 }
-mat('CAB_BLACK','skin',BLACK_RECT,{stretch:true});
+mat('CAB_BLACK','solid',null,{stretch:true});
 for(let i=1;i<=25;i++)mat('SCREEN_'+String(i).padStart(2,'0'),'screen',screenRect(i),{stretch:true});
 
 const Geom={
@@ -174,58 +248,61 @@ function ringDefs(){
 }
 
 // 26 cabinet identities, A-Z. Artwork and resting-screen pairings are centralized here.
-// screen is the 1-based tile index in fts-arcade-screen-atlas.png.
+// screen is the 1-based tile index in the supplied fts_sprites landscape CRT atlas.
 const CABINET_ROSTER=[
- ['A','ASTROIDS OBLITERATUS','../astroids.html',1,'_blank'],
- ['B','BRAZEN TOWER','../BRAZENTOWER',17],
- ['C','CAMELOT','../camelot.html',18],
- ['D','CAVE RACER','../cave-racer.html',3],
- ['E','COVEN BLITZ','../coven-blitz.html',4],
- ['F','CRAWFORD COUNTY','../crawford-county.html',5],
- ['G','GRACE BLAND','../grace_bland_clocktower.html',7],
- ['H','MINESWEEPER','../minesweeper.html',8],
- ['I','NEON INVADERS','../neon-invaders.html',9],
- ['J','RC RACER','../rc-racer.html',10],
- ['K','RED EYE','../REDEYE/',11],
- ['L','SNAKIA','../snakia.html',17],
- ['M','UNDERHALL','../underhall.html',13],
- ['N','VECTOR SIEGE','../vector-siege.html',16],
- ['O','ZOMBIE GOLF SURVIVAL','../zombie-golf-survival.html',15],
- ['P','AUXOR','../auxigen.html',2],
- ['Q','VECTOR SQUADRON','../starfox_shooten7.html',12],
- ['R','FTS ARCADE HUB','https://frymatic.us/FTSArcade/',6],
- ['S','MOONSHOT PINBALL','../ref-pinball.html',25],
- ['T','GRID WARDEN','../grid-warden.html',24],
- ['U','PLINKO','../plinko.html',20],
- ['V','TOURNAMENT CONDUCTOR','../tournament.html',22],
- ['W','FREE PLAY','https://frymatic.us/FTSArcade/',6],
- ['X','COMING SOON','https://frymatic.us/FTSArcade/',17],
- ['Y','EVENT SERIES','../tournament.html',22],
- ['Z','BRAZEN INDEX','https://frymatic.us/',6]
+ ['A','ASTROIDS OBLITERATUS','../astroids.html',1, '_blank'],
+ ['B','BRAZEN TOWER','../BRAZENTOWER',17, '_blank'],
+ ['C','CAMELOT','../camelot.html',18, '_blank'],
+ ['D','CAVE RACER','../cave-racer.html',3, '_blank'],
+ ['E','COVEN BLITZ','../coven-blitz.html',4, '_blank'],
+ ['F','CRAWFORD COUNTY','../crawford-county.html',5, '_blank'],
+ ['G','GRACE BLAND','../grace_bland_clocktower.html',7, '_blank'],
+ ['H','MINESWEEPER','../minesweeper.html',8, '_blank'],
+ ['I','NEON INVADERS','../neon-invaders.html',9, '_blank'],
+ ['J','RC RACER','../rc-racer.html',10, '_blank'],
+ ['K','RED EYE','../REDEYE/',11, '_blank'],
+ ['L','SNAKIA','../snakia.html',17, '_blank'],
+ ['M','UNDERHALL','../underhall.html',13, '_blank'],
+ ['N','VECTOR SIEGE','../vector-siege.html',16, '_blank'],
+ ['O','ZOMBIE GOLF SURVIVAL','../zombie-golf-survival.html',15, '_blank'],
+ ['P','AUXOR','../auxigen.html',2, '_blank'],
+ ['Q','VECTOR SQUADRON','../starfox-shooter7.html',12, '_blank'],
+ ['R','FTS ARCADE HUB','https://frymatic.us/FTSArcade/',6, '_blank'],
+ ['S','MOONSHOT PINBALL','../moonshot-pinball.html',25, '_blank'],
+ ['T','GRID WARDEN','../grid-warden.html',24, '_blank'],
+ ['U','PLINKO','../plinko.html',20, '_blank'],
+ ['V','TOURNAMENT CONDUCTOR','../tournament.html',22, '_blank'],
+ ['W','FREE PLAY','https://frymatic.us/FTSArcade/',6, '_blank'],
+ ['X','COMING SOON','https://frymatic.us/FTSArcade/',17, '_blank'],
+ ['Y','EVENT SERIES','../adapter-test.html',22, '_blank'],
+ ['Z','BRAZEN INDEX','https://frymatic.us/',6, '_blank']
 ];
 
-function cabinetSolid(letter,slot,x,y,faceAng,title,url,screenIndex){
+function cabinetSolid(letter,slot,x,y,faceAng,title,url,screenIndex,target='_blank'){
  const K=p=>MAT['SKIN_'+letter+'_'+p], black=MAT.CAB_BLACK;
  const screen=MAT['SCREEN_'+String(screenIndex||17).padStart(2,'0')];
+ // Preserve each supplied CRT sprite's landscape aspect ratio in physical cabinet geometry.
+ const sr=screenRect(screenIndex||17),screenH=CABINET_DIM.screenW*(sr[3]/sr[2]);
+ const screenZ0=CABINET_DIM.screenCenter-screenH/2,screenZ1=CABINET_DIM.screenCenter+screenH/2;
  // Cabinet shell: full-height art outside, black-lined cavity inside, recessed CRT plane, extra lower blockers.
- return{id:'CAB_'+letter,kind:'cabinet',letter,slot,title,url,screenIndex,x,y,ang:faceAng,w:CABINET_DIM.w,d:CABINET_DIM.d,collision:true,light:1,
+ return{id:'CAB_'+letter,kind:'cabinet',letter,slot,title,url,target,screenIndex,x,y,ang:faceAng,w:CABINET_DIM.w,d:CABINET_DIM.d,collision:true,light:1,
   parts:[
    {role:'plinth',w:30,d:34,of:-1,ro:0,z0:0,z1:8,front:black,left:black,right:black,back:black,stretch:true},
-   {role:'left-shell', w:2,d:34,of:-1,ro:-14,z0:0,z1:CABINET_DIM.h,front:black,left:K('LEFT'),right:black,back:black,stretch:true},
-   {role:'right-shell',w:2,d:34,of:-1,ro: 14,z0:0,z1:CABINET_DIM.h,front:black,left:black,right:K('RIGHT'),back:black,stretch:true},
-   {role:'lower-core',w:26,d:22,of:1,ro:0,z0:8,z1:40,front:black,left:black,right:black,back:black,stretch:true},
-   {role:'front-brand',w:26,d:2,of:12,ro:0,z0:0,z1:14,front:K('FRONT'),left:black,right:black,back:black,stretch:true},
-   {role:'control-pedestal',w:28,d:16,of:5,ro:0,z0:14,z1:42,front:black,left:black,right:black,back:black,stretch:true},
-   {role:'control',w:30,d:18,of:7,ro:0,z0:42,z1:48,front:K('CONTROL'),left:black,right:black,back:black,stretch:true},
-   {role:'inner-left',w:2,d:22,of:5,ro:-12,z0:0,z1:48,front:black,left:black,right:black,back:black,stretch:true},
-   {role:'inner-right',w:2,d:22,of:5,ro:12,z0:0,z1:48,front:black,left:black,right:black,back:black,stretch:true},
-   {role:'backdrop',w:26,d:2,of:5,ro:0,z0:48,z1:CABINET_DIM.screenTop,front:black,left:black,right:black,back:black,stretch:true},
-   {role:'screen',w:24,d:2,of:7,ro:0,z0:50,z1:CABINET_DIM.screenTop,front:screen,left:black,right:black,back:black,stretch:true},
-   {role:'jamb-left',w:2,d:18,of:7,ro:-13,z0:48,z1:CABINET_DIM.screenTop,front:black,left:black,right:black,back:black,stretch:true},
-   {role:'jamb-right',w:2,d:18,of:7,ro:13,z0:48,z1:CABINET_DIM.screenTop,front:black,left:black,right:black,back:black,stretch:true},
-   {role:'hood-bottom',w:26,d:18,of:7,ro:0,z0:48,z1:50,front:black,left:black,right:black,back:black,stretch:true},
-   {role:'marquee',w:30,d:24,of:-1,ro:0,z0:CABINET_DIM.screenTop,z1:CABINET_DIM.h,front:K('MARQUEE'),left:black,right:black,back:black,stretch:true},
-   {role:'back-block',w:26,d:2,of:-16,ro:0,z0:0,z1:CABINET_DIM.h,front:black,left:black,right:black,back:black,stretch:true}
+   {role:'left-shell', w:2,d:23,of:-1,ro:-14,z0:0,z1:CABINET_DIM.screenBayTop,front:black,left:K('LEFT'),right:black,back:black,stretch:true},
+   {role:'right-shell',w:2,d:23,of:-1,ro: 14,z0:0,z1:CABINET_DIM.screenBayTop,front:black,left:black,right:K('RIGHT'),back:black,stretch:true},
+   {role:'lower-core',w:24,d:20,of:1,ro:0,z0:8,z1:39,front:black,left:black,right:black,back:black,stretch:true},
+   {role:'front-brand',w:24,d:2,of:11,ro:0,z0:0,z1:15,front:K('FRONT'),left:black,right:black,back:black,stretch:true},
+   {role:'control-pedestal',w:26,d:15,of:5,ro:0,z0:15,z1:39,front:black,left:black,right:black,back:black,stretch:true},
+   {role:'control',w:26,d:16,of:7,ro:0,z0:39,z1:51,front:K('CONTROL'),left:black,right:black,back:black,stretch:true},
+   {role:'inner-left',w:2,d:20,of:5,ro:-12,z0:0,z1:51,front:black,left:black,right:black,back:black,stretch:true},
+   {role:'inner-right',w:2,d:20,of:5,ro:12,z0:0,z1:51,front:black,left:black,right:black,back:black,stretch:true},
+   {role:'backdrop',w:24,d:2,of:5,ro:0,z0:51,z1:CABINET_DIM.screenBayTop,front:black,left:black,right:black,back:black,stretch:true},
+   {role:'screen',w:CABINET_DIM.screenW,d:2,of:7,ro:0,z0:screenZ0,z1:screenZ1,front:screen,left:black,right:black,back:black,stretch:true},
+   {role:'jamb-left',w:2,d:16,of:7,ro:-12,z0:51,z1:CABINET_DIM.screenBayTop,front:black,left:black,right:black,back:black,stretch:true},
+   {role:'jamb-right',w:2,d:16,of:7,ro:12,z0:51,z1:CABINET_DIM.screenBayTop,front:black,left:black,right:black,back:black,stretch:true},
+   {role:'hood-bottom',w:24,d:16,of:7,ro:0,z0:51,z1:53,front:black,left:black,right:black,back:black,stretch:true},
+   {role:'marquee',w:30,d:20,of:-1,ro:0,z0:CABINET_DIM.screenBayTop,z1:CABINET_DIM.h,front:K('MARQUEE'),left:black,right:black,back:black,stretch:true},
+   {role:'back-block',w:24,d:2,of:-16,ro:0,z0:0,z1:CABINET_DIM.h,front:black,left:black,right:black,back:black,stretch:true}
   ]};
 }
 function boxSolid(id,x,y,ang,w,d,h,front,side,opts){return Object.assign({id,kind:'box',x,y,ang,w,d,collision:true,light:.96,parts:[{w,d,of:0,z0:0,z1:h,front,side,back:side}]},opts||{});}
@@ -240,15 +317,36 @@ function buildLevel(){
   if(Math.max(Math.abs(mx),Math.abs(my))<RING.inner+14){ln.mid=MAT.OFFICE_DARK;ln.tag='OFFICE_CORE';}
   else{const ang=Math.atan2(my,mx);ln.mid=Math.abs(Math.sin(ang*3))>.72?MAT.WALL_BLACK_GOLD:MAT.WALL_RIB;ln.tag='OUTER_WALL';}
  }
- const addCab=(letter,x,y,ang)=>{const row=CABINET_ROSTER.find(r=>r[0]===letter),slot=letter.charCodeAt(0)-64,c=cabinetSolid(letter,slot,x,y,ang,row[1],row[2],row[3]);map.solids.push(c);map.cabinets.push(c);map.targets.push(c);};
- const polarCab=(letter,deg,r=374)=>{const a=deg*DEG;addCab(letter,Math.cos(a)*r,Math.sin(a)*r,a+Math.PI);};
- // Outer ring: A-H north arc, U-X south arc.
- [['A',112],['B',128],['C',144],['D',160],['E',68],['F',52],['G',36],['H',20],['U',220],['V',238],['W',302],['X',320]].forEach(q=>polarCab(q[0],q[1]));
- // Square-island stations: backs toward the office core, faces into circulation.
- addCab('I',-78,154,Math.PI/2); addCab('J',-30,154,Math.PI/2); addCab('O',30,154,Math.PI/2); addCab('P',78,154,Math.PI/2);
- addCab('K',-154,32,Math.PI); addCab('L',-154,-28,Math.PI); addCab('Q',154,32,0); addCab('R',154,-28,0);
- addCab('M',-142,-92,Math.PI*1.25); addCab('N',-96,-142,Math.PI*1.25); addCab('S',142,-92,-Math.PI*.25); addCab('T',96,-142,-Math.PI*.25);
- addCab('Y',-34,-154,-Math.PI/2); addCab('Z',34,-154,-Math.PI/2);
+ const addCab=(letter,x,y,ang)=>{const row=CABINET_ROSTER.find(r=>r[0]===letter),slot=letter.charCodeAt(0)-64,c=cabinetSolid(letter,slot,x,y,ang,row[1],row[2],row[3],row[4]);map.solids.push(c);map.cabinets.push(c);map.targets.push(c);};
+ // Cabinet topology 0.4: clustered back-to-back pods. The shared backs form protected
+ // power/data spines, player faces point into sheltered gathering pockets, and the pods
+ // deliberately interrupt long cross-arcade sightlines. Texture assignments are unchanged.
+ const pod4=(front,back,cx,cy,ang,fsep=20,rsep=17)=>{
+  const f={x:Math.cos(ang),y:Math.sin(ang)},r={x:Math.sin(ang),y:-Math.cos(ang)};
+  front.forEach((L,i)=>{const rs=i? rsep:-rsep;addCab(L,cx+f.x*fsep+r.x*rs,cy+f.y*fsep+r.y*rs,ang);});
+  back.forEach((L,i)=>{const rs=i? rsep:-rsep;addCab(L,cx-f.x*fsep+r.x*rs,cy-f.y*fsep+r.y*rs,ang+Math.PI);});
+ };
+
+ // Northwest and northeast neighborhood pods.
+ pod4(['C','A'],['D','B'],-300,210,60*DEG);
+ pod4(['F','G'],['E','H'], 300,210,120*DEG);
+
+ // North wall of the office island: three machines share one service chase.
+ addCab('O',-62,154,Math.PI/2);
+ addCab('I',  0,154,Math.PI/2);
+ addCab('P', 62,154,Math.PI/2);
+
+ // West island: J acts as a visual baffle; K/L share backs along the office wall.
+ addCab('J',-232,0,Math.PI);
+ addCab('K',-154, 38, Math.PI/2);
+ addCab('L',-154,-38,-Math.PI/2);
+
+ // East island: two-by-two back-to-back bank with a generous cable/service void.
+ pod4(['Q','S'],['R','T'],185,0,Math.PI/2,36,31);
+
+ // Southwest and southeast pods leave the southern arrival/egress axis porous.
+ pod4(['U','N'],['V','M'],-285,-245,135*DEG);
+ pod4(['Z','X'],['Y','W'], 285,-245, 45*DEG);
 
  // North performance zone. Stage and DJ booth remain geometry.
  map.solids.push(boxSolid('STAGE_BACK',0,366,-Math.PI/2,190,16,96,MAT.STAGE_RED,MAT.WALL_BLACK_GOLD,{collision:true}));
@@ -266,11 +364,11 @@ function buildLevel(){
  map.solids.push(white,board);map.fixtures.push(white,board);
 
  // Empty cabinet bays become real placeholder geometry.
- const fixture=(id,label,deg,r,w,d,h,matFront,kind='fixture',url='')=>{const a=deg*DEG,x=Math.cos(a)*r,y=Math.sin(a)*r,s=boxSolid(id,x,y,a+Math.PI,w,d,h,matFront,MAT.WALL_RIB,{kind,label,url,collision:true});map.solids.push(s);map.fixtures.push(s);if(url){map.targets.push(s);}return s;};
+ const fixture=(id,label,deg,r,w,d,h,matFront,kind='fixture',url='',target='_blank')=>{const a=deg*DEG,x=Math.cos(a)*r,y=Math.sin(a)*r,s=boxSolid(id,x,y,a+Math.PI,w,d,h,matFront,MAT.WALL_RIB,{kind,label,url,target,collision:true});map.solids.push(s);map.fixtures.push(s);if(url){map.targets.push(s);}return s;};
  fixture('VEND_DRINK','DRINK VENDING',198,372,30,28,72,MAT.FIX_VEND_DRINK);
  fixture('VEND_SNACK','SNACK VENDING',342,372,30,28,72,MAT.FIX_VEND_SNACK);
  fixture('JUKEBOX','JUKEBOX',97,294,34,22,60,MAT.FIX_JUKEBOX);
- fixture('TOKEN_VEND','FTS TOKEN VENDING',258,344,28,24,68,MAT.FIX_TOKEN,'token',PORTALS.tokens);
+ fixture('TOKEN_VEND','FTS TOKEN VENDING',258,344,28,24,68,MAT.FIX_TOKEN,'token',PORTALS.tokens, '_blank');
 
  // Upcoming-event poster campaign: visual inventory, deliberately non-interactive.
  const posterAngles=[8,82,98,172,188,208,252,288,332,352];
@@ -278,15 +376,15 @@ function buildLevel(){
 
  // Programmatic ad inventory. Every unit has a stable ID and its own deal-form URL.
  const adAngles=[14,76,104,166,194,244,296,346];
- adAngles.forEach((deg,i)=>{const unit='FTS-RING-'+String(i+1).padStart(2,'0'),a=deg*DEG,r=420,x=Math.cos(a)*r,y=Math.sin(a)*r,p=panelSolid('AD_'+unit,x,y,a+Math.PI,32,34,92,i%2?MAT.FIX_AD_DEAL:MAT.FIX_AD_SPACE,{kind:'ad',label:'AD SPACE '+unit,url:dealUrl(unit),inventory:unit});map.solids.push(p);map.ads.push(p);map.targets.push(p);});
+ adAngles.forEach((deg,i)=>{const unit='FTS-RING-'+String(i+1).padStart(2,'0'),a=deg*DEG,r=420,x=Math.cos(a)*r,y=Math.sin(a)*r,p=panelSolid('AD_'+unit,x,y,a+Math.PI,32,34,92,i%2?MAT.FIX_AD_DEAL:MAT.FIX_AD_SPACE,{kind:'ad',label:'AD SPACE '+unit,url:dealUrl(unit),target:'_blank',inventory:unit});map.solids.push(p);map.ads.push(p);map.targets.push(p);});
 
  // Three world exits: all use absolute URLs and always confirm before navigation.
  const exitDefs=[
-  {id:'EXIT_LOBBY',label:'LOBBY / OFF-SITE',url:PORTALS.lobby,a:0},
-  {id:'EXIT_THEATERS',label:'BRAZEN THEATERS / OFF-SITE',url:PORTALS.theaters,a:Math.PI},
-  {id:'EXIT_REDEYE',label:'REDEYE / OFF-SITE',url:PORTALS.redeye,a:-Math.PI/2}
+  {id:'EXIT_LOBBY',label:'LOBBY / OFF-SITE',url:PORTALS.lobby,target:'_blank',a:0},
+  {id:'EXIT_THEATERS',label:'BRAZEN THEATERS / OFF-SITE',url:PORTALS.theaters,target:'_blank',a:Math.PI},
+  {id:'EXIT_REDEYE',label:'REDEYE / OFF-SITE',url:PORTALS.redeye,target:'_blank',a:-Math.PI/2}
  ];
- exitDefs.forEach(e=>{const r=418,x=Math.cos(e.a)*r,y=Math.sin(e.a)*r,face=e.a+Math.PI,s=boxSolid(e.id,x,y,face,72,8,84,MAT.EXIT,MAT.WALL_GOLD,{kind:'exit',label:e.label,url:e.url,collision:true});map.solids.push(s);map.exits.push(s);map.targets.push(s);});
+ exitDefs.forEach(e=>{const r=418,x=Math.cos(e.a)*r,y=Math.sin(e.a)*r,face=e.a+Math.PI,s=boxSolid(e.id,x,y,face,72,8,84,MAT.EXIT,MAT.WALL_GOLD,{kind:'exit',label:e.label,url:e.url,target:e.target,collision:true});map.solids.push(s);map.exits.push(s);map.targets.push(s);});
  return map;
 }
 
@@ -337,17 +435,26 @@ const RenderCore={
 };
 
 const canvas=document.getElementById('c'),ctx=canvas.getContext('2d'),telemetry=document.getElementById('telemetry'),promptEl=document.getElementById('prompt'),lockEl=document.getElementById('lock'),modal=document.getElementById('modal'),modalEyebrow=document.getElementById('modalEyebrow'),modalTitle=document.getElementById('modalTitle'),modalCopy=document.getElementById('modalCopy'),confirmBtn=document.getElementById('confirmBtn'),cancelBtn=document.getElementById('cancelBtn'),mapBtn=document.getElementById('mapBtn'),audioBtn=document.getElementById('audioBtn');
-const IMG={world:null,skin:null,screen:null,fixture:null,ready:false,errors:[]};let texBank=[],flatBank=[],RW=0,RH=0,RSCALE=1,dl=null,showMap=false,activeTarget=null,modalTarget=null;
+const IMG={world:null,cab1:null,cab2:null,cab3:null,cab4:null,screen:null,fixture:null,ready:false,errors:[]};let texBank=[],flatBank=[],RW=0,RH=0,RSCALE=1,dl=null,showMap=false,activeTarget=null,modalTarget=null;
 
-function loadImage(src){return new Promise(resolve=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=()=>{IMG.errors.push(src);resolve(null);};im.src=src;});}
-function cropCanvas(im,r){const cv=document.createElement('canvas');cv.width=cv.height=64;const g=cv.getContext('2d');g.imageSmoothingEnabled=false;if(im&&r)g.drawImage(im,r[0],r[1],r[2],r[3],0,0,64,64);else{g.fillStyle='#222833';g.fillRect(0,0,64,64);g.strokeStyle='#ff4a98';g.strokeRect(2,2,60,60);}return cv;}
+function loadImage(src,label){
+ const candidates=Array.isArray(src)?src:[src];
+ return new Promise(resolve=>{let i=0;const attempt=()=>{if(i>=candidates.length){IMG.errors.push(label||'asset');resolve(null);return;}const im=new Image();im.onload=()=>resolve(im);im.onerror=()=>{i++;attempt();};im.src=candidates[i];};attempt();});
+}
+function cropCanvas(im,r,sheet){const cv=document.createElement('canvas');cv.width=cv.height=64;const g=cv.getContext('2d');g.imageSmoothingEnabled=false;if(sheet==='solid'){g.fillStyle='#03050a';g.fillRect(0,0,64,64);}else if(im&&r)g.drawImage(im,r[0],r[1],r[2],r[3],0,0,64,64);else{g.fillStyle='#222833';g.fillRect(0,0,64,64);g.strokeStyle='#ff4a98';g.strokeRect(2,2,60,60);}return cv;}
 function shadeStrip(src,level){const cv=document.createElement('canvas');cv.width=64;cv.height=TILE_H;const g=cv.getContext('2d');g.imageSmoothingEnabled=false;for(let y=0;y<TILE_H;y+=64)g.drawImage(src,0,y,64,64);const k=level/(SHADES-1);g.globalCompositeOperation='source-atop';g.fillStyle='rgba(2,4,8,'+(k*.9)+')';g.fillRect(0,0,64,TILE_H);return cv;}
 function shadeTile(src,level){const cv=document.createElement('canvas');cv.width=cv.height=64;const g=cv.getContext('2d');g.imageSmoothingEnabled=false;g.drawImage(src,0,0);const k=level/(SHADES-1);g.globalCompositeOperation='source-atop';g.fillStyle='rgba(2,4,8,'+(k*.9)+')';g.fillRect(0,0,64,64);return cv;}
-function buildTextures(){texBank=[];flatBank=[];for(const m of MATERIALS){const src=cropCanvas(IMG[m.sheet],m.rect),row=[],prow=[];for(let sh=0;sh<SHADES;sh++){row.push(shadeStrip(src,sh));prow.push(ctx.createPattern(shadeTile(src,sh),'repeat'));}texBank.push(row);flatBank.push(prow);}IMG.ready=!!(IMG.world&&IMG.skin&&IMG.screen&&IMG.fixture);}
+function buildTextures(){texBank=new Array(MATERIALS.length);flatBank=new Array(MATERIALS.length);IMG.ready=!!(IMG.world&&IMG.cab1&&IMG.cab2&&IMG.cab3&&IMG.cab4&&IMG.screen&&IMG.fixture);}
+function ensureTextureBank(i){
+ if(texBank[i]&&flatBank[i])return;
+ const m=MATERIALS[i],src=cropCanvas(IMG[m.sheet],m.rect,m.sheet),row=[],prow=[];
+ for(let sh=0;sh<SHADES;sh++){row.push(shadeStrip(src,sh));prow.push(ctx.createPattern(shadeTile(src,sh),'repeat'));}
+ texBank[i]=row;flatBank[i]=prow;
+}
 
 function paint(sim,d){const v=d.view,w=v.w,h=v.h;ctx.fillStyle='#03050a';ctx.fillRect(0,0,w,h);ctx.imageSmoothingEnabled=false;const zbuf=d.pixelDepth;zbuf.fill(Infinity);const shadeOf=(dist,light)=>Math.min(SHADES-1,Math.max(0,((Math.min(1,dist/780+(1-light)*.7))*(SHADES-1))|0));
- const plane=i=>{const y=d.sY[i],x0=d.sX0[i],x1=d.sX1[i],dist=d.sDist[i];if(y<0||y>=h||x1<x0)return;const p=flatBank[d.sFlat[i]]&&flatBank[d.sFlat[i]][shadeOf(dist,d.sLight[i])];if(!p)return;const m=Geom.planePatternTransform(sim.x,sim.y,v.cosA,v.sinA,v.halfW,v.projDist,y,dist);if(m&&p.setTransform){const pm=typeof DOMMatrix==='function'?new DOMMatrix([m.a,m.b,m.c,m.d,m.e,m.f]):m;p.setTransform(pm);}ctx.fillStyle=p;ctx.fillRect(x0,y,x1-x0+1,1);const off=y*w;for(let x=Math.max(0,x0);x<=Math.min(w-1,x1);x++)if(dist<zbuf[off+x])zbuf[off+x]=dist;};
- const wall=i=>{const bank=texBank[d.wTex[i]];if(!bank)return;const tex=bank[shadeOf(d.wDist[i],d.wLight[i])];let u=d.wU[i]%1;if(u<0)u+=1;const sx=Math.min(63,(u*64)|0),y0=d.wY0[i],y1=d.wY1[i],span=d.wF1[i]-d.wF0[i];if(span<=.001||y1<=y0)return;let sy0,sy1;if(d.wStretch[i]){sy0=Math.max(0,Math.min(64,((y0-d.wF0[i])/span)*64));sy1=Math.max(sy0,Math.min(64,((y1-d.wF0[i])/span)*64));}else{const wh=Math.max(1,Math.min(TILE_H,Math.abs(d.wTop[i]-d.wBot[i])));sy0=Math.max(0,Math.min(TILE_H,((y0-d.wF0[i])/span)*wh));sy1=Math.max(sy0,Math.min(TILE_H,((y1-d.wF0[i])/span)*wh));}ctx.drawImage(tex,sx,sy0,1,Math.max(.05,sy1-sy0),d.wX[i],y0,1,Math.max(1,y1-y0));const x=d.wX[i],ya=Math.max(0,Math.floor(y0)),yb=Math.min(h,Math.ceil(y1));if(x>=0&&x<w)for(let y=ya;y<yb;y++)if(d.wDist[i]<zbuf[y*w+x])zbuf[y*w+x]=d.wDist[i];};
+ const plane=i=>{const y=d.sY[i],x0=d.sX0[i],x1=d.sX1[i],dist=d.sDist[i];if(y<0||y>=h||x1<x0)return;ensureTextureBank(d.sFlat[i]);const p=flatBank[d.sFlat[i]]&&flatBank[d.sFlat[i]][shadeOf(dist,d.sLight[i])];if(!p)return;const m=Geom.planePatternTransform(sim.x,sim.y,v.cosA,v.sinA,v.halfW,v.projDist,y,dist);if(m&&p.setTransform){const pm=typeof DOMMatrix==='function'?new DOMMatrix([m.a,m.b,m.c,m.d,m.e,m.f]):m;p.setTransform(pm);}ctx.fillStyle=p;ctx.fillRect(x0,y,x1-x0+1,1);const off=y*w;for(let x=Math.max(0,x0);x<=Math.min(w-1,x1);x++)if(dist<zbuf[off+x])zbuf[off+x]=dist;};
+ const wall=i=>{ensureTextureBank(d.wTex[i]);const bank=texBank[d.wTex[i]];if(!bank)return;const tex=bank[shadeOf(d.wDist[i],d.wLight[i])];let u=d.wU[i]%1;if(u<0)u+=1;const sx=Math.min(63,(u*64)|0),y0=d.wY0[i],y1=d.wY1[i],span=d.wF1[i]-d.wF0[i];if(span<=.001||y1<=y0)return;let sy0,sy1;if(d.wStretch[i]){sy0=Math.max(0,Math.min(64,((y0-d.wF0[i])/span)*64));sy1=Math.max(sy0,Math.min(64,((y1-d.wF0[i])/span)*64));}else{const wh=Math.max(1,Math.min(TILE_H,Math.abs(d.wTop[i]-d.wBot[i])));sy0=Math.max(0,Math.min(TILE_H,((y0-d.wF0[i])/span)*wh));sy1=Math.max(sy0,Math.min(TILE_H,((y1-d.wF0[i])/span)*wh));}ctx.drawImage(tex,sx,sy0,1,Math.max(.05,sy1-sy0),d.wX[i],y0,1,Math.max(1,y1-y0));const x=d.wX[i],ya=Math.max(0,Math.floor(y0)),yb=Math.min(h,Math.ceil(y1));if(x>=0&&x<w)for(let y=ya;y<yb;y++)if(d.wDist[i]<zbuf[y*w+x])zbuf[y*w+x]=d.wDist[i];};
  const ops=[];for(let i=0;i<d.sN;i++)ops.push({k:0,i,dist:d.sDist[i]});for(let i=0;i<d.wN;i++)ops.push({k:1,i,dist:d.wDist[i]});ops.sort((a,b)=>b.dist-a.dist||a.k-b.k);for(const op of ops)op.k?wall(op.i):plane(op.i);
  // subtle CRT vignette and crosshair
  const grad=ctx.createRadialGradient(w/2,h/2,Math.min(w,h)*.2,w/2,h/2,Math.max(w,h)*.72);grad.addColorStop(0,'rgba(0,0,0,0)');grad.addColorStop(1,'rgba(0,0,0,.34)');ctx.fillStyle=grad;ctx.fillRect(0,0,w,h);ctx.fillStyle='rgba(220,238,255,.62)';ctx.fillRect(w/2-5,h/2,3,1);ctx.fillRect(w/2+3,h/2,3,1);ctx.fillRect(w/2,h/2-5,1,3);ctx.fillRect(w/2,h/2+3,1,3);
@@ -363,7 +470,7 @@ function targetKind(t){return t.kind==='cabinet'?'CABINET '+t.letter:t.kind==='e
 function updatePrompt(){activeTarget=findTarget();if(!activeTarget){promptEl.classList.remove('show');return;}const name=activeTarget.kind==='cabinet'?activeTarget.title:activeTarget.label,verb=activeTarget.kind==='cabinet'?'ENTER GAME':activeTarget.kind==='token'?'BUY TOKENS':activeTarget.kind==='ad'?'OPEN DEAL FORM':'LEAVE FTS ARCADE';promptEl.innerHTML='<span class="kind">'+targetKind(activeTarget)+'</span> '+name+' &nbsp; <span class="key">[E / CLICK]</span> '+verb;promptEl.classList.add('show');}
 function openConfirm(t){if(!t||!t.url)return;modalTarget=t;if(document.pointerLockElement===canvas)document.exitPointerLock();const name=t.kind==='cabinet'?(t.letter+' / '+t.title):t.label;modalTitle.textContent=name;if(t.kind==='cabinet'){modalEyebrow.textContent='LEAVE FTS ARCADE?';modalCopy.textContent='Enter cabinet '+t.letter+' and navigate to '+t.title+'? Your browser will load '+t.url+'.';confirmBtn.textContent='ENTER CABINET';}else if(t.kind==='token'){modalEyebrow.textContent='TOKEN PURCHASE';modalCopy.textContent='Open the FTS token purchase portal? This leaves the arcade floor and loads '+t.url+'.';confirmBtn.textContent='BUY TOKENS';}else if(t.kind==='ad'){modalEyebrow.textContent='PROGRAMMATIC INVENTORY';modalCopy.textContent='Open the deal form for '+t.inventory+'? This leaves the arcade floor.';confirmBtn.textContent='OPEN DEAL FORM';}else{modalEyebrow.textContent='LEAVE FTS ARCADE?';modalCopy.textContent='Use this exit for '+name+'? This destination is off the arcade floor.';confirmBtn.textContent='LEAVE ARCADE';}modal.classList.add('show');}
 function closeConfirm(relock){modal.classList.remove('show');modalTarget=null;if(relock&&!coarse())setTimeout(()=>canvas.requestPointerLock&&canvas.requestPointerLock(),60);}
-function leaveArcade(){if(!modalTarget)return;const t=modalTarget;try{sessionStorage.setItem('fts.arcade.return',JSON.stringify({x:sim.x,y:sim.y,ang:sim.ang,t:Date.now()}));}catch(e){}location.href=t.url;}
+function leaveArcade(){if(!modalTarget)return;const t=modalTarget;try{sessionStorage.setItem('fts.arcade.return',JSON.stringify({x:sim.x,y:sim.y,ang:sim.ang,t:Date.now()}));}catch(e){}window.open(t.url, t.target || '_blank');closeConfirm(true);}
 confirmBtn.addEventListener('click',leaveArcade);cancelBtn.addEventListener('click',()=>closeConfirm(true));
 
 function resize(){const w=innerWidth||960,h=innerHeight||600;RSCALE=h>900?1.9:1.55;RW=Math.max(240,Math.round(w/RSCALE));RH=Math.max(150,Math.round(h/RSCALE));canvas.width=RW;canvas.height=RH;canvas.style.width=w+'px';canvas.style.height=h+'px';dl=new DrawLists(RW,RH);ctx.imageSmoothingEnabled=false;}
@@ -389,11 +496,62 @@ canvas.addEventListener('pointerdown',e=>{if(e.pointerType==='touch'&&e.clientX>
 let last=0,fpsAcc=0,fpsN=0,fps=0,frames=0;
 function loop(ts){const dt=Math.min((ts-last)/1000||.016,.05);last=ts;sim.step(dt,input);RenderCore.solve(sim,dl,RW,RH);paint(sim,dl);if(showMap)drawMap(sim,RW,RH);updatePrompt();fpsAcc+=dt;fpsN++;if(fpsAcc>.45){fps=fpsN/fpsAcc;fpsAcc=0;fpsN=0;}if((frames++&7)===0)telemetry.textContent=VERSION+' | '+RW+'x'+RH+' | '+fps.toFixed(0)+' fps | SEC '+(sim.sector+1)+'/'+map.sectors.length+' | CAB '+map.cabinets.length+' A-Z | FIX '+map.fixtures.length+' | ADS '+map.ads.length+' | VIS '+dl.stats.sectors+'s '+dl.stats.solidFaces+'g | ART '+(IMG.ready?'ATLAS':'FALLBACK')+(MAP_ERRORS.length?' | MAP ERR '+MAP_ERRORS.length:'');requestAnimationFrame(loop);}
 addEventListener('resize',resize);
-Promise.all([loadImage(ASSET_FILES.world),loadImage(ASSET_FILES.skin),loadImage(ASSET_FILES.screen),loadImage(ASSET_FILES.fixture)]).then(([w,s,sc,f])=>{IMG.world=w;IMG.skin=s;IMG.screen=sc;IMG.fixture=f;buildTextures();});
+Promise.all([
+ loadImage(ASSET_FILES.world,'world'),loadImage(ASSET_FILES.cab1,'Cabinets01'),loadImage(ASSET_FILES.cab2,'Cabinets02'),loadImage(ASSET_FILES.cab3,'Cabinets03'),loadImage(ASSET_FILES.cab4,'Cabinets04'),loadImage(ASSET_FILES.screen,'screen'),loadImage(ASSET_FILES.fixture,'fixture')
+]).then(([w,c1,c2,c3,c4,sc,f])=>{IMG.world=w;IMG.cab1=c1;IMG.cab2=c2;IMG.cab3=c3;IMG.cab4=c4;IMG.screen=sc;IMG.fixture=f;buildTextures();if(IMG.errors.length){telemetry.textContent=VERSION+' | ASSET ERROR: '+IMG.errors.join(', ');console.error('[FTS ARCADE] atlas load failure',IMG.errors,ASSET_FILES);}});
 resize();buildTextures();
 if(MAP_ERRORS.length)console.error('[FTS ARCADE] map validation',MAP_ERRORS);
-window.__FTS_ARCADE__={VERSION,map,sim,MapBuilder,Geom,RenderCore,DrawLists,MATERIALS,MAP_ERRORS,CABINET_ROSTER,CABINET_DIM,AISLE,PORTALS,tests:{mapValid:()=>MAP_ERRORS.length===0,cabinetCount:()=>map.cabinets.length===26,cabinetAlphabet:()=>map.cabinets.map(c=>c.letter).sort().join('')==='ABCDEFGHIJKLMNOPQRSTUVWXYZ',exitCount:()=>map.exits.length===3,geometryCabinets:()=>map.cabinets.every(c=>c.parts&&c.parts.length>=10),concaveCabinets:()=>map.cabinets.every(c=>c.parts.some(p=>p.role==='backdrop')&&c.parts.some(p=>p.role==='screen')&&c.parts.some(p=>p.role==='jamb-left')&&c.parts.some(p=>p.role==='jamb-right')),screenPairings:()=>map.cabinets.every(c=>c.screenIndex>=1&&c.screenIndex<=25),cabinetProportions:()=>CABINET_DIM.control===45&&CABINET_DIM.screenTop===EYE&&CABINET_DIM.h===74,runSpeed22mph:()=>Math.abs(SPEED_RUN-387.2)<.001,ringSectors:()=>map.sectors.length===RING.sides,fixturesPresent:()=>map.fixtures.some(f=>f.id==='TOKEN_VEND')&&map.fixtures.some(f=>f.id==='JUKEBOX')&&map.fixtures.some(f=>f.id==='WHITEBOARD')&&map.fixtures.some(f=>f.id==='BULLETIN'),adInventory:()=>map.ads.length===8&&map.ads.every(a=>a.url.includes('inventory=')),offsiteExits:()=>map.exits.every(e=>/^https:\/\//.test(e.url)),assetsReferenced:()=>ASSET_FILES.world==='fts-arcade-world-atlas.png'&&ASSET_FILES.skin==='fts-arcade-cabinet-skins.png'&&ASSET_FILES.screen==='fts-arcade-screen-atlas.png'&&ASSET_FILES.fixture==='fts-arcade-fixture-atlas.png'}};
-const qs=new URLSearchParams(location.search);if(qs.get('preview')==='1')lockEl.classList.add('hidden');if(qs.get('map')==='1'){showMap=true;mapBtn.textContent='MAP: ON';mapBtn.classList.add('on');}if(qs.get('test')==='1')setTimeout(()=>{const t=window.__FTS_ARCADE__.tests,r={version:VERSION,mapValid:t.mapValid(),cabinetCount:t.cabinetCount(),cabinetAlphabet:t.cabinetAlphabet(),exitCount:t.exitCount(),geometryCabinets:t.geometryCabinets(),cabinetProportions:t.cabinetProportions(),runSpeed22mph:t.runSpeed22mph(),ringSectors:t.ringSectors(),fixturesPresent:t.fixturesPresent(),adInventory:t.adInventory(),offsiteExits:t.offsiteExits(),assetsReferenced:t.assetsReferenced(),mapErrors:MAP_ERRORS,assetErrors:IMG.errors};const pre=document.createElement('pre');pre.id='fts-tests';pre.style.cssText='position:fixed;z-index:99;left:0;top:0;background:#000;color:#0f0;padding:8px;font:12px monospace';pre.textContent=JSON.stringify(r);document.body.appendChild(pre);},900);
+function screenPart(c){return c.parts.find(p=>p.role==='screen');}
+const REF_TESTS={
+ mapValid:()=>MAP_ERRORS.length===0,
+ cabinetCount:()=>map.cabinets.length===26,
+ cabinetAlphabet:()=>map.cabinets.map(c=>c.letter).sort().join('')==='ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+ exitCount:()=>map.exits.length===3,
+ geometryCabinets:()=>map.cabinets.every(c=>c.parts&&c.parts.length>=10),
+ concaveCabinets:()=>map.cabinets.every(c=>c.parts.some(p=>p.role==='backdrop')&&c.parts.some(p=>p.role==='screen')&&c.parts.some(p=>p.role==='jamb-left')&&c.parts.some(p=>p.role==='jamb-right')),
+ screenPairings:()=>map.cabinets.every(c=>c.screenIndex>=1&&c.screenIndex<=25),
+ screenAtlasGrid:()=>SCREEN_ATLAS_META.count===25&&SCREEN_RECTS.length===25,
+ screenRectsInBounds:()=>Array.from({length:25},(_,i)=>screenRect(i+1)).every(r=>r[0]>=0&&r[1]>=0&&r[0]+r[2]<=SCREEN_ATLAS_META.width&&r[1]+r[3]<=SCREEN_ATLAS_META.height),
+ screenSpritesLandscape:()=>Array.from({length:25},(_,i)=>screenRect(i+1)).every(r=>r[2]/r[3]>1.35),
+ cabinetScreensLandscape:()=>map.cabinets.every(c=>{const p=screenPart(c);return p&&p.w/(p.z1-p.z0)>1.35;}),
+ screenAspectPreserved:()=>map.cabinets.every(c=>{const p=screenPart(c),r=screenRect(c.screenIndex);return p&&Math.abs(p.w/(p.z1-p.z0)-r[2]/r[3])<1e-6;}),
+ screenMaterialPairings:()=>map.cabinets.every(c=>{const p=screenPart(c);return p&&MATERIALS[p.front]&&MATERIALS[p.front].name==='SCREEN_'+String(c.screenIndex).padStart(2,'0');}),
+ cabinetProportions:()=>CABINET_DIM.control===45&&CABINET_DIM.screenBayTop===76&&CABINET_DIM.h===84&&CABINET_DIM.screenW===24,
+ runSpeed22mph:()=>Math.abs(SPEED_RUN-387.2)<.001,
+ ringSectors:()=>map.sectors.length===RING.sides,
+ spawnInsideMap:()=>sim.sectorAt(map.spawn.x,map.spawn.y)>=0,
+ fixturesPresent:()=>map.fixtures.some(f=>f.id==='TOKEN_VEND')&&map.fixtures.some(f=>f.id==='JUKEBOX')&&map.fixtures.some(f=>f.id==='WHITEBOARD')&&map.fixtures.some(f=>f.id==='BULLETIN'),
+ adInventory:()=>map.ads.length===8&&map.ads.every(a=>a.url.includes('inventory=')),
+ offsiteExits:()=>map.exits.every(e=>/^https:\/\//.test(e.url)),
+ sameDirectoryAssets:()=>Object.values(ASSET_FILES).every(v=>(Array.isArray(v)?v:[v]).every(s=>!/^https?:/i.test(s))),
+ assetDimensions:()=>!!IMG.world&&IMG.world.naturalWidth===1024&&IMG.world.naturalHeight===1024&&['cab1','cab2','cab3','cab4'].every(k=>IMG[k]&&IMG[k].naturalWidth===1254&&IMG[k].naturalHeight===1254)&&!!IMG.screen&&IMG.screen.naturalWidth===2048&&IMG.screen.naturalHeight===1433&&!!IMG.fixture&&IMG.fixture.naturalWidth===1024&&IMG.fixture.naturalHeight===256,
+ assetsReady:()=>IMG.ready&&IMG.errors.length===0,
+ noFrameOriginTrap:()=>document.querySelectorAll('iframe,frame').length===0,
+ renderProducesGeometry:()=>!!dl&&dl.wN>0&&dl.sN>0&&dl.stats.solidFaces>0,
+ runtimeClean:()=>RUNTIME_ERRORS.length===0
+};
+function runRefTests(){
+ const results={},failures=[];
+ for(const [name,fn] of Object.entries(REF_TESTS)){
+  try{results[name]=!!fn();}catch(err){results[name]=false;results[name+'_error']=String(err&&err.stack||err);}
+  if(results[name]===false)failures.push(name);
+ }
+ return{version:VERSION,pass:failures.length===0,passed:Object.values(results).filter(v=>v===true).length,total:Object.keys(REF_TESTS).length,failures,results,mapErrors:MAP_ERRORS.slice(),assetErrors:IMG.errors.slice(),runtimeErrors:RUNTIME_ERRORS.slice(),screenAtlas:SCREEN_ATLAS_META};
+}
+window.__FTS_ARCADE__={VERSION,map,sim,MapBuilder,Geom,RenderCore,DrawLists,MATERIALS,MAP_ERRORS,CABINET_ROSTER,CABINET_DIM,AISLE,PORTALS,ASSET_NAMES,CABINET_PART_RECTS,SCREEN_ATLAS_META,SCREEN_RECTS,screenRect,tests:REF_TESTS,runTests:runRefTests};
+const qs=new URLSearchParams(location.search);
+if(qs.get('preview')==='1')lockEl.classList.add('hidden');
+if(qs.get('map')==='1'){showMap=true;mapBtn.textContent='MAP: ON';mapBtn.classList.add('on');}
+if(qs.get('test')==='1'){
+ const showTests=()=>{
+  const r=runRefTests();
+  const pre=document.createElement('pre');pre.id='fts-tests';
+  pre.dataset.pass=String(r.pass);
+  pre.style.cssText='position:fixed;z-index:99;left:0;top:0;max-width:100vw;max-height:100vh;overflow:auto;background:#000;color:'+(r.pass?'#53ff8a':'#ff667a')+';padding:10px;font:12px/1.45 monospace;white-space:pre-wrap';
+  pre.textContent=JSON.stringify(r,null,2);document.body.appendChild(pre);
+ };
+ const waitAssets=()=>{if(IMG.ready||IMG.errors.length){setTimeout(showTests,180);}else setTimeout(waitAssets,60);};waitAssets();
+}
 requestAnimationFrame(loop);
 </script>
 </body>
