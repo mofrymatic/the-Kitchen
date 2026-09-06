@@ -22,7 +22,7 @@
 <link rel="preload" as="image" href="fts_sprites.png">
 <link rel="preload" as="image" href="fts-arcade-fixture-atlas.png">
 <link rel="preload" as="image" href="the-Cabinet.png">
-<title>FTS Arcade Floor 0.5.7 Clean Control Deck</title>
+<title>FTS Arcade Floor 0.5.9 Cabinet Face Cleanup</title>
 <!-- 0.5.2 art fit: external world/fixture/screen atlases + Cabinets01-Cabinets04, exact per-CRT crops. -->
 
 <!-- ── FA3D Meta ─────────────────────────────────────────── -->
@@ -107,7 +107,7 @@ const RUNTIME_ERRORS=[];
 addEventListener('error',e=>{if(e.error||e.message)RUNTIME_ERRORS.push(String(e.error&&e.error.stack||e.message||e.error));});
 addEventListener('unhandledrejection',e=>RUNTIME_ERRORS.push(String(e.reason&&e.reason.stack||e.reason||'unhandled rejection')));
 
-const VERSION='fts-arcade-floor-0.5.8-perfect-cabinet';
+const VERSION='fts-arcade-floor-0.5.9-cabinet-face-cleanup';
 const TAU=Math.PI*2, DEG=Math.PI/180;
 // Dimensional contract: 1 engine unit = 1 inch.
 const RING={outer:430,inner:118,sides:32,ceil:132};
@@ -143,11 +143,13 @@ const WORLD_RECTS={
 const FIXTURE_RECTS={VEND_DRINK:[16,16,64,64],VEND_SNACK:[96,16,64,64],JUKEBOX:[176,16,64,64],WHITEBOARD:[256,16,64,64],BULLETIN:[336,16,64,64],TOKEN:[416,16,64,64],POSTER_1:[496,16,64,64],POSTER_2:[576,16,64,64],POSTER_3:[656,16,64,64],AD_SPACE:[736,16,64,64],AD_DEAL:[816,16,64,64],WAYFIND:[896,16,64,64],OFFICE_DOOR:[16,96,64,64],STAGE_SIGN:[96,96,64,64],DJ_SIGN:[176,96,64,64],POSTER_4:[256,96,64,64]};
 const SKIN_PARTS=['MARQUEE','LEFT','RIGHT','CONTROL','FRONT'];
 
-// the-Cabinet.png remains a detail source. Use it surgically: authentic coin door plus
-// the uninterrupted lower-front / kick-panel body so the cabinet face never opens up.
+// the-Cabinet.png is now a surgical hardware/detail source only.
+// Never use it on the control deck or as a full-width lower-front skin: that
+// source contains the red/white trim that was bleeding across cabinet faces.
 const CABINET_REF_RECTS={
  COIN_DOOR:[330,978,112,214],
- LOWER_FRONT:[87,792,598,502]
+ // Clean toe/kick region, deliberately cropped below the striped control trim.
+ KICK_PLATE:[87,1210,598,84]
 };
 
 // Crops measured from Cabinets01-Cabinets04. Transparent helper-label bands are excluded.
@@ -341,7 +343,7 @@ const AUTHORING={
 function cabinetSolid(letter,slot,x,y,faceAng,title,url,screenIndex,target='_blank'){
  const K=p=>MAT['SKIN_'+letter+'_'+p], black=MAT.CAB_BLACK;
  const coin=MAT.CAB_REF_COIN_DOOR;
- const lowerRef=MAT.CAB_REF_LOWER_FRONT;
+ const kick=MAT.CAB_REF_KICK_PLATE;
  const screen=MAT['SCREEN_'+String(screenIndex||17).padStart(2,'0')];
  // "42-inch equivalent" is interpreted against each supplied landscape CRT crop.
  // At the atlas' ~1.45-1.55 aspect ratios, a 35-inch physical width lands near a
@@ -357,13 +359,12 @@ function cabinetSolid(letter,slot,x,y,faceAng,title,url,screenIndex,target='_bla
    {role:'left-shell', w:2,d:31,of:-1,ro:-19,z0:0,z1:CABINET_DIM.screenBayTop,front:black,left:K('LEFT'),right:black,back:black,stretch:true},
    {role:'right-shell',w:2,d:31,of:-1,ro: 19,z0:0,z1:CABINET_DIM.screenBayTop,front:black,left:black,right:K('RIGHT'),back:black,stretch:true},
    {role:'lower-core',w:34,d:27,of:1.5,ro:0,z0:5,z1:36.5,front:black,left:black,right:black,back:black,stretch:true},
-   // Let the game-specific lower-front art do the visual framing instead of the-Cabinet.png.
+   // Game-specific FRONT art and plain shell own the lower face. the-Cabinet.png
+   // contributes hardware only, so its striped trim can never reach the controls.
    {role:'front-brand',w:32,d:1.7,of:14.2,ro:0,z0:2.5,z1:16,front:K('FRONT'),left:black,right:black,back:black,stretch:true},
-   // Fill the entire mid/lower front with the real cabinet body so there are no visual gaps.
-   {role:'lower-front',w:33.8,d:1.35,of:14.52,ro:0,z0:15.8,z1:38.2,front:lowerRef,left:black,right:black,back:black,stretch:true},
-   {role:'coin-door',w:8.4,d:1.12,of:14.9,ro:0,z0:17,z1:32.5,front:coin,left:black,right:black,back:black,stretch:true},
    {role:'coin-boss',w:13,d:0.9,of:14.54,ro:0,z0:15.5,z1:34.5,front:black,left:black,right:black,back:black,stretch:true},
-   {role:'kick-plate',w:33.8,d:1.28,of:14.48,ro:0,z0:32.2,z1:38.25,front:lowerRef,left:black,right:black,back:black,stretch:true},
+   {role:'coin-door',w:8.4,d:1.12,of:14.9,ro:0,z0:17,z1:32.5,front:coin,left:black,right:black,back:black,stretch:true},
+   {role:'kick-plate',w:33.8,d:1.28,of:14.48,ro:0,z0:5.2,z1:11.4,front:kick,left:black,right:black,back:black,stretch:true},
    // Keep only the top face; the old vertical lip in front of the controls is now effectively gone.
    {role:'control',w:CABINET_DIM.controlW,d:CABINET_DIM.controlD,of:8.0,ro:0,z0:controlBase,z1:controlTop,front:black,left:black,right:black,back:black,top:K('CONTROL'),stretch:true},
    {role:'jamb-left',w:1.65,d:hoodDepth,of:screenInset,ro:-17.9,z0:controlTop-.2,z1:CABINET_DIM.screenBayTop,front:black,left:black,right:black,back:black,stretch:true},
@@ -373,7 +374,8 @@ function cabinetSolid(letter,slot,x,y,faceAng,title,url,screenIndex,target='_bla
    // Slim black bezel only: no photographic edge texture competing with game art.
    {role:'bezel-left',w:1.2,d:hoodDepth,of:screenInset,ro:-17.45,z0:screenZ0-.9,z1:screenZ1+.9,front:black,left:black,right:black,back:black,stretch:true},
    {role:'bezel-right',w:1.2,d:hoodDepth,of:screenInset,ro:17.45,z0:screenZ0-.9,z1:screenZ1+.9,front:black,left:black,right:black,back:black,stretch:true},
-   {role:'bezel-bottom',w:37.2,d:hoodDepth,of:screenInset,ro:0,z0:screenZ0-1.1,z1:screenZ0+.55,front:black,left:black,right:black,back:black,stretch:true},
+   // No bottom crossbar: it projected over the rear of the control deck and
+   // read as a stray stripe from player-height viewing angles.
    {role:'bezel-top',w:37.2,d:15.5,of:2.4,ro:0,z0:screenZ1+.45,z1:CABINET_DIM.screenBayTop,front:black,left:black,right:black,back:black,stretch:true},
    {role:'marquee',w:40,d:18.5,of:-2,ro:0,z0:CABINET_DIM.screenBayTop,z1:CABINET_DIM.h,front:K('MARQUEE'),left:black,right:black,back:black,stretch:true},
    {role:'back-block',w:34,d:2.2,of:-18.5,ro:0,z0:0,z1:CABINET_DIM.h,front:black,left:black,right:black,back:black,stretch:true}
@@ -565,7 +567,7 @@ const REF_TESTS={
  exitCount:()=>map.exits.length===3,
  geometryCabinets:()=>map.cabinets.every(c=>c.parts&&c.parts.length>=16),
  cabinetCoinDoors:()=>map.cabinets.every(c=>{const p=c.parts.find(x=>x.role==='coin-door');return p&&p.front===MAT.CAB_REF_COIN_DOOR&&p.z0>=12&&p.z1<=34;}),
- cabinetClassicDetails:()=>map.cabinets.every(c=>['kick-plate','lower-front','bezel-left','bezel-right','bezel-bottom','bezel-top'].every(r=>c.parts.some(p=>p.role===r))),
+ cabinetClassicDetails:()=>map.cabinets.every(c=>['kick-plate','coin-door','bezel-left','bezel-right','bezel-top'].every(r=>c.parts.some(p=>p.role===r))),
  concaveCabinets:()=>map.cabinets.every(c=>c.parts.some(p=>p.role==='backdrop')&&c.parts.some(p=>p.role==='screen')&&c.parts.some(p=>p.role==='jamb-left')&&c.parts.some(p=>p.role==='jamb-right')),
  screenPairings:()=>map.cabinets.every(c=>c.screenIndex>=1&&c.screenIndex<=25),
  screenAtlasGrid:()=>SCREEN_ATLAS_META.count===25&&SCREEN_RECTS.length===25,
@@ -575,10 +577,12 @@ const REF_TESTS={
  screenAspectPreserved:()=>map.cabinets.every(c=>{const p=screenPart(c),r=screenRect(c.screenIndex);return p&&Math.abs(p.w/(p.z1-p.z0)-r[2]/r[3])<1e-6;}),
  screenMaterialPairings:()=>map.cabinets.every(c=>{const p=screenPart(c);return p&&MATERIALS[p.front]&&MATERIALS[p.front].name==='SCREEN_'+String(c.screenIndex).padStart(2,'0');}),
  cabinetProportions:()=>CABINET_DIM.control===40&&CABINET_DIM.screenBayTop===68.5&&CABINET_DIM.h===78&&CABINET_DIM.screenW===35,
- cabinetRefMinimal:()=>Object.keys(CABINET_REF_RECTS).join(',')==='COIN_DOOR,LOWER_FRONT',
+ cabinetRefMinimal:()=>Object.keys(CABINET_REF_RECTS).join(',')==='COIN_DOOR,KICK_PLATE',
  cabinetRefDeclared:()=>!!ASSET_NAMES.cabinetRef&&Array.isArray(ASSET_NAMES.cabinetRef)&&ASSET_NAMES.cabinetRef.some(x=>/the-Cabinet\.png$/i.test(x)),
  cabinetControlsHorizontal:()=>map.cabinets.every(c=>{const p=c.parts.find(x=>x.role==='control');return p&&p.top!=null&&(p.z1-p.z0)<=1.01;}),
- cabinetControlDeckClean:()=>map.cabinets.every(c=>!c.parts.some(p=>p.role==='control-pedestal')&&(()=>{const p=c.parts.find(x=>x.role==='control');return p&&(p.z1-p.z0)<=.03;})()),
+ cabinetControlDeckClean:()=>map.cabinets.every(c=>!c.parts.some(p=>p.role==='control-pedestal')&&(()=>{const p=c.parts.find(x=>x.role==='control');return p&&(p.z1-p.z0)<=.03&&p.top===MAT['SKIN_'+c.letter+'_CONTROL'];})()),
+ cabinetNoFrontCrossbar:()=>map.cabinets.every(c=>!c.parts.some(p=>p.role==='bezel-bottom'||p.role==='lower-front'||p.role==='control-pedestal')),
+ cabinetRefSurgical:()=>map.cabinets.every(c=>{const refs=c.parts.filter(p=>p.front===MAT.CAB_REF_COIN_DOOR||p.front===MAT.CAB_REF_KICK_PLATE);return refs.length===2&&refs.some(p=>p.role==='coin-door')&&refs.some(p=>p.role==='kick-plate')&&!c.parts.some(p=>p.role==='control'&&(p.front===MAT.CAB_REF_COIN_DOOR||p.front===MAT.CAB_REF_KICK_PLATE||p.top===MAT.CAB_REF_COIN_DOOR||p.top===MAT.CAB_REF_KICK_PLATE));}),
  officeEntryFlanked:()=>{const d=AUTHORING.officeEntry.find(x=>x.id==='OFFICE_DOOR'),w=AUTHORING.officeEntry.find(x=>x.id==='WHITEBOARD'),b=AUTHORING.officeEntry.find(x=>x.id==='BULLETIN');return !!(d&&w&&b&&w.x<d.x&&b.x>d.x&&w.y===d.y&&b.y===d.y);},
  tightCabinetPacking:()=>AUTHORING.packing.sideGap<=.5&&AUTHORING.packing.backGap<=.5,
  wallDressingsInteractive:()=>map.fixtures.filter(f=>f.kind==='dressing').length>=AUTHORING.posters.length+AUTHORING.wallPortals.length+2&&map.fixtures.filter(f=>f.kind==='dressing').every(f=>f.url&&f.cta),
