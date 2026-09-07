@@ -84,12 +84,11 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;image-renderi
 #modalActions{display:flex;justify-content:flex-end;gap:8px}
 #modalActions button{padding:9px 13px;border:1px solid rgba(113,184,255,.38);background:#080b12;color:#dceafa;font:11px "Courier New",monospace;letter-spacing:.09em;cursor:pointer}
 #modalActions #confirmBtn{border-color:rgba(255,201,95,.64);color:var(--gold)}
-#touchMove,#touchAct,#touchCrouch{display:none;position:fixed;z-index:15}
+#touchMove,#touchAct{display:none;position:fixed;z-index:15}
 #touchMove{left:18px;bottom:22px;width:112px;height:112px;border:1px solid rgba(113,184,255,.26);border-radius:50%;background:rgba(6,10,18,.18)}
 #touchKnob{position:absolute;left:35px;top:35px;width:42px;height:42px;border:1px solid rgba(255,255,255,.35);border-radius:50%;background:rgba(100,150,230,.16)}
 #touchAct{right:20px;bottom:28px;width:82px;height:82px;border-radius:50%;border:1px solid rgba(255,89,213,.42);background:rgba(18,7,20,.28);color:#fff;font:bold 10px "Courier New",monospace;letter-spacing:.08em}
-#touchCrouch{right:112px;bottom:38px;width:68px;height:68px;border-radius:50%;border:1px solid rgba(113,184,255,.38);background:rgba(6,10,18,.3);color:#ddecff;font:bold 9px "Courier New",monospace;letter-spacing:.07em}
-@media(pointer:coarse){#touchMove,#touchAct,#touchCrouch{display:block}#toolbar{bottom:120px}#prompt{bottom:124px}}
+@media(pointer:coarse){#touchMove,#touchAct{display:block}#toolbar{bottom:120px}#prompt{bottom:124px}}
 </style>
 </head>
 <body>
@@ -98,9 +97,9 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;image-renderi
 <div id="brand"><b>FTS ARCADE</b>CIRCULAR FLOOR / A-Z CABINET PORTAL HUB</div>
 <div id="prompt"></div>
 <div id="toolbar"><button id="mapBtn">MAP: OFF</button><button id="audioBtn">AUDIO: OFF</button></div>
-<div id="lock"><div><b>FTS ARCADE</b><br><span class="pink">THE RING</span><br><br>WASD MOVE / MOUSE LOOK / SHIFT RUN<br>SPACE JUMP / CTRL OR C CROUCH + SLIDE<br>E OR CLICK INTERACT / M MAP / N AUDIO<br><br>CLICK TO WALK IN</div></div>
+<div id="lock"><div><b>FTS ARCADE</b><br><span class="pink">THE RING</span><br><br>WASD MOVE / MOUSE LOOK / SHIFT RUN<br>E OR CLICK INTERACT / M MAP / N AUDIO<br><br>CLICK TO WALK IN</div></div>
 <div id="modal"><div id="modalCard"><div id="modalEyebrow">LEAVE FTS ARCADE?</div><div id="modalTitle"></div><div id="modalCopy"></div><div id="modalActions"><button id="cancelBtn">STAY HERE</button><button id="confirmBtn">LEAVE ARCADE</button></div></div></div>
-<div id="touchMove"><div id="touchKnob"></div></div><button id="touchCrouch">SLIDE</button><button id="touchAct">ENTER</button>
+<div id="touchMove"><div id="touchKnob"></div></div><button id="touchAct">ENTER</button>
 <script>
 'use strict';
 
@@ -108,21 +107,14 @@ const RUNTIME_ERRORS=[];
 addEventListener('error',e=>{if(e.error||e.message)RUNTIME_ERRORS.push(String(e.error&&e.error.stack||e.message||e.error));});
 addEventListener('unhandledrejection',e=>RUNTIME_ERRORS.push(String(e.reason&&e.reason.stack||e.reason||'unhandled rejection')));
 
-const VERSION='fts-arcade-floor-0.6.1-stage-sweep-trio-clearance';
+const VERSION='fts-arcade-floor-0.5.9-cabinet-face-cleanup';
 const TAU=Math.PI*2, DEG=Math.PI/180;
 // Dimensional contract: 1 engine unit = 1 inch.
 const RING={outer:430,inner:118,sides:32,ceil:132};
-const PLAYER_R=11,PLAYER_H=74,EYE=69,CROUCH_EYE=44,SPEED_WALK=84,SPEED_RUN=387.2,ACCEL=10; // 22 mph sprint
-const KINETIC={
- simHz:60,walkSpeed:SPEED_WALK,sprintSpeed:SPEED_RUN,crouchSpeed:58,strafeFactor:.90,reverseFactor:.72,
- accelLambda:12,brakeLambda:18,reverseLambda:10,baseFov:76*Math.PI/180,sprintFov:84*Math.PI/180,
- crouchFov:74*Math.PI/180,slideFov:82*Math.PI/180,jumpVel:132,gravity:386,
- slideMinSpeed:72,slideDuration:.72,slideBoost:1.06,slideFriction:2.7,slideSteerLambda:2.4,
- stanceLambda:18,fovLambda:8,maxCatchupSteps:8
-};
+const PLAYER_R=11,PLAYER_H=74,EYE=69,SPEED_WALK=84,SPEED_RUN=387.2,ACCEL=10; // 22 mph sprint
 const CABINET_DIM={w:40,d:40,h:78,control:40,screenBayTop:68.5,screenCenter:55.5,screenW:35,controlW:36.5,controlD:17.5};
 const AISLE={secondary:47.25,primary:70.87,merge:141.73}; // 1.2m / 1.8m / 3.6m references, inches
-const FOV=KINETIC.baseFov,NEAR=.6,SHADES=11,TILE_H=256,LOOK_UP=180,LOOK_DOWN=320;
+const FOV=76*Math.PI/180,NEAR=.6,SHADES=11,TILE_H=256,LOOK_UP=180,LOOK_DOWN=320;
 const PORTALS={
  lobby:'https://frymatic.us/FTSArcade/REDEYE',
  theaters:'https://frymatic.us/FTSArcade/REDEYE',
@@ -309,23 +301,21 @@ const CABINET_ROSTER=[
 // -----------------------------------------------------------------------------
 const AUTHORING={
  schema:'fts-arcade-floor-authoring-1',
- officeClearance:10,
  packing:{sideGap:.5,backGap:.5},
- stageRotateDeg:22.5,
  cabinetPods:[
   {front:['C','A'],back:['D','B'],cx:-300,cy:210,deg:60},
   {front:['F','G'],back:['E','H'],cx:300,cy:210,deg:120},
-  {front:['Q','S'],back:['R','T'],cx:168.75,cy:0,deg:90},
+  {front:['Q','S'],back:['R','T'],cx:148.75,cy:0,deg:90},
   {front:['U','N'],back:['V','M'],cx:-285,cy:-245,deg:135},
   {front:['Z','X'],back:['Y','W'],cx:285,cy:-245,deg:45}
  ],
  cabinetSingles:[
-  {letter:'O',x:-40.25,y:148.5,deg:90},
-  {letter:'I',x:0,y:148.5,deg:90},
-  {letter:'P',x:40.25,y:148.5,deg:90},
+  {letter:'O',x:-40.25,y:138.5,deg:90},
+  {letter:'I',x:0,y:138.5,deg:90},
+  {letter:'P',x:40.25,y:138.5,deg:90},
   {letter:'J',x:-168,y:0,deg:180},
-  {letter:'K',x:-148.5,y:40.25,deg:90},
-  {letter:'L',x:-148.5,y:-40.25,deg:-90}
+  {letter:'K',x:-138.5,y:20.25,deg:90},
+  {letter:'L',x:-138.5,y:-20.25,deg:-90}
  ],
  officeEntry:[
   {id:'WHITEBOARD',x:-53,y:-119,deg:-90,w:48,z0:36,z1:80,mat:'FIX_WHITEBOARD',label:'WHITEBOARD',url:'https://frymatic.us/FTSArcade/',cta:'VIEW ARCADE NOTES'},
@@ -410,17 +400,14 @@ function buildLevel(){
  AUTHORING.cabinetPods.forEach(pod4);
  AUTHORING.cabinetSingles.forEach(c=>addCab(c.letter,c.x,c.y,c.deg*DEG));
 
- // Counter-clockwise stage sweep: rotate the performance zone along the perimeter
- // to clear more north-floor dance space while preserving the ensemble.
- const stageDelta=(AUTHORING.stageRotateDeg||0)*DEG;
- const addStageBox=(id,x,y,ang,w,d,h,front,side)=>{const p=rotatePose(x,y,ang,stageDelta);const s=boxSolid(id,p.x,p.y,p.ang,w,d,h,front,side,{collision:true});map.solids.push(s);return s;};
- addStageBox('STAGE_BACK',0,366,-Math.PI/2,190,16,96,MAT.STAGE_RED,MAT.WALL_BLACK_GOLD);
- addStageBox('STAGE_LIP',0,326,-Math.PI/2,210,48,18,MAT.STAGE,MAT.WALL_GOLD);
- addStageBox('DJ_BOOTH',104,304,-Math.PI/2,62,26,45,MAT.DJ,MAT.WALL_RIB);
- addStageBox('SPEAKER_L',-82,337,-Math.PI/2,24,20,74,MAT.WALL_RIB,MAT.WALL_BLACK_GOLD);
- addStageBox('SPEAKER_R',82,337,-Math.PI/2,24,20,74,MAT.WALL_RIB,MAT.WALL_BLACK_GOLD);
+ // North performance zone. Stage/DJ geometry stays fixed; their dressings are portals below.
+ map.solids.push(boxSolid('STAGE_BACK',0,366,-Math.PI/2,190,16,96,MAT.STAGE_RED,MAT.WALL_BLACK_GOLD,{collision:true}));
+ map.solids.push(boxSolid('STAGE_LIP',0,326,-Math.PI/2,210,48,18,MAT.STAGE,MAT.WALL_GOLD,{collision:true}));
+ map.solids.push(boxSolid('DJ_BOOTH',104,304,-Math.PI/2,62,26,45,MAT.DJ,MAT.WALL_RIB,{collision:true}));
+ map.solids.push(boxSolid('SPEAKER_L',-82,337,-Math.PI/2,24,20,74,MAT.WALL_RIB,MAT.WALL_BLACK_GOLD,{collision:true}));
+ map.solids.push(boxSolid('SPEAKER_R',82,337,-Math.PI/2,24,20,74,MAT.WALL_RIB,MAT.WALL_BLACK_GOLD,{collision:true}));
 
- const addPortalPanel=(d)=>{const stageDress=d.id==='STAGE_SIGN'||d.id==='DJ_SIGN';const pose=stageDress?rotatePose(d.x,d.y,d.deg*DEG,stageDelta):{x:d.x,y:d.y,ang:d.deg*DEG};const p=panelSolid(d.id,pose.x,pose.y,pose.ang,d.w,d.z0,d.z1,MAT[d.mat],{kind:'dressing',label:d.label,url:d.url||'',cta:d.cta||'OPEN',target:'_blank'});map.solids.push(p);map.fixtures.push(p);if(p.url)map.targets.push(p);return p;};
+ const addPortalPanel=(d)=>{const p=panelSolid(d.id,d.x,d.y,d.deg*DEG,d.w,d.z0,d.z1,MAT[d.mat],{kind:'dressing',label:d.label,url:d.url||'',cta:d.cta||'OPEN',target:'_blank'});map.solids.push(p);map.fixtures.push(p);if(p.url)map.targets.push(p);return p;};
  AUTHORING.wallPortals.forEach(addPortalPanel);
  AUTHORING.officeEntry.forEach(d=>{if(d.id==='OFFICE_DOOR'){map.solids.push(panelSolid(d.id,d.x,d.y,d.deg*DEG,d.w,d.z0,d.z1,MAT[d.mat],{collision:false,label:d.label}));}else addPortalPanel(d);});
 
@@ -449,68 +436,17 @@ function buildLevel(){
 }
 
 function basis(a){return{f:{x:Math.cos(a),y:Math.sin(a)},r:{x:Math.sin(a),y:-Math.cos(a)}};}
-function rotatePose(x,y,ang,delta){const c=Math.cos(delta),s=Math.sin(delta);return{x:x*c-y*s,y:x*s+y*c,ang:ang+delta};}
 function obbPush(px,py,s,rad){const b=basis(s.ang),dx=px-s.x,dy=py-s.y,hf=s.d/2+rad,hr=s.w/2+rad;let fr=dx*b.f.x+dy*b.f.y,rr=dx*b.r.x+dy*b.r.y;if(Math.abs(fr)>=hf||Math.abs(rr)>=hr)return null;const pf=hf-Math.abs(fr),pr=hr-Math.abs(rr);if(pf<pr){const q=fr===0?1:Math.sign(fr);fr=q*hf;}else{const q=rr===0?1:Math.sign(rr);rr=q*hr;}return{x:s.x+b.f.x*fr+b.r.x*rr,y:s.y+b.f.y*fr+b.r.y*rr};}
-function solidAabb(s){const b=basis(s.ang),hx=Math.abs(b.f.x)*(s.d/2)+Math.abs(b.r.x)*(s.w/2),hy=Math.abs(b.f.y)*(s.d/2)+Math.abs(b.r.y)*(s.w/2);return{x1:s.x-hx,x2:s.x+hx,y1:s.y-hy,y2:s.y+hy};}
-function solidCorners(s){const b=basis(s.ang),hf=s.d/2,hr=s.w/2;return[
- {x:s.x+b.f.x*hf+b.r.x*hr,y:s.y+b.f.y*hf+b.r.y*hr},
- {x:s.x+b.f.x*hf-b.r.x*hr,y:s.y+b.f.y*hf-b.r.y*hr},
- {x:s.x-b.f.x*hf+b.r.x*hr,y:s.y-b.f.y*hf+b.r.y*hr},
- {x:s.x-b.f.x*hf-b.r.x*hr,y:s.y-b.f.y*hf-b.r.y*hr}
-];}
-function rangeOnAxis(pts,ax){let lo=Infinity,hi=-Infinity;for(const p of pts){const v=p.x*ax.x+p.y*ax.y;if(v<lo)lo=v;if(v>hi)hi=v;}return{lo,hi};}
-function solidsOverlap(a,b,eps=.01){const pa=solidCorners(a),pb=solidCorners(b),axes=[basis(a.ang).f,basis(a.ang).r,basis(b.ang).f,basis(b.ang).r];
- for(const ax of axes){const ra=rangeOnAxis(pa,ax),rb=rangeOnAxis(pb,ax);if(ra.hi<=rb.lo+eps||rb.hi<=ra.lo+eps)return false;}
- return true;
-}
-function cabinetClearOfOffice(c,gap=AUTHORING.officeClearance){const a=solidAabb(c),lim=RING.inner+gap;return a.x2<=-lim||a.x1>=lim||a.y2<=-lim||a.y1>=lim;}
 
 class Sim{
- constructor(map){
-  this.map=map;this.x=map.spawn.x;this.y=map.spawn.y;this.ang=map.spawn.ang;this.pitch=0;
-  this.vx=0;this.vy=0;this.vz=0;this.jumpZ=0;this.grounded=true;
-  this.sector=this.sectorAt(this.x,this.y);this.t=0;this.bob=0;this.steps=0;this.blocked=0;
-  this.stance=0;this.eyeHeight=EYE;this.slideT=0;this.slideDirX=0;this.slideDirY=0;this.currentFov=FOV;
- }
+ constructor(map){this.map=map;this.x=map.spawn.x;this.y=map.spawn.y;this.ang=map.spawn.ang;this.pitch=0;this.vx=0;this.vy=0;this.sector=this.sectorAt(this.x,this.y);this.t=0;this.bob=0;this.steps=0;this.blocked=0;}
  sectorAt(x,y){for(const s of this.map.sectors)if(Geom.pointInPoly(x,y,s.poly))return s.idx;return-1;}
- eyeZ(){const floor=this.sector>=0?this.map.sectors[this.sector].floor:0,bob=this.grounded&&this.slideT<=0?Math.sin(this.bob)*(1.2*(1-this.stance*.55)):0;return floor+this.eyeHeight+this.jumpZ+bob;}
+ eyeZ(){return(this.sector>=0?this.map.sectors[this.sector].floor:0)+EYE+Math.sin(this.bob)*1.2;}
  lineBlocks(ln){return ln.back<0||ln.blocking;}
  tryMove(nx,ny){const M=this.map;for(let pass=0;pass<3;pass++){let hit=false;for(const ln of M.lines){if(!this.lineBlocks(ln))continue;const a=M.verts[ln.v1],b=M.verts[ln.v2],c=Geom.closestOnSeg(nx,ny,a.x,a.y,b.x,b.y);if(c.d2>=PLAYER_R*PLAYER_R)continue;const d=Math.sqrt(c.d2)||.0001,p=(PLAYER_R-d)+.02;nx+=((nx-c.x)/d)*p;ny+=((ny-c.y)/d)*p;hit=true;}for(const s of M.solids){if(!s.collision)continue;const p=obbPush(nx,ny,s,PLAYER_R);if(p){nx=p.x;ny=p.y;hit=true;}}if(!hit)break;}
   const sec=this.sectorAt(nx,ny);if(sec<0){this.blocked++;return false;}this.x=nx;this.y=ny;this.sector=sec;return true;}
  look(dx,dy,sens){this.ang-=dx*sens;while(this.ang>Math.PI)this.ang-=TAU;while(this.ang<-Math.PI)this.ang+=TAU;this.pitch-=dy*sens*210;this.pitch=Math.max(-LOOK_DOWN,Math.min(LOOK_UP,this.pitch));}
- beginSlide(){
-  if(!this.grounded||this.slideT>0)return false;
-  const sp=Math.hypot(this.vx,this.vy);if(sp<KINETIC.slideMinSpeed)return false;
-  this.slideT=KINETIC.slideDuration;const inv=1/(sp||1);this.slideDirX=this.vx*inv;this.slideDirY=this.vy*inv;
-  this.vx*=KINETIC.slideBoost;this.vy*=KINETIC.slideBoost;return true;
- }
- jump(){if(!this.grounded)return false;this.grounded=false;this.vz=KINETIC.jumpVel;this.jumpZ=.01;this.slideT=0;return true;}
- step(dt,input){
-  this.t+=dt;const ca=Math.cos(this.ang),sa=Math.sin(this.ang);
-  let f=(input.fwd?1:0)-(input.back?1:0),r=(input.right?1:0)-(input.left?1:0),mag=Math.hypot(f,r);
-  if(mag>1){f/=mag;r/=mag;mag=1;}
-  const crouched=!!input.crouch&&this.slideT<=0,base=crouched?KINETIC.crouchSpeed:(input.run?KINETIC.sprintSpeed:KINETIC.walkSpeed);
-  const forward=f*base*(f<0?KINETIC.reverseFactor:1),strafe=r*base*KINETIC.strafeFactor;
-  const tx=ca*forward+sa*strafe,ty=sa*forward-ca*strafe;
-  if(this.slideT>0){
-   this.slideT=Math.max(0,this.slideT-dt);const decay=Math.exp(-KINETIC.slideFriction*dt);this.vx*=decay;this.vy*=decay;
-   if(mag>.01){const steer=(1-Math.exp(-KINETIC.slideSteerLambda*dt))*.34;this.vx+=(tx-this.vx)*steer;this.vy+=(ty-this.vy)*steer;}
-  }else{
-   const dot=this.vx*tx+this.vy*ty,lambda=mag<=.001?KINETIC.brakeLambda:(dot<0?KINETIC.reverseLambda:KINETIC.accelLambda),k=1-Math.exp(-lambda*dt);
-   this.vx+=(tx-this.vx)*k;this.vy+=(ty-this.vy)*k;
-  }
-  const ox=this.x,oy=this.y,nx=this.x+this.vx*dt,ny=this.y+this.vy*dt;
-  if(!this.tryMove(nx,ny)){
-   if(!this.tryMove(this.x+this.vx*dt,this.y))this.vx*=.18;
-   if(!this.tryMove(this.x,this.y+this.vy*dt))this.vy*=.18;
-  }
-  if(!this.grounded){this.jumpZ+=this.vz*dt;this.vz-=KINETIC.gravity*dt;if(this.jumpZ<=0){this.jumpZ=0;this.vz=0;this.grounded=true;}}
-  const moved=Math.hypot(this.x-ox,this.y-oy);if(moved>.001&&this.grounded&&this.slideT<=0)this.bob+=moved*.05*(crouched?.68:1);
-  else if(moved<=.001)this.bob+=(Math.round(this.bob/Math.PI)*Math.PI-this.bob)*(1-Math.exp(-8*dt));
-  const stanceTarget=(input.crouch||this.slideT>0)?1:0,stanceK=1-Math.exp(-KINETIC.stanceLambda*dt);this.stance+=(stanceTarget-this.stance)*stanceK;this.eyeHeight=EYE+(CROUCH_EYE-EYE)*this.stance;
-  const fovTarget=this.slideT>0?KINETIC.slideFov:(input.crouch?KINETIC.crouchFov:(input.run&&mag>.15?KINETIC.sprintFov:KINETIC.baseFov)),fovK=1-Math.exp(-KINETIC.fovLambda*dt);this.currentFov+=(fovTarget-this.currentFov)*fovK;
-  return this;
- }
+ step(dt,input){this.t+=dt;const sp=input.run?SPEED_RUN:SPEED_WALK,ca=Math.cos(this.ang),sa=Math.sin(this.ang);let wx=0,wy=0;if(input.fwd){wx+=ca;wy+=sa;}if(input.back){wx-=ca;wy-=sa;}if(input.right){wx+=sa;wy-=ca;}if(input.left){wx-=sa;wy+=ca;}const L=Math.hypot(wx,wy);if(L){wx=wx/L*sp;wy=wy/L*sp;}const k=Math.min(1,ACCEL*dt);this.vx+=(wx-this.vx)*k;this.vy+=(wy-this.vy)*k;const moved=Math.hypot(this.vx,this.vy)*dt;if(moved>.001){if(!this.tryMove(this.x+this.vx*dt,this.y+this.vy*dt)){if(!this.tryMove(this.x+this.vx*dt,this.y))this.tryMove(this.x,this.y+this.vy*dt);}this.bob+=moved*.05;}return this;}
 }
 
 class DrawLists{
@@ -522,7 +458,7 @@ class DrawLists{
 }
 
 const RenderCore={
- solve(sim,out,w,h){out.reset();const M=sim.map,S=M.sectors,V=M.verts,pd=Geom.projDist(w,sim.currentFov||FOV),hw=w/2,pz=sim.eyeZ(),hor=Math.round(h/2+sim.pitch),ca=Math.cos(sim.ang),sa=Math.sin(sim.ang);
+ solve(sim,out,w,h){out.reset();const M=sim.map,S=M.sectors,V=M.verts,pd=Geom.projDist(w,FOV),hw=w/2,pz=sim.eyeZ(),hor=Math.round(h/2+sim.pitch),ca=Math.cos(sim.ang),sa=Math.sin(sim.ang);
   if(!out._ytop||out._ytop[0].length!==w){out._ytop=[];out._ybot=[];for(let d=0;d<=28;d++){out._ytop.push(new Int16Array(w));out._ybot.push(new Int16Array(w));}out._pt=new Int16Array(w);out._pb=new Int16Array(w);out._ft=new Int16Array(w);out._fb=new Int16Array(w);out._ss=new Int16Array(h+8);out._nt=new Int16Array(w);out._nb=new Int16Array(w);}
   out._ytop[0].fill(0);out._ybot[0].fill(h-1);const q=[{sec:sim.sector<0?0:sim.sector,x0:0,x1:w-1,depth:0}],seen=Array.from({length:S.length},()=>new Uint32Array(Math.ceil(Math.ceil(w/16)/32)));let jobs=0;
   const seenJob=j=>{const b0=j.x0>>4,b1=j.x1>>4;let fresh=false;for(let b=b0;b<=b1;b++){const wi=b>>5,bit=1<<(b&31);if(!(seen[j.sec][wi]&bit)){seen[j.sec][wi]|=bit;fresh=true;}}return!fresh;};
@@ -584,7 +520,7 @@ function paint(sim,d){const v=d.view,w=v.w,h=v.h;ctx.fillStyle='#03050a';ctx.fil
 
 function drawMap(sim,w,h){const sc=Math.min(w,h)*.34/RING.outer,ox=w-RING.outer*sc-16,oy=RING.outer*sc+16,P=(x,y)=>[ox+x*sc,oy-y*sc];ctx.fillStyle='rgba(2,5,10,.72)';ctx.beginPath();ctx.arc(ox,oy,RING.outer*sc+8,0,TAU);ctx.fill();for(const ln of sim.map.lines){const a=sim.map.verts[ln.v1],b=sim.map.verts[ln.v2],p=P(a.x,a.y),q=P(b.x,b.y);ctx.strokeStyle=ln.back>=0?'rgba(80,140,220,.25)':'rgba(210,220,235,.65)';ctx.lineWidth=ln.back>=0?.6:1.2;ctx.beginPath();ctx.moveTo(p[0],p[1]);ctx.lineTo(q[0],q[1]);ctx.stroke();}for(const c of sim.map.cabinets){const p=P(c.x,c.y);ctx.fillStyle='rgba(255,90,210,.74)';ctx.fillRect(p[0]-2,p[1]-2,4,4);ctx.fillStyle='rgba(255,255,255,.9)';ctx.font='5px monospace';ctx.fillText(c.letter,p[0]+3,p[1]-3);}for(const f of sim.map.fixtures){const p=P(f.x,f.y);ctx.fillStyle='rgba(100,190,255,.55)';ctx.fillRect(p[0]-1.5,p[1]-1.5,3,3);}for(const a of sim.map.ads){const p=P(a.x,a.y);ctx.fillStyle='rgba(255,201,95,.82)';ctx.fillRect(p[0]-2,p[1]-2,4,4);}for(const e of sim.map.exits){const p=P(e.x,e.y);ctx.fillStyle='rgba(255,91,69,.95)';ctx.fillRect(p[0]-3,p[1]-3,6,6);}const p=P(sim.x,sim.y);ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(p[0],p[1]);ctx.lineTo(p[0]+Math.cos(sim.ang)*12,p[1]-Math.sin(sim.ang)*12);ctx.stroke();ctx.fillStyle='#fff';ctx.fillRect(p[0]-2,p[1]-2,4,4);}
 
-const map=buildLevel(),MAP_ERRORS=MapBuilder.validate(map),sim=new Sim(map);const input={fwd:0,back:0,left:0,right:0,run:0,crouch:0,jump:0};
+const map=buildLevel(),MAP_ERRORS=MapBuilder.validate(map),sim=new Sim(map);const input={fwd:0,back:0,left:0,right:0,run:0};
 
 function interactionPoint(t){const b=basis(t.ang),d=(t.d||10)/2+24;return{x:t.x+b.f.x*d,y:t.y+b.f.y*d};}
 function findTarget(){const ca=Math.cos(sim.ang),sa=Math.sin(sim.ang),all=map.targets;let best=null,bscore=1e9;for(const t of all){const p=interactionPoint(t),dx=p.x-sim.x,dy=p.y-sim.y,dist=Math.hypot(dx,dy);if(dist>78)continue;const dot=(dx*ca+dy*sa)/(dist||1);if(dot<.28)continue;const score=dist-dot*16;if(score<bscore){bscore=score;best=t;}}return best;}
@@ -597,8 +533,8 @@ confirmBtn.addEventListener('click',leaveArcade);cancelBtn.addEventListener('cli
 
 function resize(){const w=innerWidth||960,h=innerHeight||600;RSCALE=h>900?1.9:1.55;RW=Math.max(240,Math.round(w/RSCALE));RH=Math.max(150,Math.round(h/RSCALE));canvas.width=RW;canvas.height=RH;canvas.style.width=w+'px';canvas.style.height=h+'px';dl=new DrawLists(RW,RH);ctx.imageSmoothingEnabled=false;}
 const KEY={KeyW:'fwd',ArrowUp:'fwd',KeyS:'back',ArrowDown:'back',KeyA:'left',KeyD:'right'};
-addEventListener('keydown',e=>{if(modal.classList.contains('show')){if(e.code==='Enter'||e.code==='KeyY')leaveArcade();if(e.code==='Escape'||e.code==='KeyN')closeConfirm(true);return;}if(KEY[e.code]){input[KEY[e.code]]=1;e.preventDefault();}if(e.code==='ShiftLeft'||e.code==='ShiftRight')input.run=1;if(e.code==='ControlLeft'||e.code==='ControlRight'||e.code==='KeyC'){input.crouch=1;if(!e.repeat)sim.beginSlide();e.preventDefault();}if(e.code==='Space'){input.jump=1;if(!e.repeat)sim.jump();e.preventDefault();}if(e.code==='KeyE')openConfirm(activeTarget);if(e.code==='KeyM'){showMap=!showMap;mapBtn.textContent='MAP: '+(showMap?'ON':'OFF');mapBtn.classList.toggle('on',showMap);}if(e.code==='KeyN')toggleAudio();});
-addEventListener('keyup',e=>{if(KEY[e.code])input[KEY[e.code]]=0;if(e.code==='ShiftLeft'||e.code==='ShiftRight')input.run=0;if(e.code==='ControlLeft'||e.code==='ControlRight'||e.code==='KeyC')input.crouch=0;if(e.code==='Space')input.jump=0;});
+addEventListener('keydown',e=>{if(modal.classList.contains('show')){if(e.code==='Enter'||e.code==='KeyY')leaveArcade();if(e.code==='Escape'||e.code==='KeyN')closeConfirm(true);return;}if(KEY[e.code]){input[KEY[e.code]]=1;e.preventDefault();}if(e.code==='ShiftLeft'||e.code==='ShiftRight')input.run=1;if(e.code==='KeyE')openConfirm(activeTarget);if(e.code==='KeyM'){showMap=!showMap;mapBtn.textContent='MAP: '+(showMap?'ON':'OFF');mapBtn.classList.toggle('on',showMap);}if(e.code==='KeyN')toggleAudio();});
+addEventListener('keyup',e=>{if(KEY[e.code])input[KEY[e.code]]=0;if(e.code==='ShiftLeft'||e.code==='ShiftRight')input.run=0;});
 addEventListener('mousemove',e=>{if(document.pointerLockElement===canvas&&!modal.classList.contains('show'))sim.look(e.movementX||0,e.movementY||0,.0021);});
 canvas.addEventListener('mousedown',e=>{if(e.button!==0)return;if(coarse())return;if(document.pointerLockElement!==canvas){canvas.requestPointerLock&&canvas.requestPointerLock();return;}if(activeTarget)openConfirm(activeTarget);});
 document.addEventListener('pointerlockchange',()=>{if(coarse())return;lockEl.classList.toggle('hidden',document.pointerLockElement===canvas||modal.classList.contains('show'));});
@@ -610,15 +546,13 @@ const AudioMini={ctx:null,on:false,master:null,osc:null,lfo:null,init(){if(this.
 function toggleAudio(){AudioMini.set(!AudioMini.on);audioBtn.textContent='AUDIO: '+(AudioMini.on?'ON':'OFF');audioBtn.classList.toggle('on',AudioMini.on);}audioBtn.addEventListener('click',toggleAudio);
 
 // Coarse-pointer controls: left stick moves, right-side drag looks, ENTER uses the active portal.
-const touchMove=document.getElementById('touchMove'),touchKnob=document.getElementById('touchKnob'),touchAct=document.getElementById('touchAct'),touchCrouch=document.getElementById('touchCrouch');let movePid=null,lookPid=null,lastLook=null;
+const touchMove=document.getElementById('touchMove'),touchKnob=document.getElementById('touchKnob'),touchAct=document.getElementById('touchAct');let movePid=null,lookPid=null,lastLook=null;
 function stickFromEvent(e){const r=touchMove.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,dx=e.clientX-cx,dy=e.clientY-cy,L=Math.hypot(dx,dy),m=Math.min(36,L),nx=L?dx/L:0,ny=L?dy/L:0;touchKnob.style.transform='translate('+(nx*m)+'px,'+(ny*m)+'px)';input.fwd=ny<-.2?1:0;input.back=ny>.2?1:0;input.left=nx<-.2?1:0;input.right=nx>.2?1:0;}
 touchMove.addEventListener('pointerdown',e=>{movePid=e.pointerId;touchMove.setPointerCapture(e.pointerId);stickFromEvent(e);});touchMove.addEventListener('pointermove',e=>{if(e.pointerId===movePid)stickFromEvent(e);});touchMove.addEventListener('pointerup',e=>{if(e.pointerId!==movePid)return;movePid=null;touchKnob.style.transform='';input.fwd=input.back=input.left=input.right=0;});
 canvas.addEventListener('pointerdown',e=>{if(e.pointerType==='touch'&&e.clientX>innerWidth*.42){lookPid=e.pointerId;lastLook={x:e.clientX,y:e.clientY};canvas.setPointerCapture&&canvas.setPointerCapture(e.pointerId);}});canvas.addEventListener('pointermove',e=>{if(e.pointerId===lookPid&&lastLook){sim.look(e.clientX-lastLook.x,e.clientY-lastLook.y,.004);lastLook={x:e.clientX,y:e.clientY};}});canvas.addEventListener('pointerup',e=>{if(e.pointerId===lookPid){lookPid=null;lastLook=null;}});touchAct.addEventListener('click',()=>openConfirm(activeTarget));
-touchCrouch.addEventListener('pointerdown',e=>{input.crouch=1;sim.beginSlide();touchCrouch.setPointerCapture&&touchCrouch.setPointerCapture(e.pointerId);e.preventDefault();});
-touchCrouch.addEventListener('pointerup',e=>{input.crouch=0;e.preventDefault();});touchCrouch.addEventListener('pointercancel',()=>{input.crouch=0;});
 
-let last=0,fpsAcc=0,fpsN=0,fps=0,frames=0,simAcc=0;
-function loop(ts){const frameDt=Math.min((ts-last)/1000||.016,.12);last=ts;simAcc=Math.min(.20,simAcc+frameDt);const fixedDt=1/KINETIC.simHz;let simSteps=0;while(simAcc>=fixedDt&&simSteps<KINETIC.maxCatchupSteps){sim.step(fixedDt,input);simAcc-=fixedDt;simSteps++;}RenderCore.solve(sim,dl,RW,RH);paint(sim,dl);if(showMap)drawMap(sim,RW,RH);updatePrompt();fpsAcc+=frameDt;fpsN++;if(fpsAcc>.45){fps=fpsN/fpsAcc;fpsAcc=0;fpsN=0;}if((frames++&7)===0){const moveState=sim.slideT>0?'SLIDE':input.crouch?'CROUCH':input.run?'RUN':'WALK';telemetry.textContent=VERSION+' | '+RW+'x'+RH+' | '+fps.toFixed(0)+' fps | '+moveState+' | SEC '+(sim.sector+1)+'/'+map.sectors.length+' | CAB '+map.cabinets.length+' A-Z | FIX '+map.fixtures.length+' | ADS '+map.ads.length+' | VIS '+dl.stats.sectors+'s '+dl.stats.solidFaces+'g | ART '+(IMG.ready?'ATLAS':'FALLBACK')+(MAP_ERRORS.length?' | MAP ERR '+MAP_ERRORS.length:'');}requestAnimationFrame(loop);}
+let last=0,fpsAcc=0,fpsN=0,fps=0,frames=0;
+function loop(ts){const dt=Math.min((ts-last)/1000||.016,.05);last=ts;sim.step(dt,input);RenderCore.solve(sim,dl,RW,RH);paint(sim,dl);if(showMap)drawMap(sim,RW,RH);updatePrompt();fpsAcc+=dt;fpsN++;if(fpsAcc>.45){fps=fpsN/fpsAcc;fpsAcc=0;fpsN=0;}if((frames++&7)===0)telemetry.textContent=VERSION+' | '+RW+'x'+RH+' | '+fps.toFixed(0)+' fps | SEC '+(sim.sector+1)+'/'+map.sectors.length+' | CAB '+map.cabinets.length+' A-Z | FIX '+map.fixtures.length+' | ADS '+map.ads.length+' | VIS '+dl.stats.sectors+'s '+dl.stats.solidFaces+'g | ART '+(IMG.ready?'ATLAS':'FALLBACK')+(MAP_ERRORS.length?' | MAP ERR '+MAP_ERRORS.length:'');requestAnimationFrame(loop);}
 addEventListener('resize',resize);
 Promise.all([
  loadImage(ASSET_FILES.world,'world'),loadImage(ASSET_FILES.cab1,'Cabinets01'),loadImage(ASSET_FILES.cab2,'Cabinets02'),loadImage(ASSET_FILES.cab3,'Cabinets03'),loadImage(ASSET_FILES.cab4,'Cabinets04'),loadImage(ASSET_FILES.screen,'screen'),loadImage(ASSET_FILES.fixture,'fixture'),loadImage(ASSET_FILES.cabinetRef,'the-Cabinet')
@@ -649,17 +583,10 @@ const REF_TESTS={
  cabinetControlDeckClean:()=>map.cabinets.every(c=>!c.parts.some(p=>p.role==='control-pedestal')&&(()=>{const p=c.parts.find(x=>x.role==='control');return p&&(p.z1-p.z0)<=.03&&p.top===MAT['SKIN_'+c.letter+'_CONTROL'];})()),
  cabinetNoFrontCrossbar:()=>map.cabinets.every(c=>!c.parts.some(p=>p.role==='bezel-bottom'||p.role==='lower-front'||p.role==='control-pedestal')),
  cabinetRefSurgical:()=>map.cabinets.every(c=>{const refs=c.parts.filter(p=>p.front===MAT.CAB_REF_COIN_DOOR||p.front===MAT.CAB_REF_KICK_PLATE);return refs.length===2&&refs.some(p=>p.role==='coin-door')&&refs.some(p=>p.role==='kick-plate')&&!c.parts.some(p=>p.role==='control'&&(p.front===MAT.CAB_REF_COIN_DOOR||p.front===MAT.CAB_REF_KICK_PLATE||p.top===MAT.CAB_REF_COIN_DOOR||p.top===MAT.CAB_REF_KICK_PLATE));}),
- cabinetOfficeClearance:()=>AUTHORING.officeClearance>=8&&map.cabinets.every(c=>cabinetClearOfOffice(c,AUTHORING.officeClearance)),
- westTrioNoOverlap:()=>{const j=map.cabinets.find(c=>c.letter==='J'),k=map.cabinets.find(c=>c.letter==='K'),l=map.cabinets.find(c=>c.letter==='L');return !!(j&&k&&l&&!solidsOverlap(j,k)&&!solidsOverlap(j,l)&&!solidsOverlap(k,l));},
- stageSweptCCW:()=>{const sb=map.solids.find(s=>s.id==='STAGE_BACK'),dj=map.solids.find(s=>s.id==='DJ_BOOTH');return AUTHORING.stageRotateDeg>0&&!!(sb&&dj&&sb.x<-80&&dj.x<40&&sb.ang>-Math.PI/2);},
  officeEntryFlanked:()=>{const d=AUTHORING.officeEntry.find(x=>x.id==='OFFICE_DOOR'),w=AUTHORING.officeEntry.find(x=>x.id==='WHITEBOARD'),b=AUTHORING.officeEntry.find(x=>x.id==='BULLETIN');return !!(d&&w&&b&&w.x<d.x&&b.x>d.x&&w.y===d.y&&b.y===d.y);},
  tightCabinetPacking:()=>AUTHORING.packing.sideGap<=.5&&AUTHORING.packing.backGap<=.5,
  wallDressingsInteractive:()=>map.fixtures.filter(f=>f.kind==='dressing').length>=AUTHORING.posters.length+AUTHORING.wallPortals.length+2&&map.fixtures.filter(f=>f.kind==='dressing').every(f=>f.url&&f.cta),
  runSpeed22mph:()=>Math.abs(SPEED_RUN-387.2)<.001,
- kineticMovement:()=>KINETIC.strafeFactor===.90&&KINETIC.reverseFactor===.72&&KINETIC.accelLambda===12&&KINETIC.brakeLambda===18&&KINETIC.reverseLambda===10,
- crouchSlideSystem:()=>CROUCH_EYE<EYE&&KINETIC.slideDuration>.5&&typeof sim.beginSlide==='function'&&'stance' in sim&&'slideT' in sim,
- jumpSystem:()=>KINETIC.jumpVel>0&&KINETIC.gravity>0&&typeof sim.jump==='function'&&'jumpZ' in sim,
- fixedStepMovement:()=>KINETIC.simHz===60&&KINETIC.maxCatchupSteps>=6,
  ringSectors:()=>map.sectors.length===RING.sides,
  spawnInsideMap:()=>sim.sectorAt(map.spawn.x,map.spawn.y)>=0,
  fixturesPresent:()=>map.fixtures.some(f=>f.id==='TOKEN_VEND')&&map.fixtures.some(f=>f.id==='JUKEBOX')&&map.fixtures.some(f=>f.id==='WHITEBOARD')&&map.fixtures.some(f=>f.id==='BULLETIN'),
@@ -680,7 +607,7 @@ function runRefTests(){
  }
  return{version:VERSION,pass:failures.length===0,passed:Object.values(results).filter(v=>v===true).length,total:Object.keys(REF_TESTS).length,failures,results,mapErrors:MAP_ERRORS.slice(),assetErrors:IMG.errors.slice(),runtimeErrors:RUNTIME_ERRORS.slice(),screenAtlas:SCREEN_ATLAS_META};
 }
-window.__FTS_ARCADE__={VERSION,map,sim,MapBuilder,Geom,RenderCore,DrawLists,MATERIALS,MAP_ERRORS,CABINET_ROSTER,CABINET_DIM,AISLE,PORTALS,ASSET_NAMES,CABINET_PART_RECTS,CABINET_REF_RECTS,SCREEN_ATLAS_META,SCREEN_RECTS,screenRect,AUTHORING,KINETIC,solidAabb,cabinetClearOfOffice,exportAuthoring:()=>JSON.stringify(AUTHORING,null,2),tests:REF_TESTS,runTests:runRefTests};
+window.__FTS_ARCADE__={VERSION,map,sim,MapBuilder,Geom,RenderCore,DrawLists,MATERIALS,MAP_ERRORS,CABINET_ROSTER,CABINET_DIM,AISLE,PORTALS,ASSET_NAMES,CABINET_PART_RECTS,CABINET_REF_RECTS,SCREEN_ATLAS_META,SCREEN_RECTS,screenRect,AUTHORING,exportAuthoring:()=>JSON.stringify(AUTHORING,null,2),tests:REF_TESTS,runTests:runRefTests};
 const qs=new URLSearchParams(location.search);
 if(qs.get('preview')==='1')lockEl.classList.add('hidden');
 if(qs.get('map')==='1'){showMap=true;mapBtn.textContent='MAP: ON';mapBtn.classList.add('on');}
