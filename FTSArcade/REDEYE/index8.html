@@ -583,99 +583,16 @@ function toggleDrawer(id){
     e.preventDefault();setDevMode(!devModeEnabled);
   }
 });
-/* Brazen URL Incantations -------------------------------------------------
-   These are intentionally discoverable, composable conveniences for this
-   static/open-source build. They are not cryptographic entitlements.
-
-   Canonical examples:
-     ?frymatic=6
-     ?invite=1
-     ?admission=1
-     ?vip=1
-     ?ducats=100
-     ?fob=gym
-     ?fob=gym&fob=rooftop
-     ?fob=gym,cowork,rooftop
-     ?fob=all
-     ?mark=windfish
-     ?scene=rooftop
-     ?backroom=7
-     ?backroom=7&origin=unlistedRoom
-     ?secret=service
-     ?secret=unlisted
-     ?dev=1
-
-   Navigation precedence when several are present:
-     backroom > scene > secret
------------------------------------------------------------------------- */
-const BRAZEN_TRUE=new Set(['1','true','yes','on']);
-function brazenTruthy(v){return BRAZEN_TRUE.has(String(v||'').toLowerCase())}
-function brazenVisit(scene){
-  if(!SCENES[scene])return false;
-  state.scene=scene;if(!state.visited.includes(scene))state.visited.push(scene);return true
-}
-function applyUrlIncantations(){
-  const q=new URLSearchParams(location.search);
-  const invoked=[];
-
-  /* The Six: one canonical legendary artifact, not six stack copies. */
-  if(q.get('frymatic')==='6'){
-    if(!state.inventory.includes('frymatic'))state.inventory.push('frymatic');
-    state.flags.frymaticSigil=6;
-    invoked.push('frymatic:6');
-  }
-
-  if(brazenTruthy(q.get('invite'))){state.entitlements.vip.invited=true;invoked.push('invite')}
-  if(brazenTruthy(q.get('admission'))){state.entitlements.admission.purchased=true;state.entitlements.admission.redeemed=false;invoked.push('admission')}
-  if(brazenTruthy(q.get('vip'))){state.entitlements.vip.purchased=true;state.entitlements.vip.redeemed=false;invoked.push('vip')}
-  if(brazenTruthy(q.get('tournament'))){state.flags.ftsTournamentSeries=true;invoked.push('tournament')}
-
-  if(q.has('ducats')){
-    const n=Math.min(1000000,Math.max(0,Math.floor(Number(q.get('ducats'))||0)));
-    if(n>0){state.wallet.ducats+=n;state.wallet.lifetimeDucats+=n;invoked.push('ducats:'+n)}
-  }
-
-  const requestedFobs=q.getAll('fob').flatMap(v=>v.split(',')).map(v=>v.trim()).filter(Boolean);
-  if(requestedFobs.includes('all')){
-    Object.keys(state.access).forEach(k=>state.access[k]=true);invoked.push('fob:all');
-  }else{
-    requestedFobs.forEach(name=>{if(name in state.access){state.access[name]=true;invoked.push('fob:'+name)}});
-  }
-
-  if(q.has('mark')){
-    const mark=String(q.get('mark')||'').trim().toLowerCase().replace(/[^a-z0-9_-]/g,'').slice(0,64);
-    if(mark){state.flags.playerSignal=mark;invoked.push('mark:'+mark)}
-  }
-
-  /* Scene placement: strongest spell wins. */
-  const depth=Math.min(9999,Math.max(0,Math.floor(Number(q.get('backroom'))||0)));
-  if(depth>0){
-    const origin=q.get('origin');
-    state.backrooms.origin=(origin&&SCENES[origin])?origin:(state.backrooms.origin||'linkServiceRoom');
-    state.backrooms.depth=depth;state.scene='backroom';invoked.push('backroom:'+depth);
-  }else if(q.has('scene')){
-    const scene=q.get('scene');
-    if(brazenVisit(scene))invoked.push('scene:'+scene);
-  }else{
-    const secret=q.get('secret');
-    if(secret==='service'&&brazenVisit('linkServiceRoom'))invoked.push('secret:service');
-    if(secret==='unlisted'&&brazenVisit('unlistedRoom'))invoked.push('secret:unlisted');
-  }
-
-  if(invoked.length){
-    save();
-    addLog('URL incantation → '+invoked.join(' · '));
-  }
-  return invoked;
-}
-window.applyRedEyeUrlIncantations=applyUrlIncantations;
-window.redEyeUrlIncantations=()=>({
-  frymatic:'?frymatic=6',invite:'?invite=1',admission:'?admission=1',vip:'?vip=1',
-  ducats:'?ducats=100',fob:'?fob=gym',mark:'?mark=windfish',scene:'?scene=rooftop',
-  backroom:'?backroom=7',secret:'?secret=service',dev:'?dev=1'
-});
-
-applyUrlIncantations();
+/* URL backdoors are composable:
+   ?dev=1
+   ?secret=service
+   ?secret=unlisted
+   ?dev=1&secret=service
+   ?dev=1&secret=unlisted
+*/
+const secretParam=new URLSearchParams(location.search).get('secret');
+if(secretParam==='service'){state.scene='linkServiceRoom';if(!state.visited.includes('linkServiceRoom'))state.visited.push('linkServiceRoom');save()}
+if(secretParam==='unlisted'){state.scene='unlistedRoom';if(!state.visited.includes('unlistedRoom'))state.visited.push('unlistedRoom');save()}
 applyDevMode();loadImages().then(()=>{addLog('Static atlas build loaded.');render()}).catch(err=>{$('title').textContent='Asset load error';$('desc').textContent='Check that the assets/ folder is deployed beside index.html.';console.error(err)});
 </script>
 </body>
