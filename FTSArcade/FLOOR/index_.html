@@ -13,7 +13,7 @@
     }
     </script>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <link rel="preload" as="image" href="fts-arcade-world-atlas.png">
 <link rel="preload" as="image" href="Cabinets01.png">
 <link rel="preload" as="image" href="Cabinets02.png">
@@ -22,7 +22,7 @@
 <link rel="preload" as="image" href="fts_sprites.png">
 <link rel="preload" as="image" href="fts-arcade-fixture-atlas.png">
 <link rel="preload" as="image" href="the-Cabinet.png">
-<title>FTS Arcade Floor 0.6.2 Stable Plane Mapping</title>
+<title>FTS Arcade Floor 0.6.4 Deterministic iOS Plane Raster</title>
 <!-- 0.5.2 art fit: external world/fixture/screen atlases + Cabinets01-Cabinets04, exact per-CRT crops. -->
 
 <!-- ── FA3D Meta ─────────────────────────────────────────── -->
@@ -58,7 +58,7 @@
 <style>
 :root{--pink:#ff59d5;--blue:#71b8ff;--gold:#ffc95f;--red:#ff5b45;--ink:#05070b;--panel:rgba(7,9,14,.88)}
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{width:100%;height:100%;background:#04060a;overflow:hidden;user-select:none;touch-action:none}
+html,body{width:100%;height:100%;background:#04060a;overflow:hidden;overscroll-behavior:none;user-select:none;touch-action:none;-webkit-user-select:none}
 body{font-family:"Courier New",monospace}
 canvas{position:fixed;inset:0;width:100%;height:100%;display:block;image-rendering:pixelated;cursor:crosshair}
 #telemetry{position:fixed;z-index:7;left:12px;top:10px;color:rgba(170,202,235,.72);font:10px/1.55 "Courier New",monospace;letter-spacing:.08em;text-shadow:0 0 7px rgba(35,105,255,.35);pointer-events:none}
@@ -85,11 +85,11 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;image-renderi
 #modalActions button{padding:9px 13px;border:1px solid rgba(113,184,255,.38);background:#080b12;color:#dceafa;font:11px "Courier New",monospace;letter-spacing:.09em;cursor:pointer}
 #modalActions #confirmBtn{border-color:rgba(255,201,95,.64);color:var(--gold)}
 #touchMove,#touchAct,#touchCrouch{display:none;position:fixed;z-index:15}
-#touchMove{left:18px;bottom:22px;width:112px;height:112px;border:1px solid rgba(113,184,255,.26);border-radius:50%;background:rgba(6,10,18,.18)}
+#touchMove{left:max(18px,env(safe-area-inset-left));bottom:max(22px,env(safe-area-inset-bottom));width:112px;height:112px;border:1px solid rgba(113,184,255,.26);border-radius:50%;background:rgba(6,10,18,.18)}
 #touchKnob{position:absolute;left:35px;top:35px;width:42px;height:42px;border:1px solid rgba(255,255,255,.35);border-radius:50%;background:rgba(100,150,230,.16)}
-#touchAct{right:20px;bottom:28px;width:82px;height:82px;border-radius:50%;border:1px solid rgba(255,89,213,.42);background:rgba(18,7,20,.28);color:#fff;font:bold 10px "Courier New",monospace;letter-spacing:.08em}
-#touchCrouch{right:112px;bottom:38px;width:68px;height:68px;border-radius:50%;border:1px solid rgba(113,184,255,.38);background:rgba(6,10,18,.3);color:#ddecff;font:bold 9px "Courier New",monospace;letter-spacing:.07em}
-@media(pointer:coarse){#touchMove,#touchAct,#touchCrouch{display:block}#toolbar{bottom:120px}#prompt{bottom:124px}}
+#touchAct{right:max(20px,env(safe-area-inset-right));bottom:max(28px,env(safe-area-inset-bottom));width:82px;height:82px;border-radius:50%;border:1px solid rgba(255,89,213,.42);background:rgba(18,7,20,.28);color:#fff;font:bold 10px "Courier New",monospace;letter-spacing:.08em}
+#touchCrouch{right:max(112px,calc(env(safe-area-inset-right) + 92px));bottom:max(38px,calc(env(safe-area-inset-bottom) + 10px));width:68px;height:68px;border-radius:50%;border:1px solid rgba(113,184,255,.38);background:rgba(6,10,18,.3);color:#ddecff;font:bold 9px "Courier New",monospace;letter-spacing:.07em}
+@media(pointer:coarse){#touchMove,#touchAct,#touchCrouch{display:block}#toolbar{bottom:calc(120px + env(safe-area-inset-bottom))}#prompt{bottom:calc(124px + env(safe-area-inset-bottom))}#telemetry{font-size:8px;max-width:72vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#brand{display:none}}
 </style>
 </head>
 <body>
@@ -98,7 +98,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;image-renderi
 <div id="brand"><b>FTS ARCADE</b>CIRCULAR FLOOR / A-Z CABINET PORTAL HUB</div>
 <div id="prompt"></div>
 <div id="toolbar"><button id="mapBtn">MAP: OFF</button><button id="audioBtn">AUDIO: OFF</button></div>
-<div id="lock"><div><b>FTS ARCADE</b><br><span class="pink">THE RING</span><br><br>WASD MOVE / MOUSE LOOK / SHIFT RUN<br>SPACE JUMP / CTRL OR C CROUCH + SLIDE<br>E OR CLICK INTERACT / M MAP / N AUDIO<br><br>CLICK TO WALK IN</div></div>
+<div id="lock"><div><b>FTS ARCADE</b><br><span class="pink">THE RING</span><br><br>WASD MOVE / MOUSE LOOK / SHIFT RUN<br>SPACE JUMP / CTRL OR C CROUCH + SLIDE<br>E OR CLICK INTERACT / M MAP / N AUDIO<br><span style="opacity:.55">DEV: K KALEIDO / P PLANE BACKEND</span><br><br>CLICK TO WALK IN</div></div>
 <div id="modal"><div id="modalCard"><div id="modalEyebrow">LEAVE FTS ARCADE?</div><div id="modalTitle"></div><div id="modalCopy"></div><div id="modalActions"><button id="cancelBtn">STAY HERE</button><button id="confirmBtn">LEAVE ARCADE</button></div></div></div>
 <div id="touchMove"><div id="touchKnob"></div></div><button id="touchCrouch">SLIDE</button><button id="touchAct">ENTER</button>
 <script>
@@ -108,7 +108,7 @@ const RUNTIME_ERRORS=[];
 addEventListener('error',e=>{if(e.error||e.message)RUNTIME_ERRORS.push(String(e.error&&e.error.stack||e.message||e.error));});
 addEventListener('unhandledrejection',e=>RUNTIME_ERRORS.push(String(e.reason&&e.reason.stack||e.reason||'unhandled rejection')));
 
-const VERSION='fts-arcade-floor-0.6.2-stable-plane-mapping';
+const VERSION='fts-arcade-floor-0.6.4-ios-deterministic-planes';
 const TAU=Math.PI*2, DEG=Math.PI/180;
 // Dimensional contract: 1 engine unit = 1 inch.
 const RING={outer:430,inner:118,sides:32,ceil:132};
@@ -124,11 +124,24 @@ const CABINET_DIM={w:40,d:40,h:78,control:40,screenBayTop:68.5,screenCenter:55.5
 const AISLE={secondary:47.25,primary:70.87,merge:141.73}; // 1.2m / 1.8m / 3.6m references, inches
 const FOV=KINETIC.baseFov,NEAR=.6,SHADES=11,TILE_H=256,LOOK_UP=180,LOOK_DOWN=320;
 const MOUSE_LOOK_SENS=.0021,TOUCH_LOOK_SENS=.00235;
-// Plane textures are sector-local by default. 'world' preserves the previous
-// globally-oriented / kaleidoscopic mapping as an intentional effect mode.
-const PLANE_MAPPING={mode:'sector'};
-function setPlaneMappingMode(mode){const m=String(mode||'').toLowerCase();PLANE_MAPPING.mode=(m==='world'||m==='kaleido')?'world':'sector';return PLANE_MAPPING.mode;}
-function togglePlaneMapping(){return setPlaneMappingMode(PLANE_MAPPING.mode==='sector'?'world':'sector');}
+// Horizontal-plane architecture:
+// - PATTERN: fast CanvasPattern transform path for browsers that execute it correctly.
+// - SOFTWARE: explicit world -> texel scanline rasterizer; no DOMMatrix / pattern mutation.
+// iOS/iPadOS defaults to SOFTWARE because all iOS browsers share WebKit's Canvas backend.
+const PLATFORM={
+ ua:(navigator&&navigator.userAgent)||'',
+ ios:/iP(?:hone|ad|od)/.test((navigator&&navigator.userAgent)||'')||(/Macintosh/.test((navigator&&navigator.userAgent)||'')&&((navigator&&navigator.maxTouchPoints)||0)>1)
+};
+const PLANE_BACKEND={requested:'auto',active:PLATFORM.ios?'software':'pattern'};
+function setPlaneBackend(mode){const m=String(mode||'auto').toLowerCase();PLANE_BACKEND.requested=(m==='software'||m==='pattern')?m:'auto';PLANE_BACKEND.active=PLANE_BACKEND.requested==='auto'?(PLATFORM.ios?'software':'pattern'):PLANE_BACKEND.requested;return PLANE_BACKEND.active;}
+function togglePlaneBackend(){return setPlaneBackend(PLANE_BACKEND.active==='software'?'pattern':'software');}
+// Mapping is world-locked by default, matching the correct desktop presentation.
+// 'sector' is retained as an alternate art direction. 'kaleido' is now explicit,
+// deterministic, and independent of browser bugs: it rotates each sector's material
+// basis with camera yaw around that sector's own center.
+const PLANE_MAPPING={mode:'world'};
+function setPlaneMappingMode(mode){const m=String(mode||'world').toLowerCase();PLANE_MAPPING.mode=(m==='sector'||m==='kaleido'||m==='view')?(m==='view'?'kaleido':m):'world';return PLANE_MAPPING.mode;}
+function togglePlaneMapping(){return setPlaneMappingMode(PLANE_MAPPING.mode==='kaleido'?'world':'kaleido');}
 const PORTALS={
  lobby:'https://frymatic.us/FTSArcade/REDEYE',
  theaters:'https://frymatic.us/FTSArcade/REDEYE',
@@ -241,6 +254,12 @@ const Geom={
   const a=D/det,b=-B/det,c=-C/det,d=A/det;
   return{a,b,c,d,e:-(a*E+c*F),f:-(b*E+d*F)};
  },
+ planeMaterialFrame(sec,mode,viewAng){
+  if(mode==='sector'&&sec)return{ang:sec.planeAng,ox:sec.planeOx,oy:sec.planeOy};
+  if(mode==='kaleido'&&sec)return{ang:sec.planeAng+viewAng,ox:sec.planeOx,oy:sec.planeOy};
+  return{ang:0,ox:0,oy:0};
+ },
+ planeUV(wx,wy,sec,mode,viewAng){const f=this.planeMaterialFrame(sec,mode,viewAng),c=Math.cos(f.ang),ss=Math.sin(f.ang),dx=wx-f.ox,dy=wy-f.oy;return{u:c*dx+ss*dy,v:-ss*dx+c*dy};},
  frontNormal(x1,y1,x2,y2){const dx=x2-x1,dy=y2-y1,L=Math.hypot(dx,dy)||1;return{nx:dy/L,ny:-dx/L};},
  closestOnSeg(px,py,x1,y1,x2,y2){const dx=x2-x1,dy=y2-y1,l2=dx*dx+dy*dy;let t=l2===0?0:((px-x1)*dx+(py-y1)*dy)/l2;t=Math.max(0,Math.min(1,t));const x=x1+t*dx,y=y1+t*dy;return{x,y,t,d2:(px-x)*(px-x)+(py-y)*(py-y)};},
  pointInPoly(x,y,p){let inside=false;for(let i=0,j=p.length-1;i<p.length;j=i++){const xi=p[i][0],yi=p[i][1],xj=p[j][0],yj=p[j][1];const hit=((yi>y)!==(yj>y))&&(x<(xj-xi)*(y-yi)/(yj-yi+1e-12)+xi);if(hit)inside=!inside;}return inside;},
@@ -286,8 +305,8 @@ function ringDefs(){
   const a0=i*TAU/RING.sides,a1=(i+1)*TAU/RING.sides,ac=(a0+a1)/2;
   const poly=[Geom.polar(RING.outer,a0),Geom.polar(RING.outer,a1),innerSquarePoint(a1),innerSquarePoint(a0)];
   const planeOx=poly.reduce((n,p)=>n+p[0],0)/poly.length,planeOy=poly.reduce((n,p)=>n+p[1],0)/poly.length;
-  // Each sector owns its floor/ceiling basis. This prevents the globally-aligned
-  // texture field from appearing to rotate inside radial sectors while circling the ring.
+  // Each sector owns an optional local material basis. World mapping remains the
+  // default; this frame supports alternate sector-locked and intentional kaleido modes.
   defs.push({id:'RING_'+String(i+1).padStart(2,'0'),poly,floor:0,ceil:RING.ceil,light:.90+.05*((i%4)/3),ftex:i%2?MAT.FLOOR_BLACK:MAT.FLOOR_ALT,ctex:MAT.CEILING_DARK,wtex:MAT.WALL_BLACK_GOLD,planeAng:ac,planeOx,planeOy});
  }
  return defs;
@@ -570,7 +589,7 @@ const RenderCore={
 };
 
 const canvas=document.getElementById('c'),ctx=canvas.getContext('2d'),telemetry=document.getElementById('telemetry'),promptEl=document.getElementById('prompt'),lockEl=document.getElementById('lock'),modal=document.getElementById('modal'),modalEyebrow=document.getElementById('modalEyebrow'),modalTitle=document.getElementById('modalTitle'),modalCopy=document.getElementById('modalCopy'),confirmBtn=document.getElementById('confirmBtn'),cancelBtn=document.getElementById('cancelBtn'),mapBtn=document.getElementById('mapBtn'),audioBtn=document.getElementById('audioBtn');
-const IMG={world:null,cab1:null,cab2:null,cab3:null,cab4:null,screen:null,fixture:null,cabinetRef:null,ready:false,errors:[]};let texBank=[],flatBank=[],RW=0,RH=0,RSCALE=1,dl=null,showMap=false,activeTarget=null,modalTarget=null;
+const IMG={world:null,cab1:null,cab2:null,cab3:null,cab4:null,screen:null,fixture:null,cabinetRef:null,ready:false,errors:[]};let texBank=[],flatBank=[],planePixelBank=[],RW=0,RH=0,RSCALE=1,dl=null,showMap=false,activeTarget=null,modalTarget=null;const PLANE_SOFT={canvas:null,ctx:null,image:null,u32:null,width:0,height:0};const PLANE_STATS={patternTransforms:0,softwareSpans:0,softwarePixels:0};
 
 function loadImage(src,label){
  const candidates=Array.isArray(src)?src:[src];
@@ -579,13 +598,24 @@ function loadImage(src,label){
 function cropCanvas(im,r,sheet){const cv=document.createElement('canvas');cv.width=cv.height=64;const g=cv.getContext('2d');g.imageSmoothingEnabled=false;if(sheet==='solid'){g.fillStyle='#03050a';g.fillRect(0,0,64,64);}else if(im&&r)g.drawImage(im,r[0],r[1],r[2],r[3],0,0,64,64);else{g.fillStyle='#222833';g.fillRect(0,0,64,64);g.strokeStyle='#ff4a98';g.strokeRect(2,2,60,60);}return cv;}
 function shadeStrip(src,level){const cv=document.createElement('canvas');cv.width=64;cv.height=TILE_H;const g=cv.getContext('2d');g.imageSmoothingEnabled=false;for(let y=0;y<TILE_H;y+=64)g.drawImage(src,0,y,64,64);const k=level/(SHADES-1);g.globalCompositeOperation='source-atop';g.fillStyle='rgba(2,4,8,'+(k*.9)+')';g.fillRect(0,0,64,TILE_H);return cv;}
 function shadeTile(src,level){const cv=document.createElement('canvas');cv.width=cv.height=64;const g=cv.getContext('2d');g.imageSmoothingEnabled=false;g.drawImage(src,0,0);const k=level/(SHADES-1);g.globalCompositeOperation='source-atop';g.fillStyle='rgba(2,4,8,'+(k*.9)+')';g.fillRect(0,0,64,64);return cv;}
-function buildTextures(){texBank=new Array(MATERIALS.length);flatBank=new Array(MATERIALS.length);IMG.ready=!!(IMG.world&&IMG.cab1&&IMG.cab2&&IMG.cab3&&IMG.cab4&&IMG.screen&&IMG.fixture&&IMG.cabinetRef);}
+function buildTextures(){texBank=new Array(MATERIALS.length);flatBank=new Array(MATERIALS.length);planePixelBank=new Array(MATERIALS.length);IMG.ready=!!(IMG.world&&IMG.cab1&&IMG.cab2&&IMG.cab3&&IMG.cab4&&IMG.screen&&IMG.fixture&&IMG.cabinetRef);}
 function ensureTextureBank(i){
  if(texBank[i]&&flatBank[i])return;
  const m=MATERIALS[i],src=cropCanvas(IMG[m.sheet],m.rect,m.sheet),row=[],prow=[];
  for(let sh=0;sh<SHADES;sh++){row.push(shadeStrip(src,sh));prow.push(ctx.createPattern(shadeTile(src,sh),'repeat'));}
  texBank[i]=row;flatBank[i]=prow;
 }
+function ensurePlanePixelBank(i){
+ if(planePixelBank[i])return planePixelBank[i];
+ const m=MATERIALS[i],src=cropCanvas(IMG[m.sheet],m.rect,m.sheet),rows=[];
+ for(let sh=0;sh<SHADES;sh++){
+  const tile=shadeTile(src,sh),g=tile.getContext('2d',{willReadFrequently:true}),img=g.getImageData(0,0,64,64);
+  rows.push(new Uint32Array(img.data.buffer.slice(0)));
+ }
+ planePixelBank[i]=rows;return rows;
+}
+function ensureSoftwareFrame(w,h){if(PLANE_SOFT.width===w&&PLANE_SOFT.height===h&&PLANE_SOFT.image)return;const cv=document.createElement('canvas');cv.width=w;cv.height=h;const g=cv.getContext('2d',{alpha:true});PLANE_SOFT.canvas=cv;PLANE_SOFT.ctx=g;PLANE_SOFT.width=w;PLANE_SOFT.height=h;PLANE_SOFT.image=g.createImageData(w,h);PLANE_SOFT.u32=new Uint32Array(PLANE_SOFT.image.data.buffer);}
+function wrap64(v){v%=64;return v<0?v+64:v;}
 
 function drawAffineTri(tex,s0,s1,s2,d0,d1,d2){
  const u0=s0[0],v0=s0[1],u1=s1[0],v1=s1[1],u2=s2[0],v2=s2[1],x0=d0.x,y0=d0.y,x1=d1.x,y1=d1.y,x2=d2.x,y2=d2.y;
@@ -596,10 +626,18 @@ function drawAffineTri(tex,s0,s1,s2,d0,d1,d2){
 }
 function paintHorizontalFace(hf,shadeOf){ensureTextureBank(hf.tex);const bank=texBank[hf.tex];if(!bank)return;const tex=bank[shadeOf(hf.dist,hf.light)],p=hf.p;drawAffineTri(tex,[0,0],[64,0],[64,64],p[0],p[1],p[2]);drawAffineTri(tex,[0,0],[64,64],[0,64],p[0],p[2],p[3]);}
 
+// Plane backend split is deliberate: software path must never touch CanvasPattern.setTransform().
 function paint(sim,d){const v=d.view,w=v.w,h=v.h;ctx.fillStyle='#03050a';ctx.fillRect(0,0,w,h);ctx.imageSmoothingEnabled=false;const zbuf=d.pixelDepth;zbuf.fill(Infinity);const shadeOf=(dist,light)=>Math.min(SHADES-1,Math.max(0,((Math.min(1,dist/780+(1-light)*.7))*(SHADES-1))|0));
- const plane=i=>{const y=d.sY[i],x0=d.sX0[i],x1=d.sX1[i],dist=d.sDist[i];if(y<0||y>=h||x1<x0)return;ensureTextureBank(d.sFlat[i]);const p=flatBank[d.sFlat[i]]&&flatBank[d.sFlat[i]][shadeOf(dist,d.sLight[i])];if(!p)return;const sec=sim.map.sectors[d.sSec[i]];const local=PLANE_MAPPING.mode==='sector'&&sec;const mapAng=local?sec.planeAng:0,mapOx=local?sec.planeOx:0,mapOy=local?sec.planeOy:0;const m=Geom.planePatternTransform(sim.x,sim.y,v.cosA,v.sinA,v.halfW,v.projDist,y,dist,mapAng,mapOx,mapOy);if(m&&p.setTransform){const pm=typeof DOMMatrix==='function'?new DOMMatrix([m.a,m.b,m.c,m.d,m.e,m.f]):m;p.setTransform(pm);}ctx.fillStyle=p;ctx.fillRect(x0,y,x1-x0+1,1);const off=y*w;for(let x=Math.max(0,x0);x<=Math.min(w-1,x1);x++)if(dist<zbuf[off+x])zbuf[off+x]=dist;};
+ PLANE_STATS.patternTransforms=PLANE_STATS.softwareSpans=PLANE_STATS.softwarePixels=0;
+ const planePattern=i=>{const y=d.sY[i],x0=d.sX0[i],x1=d.sX1[i],dist=d.sDist[i];if(y<0||y>=h||x1<x0)return;ensureTextureBank(d.sFlat[i]);const p=flatBank[d.sFlat[i]]&&flatBank[d.sFlat[i]][shadeOf(dist,d.sLight[i])];if(!p)return;const sec=sim.map.sectors[d.sSec[i]],frame=Geom.planeMaterialFrame(sec,PLANE_MAPPING.mode,sim.ang);const m=Geom.planePatternTransform(sim.x,sim.y,v.cosA,v.sinA,v.halfW,v.projDist,y,dist,frame.ang,frame.ox,frame.oy);if(m&&p.setTransform){PLANE_STATS.patternTransforms++;const pm=typeof DOMMatrix==='function'?new DOMMatrix([m.a,m.b,m.c,m.d,m.e,m.f]):m;p.setTransform(pm);}ctx.fillStyle=p;ctx.fillRect(x0,y,x1-x0+1,1);const off=y*w;for(let x=Math.max(0,x0);x<=Math.min(w-1,x1);x++)if(dist<zbuf[off+x])zbuf[off+x]=dist;};
+ const planeSoftware=i=>{let y=d.sY[i],x0=Math.max(0,d.sX0[i]),x1=Math.min(w-1,d.sX1[i]),dist=d.sDist[i];if(y<0||y>=h||x1<x0||!Number.isFinite(dist)||dist<=0)return;const shade=shadeOf(dist,d.sLight[i]),banks=ensurePlanePixelBank(d.sFlat[i]),pix=banks&&banks[shade];if(!pix)return;const sec=sim.map.sectors[d.sSec[i]],frame=Geom.planeMaterialFrame(sec,PLANE_MAPPING.mode,sim.ang),mc=Math.cos(frame.ang),ms=Math.sin(frame.ang),step=dist/v.projDist,tx0=(x0+.5-v.halfW)*step,wx0=sim.x+v.cosA*dist+v.sinA*tx0,wy0=sim.y+v.sinA*dist-v.cosA*tx0,dwx=v.sinA*step,dwy=-v.cosA*step,dx=wx0-frame.ox,dy=wy0-frame.oy;let u=wrap64(mc*dx+ms*dy),vv=wrap64(-ms*dx+mc*dy),du=mc*dwx+ms*dwy,dv=-ms*dwx+mc*dwy;const frame32=PLANE_SOFT.u32,off=y*w;PLANE_STATS.softwareSpans++;for(let x=x0;x<=x1;x++){if(dist<zbuf[off+x]){frame32[off+x]=pix[((vv|0)<<6)+(u|0)];zbuf[off+x]=dist;PLANE_STATS.softwarePixels++;}u+=du;vv+=dv;if(u>=64||u<0)u=wrap64(u);if(vv>=64||vv<0)vv=wrap64(vv);}};
  const wall=i=>{ensureTextureBank(d.wTex[i]);const bank=texBank[d.wTex[i]];if(!bank)return;const tex=bank[shadeOf(d.wDist[i],d.wLight[i])];let u=d.wU[i]%1;if(u<0)u+=1;const sx=Math.min(63,(u*64)|0),y0=d.wY0[i],y1=d.wY1[i],span=d.wF1[i]-d.wF0[i];if(span<=.001||y1<=y0)return;let sy0,sy1;if(d.wStretch[i]){sy0=Math.max(0,Math.min(64,((y0-d.wF0[i])/span)*64));sy1=Math.max(sy0,Math.min(64,((y1-d.wF0[i])/span)*64));}else{const wh=Math.max(1,Math.min(TILE_H,Math.abs(d.wTop[i]-d.wBot[i])));sy0=Math.max(0,Math.min(TILE_H,((y0-d.wF0[i])/span)*wh));sy1=Math.max(sy0,Math.min(TILE_H,((y1-d.wF0[i])/span)*wh));}ctx.drawImage(tex,sx,sy0,1,Math.max(.05,sy1-sy0),d.wX[i],y0,1,Math.max(1,y1-y0));const x=d.wX[i],ya=Math.max(0,Math.floor(y0)),yb=Math.min(h,Math.ceil(y1));if(x>=0&&x<w)for(let y=ya;y<yb;y++)if(d.wDist[i]<zbuf[y*w+x])zbuf[y*w+x]=d.wDist[i];};
- const ops=[];for(let i=0;i<d.sN;i++)ops.push({k:0,i,dist:d.sDist[i]});for(let i=0;i<d.wN;i++)ops.push({k:1,i,dist:d.wDist[i]});for(let i=0;i<d.hFaces.length;i++)ops.push({k:2,i,dist:d.hFaces[i].dist});ops.sort((a,b)=>b.dist-a.dist||a.k-b.k);for(const op of ops){if(op.k===0)plane(op.i);else if(op.k===1)wall(op.i);else paintHorizontalFace(d.hFaces[op.i],shadeOf);}
+ if(PLANE_BACKEND.active==='software'){
+  ensureSoftwareFrame(w,h);PLANE_SOFT.u32.fill(0);for(let i=0;i<d.sN;i++)planeSoftware(i);PLANE_SOFT.ctx.putImageData(PLANE_SOFT.image,0,0);ctx.drawImage(PLANE_SOFT.canvas,0,0);
+  const ops=[];for(let i=0;i<d.wN;i++)ops.push({k:1,i,dist:d.wDist[i]});for(let i=0;i<d.hFaces.length;i++)ops.push({k:2,i,dist:d.hFaces[i].dist});ops.sort((a,b)=>b.dist-a.dist||a.k-b.k);for(const op of ops){if(op.k===1)wall(op.i);else paintHorizontalFace(d.hFaces[op.i],shadeOf);}
+ }else{
+  const ops=[];for(let i=0;i<d.sN;i++)ops.push({k:0,i,dist:d.sDist[i]});for(let i=0;i<d.wN;i++)ops.push({k:1,i,dist:d.wDist[i]});for(let i=0;i<d.hFaces.length;i++)ops.push({k:2,i,dist:d.hFaces[i].dist});ops.sort((a,b)=>b.dist-a.dist||a.k-b.k);for(const op of ops){if(op.k===0)planePattern(op.i);else if(op.k===1)wall(op.i);else paintHorizontalFace(d.hFaces[op.i],shadeOf);}
+ }
  // subtle CRT vignette and crosshair
  const grad=ctx.createRadialGradient(w/2,h/2,Math.min(w,h)*.2,w/2,h/2,Math.max(w,h)*.72);grad.addColorStop(0,'rgba(0,0,0,0)');grad.addColorStop(1,'rgba(0,0,0,.34)');ctx.fillStyle=grad;ctx.fillRect(0,0,w,h);ctx.fillStyle='rgba(220,238,255,.62)';ctx.fillRect(w/2-5,h/2,3,1);ctx.fillRect(w/2+3,h/2,3,1);ctx.fillRect(w/2,h/2-5,1,3);ctx.fillRect(w/2,h/2+3,1,3);
 }
@@ -617,9 +655,9 @@ function closeConfirm(relock){modal.classList.remove('show');modalTarget=null;if
 function leaveArcade(){if(!modalTarget)return;const t=modalTarget;try{sessionStorage.setItem('fts.arcade.return',JSON.stringify({x:sim.x,y:sim.y,ang:sim.ang,t:Date.now()}));}catch(e){}window.open(t.url, t.target || '_blank');closeConfirm(true);}
 confirmBtn.addEventListener('click',leaveArcade);cancelBtn.addEventListener('click',()=>closeConfirm(true));
 
-function resize(){const w=innerWidth||960,h=innerHeight||600;RSCALE=h>900?1.9:1.55;RW=Math.max(240,Math.round(w/RSCALE));RH=Math.max(150,Math.round(h/RSCALE));canvas.width=RW;canvas.height=RH;canvas.style.width=w+'px';canvas.style.height=h+'px';dl=new DrawLists(RW,RH);ctx.imageSmoothingEnabled=false;}
+function resize(){const w=innerWidth||960,h=innerHeight||600;RSCALE=h>900?1.9:1.55;RW=Math.max(240,Math.round(w/RSCALE));RH=Math.max(150,Math.round(h/RSCALE));canvas.width=RW;canvas.height=RH;canvas.style.width=w+'px';canvas.style.height=h+'px';dl=new DrawLists(RW,RH);PLANE_SOFT.canvas=PLANE_SOFT.ctx=PLANE_SOFT.image=PLANE_SOFT.u32=null;PLANE_SOFT.width=PLANE_SOFT.height=0;ensureSoftwareFrame(RW,RH);ctx.imageSmoothingEnabled=false;}
 const KEY={KeyW:'fwd',ArrowUp:'fwd',KeyS:'back',ArrowDown:'back',KeyA:'left',KeyD:'right'};
-addEventListener('keydown',e=>{if(modal.classList.contains('show')){if(e.code==='Enter'||e.code==='KeyY')leaveArcade();if(e.code==='Escape'||e.code==='KeyN')closeConfirm(true);return;}if(KEY[e.code]){input[KEY[e.code]]=1;e.preventDefault();}if(e.code==='ShiftLeft'||e.code==='ShiftRight')input.run=1;if(e.code==='ControlLeft'||e.code==='ControlRight'||e.code==='KeyC'){input.crouch=1;if(!e.repeat)sim.beginSlide();e.preventDefault();}if(e.code==='Space'){input.jump=1;if(!e.repeat)sim.jump();e.preventDefault();}if(e.code==='KeyE')openConfirm(activeTarget);if(e.code==='KeyM'){showMap=!showMap;mapBtn.textContent='MAP: '+(showMap?'ON':'OFF');mapBtn.classList.toggle('on',showMap);}if(e.code==='KeyN')toggleAudio();if(e.code==='KeyK'){togglePlaneMapping();e.preventDefault();}});
+addEventListener('keydown',e=>{if(modal.classList.contains('show')){if(e.code==='Enter'||e.code==='KeyY')leaveArcade();if(e.code==='Escape'||e.code==='KeyN')closeConfirm(true);return;}if(KEY[e.code]){input[KEY[e.code]]=1;e.preventDefault();}if(e.code==='ShiftLeft'||e.code==='ShiftRight')input.run=1;if(e.code==='ControlLeft'||e.code==='ControlRight'||e.code==='KeyC'){input.crouch=1;if(!e.repeat)sim.beginSlide();e.preventDefault();}if(e.code==='Space'){input.jump=1;if(!e.repeat)sim.jump();e.preventDefault();}if(e.code==='KeyE')openConfirm(activeTarget);if(e.code==='KeyM'){showMap=!showMap;mapBtn.textContent='MAP: '+(showMap?'ON':'OFF');mapBtn.classList.toggle('on',showMap);}if(e.code==='KeyN')toggleAudio();if(e.code==='KeyK'){togglePlaneMapping();e.preventDefault();}if(e.code==='KeyP'){togglePlaneBackend();e.preventDefault();}});
 addEventListener('keyup',e=>{if(KEY[e.code])input[KEY[e.code]]=0;if(e.code==='ShiftLeft'||e.code==='ShiftRight')input.run=0;if(e.code==='ControlLeft'||e.code==='ControlRight'||e.code==='KeyC')input.crouch=0;if(e.code==='Space')input.jump=0;});
 addEventListener('mousemove',e=>{if(document.pointerLockElement===canvas&&!modal.classList.contains('show'))sim.look(e.movementX||0,e.movementY||0,MOUSE_LOOK_SENS);});
 canvas.addEventListener('mousedown',e=>{if(e.button!==0)return;if(coarse())return;if(document.pointerLockElement!==canvas){canvas.requestPointerLock&&canvas.requestPointerLock();return;}if(activeTarget)openConfirm(activeTarget);});
@@ -634,17 +672,17 @@ function toggleAudio(){AudioMini.set(!AudioMini.on);audioBtn.textContent='AUDIO:
 // Coarse-pointer controls: left stick moves, right-side drag looks, ENTER uses the active portal.
 const touchMove=document.getElementById('touchMove'),touchKnob=document.getElementById('touchKnob'),touchAct=document.getElementById('touchAct'),touchCrouch=document.getElementById('touchCrouch');let movePid=null,lookPid=null,lastLook=null;
 function stickFromEvent(e){const r=touchMove.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,dx=e.clientX-cx,dy=e.clientY-cy,L=Math.hypot(dx,dy),m=Math.min(36,L),nx=L?dx/L:0,ny=L?dy/L:0;touchKnob.style.transform='translate('+(nx*m)+'px,'+(ny*m)+'px)';input.fwd=ny<-.2?1:0;input.back=ny>.2?1:0;input.left=nx<-.2?1:0;input.right=nx>.2?1:0;}
-touchMove.addEventListener('pointerdown',e=>{movePid=e.pointerId;touchMove.setPointerCapture(e.pointerId);stickFromEvent(e);});touchMove.addEventListener('pointermove',e=>{if(e.pointerId===movePid)stickFromEvent(e);});touchMove.addEventListener('pointerup',e=>{if(e.pointerId!==movePid)return;movePid=null;touchKnob.style.transform='';input.fwd=input.back=input.left=input.right=0;});
-canvas.addEventListener('pointerdown',e=>{if(e.pointerType==='touch'&&e.clientX>innerWidth*.42){lookPid=e.pointerId;lastLook={x:e.clientX,y:e.clientY};canvas.setPointerCapture&&canvas.setPointerCapture(e.pointerId);}});canvas.addEventListener('pointermove',e=>{if(e.pointerId===lookPid&&lastLook){sim.look(e.clientX-lastLook.x,e.clientY-lastLook.y,TOUCH_LOOK_SENS);lastLook={x:e.clientX,y:e.clientY};}});canvas.addEventListener('pointerup',e=>{if(e.pointerId===lookPid){lookPid=null;lastLook=null;}});touchAct.addEventListener('click',()=>openConfirm(activeTarget));
+touchMove.addEventListener('pointerdown',e=>{movePid=e.pointerId;touchMove.setPointerCapture(e.pointerId);stickFromEvent(e);});touchMove.addEventListener('pointermove',e=>{if(e.pointerId===movePid)stickFromEvent(e);});const releaseMove=e=>{if(e&&e.pointerId!==movePid)return;movePid=null;touchKnob.style.transform='';input.fwd=input.back=input.left=input.right=0;};touchMove.addEventListener('pointerup',releaseMove);touchMove.addEventListener('pointercancel',releaseMove);
+canvas.addEventListener('pointerdown',e=>{if(e.pointerType==='touch'&&e.clientX>innerWidth*.42){lookPid=e.pointerId;lastLook={x:e.clientX,y:e.clientY};canvas.setPointerCapture&&canvas.setPointerCapture(e.pointerId);}});canvas.addEventListener('pointermove',e=>{if(e.pointerId===lookPid&&lastLook){sim.look(e.clientX-lastLook.x,e.clientY-lastLook.y,TOUCH_LOOK_SENS);lastLook={x:e.clientX,y:e.clientY};}});const releaseLook=e=>{if(e&&e.pointerId!==lookPid)return;lookPid=null;lastLook=null;};canvas.addEventListener('pointerup',releaseLook);canvas.addEventListener('pointercancel',releaseLook);touchAct.addEventListener('click',()=>openConfirm(activeTarget));
 touchCrouch.addEventListener('pointerdown',e=>{input.crouch=1;sim.beginSlide();touchCrouch.setPointerCapture&&touchCrouch.setPointerCapture(e.pointerId);e.preventDefault();});
 touchCrouch.addEventListener('pointerup',e=>{input.crouch=0;e.preventDefault();});touchCrouch.addEventListener('pointercancel',()=>{input.crouch=0;});
 
 let last=0,fpsAcc=0,fpsN=0,fps=0,frames=0,simAcc=0;
-function loop(ts){const frameDt=Math.min((ts-last)/1000||.016,.12);last=ts;simAcc=Math.min(.20,simAcc+frameDt);const fixedDt=1/KINETIC.simHz;let simSteps=0;while(simAcc>=fixedDt&&simSteps<KINETIC.maxCatchupSteps){sim.step(fixedDt,input);simAcc-=fixedDt;simSteps++;}RenderCore.solve(sim,dl,RW,RH);paint(sim,dl);if(showMap)drawMap(sim,RW,RH);updatePrompt();fpsAcc+=frameDt;fpsN++;if(fpsAcc>.45){fps=fpsN/fpsAcc;fpsAcc=0;fpsN=0;}if((frames++&7)===0){const moveState=sim.slideT>0?'SLIDE':input.crouch?'CROUCH':input.run?'RUN':'WALK';telemetry.textContent=VERSION+' | '+RW+'x'+RH+' | '+fps.toFixed(0)+' fps | '+moveState+' | SEC '+(sim.sector+1)+'/'+map.sectors.length+' | CAB '+map.cabinets.length+' A-Z | FIX '+map.fixtures.length+' | ADS '+map.ads.length+' | VIS '+dl.stats.sectors+'s '+dl.stats.solidFaces+'g | PLN '+PLANE_MAPPING.mode.toUpperCase()+' | ART '+(IMG.ready?'ATLAS':'FALLBACK')+(MAP_ERRORS.length?' | MAP ERR '+MAP_ERRORS.length:'');}requestAnimationFrame(loop);}
+function loop(ts){const frameDt=Math.min((ts-last)/1000||.016,.12);last=ts;simAcc=Math.min(.20,simAcc+frameDt);const fixedDt=1/KINETIC.simHz;let simSteps=0;while(simAcc>=fixedDt&&simSteps<KINETIC.maxCatchupSteps){sim.step(fixedDt,input);simAcc-=fixedDt;simSteps++;}RenderCore.solve(sim,dl,RW,RH);paint(sim,dl);if(showMap)drawMap(sim,RW,RH);updatePrompt();fpsAcc+=frameDt;fpsN++;if(fpsAcc>.45){fps=fpsN/fpsAcc;fpsAcc=0;fpsN=0;}if((frames++&7)===0){const moveState=sim.slideT>0?'SLIDE':input.crouch?'CROUCH':input.run?'RUN':'WALK';telemetry.textContent=VERSION+' | '+RW+'x'+RH+' | '+fps.toFixed(0)+' fps | '+moveState+' | SEC '+(sim.sector+1)+'/'+map.sectors.length+' | CAB '+map.cabinets.length+' A-Z | FIX '+map.fixtures.length+' | ADS '+map.ads.length+' | VIS '+dl.stats.sectors+'s '+dl.stats.solidFaces+'g | PLN '+PLANE_BACKEND.active.toUpperCase()+'/'+PLANE_MAPPING.mode.toUpperCase()+' | ART '+(IMG.ready?'ATLAS':'FALLBACK')+(MAP_ERRORS.length?' | MAP ERR '+MAP_ERRORS.length:'');}requestAnimationFrame(loop);}
 addEventListener('resize',resize);
 Promise.all([
  loadImage(ASSET_FILES.world,'world'),loadImage(ASSET_FILES.cab1,'Cabinets01'),loadImage(ASSET_FILES.cab2,'Cabinets02'),loadImage(ASSET_FILES.cab3,'Cabinets03'),loadImage(ASSET_FILES.cab4,'Cabinets04'),loadImage(ASSET_FILES.screen,'screen'),loadImage(ASSET_FILES.fixture,'fixture'),loadImage(ASSET_FILES.cabinetRef,'the-Cabinet')
-]).then(([w,c1,c2,c3,c4,sc,f,cr])=>{IMG.world=w;IMG.cab1=c1;IMG.cab2=c2;IMG.cab3=c3;IMG.cab4=c4;IMG.screen=sc;IMG.fixture=f;IMG.cabinetRef=cr;buildTextures();if(IMG.errors.length){telemetry.textContent=VERSION+' | ASSET ERROR: '+IMG.errors.join(', ');console.error('[FTS ARCADE] atlas load failure',IMG.errors,ASSET_FILES);}});
+]).then(([w,c1,c2,c3,c4,sc,f,cr])=>{IMG.world=w;IMG.cab1=c1;IMG.cab2=c2;IMG.cab3=c3;IMG.cab4=c4;IMG.screen=sc;IMG.fixture=f;IMG.cabinetRef=cr;buildTextures();if(PLANE_BACKEND.active==='software'){const used=new Set();for(const s of map.sectors){used.add(s.ftex);used.add(s.ctex);}for(const m of used)ensurePlanePixelBank(m);}if(IMG.errors.length){telemetry.textContent=VERSION+' | ASSET ERROR: '+IMG.errors.join(', ');console.error('[FTS ARCADE] atlas load failure',IMG.errors,ASSET_FILES);}});
 resize();buildTextures();
 if(MAP_ERRORS.length)console.error('[FTS ARCADE] map validation',MAP_ERRORS);
 function screenPart(c){return c.parts.find(p=>p.role==='screen');}
@@ -683,8 +721,14 @@ const REF_TESTS={
  jumpSystem:()=>KINETIC.jumpVel>0&&KINETIC.gravity>0&&typeof sim.jump==='function'&&'jumpZ' in sim,
  fixedStepMovement:()=>KINETIC.simHz===60&&KINETIC.maxCatchupSteps>=6,
  planeSectorFrames:()=>map.sectors.length===RING.sides&&map.sectors.every(s=>Number.isFinite(s.planeAng)&&Number.isFinite(s.planeOx)&&Number.isFinite(s.planeOy)),
- planeMappingModes:()=>{const old=PLANE_MAPPING.mode;const ok=setPlaneMappingMode('sector')==='sector'&&setPlaneMappingMode('kaleido')==='world';setPlaneMappingMode(old);return ok;},
+ planeMappingModes:()=>{const old=PLANE_MAPPING.mode;const ok=setPlaneMappingMode('world')==='world'&&setPlaneMappingMode('sector')==='sector'&&setPlaneMappingMode('kaleido')==='kaleido';setPlaneMappingMode(old);return ok;},
+ planeBackendModes:()=>{const req=PLANE_BACKEND.requested,ok=setPlaneBackend('software')==='software'&&setPlaneBackend('pattern')==='pattern';setPlaneBackend(req);return ok;},
+ iosDefaultsSoftware:()=>!PLATFORM.ios||PLANE_BACKEND.requested!=='auto'||PLANE_BACKEND.active==='software',
  planeTransformInvariant:()=>{const px=0,py=-300,yaw=.7,ca=Math.cos(yaw),sa=Math.sin(yaw),hw=320,pd=420,pz=69,hor=200,depth=180,tx=35,wx=px+ca*depth+sa*tx,wy=py+sa*depth-ca*tx,sy=hor+(pz*pd)/depth,row=sy-.5,ang=.9,ox=40,oy=-20,mc=Math.cos(ang),ms=Math.sin(ang),u=mc*(wx-ox)+ms*(wy-oy),vv=-ms*(wx-ox)+mc*(wy-oy),m=Geom.planePatternTransform(px,py,ca,sa,hw,pd,row,depth,ang,ox,oy),sx=hw+(tx/depth)*pd,qx=m.a*u+m.c*vv+m.e,qy=m.b*u+m.d*vv+m.f;return Math.hypot(qx-sx,qy-sy)<1e-6;},
+ softwareWorldUVInvariant:()=>{const wx=123.25,wy=-77.5,a=Geom.planeUV(wx,wy,map.sectors[0],'world',0),b=Geom.planeUV(wx,wy,map.sectors[0],'world',1.7);return Math.abs(a.u-b.u)<1e-9&&Math.abs(a.v-b.v)<1e-9;},
+ softwareProjectionInvariant:()=>{const px=12,py=-45,wx=155,wy=88,pd=420,hw=300,uv0=Geom.planeUV(wx,wy,map.sectors[0],'world',0);for(const yaw of[-.7,.1,.8]){const ca=Math.cos(yaw),sa=Math.sin(yaw),q=Geom.view(px,py,ca,sa,wx,wy);if(q.tz<=1)return false;const sx=hw+(q.tx/q.tz)*pd,tx=(sx-hw)*q.tz/pd,rx=px+ca*q.tz+sa*tx,ry=py+sa*q.tz-ca*tx,uv=Geom.planeUV(rx,ry,map.sectors[0],'world',yaw);if(Math.hypot(uv.u-uv0.u,uv.v-uv0.v)>1e-7)return false;}return true;},
+ kaleidoActuallyCouplesYaw:()=>{const s=map.sectors[0],a=Geom.planeUV(s.planeOx+20,s.planeOy+7,s,'kaleido',0),b=Geom.planeUV(s.planeOx+20,s.planeOy+7,s,'kaleido',.6);return Math.hypot(a.u-b.u,a.v-b.v)>.1;},
+ softwareFrameAllocated:()=>!!PLANE_SOFT.canvas&&!!PLANE_SOFT.ctx&&!!PLANE_SOFT.image&&!!PLANE_SOFT.u32&&PLANE_SOFT.width===RW&&PLANE_SOFT.height===RH,
  touchLookParity:()=>TOUCH_LOOK_SENS/MOUSE_LOOK_SENS<=1.2,
  ringSectors:()=>map.sectors.length===RING.sides,
  spawnInsideMap:()=>sim.sectorAt(map.spawn.x,map.spawn.y)>=0,
@@ -706,9 +750,10 @@ function runRefTests(){
  }
  return{version:VERSION,pass:failures.length===0,passed:Object.values(results).filter(v=>v===true).length,total:Object.keys(REF_TESTS).length,failures,results,mapErrors:MAP_ERRORS.slice(),assetErrors:IMG.errors.slice(),runtimeErrors:RUNTIME_ERRORS.slice(),screenAtlas:SCREEN_ATLAS_META};
 }
-window.__FTS_ARCADE__={VERSION,map,sim,MapBuilder,Geom,RenderCore,DrawLists,MATERIALS,MAP_ERRORS,CABINET_ROSTER,CABINET_DIM,AISLE,PORTALS,ASSET_NAMES,CABINET_PART_RECTS,CABINET_REF_RECTS,SCREEN_ATLAS_META,SCREEN_RECTS,screenRect,AUTHORING,KINETIC,PLANE_MAPPING,setPlaneMappingMode,togglePlaneMapping,MOUSE_LOOK_SENS,TOUCH_LOOK_SENS,solidAabb,cabinetClearOfOffice,exportAuthoring:()=>JSON.stringify(AUTHORING,null,2),tests:REF_TESTS,runTests:runRefTests};
+window.__FTS_ARCADE__={VERSION,map,sim,MapBuilder,Geom,RenderCore,DrawLists,MATERIALS,MAP_ERRORS,CABINET_ROSTER,CABINET_DIM,AISLE,PORTALS,ASSET_NAMES,CABINET_PART_RECTS,CABINET_REF_RECTS,SCREEN_ATLAS_META,SCREEN_RECTS,screenRect,AUTHORING,KINETIC,PLATFORM,PLANE_BACKEND,PLANE_STATS,setPlaneBackend,togglePlaneBackend,PLANE_MAPPING,setPlaneMappingMode,togglePlaneMapping,MOUSE_LOOK_SENS,TOUCH_LOOK_SENS,solidAabb,cabinetClearOfOffice,exportAuthoring:()=>JSON.stringify(AUTHORING,null,2),tests:REF_TESTS,runTests:runRefTests};
 const qs=new URLSearchParams(location.search);
-setPlaneMappingMode(qs.get('planes')||qs.get('plane')||'sector');
+setPlaneBackend(qs.get('planeBackend')||qs.get('backend')||'auto');
+setPlaneMappingMode(qs.get('planes')||qs.get('plane')||'world');
 if(qs.get('preview')==='1')lockEl.classList.add('hidden');
 if(qs.get('map')==='1'){showMap=true;mapBtn.textContent='MAP: ON';mapBtn.classList.add('on');}
 if(qs.get('test')==='1'){
