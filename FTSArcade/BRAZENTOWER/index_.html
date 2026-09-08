@@ -1,0 +1,1900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Analytics only on hosted HTTP(S); local/offline builds stay clean. -->
+<script>
+if (/^https?:$/.test(location.protocol)) {
+  window.dataLayer = window.dataLayer || [];
+  window.gtag = function(){ dataLayer.push(arguments); };
+  gtag('js', new Date()); gtag('config', 'G-1WWRJJN05N');
+  const ga = document.createElement('script'); ga.async = true;
+  ga.src = 'https://www.googletagmanager.com/gtag/js?id=G-1WWRJJN05N';
+  document.head.appendChild(ga);
+}
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>BRAZEN TOWER · Lobby Explorer · FTS Arcade</title>
+
+ <!-- ── Primary Meta ─────────────────────────────────────────────────────── -->
+<meta name="description" content="Brazen Tower — 3rd person space shooter." />
+
+<!-- ── Favicons ─────────────────────────────────────────────────────────── -->
+<link rel="icon" type="image/png" href="fts-favicon.png">
+<link rel="shortcut icon" type="image/png" href="fts-favicon.png">
+<link rel="apple-touch-icon" href="fts-favicon.png">
+
+<!-- ── Open Graph (Facebook, Discord, iMessage, etc.) ────────────────────── -->
+<meta property="og:title" content="FishTacoStand Arcade">
+<meta property="og:description" content="Brazen Tower — First Person">
+<meta property="og:url" content="https://frymatic.us/FTSArcade/BRAZENTOWER">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Brazen Tower">
+
+<meta property="og:image" content="https://frymatic.us/FTSArcade/BRAZENTOWER/brazentower_preview.png">
+<meta property="og:image:alt" content="2.5D First Person">
+<meta property="og:image:type" content="image/png">
+
+<!-- ── Twitter / X Card ─────────────────────────────────────────────────── -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Brazen Tower">
+<meta name="twitter:description" content="2.5D First Person">
+<meta name="twitter:image" content="https://frymatic.us/FTSArcade/BRAZENTOWER/brazentower_preview.png">
+
+<link rel="preload" as="image" href="sprites01.png">
+<link rel="preload" as="image" href="sprites02.png">
+
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;background:#05070a;overflow:hidden;overscroll-behavior:none;user-select:none;touch-action:none;-webkit-user-select:none}
+canvas{display:block;position:fixed;inset:0;width:100%;height:100%;cursor:crosshair;image-rendering:pixelated;-webkit-touch-callout:none}
+#ui{position:fixed;top:10px;left:12px;z-index:5;font:10px/1.6 'Courier New',monospace;
+  color:rgba(255,60,40,.75);letter-spacing:.12em;pointer-events:none;text-shadow:0 0 6px rgba(255,0,0,.4)}
+#bar{position:fixed;bottom:max(10px,env(safe-area-inset-bottom));right:max(12px,env(safe-area-inset-right));z-index:5;display:flex;gap:6px}
+#bar button{font:10px 'Courier New',monospace;letter-spacing:.1em;color:rgba(255,90,60,.8);
+  background:rgba(14,8,8,.75);border:1px solid rgba(255,60,40,.35);padding:6px 10px;cursor:pointer;border-radius:2px}
+#bar button:hover{border-color:rgba(255,120,80,.8);color:#ffb08a}
+#bar button.on{color:#ffd24a;border-color:rgba(255,200,60,.6)}
+#lock{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;
+  background:rgba(4,6,10,.82);font:14px 'Courier New',monospace;letter-spacing:.22em;color:#ff6a3d;cursor:pointer;
+  text-align:center;line-height:2.2;text-shadow:0 0 10px rgba(255,40,0,.5)}
+#lock.hidden{display:none}
+#touchMove,#touchFire,#touchJump,#touchRun{display:none;position:fixed;z-index:15;touch-action:none;-webkit-touch-callout:none}
+#touchMove{left:max(18px,env(safe-area-inset-left));bottom:max(24px,env(safe-area-inset-bottom));width:116px;height:116px;border:1px solid rgba(255,90,60,.26);border-radius:50%;background:rgba(18,7,7,.20)}
+#touchKnob{position:absolute;left:36px;top:36px;width:44px;height:44px;border:1px solid rgba(255,210,160,.4);border-radius:50%;background:rgba(255,90,60,.14);transform:translate(0,0)}
+#touchFire,#touchJump,#touchRun{border-radius:50%;font:bold 10px 'Courier New',monospace;letter-spacing:.08em;color:#fff;background:rgba(18,7,7,.30)}
+#touchFire{right:max(18px,env(safe-area-inset-right));bottom:max(28px,env(safe-area-inset-bottom));width:84px;height:84px;border:1px solid rgba(255,76,48,.52)}
+#touchJump{right:max(112px,calc(env(safe-area-inset-right) + 94px));bottom:max(34px,calc(env(safe-area-inset-bottom) + 6px));width:68px;height:68px;border:1px solid rgba(255,190,90,.40)}
+#touchRun{right:max(30px,calc(env(safe-area-inset-right) + 12px));bottom:max(124px,calc(env(safe-area-inset-bottom) + 104px));width:62px;height:62px;border:1px solid rgba(255,190,90,.32);color:#ffd28a}
+body.touch-ui #touchMove,body.touch-ui #touchFire,body.touch-ui #touchJump,body.touch-ui #touchRun{display:block}
+body.touch-ui #bar{bottom:calc(120px + env(safe-area-inset-bottom))}
+body.touch-ui #ui{top:max(8px,env(safe-area-inset-top));left:max(9px,env(safe-area-inset-left));font-size:8px;max-width:74vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.touch-ui #lock{font-size:11px;line-height:1.9;padding:24px}
+@media(pointer:coarse){#bar{bottom:calc(120px + env(safe-area-inset-bottom))}}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="ui">···</div>
+<div id="bar">
+  <button id="audioBtn">AUDIO: OFF</button>
+  <button id="mapBtn">MAP: OFF</button>
+</div>
+<div id="lock">ENTER BRAZEN TOWER · LOBBY 01<br>WASD MOVE · MOUSE LOOK · SPACE JUMP · SHIFT RUN · CLICK FIRE · M MAP · N AUDIO · ESC RELEASE</div>
+<div id="touchMove"><div id="touchKnob"></div></div>
+<button id="touchRun">RUN</button><button id="touchJump">JUMP</button><button id="touchFire">FIRE</button>
+
+<script>
+'use strict';
+
+const RUNTIME_ERRORS = [];
+addEventListener('error', e => { if (e.error || e.message) RUNTIME_ERRORS.push(String((e.error && e.error.stack) || e.message || e.error)); });
+addEventListener('unhandledrejection', e => RUNTIME_ERRORS.push(String((e.reason && e.reason.stack) || e.reason || 'unhandled rejection')));
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BRAZEN — FTS ARCADE cabinet
+   True sector/portal renderer (not a grid raycaster).
+
+   ARCHITECTURAL CONTRACT (propagate to kid packets):
+   A1. Sectors MUST be convex. Convexity is what makes "draw solids, then
+       recurse portals" correct without a BSP: no wall of a sector can
+       occlude another wall of the same sector. The rect-based MapBuilder
+       guarantees it; validate() enforces it.
+   A2. Map coords are standard-math orientation: +X east, +Y north,
+       angle 0 = facing +X, increasing angle = turning LEFT (CCW).
+   A3. Linedef winding: the FRONT sector lies to the RIGHT of v1->v2.
+       (Same convention as DOOM.) MapBuilder emits this; tests verify it.
+   A4. No floor above a floor at the same XY. A sector renderer cannot do
+       room-over-room. Brazen 0.5 uses a broad raised U of ADJACENT sectors
+       around the lower lobby void, creating a true playable wraparound
+       mezzanine and balcony sightlines without overlapping floor planes.
+   A5. Solve/paint split: RenderCore.solve() is pure (zero canvas refs) and
+       emits flat draw lists. Paint reads them. The harness tests solve.
+   A6. Headless-tolerant boot: if getContext('2d') returns null the cabinet
+       boots into headless mode and the sim still runs. This is what lets
+       the jsdom gate exercise the REAL file rather than a stubbed twin.
+   A7. Simulation advances at a fixed 60 Hz with bounded catch-up. Rendering
+       cadence may vary; movement/jump integration does not.
+   A8. Horizontal plane UVs are WORLD-LOCKED. iOS and browsers without safe
+       CanvasPattern transforms use the software plane sampler, never a
+       viewport-relative fallback. This is the anti-kaleidoscope contract.
+
+   TEXTURE ATLAS CONTRACT (authored Brazen art, external sprite-sheet resources):
+       TEX[] index order is frozen. Each entry is 64x64 RGBA.
+       sprites01.png = HUD / face / weapon sheet.
+       sprites02.png = Brazen Tower world / material / prop sheet.
+       Source crops are deliberately padded to avoid edge clipping.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+const VERSION = 'brazen-0.6.0-mobile';
+
+
+/* Mobile/runtime contract carried forward from the newer FTS Arcade floor.
+   WebKit's mutable CanvasPattern transform path can rotate/swim horizontal
+   textures on iOS. Tower therefore defaults to an explicit software plane
+   sampler on iOS or when pattern transforms are unavailable. World UVs are
+   always derived from world coordinates, never camera orientation. */
+const PLATFORM = {
+  ua: (navigator && navigator.userAgent) || '',
+  touch: ((navigator && navigator.maxTouchPoints) || 0) > 0 || (typeof matchMedia === 'function' && matchMedia('(pointer:coarse)').matches),
+  ios: /iP(?:hone|ad|od)/.test((navigator && navigator.userAgent) || '') || (/Macintosh/.test((navigator && navigator.userAgent) || '') && ((navigator && navigator.maxTouchPoints) || 0) > 1)
+};
+const PATTERN_TRANSFORMS = typeof CanvasPattern !== 'undefined' && CanvasPattern.prototype && typeof CanvasPattern.prototype.setTransform === 'function';
+const PLANE_BACKEND = { requested:'auto', active:(PLATFORM.ios || !PATTERN_TRANSFORMS) ? 'software' : 'pattern' };
+function setPlaneBackend(mode) {
+  const m = String(mode || 'auto').toLowerCase();
+  PLANE_BACKEND.requested = (m === 'software' || m === 'pattern') ? m : 'auto';
+  PLANE_BACKEND.active = PLANE_BACKEND.requested === 'auto' ? ((PLATFORM.ios || !PATTERN_TRANSFORMS) ? 'software' : 'pattern') : PLANE_BACKEND.requested;
+  return PLANE_BACKEND.active;
+}
+function togglePlaneBackend() { return setPlaneBackend(PLANE_BACKEND.active === 'software' ? 'pattern' : 'software'); }
+const PLANE_MAPPING = { mode:'world' };
+
+/* ── Cabinet contract shims ─────────────────────────────────────────────── */
+const LS = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* sandboxed */ } }
+};
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+const FTS_GA_ID = 'G-XXXXXXXXXX';           // single-string swap per cabinet
+const GA_LOG = [];
+function gaEvent(name, params) {            // dry-run until shell is live
+  const rec = { id: FTS_GA_ID, name: name, params: params || {}, t: Date.now() };
+  GA_LOG.push(rec);
+  if (GA_LOG.length > 256) GA_LOG.shift();
+}
+function reportToShell(type, payload) {
+  gaEvent(type, payload);
+  try { if (window.parent && window.parent !== window) window.parent.postMessage({ fts: 1, cabinet: 'brazen', type: type, payload: payload }, '*'); } catch (e) {}
+}
+
+/* ══ Geom — pure math, zero DOM ═════════════════════════════════════════ */
+const Geom = {
+  NEAR: 0.6,
+
+  /* World -> view space. tz = forward depth, tx = right offset.
+     forward F=(cos a, sin a); right R=(sin a, -cos a). */
+  view(px, py, cosA, sinA, x, y) {
+    const dx = x - px, dy = y - py;
+    return { tx: dx * sinA - dy * cosA, tz: dx * cosA + dy * sinA };
+  },
+
+  /* Clip a view-space segment to tz >= near. Returns null if fully behind.
+     tA/tB are interpolation params carried for texture-u. */
+  clipNear(a, b, near) {
+    const A = { tx: a.tx, tz: a.tz, t: 0 }, B = { tx: b.tx, tz: b.tz, t: 1 };
+    if (A.tz < near && B.tz < near) return null;
+    if (A.tz < near) { const f = (near - A.tz) / (B.tz - A.tz); A.tx += (B.tx - A.tx) * f; A.tz = near; A.t = f; }
+    else if (B.tz < near) { const f = (near - B.tz) / (A.tz - B.tz); B.tx += (A.tx - B.tx) * f; B.tz = near; B.t = 1 - f; }
+    return [A, B];
+  },
+
+  projX(tx, tz, halfW, projDist) { return halfW + (tx / tz) * projDist; },
+
+  /* Screen row of world height h seen from eye height pz at depth tz.
+     Invariant: h === pz  =>  y === horizon, for every tz. */
+  projY(h, pz, tz, horizon, projDist) { return horizon - ((h - pz) * projDist) / tz; },
+
+  projDist(width, fovRad) { return (width / 2) / Math.tan(fovRad / 2); },
+
+
+  /* World point sampled by a horizontal floor/ceiling scanline. `depth` is
+     forward camera depth (tz), not Euclidean ray length. Anchoring flat
+     coordinates in world space prevents the texture from swimming with the
+     viewport — the same tile stays attached to the same piece of floor. */
+  planePoint(px, py, cosA, sinA, halfW, projDist, screenX, depth) {
+    const lateral = ((screenX + 0.5 - halfW) / projDist) * depth;
+    return {
+      x: px + cosA * depth + sinA * lateral,
+      y: py + sinA * depth - cosA * lateral
+    };
+  },
+
+  /* Explicit world-locked flat UVs. `worldScale` is world-units per source
+     texel, so MEDALLION uses 3 and the 64px crop occupies 192 world units. */
+  planeUV(wx, wy, worldScale) {
+    const s = worldScale || 1;
+    return { u: wx / s, v: wy / s };
+  },
+
+  /* CanvasPattern transform from 64px texture/world coordinates to screen
+     coordinates for one horizontal plane scanline. It is the inverse of the
+     screen->world affine map used by planePoint(). */
+  planePatternTransform(px, py, cosA, sinA, halfW, projDist, row, depth) {
+    const k = depth / projDist;
+    if (!Number.isFinite(k) || Math.abs(k) < 1e-8) return null;
+    const as = sinA * k, cs = cosA * k;
+    const bs = -cosA * k, ds = sinA * k;
+    const cy = row + 0.5;
+    const wx = px + cosA * depth, wy = py + sinA * depth;
+    const es = wx - as * halfW - cs * cy;
+    const fs = wy - bs * halfW - ds * cy;
+    const det = as * ds - bs * cs;
+    if (!Number.isFinite(det) || Math.abs(det) < 1e-10) return null;
+    const a = ds / det, b = -bs / det, c = -cs / det, d = as / det;
+    return { a:a, b:b, c:c, d:d, e:-(a * es + c * fs), f:-(b * es + d * fs) };
+  },
+
+  /* Right-hand normal of v1->v2. FRONT sector lies on this side (A3). */
+  frontNormal(x1, y1, x2, y2) {
+    const dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy) || 1;
+    return { nx: dy / L, ny: -dx / L };
+  },
+
+  /* Squared distance from point to segment, plus closest point. */
+  closestOnSeg(px, py, x1, y1, x2, y2) {
+    const dx = x2 - x1, dy = y2 - y1, l2 = dx * dx + dy * dy;
+    let t = l2 === 0 ? 0 : ((px - x1) * dx + (py - y1) * dy) / l2;
+    t = t < 0 ? 0 : t > 1 ? 1 : t;
+    const cx = x1 + t * dx, cy = y1 + t * dy;
+    return { x: cx, y: cy, t: t, d2: (px - cx) * (px - cx) + (py - cy) * (py - cy) };
+  },
+
+  /* Classic DOOM R_MakeSpans. prev/cur are inclusive row ranges per column;
+     EMPTY is encoded as t > b. Emits horizontal runs via cb(row, x0, x1). */
+  makeSpans(x, t1, b1, t2, b2, spanstart, cb) {
+    while (t1 < t2 && t1 <= b1) { cb(t1, spanstart[t1], x - 1); t1++; }
+    while (b1 > b2 && b1 >= t1) { cb(b1, spanstart[b1], x - 1); b1--; }
+    while (t2 < t1 && t2 <= b2) { spanstart[t2] = x; t2++; }
+    while (b2 > b1 && b2 >= t2) { spanstart[b2] = x; b2--; }
+  }
+};
+
+/* ══ Texture atlas contract (frozen index order) ════════════════════════ */
+const TEX = {
+  STONE: 0, RIVET: 1, BRAZEN: 2, REDLIT: 3, CONCRETE: 4, BANNER: 5,
+  DOOR: 6, FASCIA: 7, RAILING: 8, HAZARD: 9, STAIRTREAD: 10, SUPPORT: 11
+};
+const TEX_NAMES = ['STONE', 'RIVET', 'BRAZEN', 'REDLIT', 'CONCRETE', 'BANNER',
+  'DOOR', 'FASCIA', 'RAILING', 'HAZARD', 'STAIRTREAD', 'SUPPORT'];
+const FLAT = {
+  HALL: [20, 20, 24], MEZZ: [28, 24, 18], SIDE: [74, 18, 18],
+  ROCK: [68, 68, 72], PANEL: [56, 48, 34], HAZARD: [86, 28, 20], OFF: [24, 22, 20],
+  MEDALLION: [34, 30, 26], CARPET: [82, 18, 22]
+};
+const FLAT_NAMES = Object.keys(FLAT);
+const FLAT_WORLD_SIZE = { HALL:64, MEZZ:64, SIDE:64, ROCK:64, PANEL:64, HAZARD:64, OFF:64, MEDALLION:192, CARPET:64 };
+const FLAT_SCALE = FLAT_NAMES.map(n => (FLAT_WORLD_SIZE[n] || 64) / 64);
+const SPR = {
+  PLANTER:0, SOFA:1, FLOORLAMP:2, BANNER:3, DIRECTORY:4, TABLE:5, LOUNGE:6,
+  CONCIERGE:7, ELEVATOR:8, CHANDELIER:9, FLOWERS:10, BUST:11, BELLHOP:12,
+  GOLDPLANTER:13, IMPACT:14
+};
+
+/* ══ Authored art resources — direct references to the supplied Brazen Tower
+   sprite sheets. No base64 image payloads are embedded in this HTML. ══ */
+const ART_FILES = {
+  // Canonical authored resources supplied with the cabinet. Keep beside HTML.
+  hud: 'sprites01.png',
+  world: 'sprites02.png'
+};
+
+/* Direct source-sheet coordinates. These are intentionally not generated
+   sub-atlases: every world texture/prop below is sliced from sprites02.png.
+   Tile crops stay square; prop crops include a few pixels of safety margin
+   so furniture, lamps, foliage and signage are never shaved at the edges. */
+const WORLD_ATLAS = {
+  materials: {
+    STONE:[16,120,64,64], RIVET:[88,120,64,64], BRAZEN:[300,120,64,64], REDLIT:[490,120,64,64],
+    CONCRETE:[158,120,64,64], BANNER:[874,884,68,68], DOOR:[648,500,64,64], FASCIA:[420,120,64,64],
+    RAILING:[520,1065,64,64], HAZARD:[1102,120,64,64], STAIRTREAD:[660,300,64,64], SUPPORT:[362,120,64,64]
+  },
+  flats: {
+    HALL:[772,120,64,64], MEZZ:[838,120,64,64], SIDE:[1102,120,64,64], ROCK:[158,120,64,64],
+    PANEL:[20,300,64,64], HAZARD:[1102,120,64,64], OFF:[838,120,64,64], MEDALLION:[902,145,72,72], CARPET:[1040,120,64,64]
+  },
+  props: {
+    PLANTER:[364,866,84,140], SOFA:[258,882,106,122], FLOORLAMP:[584,880,43,124], BANNER:[870,874,80,139],
+    DIRECTORY:[768,874,94,135], TABLE:[188,887,69,116], LOUNGE:[107,883,79,121], CONCIERGE:[1094,481,143,171],
+    ELEVATOR:[642,478,235,180], CHANDELIER:[186,283,112,153], FLOWERS:[1166,872,72,135], BUST:[1097,873,61,136],
+    BELLHOP:[508,870,72,135], GOLDPLANTER:[450,900,54,104]
+  }
+};
+
+/* HUD assets are also cut directly from sprites01.png. Faces use an explicit
+   matrix rather than assuming a uniform source grid; this avoids the subtle
+   left/right clipping that occurs when generated art is treated as exact cells. */
+const HUD_ATLAS = {
+  faces: [
+    [[14,8,99,132],[124,8,99,132],[233,8,99,132],[343,8,100,132]],
+    [[14,145,101,132],[124,145,98,132],[233,145,99,132],[343,145,100,132]],
+    [[14,280,99,136],[124,280,98,136],[233,280,99,136],[343,280,100,136]],
+    [[124,280,98,136],[233,280,99,136],[452,280,103,136],[565,280,98,136]]
+  ],
+  digits: {
+    '0':[803,7,78,105], '1':[892,7,51,105], '2':[962,7,76,105], '3':[1052,7,76,105], '4':[1142,7,85,105],
+    '5':[803,117,67,105], '6':[876,117,68,105], '7':[947,117,65,105], '8':[1017,117,67,105], '9':[1090,117,69,105], '%':[1168,117,78,105]
+  },
+  panels: { AMMO:[14,455,309,145], HEALTH:[338,455,286,145], ARMOR:[641,455,291,145] },
+  extras: { FTS:[989,336,83,90], BRAZEN:[1060,332,110,95] },
+  weapon: { idle:[18,943,167,173], recoil:[190,943,153,173], fire:[362,943,163,173] }
+};
+const ART = { world:null, hud:null, ready:false, errors:[] };
+function loadImageFile(src) {
+  return new Promise(resolve => {
+    const im = new Image();
+    im.onload = () => resolve(im);
+    im.onerror = () => { ART.errors.push(src.slice(0,32)); resolve(null); };
+    im.src = src;
+  });
+}
+async function loadExternalArt() {
+  const [world, hud] = await Promise.all([loadImageFile(ART_FILES.world), loadImageFile(ART_FILES.hud)]);
+  ART.world = world; ART.hud = hud; ART.ready = !!(world && hud);
+  return ART.ready;
+}
+
+
+/* ══ MapBuilder — rects in, sector/linedef graph out ════════════════════
+   Auto-derives portals from coincident axis-aligned edges. Every emitted
+   line is wound per A3, which the harness verifies by projection. */
+const MapBuilder = {
+  build(rects) {
+    const sectors = rects.map((r, i) => ({
+      idx: i, id: r.id, x1: r.x1, y1: r.y1, x2: r.x2, y2: r.y2,
+      floor: r.floor, ceil: r.ceil, light: r.light,
+      ftex: r.ftex, ctex: r.ctex, wtex: r.wtex, lines: []
+    }));
+    const verts = [], vmap = new Map(), lines = [];
+    const V = (x, y) => {
+      const k = x + ',' + y;
+      if (vmap.has(k)) return vmap.get(k);
+      const i = verts.length; verts.push({ x: x, y: y }); vmap.set(k, i); return i;
+    };
+
+    // side: 0=S(y1) 1=E(x2) 2=N(y2) 3=W(x1)
+    const axisOf = (s, side) => (side === 0 ? s.y1 : side === 1 ? s.x2 : side === 2 ? s.y2 : s.x1);
+    const spanOf = (s, side) => (side === 0 || side === 2) ? [s.x1, s.x2] : [s.y1, s.y2];
+    const opposite = [2, 3, 0, 1];
+    // Winding tables per A3 (front == this sector, i.e. interior on the right)
+    const mkSeg = (s, side, a, b) => {
+      if (side === 0) return [V(b, s.y1), V(a, s.y1)];   // south -> heading west
+      if (side === 1) return [V(s.x2, b), V(s.x2, a)];   // east  -> heading south
+      if (side === 2) return [V(a, s.y2), V(b, s.y2)];   // north -> heading east
+      return [V(s.x1, a), V(s.x1, b)];                   // west  -> heading north
+    };
+
+    for (const A of sectors) {
+      for (let side = 0; side < 4; side++) {
+        const ax = axisOf(A, side), [s0, s1] = spanOf(A, side);
+        const hits = [];
+        for (const B of sectors) {
+          if (B === A) continue;
+          if (axisOf(B, opposite[side]) !== ax) continue;
+          const [t0, t1] = spanOf(B, opposite[side]);
+          const a = Math.max(s0, t0), b = Math.min(s1, t1);
+          if (b - a > 0.0001) hits.push({ a: a, b: b, B: B });
+        }
+        hits.sort((p, q) => p.a - q.a);
+        let cur = s0;
+        const push = (a, b, back) => {
+          if (b - a < 0.0001) return;
+          if (back && back.idx < A.idx) return;           // emitted from the other side
+          const [v1, v2] = mkSeg(A, side, a, b);
+          const ln = {
+            idx: lines.length, v1: v1, v2: v2,
+            front: A.idx, back: back ? back.idx : -1,
+            side: side,
+            upper: A.wtex, lower: A.wtex, mid: A.wtex,
+            midTex: -1, midBot: 0, midTop: 0, blocking: !back, tag: ''
+          };
+          lines.push(ln);
+        };
+        for (const h of hits) { push(cur, h.a, null); push(h.a, h.b, h.B); cur = h.b; }
+        push(cur, s1, null);
+      }
+    }
+    for (const ln of lines) {
+      sectors[ln.front].lines.push(ln.idx);
+      if (ln.back >= 0) sectors[ln.back].lines.push(ln.idx);
+    }
+    return { verts: verts, sectors: sectors, lines: lines };
+  },
+
+  /* Structural gate — runs on every boot AND in the harness. */
+  validate(map) {
+    const errs = [];
+    for (const s of map.sectors) {
+      if (s.ceil - s.floor < 56) errs.push(`sector ${s.id}: headroom ${s.ceil - s.floor} < 56`);
+      if (s.x2 <= s.x1 || s.y2 <= s.y1) errs.push(`sector ${s.id}: degenerate rect`);
+      if (!s.lines.length) errs.push(`sector ${s.id}: no lines`);
+    }
+    // A4 — no sector may vertically overlap another in XY (no room-over-room)
+    for (let i = 0; i < map.sectors.length; i++)
+      for (let j = i + 1; j < map.sectors.length; j++) {
+        const a = map.sectors[i], b = map.sectors[j];
+        const ox = Math.min(a.x2, b.x2) - Math.max(a.x1, b.x1);
+        const oy = Math.min(a.y2, b.y2) - Math.max(a.y1, b.y1);
+        if (ox > 0.001 && oy > 0.001) errs.push(`A4 violation: ${a.id} overlaps ${b.id} in XY`);
+      }
+    // A3 — front sector must lie on the right-hand normal side
+    for (const ln of map.lines) {
+      const p = map.verts[ln.v1], q = map.verts[ln.v2];
+      const n = Geom.frontNormal(p.x, p.y, q.x, q.y);
+      const mx = (p.x + q.x) / 2 + n.nx * 0.5, my = (p.y + q.y) / 2 + n.ny * 0.5;
+      const f = map.sectors[ln.front];
+      if (!(mx >= f.x1 - 1e-6 && mx <= f.x2 + 1e-6 && my >= f.y1 - 1e-6 && my <= f.y2 + 1e-6))
+        errs.push(`A3 violation: line ${ln.idx} front ${f.id} not on right-hand side`);
+    }
+    return errs;
+  }
+};
+
+/* ══ Level ═════════════════════════════════════════════════════════════
+   Units are DOOM-ish. Player r=16, h=56, eye=41, step up 24 / down 32.
+   Layout (+X east, +Y north):
+
+     y=448 ┌───────────────────────────┬──────────┐
+           │      MEZZANINE (fl 56)    │  STAIRS  │
+           │   ...railing along south  │  0 -> 56 │
+     y=320 ├───────────────────────────┴──────────┤
+   ┌───────┤                                      ├────────┐
+   │OFFSHOT│         MAIN HALL (fl 0)             │  SIDE  │
+   └───────┤                                      ├────────┘
+     y=0   └──────────────────────────────────────┘
+          x=-192  x=0                          x=512    x=704            */
+const STAIR_STEPS = 8, STAIR_RISE = 8, STAIR_DEPTH = 20;
+const RECTS = [
+  // Grand lobby floor is partitioned so the authored medallion can occupy one
+  // world-anchored 192u tile without repeating across the whole hall.
+  { id:'ENTRY', x1:320, y1:-96, x2:704, y2:0, floor:0, ceil:240, light:.90, ftex:'HALL', ctex:'PANEL', wtex:TEX.STONE },
+  { id:'LOBBY_S', x1:192, y1:0, x2:832, y2:160, floor:0, ceil:240, light:.96, ftex:'HALL', ctex:'PANEL', wtex:TEX.STONE },
+  { id:'LOBBY_W', x1:192, y1:160, x2:416, y2:352, floor:0, ceil:240, light:.94, ftex:'HALL', ctex:'PANEL', wtex:TEX.STONE },
+  { id:'MEDALLION', x1:416, y1:160, x2:608, y2:352, floor:0, ceil:240, light:1.00, ftex:'MEDALLION', ctex:'PANEL', wtex:TEX.STONE },
+  { id:'LOBBY_E', x1:608, y1:160, x2:832, y2:352, floor:0, ceil:240, light:.94, ftex:'HALL', ctex:'PANEL', wtex:TEX.STONE },
+  { id:'LOBBY_N', x1:192, y1:352, x2:832, y2:512, floor:0, ceil:240, light:.92, ftex:'HALL', ctex:'PANEL', wtex:TEX.STONE },
+
+  // Ground-floor side destinations remain directly accessible from the lobby.
+  { id:'THEATER_LINK', x1:64, y1:64, x2:192, y2:160, floor:0, ceil:208, light:.78, ftex:'CARPET', ctex:'PANEL', wtex:TEX.BRAZEN },
+  { id:'THEATER', x1:-192, y1:64, x2:64, y2:160, floor:0, ceil:208, light:.72, ftex:'CARPET', ctex:'PANEL', wtex:TEX.REDLIT },
+  { id:'ARCADE_LINK', x1:832, y1:64, x2:960, y2:160, floor:0, ceil:208, light:.82, ftex:'SIDE', ctex:'PANEL', wtex:TEX.BRAZEN },
+  { id:'ARCADE', x1:960, y1:64, x2:1216, y2:160, floor:0, ceil:208, light:.76, ftex:'SIDE', ctex:'PANEL', wtex:TEX.REDLIT },
+
+  // The renderer cannot stack floors at identical XY, so the wraparound
+  // mezzanine is represented as a broad raised U surrounding the lower void.
+  // From its inner edges the player looks directly down into the lobby.
+  { id:'MEZZ_LEFT', x1:64, y1:160, x2:192, y2:672, floor:64, ceil:240, light:.95, ftex:'MEZZ', ctex:'PANEL', wtex:TEX.BRAZEN },
+  { id:'MEZZ_RIGHT', x1:832, y1:160, x2:960, y2:672, floor:64, ceil:240, light:.95, ftex:'MEZZ', ctex:'PANEL', wtex:TEX.BRAZEN },
+  { id:'MEZZ_CENTER', x1:320, y1:512, x2:704, y2:672, floor:64, ceil:240, light:.98, ftex:'MEZZ', ctex:'PANEL', wtex:TEX.BRAZEN },
+  { id:'MEZZ_BACK', x1:192, y1:672, x2:832, y2:800, floor:64, ceil:240, light:.98, ftex:'MEZZ', ctex:'PANEL', wtex:TEX.BRAZEN },
+  { id:'MEZZ_THEATER', x1:-96, y1:432, x2:64, y2:608, floor:64, ceil:224, light:.86, ftex:'CARPET', ctex:'PANEL', wtex:TEX.REDLIT },
+  { id:'MEZZ_ARCADE', x1:960, y1:432, x2:1120, y2:608, floor:64, ceil:224, light:.88, ftex:'SIDE', ctex:'PANEL', wtex:TEX.REDLIT },
+  { id:'ELEVATORS', x1:352, y1:800, x2:672, y2:864, floor:64, ceil:240, light:1.00, ftex:'MEZZ', ctex:'PANEL', wtex:TEX.DOOR }
+];
+for (let i = 0; i < STAIR_STEPS; i++) {
+  RECTS.push({
+    id:'STAIR_L' + i, x1:192, y1:512 + i*STAIR_DEPTH, x2:320, y2:512 + (i+1)*STAIR_DEPTH,
+    floor:STAIR_RISE*(i+1), ceil:240, light:.88 + .012*i, ftex:'MEZZ', ctex:'PANEL', wtex:TEX.STAIRTREAD
+  });
+  RECTS.push({
+    id:'STAIR_R' + i, x1:704, y1:512 + i*STAIR_DEPTH, x2:832, y2:512 + (i+1)*STAIR_DEPTH,
+    floor:STAIR_RISE*(i+1), ceil:240, light:.88 + .012*i, ftex:'MEZZ', ctex:'PANEL', wtex:TEX.STAIRTREAD
+  });
+}
+
+const DECOR = [
+  // Entry + concierge / lounge program
+  { x:250, y:72, tex:SPR.FLOORLAMP, w:26, h:74, z:0 },
+  { x:774, y:72, tex:SPR.FLOORLAMP, w:26, h:74, z:0 },
+  { x:274, y:112, tex:SPR.CONCIERGE, w:112, h:72, z:0 },
+  { x:222, y:122, tex:SPR.FLOWERS, w:30, h:48, z:0 },
+  { x:744, y:118, tex:SPR.SOFA, w:94, h:52, z:0 },
+  { x:666, y:118, tex:SPR.TABLE, w:32, h:30, z:0 },
+  { x:812, y:120, tex:SPR.LOUNGE, w:42, h:48, z:0 },
+  { x:228, y:304, tex:SPR.PLANTER, w:34, h:58, z:0 },
+  { x:796, y:304, tex:SPR.PLANTER, w:34, h:58, z:0 },
+  { x:512, y:410, tex:SPR.TABLE, w:46, h:38, z:0 },
+
+  // Grand vertical feature: authored chandelier sprite suspended over medallion.
+  { x:512, y:256, tex:SPR.CHANDELIER, w:92, h:100, z:116 },
+
+  // Wayfinding / threshold dressing
+  { x:108, y:176, tex:SPR.BANNER, w:42, h:76, z:12 },
+  { x:916, y:176, tex:SPR.DIRECTORY, w:44, h:70, z:0 },
+  { x:-50, y:176, tex:SPR.SOFA, w:86, h:48, z:0 },
+  { x:1080, y:176, tex:SPR.BELLHOP, w:44, h:76, z:0 },
+
+  // Mezzanine lounge: authored furniture only, no procedural block furniture.
+  { x:108, y:374, tex:SPR.LOUNGE, w:42, h:48, z:0 },
+  { x:108, y:458, tex:SPR.GOLDPLANTER, w:34, h:54, z:0 },
+  { x:916, y:374, tex:SPR.LOUNGE, w:42, h:48, z:0 },
+  { x:916, y:458, tex:SPR.GOLDPLANTER, w:34, h:54, z:0 },
+  { x:400, y:610, tex:SPR.SOFA, w:84, h:48, z:0 },
+  { x:512, y:610, tex:SPR.TABLE, w:30, h:28, z:0 },
+  { x:624, y:610, tex:SPR.LOUNGE, w:40, h:46, z:0 },
+  { x:246, y:730, tex:SPR.BUST, w:30, h:62, z:0 },
+  { x:778, y:730, tex:SPR.FLOWERS, w:32, h:54, z:0 },
+
+  // Elevator bank and paired banners terminate the primary sightline.
+  { x:448, y:826, tex:SPR.ELEVATOR, w:92, h:100, z:0 },
+  { x:576, y:826, tex:SPR.ELEVATOR, w:92, h:100, z:0 },
+  { x:354, y:742, tex:SPR.BANNER, w:38, h:76, z:20 },
+  { x:670, y:742, tex:SPR.BANNER, w:38, h:76, z:20 }
+];
+
+function buildLevel() {
+  const map = MapBuilder.build(RECTS);
+  const S = {}; map.sectors.forEach(s => S[s.id] = s.idx);
+  const sector = i => map.sectors[i];
+
+  // Every transition from lower lobby floor to a non-stair 64u mezzanine edge
+  // becomes a transparent authored balcony rail with a marble/brass fascia.
+  for (const l of map.lines) {
+    const A = sector(l.front), B = l.back >= 0 ? sector(l.back) : null;
+    if (!B) {
+      if (A.id.startsWith('MEZZ') || A.id === 'ELEVATORS') l.mid = TEX.BRAZEN;
+      else if (A.id === 'ARCADE' || A.id === 'THEATER') l.mid = TEX.REDLIT;
+      else l.mid = TEX.STONE;
+      continue;
+    }
+    const stair = A.id.startsWith('STAIR') || B.id.startsWith('STAIR');
+    const balcony = !stair && ((A.floor === 64 && B.floor === 0) || (B.floor === 64 && A.floor === 0));
+    if (balcony) {
+      l.blocking = true; l.midTex = TEX.RAILING; l.midBot = 64; l.midTop = 100;
+      l.lower = TEX.FASCIA; l.upper = TEX.BRAZEN; l.tag = 'RAILING';
+    }
+    if (stair) { l.lower = TEX.STAIRTREAD; l.upper = TEX.SUPPORT; }
+  }
+
+  // Destination thresholds retain explicit art cues.
+  const tagPair = (a,b,tag,upper,lower) => {
+    for (const l of map.lines) if ((l.front===S[a]&&l.back===S[b])||(l.front===S[b]&&l.back===S[a])) {
+      l.tag=tag; if (upper !== undefined) l.upper=upper; if (lower !== undefined) l.lower=lower;
+    }
+  };
+  tagPair('LOBBY_S','THEATER_LINK','THEATER',TEX.BRAZEN,TEX.FASCIA);
+  tagPair('THEATER_LINK','THEATER','THEATER',TEX.REDLIT,TEX.FASCIA);
+  tagPair('LOBBY_S','ARCADE_LINK','ARCADE',TEX.REDLIT,TEX.FASCIA);
+  tagPair('ARCADE_LINK','ARCADE','ARCADE',TEX.REDLIT,TEX.FASCIA);
+
+  map.decor = DECOR.map(d => Object.assign({}, d));
+  map.spawn = { x:512, y:54, ang:Math.PI/2 };
+  return map;
+}
+
+
+/* ══ Sim — pure, zero DOM ══════════════════════════════════════════════ */
+const PLAYER_R = 16, PLAYER_H = 56, EYE = 41, STEP_UP = 24, STEP_DOWN = 32;
+const SPEED_WALK = 190, SPEED_RUN = 330, ACCEL = 12;
+const MOVE = { strafeFactor:.92, reverseFactor:.78, accelLambda:12, brakeLambda:18, reverseLambda:10 };
+const BASE_FOV = 74 * Math.PI / 180, SPRINT_FOV = 80 * Math.PI / 180, FOV_LAMBDA = 8;
+const JUMP_VELOCITY = 250, GRAVITY = 720;
+
+class Sim {
+  constructor(map, seed) {
+    this.map = map; this.rng = mulberry32(seed >>> 0); this.seed = seed >>> 0;
+    this.x = map.spawn.x; this.y = map.spawn.y; this.ang = map.spawn.ang;
+    this.pitch = 0; this.vx = 0; this.vy = 0; this.currentFov = BASE_FOV;
+    this.sector = this.sectorAt(this.x, this.y);
+    this.baseZ = map.sectors[this.sector].floor + EYE;
+    this.baseZSmooth = this.baseZ;
+    this.airZ = 0; this.vz = 0; this.grounded = true;
+    this.z = this.baseZ;
+    this.t = 0; this.bob = 0; this.steps = 0; this.blocked = 0;
+    this.health = 100; this.armor = 0; this.ammo = 50;
+    this.fireT = -99; this.events = [];
+    this.impacts = []; this.lastImpactId = 0;
+  }
+  sectorAt(x, y) {
+    const S = this.map.sectors;
+    for (let i = 0; i < S.length; i++) {
+      const s = S[i];
+      if (x >= s.x1 && x <= s.x2 && y >= s.y1 && y <= s.y2) return i;
+    }
+    return -1;
+  }
+  /* A line blocks if solid, flagged, or the height transition is illegal. */
+  lineBlocks(ln, fromFloor) {
+    if (ln.back < 0 || ln.blocking) return true;
+    const A = this.map.sectors[ln.front], B = this.map.sectors[ln.back];
+    for (const dest of [A, B]) {
+      if (dest.ceil - dest.floor < PLAYER_H) return true;
+    }
+    const hi = Math.max(A.floor, B.floor), lo = Math.min(A.floor, B.floor);
+    if (hi - fromFloor > STEP_UP) return true;
+    if (fromFloor - lo > STEP_DOWN && Math.abs(fromFloor - hi) > STEP_UP) return true;
+    return false;
+  }
+  /* Try to move to (nx,ny); push out of blocking lines; reject if we would
+     leave the sector graph entirely (hard invariant, soak-tested). */
+  tryMove(nx, ny) {
+    const M = this.map, floorNow = M.sectors[this.sector].floor;
+    for (let pass = 0; pass < 3; pass++) {
+      let hit = false;
+      for (const ln of M.lines) {
+        const p = M.verts[ln.v1], q = M.verts[ln.v2];
+        const c = Geom.closestOnSeg(nx, ny, p.x, p.y, q.x, q.y);
+        if (c.d2 >= PLAYER_R * PLAYER_R) continue;
+        if (!this.lineBlocks(ln, floorNow)) continue;
+        const d = Math.sqrt(c.d2) || 0.0001;
+        const push = (PLAYER_R - d) + 0.01;
+        nx += ((nx - c.x) / d) * push; ny += ((ny - c.y) / d) * push;
+        hit = true;
+      }
+      if (!hit) break;
+    }
+    const sec = this.sectorAt(nx, ny);
+    if (sec < 0) { this.blocked++; return false; }
+    const dst = M.sectors[sec], dstFloor = dst.floor;
+    if (dstFloor - floorNow > STEP_UP || floorNow - dstFloor > STEP_DOWN) { this.blocked++; return false; }
+    // While airborne, the player's feet are elevated by airZ. Do not allow a
+    // lateral move that would place the player's head through a lower ceiling.
+    if (dst.ceil - dst.floor < PLAYER_H + Math.max(0, this.airZ)) { this.blocked++; return false; }
+    if (sec !== this.sector) this.events.push({ t: this.t, k: 'sector', from: this.sector, to: sec });
+    this.x = nx; this.y = ny; this.sector = sec;
+    return true;
+  }
+  look(dx, dy, sens, invert) {
+    // Mouse RIGHT turns right = clockwise = DECREASING angle (A2).
+    this.ang -= dx * sens;
+    while (this.ang > Math.PI) this.ang -= Math.PI * 2;
+    while (this.ang < -Math.PI) this.ang += Math.PI * 2;
+    // Mouse DOWN looks down; looking down lowers the horizon row.
+    this.pitch -= (invert ? -dy : dy) * sens * 220;
+    const lim = 260; this.pitch = Math.max(-lim, Math.min(lim, this.pitch));
+  }
+  step(dt, input) {
+    this.t += dt;
+    const cs = Math.cos(this.ang), sn = Math.sin(this.ang);
+    let f = (input.fwd ? 1 : 0) - (input.back ? 1 : 0);
+    let r = (input.right ? 1 : 0) - (input.left ? 1 : 0);
+    const mag0 = Math.hypot(f, r);
+    if (mag0 > 1) { f /= mag0; r /= mag0; }
+    const spd = input.run ? SPEED_RUN : SPEED_WALK;
+    const forward = f * spd * (f < 0 ? MOVE.reverseFactor : 1);
+    const strafe = r * spd * MOVE.strafeFactor;
+    const tx = cs * forward + sn * strafe;
+    const ty = sn * forward - cs * strafe;
+    const dot = this.vx * tx + this.vy * ty;
+    const lambda = mag0 <= .001 ? MOVE.brakeLambda : (dot < 0 ? MOVE.reverseLambda : MOVE.accelLambda);
+    const k = 1 - Math.exp(-lambda * dt);
+    this.vx += (tx - this.vx) * k; this.vy += (ty - this.vy) * k;
+
+    const ox = this.x, oy = this.y;
+    if (Math.hypot(this.vx, this.vy) * dt > 0.001) {
+      if (!this.tryMove(this.x + this.vx * dt, this.y + this.vy * dt)) {
+        const sx = this.tryMove(this.x + this.vx * dt, this.y);
+        const sy = this.tryMove(this.x, this.y + this.vy * dt);
+        if (!sx) this.vx *= .2;
+        if (!sy) this.vy *= .2;
+      }
+    }
+    const moved = Math.hypot(this.x - ox, this.y - oy);
+    if (moved > 0.001) {
+      this.bob += moved * 0.055;
+      const prev = this.steps; this.steps = Math.floor(this.bob / Math.PI);
+      if (this.steps !== prev) this.events.push({ t: this.t, k: 'step' });
+    } else {
+      this.bob += (Math.round(this.bob / Math.PI) * Math.PI - this.bob) * (1 - Math.exp(-8 * dt));
+    }
+
+    const fovTarget = input.run && mag0 > .15 ? SPRINT_FOV : BASE_FOV;
+    this.currentFov += (fovTarget - this.currentFov) * (1 - Math.exp(-FOV_LAMBDA * dt));
+
+    const secNow = this.map.sectors[this.sector];
+    this.baseZ = secNow.floor + EYE;
+    this.baseZSmooth += (this.baseZ - this.baseZSmooth) * (1 - Math.exp(-12 * dt));
+
+    if (input.jump) {
+      input.jump = 0;
+      if (this.grounded) {
+        this.grounded = false; this.vz = JUMP_VELOCITY;
+        this.events.push({ t: this.t, k: 'jump' });
+      }
+    }
+    if (!this.grounded) {
+      this.airZ += this.vz * dt;
+      this.vz -= GRAVITY * dt;
+      const maxAir = Math.max(0, secNow.ceil - secNow.floor - PLAYER_H - 1);
+      if (this.airZ > maxAir) { this.airZ = maxAir; if (this.vz > 0) this.vz = 0; }
+      if (this.airZ <= 0 && this.vz <= 0) {
+        this.airZ = 0; this.vz = 0; this.grounded = true;
+        this.events.push({ t: this.t, k: 'land' });
+      }
+    }
+    this.z = this.baseZ + this.airZ;
+    return this;
+  }
+  eyeZ() {
+    const bob = this.grounded ? Math.sin(this.bob) * 1.8 : Math.sin(this.bob) * 0.35;
+    return this.baseZSmooth + this.airZ + bob;
+  }
+  shotCast(maxDist) {
+    const dx = Math.cos(this.ang), dy = Math.sin(this.ang);
+    let best = null;
+    for (const ln of this.map.lines) {
+      if (ln.back >= 0 && !ln.blocking && ln.midTex < 0) continue;
+      const a = this.map.verts[ln.v1], b = this.map.verts[ln.v2];
+      const sx = b.x - a.x, sy = b.y - a.y;
+      const denom = dx * sy - dy * sx;
+      if (Math.abs(denom) < 1e-6) continue;
+      const qx = a.x - this.x, qy = a.y - this.y;
+      const t = (qx * sy - qy * sx) / denom;
+      const u = (qx * dy - qy * dx) / denom;
+      if (t <= 1 || t > maxDist || u < 0 || u > 1) continue;
+      if (!best || t < best.t) {
+        const n = Geom.frontNormal(a.x, a.y, b.x, b.y);
+        best = { t:t, x:this.x + dx * t, y:this.y + dy * t, nx:n.nx, ny:n.ny, line:ln };
+      }
+    }
+    return best;
+  }
+  registerImpact(hit) {
+    if (!hit) return;
+    const life = 24;
+    const sec = this.sectorAt(Math.min(Math.max(hit.x - hit.nx * 2, -255), 959), Math.min(Math.max(hit.y - hit.ny * 2, 0), 575));
+    const z = sec >= 0 ? Math.max(14, Math.min(this.map.sectors[sec].ceil - this.map.sectors[sec].floor - 18, this.eyeZ() - this.map.sectors[sec].floor - 6)) : 32;
+    this.impacts.push({
+      id: ++this.lastImpactId,
+      x: hit.x - hit.nx * 6,
+      y: hit.y - hit.ny * 6,
+      z: z,
+      tex: SPR.IMPACT,
+      w: 18,
+      h: 18,
+      born: this.t,
+      ttl: life
+    });
+    if (this.impacts.length > 40) this.impacts.shift();
+  }
+  clearImpacts() { this.impacts.length = 0; }
+  fire() {
+    if (this.ammo <= 0) return false;
+    this.ammo--; this.fireT = this.t;
+    const hit = this.shotCast(1400);
+    if (hit) this.registerImpact(hit);
+    this.events.push({ t: this.t, k: 'fire' });
+    return true;
+  }
+}
+
+/* ══ RenderCore — PURE. Emits flat draw lists. No canvas refs (A5). ═════ */
+const KIND = { WALL: 0, UPPER: 1, LOWER: 2, MID: 3 };
+const MAX_DEPTH = 20, MAX_JOBS = 256;
+
+class DrawLists {
+  constructor(w, h) { this.alloc(w, h); }
+  alloc(w, h) {
+    this.w = w; this.h = h;
+    const cap = w * 6;
+    this.wN = 0;
+    this.wX = new Int16Array(cap); this.wY0 = new Float32Array(cap); this.wY1 = new Float32Array(cap);
+    this.wTex = new Uint8Array(cap); this.wU = new Float32Array(cap);
+    this.wTop = new Float32Array(cap); this.wBot = new Float32Array(cap);
+    this.wF0 = new Float32Array(cap); this.wF1 = new Float32Array(cap);
+    this.wDist = new Float32Array(cap); this.wLight = new Float32Array(cap);
+    this.mN = 0;
+    this.mX = new Int16Array(cap); this.mY0 = new Float32Array(cap); this.mY1 = new Float32Array(cap);
+    this.mTex = new Uint8Array(cap); this.mU = new Float32Array(cap);
+    this.mF0 = new Float32Array(cap); this.mF1 = new Float32Array(cap);
+    this.mDist = new Float32Array(cap); this.mLight = new Float32Array(cap);
+    const scap = w * h / 2 | 0;
+    this.sN = 0;
+    this.sY = new Int16Array(scap); this.sX0 = new Int16Array(scap); this.sX1 = new Int16Array(scap);
+    this.sFlat = new Uint8Array(scap); this.sDist = new Float32Array(scap); this.sLight = new Float32Array(scap);
+    this.colDepth = new Float32Array(w);
+    // Opaque scene depth at pixel granularity. Transparent mids/sprites are
+    // composited far->near against this buffer so nearby architecture masks
+    // only the pixels it actually occupies (not the whole screen column).
+    this.pixelDepth = new Float32Array(w * h);
+    this.stats = { sectors: 0, portals: 0, lines: 0, dropped: 0, jobLog: [] };
+  }
+  reset() {
+    this.wN = 0; this.mN = 0; this.sN = 0;
+    this.colDepth.fill(1e9);
+    this.stats.sectors = 0; this.stats.portals = 0; this.stats.lines = 0;
+    this.stats.dropped = 0; this.stats.jobLog.length = 0;
+  }
+  wall(x, y0, y1, tex, u, top, bot, dist, light, f0, f1) {
+    if (this.wN >= this.wX.length) { this.stats.dropped++; return; }
+    const i = this.wN++;
+    this.wX[i] = x; this.wY0[i] = y0; this.wY1[i] = y1; this.wTex[i] = tex; this.wU[i] = u;
+    this.wTop[i] = top; this.wBot[i] = bot; this.wDist[i] = dist; this.wLight[i] = light;
+    this.wF0[i] = f0; this.wF1[i] = f1;
+  }
+  mid(x, y0, y1, tex, u, dist, light, f0, f1) {
+    if (this.mN >= this.mX.length) { this.stats.dropped++; return; }
+    const i = this.mN++;
+    this.mX[i] = x; this.mY0[i] = y0; this.mY1[i] = y1; this.mTex[i] = tex; this.mU[i] = u;
+    this.mDist[i] = dist; this.mLight[i] = light; this.mF0[i] = f0; this.mF1[i] = f1;
+  }
+  span(y, x0, x1, flat, dist, light) {
+    if (x1 < x0) return;
+    if (this.sN >= this.sY.length) { this.stats.dropped++; return; }
+    const i = this.sN++;
+    this.sY[i] = y; this.sX0[i] = x0; this.sX1[i] = x1; this.sFlat[i] = flat;
+    this.sDist[i] = dist; this.sLight[i] = light;
+  }
+}
+
+const RenderCore = {
+  FOV: BASE_FOV,
+
+  /* solve(sim, out, w, h) — portal flood. Convex sectors (A1) let us draw
+     all solids first (establishing occlusion) then recurse portals. */
+  solve(sim, out, w, h) {
+    out.reset();
+    const M = sim.map, S = M.sectors, V = M.verts;
+    const projDist = Geom.projDist(w, sim.currentFov || this.FOV);
+    const halfW = w / 2;
+    const pz = sim.eyeZ();
+    const horizon = Math.round(h / 2 + sim.pitch);
+    const cosA = Math.cos(sim.ang), sinA = Math.sin(sim.ang);
+    const near = Geom.NEAR;
+
+    // Per-depth clip window pools (Build-engine style).
+    if (!out._ytop || out._ytop[0].length !== w) {
+      out._ytop = []; out._ybot = [];
+      for (let d = 0; d <= MAX_DEPTH; d++) { out._ytop.push(new Int16Array(w)); out._ybot.push(new Int16Array(w)); }
+      out._pt = new Int16Array(w); out._pb = new Int16Array(w);
+      out._ft = new Int16Array(w); out._fb = new Int16Array(w);
+      out._ss = new Int16Array(h + 8);
+    }
+    const yt0 = out._ytop[0], yb0 = out._ybot[0];
+    yt0.fill(0); yb0.fill(h - 1);
+
+    const queue = [{ sec: sim.sector < 0 ? 0 : sim.sector, x0: 0, x1: w - 1, depth: 0 }];
+    let jobs = 0;
+
+    while (queue.length) {
+      const job = queue.shift();
+      if (++jobs > MAX_JOBS) break;
+      const sec = S[job.sec], depth = job.depth;
+      if (depth > MAX_DEPTH) continue;
+      const ytop = out._ytop[depth], ybot = out._ybot[depth];
+      const jx0 = job.x0, jx1 = job.x1;
+      if (jx1 < jx0) continue;
+      out.stats.sectors++;
+      out.stats.jobLog.push({ d: depth, x0: jx0, x1: jx1, sec: sec.idx });
+
+      // Plane accumulators over this job's window; EMPTY = top>bot.
+      const ct = out._pt, cb = out._pb, ft = out._ft, fb = out._fb;
+      for (let x = jx0; x <= jx1; x++) { ct[x] = h; cb[x] = -1; ft[x] = h; fb[x] = -1; }
+
+      const portals = [];
+      // ── pass over every line of this sector
+      for (const li of sec.lines) {
+        const ln = M.lines[li];
+        const flip = (ln.back === sec.idx);
+        const other = flip ? ln.front : ln.back;
+        const p = V[flip ? ln.v2 : ln.v1], q = V[flip ? ln.v1 : ln.v2];
+        const a0 = Geom.view(sim.x, sim.y, cosA, sinA, p.x, p.y);
+        const b0 = Geom.view(sim.x, sim.y, cosA, sinA, q.x, q.y);
+        const cl = Geom.clipNear(a0, b0, near);
+        if (!cl) continue;
+        const A = cl[0], B = cl[1];
+        let xa = Geom.projX(A.tx, A.tz, halfW, projDist);
+        let xb = Geom.projX(B.tx, B.tz, halfW, projDist);
+        if (xa >= xb) continue;                                   // back-facing (A3)
+        out.stats.lines++;
+        const sx0 = Math.max(jx0, Math.ceil(xa)), sx1 = Math.min(jx1, Math.ceil(xb) - 1);
+        if (sx1 < sx0) continue;
+
+        const segLen = Math.hypot(q.x - p.x, q.y - p.y);
+        const iza = 1 / A.tz, izb = 1 / B.tz;
+        const ua = A.t * iza, ub = B.t * izb;                     // perspective-correct u
+        const back = other >= 0 ? S[other] : null;
+        const isPortal = !!back;
+        const nxt = isPortal ? { x0: w, x1: -1 } : null;
+
+        for (let x = sx0; x <= sx1; x++) {
+          const cTop = ytop[x], cBot = ybot[x];
+          if (cTop > cBot) continue;
+          const f = (x + 0.5 - xa) / (xb - xa);
+          const iz = iza + (izb - iza) * f;
+          const z = 1 / iz;
+          const u = (ua + (ub - ua) * f) * z * segLen;   // world units along the wall
+          const dist = z;
+          const yC = Geom.projY(sec.ceil, pz, z, horizon, projDist);
+          const yF = Geom.projY(sec.floor, pz, z, horizon, projDist);
+          let wt = Math.round(yC), wb2 = Math.round(yF) - 1;
+          if (wt < cTop) wt = cTop; if (wt > cBot + 1) wt = cBot + 1;
+          if (wb2 > cBot) wb2 = cBot; if (wb2 < cTop - 1) wb2 = cTop - 1;
+
+          if (cTop <= wt - 1) { ct[x] = cTop; cb[x] = wt - 1; }
+          if (wb2 + 1 <= cBot) { ft[x] = wb2 + 1; fb[x] = cBot; }
+
+          if (!isPortal) {
+            if (wt <= wb2) {
+              out.wall(x, wt, wb2 + 1, ln.mid, u / 64, sec.ceil, sec.floor, dist, sec.light, yC, yF);
+              if (dist < out.colDepth[x]) out.colDepth[x] = dist;
+            }
+            ytop[x] = 1; ybot[x] = 0;                              // fully occluded
+          } else {
+            const yU = Geom.projY(back.ceil, pz, z, horizon, projDist);
+            const yL = Geom.projY(back.floor, pz, z, horizon, projDist);
+            let ut = wt, ub2 = Math.round(yU) - 1;
+            if (ub2 > wb2) ub2 = wb2;
+            let lt = Math.round(yL), lb = wb2;
+            if (lt < wt) lt = wt;
+            if (back.ceil < sec.ceil && ut <= ub2) {
+              out.wall(x, ut, ub2 + 1, ln.upper, u / 64, sec.ceil, back.ceil, dist, sec.light, yC, yU);
+              if (dist < out.colDepth[x]) out.colDepth[x] = dist;
+            }
+            if (back.floor > sec.floor && lt <= lb) {
+              out.wall(x, lt, lb + 1, ln.lower, u / 64, back.floor, sec.floor, dist, sec.light, yL, yF);
+              if (dist < out.colDepth[x]) out.colDepth[x] = dist;
+            }
+            const nt = Math.max(wt, back.ceil < sec.ceil ? ub2 + 1 : wt);
+            const nb = Math.min(wb2, back.floor > sec.floor ? lt - 1 : wb2);
+            if (ln.midTex >= 0) {
+              const mTop = Math.round(Geom.projY(ln.midTop, pz, z, horizon, projDist));
+              const mBot = Math.round(Geom.projY(ln.midBot, pz, z, horizon, projDist)) - 1;
+              const t = Math.max(mTop, nt), b2 = Math.min(mBot, nb);
+              if (t <= b2) out.mid(x, t, b2 + 1, ln.midTex, u / 64, dist, sec.light,
+                Geom.projY(ln.midTop, pz, z, horizon, projDist),
+                Geom.projY(ln.midBot, pz, z, horizon, projDist));
+            }
+            ytop[x] = 1; ybot[x] = 0;                              // handled by recursion
+            if (nt <= nb) {
+              if (x < nxt.x0) nxt.x0 = x;
+              if (x > nxt.x1) nxt.x1 = x;
+              out._nt = out._nt || new Int16Array(w); out._nb = out._nb || new Int16Array(w);
+              out._nt[x] = nt; out._nb[x] = nb;
+            } else { out._nt = out._nt || new Int16Array(w); out._nb = out._nb || new Int16Array(w); out._nt[x] = 1; out._nb[x] = 0; }
+          }
+        }
+        if (isPortal && nxt.x1 >= nxt.x0 && depth + 1 <= MAX_DEPTH) {
+          const dt = out._ytop[depth + 1], db = out._ybot[depth + 1];
+          for (let x = nxt.x0; x <= nxt.x1; x++) { dt[x] = out._nt[x]; db[x] = out._nb[x]; }
+          portals.push({ sec: other, x0: nxt.x0, x1: nxt.x1, depth: depth + 1 });
+          out.stats.portals++;
+        }
+      }
+
+      // ── emit floor/ceiling planes for this sector visit
+      this._plane(out, ct, cb, jx0, jx1, FLAT_NAMES.indexOf(sec.ctex), sec.ceil, pz, horizon, projDist, sec.light, h);
+      this._plane(out, ft, fb, jx0, jx1, FLAT_NAMES.indexOf(sec.ftex), sec.floor, pz, horizon, projDist, sec.light, h);
+
+      for (const pj of portals) queue.push(pj);
+    }
+
+    out.view = { projDist: projDist, horizon: horizon, pz: pz, halfW: halfW, w: w, h: h, cosA: cosA, sinA: sinA };
+    return out;
+  },
+
+  _plane(out, top, bot, x0, x1, flat, planeZ, pz, horizon, projDist, light, h) {
+    const ss = out._ss, dz = Math.abs(planeZ - pz);
+    let pt = h, pb = -1;
+    const cb = (row, a, b) => {
+      const dy = Math.abs(row + 0.5 - horizon);
+      const dist = dy < 0.5 ? 1e6 : (dz * projDist) / dy;
+      out.span(row, a, b, flat < 0 ? 0 : flat, dist, light);
+    };
+    for (let x = x0; x <= x1 + 1; x++) {
+      const t = x > x1 ? h : top[x], b = x > x1 ? -1 : bot[x];
+      Geom.makeSpans(x, pt, pb, t, b, ss, cb);
+      pt = t; pb = b;
+    }
+  },
+
+  /* Billboard sprites, sorted far->near, clipped against colDepth. */
+  sprites(sim, out) {
+    const M = sim.map, v = out.view, list = [];
+    for (const d of M.decor) {
+      const p = Geom.view(sim.x, sim.y, v.cosA, v.sinA, d.x, d.y);
+      if (p.tz < Geom.NEAR * 2) continue;
+      list.push({ d: d, tz: p.tz, tx: p.tx });
+    }
+    for (const d of sim.impacts) {
+      if (sim.t - d.born > d.ttl) continue;
+      const p = Geom.view(sim.x, sim.y, v.cosA, v.sinA, d.x, d.y);
+      if (p.tz < Geom.NEAR) continue;
+      list.push({ d: d, tz: p.tz, tx: p.tx, impact: 1 });
+    }
+    list.sort((a, b) => b.tz - a.tz);
+    return list;
+  }
+};
+
+/* ══ Audio — four-bus, MUTED BY DEFAULT (cabinet contract) ═════════════ */
+const Audio4 = {
+  ready: false, on: false, ctx: null, buses: {}, master: null,
+  seq: null, step: 0, nextT: 0, rng: null,
+  init(seed) {
+    if (this.ready) return;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    try { this.ctx = new AC(); } catch (e) { return; }
+    this.master = this.ctx.createGain(); this.master.gain.value = 0; // muted
+    this.master.connect(this.ctx.destination);
+    for (const b of ['BED', 'FLOOR', 'FOLEY', 'FOCUS']) {
+      const g = this.ctx.createGain();
+      g.gain.value = { BED: .30, FLOOR: .34, FOLEY: .55, FOCUS: .70 }[b];
+      g.connect(this.master); this.buses[b] = g;
+    }
+    this.rng = mulberry32(seed ^ 0x5eed);
+    this._drone();
+    this.ready = true;
+  },
+  setOn(on) {
+    this.on = on; if (!this.ready) return;
+    if (on && this.ctx.state === 'suspended') this.ctx.resume();
+    const t = this.ctx.currentTime;
+    this.master.gain.cancelScheduledValues(t);
+    this.master.gain.setTargetAtTime(on ? 0.85 : 0, t, 0.08);
+    if (on && this.nextT === 0) this.nextT = this.ctx.currentTime + 0.1;
+  },
+  setBus(name, v) { if (this.buses[name]) this.buses[name].gain.value = v; },
+  _drone() {
+    const c = this.ctx, f = c.createBiquadFilter();
+    f.type = 'lowpass'; f.frequency.value = 240; f.Q.value = 6;
+    f.connect(this.buses.BED);
+    for (const d of [0, 3.5, -4.2]) {
+      const o = c.createOscillator(); o.type = 'sawtooth';
+      o.frequency.value = 55 + d; o.connect(f); o.start();
+    }
+    const lfo = c.createOscillator(), lg = c.createGain();
+    lfo.frequency.value = 0.06; lg.gain.value = 90;
+    lfo.connect(lg); lg.connect(f.frequency); lfo.start();
+  },
+  _env(bus, type, freq, dur, gain, sweep) {
+    if (!this.ready || !this.on) return;
+    const c = this.ctx, t = c.currentTime;
+    const o = c.createOscillator(), g = c.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, t);
+    if (sweep) o.frequency.exponentialRampToValueAtTime(Math.max(20, sweep), t + dur);
+    g.gain.setValueAtTime(gain, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(this.buses[bus]); o.start(t); o.stop(t + dur + .02);
+  },
+  _noise(bus, dur, gain, cut, q) {
+    if (!this.ready || !this.on) return;
+    const c = this.ctx, n = c.sampleRate * dur | 0;
+    const buf = c.createBuffer(1, Math.max(1, n), c.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < n; i++) d[i] = (this.rng() * 2 - 1) * (1 - i / n);
+    const src = c.createBufferSource(); src.buffer = buf;
+    const f = c.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = cut; f.Q.value = q || 1;
+    const g = c.createGain(); g.gain.value = gain;
+    src.connect(f); f.connect(g); g.connect(this.buses[bus]); src.start();
+  },
+  sfx(name) {
+    // Audio is intentionally lazy-initialized and muted by default. Game
+    // events still occur before the player enables audio, so never touch
+    // audio-only state (notably rng) until init() has completed.
+    if (!this.ready || !this.on || typeof this.rng !== 'function') return false;
+    switch (name) {
+      case 'step': this._noise('FOLEY', .07, .22, 380 + this.rng() * 160, 1.4); break;
+      case 'fire': this._env('FOCUS', 'square', 220, .10, .35, 60); this._noise('FOCUS', .16, .5, 1400, .8); break;
+      case 'dry': this._env('FOCUS', 'square', 160, .05, .12, 90); break;
+      case 'sector': this._env('FOLEY', 'sine', 300, .06, .07, 220); break;
+      case 'jump': this._env('FOLEY', 'triangle', 130, .09, .08, 210); break;
+      case 'land': this._noise('FOLEY', .09, .18, 260, 1.1); break;
+      default: return false;
+    }
+    return true;
+  },
+  /* 16-step lookahead sequencer on the FLOOR bus. */
+  tick() {
+    if (!this.ready || !this.on) return;
+    const c = this.ctx, look = 0.12;
+    if (!this.seq) {
+      const r = this.rng, root = 55;
+      this.seq = { bass: [], hat: [], kick: [] };
+      const scale = [0, 3, 5, 7, 10];
+      for (let i = 0; i < 16; i++) {
+        this.seq.bass.push(i % 4 === 0 ? root : (r() < .45 ? root * Math.pow(2, scale[(r() * 5) | 0] / 12) : 0));
+        this.seq.hat.push(r() < .6 ? 1 : 0);
+        this.seq.kick.push(i % 8 === 0 || (i % 8 === 6 && r() < .5) ? 1 : 0);
+      }
+    }
+    const spb = 60 / 138 / 4;
+    while (this.nextT < c.currentTime + look) {
+      const t = this.nextT, s = this.step % 16;
+      if (this.seq.kick[s]) {
+        const o = c.createOscillator(), g = c.createGain();
+        o.type = 'sine'; o.frequency.setValueAtTime(120, t);
+        o.frequency.exponentialRampToValueAtTime(38, t + .12);
+        g.gain.setValueAtTime(.7, t); g.gain.exponentialRampToValueAtTime(.001, t + .18);
+        o.connect(g); g.connect(this.buses.FLOOR); o.start(t); o.stop(t + .2);
+      }
+      const bf = this.seq.bass[s];
+      if (bf) {
+        const o = c.createOscillator(), g = c.createGain(), f = c.createBiquadFilter();
+        o.type = 'square'; o.frequency.value = bf * 2;
+        f.type = 'lowpass'; f.frequency.setValueAtTime(900, t);
+        f.frequency.exponentialRampToValueAtTime(180, t + spb * 1.6);
+        g.gain.setValueAtTime(.28, t); g.gain.exponentialRampToValueAtTime(.001, t + spb * 1.8);
+        o.connect(f); f.connect(g); g.connect(this.buses.FLOOR); o.start(t); o.stop(t + spb * 2);
+      }
+      if (this.seq.hat[s]) {
+        const n = c.sampleRate * .03 | 0;
+        const buf = c.createBuffer(1, n, c.sampleRate), d = buf.getChannelData(0);
+        for (let i = 0; i < n; i++) d[i] = (this.rng() * 2 - 1) * (1 - i / n);
+        const src = c.createBufferSource(); src.buffer = buf;
+        const hp = c.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 7000;
+        const g = c.createGain(); g.gain.value = .10;
+        src.connect(hp); hp.connect(g); g.connect(this.buses.FLOOR); src.start(t);
+      }
+      this.nextT += spb; this.step++;
+    }
+  }
+};
+
+/* ══ Presentation ══════════════════════════════════════════════════════ */
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext ? canvas.getContext('2d') : null;
+const HEADLESS = !ctx;                                   // A6
+const uiEl = document.getElementById('ui');
+const audioBtn = document.getElementById('audioBtn');
+const mapBtn = document.getElementById('mapBtn');
+const lockEl = document.getElementById('lock');
+const touchMoveEl = document.getElementById('touchMove');
+const touchKnobEl = document.getElementById('touchKnob');
+const touchFireEl = document.getElementById('touchFire');
+const touchJumpEl = document.getElementById('touchJump');
+const touchRunEl = document.getElementById('touchRun');
+if (PLATFORM.touch && document.body) document.body.classList.add('touch-ui');
+if (PLATFORM.touch && lockEl) lockEl.innerHTML = 'ENTER BRAZEN TOWER · MOBILE<br>LEFT PAD MOVE · DRAG WORLD LOOK<br>FIRE · JUMP · HOLD RUN<br><span style="opacity:.6">WORLD-LOCKED PLANES · MOBILE SAFE</span>';
+
+const SHADES = 12;
+const TILE_H = 256;   // strip height in world units == px (4 x 64 tiles)
+const TEX_SRC = [];        // atlas override hook (DR-DOOM-2)
+let texBank = [], flatBank = [], flatTileBank = [], flatPixelBank = [], sprBank = [];
+
+function px(c, x, y, w, h, col) { c.fillStyle = col; c.fillRect(x, y, w, h); }
+function makeTexCanvas(id, rnd) {
+  const cv = document.createElement('canvas'); cv.width = cv.height = 64;
+  const g = cv.getContext('2d'); if (!g) return null;
+  const R = rnd;
+  const noise = (a) => { for (let i = 0; i < 900; i++) { const x = R() * 64 | 0, y = R() * 64 | 0; g.fillStyle = `rgba(0,0,0,${R() * a})`; g.fillRect(x, y, 1, 1); } };
+  switch (id) {
+    case TEX.STONE: px(g, 0, 0, 64, 64, '#6b6b70');
+      for (let y = 0; y < 64; y += 16) for (let x = (y / 16 % 2) * 16; x < 64; x += 32) {
+        px(g, x + 1, y + 1, 30, 14, `rgb(${110 + R() * 24 | 0},${108 + R() * 22 | 0},${112 + R() * 22 | 0})`);
+      } noise(.5); break;
+    case TEX.RIVET: px(g, 0, 0, 64, 64, '#8a7a5a');
+      for (let y = 0; y < 64; y += 21) px(g, 0, y, 64, 2, '#4a4030');
+      for (let x = 0; x < 64; x += 21) px(g, x, 0, 2, 64, '#4a4030');
+      for (let y = 6; y < 64; y += 21) for (let x = 6; x < 64; x += 21) { px(g, x, y, 3, 3, '#cbb684'); px(g, x + 1, y + 1, 1, 1, '#6a5a3a'); }
+      noise(.45); break;
+    case TEX.BRAZEN: px(g, 0, 0, 64, 64, '#4c5157');
+      px(g, 4, 4, 56, 56, '#5d636b'); px(g, 4, 4, 56, 3, '#7d848c'); px(g, 4, 57, 56, 3, '#333940');
+      px(g, 10, 26, 44, 4, '#c02a18'); px(g, 10, 34, 26, 3, '#8a1f12');
+      for (let i = 0; i < 6; i++) px(g, 8 + i * 9, 12, 3, 3, '#9aa2ab'); noise(.4); break;
+    case TEX.REDLIT: px(g, 0, 0, 64, 64, '#5c1a16');
+      for (let y = 0; y < 64; y += 32) for (let x = 0; x < 64; x += 32) px(g, x + 2, y + 2, 28, 28, '#7d2019');
+      px(g, 0, 30, 64, 3, '#ff4020'); px(g, 0, 31, 64, 1, '#ffb090'); noise(.5); break;
+    case TEX.CONCRETE: px(g, 0, 0, 64, 64, '#6e6a64');
+      for (let i = 0; i < 40; i++) px(g, R() * 64 | 0, R() * 64 | 0, 2 + R() * 6 | 0, 1 + R() * 2 | 0, '#5c5852');
+      px(g, 0, 20, 64, 1, '#4e4a45'); px(g, 0, 44, 64, 1, '#4e4a45'); noise(.55); break;
+    case TEX.BANNER: px(g, 0, 0, 64, 64, '#3a3a3e');
+      px(g, 12, 0, 40, 60, '#8f1410'); px(g, 14, 0, 36, 58, '#b81c14');
+      px(g, 22, 14, 20, 18, '#ddc9a0'); px(g, 26, 20, 4, 5, '#20140c'); px(g, 34, 20, 4, 5, '#20140c');
+      px(g, 28, 30, 8, 4, '#20140c'); px(g, 24, 34, 16, 6, '#ddc9a0');
+      for (let i = 0; i < 5; i++) px(g, 14 + i * 8, 58, 5, 6, '#b81c14'); noise(.4); break;
+    case TEX.DOOR: px(g, 0, 0, 64, 64, '#6a5836');
+      px(g, 3, 0, 58, 64, '#8a7346'); px(g, 30, 0, 4, 64, '#4a3d24');
+      for (let y = 8; y < 64; y += 16) { px(g, 6, y, 22, 10, '#9a8352'); px(g, 36, y, 22, 10, '#9a8352'); }
+      px(g, 26, 28, 12, 8, '#c0392b'); noise(.45); break;
+    case TEX.FASCIA: px(g, 0, 0, 64, 64, '#3f5230');
+      px(g, 0, 0, 64, 6, '#6d8a4e'); px(g, 0, 58, 64, 6, '#243318');
+      for (let x = 4; x < 64; x += 12) px(g, x, 10, 8, 44, '#4b6238');
+      for (let x = 8; x < 64; x += 12) px(g, x, 14, 2, 2, '#a8c07a'); noise(.5); break;
+    case TEX.RAILING: g.clearRect(0, 0, 64, 64);
+      px(g, 0, 0, 64, 9, '#8a9099'); px(g, 0, 2, 64, 2, '#c2cad3');
+      px(g, 0, 54, 64, 10, '#5c6169');
+      for (let x = 4; x < 64; x += 15) { px(g, x, 9, 5, 45, '#767c85'); px(g, x + 1, 9, 1, 45, '#a5acb5'); }
+      px(g, 0, 30, 64, 3, '#6b7078'); break;
+    case TEX.HAZARD: for (let i = -8; i < 12; i++) {
+      g.fillStyle = i % 2 ? '#d8a416' : '#1e1c16';
+      g.beginPath(); g.moveTo(i * 8, 0); g.lineTo(i * 8 + 8, 0); g.lineTo(i * 8 + 24, 64); g.lineTo(i * 8 + 16, 64); g.closePath(); g.fill();
+    } noise(.45); break;
+    case TEX.STAIRTREAD: px(g, 0, 0, 64, 64, '#77787c');
+      px(g, 0, 0, 64, 8, '#9a9ba0'); px(g, 0, 56, 64, 8, '#4c4d51');
+      for (let x = 2; x < 64; x += 8) px(g, x, 12, 4, 40, '#68696d'); noise(.5); break;
+    case TEX.SUPPORT: px(g, 0, 0, 64, 64, '#5a5f66');
+      px(g, 8, 0, 48, 64, '#6d737b'); px(g, 8, 0, 4, 64, '#8d949d'); px(g, 52, 0, 4, 64, '#3d434a');
+      for (let y = 6; y < 64; y += 14) px(g, 26, y, 12, 3, '#4a5058'); noise(.4); break;
+    default: px(g, 0, 0, 64, 64, '#808080');
+  }
+  return cv;
+}
+/* Bake a 64 x TILE_H vertical strip at one shade level. Because the strip is
+   the base tile repeated, source rows 0..63 are identical to the base texture —
+   mid-textures reuse the same bank instead of needing a second one. */
+function shadeStrip(src, level) {
+  const cv = document.createElement('canvas'); cv.width = 64; cv.height = TILE_H;
+  const g = cv.getContext('2d'); if (!g) return null;
+  g.imageSmoothingEnabled = false;
+  for (let y = 0; y < TILE_H; y += 64) g.drawImage(src, 0, y, 64, 64);
+  const k = level / (SHADES - 1);
+  g.globalCompositeOperation = 'source-atop';
+  g.fillStyle = `rgba(3,5,10,${k * 0.94})`;
+  g.fillRect(0, 0, 64, TILE_H);
+  return cv;
+}
+function shadeTile(src, level) {
+  const cv = document.createElement('canvas'); cv.width = cv.height = 64;
+  const g = cv.getContext('2d'); if (!g) return null;
+  g.imageSmoothingEnabled = false; g.drawImage(src, 0, 0, 64, 64);
+  const k = level / (SHADES - 1);
+  g.globalCompositeOperation = 'source-atop';
+  g.fillStyle = `rgba(3,5,10,${k * 0.94})`; g.fillRect(0, 0, 64, 64);
+  return cv;
+}
+function atlasCanvas(img, rect, w, h) {
+  if (!img || !rect) return null;
+  const cv = document.createElement('canvas'); cv.width = w || rect[2]; cv.height = h || rect[3];
+  const g = cv.getContext('2d'); if (!g) return null;
+  g.imageSmoothingEnabled = false;
+  g.drawImage(img, rect[0], rect[1], rect[2], rect[3], 0, 0, cv.width, cv.height);
+  return cv;
+}
+function solidFlatCanvas(name) {
+  const cv = document.createElement('canvas'); cv.width = cv.height = 64;
+  const g = cv.getContext('2d'); if (!g) return null;
+  const c0 = FLAT[name] || [64,64,64];
+  g.fillStyle = `rgb(${c0[0]},${c0[1]},${c0[2]})`; g.fillRect(0,0,64,64);
+  return cv;
+}
+function tilePixels(tile, name, shade) {
+  try {
+    const g = tile && tile.getContext && tile.getContext('2d');
+    if (g) return g.getImageData(0,0,64,64).data;
+  } catch (e) { /* same-origin deploys are readable; fallback below */ }
+  const c0 = FLAT[name] || [64,64,64], k = 1 - (shade / (SHADES - 1)) * 0.94;
+  const d = new Uint8ClampedArray(64*64*4), rr=c0[0]*k|0, gg=c0[1]*k|0, bb=c0[2]*k|0;
+  for (let i=0;i<d.length;i+=4) { d[i]=rr; d[i+1]=gg; d[i+2]=bb; d[i+3]=255; }
+  return d;
+}
+function buildTextures(seed) {
+  if (HEADLESS) return;
+  texBank = []; flatBank = []; flatTileBank = []; flatPixelBank = [];
+  for (let i = 0; i < TEX_NAMES.length; i++) {
+    const name = TEX_NAMES[i];
+    const atlasBase = ART.world ? atlasCanvas(ART.world, WORLD_ATLAS.materials[name], 64, 64) : null;
+    const base = TEX_SRC[i] || atlasBase || makeTexCanvas(i, mulberry32(seed + i * 7919));
+    const row = []; for (let sh = 0; sh < SHADES; sh++) row.push(shadeStrip(base, sh));
+    texBank.push(row);
+  }
+  for (const name of FLAT_NAMES) {
+    const patterns = [], tiles = [], pixels = [];
+    const atlasBase = ART.world ? atlasCanvas(ART.world, WORLD_ATLAS.flats[name], 64, 64) : null;
+    const base = atlasBase || solidFlatCanvas(name);
+    for (let sh = 0; sh < SHADES; sh++) {
+      const tile = shadeTile(base, sh);
+      tiles.push(tile); pixels.push(tilePixels(tile, name, sh));
+      patterns.push(tile && ctx.createPattern ? (ctx.createPattern(tile, 'repeat') || '#202024') : '#202024');
+    }
+    flatBank.push(patterns); flatTileBank.push(tiles); flatPixelBank.push(pixels);
+  }
+  sprBank = buildSprites(seed);
+}
+function buildAtlasSprites() {
+  if (!ART.world) return [];
+  const out = [];
+  const names = ['PLANTER','SOFA','FLOORLAMP','BANNER','DIRECTORY','TABLE','LOUNGE','CONCIERGE','ELEVATOR','CHANDELIER','FLOWERS','BUST','BELLHOP','GOLDPLANTER'];
+  for (const name of names) out[SPR[name]] = atlasCanvas(ART.world, WORLD_ATLAS.props[name], 96, 112);
+  return out;
+}
+function buildSprites(seed) {
+  const out = buildAtlasSprites();
+  const mk = (w, h, fn) => {
+    const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+    const g = cv.getContext('2d'); if (!g) return null; g.imageSmoothingEnabled = false; fn(g, w, h); return cv;
+  };
+  // Only transient bullet impact remains synthetic; all environmental props
+  // are crops from the authored Brazen Tower atlas above.
+  out[SPR.IMPACT] = mk(18, 18, (g) => {
+    px(g, 7, 0, 4, 18, '#a81516'); px(g, 0, 7, 18, 4, '#a81516');
+    px(g, 3, 3, 12, 12, '#401112'); px(g, 5, 5, 8, 8, '#d63d24'); px(g, 7, 7, 4, 4, '#fff1ac');
+  });
+  return out;
+}
+
+
+/* ── mobile-safe horizontal plane raster ─────────────────────────────
+   The whole floor/ceiling image is sampled once into an offscreen layer using
+   world coordinates. Individual spans are then composited in the existing
+   far->near opaque order, preserving Tower's raised-floor/stair behavior while
+   avoiding CanvasPattern.setTransform entirely on the affected browsers. */
+const SOFT_PLANE = { canvas:null, ctx:null, image:null, w:0, h:0 };
+function ensureSoftPlane(w,h) {
+  if (SOFT_PLANE.canvas && SOFT_PLANE.w === w && SOFT_PLANE.h === h) return;
+  const cv = document.createElement('canvas'); cv.width=w; cv.height=h;
+  const g = cv.getContext('2d', { alpha:true });
+  SOFT_PLANE.canvas=cv; SOFT_PLANE.ctx=g; SOFT_PLANE.w=w; SOFT_PLANE.h=h;
+  SOFT_PLANE.image=g ? g.createImageData(w,h) : null;
+}
+function wrap64(n) { n = Math.floor(n) % 64; return n < 0 ? n + 64 : n; }
+function prepareSoftwarePlanes(sim, dl, shadeOf) {
+  const v=dl.view,w=v.w,h=v.h; ensureSoftPlane(w,h);
+  if (!SOFT_PLANE.ctx || !SOFT_PLANE.image) return false;
+  const dst=SOFT_PLANE.image.data;
+  for (let i=0;i<dl.sN;i++) {
+    const y=dl.sY[i],x0=Math.max(0,dl.sX0[i]),x1=Math.min(w-1,dl.sX1[i]);
+    if (x1<x0 || y<0 || y>=h) continue;
+    const flat=dl.sFlat[i], sh=shadeOf(dl.sDist[i],dl.sLight[i]);
+    const tile=flatPixelBank[flat] && flatPixelBank[flat][sh]; if (!tile) continue;
+    const scale=FLAT_SCALE[flat] || 1, depth=dl.sDist[i], step=depth/v.projDist;
+    const p=Geom.planePoint(sim.x,sim.y,v.cosA,v.sinA,v.halfW,v.projDist,x0,depth);
+    let wx=p.x, wy=p.y; const dwx=v.sinA*step, dwy=-v.cosA*step;
+    let di=(y*w+x0)*4;
+    for (let x=x0;x<=x1;x++,wx+=dwx,wy+=dwy,di+=4) {
+      const uv=Geom.planeUV(wx,wy,scale), u=wrap64(uv.u), vv=wrap64(uv.v), si=(vv*64+u)*4;
+      dst[di]=tile[si]; dst[di+1]=tile[si+1]; dst[di+2]=tile[si+2]; dst[di+3]=255;
+    }
+  }
+  SOFT_PLANE.ctx.putImageData(SOFT_PLANE.image,0,0);
+  return true;
+}
+
+/* ── paint ── */
+function paint(sim, dl) {
+  const v = dl.view, w = v.w, h = v.h;
+  ctx.fillStyle = '#05070a'; ctx.fillRect(0, 0, w, h);
+  ctx.imageSmoothingEnabled = false;
+  const shadeOf = (dist, light) => {
+    let k = (dist / 900) + (1 - light) * 0.75;
+    k = k < 0 ? 0 : k > 1 ? 1 : k;
+    return Math.min(SHADES - 1, (k * (SHADES - 1)) | 0);
+  };
+
+  const zbuf = dl.pixelDepth; zbuf.fill(Infinity);
+
+  /* Perspective flats ---------------------------------------------------
+     Previous releases used CanvasPattern directly in screen space. That made
+     the floor look like wallpaper pasted behind the scene: its grout lines
+     remained locked to the display while the player moved. Each scanline now
+     receives a world-anchored affine pattern transform derived from the same
+     tz projection as the portal solver. */
+  const softwareReady = PLANE_BACKEND.active === 'software' ? prepareSoftwarePlanes(sim, dl, shadeOf) : false;
+  const drawPlane = (i) => {
+    const y = dl.sY[i], x0 = dl.sX0[i], x1 = dl.sX1[i], dist = dl.sDist[i];
+    if (x1 < x0 || y < 0 || y >= h) return;
+    if (PLANE_BACKEND.active === 'software' && softwareReady && SOFT_PLANE.canvas) {
+      ctx.drawImage(SOFT_PLANE.canvas, x0, y, x1-x0+1, 1, x0, y, x1-x0+1, 1);
+    } else {
+      const bank = flatBank[dl.sFlat[i]] || flatBank[0];
+      const fill = bank && bank[shadeOf(dist, dl.sLight[i])];
+      if (!fill) return;
+      if (typeof fill === 'string' || !fill.setTransform) {
+        ctx.fillStyle = fill; ctx.fillRect(x0, y, x1 - x0 + 1, 1);
+      } else {
+        const m = Geom.planePatternTransform(sim.x, sim.y, v.cosA, v.sinA, v.halfW, v.projDist, y, dist);
+        if (m) {
+          const fs = FLAT_SCALE[dl.sFlat[i]] || 1;
+          const mm = { a:m.a*fs, b:m.b*fs, c:m.c*fs, d:m.d*fs, e:m.e, f:m.f };
+          try {
+            const pm = (typeof DOMMatrix === 'function') ? new DOMMatrix([mm.a,mm.b,mm.c,mm.d,mm.e,mm.f]) : mm;
+            fill.setTransform(pm);
+          } catch (e) {
+            setPlaneBackend('software');
+            const c0=FLAT[FLAT_NAMES[dl.sFlat[i]]]||[32,32,36];
+            ctx.fillStyle=`rgb(${c0[0]},${c0[1]},${c0[2]})`; ctx.fillRect(x0,y,x1-x0+1,1); return;
+          }
+        }
+        ctx.fillStyle = fill; ctx.fillRect(x0, y, x1 - x0 + 1, 1);
+      }
+    }
+    const off = y * w;
+    for (let x = Math.max(0,x0); x <= Math.min(w-1,x1); x++) if (dist < zbuf[off+x]) zbuf[off+x] = dist;
+  };
+
+  const drawWall = (i) => {
+    const bank = texBank[dl.wTex[i]]; if (!bank) return;
+    const tex = bank[shadeOf(dl.wDist[i], dl.wLight[i])]; if (!tex) return;
+    let u = dl.wU[i] % 1; if (u < 0) u += 1;
+    const sx = Math.min(63, (u * 64) | 0), y0 = dl.wY0[i], y1 = dl.wY1[i];
+    const f0 = dl.wF0[i], span = dl.wF1[i] - f0;
+    if (span <= 0.0001 || y1 <= y0) return;
+    const wh = Math.min(TILE_H, Math.abs(dl.wTop[i] - dl.wBot[i]));
+    let sy0 = ((y0 - f0) / span) * wh, sy1 = ((y1 - f0) / span) * wh;
+    sy0 = Math.max(0, Math.min(TILE_H, sy0)); sy1 = Math.max(sy0, Math.min(TILE_H, sy1));
+    ctx.drawImage(tex, sx, sy0, 1, Math.max(0.05, sy1 - sy0), dl.wX[i], y0, 1, Math.max(1, y1 - y0));
+    const x = dl.wX[i]; if (x < 0 || x >= w) return;
+    const ya = Math.max(0, Math.floor(y0)), yb = Math.min(h, Math.ceil(y1));
+    for (let y = ya; y < yb; y++) if (dl.wDist[i] < zbuf[y*w+x]) zbuf[y*w+x] = dl.wDist[i];
+  };
+
+  // One opaque depth queue means raised floors, walls and stair faces all obey
+  // the same painter order. This also makes the depth buffer meaningful for
+  // sprites: a prop cannot bleed through a nearer floor lip or wall segment.
+  const opaque = [];
+  for (let i = 0; i < dl.sN; i++) opaque.push({kind:0, i:i, dist:dl.sDist[i]});
+  for (let i = 0; i < dl.wN; i++) opaque.push({kind:1, i:i, dist:dl.wDist[i]});
+  opaque.sort((a,b) => b.dist - a.dist || a.kind - b.kind);
+  for (const op of opaque) op.kind === 0 ? drawPlane(op.i) : drawWall(op.i);
+
+  /* Transparent queue --------------------------------------------------- */
+  const trans = [];
+  for (let i = 0; i < dl.mN; i++) trans.push({ kind:0, i:i, dist:dl.mDist[i] });
+  const sprites = RenderCore.sprites(sim, dl);
+  for (const s of sprites) {
+    const bmp = sprBank[s.d.tex]; if (!bmp) continue;
+    const sec = sim.sectorAt(s.d.x, s.d.y); if (sec < 0) continue;
+    const fz = sim.map.sectors[sec].floor + s.d.z;
+    const scale = v.projDist / s.tz;
+    const cx = v.halfW + (s.tx / s.tz) * v.projDist;
+    const sw = s.d.w * scale, sh = s.d.h * scale;
+    const yBase = Geom.projY(fz, v.pz, s.tz, v.horizon, v.projDist);
+    const x0 = Math.max(0, Math.round(cx - sw / 2)), x1 = Math.min(w - 1, Math.round(cx + sw / 2));
+    if (x1 < x0 || sw <= .01 || sh <= .01) continue;
+    for (let x = x0; x <= x1; x++) {
+      const u = (x - (cx - sw / 2)) / sw;
+      const sxp = Math.min(bmp.width - 1, Math.max(0, (u * bmp.width) | 0));
+      trans.push({ kind:1, dist:s.tz, bmp:bmp, x:x, sx:sxp, y0:yBase-sh, y1:yBase, sy0:0, sy1:bmp.height });
+    }
+  }
+  trans.sort((a, b) => b.dist - a.dist);
+
+  const drawClipped = (bmp, sx, sy0, sy1, x, y0, y1, dist) => {
+    const ya = Math.max(0, Math.floor(y0)), yb = Math.min(h, Math.ceil(y1));
+    if (yb <= ya || x < 0 || x >= w) return;
+    let run = -1;
+    const flush = (a, b) => {
+      if (a < 0 || b <= a) return;
+      const fa = (a - y0) / (y1 - y0), fb = (b - y0) / (y1 - y0);
+      const sa = sy0 + (sy1 - sy0) * fa, sb = sy0 + (sy1 - sy0) * fb;
+      ctx.drawImage(bmp, sx, sa, 1, Math.max(.05, sb - sa), x, a, 1, b - a);
+    };
+    for (let y = ya; y < yb; y++) {
+      const visible = dist < zbuf[y * w + x] - 0.01;
+      if (visible && run < 0) run = y;
+      if (!visible && run >= 0) { flush(run, y); run = -1; }
+    }
+    if (run >= 0) flush(run, yb);
+  };
+
+  for (const op of trans) {
+    if (op.kind === 1) {
+      drawClipped(op.bmp, op.sx, op.sy0, op.sy1, op.x, op.y0, op.y1, op.dist);
+      continue;
+    }
+    const i = op.i, bank = texBank[dl.mTex[i]]; if (!bank) continue;
+    const tex = bank[shadeOf(dl.mDist[i], dl.mLight[i])];
+    let u = dl.mU[i] % 1; if (u < 0) u += 1;
+    const f0 = dl.mF0[i], span = dl.mF1[i] - f0; if (span <= 0.0001) continue;
+    let sy0 = ((dl.mY0[i] - f0) / span) * 64, sy1 = ((dl.mY1[i] - f0) / span) * 64;
+    sy0 = Math.max(0, Math.min(64, sy0)); sy1 = Math.max(sy0, Math.min(64, sy1));
+    drawClipped(tex, Math.min(63, (u * 64) | 0), sy0, sy1, dl.mX[i], dl.mY0[i], dl.mY1[i], dl.mDist[i]);
+  }
+}
+
+/* ── HUD: Brazen status bar, drawn procedurally in kit palette ── */
+/* segment order: [TL, TOP, TR, MID, BL, BR, BOT] — lit-count per digit is
+   6,2,5,5,4,5,6,3,7,6 and the harness verifies that independently. */
+const DIGIT = ['1110111', '0010010', '0111101', '0111011', '1011010',
+               '1101011', '1101111', '0110010', '1111111', '1111011'];
+function drawDigit(g, d, x, y, s, col) {
+  const seg = DIGIT[d], put = (i, a, b, c, e) => { if (seg[i] === '1') { g.fillStyle = col; g.fillRect(x + a * s, y + b * s, c * s, e * s); } };
+  put(0, 0, 0, 1, 5); put(1, 1, 0, 2, 1); put(2, 3, 0, 1, 5);
+  put(3, 1, 4, 2, 1); put(4, 0, 4, 1, 5); put(5, 3, 4, 1, 5); put(6, 1, 8, 2, 1);
+}
+function drawNum(g, n, x, y, s, col, pad) {
+  const str = String(Math.max(0, n | 0)).padStart(pad || 1, ' ');
+  for (let i = 0; i < str.length; i++) if (str[i] !== ' ') drawDigit(g, +str[i], x + i * 5 * s, y, s, col);
+}
+function drawAtlasRect(img, r, dx, dy, dw, dh) {
+  if (!img || !r) return false;
+  ctx.drawImage(img, r[0], r[1], r[2], r[3], Math.round(dx), Math.round(dy), Math.round(dw), Math.round(dh));
+  return true;
+}
+function drawHudGlyph(ch, x, y, gw, gh) {
+  const r = HUD_ATLAS.digits[ch];
+  return drawAtlasRect(ART.hud, r, x, y, gw, gh);
+}
+function drawHudValue(value, x, y, gw, gh, suffix) {
+  const str = String(Math.max(0, value | 0)) + (suffix || '');
+  for (let i = 0; i < str.length; i++) drawHudGlyph(str[i], x + i * (gw + 1), y, gw, gh);
+  return str.length * (gw + 1);
+}
+function drawHUD(sim, w, h) {
+  if (!ART.hud) {
+    const bh = Math.max(44, Math.round(h * 0.13)), y0 = h - bh, g = ctx;
+    g.fillStyle = '#2c2f33'; g.fillRect(0, y0, w, bh);
+    g.fillStyle = '#3a3e44'; g.fillRect(0, y0, w, 3);
+    g.fillStyle = '#1b1e22'; g.fillRect(0, y0 + bh - 3, w, 3);
+    const sc = Math.max(2, Math.round(bh / 22));
+    const panel = (x, pw, label) => { g.fillStyle = '#22262b'; g.fillRect(x, y0 + 6, pw, bh - 14); g.fillStyle = '#e08a2a'; g.font = `${Math.round(bh * .16)}px monospace`; g.textAlign = 'center'; g.fillText(label, x + pw / 2, y0 + bh - 7); };
+    const pw = Math.min(150, w * 0.19), gap = 8;
+    panel(gap, pw, 'AMMO'); panel(gap * 2 + pw, pw, 'HEALTH'); panel(w - pw - gap, pw, 'ARMOR');
+    drawNum(g, sim.ammo, gap + pw / 2 - 22, y0 + 12, sc, '#ff3a18', 2);
+    drawNum(g, sim.health, gap * 2 + pw + pw / 2 - 34, y0 + 12, sc, '#ff3a18', 3);
+    drawNum(g, sim.armor, w - pw - gap + pw / 2 - 34, y0 + 12, sc, '#ff3a18', 3);
+  } else {
+    const bh = Math.max(52, Math.round(h * 0.16)), y0 = h - bh;
+    ctx.fillStyle = '#17191d'; ctx.fillRect(0, y0, w, bh);
+    ctx.fillStyle = '#4a4f55'; ctx.fillRect(0, y0, w, 2);
+    ctx.fillStyle = '#090b0e'; ctx.fillRect(0, h - 2, w, 2);
+    const groupW = Math.max(48, Math.min(64, Math.floor(w * .20)));
+    const labelH = Math.max(15, Math.round(bh * .34));
+    const digitH = Math.max(22, bh - labelH - 8), digitW = Math.round(digitH * .72);
+    const faceH = bh - 4, faceW = Math.round(faceH * .84), faceX = Math.round(w / 2 - faceW / 2);
+    const leftAmmo = 4;
+    const leftHealth = Math.max(leftAmmo + groupW + 4, faceX - groupW - 5);
+    const rightArmor = Math.min(w - groupW - 4, faceX + faceW + 5);
+    const panelY = h - labelH - 2;
+    drawAtlasRect(ART.hud, HUD_ATLAS.panels.AMMO, leftAmmo, panelY, groupW, labelH);
+    drawAtlasRect(ART.hud, HUD_ATLAS.panels.HEALTH, leftHealth, panelY, groupW, labelH);
+    drawAtlasRect(ART.hud, HUD_ATLAS.panels.ARMOR, rightArmor, panelY, groupW, labelH);
+    const valueY = y0 + 3;
+    drawHudValue(sim.ammo, leftAmmo + 2, valueY, digitW, digitH, '');
+    drawHudValue(sim.health, leftHealth + 1, valueY, digitW, digitH, '%');
+    drawHudValue(sim.armor, rightArmor + 1, valueY, digitW, digitH, '%');
+    const band = sim.health > 75 ? 0 : sim.health > 50 ? 1 : sim.health > 25 ? 2 : 3;
+    const expr = sim.t - sim.fireT < .18 ? 2 : [0,1,3][Math.floor(sim.t * .65) % 3];
+    const fr = HUD_ATLAS.faces[band][expr];
+    drawAtlasRect(ART.hud, fr, faceX, y0 + 2, faceW, faceH - 2);
+    if (rightArmor + groupW + 5 + 26 < w) drawAtlasRect(ART.hud, HUD_ATLAS.extras.FTS, w - 29, y0 + 5, 24, 22);
+  }
+  // crosshair stays independent of HUD art.
+  const bh = ART.hud ? Math.max(52, Math.round(h * 0.16)) : Math.max(44, Math.round(h * 0.13));
+  ctx.fillStyle = 'rgba(255,80,40,.8)';
+  const cx = w / 2, cy = (h - bh) / 2;
+  ctx.fillRect(cx - 7, cy - 1, 5, 2); ctx.fillRect(cx + 2, cy - 1, 5, 2);
+  ctx.fillRect(cx - 1, cy - 7, 2, 5); ctx.fillRect(cx - 1, cy + 2, 2, 5);
+}
+
+function drawWeapon(sim, w, h, bh) {
+  const age = sim.t - sim.fireT;
+  const frame = age < .065 ? 'fire' : age < .15 ? 'recoil' : 'idle';
+  const r = HUD_ATLAS.weapon && HUD_ATLAS.weapon[frame];
+  const bobX = Math.sin(sim.bob) * 7;
+  const bobY = (sim.grounded ? Math.abs(Math.cos(sim.bob)) * 5 : 7) + Math.min(10, sim.airZ * .12);
+  if (ART.hud && r) {
+    const dh = Math.max(112, Math.min(178, Math.round(h * .34)));
+    const dw = dh;
+    const x = w / 2 - dw / 2 + bobX;
+    const y = h - bh - dh + 18 + bobY;
+    drawAtlasRect(ART.hud, r, x, y, dw, dh);
+    return;
+  }
+  // Procedural fallback when the HUD atlas is absent.
+  const g = ctx, k = Math.max(0, 1 - age / 0.13), gx = w / 2 + bobX, gy = h - bh + bobY;
+  if (k > 0.05) {
+    g.globalAlpha = k; g.fillStyle = '#ffd88a'; g.beginPath(); g.arc(gx, gy - 92, 30*k, 0, 7); g.fill();
+    g.fillStyle = '#ff9020'; g.beginPath(); g.arc(gx, gy - 92, 17*k, 0, 7); g.fill(); g.globalAlpha = 1;
+  }
+  g.fillStyle = '#171a1f'; g.fillRect(gx-25, gy-94, 50, 102);
+  g.fillStyle = '#4d555e'; g.fillRect(gx-19, gy-88, 38, 92);
+  g.fillStyle = '#8c969f'; g.fillRect(gx-12, gy-84, 7, 76);
+  g.fillStyle = '#c52c1b'; g.fillRect(gx-14, gy-60, 28, 5);
+  g.fillStyle = '#090b0e'; g.fillRect(gx-8, gy-104, 16, 22);
+}
+function drawAutomap(sim, w, h) {
+  const g = ctx, M = sim.map;
+  let minx = 1e9, miny = 1e9, maxx = -1e9, maxy = -1e9;
+  for (const s of M.sectors) { minx = Math.min(minx, s.x1); miny = Math.min(miny, s.y1); maxx = Math.max(maxx, s.x2); maxy = Math.max(maxy, s.y2); }
+  const pad = 28, sc = Math.min((w * .34) / (maxx - minx), (h * .34) / (maxy - miny));
+  const ox = w - pad - (maxx - minx) * sc, oy = pad;
+  const P = (x, y) => [ox + (x - minx) * sc, oy + (maxy - y) * sc];
+  g.fillStyle = 'rgba(4,8,14,.72)';
+  g.fillRect(ox - 8, oy - 8, (maxx - minx) * sc + 16, (maxy - miny) * sc + 16);
+  for (const ln of M.lines) {
+    const a = P(M.verts[ln.v1].x, M.verts[ln.v1].y), b = P(M.verts[ln.v2].x, M.verts[ln.v2].y);
+    g.strokeStyle = ln.tag === 'RAILING' ? '#ffcf3a' : ln.back < 0 ? '#c9c9d0' : 'rgba(90,150,255,.55)';
+    g.lineWidth = ln.back < 0 ? 1.6 : 1;
+    g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.stroke();
+  }
+  const p = P(sim.x, sim.y);
+  for (const hit of sim.impacts) { const hp = P(hit.x, hit.y); g.fillStyle = 'rgba(255,210,64,.95)'; g.fillRect(hp[0]-1.5, hp[1]-1.5, 3, 3); }
+  g.strokeStyle = '#ff3a18'; g.lineWidth = 2; g.beginPath();
+  g.moveTo(p[0], p[1]);
+  g.lineTo(p[0] + Math.cos(sim.ang) * 12, p[1] - Math.sin(sim.ang) * 12); g.stroke();
+  g.fillStyle = '#ff3a18'; g.fillRect(p[0] - 2, p[1] - 2, 4, 4);
+}
+
+/* ══ Boot / loop ═══════════════════════════════════════════════════════ */
+const SEED = (parseInt(LS.get('brazen.seed', '0'), 10) || 0x1993) >>> 0;
+const map = buildLevel();
+const MAP_ERRORS = MapBuilder.validate(map);
+const sim = new Sim(map, SEED);
+
+let RW = 0, RH = 0, RSCALE = 1, dl = null;
+const input = { fwd: 0, back: 0, left: 0, right: 0, run: 0, jump: 0 };
+let showMap = LS.get('brazen.map', '0') === '1';
+let frameMs = 0, fps = 0, fpsAcc = 0, fpsN = 0;
+const SIM_HZ = 60, SIM_DT = 1 / SIM_HZ, MAX_CATCHUP_STEPS = 8;
+
+function viewportSize() {
+  const vv = window.visualViewport;
+  return { w: Math.max(1, Math.round((vv && vv.width) || window.innerWidth || 960)), h: Math.max(1, Math.round((vv && vv.height) || window.innerHeight || 600)) };
+}
+function resize() {
+  if (HEADLESS) { RW = 320; RH = 200; dl = dl || new DrawLists(RW, RH); return; }
+  const vp = viewportSize(), w = vp.w, h = vp.h;
+  // Coarse-pointer devices deliberately render fewer internal pixels. Tower's
+  // pixel-art presentation gains battery/thermal headroom instead of fake DPI.
+  RSCALE = PLATFORM.touch ? 2 : (h > 900 ? 2 : 1.5);
+  RW = Math.max(160, Math.round(w / RSCALE));
+  RH = Math.max(120, Math.round(h / RSCALE));
+  canvas.width = RW; canvas.height = RH;
+  canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
+  if (ctx) ctx.imageSmoothingEnabled = false;
+  dl = new DrawLists(RW, RH);
+  if (PLANE_BACKEND.active === 'software') ensureSoftPlane(RW,RH);
+}
+function drainSimEvents() {
+  for (const e of sim.events) {
+    if (e.k === 'step') Audio4.sfx('step');
+    else if (e.k === 'fire') Audio4.sfx('fire');
+    else if (e.k === 'sector') Audio4.sfx('sector');
+    else if (e.k === 'jump') Audio4.sfx('jump');
+    else if (e.k === 'land') Audio4.sfx('land');
+  }
+  sim.events.length = 0;
+}
+
+let last = 0, accumulator = 0, rafId = null, frames = 0;
+function loop(ts) {
+  const frameDt = Math.min((ts - last) / 1000 || SIM_DT, 0.10); last = ts;
+  accumulator += frameDt;
+  const t0 = (performance && performance.now) ? performance.now() : 0;
+  let steps = 0;
+  while (accumulator >= SIM_DT && steps < MAX_CATCHUP_STEPS) {
+    sim.step(SIM_DT, input); drainSimEvents(); accumulator -= SIM_DT; steps++;
+  }
+  if (steps === MAX_CATCHUP_STEPS && accumulator >= SIM_DT) accumulator = 0;
+  Audio4.tick();
+  if (!HEADLESS) {
+    RenderCore.solve(sim, dl, RW, RH);
+    paint(sim, dl);
+    const bh = ART.hud ? Math.max(52, Math.round(RH * 0.16)) : Math.max(44, Math.round(RH * 0.13));
+    drawWeapon(sim, RW, RH, bh);
+    drawHUD(sim, RW, RH);
+    if (showMap) drawAutomap(sim, RW, RH);
+  }
+  frameMs = ((performance && performance.now) ? performance.now() : 0) - t0;
+  fpsAcc += frameDt; fpsN++;
+  if (fpsAcc > .4) { fps = fpsN / fpsAcc; fpsAcc = 0; fpsN = 0; }
+  if (uiEl && (frames & 7) === 0) {
+    const sec = map.sectors[sim.sector];
+    uiEl.textContent = `${VERSION} · ${RW}x${RH} · ${frameMs.toFixed(1)}ms · ${fps.toFixed(0)}fps · ${PLANE_BACKEND.active.toUpperCase()} · SEC ${sec ? sec.id : '?'} · vis ${dl.stats.sectors}/${dl.stats.portals}p · Z ${sim.z.toFixed ? sim.z.toFixed(0) : sim.z}`
+      + ` · J ${sim.grounded ? 'GND' : sim.airZ.toFixed(0)} · ART ${ART.ready ? 'ATLAS' : (ART.errors.length ? 'FALLBACK' : 'LOADING')}`
+      + (RUNTIME_ERRORS.length ? ` · ERR ${RUNTIME_ERRORS.length}` : '') + (MAP_ERRORS.length ? ` · MAP ERRORS ${MAP_ERRORS.length}` : '');
+  }
+  frames++;
+  rafId = requestAnimationFrame(loop);
+}
+
+/* ── input ── */
+const KEYMAP = { KeyW: 'fwd', ArrowUp: 'fwd', KeyS: 'back', ArrowDown: 'back', KeyA: 'left', KeyD: 'right' };
+window.addEventListener('keydown', e => {
+  if (KEYMAP[e.code]) { input[KEYMAP[e.code]] = 1; e.preventDefault(); }
+  if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') input.run = 1;
+  if (e.code === 'Space') { if (!e.repeat) input.jump = 1; e.preventDefault(); }
+  if (e.code === 'KeyM') toggleMap();
+  if (e.code === 'KeyN') toggleAudio();
+  if (e.code === 'KeyP') togglePlaneBackend();
+  if (e.code === 'KeyC') sim.clearImpacts();
+});
+window.addEventListener('keyup', e => {
+  if (KEYMAP[e.code]) input[KEYMAP[e.code]] = 0;
+  if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') input.run = 0;
+  if (e.code === 'Space') input.jump = 0;
+});
+const MOUSE_SENS = 0.0022, TOUCH_LOOK_SENS = 0.00255;
+window.addEventListener('mousemove', e => {
+  if (!PLATFORM.touch && document.pointerLockElement === canvas) sim.look(e.movementX || 0, e.movementY || 0, MOUSE_SENS, false);
+});
+function fireOnce() { if (!sim.fire()) Audio4.sfx('dry'); }
+canvas.addEventListener('mousedown', () => {
+  if (PLATFORM.touch) return;
+  if (document.pointerLockElement !== canvas) { canvas.requestPointerLock && canvas.requestPointerLock(); return; }
+  fireOnce();
+});
+function enterGame() {
+  if (PLATFORM.touch) {
+    if (lockEl) lockEl.classList.add('hidden');
+    reportToShell('node_entry', { node:'brazen.play', seed:SEED, mobile:1 });
+    return;
+  }
+  canvas.requestPointerLock && canvas.requestPointerLock();
+}
+if (lockEl) lockEl.addEventListener('click', enterGame);
+document.addEventListener('pointerlockchange', () => {
+  if (PLATFORM.touch) return;
+  const on = document.pointerLockElement === canvas;
+  if (lockEl) lockEl.classList.toggle('hidden', on);
+  reportToShell(on ? 'node_entry' : 'node_exit', { node: 'brazen.play', seed: SEED });
+});
+
+// Left virtual stick: deliberately digital at the Sim boundary. The fixed-step
+// controller still owns acceleration, so touch and keyboard share one movement law.
+let movePointer = -1;
+function setTouchMove(e) {
+  if (!touchMoveEl) return;
+  const r=touchMoveEl.getBoundingClientRect(), cx=r.left+r.width/2, cy=r.top+r.height/2;
+  let dx=e.clientX-cx, dy=e.clientY-cy, L=Math.hypot(dx,dy), lim=r.width*.34;
+  if (L>lim) { dx*=lim/L; dy*=lim/L; L=lim; }
+  if (touchKnobEl) touchKnobEl.style.transform=`translate(${dx}px,${dy}px)`;
+  const nx=dx/lim, ny=dy/lim, dead=.18;
+  input.left=nx < -dead ? 1:0; input.right=nx > dead ? 1:0;
+  input.fwd=ny < -dead ? 1:0; input.back=ny > dead ? 1:0;
+}
+function clearTouchMove() {
+  input.left=input.right=input.fwd=input.back=0; movePointer=-1;
+  if (touchKnobEl) touchKnobEl.style.transform='translate(0,0)';
+}
+if (touchMoveEl) {
+  touchMoveEl.addEventListener('pointerdown',e=>{movePointer=e.pointerId;touchMoveEl.setPointerCapture&&touchMoveEl.setPointerCapture(e.pointerId);setTouchMove(e);e.preventDefault();},{passive:false});
+  touchMoveEl.addEventListener('pointermove',e=>{if(e.pointerId===movePointer){setTouchMove(e);e.preventDefault();}},{passive:false});
+  touchMoveEl.addEventListener('pointerup',e=>{if(e.pointerId===movePointer)clearTouchMove();});
+  touchMoveEl.addEventListener('pointercancel',e=>{if(e.pointerId===movePointer)clearTouchMove();});
+}
+
+// Right-side drag look. UI buttons consume their own pointers, so the canvas
+// receives only intentional look gestures.
+let lookPointer=-1,lastLookX=0,lastLookY=0;
+canvas.addEventListener('pointerdown',e=>{
+  if (!PLATFORM.touch || e.pointerType==='mouse') return;
+  if (e.clientX < (window.innerWidth||1)*.34) return;
+  lookPointer=e.pointerId; lastLookX=e.clientX; lastLookY=e.clientY;
+  canvas.setPointerCapture&&canvas.setPointerCapture(e.pointerId); e.preventDefault();
+},{passive:false});
+canvas.addEventListener('pointermove',e=>{
+  if (e.pointerId!==lookPointer) return;
+  const dx=e.clientX-lastLookX,dy=e.clientY-lastLookY;lastLookX=e.clientX;lastLookY=e.clientY;
+  sim.look(dx,dy,TOUCH_LOOK_SENS,false);e.preventDefault();
+},{passive:false});
+function endTouchLook(e){if(e.pointerId===lookPointer)lookPointer=-1;}
+canvas.addEventListener('pointerup',endTouchLook); canvas.addEventListener('pointercancel',endTouchLook);
+
+if (touchFireEl) touchFireEl.addEventListener('pointerdown',e=>{fireOnce();e.preventDefault();},{passive:false});
+if (touchJumpEl) touchJumpEl.addEventListener('pointerdown',e=>{input.jump=1;e.preventDefault();},{passive:false});
+if (touchRunEl) {
+  touchRunEl.addEventListener('pointerdown',e=>{input.run=1;touchRunEl.classList.add('on');touchRunEl.setPointerCapture&&touchRunEl.setPointerCapture(e.pointerId);e.preventDefault();},{passive:false});
+  const stopRun=e=>{input.run=0;touchRunEl.classList.remove('on');e.preventDefault&&e.preventDefault();};
+  touchRunEl.addEventListener('pointerup',stopRun,{passive:false}); touchRunEl.addEventListener('pointercancel',stopRun,{passive:false});
+}
+
+function toggleAudio() {
+  Audio4.init(SEED); Audio4.setOn(!Audio4.on);
+  audioBtn.textContent = 'AUDIO: ' + (Audio4.on ? 'ON' : 'OFF');
+  audioBtn.classList.toggle('on', Audio4.on);
+  LS.set('brazen.audio', Audio4.on ? '1' : '0');
+}
+function toggleMap() {
+  showMap = !showMap; LS.set('brazen.map', showMap ? '1' : '0');
+  mapBtn.textContent = 'MAP: ' + (showMap ? 'ON' : 'OFF');
+  mapBtn.classList.toggle('on', showMap);
+}
+if (audioBtn) audioBtn.addEventListener('click', toggleAudio);
+if (mapBtn) mapBtn.addEventListener('click', toggleMap);
+window.addEventListener('resize', resize);
+if (window.visualViewport) window.visualViewport.addEventListener('resize', resize);
+window.addEventListener('message', e => {
+  const d = e.data; if (!d || d.fts !== 1) return;
+  if (d.type === 'volume' && d.bus) Audio4.setBus(d.bus, d.value);
+  if (d.type === 'mute') Audio4.setOn(!d.value);
+});
+
+buildTextures(SEED); // immediate procedural fallback
+loadExternalArt().then(() => { if (!HEADLESS) buildTextures(SEED); });
+resize();
+if (mapBtn) { mapBtn.textContent = 'MAP: ' + (showMap ? 'ON' : 'OFF'); mapBtn.classList.toggle('on', showMap); }
+reportToShell('node_entry', { node: 'brazen.boot', seed: SEED, version: VERSION });
+window.addEventListener('beforeunload', () => reportToShell('node_exit', { node: 'brazen.boot', t: sim.t }));
+if (MAP_ERRORS.length) console.error('[BRAZEN] map validation failed:', MAP_ERRORS);
+rafId = requestAnimationFrame(loop);
+
+/* ── harness surface: the SAME code the browser runs (A5/A6) ── */
+window.__brazenPaint = function (sm, d) {
+  paint(sm, d);
+  const bh = ART.hud ? Math.max(52, Math.round(d.view.h * 0.16)) : Math.max(44, Math.round(d.view.h * 0.13));
+  drawWeapon(sm, d.view.w, d.view.h, bh);
+  drawHUD(sm, d.view.w, d.view.h);
+};
+window.__BRAZEN_TESTS__ = {
+  audioColdStart() {
+    const prevReady = Audio4.ready, prevOn = Audio4.on, prevRng = Audio4.rng;
+    try { Audio4.ready = false; Audio4.on = false; Audio4.rng = null; return Audio4.sfx('step') === false; }
+    finally { Audio4.ready = prevReady; Audio4.on = prevOn; Audio4.rng = prevRng; }
+  },
+  atlasReferences() { return ART_FILES.world === 'sprites02.png' && ART_FILES.hud === 'sprites01.png'; },
+  authoredProps() { return !!WORLD_ATLAS.props.CONCIERGE && !!WORLD_ATLAS.props.CHANDELIER && SPR.IMPACT === 14; },
+  pixelDepthAllocated() { return !!dl && dl.pixelDepth instanceof Float32Array && dl.pixelDepth.length === dl.w * dl.h; },
+  mapValid() { return MAP_ERRORS.length === 0; },
+  assetsLoaded() { return ART.ready && !!ART.world && !!ART.hud; },
+  floorWorldMapping() {
+    const p = Geom.planePoint(10, 20, 1, 0, 160, 160, 159.5, 64);
+    const q = Geom.planePoint(10, 20, 1, 0, 160, 160, 319.5, 64);
+    return Math.abs(p.x - 74) < 1e-6 && Math.abs(p.y - 20) < 1e-6 &&
+      Math.abs(q.x - 74) < 1e-6 && Math.abs(q.y + 44) < 1e-6;
+  },
+  floorTransformFinite() {
+    const m = Geom.planePatternTransform(0,0,1,0,160,160,150,64);
+    return !!m && Object.values(m).every(Number.isFinite);
+  },
+  floorUvWorldLocked() {
+    const a=Geom.planeUV(192,96,3),b=Geom.planeUV(192,96,3);
+    return a.u===64 && a.v===32 && a.u===b.u && a.v===b.v;
+  },
+  fixedStepConfig() { return SIM_HZ===60 && Math.abs(SIM_DT-1/60)<1e-12 && MAX_CATCHUP_STEPS===8; },
+  mobilePlaneSafe() { return !PLATFORM.ios || PLANE_BACKEND.active==='software' || PLANE_BACKEND.requested==='pattern'; },
+  jumpArc() {
+    const m = buildLevel(), s = new Sim(m, 123), inp = {fwd:0,back:0,left:0,right:0,run:0,jump:1};
+    s.step(1/60, inp);
+    const rose = !s.grounded && s.airZ > 0 && s.vz > 0;
+    for (let i=0;i<240;i++) s.step(1/60, inp);
+    return rose && s.grounded && s.airZ === 0 && s.vz === 0;
+  },
+  jumpCeilingClamp() {
+    const m = buildLevel(), s = new Sim(m, 123), inp = {fwd:0,back:0,left:0,right:0,run:0,jump:1};
+    for (let i=0;i<90;i++) s.step(1/60, inp);
+    const sec = m.sectors[s.sector];
+    return s.airZ <= sec.ceil - sec.floor - PLAYER_H + 1e-6;
+  },
+  weaponAtlas() { return !!HUD_ATLAS.weapon && !!HUD_ATLAS.weapon.idle && !!HUD_ATLAS.weapon.recoil && !!HUD_ATLAS.weapon.fire; }
+};
+
+window.__BRAZEN__ = {
+  VERSION: VERSION, Geom: Geom, MapBuilder: MapBuilder, buildLevel: buildLevel,
+  Sim: Sim, RenderCore: RenderCore, DrawLists: DrawLists, mulberry32: mulberry32,
+  TEX: TEX, FLAT_NAMES: FLAT_NAMES, DIGIT: DIGIT, TILE_H: TILE_H, RECTS: RECTS, GA_LOG: GA_LOG,
+  Audio4: Audio4, ART: ART, ART_FILES: ART_FILES, WORLD_ATLAS: WORLD_ATLAS, HUD_ATLAS: HUD_ATLAS, headless: HEADLESS,
+  PLATFORM: PLATFORM, PLANE_BACKEND: PLANE_BACKEND, setPlaneBackend: setPlaneBackend, togglePlaneBackend: togglePlaneBackend,
+  RUNTIME_ERRORS: RUNTIME_ERRORS, SIM_HZ: SIM_HZ, SIM_DT: SIM_DT, MAX_CATCHUP_STEPS: MAX_CATCHUP_STEPS,
+  get sim() { return sim; }, get map() { return map; },
+  get mapErrors() { return MAP_ERRORS; }, get frames() { return frames; },
+  get dl() { return dl; },
+  consts: { PLAYER_R: PLAYER_R, PLAYER_H: PLAYER_H, EYE: EYE, STEP_UP: STEP_UP, STEP_DOWN: STEP_DOWN, SHADES: SHADES, JUMP_VELOCITY: JUMP_VELOCITY, GRAVITY: GRAVITY }
+};
+
+// Development-only URL helpers: ?preview=1 hides the pointer-lock curtain;
+// ?test=1 publishes a tiny machine-readable smoke report into the DOM.
+const DEV_Q = new URLSearchParams(location.search);
+if (DEV_Q.get('planes')) setPlaneBackend(DEV_Q.get('planes'));
+if (DEV_Q.get('preview') === '1' && lockEl) lockEl.classList.add('hidden');
+if (DEV_Q.get('test') === '1') {
+  setTimeout(() => {
+    const T = window.__BRAZEN_TESTS__;
+    const results = {
+      version: VERSION,
+      audioColdStart: T.audioColdStart(),
+      atlasReferences: T.atlasReferences(),
+      authoredProps: T.authoredProps(),
+      pixelDepthAllocated: T.pixelDepthAllocated(),
+      mapValid: T.mapValid(),
+      assetsLoaded: T.assetsLoaded(),
+      floorWorldMapping: T.floorWorldMapping(),
+      floorTransformFinite: T.floorTransformFinite(),
+      floorUvWorldLocked: T.floorUvWorldLocked(),
+      fixedStepConfig: T.fixedStepConfig(),
+      mobilePlaneSafe: T.mobilePlaneSafe(),
+      jumpArc: T.jumpArc(),
+      jumpCeilingClamp: T.jumpCeilingClamp(),
+      weaponAtlas: T.weaponAtlas(),
+      mapErrors: MAP_ERRORS.slice(),
+      artErrors: ART.errors.slice(),
+      runtimeErrors: RUNTIME_ERRORS.slice(),
+      planeBackend: PLANE_BACKEND.active,
+      platform: {ios:PLATFORM.ios,touch:PLATFORM.touch}
+    };
+    const pre = document.createElement('pre'); pre.id = 'brazen-tests'; pre.textContent = JSON.stringify(results);
+    document.body.appendChild(pre);
+  }, 900);
+}
+
+</script>
+</body>
+</html>
