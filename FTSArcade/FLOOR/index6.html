@@ -22,7 +22,7 @@
 <link rel="preload" as="image" href="fts_sprites.png">
 <link rel="preload" as="image" href="fts-arcade-fixture-atlas.png">
 <link rel="preload" as="image" href="the-Cabinet.png">
-<title>FTS Arcade Floor 0.8.0 Streamlined</title>
+<title>FTS Arcade Floor 0.7.0 Widened Ring</title>
 <!-- 0.5.2 art fit: external world/fixture/screen atlases + Cabinets01-Cabinets04, exact per-CRT crops. -->
 <!-- 0.7.0 feel pass: outer ring 430->510, ceiling 132->192, jump 132->156. Sprint stays 22 mph. Cabinet layout frozen. -->
 
@@ -45,7 +45,7 @@
     <meta property="og:url"         content="https://frymatic.us/FTSArcade/">
     <meta property="og:type"        content="website">
     <meta property="og:site_name"   content="FishTacoStand Arcade">
-    <meta property="og:image"       content="https://frymatic.us/FTSArcade/FLOOR/floor_preview.png">
+    <meta property="og:image"       content="https://frymatic.us/FTSArcade/floor_preview.png">
     <meta property="og:image:alt"   content="Walk the arcade. Enter a cabinet. Go somewhere else.">
     <meta property="og:image:type"  content="image/png">
 
@@ -53,7 +53,7 @@
     <meta name="twitter:card"        content="summary_large_image">
     <meta name="twitter:title"       content="FTS Arcade Floor">
     <meta name="twitter:description" content="Walk the arcade. Enter a cabinet. Go somewhere else.">
-    <meta name="twitter:image"       content="https://frymatic.us/FTSArcade/FLOOR/floor_preview.png">
+    <meta name="twitter:image"       content="https://frymatic.us/FTSArcade/floor_preview.png">
 
 
 <style>
@@ -109,7 +109,7 @@ const RUNTIME_ERRORS=[];
 addEventListener('error',e=>{if(e.error||e.message)RUNTIME_ERRORS.push(String(e.error&&e.error.stack||e.message||e.error));});
 addEventListener('unhandledrejection',e=>RUNTIME_ERRORS.push(String(e.reason&&e.reason.stack||e.reason||'unhandled rejection')));
 
-const VERSION='fts-arcade-floor-0.8.0-streamlined';
+const VERSION='fts-arcade-floor-0.7.0-widened-ring';
 const TAU=Math.PI*2, DEG=Math.PI/180;
 // Dimensional contract: 1 engine unit = 1 inch.
 // =============================================================================
@@ -151,14 +151,6 @@ const JUMP={
 // fogFar scales with the ring so the falloff *ratio* matches 0.6.4. If the room
 // should instead read as genuinely bigger and darker at the rim, hardcode 780.
 const RENDER={solidCull:2*RING.outer,fogFar:Math.round(RING.outer*(780/430))};
-// 0.8.0: spend geometry only where the camera can see it. The 0.7.0 sweep peaked
-// near 23 wall spans per screen column, so start at 40x width and grow only if a
-// future scene proves it necessary instead of permanently reserving 120x.
-const PERF={
- wallSpanFactor:40,wallSpanMaxFactor:80,
- cabinetNear:220,cabinetMid:390,frustumPad:1.30,
- coarseScale:2.15,coarseTallScale:2.45
-};
 const CABINET_DIM={w:40,d:40,h:78,control:40,screenBayTop:68.5,screenCenter:55.5,screenW:35,controlW:36.5,controlD:17.5};
 const AISLE={secondary:47.25,primary:70.87,merge:141.73}; // 1.2m / 1.8m / 3.6m references, inches
 const FOV=KINETIC.baseFov,NEAR=.6,SHADES=11,TILE_H=256,LOOK_UP=180,LOOK_DOWN=320;
@@ -538,7 +530,6 @@ function buildLevel(){
   {id:'EXIT_REDEYE',label:'REDEYE / OFF-SITE',url:PORTALS.redeye,target:'_blank',cta:'LEAVE ARCADE',a:-Math.PI/2}
  ];
  exitDefs.forEach(e=>{const r=wallR(418),x=Math.cos(e.a)*r,y=Math.sin(e.a)*r,face=e.a+Math.PI,s=boxSolid(e.id,x,y,face,72,8,84,MAT.EXIT,MAT.WALL_GOLD,{kind:'exit',label:e.label,url:e.url,target:e.target,cta:e.cta,collision:true});map.solids.push(s);map.exits.push(s);map.targets.push(s);});
- prepareStaticGeometry(map);
  return map;
 }
 
@@ -566,13 +557,330 @@ function cabinetLayoutSignature(m){return m.cabinets.slice().sort((a,b)=>a.lette
 function cabinetClearOfOffice(c,gap=AUTHORING.officeClearance){const a=solidAabb(c),lim=RING.inner+gap;return a.x2<=-lim||a.x1>=lim||a.y2<=-lim||a.y1>=lim;}
 
 /* =============================================================================
-   SHIPPING PERFORMANCE CONTRACT - 0.8.0
+   FUTURE SYSTEMS - DESIGN NOTES / PSEUDO-CODE ONLY
+   =============================================================================
+   Nothing in this block is wired up. It is a handoff document for the next team,
+   written as pseudo-code because prose loses the numbers. Everything here is
+   scoped against the 0.7.0 numbers: 1 unit = 1 inch, 60 Hz fixed sim step,
+   EYE 69, sprint 387.2 in/s (22 mph), jump apex ~31.5 in, hang ~0.81 s.
+
+   Read the "COST" and "RISK" lines before estimating any of it. Several of these
+   are two-hour jobs. One of them (6DOF) is a renderer rewrite wearing a trench
+   coat, and the notes say so.
+
    -----------------------------------------------------------------------------
-   The long-form future-systems design memo moved out of the runtime file. Keep
-   this build focused on executable contracts: fixed 60 Hz simulation, world-
-   locked planes, iOS software-plane fallback, deterministic authoring, frozen
-   cabinet layout, lazy texture shading, source-atlas release, static solid face
-   preparation, object-level frustum culling, and cabinet detail LOD.
+   1. STRIDE MANAGEMENT / GAIT SYSTEM                          [not implemented]
+   -----------------------------------------------------------------------------
+   WHY: Sim.step() currently carries a single scalar `this.bob`, advanced by
+   `this.bob += moved * 0.05` and read in eyeZ() as sin(bob) * 1.2. That is a
+   head-bob decoration, not a gait. It has no concept of which foot is down, no
+   footplant event to hang audio or camera impulses on, and its "settle to rest"
+   branch eases toward the nearest multiple of PI, which is a half-cycle - so the
+   player can come to rest mid-stride with one foot theoretically in the air.
+
+   The distinction that matters: bob is an OUTPUT. Stride is the STATE that
+   produces it, and that other systems (audio, camera, animation, stamina,
+   surface effects) all want to subscribe to.
+
+   CORE MODEL - phase accumulator driven by DISTANCE, not time:
+
+     STRIDE = {
+       // Stride length is the distance covered by one full two-step cycle.
+       // Real humans: walk ~30 in per step, run ~60-75 in per step. These are
+       // per-CYCLE (two steps), so double the per-step figure.
+       lengthWalk:   60,    // in, per full cycle at walkSpeed
+       lengthSprint: 132,   // in, per full cycle at sprintSpeed
+       lengthCrouch: 38,    // in, short shuffling cycle
+       // Amplitudes, in inches of eye displacement.
+       bobVertical:  1.9,   // vertical sine, 2 peaks per cycle (one per footfall)
+       bobLateral:   1.1,   // side-to-side sway, 1 peak per cycle
+       bobRoll:      0.9,   // degrees of camera roll, 1 peak per cycle
+       // Fraction of the cycle where the foot is considered planted.
+       plantWindow:  0.12,
+       settleLambda: 9      // how fast the bob unwinds to neutral when stopped
+     }
+
+     // --- per fixed step -----------------------------------------------------
+     function updateStride(dt, moved, speed, stance, grounded) {
+
+       if (!grounded || slideT > 0) {
+         // Airborne and sliding have no gait. Do NOT freeze the phase - let it
+         // decay to neutral so landing does not resume mid-lurch.
+         phase = decayTowardNeutral(phase, settleLambda, dt)
+         return
+       }
+
+       // Blend stride length by gait, not by a hard branch. A player feathering
+       // between walk and sprint should get a continuously lengthening stride,
+       // otherwise the cadence audibly pops at the speed threshold.
+       t = clamp01((speed - walkSpeed) / (sprintSpeed - walkSpeed))
+       cycleLength = lerp(lengthWalk, lengthSprint, t)
+       cycleLength = lerp(cycleLength, lengthCrouch, stance)   // stance is 0..1
+
+       prevPhase = phase
+       phase += (moved / cycleLength) * TAU     // <-- distance-driven, framerate independent
+
+       // FOOTPLANT EVENTS. Two per cycle, at phase 0 and phase PI.
+       // This is the hook everything else in this file wants.
+       for each crossing of (0 or PI) between prevPhase and phase:
+          emit FOOTPLANT {
+            foot:    (crossing == 0) ? LEFT : RIGHT,
+            speed:   speed,
+            stance:  stance,
+            position:{x, y},
+            surface: surfaceAt(x, y)      // see section 2
+          }
+
+       if (moved < 0.001) {
+         // Settle to a NEUTRAL stance, i.e. phase 0 mod TAU - both feet down.
+         // 0.6.4 settled to the nearest multiple of PI, which is mid-stride.
+         phase = decayTowardNeutral(phase, settleLambda, dt)
+       }
+     }
+
+     // --- consumed by eyeZ() and the camera ----------------------------------
+     function strideOffsets() {
+       amp = strideAmplitudeScale()     // see FATIGUE below; 1.0 by default
+       return {
+         dz:   sin(phase * 2) * bobVertical * amp,   // 2 dips per cycle
+         dx:   sin(phase)     * bobLateral  * amp,   // 1 sway per cycle
+         roll: sin(phase)     * bobRoll     * amp    // needs camera roll, see 6.
+       }
+     }
+
+   NOTE ON LATERAL BOB: dz drops straight into the existing eyeZ(). dx and roll
+   do NOT - the rasterizer's camera is a yaw + pitch-as-horizon-shear model with
+   no lateral eye offset and no roll. dx is cheap to add (offset the eye point
+   perpendicular to the view vector before RenderCore.solve; it is a world-space
+   translation, which the renderer already handles). Roll is NOT cheap - see 6.
+
+   LANDING IMPULSE - the other half of feeling grounded:
+
+     on landing(impactVelocity):
+       severity = clamp01(impactVelocity / 260)         // 260 in/s ~ a bad fall
+       // Drive a spring, do not teleport the camera. A step change reads as a
+       // rendering glitch; a critically damped spring reads as knees.
+       landSpring.velocity -= severity * 26              // in/s of eye dip
+       emit FOOTPLANT { foot: BOTH, speed: 0, hard: true }
+       if (severity > 0.7) applyCameraKick(pitch: severity * 2.4 degrees)
+
+     // per step, critically damped spring toward 0
+     landSpring.velocity += (-landSpring.offset * K - landSpring.velocity * 2*sqrt(K)) * dt
+     landSpring.offset   += landSpring.velocity * dt
+     // K ~ 180 gives a ~0.25 s recovery, which reads as athletic rather than hurt.
+
+   FATIGUE / STAMINA HOOK (optional, and genuinely optional):
+     Amplitude and cadence are the cheapest fatigue tell in the business - a tired
+     player's stride shortens and their bob deepens. If stamina ever lands:
+       strideAmplitudeScale() = lerp(1.0, 1.45, fatigue01)
+       cycleLength           *= lerp(1.0, 0.86, fatigue01)
+     Do this BEFORE touching movement speed. Players read a changed gait as their
+     character being tired; they read a changed top speed as the game being broken.
+
+   COST: ~150 lines plus a small event bus. Half a day including tuning passes.
+   RISK: Low, and it is self-contained - it replaces `this.bob` and touches
+         eyeZ(). The one trap is doing the phase accumulation OUTSIDE the fixed
+         timestep; if it lands in the render loop instead of Sim.step(), cadence
+         becomes framerate-dependent and it will sound fine on the dev machine
+         and wrong on a 144 Hz monitor.
+   TEST: assert phase advance for a fixed distance is identical at 30/60/144 fps.
+         assert exactly 2 FOOTPLANT events per cycleLength inches traveled.
+         assert coming to rest always lands within epsilon of phase 0 mod TAU.
+
+   -----------------------------------------------------------------------------
+   2. SURFACE MATERIALS + FOOTSTEP AUDIO BUS                   [not implemented]
+   -----------------------------------------------------------------------------
+   The FOOTPLANT event above is worthless without something listening. AudioMini
+   is currently a single filtered sawtooth drone with a gain toggle; it has no
+   concept of one-shots.
+
+     SURFACES = { CARPET:{...}, STAGE_WOOD:{...}, CONCRETE:{...} }
+
+     function surfaceAt(x, y) {
+       // Cheapest correct version: read the sector's floor material, which the
+       // map already stores as sec.ftex. Map material -> surface once at build
+       // time, not per footstep.
+       return SURFACE_BY_MATERIAL[map.sectors[sectorAt(x,y)].ftex] || CARPET
+     }
+
+     on FOOTPLANT(e):
+       s = e.surface
+       gain  = lerp(0.12, 0.42, clamp01(e.speed / sprintSpeed))
+       pitch = s.basePitch * randomBetween(0.94, 1.06)   // detune or it machine-guns
+       if (e.hard) gain *= 1.6
+       AudioBus.oneShot(s.sample, gain, pitch)
+
+   COST: small once the event exists. RISK: the detune. Identical pitch on every
+   footstep is the single most common way a footstep system ends up sounding like
+   a stapler.
+
+   -----------------------------------------------------------------------------
+   3. AIR CONTROL, COYOTE TIME, JUMP BUFFERING                 [not implemented]
+   -----------------------------------------------------------------------------
+   Sim.jump() currently hard-requires this.grounded. With hang time now at 0.81 s,
+   input timing errors around the jump get more visible, not less.
+
+     COYOTE_TIME  = 0.10   // s of grace after walking off a ledge
+     JUMP_BUFFER  = 0.12   // s before landing that a jump press stays queued
+     AIR_CONTROL  = 0.22   // fraction of ground accel available airborne
+
+     jump():
+       if (grounded || timeSinceGrounded < COYOTE_TIME) { doJump(); return true }
+       jumpBufferedUntil = now + JUMP_BUFFER
+       return false
+
+     on landing:
+       if (now < jumpBufferedUntil) { doJump(); jumpBufferedUntil = 0 }
+
+     // In step(), when airborne, do not zero out steering - scale it:
+     lambda = grounded ? accelLambda : accelLambda * AIR_CONTROL
+
+   Both numbers are invisible when correct and infuriating when absent. Ship them
+   together with any jump tuning, never after.
+
+   -----------------------------------------------------------------------------
+   4. MANTLE / VAULT - the prerequisite for agility gates      [not implemented]
+   -----------------------------------------------------------------------------
+   Relevant heights in this world: cabinets are 78 in, the stage lip is 18 in, the
+   DJ booth is 45 in, speakers are 74 in. A 31.5 in jump apex clears the stage lip
+   easily and clears nothing else. If agility gates are coming, the vertical
+   vocabulary has to grow, and mantling is the honest way to do it - it is a
+   traversal verb, not a bigger number.
+
+     MANTLE = { maxLedge: 52, minLedge: 14, reachAhead: 26, duration: 0.42 }
+
+     tryMantle():
+       // Cast forward at chest height, find the blocking solid, read its top z.
+       hit = forwardProbe(reachAhead)
+       if (!hit) return false
+       ledgeZ = hit.solid.topZ                        // parts already carry z1
+       if (ledgeZ < minLedge || ledgeZ > eyeFloor + maxLedge) return false
+       if (!spaceIsClear(above ledgeZ, PLAYER_R, PLAYER_H)) return false
+       // Then a scripted arc, NOT a physics impulse - mantles must be reliable.
+       beginMantle(from: {x,y,z}, to: {hit.x, hit.y, ledgeZ}, duration)
+
+   BLOCKER, READ THIS FIRST: the sim has no floor-height concept above z=0.
+   Sim.tryMove() pushes the player out of any solid's OBB in 2D regardless of
+   the player's height, and jumpZ is a purely cosmetic offset - you cannot
+   currently stand on anything. Mantling requires a real "supporting surface"
+   query and a per-frame ground height. That is the actual cost.
+   COST: 2-3 days, most of it in the collision layer, not the mantle itself.
+   RISK: High. This changes the movement contract for every existing solid on
+         the floor - suddenly all 26 cabinets are climbable furniture.
+
+   -----------------------------------------------------------------------------
+   5. AGILITY GATE AUTHORING                                   [not implemented]
+   -----------------------------------------------------------------------------
+   When gates get authored, they belong in AUTHORING as data next to cabinetPods,
+   NOT as ad-hoc boxSolid() calls in buildLevel(). The existing authoring surface
+   is the right pattern; keep it.
+
+     AUTHORING.agilityGates = [
+       // kind: 'vault' | 'duck' | 'gap' | 'rail'
+       // Author against the RING, not absolute coordinates, so the next widening
+       // pass is another one-line change instead of another migration.
+       { id:'GATE_01', kind:'duck',  deg: 45, radiusFrac: 0.72, clearance: 40 },
+       { id:'GATE_02', kind:'gap',   deg: 90, radiusFrac: 0.72, span: 96 }
+     ]
+
+   The 'gap' width above is the one number worth deriving rather than guessing:
+   a full-speed sprint jump covers JUMP.reach inches (~313 at current tuning).
+   Author gaps at 55-70 percent of that. At 100 percent they are frame-perfect and
+   players will hate them; below 40 percent they are not gaps, they are decoration.
+
+   -----------------------------------------------------------------------------
+   6. 6DOF FLIGHT PROFILE (Descent-style)                      [not implemented]
+   -----------------------------------------------------------------------------
+   Asked about as a possible future use of this engine. The movement side is easy.
+   The renderer side is not, and the honest version of this note is: the current
+   rasterizer cannot do it, and no amount of pseudo-code changes that.
+
+   WHAT WOULD PORT CLEANLY - the movement model:
+
+     FLIGHT = {
+       thrust: 620, strafeThrust: 380, liftThrust: 380,
+       linearDrag: 1.6,                    // exponential, per second
+       pitchRate: 2.2, yawRate: 2.0, rollRate: 3.0,   // rad/s
+       angularDrag: 6.0,
+       afterburner: { mult: 1.9, drain: 34, recharge: 12 }
+     }
+
+     // Orientation MUST be a quaternion, not euler angles. The whole point of a
+     // Descent-like is inverting over the top of a loop and having no idea which
+     // way is up; euler angles gimbal-lock exactly there, at the moment the
+     // player is most committed.
+     orientation = Quat.identity()
+
+     step(dt, input):
+       // Torque in LOCAL space, integrate into the quaternion, renormalize.
+       torque = vec3(input.pitch * pitchRate, input.yaw * yawRate, input.roll * rollRate)
+       angVel = angVel * exp(-angularDrag * dt) + torque * dt
+       orientation = Quat.normalize(orientation * Quat.fromAxisAngle(angVel * dt))
+
+       // Thrust in LOCAL space, rotated to world. No gravity, no ground plane,
+       // no grounded flag - delete the entire stance/slide/jump state machine.
+       accel = orientation.rotate(vec3(input.strafe * strafeThrust,
+                                       input.lift   * liftThrust,
+                                       input.fwd    * thrust * burnMult))
+       velocity = velocity * exp(-linearDrag * dt) + accel * dt
+       position += velocity * dt
+
+     // Collision becomes swept-sphere vs. mesh in 3D. The current 2D OBB push
+     // (obbPush) has no third axis and no concept of a ceiling; it cannot be
+     // extended, it has to be replaced.
+
+   WHAT DOES NOT PORT - be blunt about this in planning:
+
+     The renderer is a sector/portal scanline rasterizer with a strictly vertical
+     up-axis. Three specific assumptions are load-bearing throughout:
+
+       a) Walls are vertical. RenderCore._face projects only two z values per
+          face and fills the column between them. A wall that is not vertical in
+          screen space has no representation in the draw list at all.
+       b) Floors and ceilings are horizontal planes at constant z. The entire
+          plane path - both the CanvasPattern transform and the software
+          scanline rasterizer - derives its affine basis from "this screen row
+          is at this constant world depth", which is only true with zero roll.
+       c) Pitch is a horizon SHEAR (`hor = h/2 + pitch`), not a rotation. This is
+          the classic Doom-style fake. It is free, it looks fine to about 40
+          degrees, and it is geometrically wrong - which is exactly why it cannot
+          be extended to roll.
+
+     Roll is the killer. There is no shear that produces it. Two options:
+
+       OPTION A - fake it. Composite the frame as today, then rotate the finished
+       canvas by the roll angle when blitting to the display. Cost: hours.
+       Correct only for roll; pitch stays a shear, so combined pitch+roll reads
+       visibly wrong, and the frame corners have to be over-rendered or they
+       swing into view. Fine for a banking racer. Not fine for Descent.
+
+       OPTION B - the real thing. Replace the scanline rasterizer with a
+       perspective-correct triangle pipeline, WebGL or a real software 3D path.
+       At that point the sector/portal system, the plane backends, the two
+       iOS-specific code paths, the shade-strip texture banks and the affine
+       horizontal-face path are all dead code. This is not a port. It is a new
+       renderer that reuses the authoring data.
+
+     RECOMMENDATION: if 6DOF is genuinely on the roadmap, do not evolve this
+     renderer toward it. Keep this engine as the 2.5D arcade-floor hub it is
+     good at, and start the flight game on a WebGL pipeline that reads the same
+     AUTHORING manifest. The manifest is the reusable asset here - the deterministic
+     authoring surface, the atlas crops, the portal/target model - not the raster.
+
+   -----------------------------------------------------------------------------
+   7. SMALLER THINGS WORTH A LOOK, ROUGHLY IN COST ORDER
+   -----------------------------------------------------------------------------
+   * LOOK_UP is 180 px vs LOOK_DOWN 320. Authored against a 132 in ceiling. With
+     192 in overhead, players will try to look up at the ceiling and hit the
+     clamp. Try LOOK_UP 240.
+   * Perimeter dressing tops out around z=106 (STAGE_SIGN). The wall above it is
+     now 86 in of bare texture. Either raise the dressing or add an upper band
+     of trim - the room currently reads as a short room with a tall hat.
+   * FOV shifts on sprint (76 to 84 deg) but nothing shifts on landing. A brief
+     FOV pull-in on hard landings costs 3 lines and sells the impact.
+   * The slide has slideBoost 1.06 and no exit ramp - it just runs out. A
+     slide-into-jump that preserves horizontal momentum would give the agility
+     gates a skill ceiling for free, and it is ~10 lines.
    ============================================================================= */
 
 class Sim{
@@ -626,43 +934,15 @@ class Sim{
 class DrawLists{
  constructor(w,h){this.alloc(w,h);}
  alloc(w,h){this.w=w;this.h=h;
-  const cap=Math.max(2048,w*PERF.wallSpanFactor|0);this.wN=0;
-  this.wX=new Int16Array(cap);this.wY0=new Float32Array(cap);this.wY1=new Float32Array(cap);this.wTex=new Uint8Array(cap);this.wU=new Float32Array(cap);this.wTop=new Float32Array(cap);this.wBot=new Float32Array(cap);this.wF0=new Float32Array(cap);this.wF1=new Float32Array(cap);this.wDist=new Float32Array(cap);this.wLight=new Float32Array(cap);this.wStretch=new Uint8Array(cap);
-  const scap=w*h/2|0;this.sN=0;this.sY=new Int16Array(scap);this.sX0=new Int16Array(scap);this.sX1=new Int16Array(scap);this.sFlat=new Uint8Array(scap);this.sDist=new Float32Array(scap);this.sLight=new Float32Array(scap);this.sSec=new Uint8Array(scap);
-  this.pixelDepth=new Float32Array(w*h);this.hFaces=[];this.stats={sectors:0,portals:0,lines:0,solidFaces:0,culledSolids:0,lodParts:0,grows:0,dropped:0};
- }
- _growWalls(){
-  const old=this.wX.length,max=Math.max(old,this.w*PERF.wallSpanMaxFactor|0);if(old>=max){this.stats.dropped++;return false;}
-  const n=Math.min(max,Math.max(old+this.w*8,old*2));
-  const grow=a=>{const b=new a.constructor(n);b.set(a);return b;};
-  this.wX=grow(this.wX);this.wY0=grow(this.wY0);this.wY1=grow(this.wY1);this.wTex=grow(this.wTex);this.wU=grow(this.wU);this.wTop=grow(this.wTop);this.wBot=grow(this.wBot);this.wF0=grow(this.wF0);this.wF1=grow(this.wF1);this.wDist=grow(this.wDist);this.wLight=grow(this.wLight);this.wStretch=grow(this.wStretch);this.stats.grows++;return true;
- }
- reset(){this.wN=0;this.sN=0;this.hFaces.length=0;this.stats.sectors=0;this.stats.portals=0;this.stats.lines=0;this.stats.solidFaces=0;this.stats.culledSolids=0;this.stats.lodParts=0;this.stats.grows=0;this.stats.dropped=0;}
- wall(x,y0,y1,tex,u,top,bot,dist,light,f0,f1,stretch){if(this.wN>=this.wX.length&&!this._growWalls())return;const i=this.wN++;this.wX[i]=x;this.wY0[i]=y0;this.wY1[i]=y1;this.wTex[i]=tex;this.wU[i]=u;this.wTop[i]=top;this.wBot[i]=bot;this.wDist[i]=dist;this.wLight[i]=light;this.wF0[i]=f0;this.wF1[i]=f1;this.wStretch[i]=stretch?1:0;}
+  // Wall-span capacity. MEASURED at 0.7.0, do not raise on a hunch: sweeping 704
+  // camera poses across the widened ring peaks at ~19% of this cap, statistically
+  // identical to 0.6.4 (21003 vs 21054 spans) - widening the ring did not cost
+  // wall spans, because span count is per screen COLUMN, not per floor area.
+  // The DROP counter now shows in telemetry if this is ever actually exceeded.
+  const cap=w*120;this.wN=0;this.wX=new Int16Array(cap);this.wY0=new Float32Array(cap);this.wY1=new Float32Array(cap);this.wTex=new Uint8Array(cap);this.wU=new Float32Array(cap);this.wTop=new Float32Array(cap);this.wBot=new Float32Array(cap);this.wF0=new Float32Array(cap);this.wF1=new Float32Array(cap);this.wDist=new Float32Array(cap);this.wLight=new Float32Array(cap);this.wStretch=new Uint8Array(cap);const scap=w*h/2|0;this.sN=0;this.sY=new Int16Array(scap);this.sX0=new Int16Array(scap);this.sX1=new Int16Array(scap);this.sFlat=new Uint8Array(scap);this.sDist=new Float32Array(scap);this.sLight=new Float32Array(scap);this.sSec=new Uint8Array(scap);this.pixelDepth=new Float32Array(w*h);this.hFaces=[];this.stats={sectors:0,portals:0,lines:0,solidFaces:0,dropped:0};}
+ reset(){this.wN=0;this.sN=0;this.hFaces.length=0;this.stats.sectors=0;this.stats.portals=0;this.stats.lines=0;this.stats.solidFaces=0;this.stats.dropped=0;}
+ wall(x,y0,y1,tex,u,top,bot,dist,light,f0,f1,stretch){if(this.wN>=this.wX.length){this.stats.dropped++;return;}const i=this.wN++;this.wX[i]=x;this.wY0[i]=y0;this.wY1[i]=y1;this.wTex[i]=tex;this.wU[i]=u;this.wTop[i]=top;this.wBot[i]=bot;this.wDist[i]=dist;this.wLight[i]=light;this.wF0[i]=f0;this.wF1[i]=f1;this.wStretch[i]=stretch?1:0;}
  span(y,x0,x1,flat,dist,light,sec){if(x1<x0||this.sN>=this.sY.length){if(this.sN>=this.sY.length)this.stats.dropped++;return;}const i=this.sN++;this.sY[i]=y;this.sX0[i]=x0;this.sX1[i]=x1;this.sFlat[i]=flat;this.sDist[i]=dist;this.sLight[i]=light;this.sSec[i]=sec||0;}
-}
-
-function cabinetPartLOD(role){
- // 0 survives at long range; 1 is mid-range silhouette/detail; 2 is close hardware.
- if(role==='coin-boss'||role==='coin-door'||role==='bezel-left'||role==='bezel-right'||role==='back-block')return 2;
- if(role==='kick-plate'||role==='jamb-left'||role==='jamb-right'||role==='backdrop'||role==='bezel-top')return 1;
- return 0;
-}
-function prepareStaticGeometry(m){
- for(const s of m.solids){
-  const ca=Math.cos(s.ang),sa=Math.sin(s.ang),fx=ca,fy=sa,rx=sa,ry=-ca,faces=[],tops=[];let radius=0;
-  for(const part of s.parts){
-   const cx=s.x+fx*(part.of||0)+rx*(part.ro||0),cy=s.y+fy*(part.of||0)+ry*(part.ro||0),hf=part.d/2,hr=part.w/2;
-   const FL={x:cx+fx*hf-rx*hr,y:cy+fy*hf-ry*hr},FR={x:cx+fx*hf+rx*hr,y:cy+fy*hf+ry*hr},BR={x:cx-fx*hf+rx*hr,y:cy-fy*hf+ry*hr},BL={x:cx-fx*hf-rx*hr,y:cy-fy*hf-ry*hr};
-   const side=part.side==null?part.front:part.side,left=part.left==null?side:part.left,right=part.right==null?side:part.right,back=part.back==null?side:part.back,stretch=!!part.stretch,lod=s.kind==='cabinet'?cabinetPartLOD(part.role):0;
-   const add=(a,b,nx,ny,tex)=>faces.push({x1:a.x,y1:a.y,x2:b.x,y2:b.y,mx:(a.x+b.x)/2,my:(a.y+b.y)/2,nx,ny,z0:part.z0,z1:part.z1,tex,light:s.light,stretch,lod,len:Math.hypot(b.x-a.x,b.y-a.y)||1});
-   add(FL,FR,fx,fy,part.front);add(FR,BR,rx,ry,right);add(BR,BL,-fx,-fy,back);add(BL,FL,-rx,-ry,left);
-   if(part.top!=null)tops.push({pts:[BL,BR,FR,FL],z:part.z1,tex:part.top,light:s.light,lod});
-   for(const p of[FL,FR,BR,BL])radius=Math.max(radius,Math.hypot(p.x-s.x,p.y-s.y));
-  }
-  s._render={faces,tops,radius:radius+2};
- }
- return m;
 }
 
 const RenderCore={
@@ -684,36 +964,15 @@ const RenderCore={
   out.view={projDist:pd,horizon:hor,pz,halfW:hw,w,h,cosA:ca,sinA:sa};this._solids(sim,out);return out;
  },
  _plane(out,top,bot,x0,x1,flat,z,pz,hor,pd,light,h,sec){const ss=out._ss,dz=Math.abs(z-pz);let pt=h,pb=-1;const cb=(row,a,b)=>{const dy=Math.abs(row+.5-hor),dist=dy<.5?1e6:(dz*pd)/dy;out.span(row,a,b,flat,dist,light,sec);};for(let x=x0;x<=x1+1;x++){let t=x>x1?h:top[x],b=x>x1?-1:bot[x];while(pt<t&&pt<=pb){cb(pt,ss[pt],x-1);pt++;}while(pb>b&&pb>=pt){cb(pb,ss[pb],x-1);pb--;}while(t<pt&&t<=b){ss[t]=x;t++;}while(b>pb&&b>=t){ss[b]=x;b--;}pt=x>x1?h:top[x];pb=x>x1?-1:bot[x];}},
- _solids(sim,out){
-  const v=out.view,tanHalf=Math.tan((sim.currentFov||FOV)/2)*PERF.frustumPad,near2=PERF.cabinetNear*PERF.cabinetNear,mid2=PERF.cabinetMid*PERF.cabinetMid;
-  for(const s of sim.map.solids){
-   const rg=s._render;if(!rg)continue;const dx=s.x-sim.x,dy=s.y-sim.y,d2=dx*dx+dy*dy,r=rg.radius;
-   if(d2>(RENDER.solidCull+r)*(RENDER.solidCull+r)){out.stats.culledSolids++;continue;}
-   const tz=dx*v.cosA+dy*v.sinA,tx=dx*v.sinA-dy*v.cosA;if(tz+r<NEAR){out.stats.culledSolids++;continue;}
-   const edge=Math.max(NEAR,tz);if(Math.abs(tx)>edge*tanHalf+r*PERF.frustumPad){out.stats.culledSolids++;continue;}
-   const tier=s.kind==='cabinet'?(d2<near2?2:(d2<mid2?1:0)):2;
-   for(const f of rg.faces){if(f.lod>tier){out.stats.lodParts++;continue;}this._facePrepared(sim,out,f);}
-   if(v.pz>0)for(const t of rg.tops){if(t.lod<=tier&&v.pz>t.z+.01)this._topPrepared(sim,out,t);}
-  }
+ _solids(sim,out){const v=out.view;for(const s of sim.map.solids){const d=Math.hypot(s.x-sim.x,s.y-sim.y);if(d>RENDER.solidCull)continue;const bs=basis(s.ang);for(const part of s.parts){const cx=s.x+bs.f.x*(part.of||0)+bs.r.x*(part.ro||0),cy=s.y+bs.f.y*(part.of||0)+bs.r.y*(part.ro||0),hf=part.d/2,hr=part.w/2,F=bs.f,R=bs.r,FL={x:cx+F.x*hf-R.x*hr,y:cy+F.y*hf-R.y*hr},FR={x:cx+F.x*hf+R.x*hr,y:cy+F.y*hf+R.y*hr},BR={x:cx-F.x*hf+R.x*hr,y:cy-F.y*hf+R.y*hr},BL={x:cx-F.x*hf-R.x*hr,y:cy-F.y*hf-R.y*hr};const side=part.side==null?part.front:part.side,left=part.left==null?side:part.left,right=part.right==null?side:part.right,back=part.back==null?side:part.back,stretch=!!part.stretch;this._face(sim,out,FL,FR,F,part.z0,part.z1,part.front,s.light,stretch);this._face(sim,out,FR,BR,R,part.z0,part.z1,right,s.light,stretch);this._face(sim,out,BR,BL,{x:-F.x,y:-F.y},part.z0,part.z1,back,s.light,stretch);this._face(sim,out,BL,FL,{x:-R.x,y:-R.y},part.z0,part.z1,left,s.light,stretch);if(part.top!=null&&v.pz>part.z1+.01)this._topFace(sim,out,BL,BR,FR,FL,part.z1,part.top,s.light);}}
  },
- _topPrepared(sim,out,t){const v=out.view,p=[],pts=t.pts;let dist=0;for(let i=0;i<4;i++){const q=pts[i],dx=q.x-sim.x,dy=q.y-sim.y,tx=dx*v.sinA-dy*v.cosA,tz=dx*v.cosA+dy*v.sinA;if(tz<NEAR)return;dist+=tz;p.push({x:v.halfW+(tx/tz)*v.projDist,y:v.horizon-((t.z-v.pz)*v.projDist)/tz});}dist*=.25;let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;for(const q of p){if(q.x<minX)minX=q.x;if(q.x>maxX)maxX=q.x;if(q.y<minY)minY=q.y;if(q.y>maxY)maxY=q.y;}if(maxX<0||minX>=v.w||maxY<0||minY>=v.h)return;out.hFaces.push({p,tex:t.tex,light:t.light,dist});out.stats.solidFaces++;},
- _facePrepared(sim,out,f){
-  if((sim.x-f.mx)*f.nx+(sim.y-f.my)*f.ny<=0)return;const v=out.view;
-  let dx=f.x1-sim.x,dy=f.y1-sim.y,atx=dx*v.sinA-dy*v.cosA,atz=dx*v.cosA+dy*v.sinA;
-  dx=f.x2-sim.x;dy=f.y2-sim.y;let btx=dx*v.sinA-dy*v.cosA,btz=dx*v.cosA+dy*v.sinA,ta=0,tb=1;
-  if(atz<NEAR&&btz<NEAR)return;
-  if(atz<NEAR){const q=(NEAR-atz)/(btz-atz);atx+=(btx-atx)*q;atz=NEAR;ta=q;}
-  else if(btz<NEAR){const q=(NEAR-btz)/(atz-btz);btx+=(atx-btx)*q;btz=NEAR;tb=1-q;}
-  let xa=v.halfW+(atx/atz)*v.projDist,xb=v.halfW+(btx/btz)*v.projDist;
-  if(xa>xb){let q=xa;xa=xb;xb=q;q=atx;atx=btx;btx=q;q=atz;atz=btz;btz=q;q=ta;ta=tb;tb=q;}
-  const sx0=Math.max(0,Math.ceil(xa)),sx1=Math.min(v.w-1,Math.ceil(xb)-1);if(sx1<sx0||xb-xa<1e-6)return;out.stats.solidFaces++;
-  const iza=1/atz,izb=1/btz,ua=ta*iza,ub=tb*izb,len=f.len;
-  for(let x=sx0;x<=sx1;x++){const q=(x+.5-xa)/(xb-xa),iz=iza+(izb-iza)*q,z=1/iz,u=(ua+(ub-ua)*q)*z*len,yT=v.horizon-((f.z1-v.pz)*v.projDist)/z,yB=v.horizon-((f.z0-v.pz)*v.projDist)/z;if(yB<=0||yT>=v.h)continue;const texU=f.stretch?(1-u/len):(-u/64);out.wall(x,Math.max(-2,yT),Math.min(v.h+2,yB),f.tex,texU,f.z1,f.z0,z,f.light,yT,yB,f.stretch);}
- }
+ _topFace(sim,out,BL,BR,FR,FL,z,tex,light){const v=out.view,pts=[BL,BR,FR,FL],p=[];let dist=0;for(const q of pts){const a=Geom.view(sim.x,sim.y,v.cosA,v.sinA,q.x,q.y);if(a.tz<NEAR)return;dist+=a.tz;p.push({x:Geom.projX(a.tx,a.tz,v.halfW,v.projDist),y:Geom.projY(z,v.pz,a.tz,v.horizon,v.projDist)});}dist/=4;const minX=Math.min(...p.map(q=>q.x)),maxX=Math.max(...p.map(q=>q.x)),minY=Math.min(...p.map(q=>q.y)),maxY=Math.max(...p.map(q=>q.y));if(maxX<0||minX>=v.w||maxY<0||minY>=v.h)return;out.hFaces.push({p,tex,light,dist});out.stats.solidFaces++;
+ },
+ _face(sim,out,p,q,n,z0,z1,tex,light,stretch){const mx=(p.x+q.x)/2,my=(p.y+q.y)/2;if((sim.x-mx)*n.x+(sim.y-my)*n.y<=0)return;const v=out.view,a0=Geom.view(sim.x,sim.y,v.cosA,v.sinA,p.x,p.y),b0=Geom.view(sim.x,sim.y,v.cosA,v.sinA,q.x,q.y),cl=Geom.clipNear(a0,b0,NEAR);if(!cl)return;let A=cl[0],B=cl[1],xa=Geom.projX(A.tx,A.tz,v.halfW,v.projDist),xb=Geom.projX(B.tx,B.tz,v.halfW,v.projDist);if(xa>xb){const t=A;A=B;B=t;const xx=xa;xa=xb;xb=xx;}const sx0=Math.max(0,Math.ceil(xa)),sx1=Math.min(v.w-1,Math.ceil(xb)-1);if(sx1<sx0)return;out.stats.solidFaces++;const len=Math.hypot(q.x-p.x,q.y-p.y)||1,iza=1/A.tz,izb=1/B.tz,ua=A.t*iza,ub=B.t*izb;for(let x=sx0;x<=sx1;x++){const f=(x+.5-xa)/(xb-xa),iz=iza+(izb-iza)*f,z=1/iz,u=(ua+(ub-ua)*f)*z*len,yT=Geom.projY(z1,v.pz,z,v.horizon,v.projDist),yB=Geom.projY(z0,v.pz,z,v.horizon,v.projDist);if(yB<=0||yT>=v.h)continue;const texU=stretch?(1-u/len):(-u/64);out.wall(x,Math.max(-2,yT),Math.min(v.h+2,yB),tex,texU,z1,z0,z,light,yT,yB,stretch);}}
 };
 
 const canvas=document.getElementById('c'),ctx=canvas.getContext('2d'),telemetry=document.getElementById('telemetry'),promptEl=document.getElementById('prompt'),lockEl=document.getElementById('lock'),modal=document.getElementById('modal'),modalEyebrow=document.getElementById('modalEyebrow'),modalTitle=document.getElementById('modalTitle'),modalCopy=document.getElementById('modalCopy'),confirmBtn=document.getElementById('confirmBtn'),cancelBtn=document.getElementById('cancelBtn'),mapBtn=document.getElementById('mapBtn'),audioBtn=document.getElementById('audioBtn');
-const IMG={world:null,cab1:null,cab2:null,cab3:null,cab4:null,screen:null,fixture:null,cabinetRef:null,ready:false,artBaked:false,sourcesReleased:false,meta:{},errors:[]};let baseBank=[],texBank=[],flatBank=[],shadeTileBank=[],planePixelBank=[],RW=0,RH=0,RSCALE=1,dl=null,showMap=false,activeTarget=null,modalTarget=null,VIGNETTE=null;const PAINT_ORDER=[];const PLANE_SOFT={canvas:null,ctx:null,image:null,u32:null,width:0,height:0};const PLANE_STATS={patternTransforms:0,softwareSpans:0,softwarePixels:0};
+const IMG={world:null,cab1:null,cab2:null,cab3:null,cab4:null,screen:null,fixture:null,cabinetRef:null,ready:false,errors:[]};let texBank=[],flatBank=[],planePixelBank=[],RW=0,RH=0,RSCALE=1,dl=null,showMap=false,activeTarget=null,modalTarget=null;const PLANE_SOFT={canvas:null,ctx:null,image:null,u32:null,width:0,height:0};const PLANE_STATS={patternTransforms:0,softwareSpans:0,softwarePixels:0};
 
 function loadImage(src,label){
  const candidates=Array.isArray(src)?src:[src];
@@ -722,18 +981,21 @@ function loadImage(src,label){
 function cropCanvas(im,r,sheet){const cv=document.createElement('canvas');cv.width=cv.height=64;const g=cv.getContext('2d');g.imageSmoothingEnabled=false;if(sheet==='solid'){g.fillStyle='#03050a';g.fillRect(0,0,64,64);}else if(im&&r)g.drawImage(im,r[0],r[1],r[2],r[3],0,0,64,64);else{g.fillStyle='#222833';g.fillRect(0,0,64,64);g.strokeStyle='#ff4a98';g.strokeRect(2,2,60,60);}return cv;}
 function shadeStrip(src,level){const cv=document.createElement('canvas');cv.width=64;cv.height=TILE_H;const g=cv.getContext('2d');g.imageSmoothingEnabled=false;for(let y=0;y<TILE_H;y+=64)g.drawImage(src,0,y,64,64);const k=level/(SHADES-1);g.globalCompositeOperation='source-atop';g.fillStyle='rgba(2,4,8,'+(k*.9)+')';g.fillRect(0,0,64,TILE_H);return cv;}
 function shadeTile(src,level){const cv=document.createElement('canvas');cv.width=cv.height=64;const g=cv.getContext('2d');g.imageSmoothingEnabled=false;g.drawImage(src,0,0);const k=level/(SHADES-1);g.globalCompositeOperation='source-atop';g.fillStyle='rgba(2,4,8,'+(k*.9)+')';g.fillRect(0,0,64,64);return cv;}
-function buildTextures(){baseBank=new Array(MATERIALS.length);texBank=new Array(MATERIALS.length);flatBank=new Array(MATERIALS.length);shadeTileBank=new Array(MATERIALS.length);planePixelBank=new Array(MATERIALS.length);IMG.ready=IMG.errors.length===0&&!!(IMG.world&&IMG.cab1&&IMG.cab2&&IMG.cab3&&IMG.cab4&&IMG.screen&&IMG.fixture&&IMG.cabinetRef);}
-function baseTile(i){
- if(baseBank[i])return baseBank[i];const m=MATERIALS[i];return baseBank[i]=cropCanvas(IMG[m.sheet],m.rect,m.sheet);
+function buildTextures(){texBank=new Array(MATERIALS.length);flatBank=new Array(MATERIALS.length);planePixelBank=new Array(MATERIALS.length);IMG.ready=!!(IMG.world&&IMG.cab1&&IMG.cab2&&IMG.cab3&&IMG.cab4&&IMG.screen&&IMG.fixture&&IMG.cabinetRef);}
+function ensureTextureBank(i){
+ if(texBank[i]&&flatBank[i])return;
+ const m=MATERIALS[i],src=cropCanvas(IMG[m.sheet],m.rect,m.sheet),row=[],prow=[];
+ for(let sh=0;sh<SHADES;sh++){row.push(shadeStrip(src,sh));prow.push(ctx.createPattern(shadeTile(src,sh),'repeat'));}
+ texBank[i]=row;flatBank[i]=prow;
 }
-function shadedTile(i,level){let row=shadeTileBank[i];if(!row)row=shadeTileBank[i]=new Array(SHADES);return row[level]||(row[level]=shadeTile(baseTile(i),level));}
-function wallTexture(i,level){let row=texBank[i];if(!row)row=texBank[i]=new Array(SHADES);if(row[level])return row[level];const m=MATERIALS[i];return row[level]=m.stretch?shadedTile(i,level):shadeStrip(baseTile(i),level);}
-function flatPattern(i,level){let row=flatBank[i];if(!row)row=flatBank[i]=new Array(SHADES);return row[level]||(row[level]=ctx.createPattern(shadedTile(i,level),'repeat'));}
-function planePixels(i,level){let row=planePixelBank[i];if(!row)row=planePixelBank[i]=new Array(SHADES);if(row[level])return row[level];const tile=shadedTile(i,level),g=tile.getContext('2d',{willReadFrequently:true}),img=g.getImageData(0,0,64,64);return row[level]=new Uint32Array(img.data.buffer.slice(0));}
-function bakeBaseTilesAndRelease(){
- for(let i=0;i<MATERIALS.length;i++)baseTile(i);IMG.artBaked=true;
- for(const k of['world','cab1','cab2','cab3','cab4','screen','fixture','cabinetRef'])IMG[k]=null;
- IMG.sourcesReleased=true;
+function ensurePlanePixelBank(i){
+ if(planePixelBank[i])return planePixelBank[i];
+ const m=MATERIALS[i],src=cropCanvas(IMG[m.sheet],m.rect,m.sheet),rows=[];
+ for(let sh=0;sh<SHADES;sh++){
+  const tile=shadeTile(src,sh),g=tile.getContext('2d',{willReadFrequently:true}),img=g.getImageData(0,0,64,64);
+  rows.push(new Uint32Array(img.data.buffer.slice(0)));
+ }
+ planePixelBank[i]=rows;return rows;
 }
 function ensureSoftwareFrame(w,h){if(PLANE_SOFT.width===w&&PLANE_SOFT.height===h&&PLANE_SOFT.image)return;const cv=document.createElement('canvas');cv.width=w;cv.height=h;const g=cv.getContext('2d',{alpha:true});PLANE_SOFT.canvas=cv;PLANE_SOFT.ctx=g;PLANE_SOFT.width=w;PLANE_SOFT.height=h;PLANE_SOFT.image=g.createImageData(w,h);PLANE_SOFT.u32=new Uint32Array(PLANE_SOFT.image.data.buffer);}
 function wrap64(v){v%=64;return v<0?v+64:v;}
@@ -745,38 +1007,38 @@ function drawAffineTri(tex,s0,s1,s2,d0,d1,d2){
  const b=(y0*(v1-v2)+y1*(v2-v0)+y2*(v0-v1))/den,d=(y0*(u2-u1)+y1*(u0-u2)+y2*(u1-u0))/den,f=(y0*(u1*v2-u2*v1)+y1*(u2*v0-u0*v2)+y2*(u0*v1-u1*v0))/den;
  ctx.save();ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x1,y1);ctx.lineTo(x2,y2);ctx.closePath();ctx.clip();ctx.setTransform(a,b,c,d,e,f);ctx.drawImage(tex,0,0,64,64,0,0,64,64);ctx.restore();
 }
-function paintHorizontalFace(hf,shadeOf){const tex=wallTexture(hf.tex,shadeOf(hf.dist,hf.light));if(!tex)return;const p=hf.p;drawAffineTri(tex,[0,0],[64,0],[64,64],p[0],p[1],p[2]);drawAffineTri(tex,[0,0],[64,64],[0,64],p[0],p[2],p[3]);}
+function paintHorizontalFace(hf,shadeOf){ensureTextureBank(hf.tex);const bank=texBank[hf.tex];if(!bank)return;const tex=bank[shadeOf(hf.dist,hf.light)],p=hf.p;drawAffineTri(tex,[0,0],[64,0],[64,64],p[0],p[1],p[2]);drawAffineTri(tex,[0,0],[64,64],[0,64],p[0],p[2],p[3]);}
 
 // Plane backend split is deliberate: software path must never touch CanvasPattern.setTransform().
 function paint(sim,d){const v=d.view,w=v.w,h=v.h;ctx.fillStyle='#03050a';ctx.fillRect(0,0,w,h);ctx.imageSmoothingEnabled=false;const zbuf=d.pixelDepth;zbuf.fill(Infinity);const shadeOf=(dist,light)=>Math.min(SHADES-1,Math.max(0,((Math.min(1,dist/RENDER.fogFar+(1-light)*.7))*(SHADES-1))|0));
  PLANE_STATS.patternTransforms=PLANE_STATS.softwareSpans=PLANE_STATS.softwarePixels=0;
- const planePattern=i=>{const y=d.sY[i],x0=d.sX0[i],x1=d.sX1[i],dist=d.sDist[i];if(y<0||y>=h||x1<x0)return;const p=flatPattern(d.sFlat[i],shadeOf(dist,d.sLight[i]));if(!p)return;const sec=sim.map.sectors[d.sSec[i]],frame=Geom.planeMaterialFrame(sec,PLANE_MAPPING.mode,sim.ang);const m=Geom.planePatternTransform(sim.x,sim.y,v.cosA,v.sinA,v.halfW,v.projDist,y,dist,frame.ang,frame.ox,frame.oy);if(m&&p.setTransform){PLANE_STATS.patternTransforms++;const pm=typeof DOMMatrix==='function'?new DOMMatrix([m.a,m.b,m.c,m.d,m.e,m.f]):m;p.setTransform(pm);}ctx.fillStyle=p;ctx.fillRect(x0,y,x1-x0+1,1);const off=y*w;for(let x=Math.max(0,x0);x<=Math.min(w-1,x1);x++)if(dist<zbuf[off+x])zbuf[off+x]=dist;};
- const planeSoftware=i=>{let y=d.sY[i],x0=Math.max(0,d.sX0[i]),x1=Math.min(w-1,d.sX1[i]),dist=d.sDist[i];if(y<0||y>=h||x1<x0||!Number.isFinite(dist)||dist<=0)return;const shade=shadeOf(dist,d.sLight[i]),pix=planePixels(d.sFlat[i],shade);if(!pix)return;const sec=sim.map.sectors[d.sSec[i]],frame=Geom.planeMaterialFrame(sec,PLANE_MAPPING.mode,sim.ang),mc=Math.cos(frame.ang),ms=Math.sin(frame.ang),step=dist/v.projDist,tx0=(x0+.5-v.halfW)*step,wx0=sim.x+v.cosA*dist+v.sinA*tx0,wy0=sim.y+v.sinA*dist-v.cosA*tx0,dwx=v.sinA*step,dwy=-v.cosA*step,dx=wx0-frame.ox,dy=wy0-frame.oy;let u=wrap64(mc*dx+ms*dy),vv=wrap64(-ms*dx+mc*dy),du=mc*dwx+ms*dwy,dv=-ms*dwx+mc*dwy;const frame32=PLANE_SOFT.u32,off=y*w;PLANE_STATS.softwareSpans++;for(let x=x0;x<=x1;x++){if(dist<zbuf[off+x]){frame32[off+x]=pix[((vv|0)<<6)+(u|0)];zbuf[off+x]=dist;PLANE_STATS.softwarePixels++;}u+=du;vv+=dv;if(u>=64||u<0)u=wrap64(u);if(vv>=64||vv<0)vv=wrap64(vv);}};
- const wall=i=>{const tex=wallTexture(d.wTex[i],shadeOf(d.wDist[i],d.wLight[i]));if(!tex)return;let u=d.wU[i]%1;if(u<0)u+=1;const sx=Math.min(63,(u*64)|0),y0=d.wY0[i],y1=d.wY1[i],span=d.wF1[i]-d.wF0[i];if(span<=.001||y1<=y0)return;let sy0,sy1;if(d.wStretch[i]){sy0=Math.max(0,Math.min(64,((y0-d.wF0[i])/span)*64));sy1=Math.max(sy0,Math.min(64,((y1-d.wF0[i])/span)*64));}else{const wh=Math.max(1,Math.min(TILE_H,Math.abs(d.wTop[i]-d.wBot[i])));sy0=Math.max(0,Math.min(TILE_H,((y0-d.wF0[i])/span)*wh));sy1=Math.max(sy0,Math.min(TILE_H,((y1-d.wF0[i])/span)*wh));}ctx.drawImage(tex,sx,sy0,1,Math.max(.05,sy1-sy0),d.wX[i],y0,1,Math.max(1,y1-y0));const x=d.wX[i],ya=Math.max(0,Math.floor(y0)),yb=Math.min(h,Math.ceil(y1));if(x>=0&&x<w)for(let y=ya;y<yb;y++)if(d.wDist[i]<zbuf[y*w+x])zbuf[y*w+x]=d.wDist[i];};
+ const planePattern=i=>{const y=d.sY[i],x0=d.sX0[i],x1=d.sX1[i],dist=d.sDist[i];if(y<0||y>=h||x1<x0)return;ensureTextureBank(d.sFlat[i]);const p=flatBank[d.sFlat[i]]&&flatBank[d.sFlat[i]][shadeOf(dist,d.sLight[i])];if(!p)return;const sec=sim.map.sectors[d.sSec[i]],frame=Geom.planeMaterialFrame(sec,PLANE_MAPPING.mode,sim.ang);const m=Geom.planePatternTransform(sim.x,sim.y,v.cosA,v.sinA,v.halfW,v.projDist,y,dist,frame.ang,frame.ox,frame.oy);if(m&&p.setTransform){PLANE_STATS.patternTransforms++;const pm=typeof DOMMatrix==='function'?new DOMMatrix([m.a,m.b,m.c,m.d,m.e,m.f]):m;p.setTransform(pm);}ctx.fillStyle=p;ctx.fillRect(x0,y,x1-x0+1,1);const off=y*w;for(let x=Math.max(0,x0);x<=Math.min(w-1,x1);x++)if(dist<zbuf[off+x])zbuf[off+x]=dist;};
+ const planeSoftware=i=>{let y=d.sY[i],x0=Math.max(0,d.sX0[i]),x1=Math.min(w-1,d.sX1[i]),dist=d.sDist[i];if(y<0||y>=h||x1<x0||!Number.isFinite(dist)||dist<=0)return;const shade=shadeOf(dist,d.sLight[i]),banks=ensurePlanePixelBank(d.sFlat[i]),pix=banks&&banks[shade];if(!pix)return;const sec=sim.map.sectors[d.sSec[i]],frame=Geom.planeMaterialFrame(sec,PLANE_MAPPING.mode,sim.ang),mc=Math.cos(frame.ang),ms=Math.sin(frame.ang),step=dist/v.projDist,tx0=(x0+.5-v.halfW)*step,wx0=sim.x+v.cosA*dist+v.sinA*tx0,wy0=sim.y+v.sinA*dist-v.cosA*tx0,dwx=v.sinA*step,dwy=-v.cosA*step,dx=wx0-frame.ox,dy=wy0-frame.oy;let u=wrap64(mc*dx+ms*dy),vv=wrap64(-ms*dx+mc*dy),du=mc*dwx+ms*dwy,dv=-ms*dwx+mc*dwy;const frame32=PLANE_SOFT.u32,off=y*w;PLANE_STATS.softwareSpans++;for(let x=x0;x<=x1;x++){if(dist<zbuf[off+x]){frame32[off+x]=pix[((vv|0)<<6)+(u|0)];zbuf[off+x]=dist;PLANE_STATS.softwarePixels++;}u+=du;vv+=dv;if(u>=64||u<0)u=wrap64(u);if(vv>=64||vv<0)vv=wrap64(vv);}};
+ const wall=i=>{ensureTextureBank(d.wTex[i]);const bank=texBank[d.wTex[i]];if(!bank)return;const tex=bank[shadeOf(d.wDist[i],d.wLight[i])];let u=d.wU[i]%1;if(u<0)u+=1;const sx=Math.min(63,(u*64)|0),y0=d.wY0[i],y1=d.wY1[i],span=d.wF1[i]-d.wF0[i];if(span<=.001||y1<=y0)return;let sy0,sy1;if(d.wStretch[i]){sy0=Math.max(0,Math.min(64,((y0-d.wF0[i])/span)*64));sy1=Math.max(sy0,Math.min(64,((y1-d.wF0[i])/span)*64));}else{const wh=Math.max(1,Math.min(TILE_H,Math.abs(d.wTop[i]-d.wBot[i])));sy0=Math.max(0,Math.min(TILE_H,((y0-d.wF0[i])/span)*wh));sy1=Math.max(sy0,Math.min(TILE_H,((y1-d.wF0[i])/span)*wh));}ctx.drawImage(tex,sx,sy0,1,Math.max(.05,sy1-sy0),d.wX[i],y0,1,Math.max(1,y1-y0));const x=d.wX[i],ya=Math.max(0,Math.floor(y0)),yb=Math.min(h,Math.ceil(y1));if(x>=0&&x<w)for(let y=ya;y<yb;y++)if(d.wDist[i]<zbuf[y*w+x])zbuf[y*w+x]=d.wDist[i];};
  if(PLANE_BACKEND.active==='software'){
   ensureSoftwareFrame(w,h);PLANE_SOFT.u32.fill(0);for(let i=0;i<d.sN;i++)planeSoftware(i);PLANE_SOFT.ctx.putImageData(PLANE_SOFT.image,0,0);ctx.drawImage(PLANE_SOFT.canvas,0,0);
-  PAINT_ORDER.length=d.wN+d.hFaces.length;let on=0;for(let i=0;i<d.wN;i++)PAINT_ORDER[on++]=0x1000000|i;for(let i=0;i<d.hFaces.length;i++)PAINT_ORDER[on++]=0x2000000|i;PAINT_ORDER.sort((a,b)=>{const ak=a>>>24,bk=b>>>24,ai=a&0xffffff,bi=b&0xffffff,ad=ak===1?d.wDist[ai]:d.hFaces[ai].dist,bd=bk===1?d.wDist[bi]:d.hFaces[bi].dist;return bd-ad||ak-bk;});for(const code of PAINT_ORDER){const k=code>>>24,i=code&0xffffff;if(k===1)wall(i);else paintHorizontalFace(d.hFaces[i],shadeOf);}
+  const ops=[];for(let i=0;i<d.wN;i++)ops.push({k:1,i,dist:d.wDist[i]});for(let i=0;i<d.hFaces.length;i++)ops.push({k:2,i,dist:d.hFaces[i].dist});ops.sort((a,b)=>b.dist-a.dist||a.k-b.k);for(const op of ops){if(op.k===1)wall(op.i);else paintHorizontalFace(d.hFaces[op.i],shadeOf);}
  }else{
-  PAINT_ORDER.length=d.sN+d.wN+d.hFaces.length;let on=0;for(let i=0;i<d.sN;i++)PAINT_ORDER[on++]=i;for(let i=0;i<d.wN;i++)PAINT_ORDER[on++]=0x1000000|i;for(let i=0;i<d.hFaces.length;i++)PAINT_ORDER[on++]=0x2000000|i;PAINT_ORDER.sort((a,b)=>{const ak=a>>>24,bk=b>>>24,ai=a&0xffffff,bi=b&0xffffff,ad=ak===0?d.sDist[ai]:(ak===1?d.wDist[ai]:d.hFaces[ai].dist),bd=bk===0?d.sDist[bi]:(bk===1?d.wDist[bi]:d.hFaces[bi].dist);return bd-ad||ak-bk;});for(const code of PAINT_ORDER){const k=code>>>24,i=code&0xffffff;if(k===0)planePattern(i);else if(k===1)wall(i);else paintHorizontalFace(d.hFaces[i],shadeOf);}
+  const ops=[];for(let i=0;i<d.sN;i++)ops.push({k:0,i,dist:d.sDist[i]});for(let i=0;i<d.wN;i++)ops.push({k:1,i,dist:d.wDist[i]});for(let i=0;i<d.hFaces.length;i++)ops.push({k:2,i,dist:d.hFaces[i].dist});ops.sort((a,b)=>b.dist-a.dist||a.k-b.k);for(const op of ops){if(op.k===0)planePattern(op.i);else if(op.k===1)wall(op.i);else paintHorizontalFace(d.hFaces[op.i],shadeOf);}
  }
  // subtle CRT vignette and crosshair
- if(VIGNETTE){ctx.fillStyle=VIGNETTE;ctx.fillRect(0,0,w,h);}ctx.fillStyle='rgba(220,238,255,.62)';ctx.fillRect(w/2-5,h/2,3,1);ctx.fillRect(w/2+3,h/2,3,1);ctx.fillRect(w/2,h/2-5,1,3);ctx.fillRect(w/2,h/2+3,1,3);
+ const grad=ctx.createRadialGradient(w/2,h/2,Math.min(w,h)*.2,w/2,h/2,Math.max(w,h)*.72);grad.addColorStop(0,'rgba(0,0,0,0)');grad.addColorStop(1,'rgba(0,0,0,.34)');ctx.fillStyle=grad;ctx.fillRect(0,0,w,h);ctx.fillStyle='rgba(220,238,255,.62)';ctx.fillRect(w/2-5,h/2,3,1);ctx.fillRect(w/2+3,h/2,3,1);ctx.fillRect(w/2,h/2-5,1,3);ctx.fillRect(w/2,h/2+3,1,3);
 }
 
 function drawMap(sim,w,h){const sc=Math.min(w,h)*.34/RING.outer,ox=w-RING.outer*sc-16,oy=RING.outer*sc+16,P=(x,y)=>[ox+x*sc,oy-y*sc];ctx.fillStyle='rgba(2,5,10,.72)';ctx.beginPath();ctx.arc(ox,oy,RING.outer*sc+8,0,TAU);ctx.fill();for(const ln of sim.map.lines){const a=sim.map.verts[ln.v1],b=sim.map.verts[ln.v2],p=P(a.x,a.y),q=P(b.x,b.y);ctx.strokeStyle=ln.back>=0?'rgba(80,140,220,.25)':'rgba(210,220,235,.65)';ctx.lineWidth=ln.back>=0?.6:1.2;ctx.beginPath();ctx.moveTo(p[0],p[1]);ctx.lineTo(q[0],q[1]);ctx.stroke();}for(const c of sim.map.cabinets){const p=P(c.x,c.y);ctx.fillStyle='rgba(255,90,210,.74)';ctx.fillRect(p[0]-2,p[1]-2,4,4);ctx.fillStyle='rgba(255,255,255,.9)';ctx.font='5px monospace';ctx.fillText(c.letter,p[0]+3,p[1]-3);}for(const f of sim.map.fixtures){const p=P(f.x,f.y);ctx.fillStyle='rgba(100,190,255,.55)';ctx.fillRect(p[0]-1.5,p[1]-1.5,3,3);}for(const a of sim.map.ads){const p=P(a.x,a.y);ctx.fillStyle='rgba(255,201,95,.82)';ctx.fillRect(p[0]-2,p[1]-2,4,4);}for(const e of sim.map.exits){const p=P(e.x,e.y);ctx.fillStyle='rgba(255,91,69,.95)';ctx.fillRect(p[0]-3,p[1]-3,6,6);}const p=P(sim.x,sim.y);ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(p[0],p[1]);ctx.lineTo(p[0]+Math.cos(sim.ang)*12,p[1]-Math.sin(sim.ang)*12);ctx.stroke();ctx.fillStyle='#fff';ctx.fillRect(p[0]-2,p[1]-2,4,4);}
 
 const map=buildLevel(),MAP_ERRORS=MapBuilder.validate(map),sim=new Sim(map);const input={fwd:0,back:0,left:0,right:0,run:0,crouch:0,jump:0};
 
-function findTarget(){const ca=Math.cos(sim.ang),sa=Math.sin(sim.ang),all=map.targets;let best=null,bscore=1e9;for(const t of all){const tc=Math.cos(t.ang),ts=Math.sin(t.ang),dd=(t.d||10)/2+24,px=t.x+tc*dd,py=t.y+ts*dd,dx=px-sim.x,dy=py-sim.y,d2=dx*dx+dy*dy;if(d2>6084)continue;const dist=Math.sqrt(d2),dot=(dx*ca+dy*sa)/(dist||1);if(dot<.28)continue;const score=dist-dot*16;if(score<bscore){bscore=score;best=t;}}return best;}
+function interactionPoint(t){const b=basis(t.ang),d=(t.d||10)/2+24;return{x:t.x+b.f.x*d,y:t.y+b.f.y*d};}
+function findTarget(){const ca=Math.cos(sim.ang),sa=Math.sin(sim.ang),all=map.targets;let best=null,bscore=1e9;for(const t of all){const p=interactionPoint(t),dx=p.x-sim.x,dy=p.y-sim.y,dist=Math.hypot(dx,dy);if(dist>78)continue;const dot=(dx*ca+dy*sa)/(dist||1);if(dot<.28)continue;const score=dist-dot*16;if(score<bscore){bscore=score;best=t;}}return best;}
 function targetKind(t){return t.kind==='cabinet'?'CABINET '+t.letter:t.kind==='exit'?'EXIT':t.kind==='token'?'TOKEN VENDING':t.kind==='ad'?'AD INVENTORY':'WALL PORTAL';}
-let promptTargetKey='';
-function updatePrompt(){activeTarget=findTarget();const key=activeTarget?(activeTarget.id||activeTarget.letter||activeTarget.label):'';if(key===promptTargetKey)return;promptTargetKey=key;if(!activeTarget){promptEl.classList.remove('show');promptEl.textContent='';return;}const name=activeTarget.kind==='cabinet'?activeTarget.title:activeTarget.label,verb=activeTarget.cta||(activeTarget.kind==='cabinet'?'ENTER GAME':'OPEN');promptEl.innerHTML='<span class="kind">'+targetKind(activeTarget)+'</span> '+name+' &nbsp; <span class="key">[E / CLICK]</span> '+verb;promptEl.classList.add('show');}
+function updatePrompt(){activeTarget=findTarget();if(!activeTarget){promptEl.classList.remove('show');return;}const name=activeTarget.kind==='cabinet'?activeTarget.title:activeTarget.label,verb=activeTarget.cta||(activeTarget.kind==='cabinet'?'ENTER GAME':'OPEN');promptEl.innerHTML='<span class="kind">'+targetKind(activeTarget)+'</span> '+name+' &nbsp; <span class="key">[E / CLICK]</span> '+verb;promptEl.classList.add('show');}
 function openConfirm(t){if(!t||!t.url)return;modalTarget=t;if(document.pointerLockElement===canvas)document.exitPointerLock();const name=t.kind==='cabinet'?(t.letter+' / '+t.title):t.label;modalTitle.textContent=name;if(t.kind==='cabinet'){modalEyebrow.textContent='LEAVE FTS ARCADE?';modalCopy.textContent='Enter cabinet '+t.letter+' and navigate to '+t.title+'? Your browser will load '+t.url+'.';confirmBtn.textContent='ENTER CABINET';}else if(t.kind==='token'){modalEyebrow.textContent='TOKEN PURCHASE';modalCopy.textContent='Open the FTS token purchase portal? This leaves the arcade floor and loads '+t.url+'.';confirmBtn.textContent='BUY TOKENS';}else if(t.kind==='ad'){modalEyebrow.textContent='PROGRAMMATIC INVENTORY';modalCopy.textContent='Open the deal form for '+t.inventory+'? This leaves the arcade floor.';confirmBtn.textContent=t.cta||'OPEN DEAL FORM';}else if(t.kind==='dressing'){modalEyebrow.textContent='WALL PORTAL';modalCopy.textContent=(t.cta||'Open this link')+' — '+t.label+'.';confirmBtn.textContent=t.cta||'OPEN';}else{modalEyebrow.textContent='LEAVE FTS ARCADE?';modalCopy.textContent='Use this exit for '+name+'? This destination is off the arcade floor.';confirmBtn.textContent=t.cta||'LEAVE ARCADE';}modal.classList.add('show');}
 function closeConfirm(relock){modal.classList.remove('show');modalTarget=null;if(relock&&!coarse())setTimeout(()=>canvas.requestPointerLock&&canvas.requestPointerLock(),60);}
 function leaveArcade(){if(!modalTarget)return;const t=modalTarget;try{sessionStorage.setItem('fts.arcade.return',JSON.stringify({x:sim.x,y:sim.y,ang:sim.ang,t:Date.now()}));}catch(e){}window.open(t.url, t.target || '_blank');closeConfirm(true);}
 confirmBtn.addEventListener('click',leaveArcade);cancelBtn.addEventListener('click',()=>closeConfirm(true));
 
-function resize(){const vv=window.visualViewport,w=Math.round(vv&&vv.width||innerWidth||960),h=Math.round(vv&&vv.height||innerHeight||600),low=coarse()||PLATFORM.ios||((navigator.hardwareConcurrency||8)<=4);RSCALE=low?(h>900?PERF.coarseTallScale:PERF.coarseScale):(h>900?1.9:1.55);RW=Math.max(180,Math.round(w/RSCALE));RH=Math.max(120,Math.round(h/RSCALE));canvas.width=RW;canvas.height=RH;canvas.style.width=w+'px';canvas.style.height=h+'px';dl=new DrawLists(RW,RH);PLANE_SOFT.canvas=PLANE_SOFT.ctx=PLANE_SOFT.image=PLANE_SOFT.u32=null;PLANE_SOFT.width=PLANE_SOFT.height=0;ensureSoftwareFrame(RW,RH);VIGNETTE=ctx.createRadialGradient(RW/2,RH/2,Math.min(RW,RH)*.2,RW/2,RH/2,Math.max(RW,RH)*.72);VIGNETTE.addColorStop(0,'rgba(0,0,0,0)');VIGNETTE.addColorStop(1,'rgba(0,0,0,.34)');ctx.imageSmoothingEnabled=false;}
+function resize(){const w=innerWidth||960,h=innerHeight||600;RSCALE=h>900?1.9:1.55;RW=Math.max(240,Math.round(w/RSCALE));RH=Math.max(150,Math.round(h/RSCALE));canvas.width=RW;canvas.height=RH;canvas.style.width=w+'px';canvas.style.height=h+'px';dl=new DrawLists(RW,RH);PLANE_SOFT.canvas=PLANE_SOFT.ctx=PLANE_SOFT.image=PLANE_SOFT.u32=null;PLANE_SOFT.width=PLANE_SOFT.height=0;ensureSoftwareFrame(RW,RH);ctx.imageSmoothingEnabled=false;}
 const KEY={KeyW:'fwd',ArrowUp:'fwd',KeyS:'back',ArrowDown:'back',KeyA:'left',KeyD:'right'};
 addEventListener('keydown',e=>{if(modal.classList.contains('show')){if(e.code==='Enter'||e.code==='KeyY')leaveArcade();if(e.code==='Escape'||e.code==='KeyN')closeConfirm(true);return;}if(KEY[e.code]){input[KEY[e.code]]=1;e.preventDefault();}if(e.code==='ShiftLeft'||e.code==='ShiftRight')input.run=1;if(e.code==='ControlLeft'||e.code==='ControlRight'||e.code==='KeyC'){input.crouch=1;if(!e.repeat)sim.beginSlide();e.preventDefault();}if(e.code==='Space'){input.jump=1;if(!e.repeat)sim.jump();e.preventDefault();}if(e.code==='KeyE')openConfirm(activeTarget);if(e.code==='KeyM'){showMap=!showMap;mapBtn.textContent='MAP: '+(showMap?'ON':'OFF');mapBtn.classList.toggle('on',showMap);}if(e.code==='KeyN')toggleAudio();if(e.code==='KeyK'){togglePlaneMapping();e.preventDefault();}if(e.code==='KeyP'){togglePlaneBackend();e.preventDefault();}});
 addEventListener('keyup',e=>{if(KEY[e.code])input[KEY[e.code]]=0;if(e.code==='ShiftLeft'||e.code==='ShiftRight')input.run=0;if(e.code==='ControlLeft'||e.code==='ControlRight'||e.code==='KeyC')input.crouch=0;if(e.code==='Space')input.jump=0;});
@@ -799,11 +1061,11 @@ touchCrouch.addEventListener('pointerdown',e=>{input.crouch=1;sim.beginSlide();t
 touchCrouch.addEventListener('pointerup',e=>{input.crouch=0;e.preventDefault();});touchCrouch.addEventListener('pointercancel',()=>{input.crouch=0;});
 
 let last=0,fpsAcc=0,fpsN=0,fps=0,frames=0,simAcc=0;
-function loop(ts){const frameDt=Math.min((ts-last)/1000||.016,.12);last=ts;simAcc=Math.min(.20,simAcc+frameDt);const fixedDt=1/KINETIC.simHz;let simSteps=0;while(simAcc>=fixedDt&&simSteps<KINETIC.maxCatchupSteps){sim.step(fixedDt,input);simAcc-=fixedDt;simSteps++;}RenderCore.solve(sim,dl,RW,RH);paint(sim,dl);if(showMap)drawMap(sim,RW,RH);updatePrompt();fpsAcc+=frameDt;fpsN++;if(fpsAcc>.45){fps=fpsN/fpsAcc;fpsAcc=0;fpsN=0;}if((frames++&7)===0){const moveState=sim.slideT>0?'SLIDE':input.crouch?'CROUCH':input.run?'RUN':'WALK';telemetry.textContent=VERSION+' | '+RW+'x'+RH+' | '+fps.toFixed(0)+' fps | '+moveState+' | Z '+sim.jumpZ.toFixed(0)+' | SEC '+(sim.sector+1)+'/'+map.sectors.length+' | CAB '+map.cabinets.length+' A-Z | FIX '+map.fixtures.length+' | ADS '+map.ads.length+' | VIS '+dl.stats.sectors+'s '+dl.stats.solidFaces+'g/'+dl.stats.culledSolids+'c/'+dl.stats.lodParts+'l'+(dl.stats.grows?' GROW '+dl.stats.grows:'')+(dl.stats.dropped?' DROP '+dl.stats.dropped:'')+' | PLN '+PLANE_BACKEND.active.toUpperCase()+'/'+PLANE_MAPPING.mode.toUpperCase()+' | ART '+(IMG.ready?'ATLAS':'FALLBACK')+(MAP_ERRORS.length?' | MAP ERR '+MAP_ERRORS.length:'');}requestAnimationFrame(loop);}
-addEventListener('resize',resize);if(window.visualViewport)visualViewport.addEventListener('resize',resize);
+function loop(ts){const frameDt=Math.min((ts-last)/1000||.016,.12);last=ts;simAcc=Math.min(.20,simAcc+frameDt);const fixedDt=1/KINETIC.simHz;let simSteps=0;while(simAcc>=fixedDt&&simSteps<KINETIC.maxCatchupSteps){sim.step(fixedDt,input);simAcc-=fixedDt;simSteps++;}RenderCore.solve(sim,dl,RW,RH);paint(sim,dl);if(showMap)drawMap(sim,RW,RH);updatePrompt();fpsAcc+=frameDt;fpsN++;if(fpsAcc>.45){fps=fpsN/fpsAcc;fpsAcc=0;fpsN=0;}if((frames++&7)===0){const moveState=sim.slideT>0?'SLIDE':input.crouch?'CROUCH':input.run?'RUN':'WALK';telemetry.textContent=VERSION+' | '+RW+'x'+RH+' | '+fps.toFixed(0)+' fps | '+moveState+' | Z '+sim.jumpZ.toFixed(0)+' | SEC '+(sim.sector+1)+'/'+map.sectors.length+' | CAB '+map.cabinets.length+' A-Z | FIX '+map.fixtures.length+' | ADS '+map.ads.length+' | VIS '+dl.stats.sectors+'s '+dl.stats.solidFaces+'g'+(dl.stats.dropped?' DROP '+dl.stats.dropped:'')+' | PLN '+PLANE_BACKEND.active.toUpperCase()+'/'+PLANE_MAPPING.mode.toUpperCase()+' | ART '+(IMG.ready?'ATLAS':'FALLBACK')+(MAP_ERRORS.length?' | MAP ERR '+MAP_ERRORS.length:'');}requestAnimationFrame(loop);}
+addEventListener('resize',resize);
 Promise.all([
  loadImage(ASSET_FILES.world,'world'),loadImage(ASSET_FILES.cab1,'Cabinets01'),loadImage(ASSET_FILES.cab2,'Cabinets02'),loadImage(ASSET_FILES.cab3,'Cabinets03'),loadImage(ASSET_FILES.cab4,'Cabinets04'),loadImage(ASSET_FILES.screen,'screen'),loadImage(ASSET_FILES.fixture,'fixture'),loadImage(ASSET_FILES.cabinetRef,'the-Cabinet')
-]).then(([w,c1,c2,c3,c4,sc,f,cr])=>{IMG.world=w;IMG.cab1=c1;IMG.cab2=c2;IMG.cab3=c3;IMG.cab4=c4;IMG.screen=sc;IMG.fixture=f;IMG.cabinetRef=cr;for(const [k,im] of Object.entries({world:w,cab1:c1,cab2:c2,cab3:c3,cab4:c4,screen:sc,fixture:f,cabinetRef:cr}))IMG.meta[k]=im?[im.naturalWidth,im.naturalHeight]:null;buildTextures();bakeBaseTilesAndRelease();if(IMG.errors.length){telemetry.textContent=VERSION+' | ASSET ERROR: '+IMG.errors.join(', ');console.error('[FTS ARCADE] atlas load failure',IMG.errors,ASSET_FILES);}});
+]).then(([w,c1,c2,c3,c4,sc,f,cr])=>{IMG.world=w;IMG.cab1=c1;IMG.cab2=c2;IMG.cab3=c3;IMG.cab4=c4;IMG.screen=sc;IMG.fixture=f;IMG.cabinetRef=cr;buildTextures();if(PLANE_BACKEND.active==='software'){const used=new Set();for(const s of map.sectors){used.add(s.ftex);used.add(s.ctex);}for(const m of used)ensurePlanePixelBank(m);}if(IMG.errors.length){telemetry.textContent=VERSION+' | ASSET ERROR: '+IMG.errors.join(', ');console.error('[FTS ARCADE] atlas load failure',IMG.errors,ASSET_FILES);}});
 resize();buildTextures();
 if(MAP_ERRORS.length)console.error('[FTS ARCADE] map validation',MAP_ERRORS);
 function screenPart(c){return c.parts.find(p=>p.role==='screen');}
@@ -877,12 +1139,8 @@ const REF_TESTS={
  adInventory:()=>map.ads.length===8&&map.ads.every(a=>a.url.includes('inventory=')),
  offsiteExits:()=>map.exits.every(e=>/^https:\/\//.test(e.url)),
  sameDirectoryAssets:()=>Object.values(ASSET_FILES).every(v=>(Array.isArray(v)?v:[v]).every(s=>!/^https?:/i.test(s))),
- assetDimensions:()=>{const m=IMG.meta;return m.world&&m.world[0]===1024&&m.world[1]===1024&&['cab1','cab2','cab3','cab4'].every(k=>m[k]&&m[k][0]===1254&&m[k][1]===1254)&&m.screen&&m.screen[0]===2048&&m.screen[1]===1433&&m.fixture&&m.fixture[0]===1024&&m.fixture[1]===256&&m.cabinetRef&&m.cabinetRef[0]===767&&m.cabinetRef[1]===1432;},
+ assetDimensions:()=>!!IMG.world&&IMG.world.naturalWidth===1024&&IMG.world.naturalHeight===1024&&['cab1','cab2','cab3','cab4'].every(k=>IMG[k]&&IMG[k].naturalWidth===1254&&IMG[k].naturalHeight===1254)&&!!IMG.screen&&IMG.screen.naturalWidth===2048&&IMG.screen.naturalHeight===1433&&!!IMG.fixture&&IMG.fixture.naturalWidth===1024&&IMG.fixture.naturalHeight===256&&!!IMG.cabinetRef&&IMG.cabinetRef.naturalWidth===767&&IMG.cabinetRef.naturalHeight===1432,
  assetsReady:()=>IMG.ready&&IMG.errors.length===0,
- sourceAtlasesReleased:()=>!IMG.artBaked||IMG.sourcesReleased,
- staticRenderGeometry:()=>map.solids.every(s=>s._render&&s._render.faces.length>0&&Number.isFinite(s._render.radius)),
- leanWallReserve:()=>!dl||dl.wX.length<=RW*PERF.wallSpanMaxFactor,
- lazyShadeBanks:()=>texBank.length===MATERIALS.length&&flatBank.length===MATERIALS.length&&shadeTileBank.length===MATERIALS.length,
  noFrameOriginTrap:()=>document.querySelectorAll('iframe,frame').length===0,
  renderProducesGeometry:()=>!!dl&&dl.wN>0&&dl.sN>0&&dl.stats.solidFaces>0,
  runtimeClean:()=>RUNTIME_ERRORS.length===0
@@ -895,7 +1153,7 @@ function runRefTests(){
  }
  return{version:VERSION,pass:failures.length===0,passed:Object.values(results).filter(v=>v===true).length,total:Object.keys(REF_TESTS).length,failures,results,mapErrors:MAP_ERRORS.slice(),assetErrors:IMG.errors.slice(),runtimeErrors:RUNTIME_ERRORS.slice(),screenAtlas:SCREEN_ATLAS_META};
 }
-window.__FTS_ARCADE__={VERSION,map,sim,MapBuilder,Geom,RenderCore,DrawLists,MATERIALS,MAP_ERRORS,CABINET_ROSTER,CABINET_DIM,AISLE,PORTALS,ASSET_NAMES,CABINET_PART_RECTS,CABINET_REF_RECTS,SCREEN_ATLAS_META,SCREEN_RECTS,screenRect,AUTHORING,KINETIC,JUMP,RENDER,PERF,RING,CABINET_LAYOUT_SNAPSHOT,cabinetLayoutSignature:()=>cabinetLayoutSignature(map),PLATFORM,PLANE_BACKEND,PLANE_STATS,setPlaneBackend,togglePlaneBackend,PLANE_MAPPING,setPlaneMappingMode,togglePlaneMapping,MOUSE_LOOK_SENS,TOUCH_LOOK_SENS,solidAabb,cabinetClearOfOffice,exportAuthoring:()=>JSON.stringify(AUTHORING,null,2),tests:REF_TESTS,runTests:runRefTests};
+window.__FTS_ARCADE__={VERSION,map,sim,MapBuilder,Geom,RenderCore,DrawLists,MATERIALS,MAP_ERRORS,CABINET_ROSTER,CABINET_DIM,AISLE,PORTALS,ASSET_NAMES,CABINET_PART_RECTS,CABINET_REF_RECTS,SCREEN_ATLAS_META,SCREEN_RECTS,screenRect,AUTHORING,KINETIC,JUMP,RENDER,RING,CABINET_LAYOUT_SNAPSHOT,cabinetLayoutSignature:()=>cabinetLayoutSignature(map),PLATFORM,PLANE_BACKEND,PLANE_STATS,setPlaneBackend,togglePlaneBackend,PLANE_MAPPING,setPlaneMappingMode,togglePlaneMapping,MOUSE_LOOK_SENS,TOUCH_LOOK_SENS,solidAabb,cabinetClearOfOffice,exportAuthoring:()=>JSON.stringify(AUTHORING,null,2),tests:REF_TESTS,runTests:runRefTests};
 const qs=new URLSearchParams(location.search);
 setPlaneBackend(qs.get('planeBackend')||qs.get('backend')||'auto');
 setPlaneMappingMode(qs.get('planes')||qs.get('plane')||'world');
