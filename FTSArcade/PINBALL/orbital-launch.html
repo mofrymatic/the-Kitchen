@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ORBITAL LAUNCH · OBLITERATUS</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;background:#05080f;overflow:hidden;touch-action:none;user-select:none;font-family:'Courier New',monospace}
+canvas{display:block;position:fixed;top:0;left:0}
+#hud{position:fixed;top:10px;left:0;width:100%;text-align:center;z-index:10;color:rgba(90,180,255,.9);
+  font-size:12px;letter-spacing:.18em;pointer-events:none;text-shadow:0 0 8px rgba(40,120,255,.7)}
+#score{font-size:26px;color:#ff3b30;text-shadow:0 0 14px rgba(255,60,40,.8);font-weight:bold}
+#status{position:fixed;top:52px;left:0;width:100%;text-align:center;z-index:10;color:rgba(120,190,255,.6);
+  font-size:11px;letter-spacing:.14em;pointer-events:none}
+#msg{position:fixed;top:38%;left:0;width:100%;text-align:center;z-index:20;color:#ffd60a;
+  font-size:22px;letter-spacing:.22em;text-shadow:0 0 18px rgba(255,200,10,.8);pointer-events:none;opacity:0;transition:opacity .22s}
+#msg.show{opacity:1}
+#hint{position:fixed;bottom:10px;left:0;width:100%;text-align:center;z-index:10;color:rgba(90,150,255,.42);
+  font-size:10px;letter-spacing:.1em;pointer-events:none}
+#plunge{position:fixed;bottom:30px;right:16px;width:12px;height:120px;border:1px solid rgba(90,180,255,.4);z-index:10;background:rgba(8,16,32,.6)}
+#plungeFill{position:absolute;bottom:0;left:0;width:100%;background:linear-gradient(#ffd60a,#ff3b30);height:0%}
+</style>
+</head>
+<body>
+<div id="hud">ORBITAL LAUNCH<div id="score">000000</div></div>
+<div id="status">BALLS: 3 &nbsp;·&nbsp; CHARGE THE CORE</div>
+<div id="msg"></div>
+<div id="hint">Z / M = FLIPPERS &nbsp;·&nbsp; HOLD SPACE = LAUNCH &nbsp;·&nbsp; TAP SIDES = FLIP</div>
+<div id="plunge"><div id="plungeFill"></div></div>
+<canvas id="c"></canvas>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════
+//  ORBITAL LAUNCH · OBLITERATUS  —  iso 2.5D pinball cabinet, v0
+//
+//  Built from the RETRO SPACE sprite kit (Doc 2, the component contract)
+//  over the wireframe (Doc 1) re-expressed per the metacognition pass:
+//   • sprite kit = ECS object types with art attached (unchanged, as directed)
+//   • wireframe redrawn as SEGMENT-GRAPH + HEIGHT-FIELD annotation, not 3D geo
+//   • STAGED build: v0 = lower field + core (all layer 0, playable now).
+//     Ramps/orbits (layer-1 system) are marked + stubbed as v1/v2 targets.
+//   • materials from the PRD: passive pegs/walls, active bumpers/slings/flippers
+//   • DR-2 velocity restitution · DR-3 sweep-derived flipper kick ·
+//     DR-5 passive/active split · deterministic mulberry32 (replay-ready)
+//
+//  Original theme/art (retro-space palette). No licensed IP. Canvas 2D,
+//  single file, no CDN.  Palette: red #ff3b30 · gold #ffd60a · blue #3b82f6
+//  · white #e8f0ff on void #05080f.
+// ═══════════════════════════════════════════════════════════════════════
+
+const canvas=document.getElementById('c'), ctx=canvas.getContext('2d');
+
+// ---- sandbox-safe storage + shell stub (cabinet contract) ----
+function storageGet(k,f){ try{const v=localStorage.getItem(k);return v===null?f:JSON.parse(v);}catch(e){return f;} }
+function storageSet(k,v){ try{localStorage.setItem(k,JSON.stringify(v));}catch(e){} }
+function reportToShell(p){ /* DRY-RUN STUB: non-transmitting. */ }
+
+// ---- deterministic RNG (replay authority groundwork) ----
+function mulberry32(s){ return function(){ let t=s+=0x6D2B79F5; t=Math.imul(t^t>>>15,t|1); t^=t+Math.imul(t^t>>>7,t|61); return((t^t>>>14)>>>0)/4294967296; }; }
+const SEED=(storageGet('orbital.seed',(Math.random()*1e9)|0))|0; storageSet('orbital.seed',SEED);
+let rng=mulberry32(SEED);
+
+// ---- palette ----
+const RED='255,59,48', GOLD='255,214,10', BLUE='59,130,246', WHITE='232,240,255', STEEL='120,150,190', DIM='40,90,150';
+
+// ═══ MATERIALS (DR-2 curve, DR-5 passive/active) ═══════════════════════
+const MAX_SPEED=1400;
+const MAT={
+  wall:    {mode:'passive', rB:0.32, rC:0.10, fr:0.08, kick:0},
+  post:    {mode:'passive', rB:0.55, rC:0.22, fr:0.06, kick:0},   // rubber-ringed post
+  bumper:  {mode:'active',  rB:0.50, rC:0.20, fr:0.05, kick:560}, // pop bumper
+  sling:   {mode:'active',  rB:0.55, rC:0.18, fr:0.06, kick:600}, // slingshot (directional)
+  flipper: {mode:'active',  rB:0.42, rC:0.16, fr:0.12, kickBase:120, kickCouple:0.9}, // DR-3
+  scoop:   {mode:'passive', rB:0.12, rC:0.05, fr:0.55, kick:0},   // core capture
+};
+function restit(m,speed){ return m.rB + m.rC*Math.min(1,speed/MAX_SPEED); }
+
+// ═══ ISO PROJECTION ════════════════════════════════════════════════════
+// Physics is FLAT (px,py). Iso is render-only. Playfield 200 x 340 units.
+const PF_W=200, PF_H=340;
+let TILE_W, TILE_H, Z_SCALE, ORIGIN_X, ORIGIN_Y, W=0,H=0,DPR=Math.min(devicePixelRatio||1,2);
+function iso(px,py,z){
+  return { x: ORIGIN_X + (px-py)*(TILE_W*0.5), y: ORIGIN_Y + (px+py)*(TILE_H*0.5) - (z||0)*Z_SCALE };
+}
+
+// ═══ HEIGHT FIELD — v0 core plinth only; ramps are v1 (marked, not built) ══
+const CORE={cx:100,cy:150,r:34, plinth:6};
+function heightAt(px,py,layer){
+  if(layer!==0) return 0; // layer-1 ramp system is a v1 target
+  const d=Math.hypot(px-CORE.cx,py-CORE.cy);
+  if(d<CORE.r) return CORE.plinth*(1-d/CORE.r)*(1-d/CORE.r); // domed core plinth
+  return 0;
+}
+
+// ═══ OBJECTS (sprite-kit contract) ═════════════════════════════════════
+const walls=[];  // {ax,ay,bx,by,mat}
+function seg(ax,ay,bx,by,mat){ walls.push({ax,ay,bx,by,mat:mat||MAT.wall}); }
+// outer cabinet rails (Doc 1 frame), plus launch-lane divider (right chute)
+seg(12,14, 12,300, MAT.wall);          // left rail
+seg(188,14, 188,60, MAT.wall);         // right rail (upper; lane divider below)
+seg(12,14, 188,14, MAT.wall);          // top
+seg(168,60, 168,250, MAT.wall);        // launch-lane divider (skill shot chute)
+seg(188,60, 188,300, MAT.wall);        // right outer (lane wall)
+// lower funnels toward the drain (Doc 1 outlanes 12)
+seg(12,300, 74,330, MAT.wall);         // left funnel
+seg(188,300, 126,330, MAT.wall);       // right funnel
+
+// pop bumper cluster (Doc 1 area 5) — three, triangle
+const bumpers=[
+  {x:78,y:96,r:8,cd:0,hit:0}, {x:122,y:96,r:8,cd:0,hit:0}, {x:100,y:120,r:8,cd:0,hit:0},
+];
+// slingshots (Doc 1 area 8) — above each flipper, directional
+const slings=[
+  {x:60,y:270,r:9,dir:[0.6,-0.8],cd:0,hit:0},
+  {x:140,y:270,r:9,dir:[-0.6,-0.8],cd:0,hit:0},
+];
+// target array (Doc 1 area 6) — standups, toggle-lit, feed core charge
+const targets=[
+  {x:52,y:150,lit:false,cd:0},{x:52,y:172,lit:false,cd:0},
+  {x:148,y:150,lit:false,cd:0},{x:148,y:172,lit:false,cd:0},
+];
+// posts (rubber) flanking the core to give the mid-field some life
+const posts=[ {x:74,y:150,r:4}, {x:126,y:150,r:4} ];
+
+// core charge state (Doc 1 area 7 — CHARGE THE CORE ring)
+let coreCharge=0, coreCaptured=false, captureTimer=0;
+
+// ---- flippers (Doc 1 lower flippers; sprite kit flipper L/R) ----
+function mkFlip(px,py,side){ return {px,py,side,len:30,rest:side*0.45,up:side*-0.5,angle:side*0.45,av:0,target:'rest'}; }
+const flipL=mkFlip(76,296,1), flipR=mkFlip(124,296,-1);
+function flipTip(f){ const a=f.side>0?f.angle:Math.PI-f.angle; return {x:f.px+Math.cos(a)*f.len, y:f.py+Math.sin(a)*f.len}; }
+
+// ---- ball ----
+const ball={x:178,y:250,vx:0,vy:0,r:3.4,live:true,z:0,layer:0};
+function launchReset(){ ball.x=178; ball.y=250; ball.vx=0; ball.vy=0; ball.live=true; ball.z=0; ball.layer=0; }
+launchReset();
+
+// ═══ INPUT ═════════════════════════════════════════════════════════════
+let plunging=false, plungeCharge=0;
+const pf=document.getElementById('plungeFill');
+addEventListener('keydown',e=>{
+  if(e.code==='KeyZ') flipL.target='up';
+  if(e.code==='KeyM') flipR.target='up';
+  if(e.code==='Space'){ plunging=true; e.preventDefault(); }
+});
+addEventListener('keyup',e=>{
+  if(e.code==='KeyZ') flipL.target='rest';
+  if(e.code==='KeyM') flipR.target='rest';
+  if(e.code==='Space') releasePlunge();
+});
+function releasePlunge(){ if(plunging){ if(ball.x>160&&ball.y>150){ ball.vy=-(plungeCharge*220+70); } plunging=false; plungeCharge=0; pf.style.height='0%'; } }
+addEventListener('touchstart',e=>{ for(const t of e.changedTouches){
+  if(t.clientX>innerWidth*0.82&&t.clientY>innerHeight*0.62) plunging=true;
+  else if(t.clientX<innerWidth*0.5) flipL.target='up'; else flipR.target='up';
+}},{passive:true});
+addEventListener('touchend',()=>{ flipL.target='rest'; flipR.target='rest'; releasePlunge(); },{passive:true});
+
+// ═══ GAME STATE ════════════════════════════════════════════════════════
+let score=0, ballsLeft=3, gameOver=false;
+const scoreEl=document.getElementById('score'), statusEl=document.getElementById('status'), msgEl=document.getElementById('msg');
+let high=storageGet('orbital.high',0);
+function addScore(v){ score+=v; scoreEl.textContent=String(score).padStart(6,'0'); }
+function setStatus(){ statusEl.textContent = coreCaptured?`CORE CHARGED! · x${1+coreCharge}`:`BALLS: ${ballsLeft} · CHARGE: ${coreCharge}/4`; }
+function flash(t){ msgEl.textContent=t; msgEl.classList.add('show'); clearTimeout(flash._t); flash._t=setTimeout(()=>msgEl.classList.remove('show'),700); }
+setStatus();
+
+// ═══ COLLISION ═════════════════════════════════════════════════════════
+function collideCircle(b,cx,cy,cr,mat,onHit){
+  const dx=b.x-cx, dy=b.y-cy, rr=b.r+cr, d2=dx*dx+dy*dy;
+  if(d2<rr*rr && d2>1e-6){
+    const d=Math.sqrt(d2), ux=dx/d, uy=dy/d, pen=rr-d;
+    b.x+=ux*pen; b.y+=uy*pen;
+    const vn=b.vx*ux+b.vy*uy;
+    if(vn<0){
+      const sp=Math.hypot(b.vx,b.vy), e=restit(mat,sp);
+      b.vx-=(1+e)*vn*ux; b.vy-=(1+e)*vn*uy;
+      const tx=-uy,ty=ux, vt=b.vx*tx+b.vy*ty;
+      b.vx-=vt*mat.fr*tx; b.vy-=vt*mat.fr*ty;
+      if(mat.mode==='active'&&mat.kick){ b.vx+=ux*mat.kick; b.vy+=uy*mat.kick; }
+      if(onHit) onHit(ux,uy);
+    }
+  }
+}
+function collideSeg(b,w){
+  const dx=w.bx-w.ax, dy=w.by-w.ay, L2=dx*dx+dy*dy;
+  let t=((b.x-w.ax)*dx+(b.y-w.ay)*dy)/L2; t=Math.max(0,Math.min(1,t));
+  const cx=w.ax+t*dx, cy=w.ay+t*dy, nx=b.x-cx, ny=b.y-cy, d=Math.hypot(nx,ny);
+  if(d<b.r && d>1e-6){
+    const ux=nx/d, uy=ny/d, pen=b.r-d;
+    b.x+=ux*pen; b.y+=uy*pen;
+    const vn=b.vx*ux+b.vy*uy;
+    if(vn<0){ const e=restit(w.mat,Math.abs(vn)); b.vx-=(1+e)*vn*ux; b.vy-=(1+e)*vn*uy; }
+  }
+}
+function collideFlipper(b,f){
+  const tip=flipTip(f), ax=f.px,ay=f.py,bx=tip.x,by=tip.y;
+  const dx=bx-ax,dy=by-ay,L2=dx*dx+dy*dy;
+  let t=((b.x-ax)*dx+(b.y-ay)*dy)/L2; t=Math.max(0,Math.min(1,t));
+  const cx=ax+t*dx, cy=ay+t*dy, nx=b.x-cx, ny=b.y-cy, d=Math.hypot(nx,ny);
+  const rr=b.r+2.4;
+  if(d<rr && d>1e-6){
+    const ux=nx/d, uy=ny/d, pen=rr-d;
+    b.x+=ux*pen; b.y+=uy*pen;
+    const vn=b.vx*ux+b.vy*uy;
+    if(vn<0){ const e=restit(MAT.flipper,Math.abs(vn)); b.vx-=(1+e)*vn*ux; b.vy-=(1+e)*vn*uy; }
+    // DR-3: sweep-derived kick — magnitude from flipper angular velocity at contact
+    const kick=MAT.flipper.kickBase + Math.abs(f.av)*300*MAT.flipper.kickCouple;
+    if(Math.abs(f.av)>0.4){ b.vx+=ux*kick; b.vy+=uy*kick; }
+  }
+}
+
+// ═══ UPDATE ════════════════════════════════════════════════════════════
+const GRAV=1500, AIR=0.9992;
+function update(dt){
+  if(plunging&&plungeCharge<1){ plungeCharge=Math.min(1,plungeCharge+dt*1.2); pf.style.height=(plungeCharge*100)+'%'; }
+  // flipper drive
+  for(const f of [flipL,flipR]){
+    const goal=f.target==='up'?f.up:f.rest, prev=f.angle;
+    f.angle+=(goal-f.angle)*Math.min(1,dt*26);
+    f.av=(f.angle-prev)/Math.max(dt,1e-4);
+  }
+  if(captureTimer>0){ captureTimer-=dt; if(captureTimer<=0){ coreCaptured=false; launchReset(); flash('BALL RELEASED'); setStatus(); } return; }
+  const SUB=4, sdt=dt/SUB;
+  for(let s=0;s<SUB;s++){
+    if(!ball.live) break;
+    ball.vy+=GRAV*sdt;
+    // slope accel from core plinth (rolls off the dome)
+    const e=1.5, dzx=(heightAt(ball.x+e,ball.y,0)-heightAt(ball.x-e,ball.y,0))/(2*e);
+    const dzy=(heightAt(ball.x,ball.y+e,0)-heightAt(ball.x,ball.y-e,0))/(2*e);
+    ball.vx-=dzx*900*sdt; ball.vy-=dzy*900*sdt;
+    ball.vx*=AIR; ball.vy*=AIR;
+    ball.x+=ball.vx*sdt; ball.y+=ball.vy*sdt;
+    ball.z=heightAt(ball.x,ball.y,0);
+
+    for(const w of walls) collideSeg(ball,w);
+    for(const p of posts) collideCircle(ball,p.x,p.y,p.r,MAT.post);
+    for(const b of bumpers) collideCircle(ball,b.x,b.y,b.r,MAT.bumper,()=>{ if(b.cd<=0){ b.cd=0.18; b.hit=0.3; addScore(120); } });
+    for(const sl of slings) collideCircle(ball,sl.x,sl.y,sl.r,MAT.sling,(ux,uy)=>{ if(sl.cd<=0){ sl.cd=0.2; sl.hit=0.3; ball.vx+=sl.dir[0]*180; ball.vy+=sl.dir[1]*180; addScore(80); } });
+    collideFlipper(ball,flipL); collideFlipper(ball,flipR);
+    for(const tg of targets){ const d=Math.hypot(ball.x-tg.x,ball.y-tg.y); if(d<ball.r+5&&tg.cd<=0){ tg.cd=0.4; if(!tg.lit){ tg.lit=true; addScore(250); if(targets.every(x=>x.lit)){ coreCharge=Math.min(4,coreCharge+1); targets.forEach(x=>x.lit=false); flash('CORE +1 ('+coreCharge+'/4)'); setStatus(); } else flash('+250'); } } }
+    // core capture (scoop) when charged
+    const cd=Math.hypot(ball.x-CORE.cx,ball.y-CORE.cy);
+    if(cd<8 && coreCharge>=4 && !coreCaptured){
+      coreCaptured=true; captureTimer=1.4; ball.live=false;
+      addScore(5000*(1+coreCharge)); flash('★ ORBITAL LAUNCH! ★');
+      reportToShell({event:'core_charged',score,seed:SEED}); coreCharge=0; setStatus();
+    }
+  }
+  // cooldown decays
+  for(const b of bumpers){ if(b.cd>0)b.cd-=dt; if(b.hit>0)b.hit-=dt; }
+  for(const sl of slings){ if(sl.cd>0)sl.cd-=dt; if(sl.hit>0)sl.hit-=dt; }
+  for(const tg of targets) if(tg.cd>0)tg.cd-=dt;
+  // drain
+  if(ball.live && ball.y>332){
+    ball.live=false; ballsLeft--; setStatus();
+    if(ballsLeft<=0){ gameOver=true; const hi=score>high; if(hi){high=score;storageSet('orbital.high',score);} flash(hi?'NEW HIGH!':'GAME OVER'); reportToShell({event:'game_over',score,seed:SEED});
+      setTimeout(()=>{score=0;ballsLeft=3;coreCharge=0;gameOver=false;scoreEl.textContent='000000';setStatus();launchReset();},2600);
+    } else { flash('BALL LOST'); setTimeout(launchReset,700); }
+  }
+}
+
+// ═══ RENDER ════════════════════════════════════════════════════════════
+function diamond(p,w,h,fill,stroke,glow){
+  ctx.save(); if(glow){ctx.shadowColor=fill;ctx.shadowBlur=glow;}
+  ctx.beginPath(); ctx.moveTo(p.x,p.y-h); ctx.lineTo(p.x+w,p.y); ctx.lineTo(p.x,p.y+h); ctx.lineTo(p.x-w,p.y); ctx.closePath();
+  if(fill){ctx.fillStyle=fill;ctx.fill();} if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=1.5;ctx.stroke();} ctx.restore();
+}
+function draw(){
+  ctx.fillStyle='#05080f'; ctx.fillRect(0,0,W,H);
+  // parallax dot-grid (Obliteratus signature backdrop)
+  ctx.fillStyle=`rgba(${DIM},0.16)`;
+  const off=(ball.x*0.2)%40, off2=(ball.y*0.2)%40;
+  for(let gx=-off; gx<W; gx+=40) for(let gy=-off2; gy<H; gy+=40){ ctx.beginPath(); ctx.arc(gx,gy,1.1,0,7); ctx.fill(); }
+
+  // playfield deck (iso quad)
+  const c0=iso(12,14,0),c1=iso(188,14,0),c2=iso(188,332,0),c3=iso(12,332,0);
+  ctx.beginPath(); ctx.moveTo(c0.x,c0.y);ctx.lineTo(c1.x,c1.y);ctx.lineTo(c2.x,c2.y);ctx.lineTo(c3.x,c3.y);ctx.closePath();
+  ctx.fillStyle='rgba(10,20,40,0.55)'; ctx.fill();
+  ctx.strokeStyle=`rgba(${BLUE},0.5)`; ctx.lineWidth=2; ctx.stroke();
+
+  // core ring (Doc 1 area 7 — CHARGE THE CORE), charge-lit
+  const cc=iso(CORE.cx,CORE.cy,0);
+  for(let i=0;i<24;i++){
+    const a=i/24*Math.PI*2, lit=i < coreCharge*6;
+    const rp=iso(CORE.cx+Math.cos(a)*CORE.r*0.7, CORE.cy+Math.sin(a)*CORE.r*0.7, 0);
+    ctx.fillStyle = lit?`rgba(${GOLD},0.95)`:`rgba(${DIM},0.5)`;
+    ctx.beginPath(); ctx.arc(rp.x,rp.y,2.2,0,7); ctx.fill();
+  }
+  // core plinth dome + rocket toy (decorative, Doc 2 rocket parts)
+  const top=iso(CORE.cx,CORE.cy,CORE.plinth);
+  ctx.fillStyle=`rgba(${STEEL},0.4)`; ctx.beginPath(); ctx.ellipse(cc.x,cc.y,CORE.r*TILE_W*0.5,CORE.r*TILE_H*0.5,0,0,7); ctx.fill();
+  // rocket body
+  const rk=iso(CORE.cx,CORE.cy,CORE.plinth);
+  ctx.fillStyle=`rgba(${WHITE},0.9)`; ctx.fillRect(rk.x-4, rk.y-26, 8, 20);
+  ctx.fillStyle=`rgba(${RED},0.95)`; ctx.beginPath(); ctx.moveTo(rk.x-4,rk.y-26);ctx.lineTo(rk.x,rk.y-38);ctx.lineTo(rk.x+4,rk.y-26);ctx.closePath(); ctx.fill();
+  ctx.fillStyle=`rgba(${BLUE},0.9)`; ctx.fillRect(rk.x-3, rk.y-8, 6, 4); // engine glow
+  ctx.fillStyle=coreCaptured?`rgba(${GOLD},0.95)`:`rgba(${RED},0.8)`;
+  ctx.font="9px 'Courier New'"; ctx.textAlign='center';
+  ctx.fillText(coreCaptured?'LAUNCH':'CORE', cc.x, cc.y+4);
+
+  // build painter's list
+  const items=[];
+  for(const w of walls) items.push({k:(w.ay+w.by)/2, d:()=>{ const a=iso(w.ax,w.ay,0),b=iso(w.bx,w.by,0); ctx.strokeStyle=`rgba(${BLUE},0.6)`; ctx.lineWidth=3; ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke(); }});
+  for(const p of posts) items.push({k:p.y, d:()=>{ const q=iso(p.x,p.y,0); ctx.fillStyle=`rgba(${GOLD},0.8)`; ctx.beginPath();ctx.arc(q.x,q.y,4,0,7);ctx.fill(); }});
+  for(const tg of targets) items.push({k:tg.y, d:()=>diamond(iso(tg.x,tg.y,0),7,4, tg.lit?`rgba(${GOLD},0.95)`:`rgba(${RED},0.4)`, `rgba(${WHITE},0.7)`, tg.lit?12:0)});
+  for(const b of bumpers) items.push({k:b.y, d:()=>{ const q=iso(b.x,b.y,0), g=b.hit>0?1:0.6;
+    ctx.fillStyle=`rgba(${b.hit>0?GOLD:BLUE},${g})`; ctx.shadowColor=`rgba(${BLUE},${g})`; ctx.shadowBlur=b.hit>0?20:8;
+    ctx.beginPath();ctx.arc(q.x,q.y,7,0,7);ctx.fill(); ctx.shadowBlur=0;
+    ctx.strokeStyle=`rgba(${WHITE},0.8)`; ctx.lineWidth=1.5; ctx.beginPath();ctx.arc(q.x,q.y,7,0,7);ctx.stroke();
+    ctx.fillStyle=`rgba(${RED},0.9)`; ctx.beginPath();ctx.arc(q.x,q.y,2.5,0,7);ctx.fill(); }});
+  for(const sl of slings) items.push({k:sl.y, d:()=>{ const q=iso(sl.x,sl.y,0), g=sl.hit>0?1:0.55;
+    diamond(q,10,6, `rgba(${sl.hit>0?GOLD:RED},${g})`, `rgba(${WHITE},0.8)`, sl.hit>0?16:4); }});
+  for(const f of [flipL,flipR]) items.push({k:f.py, d:()=>{ const a=iso(f.px,f.py,0), tp=flipTip(f), b=iso(tp.x,tp.y,0);
+    ctx.strokeStyle=`rgba(${RED},0.95)`; ctx.lineWidth=7; ctx.lineCap='round'; ctx.shadowColor=`rgba(${RED},0.6)`; ctx.shadowBlur=8;
+    ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke(); ctx.shadowBlur=0;
+    ctx.strokeStyle=`rgba(${WHITE},0.9)`; ctx.lineWidth=2; ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke(); }});
+  if(ball.live) items.push({k:ball.y+ball.z, d:()=>{
+    const p=iso(ball.x,ball.y,ball.z), s=iso(ball.x,ball.y,0);
+    ctx.fillStyle='rgba(0,0,0,0.4)'; ctx.beginPath(); ctx.ellipse(s.x,s.y,ball.r*1.5,ball.r*0.75,0,0,7); ctx.fill();
+    const g=ctx.createRadialGradient(p.x-1.5,p.y-1.5,0.5,p.x,p.y,ball.r+2);
+    g.addColorStop(0,`rgba(${WHITE},1)`); g.addColorStop(1,`rgba(${STEEL},0.7)`);
+    ctx.fillStyle=g; ctx.shadowColor=`rgba(${WHITE},0.5)`; ctx.shadowBlur=8;
+    ctx.beginPath();ctx.arc(p.x,p.y,ball.r,0,7);ctx.fill(); ctx.shadowBlur=0;
+  }});
+  items.sort((a,b)=>a.k-b.k);
+  for(const it of items) it.d();
+
+  // skill-shot label (Doc 1 area 10)
+  const ss=iso(150,270,0); ctx.fillStyle=`rgba(${GOLD},0.6)`; ctx.font="8px 'Courier New'"; ctx.textAlign='center';
+  ctx.fillText('SKILL 500K', ss.x, ss.y);
+}
+
+// ═══ LOOP / BOOT ═══════════════════════════════════════════════════════
+let last=performance.now();
+function loop(now){ let dt=Math.min((now-last)/1000,1/30); last=now; update(dt); draw(); requestAnimationFrame(loop); }
+function resize(){
+  DPR=Math.min(devicePixelRatio||1,2); W=innerWidth; H=innerHeight;
+  canvas.style.width=W+'px'; canvas.style.height=H+'px';
+  canvas.width=Math.round(W*DPR); canvas.height=Math.round(H*DPR); ctx.setTransform(DPR,0,0,DPR,0,0);
+
+  // Fit by computing the projected AABB at unit scale, then scaling to viewport.
+  // iso footprint (unscaled, TILE=1, no z): x-extent = (px-py) over corners,
+  // y-extent = (px+py). For a 0..PF_W × 0..PF_H field:
+  //   xspan = (PF_W - 0) - (0 - PF_H)  = PF_W + PF_H   (times TILE_W/2)
+  //   yspan = (PF_W + PF_H) - 0        = PF_W + PF_H   (times TILE_H/2)
+  const M=0.92;                 // margin fill fraction
+  // Steep "over-the-shoulder" iso: narrow horizontal tile, tall vertical tile,
+  // so a portrait table (PF_H >> PF_W) reads TALL rather than as a squat
+  // wide diamond. baseTH > baseTW is the deliberate anti-squat choice.
+  const baseTW=1.35, baseTH=2.6;
+  const xspan=(PF_W+PF_H)*(baseTW*0.5);
+  const yspan=(PF_W+PF_H)*(baseTH*0.5)+CORE.plinth*3.2;
+  const s=Math.min((W*M)/xspan,(H*M)/yspan);
+  TILE_W=baseTW*s; TILE_H=baseTH*s; Z_SCALE=3.4*s;
+
+  // Center the projected field. x-center corresponds to px=py (the field's
+  // diagonal midline); pick the playfield center point and solve origin.
+  ORIGIN_X=0; ORIGIN_Y=0;
+  const cen=iso(PF_W*0.5, PF_H*0.5, 0);
+  ORIGIN_X=W*0.5-cen.x;
+  ORIGIN_Y=H*0.5-cen.y;
+}
+addEventListener('resize',resize); resize();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

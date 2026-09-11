@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>ASTROIDS — OBLITERATUS</title>
+<!-- ── Primary Meta ─────────────────────────────────────────────────────── -->
+<meta name="description" content="FishTacoStand Arcade — a playful retro arcade hub serving Neon Invaders, Astroids, Cave Racer, RED EYE, Packman, Tetris, and more." />
+
+<!-- ── Favicons ─────────────────────────────────────────────────────────── -->
+<link rel="icon" type="image/png" href="fts-favicon.png">
+<link rel="shortcut icon" type="image/png" href="fts-favicon.png">
+<link rel="apple-touch-icon" href="fts-favicon.png">
+
+<!-- ── Open Graph (Facebook, Discord, iMessage, etc.) ────────────────────── -->
+<meta property="og:title" content="Astroids">
+<meta property="og:description" content="Step up to the FishTacoStand Arcade: a retro cabinet hub for Neon Invaders, Astroids, Cave Racer, RED EYE, Packman, Tetris, and more.">
+<meta property="og:url" content="https://frymatic.us/FTSArcade/astroids.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ASTROIDS">
+
+<meta property="og:image" content="https://frymatic.us/FTSArcade/FishTacoStand.png">
+<meta property="og:image:alt" content="FishTacoStand Arcade cabinet menu with clickable retro games.">
+<meta property="og:image:type" content="image/png">
+
+<!-- ── Twitter / X Card ─────────────────────────────────────────────────── -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Astroids">
+<meta name="twitter:description" content="A retro arcade hub serving Neon Invaders, Astroids, Cave Racer, RED EYE, Packman, Tetris, and more.">
+<meta name="twitter:image" content="https://frymatic.us/FTSArcade/FishTacoStand.png">
+
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;background:#020b18;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+canvas{display:block;position:fixed;top:0;left:0;touch-action:none;cursor:none}
+
+/* ── NUI (touch only) ─────────────────────────────────────────── */
+#nui,#nui-pause{display:none}
+@media(pointer:coarse){#nui,#nui-pause{display:flex}}
+
+#nui{
+  position:fixed;bottom:0;left:0;right:0;
+  height:var(--nui-h,180px);z-index:50;
+  pointer-events:none;align-items:flex-end;
+  justify-content:space-between;
+  padding:0 clamp(14px,5vw,36px) clamp(10px,2.5vh,20px);
+  background:linear-gradient(to top,rgba(2,11,24,.72) 0%,transparent 100%);
+}
+#nui-move{display:flex;flex-direction:column;align-items:center;gap:clamp(6px,1.4vh,12px);pointer-events:none}
+#nui-thrust-row{display:flex;justify-content:center}
+#nui-lr-row{display:flex;align-items:center;gap:clamp(6px,2.2vw,14px)}
+#nui-act{display:flex;align-items:flex-end;pointer-events:none}
+
+.nb{
+  pointer-events:all;touch-action:none;-webkit-tap-highlight-color:transparent;
+  -webkit-appearance:none;appearance:none;outline:none;cursor:pointer;
+  position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  width:var(--nb-sz,clamp(62px,13.5vw,90px));height:var(--nb-sz,clamp(62px,13.5vw,90px));
+  border-radius:14px;background:rgba(2,14,32,.68);
+  border:1.5px solid rgba(0,190,255,.28);
+  box-shadow:0 0 12px rgba(0,170,255,.12),inset 0 0 10px rgba(0,160,255,.05);
+  color:rgba(0,210,255,.72);font-family:'Courier New',monospace;
+  font-weight:bold;font-size:clamp(20px,5vw,30px);
+  animation:nb-appear .4s ease both;
+  transition:background .06s,border-color .06s,box-shadow .06s,color .06s,transform .06s;
+}
+.nb-lbl{font-size:clamp(7px,1.5vw,10px);letter-spacing:.12em;margin-top:2px;opacity:.65}
+.nb:active,.nb.hit{
+  background:rgba(0,190,255,.14);border-color:rgba(0,220,255,.82);
+  color:#00ffff;transform:scale(.93);
+  box-shadow:0 0 22px rgba(0,200,255,.55),0 0 44px rgba(0,200,255,.2),inset 0 0 12px rgba(0,200,255,.1);
+}
+.nb-fire{
+  --nb-sz:clamp(78px,17vw,110px);border-radius:50%;
+  border-color:rgba(255,215,0,.32);color:rgba(255,215,0,.82);
+  font-size:clamp(10px,2.5vw,15px);letter-spacing:.18em;
+  box-shadow:0 0 14px rgba(255,190,0,.16),inset 0 0 12px rgba(255,180,0,.06);
+  animation-delay:.15s;
+}
+.nb-fire .nb-dot{font-size:clamp(26px,6vw,38px);line-height:1;margin-bottom:2px}
+.nb-fire:active,.nb-fire.hit{
+  background:rgba(255,200,0,.14);border-color:rgba(255,220,0,.92);color:#ffee00;
+  box-shadow:0 0 26px rgba(255,200,0,.65),0 0 52px rgba(255,200,0,.25),inset 0 0 14px rgba(255,200,0,.12);
+}
+#nui-pause{
+  position:fixed;top:clamp(6px,1.5vh,12px);left:50%;transform:translateX(-50%);
+  z-index:60;pointer-events:all;touch-action:none;-webkit-tap-highlight-color:transparent;
+  -webkit-appearance:none;appearance:none;outline:none;cursor:pointer;
+  align-items:center;justify-content:center;
+  width:44px;height:36px;border-radius:8px;
+  background:rgba(2,14,32,.68);border:1.5px solid rgba(0,190,255,.28);
+  color:rgba(0,210,255,.72);font-family:'Courier New',monospace;
+  font-size:13px;font-weight:bold;letter-spacing:2px;
+  box-shadow:0 0 10px rgba(0,170,255,.12);
+  transition:background .06s,border-color .06s,box-shadow .06s;
+}
+#nui-pause:active,#nui-pause.hit{background:rgba(0,190,255,.14);border-color:rgba(0,220,255,.82);color:#00ffff;box-shadow:0 0 18px rgba(0,200,255,.5)}
+#nui-pause[data-state="paused"]{border-color:rgba(255,220,0,.5);color:rgba(255,220,0,.85);box-shadow:0 0 12px rgba(255,200,0,.2);letter-spacing:0;font-size:15px}
+@media(pointer:coarse)and(orientation:landscape){
+  #nui{--nui-h:clamp(120px,26vh,155px)}
+  .nb{--nb-sz:clamp(52px,11vw,76px)}
+  .nb-fire{--nb-sz:clamp(66px,14vw,92px)}
+}
+@keyframes nb-appear{from{opacity:0;transform:translateY(16px) scale(.88)}to{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div id="nui" aria-label="Game controls" role="group">
+  <div id="nui-move" role="group" aria-label="Movement">
+    <div id="nui-thrust-row">
+      <button class="nb" id="nb-thrust" aria-label="Thrust"><span>▲</span><span class="nb-lbl">THRUST</span></button>
+    </div>
+    <div id="nui-lr-row">
+      <button class="nb" id="nb-rotl" aria-label="Rotate left"><span>◄</span></button>
+      <button class="nb" id="nb-rotr" aria-label="Rotate right"><span>►</span></button>
+    </div>
+  </div>
+  <div id="nui-act" role="group" aria-label="Fire">
+    <button class="nb nb-fire" id="nb-fire" aria-label="Fire">
+      <span class="nb-dot">⬤</span><span class="nb-lbl">FIRE</span>
+    </button>
+  </div>
+</div>
+<button id="nui-pause" aria-label="Pause" data-state="playing">II</button>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════
+//  A S T R O I D S  ·  O B L I T E R A T U S
+//  Chunky debris physics · Classic adversaries · Adaptive NUI
+//  Open Source · Free to Play · Safety Third
+// ═══════════════════════════════════════════════════════════════════════
+
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d');
+let W, H;
+let nuiActive = false;
+
+function resize() {
+  W = canvas.width  = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  grid.init();
+}
+window.addEventListener('resize', resize);
+
+// ── Maths ─────────────────────────────────────────────────────────────
+const TAU    = Math.PI * 2;
+const rnd    = (a, b) => a + Math.random() * (b - a);
+const rndInt = (a, b) => Math.floor(rnd(a, b + 1));
+const wrap   = (v, lo, hi) => v < lo ? hi-(lo-v)%(hi-lo) : lo+(v-lo)%(hi-lo);
+const dist   = (a, b) => Math.hypot(a.x-b.x, a.y-b.y);
+const clamp  = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+// ── Palette ───────────────────────────────────────────────────────────
+const C = {
+  bg:     '#020b18',
+  player: '#00ffff', playerGlow: '#0066ff',
+  bullet: '#ffe600', bulletGlow: '#ff8800',
+  ui:     '#00e5ff',
+  // UFO types
+  ufoLarge: { body:'#ff44ff', glow:'#aa00ff', pts:200 },
+  ufoSmall: { body:'#ff9900', glow:'#ff3300', pts:1000 },
+  // Asteroid tiers
+  asteroidCols: {
+    3: ['#ff2222','#ff4400','#ff6600'],
+    2: ['#2266ff','#3399ff','#55aaff'],
+    1: ['#22ff77','#44ffaa','#88ffcc'],
+  },
+  // Debris colors per tier
+  debrisCols: {
+    3: ['#ff1100','#ff4400','#ff7700','#ffaa00','#ff2200'],
+    2: ['#1144ff','#2266ff','#44aaff','#88ccff','#003399'],
+    1: ['#00ff55','#22ff88','#66ffaa','#aaffcc','#00cc44'],
+  },
+};
+
+const glow   = (col, blur=14) => { ctx.shadowColor=col; ctx.shadowBlur=blur; };
+const noGlow = () => { ctx.shadowBlur=0; };
+
+// ── Audio ─────────────────────────────────────────────────────────────
+let _ac = null;
+const AC = () => _ac || (_ac = new (window.AudioContext||window.webkitAudioContext)());
+
+function tone(freq, type, dur, vol=0.25, sweep=null) {
+  try {
+    const ac=AC(), o=ac.createOscillator(), g=ac.createGain();
+    o.connect(g); g.connect(ac.destination);
+    o.type=type;
+    o.frequency.setValueAtTime(sweep||freq, ac.currentTime);
+    if (sweep) o.frequency.exponentialRampToValueAtTime(freq, ac.currentTime+dur);
+    g.gain.setValueAtTime(vol, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime+dur);
+    o.start(); o.stop(ac.currentTime+dur);
+  } catch(e){}
+}
+
+function noise(dur, bandFreq=150, vol=0.2) {
+  try {
+    const ac=AC();
+    const buf=ac.createBuffer(1, ac.sampleRate*dur, ac.sampleRate);
+    const d=buf.getChannelData(0);
+    for (let i=0; i<d.length; i++) d[i]=Math.random()*2-1;
+    const src=ac.createBufferSource(); src.buffer=buf;
+    const flt=ac.createBiquadFilter(); flt.type='bandpass';
+    flt.frequency.value=bandFreq; flt.Q.value=0.6;
+    const g=ac.createGain();
+    g.gain.setValueAtTime(vol, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime+dur);
+    src.connect(flt); flt.connect(g); g.connect(ac.destination);
+    src.start(); src.stop(ac.currentTime+dur);
+  } catch(e){}
+}
+
+const SFX = {
+  shoot:      () => tone(1100,'square',0.07,0.12,1600),
+  thrust:     () => noise(0.08,90,0.04),
+  boomLarge:  () => { noise(0.6,65,0.5); tone(52,'sawtooth',0.4,0.25,110); },
+  boomMed:    () => { noise(0.32,105,0.35); tone(85,'sawtooth',0.22,0.16); },
+  boomSmall:  () => noise(0.16,195,0.22),
+  ufoShoot:   () => tone(440,'square',0.1,0.1,640),
+  ufoSpawn:   () => [180,240,320,420].forEach((f,i)=>setTimeout(()=>tone(f,'sine',0.12,0.1),i*55)),
+  playerDie:  () => { noise(0.9,52,0.55); tone(68,'sawtooth',0.65,0.32,210); },
+  extraLife:  () => [440,550,660,880].forEach((f,i)=>setTimeout(()=>tone(f,'sine',0.1,0.2),i*80)),
+  waveStart:  () => [200,300,450,680].forEach((f,i)=>setTimeout(()=>tone(f,'sawtooth',0.12,0.15),i*90)),
+  gameOver:   () => [400,300,200,100].forEach((f,i)=>setTimeout(()=>tone(f,'sawtooth',0.28,0.3),i*220)),
+};
+
+// ── Keyboard ──────────────────────────────────────────────────────────
+const keys = {};
+window.addEventListener('keydown', e => {
+  keys[e.code]=true;
+  if (['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)) e.preventDefault();
+  if (e.code==='Space' && gs.state!=='playing') startGame();
+  if (e.code==='KeyP' && gs.state==='playing') togglePause();
+});
+window.addEventListener('keyup', e => { keys[e.code]=false; });
+
+// ── Grid (Geometry Wars spring-mesh) ─────────────────────────────────
+const grid = {
+  cells:52, nodes:[], cw:0, ch:0, cols:0, rows:0,
+
+  init() {
+    this.cw=W/this.cells; this.ch=this.cw;
+    this.cols=Math.ceil(W/this.cw)+1; this.rows=Math.ceil(H/this.ch)+1;
+    this.nodes=[];
+    for (let r=0; r<this.rows; r++) {
+      this.nodes[r]=[];
+      for (let c=0; c<this.cols; c++) this.nodes[r][c]={dx:0,dy:0,vx:0,vy:0};
+    }
+  },
+
+  ripple(wx, wy, mag, radius) {
+    const cr=wx/this.cw, rr=wy/this.ch;
+    const c0=Math.max(0,Math.floor(cr-radius/this.cw)-1);
+    const c1=Math.min(this.cols-1,Math.ceil(cr+radius/this.cw)+1);
+    const r0=Math.max(0,Math.floor(rr-radius/this.ch)-1);
+    const r1=Math.min(this.rows-1,Math.ceil(rr+radius/this.ch)+1);
+    for (let r=r0; r<=r1; r++) {
+      for (let c=c0; c<=c1; c++) {
+        const nx=c*this.cw, ny=r*this.ch;
+        const dx=nx-wx, dy=ny-wy, d=Math.hypot(dx,dy);
+        if (d<radius&&d>0) {
+          const f=mag*(1-d/radius);
+          this.nodes[r][c].vx+=(dx/d)*f; this.nodes[r][c].vy+=(dy/d)*f;
+        }
+      }
+    }
+  },
+
+  update(dt) {
+    const spring=8, damp=0.88;
+    for (let r=0; r<this.rows; r++) {
+      for (let c=0; c<this.cols; c++) {
+        const n=this.nodes[r][c];
+        n.vx+=-n.dx*spring*dt; n.vy+=-n.dy*spring*dt;
+        n.vx*=damp; n.vy*=damp;
+        n.dx+=n.vx*dt; n.dy+=n.vy*dt;
+      }
+    }
+  },
+
+  draw() {
+    ctx.save(); ctx.lineWidth=0.8;
+    for (let r=0; r<this.rows; r++) {
+      for (let c=0; c<this.cols-1; c++) {
+        const n0=this.nodes[r][c],n1=this.nodes[r][c+1];
+        const disp=Math.hypot(n0.dx,n0.dy)+Math.hypot(n1.dx,n1.dy);
+        ctx.strokeStyle=`rgba(0,190,255,${Math.min(0.22,0.07+disp*0.015)})`;
+        ctx.beginPath();
+        ctx.moveTo(c*this.cw+n0.dx,r*this.ch+n0.dy);
+        ctx.lineTo((c+1)*this.cw+n1.dx,r*this.ch+n1.dy);
+        ctx.stroke();
+      }
+    }
+    for (let c=0; c<this.cols; c++) {
+      for (let r=0; r<this.rows-1; r++) {
+        const n0=this.nodes[r][c],n1=this.nodes[r+1][c];
+        const disp=Math.hypot(n0.dx,n0.dy)+Math.hypot(n1.dx,n1.dy);
+        ctx.strokeStyle=`rgba(0,190,255,${Math.min(0.22,0.07+disp*0.015)})`;
+        ctx.beginPath();
+        ctx.moveTo(c*this.cw+n0.dx,r*this.ch+n0.dy);
+        ctx.lineTo(c*this.cw+n1.dx,(r+1)*this.ch+n1.dy);
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+};
+
+// ══════════════════════════════════════════════════════════════════════
+//  CHUNKY DEBRIS FRAGMENT — the star of the show
+//  Irregular tumbling polygon shard with molten-core glow
+// ══════════════════════════════════════════════════════════════════════
+class DebrisFragment {
+  constructor(x, y, vx, vy, size, tier) {
+    this.x=x; this.y=y; this.vx=vx; this.vy=vy;
+    this.size=size;            // pixel radius of this shard
+    this.tier=tier;            // asteroid tier (1/2/3) → color set
+    this.angle=rnd(0,TAU);
+    this.spin=rnd(-4,4);
+    this.life=rnd(1.8,3.8);    // long-lived — they persist as debris fields
+    this.maxLife=this.life;
+    this.dead=false;
+
+    // Build a lumpy irregular polygon (like a shattered rock chip)
+    const nv=rndInt(5,9);
+    this.verts=[];
+    for (let i=0; i<nv; i++) {
+      const a=(i/nv)*TAU + rnd(-0.3,0.3);
+      const r=size*rnd(0.45,1.0);
+      this.verts.push({x:Math.cos(a)*r, y:Math.sin(a)*r});
+    }
+
+    const cols=C.debrisCols[tier];
+    this.fillCol =cols[rndInt(0,cols.length-1)];
+    this.coreCol ='#ffffff';     // hot molten center flash
+    this.hotTimer=rnd(0.15,0.5); // brief white-hot phase
+  }
+
+  update(dt) {
+    // Slight drag — debris slows in "space dust"
+    this.vx*=0.992; this.vy*=0.992;
+    this.x=wrap(this.x+this.vx*dt, 0, W);
+    this.y=wrap(this.y+this.vy*dt, 0, H);
+    this.angle+=this.spin*dt;
+    this.life-=dt;
+    if (this.hotTimer>0) this.hotTimer-=dt;
+    if (this.life<=0) this.dead=true;
+  }
+
+  draw() {
+    const t  = clamp(this.life/this.maxLife, 0, 1);
+    const hot= clamp(this.hotTimer/0.5, 0, 1); // 1=white-hot, 0=cooled
+
+    ctx.save();
+    ctx.globalAlpha = t * (0.55 + 0.45*t); // non-linear fade keeps them visible longer
+
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.angle);
+
+    // Outer glow halo — wide and diffuse
+    const glowCol = this.fillCol;
+    const blurAmt = this.size*(1.8 + hot*2.5)*t;
+    glow(glowCol, blurAmt);
+
+    // Core fill: white-hot → tile color → fade to dark ember
+    const rf=hot, gf=hot*0.6, bf=hot*0.3;
+    const ri=parseInt(this.fillCol.slice(1,3),16)/255;
+    const gi=parseInt(this.fillCol.slice(3,5),16)/255;
+    const bi=parseInt(this.fillCol.slice(5,7),16)/255;
+    const cr=Math.round((rf+(1-hot)*ri)*255);
+    const cg=Math.round((gf+(1-hot)*gi)*255);
+    const cb=Math.round((bf+(1-hot)*bi)*255);
+
+    ctx.beginPath();
+    ctx.moveTo(this.verts[0].x,this.verts[0].y);
+    for (let i=1; i<this.verts.length; i++) ctx.lineTo(this.verts[i].x,this.verts[i].y);
+    ctx.closePath();
+
+    ctx.fillStyle=`rgb(${cr},${cg},${cb})`;
+    ctx.fill();
+
+    // Bright edge stroke — gives the shard defined shape
+    ctx.strokeStyle=`rgba(${Math.min(255,cr+60)},${Math.min(255,cg+40)},${Math.min(255,cb+20)},${0.7*t})`;
+    ctx.lineWidth=0.8;
+    ctx.stroke();
+
+    // Inner hot-spot: small bright circle at centroid for molten-core effect
+    if (hot>0.05) {
+      noGlow();
+      ctx.globalAlpha=hot*t*0.7;
+      ctx.fillStyle=`rgba(255,240,200,${hot})`;
+      ctx.beginPath();
+      ctx.arc(0,0,this.size*0.28*hot,0,TAU);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+}
+
+// ── Tiny glow particle (for quick flash effects) ───────────────────────
+class Spark {
+  constructor(x,y,vx,vy,col,life,sz=2) {
+    Object.assign(this,{x,y,vx,vy,col,life,maxLife:life,sz,dead:false});
+  }
+  update(dt) {
+    this.x+=this.vx*dt; this.y+=this.vy*dt;
+    this.vx*=0.97; this.vy*=0.97;
+    this.life-=dt; if(this.life<=0) this.dead=true;
+  }
+  draw() {
+    const a=Math.max(0,this.life/this.maxLife);
+    ctx.save(); ctx.globalAlpha=a;
+    glow(this.col,7); ctx.fillStyle=this.col;
+    ctx.beginPath(); ctx.arc(this.x,this.y,this.sz*a,0,TAU); ctx.fill();
+    ctx.restore();
+  }
+}
+
+// ── Debris field burst ─────────────────────────────────────────────────
+// Creates chunky fragments + a ring of fast sparks for the flash
+function debrisBurst(x, y, tier, radius, power) {
+  grid.ripple(x, y, power*0.8, 180+power);
+
+  // Main chunky fragments — the video's signature effect
+  const fragCount = {3:18, 2:12, 1:7}[tier];
+  const sizeRange = {3:[6,18], 2:[4,13], 1:[3,9]}[tier];
+  const spdRange  = {3:[40,200], 2:[55,220], 1:[70,240]}[tier];
+
+  for (let i=0; i<fragCount; i++) {
+    const a=rnd(0,TAU), spd=rnd(...spdRange);
+    // Bias fragments outward from center but allow sideways tumble
+    const spread = rnd(-0.6,0.6);
+    gs.debris.push(new DebrisFragment(
+      x+Math.cos(a)*rnd(0,radius*0.4),
+      y+Math.sin(a)*rnd(0,radius*0.4),
+      Math.cos(a+spread)*spd,
+      Math.sin(a+spread)*spd,
+      rnd(...sizeRange), tier
+    ));
+  }
+
+  // Fast inner sparks for the initial flash
+  const sparkCount={3:30, 2:18, 1:10}[tier];
+  const sparkCols=C.debrisCols[tier];
+  for (let i=0; i<sparkCount; i++) {
+    const a=rnd(0,TAU), spd=rnd(power*0.6,power*1.4);
+    gs.sparks.push(new Spark(
+      x, y, Math.cos(a)*spd, Math.sin(a)*spd,
+      sparkCols[rndInt(0,sparkCols.length-1)],
+      rnd(0.15,0.65), rnd(1.5,3.5)
+    ));
+  }
+}
+
+// ── Ship ──────────────────────────────────────────────────────────────
+class Ship {
+  constructor() {
+    this.x=W/2; this.y=H/2; this.vx=0; this.vy=0;
+    this.angle=-Math.PI/2; this.radius=13;
+    this.invincible=3; this.blinkTimer=0; this.visible=true;
+    this.thrustCooldown=0; this.dead=false;
+  }
+  get nose() {
+    return {x:this.x+Math.cos(this.angle)*this.radius*1.6,
+            y:this.y+Math.sin(this.angle)*this.radius*1.6};
+  }
+  update(dt) {
+    if (keys['ArrowLeft']||keys['KeyA']) this.angle-=3.3*dt;
+    if (keys['ArrowRight']||keys['KeyD']) this.angle+=3.3*dt;
+    const thrusting=keys['ArrowUp']||keys['KeyW'];
+    if (thrusting) {
+      this.vx+=Math.cos(this.angle)*300*dt;
+      this.vy+=Math.sin(this.angle)*300*dt;
+      this.thrustCooldown-=dt;
+      if (this.thrustCooldown<=0) {
+        this.thrustCooldown=0.03; SFX.thrust();
+        const back=this.angle+Math.PI;
+        for (let i=0; i<5; i++) {
+          const sp=rnd(-0.5,0.5), spd=rnd(90,200);
+          gs.sparks.push(new Spark(
+            this.x+Math.cos(back)*10, this.y+Math.sin(back)*10,
+            Math.cos(back+sp)*spd, Math.sin(back+sp)*spd,
+            rnd(0,1)<0.5?'#ff6600':'#ffcc00', rnd(0.08,0.28), rnd(1.5,3.2)));
+        }
+      }
+    }
+    const spd=Math.hypot(this.vx,this.vy);
+    if (spd>450) { this.vx=this.vx/spd*450; this.vy=this.vy/spd*450; }
+    this.vx*=0.985; this.vy*=0.985;
+    this.x=wrap(this.x+this.vx*dt,0,W); this.y=wrap(this.y+this.vy*dt,0,H);
+    if (this.invincible>0) {
+      this.invincible-=dt; this.blinkTimer+=dt;
+      this.visible=(Math.floor(this.blinkTimer/0.09)%2===0);
+    } else { this.visible=true; }
+  }
+  draw() {
+    if (!this.visible) return;
+    const r=this.radius;
+    ctx.save(); ctx.translate(this.x,this.y); ctx.rotate(this.angle);
+    glow(C.playerGlow,22); ctx.strokeStyle=C.player; ctx.lineWidth=2;
+    ctx.beginPath();
+    ctx.moveTo(r*1.6,0); ctx.lineTo(-r,r*0.85); ctx.lineTo(-r*0.45,0);
+    ctx.lineTo(-r,-r*0.85); ctx.closePath(); ctx.stroke();
+    glow(C.player,7); ctx.strokeStyle='rgba(180,255,255,0.7)'; ctx.lineWidth=1; ctx.stroke();
+    if (keys['ArrowUp']||keys['KeyW']) {
+      const fl=rnd(0.55,1.05);
+      glow('#ff5500',18); ctx.strokeStyle='#ff7700'; ctx.lineWidth=2;
+      ctx.beginPath();
+      ctx.moveTo(-r*0.4,r*0.35); ctx.lineTo(-r*(1.6*fl+0.3),0); ctx.lineTo(-r*0.4,-r*0.35);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+}
+
+// ── Bullet ────────────────────────────────────────────────────────────
+class Bullet {
+  constructor(x,y,vx,vy,fromPlayer=true) {
+    Object.assign(this,{x,y,vx,vy,fromPlayer,radius:3,life:1.3,dead:false});
+    this.trail=[];
+  }
+  update(dt) {
+    this.trail.unshift({x:this.x,y:this.y});
+    if (this.trail.length>7) this.trail.pop();
+    this.x=wrap(this.x+this.vx*dt,0,W); this.y=wrap(this.y+this.vy*dt,0,H);
+    this.life-=dt; if(this.life<=0) this.dead=true;
+  }
+  draw() {
+    const col=this.fromPlayer?C.bullet:'#ff99ff';
+    const gcol=this.fromPlayer?C.bulletGlow:'#aa00ff';
+    ctx.save();
+    for (let i=0; i<this.trail.length; i++) {
+      ctx.globalAlpha=(1-i/this.trail.length)*0.35;
+      ctx.fillStyle=col;
+      ctx.beginPath();
+      ctx.arc(this.trail[i].x,this.trail[i].y,this.radius*(1-i/this.trail.length),0,TAU);
+      ctx.fill();
+    }
+    ctx.globalAlpha=1; glow(gcol,16); ctx.fillStyle=col;
+    ctx.beginPath(); ctx.arc(this.x,this.y,this.radius,0,TAU); ctx.fill();
+    ctx.restore();
+  }
+}
+
+// ── Asteroid ──────────────────────────────────────────────────────────
+class Asteroid {
+  constructor(x, y, size, vx=null, vy=null) {
+    this.x=x; this.y=y; this.size=size;
+    this.radius=[0,17,33,55][size]; this.dead=false;
+    this.angle=rnd(0,TAU); this.spin=rnd(-1.6,1.6);
+    const bs=[0,140,90,55][size], a=rnd(0,TAU);
+    this.vx=vx??Math.cos(a)*rnd(bs*0.5,bs);
+    this.vy=vy??Math.sin(a)*rnd(bs*0.5,bs);
+    const nv=rndInt(7,11);
+    this.verts=Array.from({length:nv},(_,i)=>{
+      const ang=(i/nv)*TAU, r=this.radius*rnd(0.62,1.0);
+      return {x:Math.cos(ang)*r, y:Math.sin(ang)*r};
+    });
+    const cols=C.asteroidCols[size];
+    this.color=cols[rndInt(0,cols.length-1)];
+  }
+  update(dt) {
+    this.x=wrap(this.x+this.vx*dt,0,W); this.y=wrap(this.y+this.vy*dt,0,H);
+    this.angle+=this.spin*dt;
+  }
+  draw() {
+    ctx.save(); ctx.translate(this.x,this.y); ctx.rotate(this.angle);
+    glow(this.color,16); ctx.strokeStyle=this.color; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(this.verts[0].x,this.verts[0].y);
+    for (let i=1; i<this.verts.length; i++) ctx.lineTo(this.verts[i].x,this.verts[i].y);
+    ctx.closePath(); ctx.stroke();
+    ctx.globalAlpha=0.09; ctx.fillStyle=this.color; ctx.fill();
+    ctx.restore();
+  }
+  explode() {
+    debrisBurst(this.x,this.y,this.size,this.radius,{3:260,2:200,1:150}[this.size]);
+    ({3:SFX.boomLarge,2:SFX.boomMed,1:SFX.boomSmall})[this.size]();
+    shake(this.size*2.8,0.2);
+    if (this.size>1) {
+      for (let i=0; i<2; i++) {
+        const kick=rnd(30,85),a=rnd(0,TAU);
+        gs.asteroids.push(new Asteroid(
+          this.x+Math.cos(a)*8, this.y+Math.sin(a)*8, this.size-1,
+          this.vx*0.6+Math.cos(a)*kick, this.vy*0.6+Math.sin(a)*kick));
+      }
+    }
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════
+//  UFO — two classic variants
+//
+//  Large Saucer  type:'large'  Shoots randomly.  Dumb. 200pts.
+//  Small Saucer  type:'small'  Aims at player.   200pts → 1000pts.
+//  Killer Satellite type:'sat' Homing. Bounces. 500pts.
+// ══════════════════════════════════════════════════════════════════════
+class UFO {
+  constructor(type='large') {
+    this.type=type;
+    const palette=type==='small'?C.ufoSmall:C.ufoLarge;
+    this.bodyCol=palette.body; this.glowCol=palette.glow;
+    this.points=palette.pts;
+    this.dead=false;
+    this.pulseT=0;
+
+    // Spawn from a random edge
+    const edge=rndInt(0,3);
+    this.x=edge===0?-20:edge===1?W+20:rnd(40,W-40);
+    this.y=edge===2?-20:edge===3?H+20:rnd(40,H-40);
+
+    if (type==='large') {
+      this.radius=22;
+      this.vx=rnd(55,90)*(Math.random()<0.5?1:-1);
+      this.vy=rnd(20,55)*(Math.random()<0.5?1:-1);
+      this.shootTimer=rnd(2,3.5);
+      this.changeTimer=rnd(1.5,3);
+    } else if (type==='small') {
+      this.radius=13;
+      this.vx=rnd(90,130)*(Math.random()<0.5?1:-1);
+      this.vy=rnd(40,80)*(Math.random()<0.5?1:-1);
+      this.shootTimer=rnd(1.2,2.2);
+      this.changeTimer=rnd(0.8,2);
+    } else {
+      // Killer Satellite — tiny, fast, homing
+      this.radius=8;
+      this.speed=110;
+      this.shootTimer=999;
+      this.changeTimer=999;
+      const a=rnd(0,TAU);
+      this.vx=Math.cos(a)*this.speed; this.vy=Math.sin(a)*this.speed;
+    }
+  }
+
+  update(dt) {
+    this.pulseT+=dt;
+
+    if (this.type==='sat') {
+      // Gently steer toward player
+      if (gs.ship) {
+        const dx=gs.ship.x-this.x, dy=gs.ship.y-this.y;
+        const d=Math.hypot(dx,dy)||1;
+        const turn=0.9*dt;
+        this.vx+=(dx/d)*this.speed*turn;
+        this.vy+=(dy/d)*this.speed*turn;
+        const spd=Math.hypot(this.vx,this.vy);
+        if(spd>this.speed*1.2){this.vx=this.vx/spd*this.speed;this.vy=this.vy/spd*this.speed;}
+      }
+    } else {
+      this.changeTimer-=dt;
+      if (this.changeTimer<=0) {
+        this.changeTimer=this.type==='small'?rnd(0.8,2):rnd(1.5,3);
+        const spd=this.type==='small'?rnd(90,130):rnd(55,90);
+        const a=rnd(0,TAU);
+        this.vx=Math.cos(a)*spd; this.vy=Math.sin(a)*spd;
+      }
+      this.shootTimer-=dt;
+      if (this.shootTimer<=0 && gs.ship) {
+        this.shootTimer=this.type==='small'?rnd(1.2,2.2):rnd(2,3.5);
+        let angle;
+        if (this.type==='small') {
+          // Aimed with slight inaccuracy
+          angle=Math.atan2(gs.ship.y-this.y,gs.ship.x-this.x)+rnd(-0.3,0.3);
+        } else {
+          // Random
+          angle=rnd(0,TAU);
+        }
+        const spd=280;
+        gs.bullets.push(new Bullet(this.x,this.y,Math.cos(angle)*spd,Math.sin(angle)*spd,false));
+        SFX.ufoShoot();
+      }
+    }
+
+    this.x=wrap(this.x+this.vx*dt,-30,W+30);
+    this.y=wrap(this.y+this.vy*dt,-30,H+30);
+  }
+
+  draw() {
+    const p=this.pulseT;
+    ctx.save(); ctx.translate(this.x,this.y);
+
+    if (this.type==='sat') {
+      // Killer Satellite — spinning diamond with energy core
+      ctx.rotate(p*2.2);
+      glow(this.glowCol,18);
+      ctx.strokeStyle=this.bodyCol; ctx.lineWidth=2;
+      ctx.beginPath();
+      ctx.moveTo(0,-10); ctx.lineTo(8,0); ctx.lineTo(0,10); ctx.lineTo(-8,0); ctx.closePath();
+      ctx.stroke();
+      // Inner cross
+      ctx.globalAlpha=0.5+0.5*Math.sin(p*8);
+      ctx.strokeStyle='#ffffff'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(-5,0); ctx.lineTo(5,0); ctx.moveTo(0,-5); ctx.lineTo(0,5); ctx.stroke();
+      // Core glow dot
+      ctx.globalAlpha=0.7+0.3*Math.sin(p*12);
+      glow(this.bodyCol,12); ctx.fillStyle=this.bodyCol;
+      ctx.beginPath(); ctx.arc(0,0,3,0,TAU); ctx.fill();
+    } else if (this.type==='large') {
+      // Classic large saucer — flat with big dome
+      glow(this.glowCol,22);
+      ctx.strokeStyle=this.bodyCol; ctx.lineWidth=2.5;
+      ctx.beginPath(); ctx.ellipse(0,4,22,9,0,0,TAU); ctx.stroke();       // rim
+      ctx.beginPath(); ctx.ellipse(0,-2,12,9,0,Math.PI,TAU); ctx.stroke(); // dome
+      ctx.beginPath(); ctx.moveTo(-22,4); ctx.lineTo(22,4); ctx.stroke();   // equator
+      // Window bumps
+      for (let i=-1; i<=1; i++) {
+        ctx.globalAlpha=0.4+0.6*Math.abs(Math.sin(p+i*2.2));
+        ctx.fillStyle=this.bodyCol;
+        ctx.beginPath(); ctx.arc(i*8,4,3,0,TAU); ctx.fill();
+      }
+    } else {
+      // Small precision saucer — sleeker, brighter
+      glow(this.glowCol,24);
+      ctx.strokeStyle=this.bodyCol; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.ellipse(0,3,13,5,0,0,TAU); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(0,-1,7,5,0,Math.PI,TAU); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-13,3); ctx.lineTo(13,3); ctx.stroke();
+      // Energy pulse ring
+      const pulseR=14+4*Math.sin(p*5);
+      ctx.globalAlpha=0.18+0.12*Math.sin(p*5);
+      ctx.strokeStyle=this.bodyCol; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.arc(0,0,pulseR,0,TAU); ctx.stroke();
+      // Center dot
+      ctx.globalAlpha=0.8; ctx.fillStyle='#ffffff';
+      ctx.beginPath(); ctx.arc(0,0,2,0,TAU); ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
+  explode() {
+    const cols=[this.bodyCol,'#ffffff',this.glowCol,'#ffeecc'];
+    for (let i=0; i<24; i++) {
+      const a=rnd(0,TAU), spd=rnd(80,220);
+      gs.sparks.push(new Spark(this.x,this.y,Math.cos(a)*spd,Math.sin(a)*spd,
+        cols[rndInt(0,cols.length-1)],rnd(0.3,1.2),rnd(1.5,4)));
+    }
+    SFX.boomMed(); shake(6,0.2);
+    grid.ripple(this.x,this.y,350,200);
+  }
+}
+
+// ── Screen shake ──────────────────────────────────────────────────────
+let shakeTimer=0, shakeMag=0;
+function shake(mag,dur) { shakeMag=Math.max(shakeMag,mag); shakeTimer=Math.max(shakeTimer,dur); }
+
+// ── HUD ───────────────────────────────────────────────────────────────
+function drawMiniShip(x,y) {
+  ctx.save(); ctx.translate(x,y); ctx.rotate(-Math.PI/2);
+  const r=7;
+  glow('#00ffff',10); ctx.strokeStyle='#00ffff'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(r*1.6,0); ctx.lineTo(-r,r*0.85); ctx.lineTo(-r*0.45,0);
+  ctx.lineTo(-r,-r*0.85); ctx.closePath(); ctx.stroke();
+  ctx.restore();
+}
+
+function drawHUD() {
+  ctx.save();
+  ctx.font='bold 20px "Courier New",monospace';
+  glow(C.ui,13); ctx.fillStyle=C.ui; ctx.textAlign='left';
+  ctx.fillText(`SCORE: ${gs.score}`,22,38);
+  ctx.font='13px "Courier New",monospace';
+  ctx.fillStyle='rgba(0,200,220,0.5)';
+  ctx.fillText(`HI: ${gs.hiScore}`,22,57);
+  ctx.font='bold 20px "Courier New",monospace';
+  glow('#ff44ff',13); ctx.fillStyle='#ff66ff';
+  ctx.textAlign='right';
+  ctx.fillText(`WAVE: ${gs.wave}`,W-22,38);
+  ctx.textAlign='center';
+  for (let i=0; i<gs.lives; i++) drawMiniShip(W/2-(gs.lives-1)*20+i*40,32);
+  ctx.restore();
+}
+
+// ── Screens ───────────────────────────────────────────────────────────
+function drawTitle() {
+  const t=Date.now()/1000;
+  ctx.save(); ctx.textAlign='center';
+  for (let pass=0; pass<2; pass++) {
+    const off=pass===0?2:-2;
+    ctx.save(); ctx.globalAlpha=pass===0?0.35:1;
+    ctx.font='bold 78px "Courier New",monospace';
+    glow(pass===0?'#ff0088':'#00ffff',pass===0?8:30);
+    ctx.fillStyle=pass===0?'#ff0088':'#00ffff';
+    ctx.fillText('ASTROIDS',W/2+off,H/2-90);
+    ctx.restore();
+  }
+  ctx.font='17px "Courier New",monospace';
+  glow('#ff44ff',14); ctx.fillStyle='#ff44ff';
+  ctx.fillText('O B L I T E R A T U S',W/2,H/2-44);
+  if (Math.floor(t*2)%2===0) {
+    ctx.font='bold 23px "Courier New",monospace';
+    glow('#ffee00',16); ctx.fillStyle='#ffee00';
+    ctx.fillText(nuiActive?'TAP  FIRE  TO  LAUNCH':'PRESS  SPACE  TO  LAUNCH',W/2,H/2+20);
+  }
+  if (!nuiActive) {
+    ctx.font='13px "Courier New",monospace'; noGlow();
+    ctx.fillStyle='rgba(0,200,220,0.65)';
+    ctx.fillText('A/D ◄► ROTATE   W▲ THRUST   SPACE FIRE   P PAUSE',W/2,H/2+72);
+  }
+  if (gs.hiScore>0) {
+    ctx.font='14px "Courier New",monospace';
+    glow(C.ui,8); ctx.fillStyle=C.ui;
+    ctx.fillText(`HIGH SCORE: ${gs.hiScore}`,W/2,H/2+(nuiActive?72:108));
+  }
+  ctx.font='10px "Courier New",monospace'; noGlow();
+  ctx.fillStyle='rgba(0,160,180,0.35)';
+  ctx.fillText('OPEN SOURCE · FREE TO PLAY · SAFETY THIRD',W/2,H-22);
+  ctx.restore();
+}
+
+function drawGameOver() {
+  const t=Date.now()/1000;
+  ctx.save(); ctx.textAlign='center';
+  ctx.font='bold 66px "Courier New",monospace';
+  glow('#ff2222',28); ctx.fillStyle='#ff3333';
+  ctx.fillText('GAME OVER',W/2,H/2-60);
+  ctx.font='bold 26px "Courier New",monospace';
+  glow(C.ui,14); ctx.fillStyle=C.ui;
+  ctx.fillText(`FINAL SCORE: ${gs.score}`,W/2,H/2+4);
+  if (gs.score>0&&gs.score>=gs.hiScore) {
+    ctx.font='19px "Courier New",monospace';
+    glow('#ffee00',14); ctx.fillStyle='#ffee00';
+    ctx.fillText('✦  NEW  HIGH  SCORE  ✦',W/2,H/2+42);
+  }
+  if (Math.floor(t*2)%2===0) {
+    ctx.font='bold 20px "Courier New",monospace';
+    glow('#ffee00',12); ctx.fillStyle='#ffee00';
+    ctx.fillText(nuiActive?'TAP FIRE TO RETRY':'PRESS SPACE TO RETRY',W/2,H/2+88);
+  }
+  ctx.restore();
+}
+
+function drawPause() {
+  ctx.fillStyle='rgba(2,11,24,0.65)'; ctx.fillRect(0,0,W,H);
+  ctx.save(); ctx.textAlign='center';
+  ctx.font='bold 52px "Courier New",monospace';
+  glow('#00ffff',22); ctx.fillStyle='#00ffff';
+  ctx.fillText('PAUSED',W/2,H/2);
+  ctx.font='17px "Courier New",monospace'; noGlow();
+  ctx.fillStyle='rgba(0,200,220,0.7)';
+  ctx.fillText(nuiActive?'TAP ⏸ TO RESUME':'P  TO  RESUME',W/2,H/2+52);
+  ctx.restore();
+}
+
+// ── Game state ────────────────────────────────────────────────────────
+const gs = {
+  state:'title', paused:false,
+  score:0, hiScore:parseInt(localStorage.getItem('astroids_obliteratus_hi')||'0'),
+  lives:3, wave:1,
+  ship:null,
+  asteroids:[], bullets:[], sparks:[], debris:[], ufos:[],
+  shootCd:0,
+  ufoTimer:0, ufoPhase:0,       // ufoPhase tracks what we next want to spawn
+  waveMsg:'', waveMsgTimer:0,
+  respawnTimer:0,
+};
+
+function togglePause() {
+  if (gs.state!=='playing') return;
+  gs.paused=!gs.paused;
+  const btn=document.getElementById('nui-pause');
+  if (btn) { btn.dataset.state=gs.paused?'paused':'playing'; btn.textContent=gs.paused?'▶':'II'; }
+}
+
+function startGame() {
+  Object.assign(gs,{
+    state:'playing',paused:false,
+    score:0,lives:3,wave:1,
+    ship:new Ship(),
+    asteroids:[],bullets:[],sparks:[],debris:[],ufos:[],
+    shootCd:0,ufoTimer:rnd(16,24),ufoPhase:0,
+    respawnTimer:0,
+  });
+  const btn=document.getElementById('nui-pause');
+  if (btn) { btn.dataset.state='playing'; btn.textContent='II'; }
+  spawnWave(1);
+}
+
+function spawnWave(w) {
+  gs.asteroids=[]; gs.bullets=gs.bullets.filter(b=>!b.fromPlayer);
+  gs.ufos=[];
+  const count=3+w;
+  for (let i=0; i<count; i++) {
+    let x,y;
+    do { x=rnd(0,W); y=rnd(0,H); }
+    while (gs.ship&&dist({x,y},gs.ship)<180);
+    gs.asteroids.push(new Asteroid(x,y,3));
+  }
+  gs.waveMsg=w===1?'ENGAGE':`WAVE  ${w}`;
+  gs.waveMsgTimer=2.5;
+  gs.ufoTimer=rnd(14,22);
+  SFX.waveStart();
+}
+
+function addScore(pts) {
+  const prev=gs.score; gs.score+=pts;
+  if (Math.floor(gs.score/10000)>Math.floor(prev/10000)) {
+    gs.lives=Math.min(gs.lives+1,7); SFX.extraLife();
+    gs.waveMsg='+1  LIFE'; gs.waveMsgTimer=1.5;
+  }
+  if (gs.score>gs.hiScore) {
+    gs.hiScore=gs.score;
+    localStorage.setItem('astroids_obliteratus_hi',gs.hiScore);
+  }
+}
+
+function killShip() {
+  if (!gs.ship) return;
+  // Ship explosion — blue-white debris fragments!
+  const sx=gs.ship.x, sy=gs.ship.y;
+  grid.ripple(sx,sy,550,320);
+  for (let i=0; i<16; i++) {
+    const a=rnd(0,TAU), spd=rnd(60,230);
+    gs.debris.push(new DebrisFragment(sx,sy,Math.cos(a)*spd,Math.sin(a)*spd,rnd(3,9),2));
+  }
+  for (let i=0; i<30; i++) {
+    const a=rnd(0,TAU), spd=rnd(120,320);
+    gs.sparks.push(new Spark(sx,sy,Math.cos(a)*spd,Math.sin(a)*spd,
+      ['#00ffff','#0088ff','#ffffff','#88ffff'][rndInt(0,3)],rnd(0.3,1.4),rnd(2,4.5)));
+  }
+  SFX.playerDie(); shake(14,0.5);
+  gs.ship=null; gs.lives--;
+  if (gs.lives<=0) { gs.state='gameover'; SFX.gameOver(); }
+  else { gs.respawnTimer=3; }
+}
+
+// ── UFO spawn logic: wave-scaled enemy mix ────────────────────────────
+function trySpawnUFO() {
+  if (gs.ufos.length>=2) return;
+  gs.ufoTimer=rnd(12,22);
+  // Each wave cycle: large → small → satellite (on wave 3+)
+  const types=['large','small'];
+  if (gs.wave>=3) types.push('sat');
+  const roll=rndInt(0,types.length-1);
+  const t=types[roll];
+  gs.ufos.push(new UFO(t));
+  SFX.ufoSpawn();
+}
+
+// ── Main loop ─────────────────────────────────────────────────────────
+let lastTs=0;
+
+function loop(ts) {
+  const dt=Math.min((ts-lastTs)/1000,0.05);
+  lastTs=ts;
+  grid.update(dt);
+
+  if (gs.state==='playing'&&!gs.paused) {
+    if (shakeTimer>0) shakeTimer-=dt;
+    if (gs.waveMsgTimer>0) gs.waveMsgTimer-=dt;
+
+    gs.ufoTimer-=dt;
+    if (gs.ufoTimer<=0) trySpawnUFO();
+
+    gs.shootCd-=dt;
+    if (keys['Space']&&gs.ship&&gs.shootCd<=0) {
+      gs.shootCd=0.17;
+      const n=gs.ship.nose, spd=570;
+      gs.bullets.push(new Bullet(n.x,n.y,
+        gs.ship.vx+Math.cos(gs.ship.angle)*spd,
+        gs.ship.vy+Math.sin(gs.ship.angle)*spd,true));
+      SFX.shoot();
+    }
+
+    if (gs.ship) gs.ship.update(dt);
+    if (gs.respawnTimer>0) {
+      gs.respawnTimer-=dt;
+      if (gs.respawnTimer<=0) gs.ship=new Ship();
+    }
+
+    for (const a of gs.asteroids) a.update(dt);
+    for (const u of gs.ufos) u.update(dt);
+    for (const b of gs.bullets) b.update(dt);
+    for (const p of gs.sparks) p.update(dt);
+    for (const d of gs.debris) d.update(dt);
+
+    // ── Collisions ───────────────────────────────────────────────
+    for (const b of gs.bullets) {
+      if (!b.fromPlayer||b.dead) continue;
+      for (const a of gs.asteroids) {
+        if (a.dead||b.dead) continue;
+        if (dist(b,a)<b.radius+a.radius) {
+          b.dead=true; a.dead=true; a.explode();
+          addScore({3:20,2:50,1:100}[a.size]);
+        }
+      }
+      for (const u of gs.ufos) {
+        if (u.dead||b.dead) continue;
+        if (dist(b,u)<b.radius+u.radius) {
+          b.dead=true; u.dead=true; u.explode(); addScore(u.points);
+        }
+      }
+    }
+
+    if (gs.ship&&gs.ship.invincible<=0) {
+      // Enemy bullets → ship
+      for (const b of gs.bullets) {
+        if (b.fromPlayer||b.dead) continue;
+        if (dist(b,gs.ship)<b.radius+gs.ship.radius) { b.dead=true; killShip(); break; }
+      }
+    }
+    if (gs.ship&&gs.ship.invincible<=0) {
+      // Asteroids → ship
+      for (const a of gs.asteroids) {
+        if (dist(a,gs.ship)<a.radius+gs.ship.radius-3) { killShip(); break; }
+      }
+    }
+    if (gs.ship&&gs.ship.invincible<=0) {
+      // UFO body → ship
+      for (const u of gs.ufos) {
+        if (dist(u,gs.ship)<u.radius+gs.ship.radius) { u.dead=true; u.explode(); killShip(); break; }
+      }
+    }
+
+    // Cleanup
+    gs.asteroids=gs.asteroids.filter(a=>!a.dead);
+    gs.ufos=gs.ufos.filter(u=>!u.dead);
+    gs.bullets=gs.bullets.filter(b=>!b.dead);
+    gs.sparks=gs.sparks.filter(p=>!p.dead);
+    gs.debris=gs.debris.filter(d=>!d.dead);
+
+    // Next wave
+    if (gs.asteroids.length===0&&gs.ufos.length===0&&gs.respawnTimer<=0) {
+      gs.wave++; spawnWave(gs.wave);
+    }
+  }
+
+  // ── Render ───────────────────────────────────────────────────────
+  ctx.save();
+  if (shakeTimer>0) ctx.translate(rnd(-shakeMag,shakeMag),rnd(-shakeMag,shakeMag));
+  ctx.fillStyle=C.bg; ctx.fillRect(-20,-20,W+40,H+40);
+  grid.draw();
+
+  if (gs.state==='playing'||gs.state==='gameover') {
+    // Debris first (behind everything — they're on the floor)
+    for (const d of gs.debris) d.draw();
+    // Then sparks, asteroids, UFOs, bullets, ship
+    for (const p of gs.sparks) p.draw();
+    for (const a of gs.asteroids) a.draw();
+    for (const u of gs.ufos) u.draw();
+    for (const b of gs.bullets) b.draw();
+    if (gs.ship) gs.ship.draw();
+
+    if (gs.waveMsgTimer>0) {
+      const fa=Math.min(1,gs.waveMsgTimer)*Math.min(1,(2.5-gs.waveMsgTimer)*2.2);
+      ctx.save(); ctx.globalAlpha=fa; ctx.textAlign='center';
+      ctx.font='bold 44px "Courier New",monospace';
+      glow('#ffee00',22); ctx.fillStyle='#ffee00';
+      ctx.fillText(gs.waveMsg,W/2,H/2);
+      ctx.restore();
+    }
+    if (gs.respawnTimer>0) {
+      ctx.save(); ctx.textAlign='center';
+      ctx.font='22px "Courier New",monospace';
+      glow('#ff5555',13); ctx.fillStyle='#ff7777';
+      ctx.fillText(`RESPAWN IN  ${Math.ceil(gs.respawnTimer)}`,W/2,H/2+68);
+      ctx.restore();
+    }
+    drawHUD();
+  }
+
+  if (gs.state==='title') drawTitle();
+  if (gs.state==='gameover') drawGameOver();
+  if (gs.state==='playing'&&gs.paused) drawPause();
+  ctx.restore();
+  requestAnimationFrame(loop);
+}
+
+// ── Touch NUI ─────────────────────────────────────────────────────────
+function setupNUI() {
+  const touchPrimary=window.matchMedia('(pointer:coarse)').matches
+                   ||('ontouchstart' in window&&navigator.maxTouchPoints>0);
+  nuiActive=touchPrimary;
+  if (!touchPrimary) return;
+
+  document.getElementById('nui').style.display='flex';
+  document.getElementById('nui-pause').style.display='flex';
+
+  const btnMap={'nb-thrust':'ArrowUp','nb-rotl':'ArrowLeft','nb-rotr':'ArrowRight','nb-fire':'Space'};
+  for (const [id,code] of Object.entries(btnMap)) {
+    const el=document.getElementById(id); if(!el) continue;
+    el.addEventListener('pointerdown',e=>{
+      e.preventDefault(); el.setPointerCapture(e.pointerId);
+      keys[code]=true; el.classList.add('hit');
+      if (code==='Space'&&gs.state!=='playing') startGame();
+    },{passive:false});
+    const up=e=>{e.preventDefault();keys[code]=false;el.classList.remove('hit');};
+    el.addEventListener('pointerup',up,{passive:false});
+    el.addEventListener('pointercancel',up,{passive:false});
+  }
+
+  const pb=document.getElementById('nui-pause');
+  pb.addEventListener('pointerdown',e=>{
+    e.preventDefault(); pb.classList.add('hit'); togglePause();
+  },{passive:false});
+  pb.addEventListener('pointerup',e=>{e.preventDefault();pb.classList.remove('hit');},{passive:false});
+  pb.addEventListener('pointercancel',()=>pb.classList.remove('hit'),{passive:false});
+
+  canvas.addEventListener('pointerdown',()=>{ if(gs.state!=='playing') startGame(); },{passive:true});
+}
+
+// ── Go ────────────────────────────────────────────────────────────────
+resize();
+setupNUI();
+requestAnimationFrame(ts=>{lastTs=ts;requestAnimationFrame(loop);});
+</script>
+</body>
+</html>

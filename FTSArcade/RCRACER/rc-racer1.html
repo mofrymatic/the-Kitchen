@@ -1,0 +1,1200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>RC PRO-AM</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #000; overflow: hidden; }
+  #game-wrapper {
+    display: flex;
+    flex-direction: column;
+    width: 100vw;
+    height: 100vh;
+    align-items: center;
+    justify-content: center;
+    background: #111;
+  }
+  #viewport {
+    position: relative;
+    flex: 1;
+    width: 100%;
+    overflow: hidden;
+  }
+  #canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  /* Orange HUD panel — exact RC Pro-Am style */
+  #hud-panel {
+    width: 100%;
+    height: 110px;
+    background: #cc4400;
+    border-top: 4px solid #ff6622;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 12px;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  .hud-box {
+    background: #cc2200;
+    border: 3px solid #ff4400;
+    border-radius: 6px;
+    padding: 6px 14px;
+    font-family: 'Courier New', monospace;
+    color: #44aaff;
+    font-size: 22px;
+    font-weight: bold;
+    line-height: 1.3;
+    min-width: 130px;
+    letter-spacing: 2px;
+    text-shadow: 1px 1px 0 #003366;
+  }
+  .hud-box .hud-label {
+    font-size: 11px;
+    color: #ff8844;
+    letter-spacing: 3px;
+    display: block;
+    text-shadow: none;
+  }
+  #minimap-box {
+    background: #22aa44;
+    border: 3px solid #ff4400;
+    border-radius: 6px;
+    width: 160px;
+    height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+  #minimap-canvas { display: block; }
+  .hud-mph {
+    font-size: 36px;
+    color: #44aaff;
+    text-align: right;
+  }
+  .hud-mph-label {
+    font-size: 13px;
+    color: #ff8844;
+  }
+
+  #overlay {
+    position: absolute;
+    inset: 0;
+    background: #000000ee;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    z-index: 100;
+  }
+  #overlay h1 {
+    font-family: 'Courier New', monospace;
+    font-size: 56px;
+    color: #ffdd00;
+    letter-spacing: 10px;
+    text-shadow: 4px 4px 0 #cc4400, 0 0 30px #ffdd0088;
+  }
+  #overlay .subtitle {
+    font-family: 'Courier New', monospace;
+    color: #ff4422;
+    font-size: 14px;
+    letter-spacing: 6px;
+  }
+  #overlay .copy {
+    font-family: 'Courier New', monospace;
+    color: #44aaff;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-align: center;
+    line-height: 2.2;
+  }
+  #start-btn {
+    font-family: 'Courier New', monospace;
+    background: #ffdd00;
+    color: #000;
+    border: none;
+    padding: 14px 52px;
+    font-size: 20px;
+    font-weight: bold;
+    letter-spacing: 5px;
+    cursor: pointer;
+    box-shadow: 4px 4px 0 #cc4400;
+    text-transform: uppercase;
+    margin-top: 8px;
+  }
+  #start-btn:hover { background: #fff; }
+  #lap-flash {
+    position: absolute;
+    top: 35%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Courier New', monospace;
+    font-size: 44px;
+    font-weight: bold;
+    color: #ffdd00;
+    letter-spacing: 8px;
+    text-shadow: 3px 3px 0 #cc4400;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.25s;
+    white-space: nowrap;
+    z-index: 50;
+  }
+  #pos-badge {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    font-family: 'Courier New', monospace;
+    font-size: 28px;
+    color: #fff;
+    background: #000000aa;
+    padding: 4px 12px;
+    letter-spacing: 3px;
+    text-shadow: 2px 2px 0 #cc4400;
+    z-index: 10;
+  }
+  #weapon-panel {
+    background: #aa2200;
+    border: 3px solid #ff4400;
+    border-radius: 6px;
+    padding: 4px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+  }
+  .weapon-label {
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    color: #ff8844;
+    letter-spacing: 3px;
+  }
+  .weapon-slots {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  .weapon-slot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+  }
+  .weapon-icon {
+    font-size: 22px;
+    line-height: 1;
+    filter: grayscale(1) brightness(0.35);
+    transition: filter 0.15s;
+  }
+  .weapon-icon.active {
+    filter: none;
+  }
+  .weapon-key {
+    font-family: 'Courier New', monospace;
+    font-size: 8px;
+    color: #ff8844;
+    letter-spacing: 1px;
+  }
+  @keyframes turbo-pulse {
+    from { text-shadow: 0 0 4px gold; filter: none; }
+    to   { text-shadow: 0 0 20px gold, 0 0 40px #ffaa00; filter: brightness(1.5); }
+  }
+  .turbo-flash { animation: turbo-pulse 0.22s infinite alternate; }
+  #overlay .copy { line-height: 2.4; }
+</style>
+</head>
+<body>
+<div id="game-wrapper">
+  <div id="viewport">
+    <canvas id="canvas"></canvas>
+    <div id="lap-flash">LAP 2</div>
+    <div id="pos-badge">1ST</div>
+    <div id="overlay">
+      <h1>RC PRO-AM</h1>
+      <div class="subtitle">© 1987 RARE LTD.</div>
+      <div class="copy">
+        RACE 3 LAPS TO ADVANCE<br>
+        ARROWS / WASD TO DRIVE · SPACE = BRAKE<br>
+        Z = MISSILE · X = BOMB · C = TURBO
+      </div>
+      <button id="start-btn" onclick="startGame()">PRESS START</button>
+    </div>
+  </div>
+  <div id="hud-panel">
+    <div class="hud-box">
+      <span class="hud-label">SCORE</span>
+      <span id="hud-score">000000</span><br>
+      <span class="hud-label">LAP</span>
+      <span id="hud-lap">1/3</span>
+      &nbsp;&nbsp;
+      <span class="hud-label" style="display:inline">LVL</span>
+      <span id="hud-level">1</span>
+    </div>
+    <div id="minimap-box">
+      <canvas id="minimap-canvas" width="150" height="84"></canvas>
+    </div>
+    <div id="weapon-panel">
+      <span class="weapon-label">WEAPONS</span>
+      <div class="weapon-slots">
+        <div class="weapon-slot">
+          <span class="weapon-icon" id="w-missile">🚀</span>
+          <span class="weapon-key">[Z]</span>
+        </div>
+        <div class="weapon-slot">
+          <span class="weapon-icon" id="w-bomb">💣</span>
+          <span class="weapon-key">[X]</span>
+        </div>
+        <div class="weapon-slot">
+          <span class="weapon-icon" id="w-turbo">⚡</span>
+          <span class="weapon-key">[C]</span>
+        </div>
+      </div>
+    </div>
+    <div class="hud-box" style="text-align:right">
+      <span class="hud-label" style="text-align:right;display:block">MPH</span>
+      <span class="hud-mph" id="hud-mph">0</span><br>
+      <span class="hud-label">PLACE</span>
+      <span id="hud-place" style="font-size:18px">1ST</span>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════════════
+//  RC PRO-AM — Three.js Recreation
+//  True isometric perspective, NES faithful visuals
+// ═══════════════════════════════════════════════════════════════
+
+const canvas = document.getElementById('canvas');
+const vp = document.getElementById('viewport');
+
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: false });
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x22bb33); // NES bright green grass
+
+// ── ISOMETRIC CAMERA ────────────────────────────────────────────
+// RC Pro-Am uses a ~30° above, looking diagonally down-right
+const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 300);
+function resizeRenderer() {
+  const w = vp.clientWidth, h = vp.clientHeight;
+  renderer.setSize(w, h);
+  const aspect = w / h;
+  const zoom = 18;
+  camera.left   = -zoom * aspect;
+  camera.right  =  zoom * aspect;
+  camera.top    =  zoom;
+  camera.bottom = -zoom;
+  camera.updateProjectionMatrix();
+}
+resizeRenderer();
+window.addEventListener('resize', resizeRenderer);
+
+// Isometric angle: 45° azimuth, ~35° elevation (classic iso)
+camera.position.set(30, 30, 30);
+camera.lookAt(0, 0, 0);
+
+// ── LIGHTING ────────────────────────────────────────────────────
+scene.add(new THREE.AmbientLight(0xffffff, 0.75));
+const sun = new THREE.DirectionalLight(0xfff4cc, 1.2);
+sun.position.set(20, 40, 10);
+sun.castShadow = true;
+sun.shadow.mapSize.width = 2048;
+sun.shadow.mapSize.height = 2048;
+sun.shadow.camera.left = sun.shadow.camera.bottom = -80;
+sun.shadow.camera.right = sun.shadow.camera.top = 80;
+sun.shadow.camera.far = 200;
+scene.add(sun);
+
+// ── TRACK DEFINITION ────────────────────────────────────────────
+// Oval loop, matches RC Pro-Am layout (wide corners, straight sections)
+const TRACK_WAYPOINTS = [
+  [ 0,  26], [ 8,  26], [16,  22], [22,  16], [26,   8],
+  [26,  -8], [22, -16], [16, -22], [ 8, -26], [-8, -26],
+  [-16,-22], [-22,-16], [-26, -8], [-26,  8], [-22,  16],
+  [-16,  22], [-8,  26]
+];
+
+const curve = new THREE.CatmullRomCurve3(
+  TRACK_WAYPOINTS.map(([x,z]) => new THREE.Vector3(x, 0, z)),
+  true, 'catmullrom', 0.4
+);
+
+const TRACK_WIDTH = 7.5;
+const CURVE_SEGMENTS = 300;
+
+// ── GROUND (GRASS) ──────────────────────────────────────────────
+// Tiled green checker like NES grass
+function buildGrass() {
+  const size = 140;
+  const tileSize = 5;
+  for (let ix = -size/2; ix < size/2; ix += tileSize) {
+    for (let iz = -size/2; iz < size/2; iz += tileSize) {
+      const tile = (Math.floor(ix/tileSize) + Math.floor(iz/tileSize)) % 2;
+      const col = tile === 0 ? 0x22bb33 : 0x1da82e;
+      const geo = new THREE.PlaneGeometry(tileSize, tileSize);
+      const mat = new THREE.MeshLambertMaterial({ color: col });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.rotation.x = -Math.PI/2;
+      mesh.position.set(ix + tileSize/2, -0.01, iz + tileSize/2);
+      mesh.receiveShadow = true;
+      scene.add(mesh);
+    }
+  }
+}
+buildGrass();
+
+// ── TRACK SURFACE ────────────────────────────────────────────────
+function buildTrack() {
+  const pts = curve.getPoints(CURVE_SEGMENTS);
+
+  // ── Road base (gray asphalt)
+  const positions = [], uvs = [], indices = [];
+  for (let i = 0; i <= pts.length; i++) {
+    const curr = pts[i % pts.length];
+    const next = pts[(i+1) % pts.length];
+    const dir = new THREE.Vector3().subVectors(next, curr).normalize();
+    const right = new THREE.Vector3(-dir.z, 0, dir.x);
+    const l = curr.clone().addScaledVector(right, -TRACK_WIDTH);
+    const r = curr.clone().addScaledVector(right, TRACK_WIDTH);
+    l.y = r.y = 0.01;
+    positions.push(l.x,l.y,l.z, r.x,r.y,r.z);
+    const u = i / pts.length;
+    uvs.push(0, u, 1, u);
+  }
+  for (let i = 0; i < pts.length; i++) {
+    const a = i*2, b = a+1, c = a+2, d = a+3;
+    indices.push(a,b,c, b,d,c);
+  }
+  const roadGeo = new THREE.BufferGeometry();
+  roadGeo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  roadGeo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  roadGeo.setIndex(indices);
+  roadGeo.computeVertexNormals();
+  const roadMesh = new THREE.Mesh(roadGeo, new THREE.MeshLambertMaterial({ color: 0x888880 }));
+  roadMesh.receiveShadow = true;
+  scene.add(roadMesh);
+
+  // ── Yellow/black dashed curb stripes (NES style)
+  buildCurbs(pts);
+
+  // ── Yellow direction arrows on road
+  buildArrows(pts);
+
+  // ── Checkered start/finish
+  buildStartLine(pts);
+}
+
+function buildCurbs(pts) {
+  // Both edges: alternating yellow/black dashes
+  [-1, 1].forEach(side => {
+    const edgeOffset = side * (TRACK_WIDTH - 0.5);
+    for (let i = 0; i < pts.length; i++) {
+      const curr = pts[i];
+      const next = pts[(i+1) % pts.length];
+      const dir = new THREE.Vector3().subVectors(next, curr).normalize();
+      const right = new THREE.Vector3(-dir.z, 0, dir.x);
+
+      const dashIdx = Math.floor(i / 2);
+      const color = (dashIdx % 2 === 0) ? 0xffdd00 : 0x111111;
+
+      const center = curr.clone().addScaledVector(right, edgeOffset);
+      const w = 0.85, len = curr.distanceTo(next) + 0.05;
+
+      const geo = new THREE.PlaneGeometry(w, len);
+      const mat = new THREE.MeshBasicMaterial({ color });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.rotation.x = -Math.PI/2;
+      mesh.position.set(center.x, 0.02, center.z);
+      const angle = Math.atan2(dir.x, dir.z);
+      mesh.rotation.z = angle;
+      scene.add(mesh);
+    }
+  });
+}
+
+function buildArrows(pts) {
+  // Place direction arrows every ~30 segments
+  for (let i = 10; i < pts.length; i += 30) {
+    const curr = pts[i];
+    const next = pts[(i+5) % pts.length];
+    const dir = new THREE.Vector3().subVectors(next, curr).normalize();
+
+    const arrowShape = new THREE.Shape();
+    arrowShape.moveTo(0, 0.8);
+    arrowShape.lineTo(0.5, 0);
+    arrowShape.lineTo(0.2, 0);
+    arrowShape.lineTo(0.2, -0.8);
+    arrowShape.lineTo(-0.2, -0.8);
+    arrowShape.lineTo(-0.2, 0);
+    arrowShape.lineTo(-0.5, 0);
+    arrowShape.closePath();
+
+    const geo = new THREE.ShapeGeometry(arrowShape);
+    const mat = new THREE.MeshBasicMaterial({ color: 0xffdd00, side: THREE.DoubleSide });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.rotation.x = -Math.PI/2;
+    mesh.position.set(curr.x, 0.03, curr.z);
+    const angle = Math.atan2(dir.x, dir.z);
+    mesh.rotation.z = -angle;
+    mesh.scale.setScalar(1.6);
+    scene.add(mesh);
+  }
+}
+
+function buildStartLine(pts) {
+  const p0 = pts[0], p1 = pts[1];
+  const dir = new THREE.Vector3().subVectors(p1, p0).normalize();
+  const right = new THREE.Vector3(-dir.z, 0, dir.x);
+  const angle = Math.atan2(dir.x, dir.z);
+
+  const cols = 8;
+  for (let c = -cols/2; c < cols/2; c++) {
+    for (let r = 0; r < 2; r++) {
+      const col = (c + r) % 2 === 0 ? 0xffffff : 0x111111;
+      const tile = new THREE.Mesh(
+        new THREE.PlaneGeometry(TRACK_WIDTH / (cols/2), 1.5),
+        new THREE.MeshBasicMaterial({ color: col })
+      );
+      tile.rotation.x = -Math.PI/2;
+      tile.position.copy(p0.clone()
+        .addScaledVector(right, (c + 0.5) * TRACK_WIDTH / (cols/2))
+        .addScaledVector(dir, (r - 0.5) * 1.5));
+      tile.position.y = 0.04;
+      tile.rotation.z = -angle;
+      scene.add(tile);
+    }
+  }
+}
+
+buildTrack();
+
+// ── SCENERY ──────────────────────────────────────────────────────
+// NES-style round bush/tree clusters
+function addBush(x, z, scale = 1) {
+  const colors = [0x116622, 0x1a8833, 0x0d5522];
+  // cluster of spheres
+  [[0,0,0,0.9],[0.5,0.1,0.3,0.65],[-0.4,0.1,-0.3,0.6],[0,0.5,0,0.55]].forEach(([ox,oy,oz,r]) => {
+    const mesh = new THREE.Mesh(
+      new THREE.SphereGeometry(r * scale, 6, 5),
+      new THREE.MeshLambertMaterial({ color: colors[Math.floor(Math.random()*colors.length)] })
+    );
+    mesh.position.set(x + ox*scale, oy*scale + r*scale*0.5, z + oz*scale);
+    mesh.castShadow = true;
+    scene.add(mesh);
+  });
+}
+
+// Place bushes only in safe off-track zones
+const bushSpots = [
+  [-38,-38],[38,-38],[-38,38],[38,38],
+  [-35,0],[35,0],[0,35],[0,-35],
+  [-30,-20],[30,-20],[-30,20],[30,20],
+  [-20,-35],[20,-35],[-20,35],[20,35],
+  [-42,10],[-42,-10],[42,10],[42,-10],
+  [10,-40],[-10,-40],[10,40],[-10,40],
+  [-38,-10],[38,10],[38,-10],[-38,10],
+  [0,0],[4,4],[-4,4],[4,-4],[-4,-4],
+  [8,0],[-8,0],[0,8],[0,-8],
+];
+bushSpots.forEach(([x,z]) => addBush(x, z, 0.8 + Math.random()*0.5));
+
+// ── TRUCK FACTORY ────────────────────────────────────────────────
+// Chunky pickup trucks like RC Pro-Am
+function createTruck(bodyColor, cabColor) {
+  const g = new THREE.Group();
+  const mat = c => new THREE.MeshLambertMaterial({ color: c });
+
+  // Truck bed (back)
+  const bed = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.5, 1.4), mat(bodyColor));
+  bed.position.set(0, 0.55, -0.5);
+  bed.castShadow = true;
+  g.add(bed);
+
+  // Cab (front, higher)
+  const cab = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.75, 1.2), mat(cabColor));
+  cab.position.set(0, 0.7, 0.65);
+  cab.castShadow = true;
+  g.add(cab);
+
+  // Cab roof
+  const roof = new THREE.Mesh(new THREE.BoxGeometry(1.35, 0.35, 0.9), mat(cabColor));
+  roof.position.set(0, 1.22, 0.7);
+  roof.castShadow = true;
+  g.add(roof);
+
+  // Windshield
+  const wind = new THREE.Mesh(
+    new THREE.BoxGeometry(1.3, 0.3, 0.07),
+    new THREE.MeshLambertMaterial({ color: 0x88ccff, transparent: true, opacity: 0.75 })
+  );
+  wind.position.set(0, 0.95, 1.22);
+  g.add(wind);
+
+  // Hood
+  const hood = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.2, 0.5), mat(bodyColor));
+  hood.position.set(0, 0.45, 1.15);
+  g.add(hood);
+
+  // Headlights
+  [-0.55, 0.55].forEach(x => {
+    const hl = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.18, 0.06), mat(0xffffaa));
+    hl.position.set(x, 0.5, 1.41);
+    g.add(hl);
+  });
+
+  // Wheels — big chunky NES wheels
+  const wGeo = new THREE.CylinderGeometry(0.42, 0.42, 0.28, 8);
+  const wMat = mat(0x222222);
+  const hubMat = mat(0xcccccc);
+  [[-0.9,0.42,0.65],[0.9,0.42,0.65],[-0.9,0.42,-0.55],[0.9,0.42,-0.55]].forEach(([wx,wy,wz]) => {
+    const w = new THREE.Mesh(wGeo, wMat);
+    w.rotation.z = Math.PI/2;
+    w.position.set(wx, wy, wz);
+    w.castShadow = true;
+    g.add(w);
+    const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.3, 6), hubMat);
+    hub.rotation.z = Math.PI/2;
+    hub.position.set(wx, wy, wz);
+    g.add(hub);
+  });
+
+  // Antenna
+  const ant = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.03, 0.03, 1.1, 4),
+    mat(0xaaaaaa)
+  );
+  ant.position.set(0.6, 1.6, 0.3);
+  g.add(ant);
+
+  g.position.y = 0.0;
+  return g;
+}
+
+// ── PLAYER ───────────────────────────────────────────────────────
+const playerTruck = createTruck(0xffaa00, 0x222222); // yellow/black like original
+scene.add(playerTruck);
+
+// ── AI TRUCKS ────────────────────────────────────────────────────
+const AI_DEFS = [
+  { body: 0x44aaff, cab: 0xffdd00 },  // blue/yellow
+  { body: 0xff4422, cab: 0x333333 },  // red/dark
+  { body: 0xaaaaaa, cab: 0x335599 },  // gray/blue
+];
+const aiTrucks = AI_DEFS.map((def, i) => {
+  const truck = createTruck(def.body, def.cab);
+  scene.add(truck);
+  return {
+    mesh: truck,
+    t: 0.2 + i * 0.18,
+    speed: 0,
+    lateral: (i - 1) * 2.2,
+    angle: 0,
+    lapCount: 0,
+    baseSpeed: 0.00195 + i * 0.00018,
+    spinTimer: 0,        // frames remaining in spin-out (0 = normal)
+    spinAngle: 0,        // accumulated spin rotation
+  };
+});
+
+// ── WEAPON SYSTEM ────────────────────────────────────────────────
+// Pickup mesh types: 0=missile, 1=bomb, 2=turbo
+
+function createPickupMesh(type) {
+  const g = new THREE.Group();
+  if (type === 0) {
+    // Missile: red elongated cylinder with cone nose
+    const body = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.18, 0.18, 0.9, 8),
+      new THREE.MeshLambertMaterial({ color: 0xff2222 })
+    );
+    body.rotation.z = Math.PI / 2;
+    g.add(body);
+    const nose = new THREE.Mesh(
+      new THREE.ConeGeometry(0.18, 0.35, 8),
+      new THREE.MeshLambertMaterial({ color: 0xff8800 })
+    );
+    nose.rotation.z = -Math.PI / 2;
+    nose.position.x = 0.6;
+    g.add(nose);
+    const fin = new THREE.Mesh(
+      new THREE.BoxGeometry(0.25, 0.05, 0.35),
+      new THREE.MeshLambertMaterial({ color: 0xdd1111 })
+    );
+    fin.position.x = -0.42;
+    g.add(fin);
+  } else if (type === 1) {
+    // Bomb: black sphere with fuse stub
+    const sphere = new THREE.Mesh(
+      new THREE.SphereGeometry(0.38, 10, 8),
+      new THREE.MeshLambertMaterial({ color: 0x222222 })
+    );
+    g.add(sphere);
+    const fuse = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.04, 0.04, 0.4, 6),
+      new THREE.MeshLambertMaterial({ color: 0x886622 })
+    );
+    fuse.position.set(0.1, 0.45, 0);
+    fuse.rotation.z = 0.3;
+    g.add(fuse);
+    // Spark on fuse tip
+    const spark = new THREE.Mesh(
+      new THREE.SphereGeometry(0.07, 6, 4),
+      new THREE.MeshBasicMaterial({ color: 0xffcc00 })
+    );
+    spark.position.set(0.16, 0.82, 0);
+    g.add(spark);
+  } else {
+    // Turbo: gold star-like shape — 4 crossing boxes + core
+    const mat = new THREE.MeshLambertMaterial({ color: 0xffcc00 });
+    const core = new THREE.Mesh(new THREE.SphereGeometry(0.28, 8, 6), mat);
+    g.add(core);
+    for (let i = 0; i < 4; i++) {
+      const arm = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.12, 0.12), mat);
+      arm.rotation.y = (i / 4) * Math.PI;
+      g.add(arm);
+    }
+    // Vertical spike
+    const spike = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.65, 0.12), mat);
+    g.add(spike);
+  }
+  return g;
+}
+
+// Pickup spawn positions along track (T values, lateral offset)
+const PICKUP_DEFS = [
+  { type: 0, t: 0.15, lat:  2.0 },  // missile
+  { type: 1, t: 0.32, lat: -2.0 },  // bomb
+  { type: 2, t: 0.50, lat:  1.5 },  // turbo
+  { type: 0, t: 0.65, lat: -1.5 },  // missile
+  { type: 1, t: 0.80, lat:  2.0 },  // bomb
+  { type: 2, t: 0.92, lat: -2.0 },  // turbo
+];
+
+const pickups = PICKUP_DEFS.map(def => {
+  const mesh = createPickupMesh(def.type);
+  const spawnPos = worldPos(def.t, def.lat);
+  mesh.position.set(spawnPos.x, 0.9, spawnPos.z);
+  scene.add(mesh);
+  return {
+    mesh,
+    type: def.type,
+    t: def.t,
+    lat: def.lat,
+    active: true,
+    respawnTimer: 0,
+  };
+});
+
+// Active bombs placed in the world by player
+const activeBombs = []; // { mesh, pos, timer }
+
+// Inventory and turbo state
+const playerInventory = { missile: 0, bomb: 0, turbo: 0 };
+let turboTimer = 0;       // frames remaining
+const TURBO_FRAMES = 180; // 3s at 60fps
+const SPIN_FRAMES  = 72;  // ~1.2s spin-out
+
+// Fired missile state (one at a time)
+let activeMissile = null; // { mesh, t, lat, speed }
+
+function createMissileMesh() {
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.14, 0.14, 0.7, 8),
+    new THREE.MeshLambertMaterial({ color: 0xff2222 })
+  );
+  body.rotation.z = Math.PI / 2;
+  g.add(body);
+  const nose = new THREE.Mesh(
+    new THREE.ConeGeometry(0.14, 0.3, 8),
+    new THREE.MeshLambertMaterial({ color: 0xff8800 })
+  );
+  nose.rotation.z = -Math.PI / 2;
+  nose.position.x = 0.48;
+  g.add(nose);
+  return g;
+}
+
+function createBombMesh() {
+  const g = new THREE.Group();
+  const sphere = new THREE.Mesh(
+    new THREE.SphereGeometry(0.3, 8, 6),
+    new THREE.MeshLambertMaterial({ color: 0x111111 })
+  );
+  g.add(sphere);
+  return g;
+}
+
+// Fire missile: find nearest AI ahead on track
+function fireMissile() {
+  if (!playerInventory.missile || activeMissile) return;
+  playerInventory.missile = 0;
+  const mesh = createMissileMesh();
+  scene.add(mesh);
+  activeMissile = { mesh, t: playerT + 0.01, lat: playerLateral * 0.5, speed: MAX_SPEED * 2.0 };
+}
+
+// Drop bomb at player position
+function dropBomb() {
+  if (!playerInventory.bomb) return;
+  playerInventory.bomb = 0;
+  const mesh = createBombMesh();
+  const pos = worldPos(playerT, playerLateral);
+  pos.y = 0.3;
+  mesh.position.copy(pos);
+  scene.add(mesh);
+  activeBombs.push({ mesh, t: playerT, lat: playerLateral, timer: 300 }); // 5s fuse
+}
+
+// Activate turbo
+function activateTurbo() {
+  if (!playerInventory.turbo || turboTimer > 0) return;
+  playerInventory.turbo = 0;
+  turboTimer = TURBO_FRAMES;
+}
+
+// Trigger spin-out on AI
+function spinOutAI(ai) {
+  if (ai.spinTimer > 0) return; // already spinning
+  ai.spinTimer = SPIN_FRAMES;
+  ai.spinAngle = ai.angle;
+  ai.speed *= 0.1;
+}
+
+// Update weapon HUD icons
+function updateWeaponHUD() {
+  const slots = [
+    { id: 'w-missile', has: playerInventory.missile > 0, turbo: false },
+    { id: 'w-bomb',    has: playerInventory.bomb > 0,    turbo: false },
+    { id: 'w-turbo',   has: playerInventory.turbo > 0 || turboTimer > 0, turbo: turboTimer > 0 },
+  ];
+  slots.forEach(({ id, has, turbo: isTurboActive }) => {
+    const el = document.getElementById(id);
+    el.classList.toggle('active', has);
+    el.classList.toggle('turbo-flash', isTurboActive);
+  });
+}
+
+// ── PHYSICS CONSTANTS ────────────────────────────────────────────
+const MAX_SPEED    = 0.003;
+const ACCEL        = 0.00015;
+const BRAKE_FORCE  = 0.0003;
+const FRICTION     = 0.983;
+const STEER_RATE   = 0.038;
+const LAT_FRICTION = 0.90;
+const WALL_BOUNCE  = 0.6;
+const OFFTRACK_SLP = 0.55;
+const LAT_LIMIT    = TRACK_WIDTH - 1.4;
+
+// ── GAME STATE ───────────────────────────────────────────────────
+let playerT = 0.005;
+let playerSpeed = 0;
+let playerLateral = 0;
+let playerAngle = 0;
+let lapCount = 0;
+let score = 0;
+let lapStart = 0;
+let raceStart = 0;
+let gameRunning = false;
+let level = 1;
+const TOTAL_LAPS = 3;
+let finishShown = false;
+
+// ── INPUT ────────────────────────────────────────────────────────
+const keys = {};
+const GAME_KEYS = new Set(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyW','KeyA','KeyS','KeyD','Space','KeyZ','KeyX','KeyC']);
+addEventListener('keydown', e => {
+  if (GAME_KEYS.has(e.code)) {
+    keys[e.code] = true;
+    e.preventDefault();
+    // One-shot weapon fires on keydown, not held
+    if (gameRunning) {
+      if (e.code === 'KeyZ') fireMissile();
+      if (e.code === 'KeyX') dropBomb();
+      if (e.code === 'KeyC') activateTurbo();
+    }
+  }
+});
+addEventListener('keyup',   e => { keys[e.code] = false; });
+const pressing = code => !!keys[code];
+const gas   = () => pressing('ArrowUp')   || pressing('KeyW');
+const brake = () => pressing('ArrowDown') || pressing('KeyS') || pressing('Space');
+const left  = () => pressing('ArrowLeft') || pressing('KeyA');
+const right = () => pressing('ArrowRight')|| pressing('KeyD');
+
+// ── TRACK HELPERS ────────────────────────────────────────────────
+function trackFrame(t) {
+  const pos = curve.getPoint(t);
+  const tan = curve.getTangent(t).normalize();
+  const rgt = new THREE.Vector3(-tan.z, 0, tan.x);
+  return { pos, tan, rgt };
+}
+function worldPos(t, lat) {
+  const { pos, tan, rgt } = trackFrame(t);
+  return pos.clone().addScaledVector(rgt, lat);
+}
+
+// ── CAMERA FOLLOW ────────────────────────────────────────────────
+// Keep isometric offset locked to player, scroll world
+const ISO_OFFSET = new THREE.Vector3(28, 28, 28);
+let camTarget = new THREE.Vector3();
+
+// ── MINIMAP ───────────────────────────────────────────────────────
+const mmCanvas = document.getElementById('minimap-canvas');
+const mmCtx = mmCanvas.getContext('2d');
+const MM_W = 150, MM_H = 84;
+
+function drawMinimap() {
+  mmCtx.fillStyle = '#1da82e';
+  mmCtx.fillRect(0, 0, MM_W, MM_H);
+
+  const scale = 2.6, cx = MM_W/2, cz = MM_H/2;
+  function toMM(x, z) { return [cx + x*scale, cz + z*scale]; }
+
+  // Draw track outline
+  const pts = curve.getPoints(200);
+  mmCtx.strokeStyle = '#666666';
+  mmCtx.lineWidth = 6;
+  mmCtx.beginPath();
+  pts.forEach((p, i) => {
+    const [mx, mz] = toMM(p.x, p.z);
+    i === 0 ? mmCtx.moveTo(mx, mz) : mmCtx.lineTo(mx, mz);
+  });
+  mmCtx.closePath();
+  mmCtx.stroke();
+
+  // AI blips
+  aiTrucks.forEach(ai => {
+    const wp = worldPos(ai.t, ai.lateral);
+    const [mx, mz] = toMM(wp.x, wp.z);
+    mmCtx.fillStyle = '#44aaff';
+    mmCtx.fillRect(mx-3, mz-3, 6, 6);
+  });
+
+  // Player blip
+  const pp = worldPos(playerT, playerLateral);
+  const [px, pz] = toMM(pp.x, pp.z);
+  mmCtx.fillStyle = '#ffdd00';
+  mmCtx.fillRect(px-4, pz-4, 8, 8);
+}
+
+// ── LAP FLASH ────────────────────────────────────────────────────
+function flashMsg(txt, dur = 1800) {
+  const el = document.getElementById('lap-flash');
+  el.textContent = txt;
+  el.style.opacity = '1';
+  setTimeout(() => el.style.opacity = '0', dur);
+}
+
+// ── HUD UPDATE ────────────────────────────────────────────────────
+function fmtScore(n) { return String(n).padStart(6, '0'); }
+
+function updateHUD() {
+  const mph = Math.round((playerSpeed / MAX_SPEED) * 85);
+  document.getElementById('hud-mph').textContent = mph;
+  document.getElementById('hud-score').textContent = fmtScore(score);
+  document.getElementById('hud-lap').textContent = `${Math.min(lapCount+1, TOTAL_LAPS)}/${TOTAL_LAPS}`;
+  document.getElementById('hud-level').textContent = level;
+
+  const pProg = playerT + lapCount;
+  const numAhead = aiTrucks.filter(a => (a.t + a.lapCount) > pProg).length;
+  const labels = ['1ST','2ND','3RD','4TH'];
+  const posStr = labels[numAhead] || '4TH';
+  document.getElementById('hud-place').textContent = posStr;
+  document.getElementById('pos-badge').textContent = posStr;
+}
+
+// ── START GAME ────────────────────────────────────────────────────
+function startGame() {
+  document.getElementById('overlay').style.display = 'none';
+  gameRunning = true;
+  playerT = 0.005;
+  playerSpeed = 0;
+  playerLateral = 0;
+  playerAngle = 0;
+  lapCount = 0;
+  score = 0;
+  raceStart = lapStart = Date.now();
+  finishShown = false;
+
+  aiTrucks.forEach((ai, i) => {
+    ai.t = 0.03 + i * 0.06;
+    ai.lateral = (i - 1) * 2.0;
+    ai.speed = 0;
+    ai.lapCount = 0;
+    ai.spinTimer = 0;
+    ai.spinAngle = 0;
+  });
+
+  // Reset weapons
+  playerInventory.missile = 0;
+  playerInventory.bomb = 0;
+  playerInventory.turbo = 0;
+  turboTimer = 0;
+  if (activeMissile) { scene.remove(activeMissile.mesh); activeMissile = null; }
+  activeBombs.forEach(b => scene.remove(b.mesh));
+  activeBombs.length = 0;
+  pickups.forEach(pk => { pk.active = true; pk.mesh.visible = true; pk.respawnTimer = 0; });
+
+  // Sync mesh positions immediately — no flash frame
+  aiTrucks.forEach(ai => {
+    const ap = worldPos(ai.t, ai.lateral);
+    ap.y = 0.05;
+    ai.mesh.position.copy(ap);
+  });
+  const pp0 = worldPos(playerT, playerLateral);
+  pp0.y = 0.05;
+  playerTruck.position.copy(pp0);
+}
+
+// ── COLLISION ────────────────────────────────────────────────────
+function handleCollisions() {
+  const pp = worldPos(playerT, playerLateral);
+  aiTrucks.forEach(ai => {
+    const ap = worldPos(ai.t, ai.lateral);
+    if (pp.distanceTo(ap) < 2.2) {
+      playerSpeed *= 0.35;
+      ai.speed *= 0.35;
+      playerLateral += (pp.x - ap.x) * 0.4;
+      score = Math.max(0, score - 50);
+    }
+  });
+}
+
+// ── MAIN LOOP ─────────────────────────────────────────────────────
+const clock = new THREE.Clock();
+
+function animate() {
+  requestAnimationFrame(animate);
+  const rawDt = clock.getDelta();
+  const dt = Math.min(rawDt, 0.05); // cap at 50ms to avoid spiral-of-death
+  const scale = dt * 60; // normalize to 60fps baseline
+
+  if (gameRunning) {
+    // ── Turbo timer
+    if (turboTimer > 0) turboTimer = Math.max(0, turboTimer - scale);
+    const effectiveMaxSpeed = MAX_SPEED * (turboTimer > 0 ? 1.5 : 1.0);
+
+    // ── Player physics
+    if (gas())   playerSpeed = Math.min(playerSpeed + ACCEL * scale, effectiveMaxSpeed);
+    if (brake())  playerSpeed = Math.max(playerSpeed - BRAKE_FORCE * scale, 0);
+    playerSpeed *= Math.pow(FRICTION, scale);
+
+    const { rgt } = trackFrame(playerT);
+    if (left())  playerLateral -= STEER_RATE * (playerSpeed / MAX_SPEED + 0.25) * scale;
+    if (right()) playerLateral += STEER_RATE * (playerSpeed / MAX_SPEED + 0.25) * scale;
+    playerLateral *= Math.pow(LAT_FRICTION, scale);
+
+    if (Math.abs(playerLateral) > LAT_LIMIT) {
+      playerLateral = Math.sign(playerLateral) * LAT_LIMIT;
+      playerSpeed *= OFFTRACK_SLP;
+    }
+
+    playerT += playerSpeed * scale;
+    if (playerT >= 1.0) {
+      playerT -= 1.0;
+      lapCount++;
+      score += 1000 + Math.max(0, 500 - Math.floor((Date.now() - lapStart) / 100));
+      lapStart = Date.now();
+
+      if (lapCount >= TOTAL_LAPS && !finishShown) {
+        finishShown = true;
+        gameRunning = false;
+        setTimeout(showFinish, 600);
+      } else if (lapCount < TOTAL_LAPS) {
+        flashMsg(`LAP ${lapCount + 1}`);
+      }
+    }
+
+    // ── Place player truck
+    const pp = worldPos(playerT, playerLateral);
+    pp.y = 0.05;
+    playerTruck.position.copy(pp);
+    const { tan: ptan } = trackFrame(playerT);
+    const targetAngle = Math.atan2(ptan.x, ptan.z) + (left() ? 0.15 : right() ? -0.15 : 0);
+    playerAngle += (targetAngle - playerAngle) * 0.15;
+    playerTruck.rotation.y = playerAngle;
+
+    // ── AI trucks
+    aiTrucks.forEach(ai => {
+      if (ai.spinTimer > 0) {
+        // Spin-out: rotate and decelerate, don't steer
+        ai.spinTimer = Math.max(0, ai.spinTimer - scale);
+        ai.spinAngle += 0.12 * scale;  // full rotation over ~52 frames
+        ai.mesh.rotation.y = ai.spinAngle;
+        ai.speed *= Math.pow(0.94, scale);
+        // Still advance position (slow drift)
+        ai.t += ai.speed * scale;
+        if (ai.t >= 1.0) { ai.t -= 1.0; ai.lapCount++; }
+        const ap = worldPos(ai.t, ai.lateral);
+        ap.y = 0.05;
+        ai.mesh.position.copy(ap);
+        return; // skip normal steering
+      }
+
+      const wobble = Math.sin(Date.now() * 0.0005 + ai.t * 8) * 0.0002;
+      ai.speed = Math.min(ai.speed + 0.00009 * scale, ai.baseSpeed + wobble);
+      ai.speed *= Math.pow(0.988, scale);
+      ai.lateral += Math.sin(Date.now() * 0.0008 + ai.t * 6) * 0.012;
+      ai.lateral = Math.max(-LAT_LIMIT * 0.75, Math.min(LAT_LIMIT * 0.75, ai.lateral));
+      ai.t += ai.speed * scale;
+      if (ai.t >= 1.0) { ai.t -= 1.0; ai.lapCount++; }
+
+      const ap = worldPos(ai.t, ai.lateral);
+      ap.y = 0.05;
+      ai.mesh.position.copy(ap);
+      const { tan: atan } = trackFrame(ai.t);
+      ai.angle += (Math.atan2(atan.x, atan.z) - ai.angle) * 0.12;
+      ai.mesh.rotation.y = ai.angle;
+    });
+
+    handleCollisions();
+    score += Math.floor(playerSpeed / MAX_SPEED * 2 * scale);
+
+    // ── Weapon tick ─────────────────────────────────────────────
+
+    // Pickups: float, spin, check overlap, respawn
+    const now = Date.now();
+    const playerWorldPos = worldPos(playerT, playerLateral);
+    pickups.forEach(pk => {
+      if (pk.active) {
+        // Float + spin animation
+        pk.mesh.position.y = 0.9 + Math.sin(now * 0.003 + pk.t * 20) * 0.18;
+        pk.mesh.rotation.y += 0.04 * scale;
+
+        // Overlap check with player
+        const dist = playerWorldPos.distanceTo(pk.mesh.position);
+        if (dist < 1.8) {
+          const typeName = ['missile','bomb','turbo'][pk.type];
+          if (playerInventory[typeName] === 0) {
+            playerInventory[typeName] = 1;
+            pk.active = false;
+            pk.respawnTimer = 480; // 8s at 60fps
+            pk.mesh.visible = false;
+            flashMsg('  ' + ['MISSILE','BOMB','TURBO'][pk.type] + '!', 900);
+          }
+        }
+      } else {
+        pk.respawnTimer -= scale;
+        if (pk.respawnTimer <= 0) {
+          pk.active = true;
+          pk.mesh.visible = true;
+        }
+      }
+    });
+
+    // Missile: advance forward, check AI hit
+    if (activeMissile) {
+      activeMissile.t += activeMissile.speed * scale;
+      if (activeMissile.t >= 1.0) activeMissile.t -= 1.0;
+      const mPos = worldPos(activeMissile.t, activeMissile.lat);
+      mPos.y = 0.7;
+      activeMissile.mesh.position.copy(mPos);
+
+      // Orient missile along track direction
+      const { tan: mtan } = trackFrame(activeMissile.t);
+      activeMissile.mesh.rotation.y = Math.atan2(mtan.x, mtan.z);
+
+      // Check AI hit (T-distance check, wrapping)
+      let hit = false;
+      aiTrucks.forEach(ai => {
+        if (hit || ai.spinTimer > 0) return;
+        const tDiff = ((activeMissile.t - ai.t) + 1.0) % 1.0;
+        const aiPos = worldPos(ai.t, ai.lateral);
+        if (activeMissile.mesh.position.distanceTo(aiPos) < 2.0) {
+          spinOutAI(ai);
+          score += 200;
+          hit = true;
+        }
+      });
+
+      // Travelled too far (>40% of track) without hitting — despawn
+      const travelDist = ((activeMissile.t - playerT) + 1.0) % 1.0;
+      if (hit || travelDist > 0.35) {
+        scene.remove(activeMissile.mesh);
+        activeMissile = null;
+      }
+    }
+
+    // Bombs: tick fuse, check AI contact
+    for (let i = activeBombs.length - 1; i >= 0; i--) {
+      const bomb = activeBombs[i];
+      bomb.timer -= scale;
+      // Blink when nearly expired
+      if (bomb.timer < 90) {
+        bomb.mesh.visible = Math.floor(bomb.timer / 6) % 2 === 0;
+      }
+
+      // Check if any AI drives over it
+      let detonated = false;
+      aiTrucks.forEach(ai => {
+        if (detonated || ai.spinTimer > 0) return;
+        const aiPos = worldPos(ai.t, ai.lateral);
+        if (bomb.mesh.position.distanceTo(aiPos) < 1.8) {
+          spinOutAI(ai);
+          score += 150;
+          detonated = true;
+        }
+      });
+
+      if (detonated || bomb.timer <= 0) {
+        scene.remove(bomb.mesh);
+        activeBombs.splice(i, 1);
+      }
+    }
+
+    updateWeaponHUD();
+
+    // ── Camera: iso follow player
+    const pWorld = worldPos(playerT, playerLateral);
+    camTarget.lerp(pWorld, 1 - Math.pow(1 - 0.08, scale));
+    camera.position.set(
+      camTarget.x + ISO_OFFSET.x,
+      ISO_OFFSET.y,
+      camTarget.z + ISO_OFFSET.z
+    );
+    camera.lookAt(camTarget.x, 0, camTarget.z);
+
+    drawMinimap();
+    updateHUD();
+  }
+
+  renderer.render(scene, camera);
+}
+
+function showFinish() {
+  const ov = document.getElementById('overlay');
+  ov.innerHTML = `
+    <h1 style="font-size:42px">FINISH!</h1>
+    <div class="subtitle">RACE COMPLETE</div>
+    <div class="copy" style="font-size:13px;line-height:2.4">
+      FINAL SCORE: <span style="color:#ffdd00;font-size:18px">${fmtScore(score)}</span><br>
+      LEVEL ${level} COMPLETE
+    </div>
+    <button id="start-btn" onclick="nextLevel()" style="font-family:'Courier New',monospace;background:#ffdd00;color:#000;border:none;padding:14px 52px;font-size:20px;font-weight:bold;letter-spacing:5px;cursor:pointer;box-shadow:4px 4px 0 #cc4400;margin-top:8px">NEXT RACE</button>
+  `;
+  ov.style.display = 'flex';
+  ov.style.position = 'absolute';
+}
+
+function nextLevel() {
+  level++;
+  finishShown = false;
+  startGame();
+}
+
+animate();
+</script>
+</body>
+</html>

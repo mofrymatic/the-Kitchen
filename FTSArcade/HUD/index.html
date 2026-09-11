@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-V90P672EWV"></script>
+    <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-V90P672EWV');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>RED EYE - See More. Capture Truth.</title>
+    <!-- ── Primary Meta ─────────────────────────────────────────────────────── -->
+    <meta name="description" content="RED EYE GAME" />
+
+    <!-- ── Favicons ─────────────────────────────────────────────────────────── -->
+    <link rel="icon" type="image/png" href="../fts-favicon.png">
+    <link rel="shortcut icon" type="image/png" href="../fts-favicon.png">
+    <link rel="apple-touch-icon" href="../fts-favicon.png">
+
+    <!-- ── Open Graph (Facebook, Discord, iMessage, etc.) ────────────────────── -->
+    <meta property="og:title" content="FishTacoStand Arcade">
+    <meta property="og:description" content="Step up to the FishTacoStand Arcade: a retro cabinet hub for Neon Invaders, Astroids, Cave Racer, RED EYE, Packman, Tetris, and more.">
+    <meta property="og:url" content="https://frymatic.us/FTSArcade/REDEYE/redeye-hud.html">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="RED EYE">
+
+    <meta property="og:image" content="https://frymatic.us/FTSArcade/REDEYE/redeye_preview.png">
+    <meta property="og:image:alt" content="Augmented Reality Game">
+    <meta property="og:image:type" content="image/png">
+
+    <!-- ── Twitter / X Card ─────────────────────────────────────────────────── -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Augmented Reality Game">
+    <meta name="twitter:description" content="An Augmented Reality Game">
+    <meta name="twitter:image" content="https://frymatic.us/FTSArcade/REDEYE/redeye_preview.png">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --red-accent: #FF2D2D;
+            --steel-gray: #A6ADB8;
+            --cool-blue: #38B2F6;
+            --dark-bg: #0A0E14;
+            --darker-bg: #060810;
+            --card-bg: rgba(15, 20, 30, 0.85);
+            --border-subtle: rgba(166, 173, 184, 0.15);
+            --text-primary: #FFFFFF;
+            --text-secondary: #A6ADB8;
+            --overlay-dark: rgba(0, 0, 0, 0.7);
+        }
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: var(--darker-bg);
+            color: var(--text-primary);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            position: fixed;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Camera Viewport - Maximum Priority */
+        #camera-container {
+            position: fixed;
+            inset: 0;
+            background: var(--dark-bg);
+            overflow: hidden;
+        }
+
+        #camera-feed {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1); /* Mirror for front camera */
+        }
+
+        /* Minimal HUD Overlay */
+        #hud-overlay {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        /* Top Bar - Edge Mounted */
+        #top-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: max(env(safe-area-inset-top), 1rem) 1rem 0.5rem;
+            background: linear-gradient(180deg, var(--overlay-dark) 0%, transparent 100%);
+            pointer-events: auto;
+        }
+
+        #logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            color: var(--text-primary);
+            text-transform: uppercase;
+        }
+
+        .logo-eye {
+            color: var(--red-accent);
+            display: inline-block;
+            animation: pulse-eye 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse-eye {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        #mode-indicator {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .mode-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--red-accent);
+            animation: blink 1.5s ease-in-out infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* Settings Icon */
+        #settings-btn {
+            pointer-events: auto;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 0.5rem;
+            margin: -0.5rem;
+            transition: all 0.2s ease;
+        }
+
+        #settings-btn:hover {
+            color: var(--text-primary);
+            transform: rotate(90deg);
+        }
+
+        /* Bottom Controls - Edge Mounted */
+        #bottom-controls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0 1rem max(env(safe-area-inset-bottom), 2rem);
+            background: linear-gradient(0deg, var(--overlay-dark) 0%, transparent 100%);
+            pointer-events: auto;
+        }
+
+        /* Mode Switcher */
+        #mode-switcher {
+            display: flex;
+            gap: 2rem;
+            margin-bottom: 1.5rem;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.8rem;
+            font-weight: 500;
+            letter-spacing: 0.1em;
+        }
+
+        .mode-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 0.5rem 1rem;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            position: relative;
+        }
+
+        .mode-btn.active {
+            color: var(--red-accent);
+        }
+
+        .mode-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 4px;
+            background: var(--red-accent);
+            border-radius: 50%;
+        }
+
+        /* Capture Controls */
+        #capture-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        #capture-btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: 4px solid var(--text-primary);
+            background: transparent;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s ease;
+            pointer-events: auto;
+        }
+
+        #capture-btn:active {
+            transform: scale(0.9);
+        }
+
+        #capture-btn::before {
+            content: '';
+            position: absolute;
+            inset: 6px;
+            border-radius: 50%;
+            background: var(--text-primary);
+            transition: all 0.2s ease;
+        }
+
+        #capture-btn:hover::before {
+            background: var(--red-accent);
+        }
+
+        #capture-btn.recording {
+            border-color: var(--red-accent);
+        }
+
+        #capture-btn.recording::before {
+            background: var(--red-accent);
+            border-radius: 8px;
+            animation: pulse 1s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .secondary-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-primary);
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .secondary-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: var(--text-primary);
+        }
+
+        /* Video Timer */
+        #video-timer {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--red-accent);
+            background: var(--card-bg);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 45, 45, 0.3);
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        #video-timer.active {
+            display: flex;
+        }
+
+        .rec-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--red-accent);
+            animation: blink 1s ease-in-out infinite;
+        }
+
+        /* Advanced Controls Layer - Progressive Disclosure */
+        #advanced-controls {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid var(--border-subtle);
+            padding: 1.5rem 1rem max(env(safe-area-inset-bottom), 1.5rem);
+            transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: auto;
+            z-index: 200;
+        }
+
+        #advanced-controls.visible {
+            transform: translateY(0);
+        }
+
+        #toggle-advanced {
+            position: absolute;
+            top: -40px;
+            right: 1rem;
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-primary);
+            padding: 0.5rem 1rem;
+            border-radius: 20px 20px 0 0;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            transition: all 0.2s ease;
+        }
+
+        #toggle-advanced:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .control-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .control-label {
+            font-size: 0.7rem;
+            font-weight: 500;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+        }
+
+        .control-input {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 0.75rem;
+            color: var(--text-primary);
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.85rem;
+            transition: all 0.2s ease;
+        }
+
+        .control-input:focus {
+            outline: none;
+            border-color: var(--red-accent);
+            background: rgba(255, 45, 45, 0.1);
+        }
+
+        select.control-input {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%23A6ADB8' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            padding-right: 2.5rem;
+        }
+
+        /* Scan Mode Overlay */
+        #scan-overlay {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        #scan-overlay.active {
+            display: flex;
+        }
+
+        .scan-frame {
+            width: 250px;
+            height: 250px;
+            border: 2px solid var(--red-accent);
+            border-radius: 12px;
+            position: relative;
+            animation: scan-pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes scan-pulse {
+            0%, 100% { opacity: 0.6; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.02); }
+        }
+
+        .scan-corner {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 3px solid var(--red-accent);
+        }
+
+        .scan-corner.tl { top: -2px; left: -2px; border-right: none; border-bottom: none; }
+        .scan-corner.tr { top: -2px; right: -2px; border-left: none; border-bottom: none; }
+        .scan-corner.bl { bottom: -2px; left: -2px; border-right: none; border-top: none; }
+        .scan-corner.br { bottom: -2px; right: -2px; border-left: none; border-top: none; }
+
+        .scan-line {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--red-accent), transparent);
+            animation: scan-sweep 2s ease-in-out infinite;
+        }
+
+        @keyframes scan-sweep {
+            0%, 100% { transform: translateY(0); opacity: 0; }
+            50% { transform: translateY(245px); opacity: 1; }
+        }
+
+        /* Toast Notifications */
+        #toast-container {
+            position: fixed;
+            bottom: 8rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 300;
+            pointer-events: none;
+        }
+
+        .toast {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-subtle);
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            animation: toast-in 0.3s ease-out;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        @keyframes toast-in {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .toast-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--red-accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        /* Permission Prompt */
+        #permission-prompt {
+            position: fixed;
+            inset: 0;
+            background: var(--darker-bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            z-index: 1000;
+            text-align: center;
+        }
+
+        #permission-prompt.hidden {
+            display: none;
+        }
+
+        .prompt-logo {
+            font-size: 3rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.5rem;
+        }
+
+        .prompt-tagline {
+            color: var(--red-accent);
+            font-size: 0.9rem;
+            font-weight: 500;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            margin-bottom: 3rem;
+        }
+
+        .prompt-text {
+            color: var(--text-secondary);
+            max-width: 400px;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+
+        .enable-camera-btn {
+            background: var(--red-accent);
+            color: var(--text-primary);
+            border: none;
+            padding: 1rem 2.5rem;
+            border-radius: 8px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .enable-camera-btn:hover {
+            background: #ff4444;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255, 45, 45, 0.3);
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            #logo {
+                font-size: 1.2rem;
+            }
+
+            #mode-switcher {
+                gap: 1.5rem;
+                font-size: 0.7rem;
+            }
+
+            #capture-btn {
+                width: 60px;
+                height: 60px;
+            }
+
+            .secondary-btn {
+                width: 40px;
+                height: 40px;
+            }
+
+            .controls-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (orientation: landscape) and (max-height: 500px) {
+            #bottom-controls {
+                padding-bottom: 1rem;
+            }
+
+            #capture-controls {
+                gap: 2rem;
+                margin-bottom: 0.5rem;
+            }
+
+            #mode-switcher {
+                margin-bottom: 0.75rem;
+            }
+        }
+
+        /* Loading State */
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top-color: var(--red-accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 1.5rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Permission Prompt -->
+    <div id="permission-prompt">
+        <div class="prompt-logo">
+            R<span class="logo-eye">E</span>D<span class="logo-eye">E</span>Y<span class="logo-eye">E</span>
+        </div>
+        <div class="prompt-tagline">See More. Capture Truth.</div>
+        <div class="loading-spinner" style="display: none;" id="loading-spinner"></div>
+        <p class="prompt-text">RED EYE transforms your camera into an intelligent, privacy-first visual tool. No uploads. No accounts. No distractions.</p>
+        <button class="enable-camera-btn" id="enable-camera">Enable Camera</button>
+    </div>
+
+    <!-- Camera Container -->
+    <div id="camera-container">
+        <video id="camera-feed" autoplay playsinline></video>
+    </div>
+
+    <!-- HUD Overlay -->
+    <div id="hud-overlay">
+        <!-- Top Bar -->
+        <div id="top-bar">
+            <div id="logo">
+                R<span class="logo-eye">E</span>D<span class="logo-eye">E</span>Y<span class="logo-eye">E</span>
+            </div>
+            <div id="mode-indicator">
+                <span class="mode-dot"></span>
+                <span id="current-mode-text">PHOTO</span>
+            </div>
+            <button id="settings-btn" aria-label="Settings">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path d="M10 12.5C11.3807 12.5 12.5 11.3807 12.5 10C12.5 8.61929 11.3807 7.5 10 7.5C8.61929 7.5 7.5 8.61929 7.5 10C7.5 11.3807 8.61929 12.5 10 12.5Z" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M16.25 10C16.25 10.625 16.75 11.125 17.375 11.125C18 11.125 18.5 10.625 18.5 10C18.5 9.375 18 8.875 17.375 8.875C16.75 8.875 16.25 9.375 16.25 10Z" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M1.5 10C1.5 10.625 2 11.125 2.625 11.125C3.25 11.125 3.75 10.625 3.75 10C3.75 9.375 3.25 8.875 2.625 8.875C2 8.875 1.5 9.375 1.5 10Z" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M8.75 3.125C8.75 3.75 9.25 4.25 9.875 4.25C10.5 4.25 11 3.75 11 3.125C11 2.5 10.5 2 9.875 2C9.25 2 8.75 2.5 8.75 3.125Z" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M8.75 16.875C8.75 17.5 9.25 18 9.875 18C10.5 18 11 17.5 11 16.875C11 16.25 10.5 15.75 9.875 15.75C9.25 15.75 8.75 16.25 8.75 16.875Z" stroke="currentColor" stroke-width="1.5"/>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Video Timer -->
+        <div id="video-timer">
+            <span class="rec-dot"></span>
+            <span id="timer-display">00:00:00</span>
+        </div>
+
+        <!-- Scan Overlay -->
+        <div id="scan-overlay">
+            <div class="scan-frame">
+                <div class="scan-corner tl"></div>
+                <div class="scan-corner tr"></div>
+                <div class="scan-corner bl"></div>
+                <div class="scan-corner br"></div>
+                <div class="scan-line"></div>
+            </div>
+        </div>
+
+        <!-- Bottom Controls -->
+        <div id="bottom-controls">
+            <div id="mode-switcher">
+                <button class="mode-btn" data-mode="scan">Scan</button>
+                <button class="mode-btn active" data-mode="photo">Photo</button>
+                <button class="mode-btn" data-mode="video">Video</button>
+            </div>
+
+            <div id="capture-controls">
+                <button class="secondary-btn" id="gallery-btn" aria-label="Gallery">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <rect x="2" y="2" width="16" height="16" rx="2" stroke="currentColor" stroke-width="1.5"/>
+                        <circle cx="7" cy="7" r="1.5" fill="currentColor"/>
+                        <path d="M2 14L6 10L10 14L14 10L18 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                </button>
+                
+                <button id="capture-btn" aria-label="Capture"></button>
+                
+                <button class="secondary-btn" id="flip-camera-btn" aria-label="Flip Camera">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path d="M15 8L18 5L15 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M5 12L2 15L5 18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M18 5H10C7.23858 5 5 7.23858 5 10V12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                        <path d="M2 15H10C12.7614 15 15 12.7614 15 10V8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                </button>
+            </div>
+
+            <button id="toggle-advanced">••• More</button>
+        </div>
+    </div>
+
+    <!-- Advanced Controls -->
+    <div id="advanced-controls">
+        <div class="controls-grid">
+            <div class="control-item">
+                <label class="control-label">Zoom</label>
+                <input type="range" class="control-input" id="zoom-control" min="1" max="3" step="0.1" value="1">
+            </div>
+            <div class="control-item">
+                <label class="control-label">Exposure</label>
+                <input type="range" class="control-input" id="exposure-control" min="-2" max="2" step="0.1" value="0">
+            </div>
+            <div class="control-item">
+                <label class="control-label">Resolution</label>
+                <select class="control-input" id="resolution-control">
+                    <option value="1080">1080p</option>
+                    <option value="720">720p</option>
+                    <option value="480">480p</option>
+                </select>
+            </div>
+            <div class="control-item">
+                <label class="control-label">Grid</label>
+                <select class="control-input" id="grid-control">
+                    <option value="none">None</option>
+                    <option value="3x3">3×3</option>
+                    <option value="4x4">4×4</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
+
+    <script>
+        // State Management
+        const state = {
+            currentMode: 'photo',
+            isRecording: false,
+            stream: null,
+            facingMode: 'user',
+            recordingStartTime: null,
+            timerInterval: null
+        };
+
+        // Elements
+        const elements = {
+            permissionPrompt: document.getElementById('permission-prompt'),
+            enableCameraBtn: document.getElementById('enable-camera'),
+            loadingSpinner: document.getElementById('loading-spinner'),
+            cameraFeed: document.getElementById('camera-feed'),
+            captureBtn: document.getElementById('capture-btn'),
+            modeBtns: document.querySelectorAll('.mode-btn'),
+            modeIndicatorText: document.getElementById('current-mode-text'),
+            scanOverlay: document.getElementById('scan-overlay'),
+            videoTimer: document.getElementById('video-timer'),
+            timerDisplay: document.getElementById('timer-display'),
+            flipCameraBtn: document.getElementById('flip-camera-btn'),
+            toggleAdvancedBtn: document.getElementById('toggle-advanced'),
+            advancedControls: document.getElementById('advanced-controls'),
+            toastContainer: document.getElementById('toast-container')
+        };
+
+        // Initialize Camera
+        async function initCamera() {
+            try {
+                elements.loadingSpinner.style.display = 'block';
+                
+                const constraints = {
+                    video: {
+                        facingMode: state.facingMode,
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 }
+                    },
+                    audio: state.currentMode === 'video'
+                };
+
+                state.stream = await navigator.mediaDevices.getUserMedia(constraints);
+                elements.cameraFeed.srcObject = state.stream;
+                
+                elements.permissionPrompt.classList.add('hidden');
+                showToast('Camera ready');
+            } catch (error) {
+                console.error('Camera access error:', error);
+                showToast('Camera access denied');
+            } finally {
+                elements.loadingSpinner.style.display = 'none';
+            }
+        }
+
+        // Mode Switching
+        function switchMode(mode) {
+            state.currentMode = mode;
+            
+            // Update UI
+            elements.modeBtns.forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.mode === mode);
+            });
+            
+            elements.modeIndicatorText.textContent = mode.toUpperCase();
+            elements.scanOverlay.classList.toggle('active', mode === 'scan');
+            
+            // Reset recording if switching away from video
+            if (mode !== 'video' && state.isRecording) {
+                stopRecording();
+            }
+        }
+
+        // Capture Functions
+        function capture() {
+            switch (state.currentMode) {
+                case 'scan':
+                    performScan();
+                    break;
+                case 'photo':
+                    takePhoto();
+                    break;
+                case 'video':
+                    toggleRecording();
+                    break;
+            }
+        }
+
+        function performScan() {
+            showToast('Scanning for QR codes...');
+            // QR code detection would go here
+            setTimeout(() => {
+                showToast('No QR codes detected');
+            }, 1500);
+        }
+
+        function takePhoto() {
+            const canvas = document.createElement('canvas');
+            canvas.width = elements.cameraFeed.videoWidth;
+            canvas.height = elements.cameraFeed.videoHeight;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.scale(-1, 1); // Mirror back
+            ctx.drawImage(elements.cameraFeed, -canvas.width, 0, canvas.width, canvas.height);
+            
+            // Create download
+            canvas.toBlob(blob => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `redeye-photo-${Date.now()}.png`;
+                a.click();
+                
+                showToast('Photo captured');
+            }, 'image/png');
+        }
+
+        function toggleRecording() {
+            if (state.isRecording) {
+                stopRecording();
+            } else {
+                startRecording();
+            }
+        }
+
+        function startRecording() {
+            state.isRecording = true;
+            state.recordingStartTime = Date.now();
+            
+            elements.captureBtn.classList.add('recording');
+            elements.videoTimer.classList.add('active');
+            
+            // Start timer
+            state.timerInterval = setInterval(updateTimer, 100);
+            
+            showToast('Recording started');
+            
+            // MediaRecorder would go here for actual recording
+        }
+
+        function stopRecording() {
+            state.isRecording = false;
+            
+            elements.captureBtn.classList.remove('recording');
+            elements.videoTimer.classList.remove('active');
+            
+            clearInterval(state.timerInterval);
+            elements.timerDisplay.textContent = '00:00:00';
+            
+            showToast('Recording stopped');
+        }
+
+        function updateTimer() {
+            const elapsed = Date.now() - state.recordingStartTime;
+            const hours = Math.floor(elapsed / 3600000);
+            const minutes = Math.floor((elapsed % 3600000) / 60000);
+            const seconds = Math.floor((elapsed % 60000) / 1000);
+            
+            elements.timerDisplay.textContent = 
+                `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        // Camera Flip
+        async function flipCamera() {
+            state.facingMode = state.facingMode === 'user' ? 'environment' : 'user';
+            
+            // Stop current stream
+            if (state.stream) {
+                state.stream.getTracks().forEach(track => track.stop());
+            }
+            
+            // Restart with new facing mode
+            await initCamera();
+            showToast(`Switched to ${state.facingMode === 'user' ? 'front' : 'back'} camera`);
+        }
+
+        // Toast Notifications
+        function showToast(message, duration = 2000) {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerHTML = `
+                <div class="toast-icon">✓</div>
+                <span>${message}</span>
+            `;
+            
+            elements.toastContainer.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'toast-in 0.3s ease-out reverse';
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
+        }
+
+        // Event Listeners
+        elements.enableCameraBtn.addEventListener('click', initCamera);
+        elements.captureBtn.addEventListener('click', capture);
+        elements.flipCameraBtn.addEventListener('click', flipCamera);
+
+        elements.modeBtns.forEach(btn => {
+            btn.addEventListener('click', () => switchMode(btn.dataset.mode));
+        });
+
+        elements.toggleAdvancedBtn.addEventListener('click', () => {
+            elements.advancedControls.classList.toggle('visible');
+            elements.toggleAdvancedBtn.textContent = 
+                elements.advancedControls.classList.contains('visible') ? '••• Less' : '••• More';
+        });
+
+        elements.galleryBtn.addEventListener('click', () => {
+            showToast('Gallery feature coming soon');
+        });
+
+        elements.settingsBtn.addEventListener('click', () => {
+            showToast('Settings feature coming soon');
+        });
+
+        // Zoom control
+        document.getElementById('zoom-control').addEventListener('input', (e) => {
+            const zoom = e.target.value;
+            elements.cameraFeed.style.transform = `scaleX(-1) scale(${zoom})`;
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                capture();
+            } else if (e.code === 'Digit1') {
+                switchMode('scan');
+            } else if (e.code === 'Digit2') {
+                switchMode('photo');
+            } else if (e.code === 'Digit3') {
+                switchMode('video');
+            } else if (e.code === 'KeyF') {
+                flipCamera();
+            }
+        });
+
+        // Prevent default touch behaviors
+        document.addEventListener('touchmove', (e) => {
+            if (e.scale !== 1) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+    </script>
+</body>
+</html>

@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>SOVTHPAW'S ZOMBIE GOLF SURVIVAL · Cart Handling Lab</title>
+<style>
+  :root {
+    --ink:#e8e0cb;
+    --muted:#a89e87;
+    --acid:#d8ff57;
+    --blood:#cf3b2e;
+    --panel:rgba(12,14,12,.78);
+    --line:rgba(232,224,203,.18);
+  }
+  * { box-sizing:border-box; }
+  html, body { margin:0; width:100%; height:100%; overflow:hidden; background:#10130f; color:var(--ink); font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  canvas { display:block; width:100%; height:100%; }
+  #hud { position:fixed; inset:0; pointer-events:none; user-select:none; }
+  .brand { position:absolute; left:22px; top:18px; padding:12px 14px 10px; background:linear-gradient(180deg,rgba(12,14,12,.88),rgba(12,14,12,.58)); border:1px solid var(--line); box-shadow:0 16px 48px rgba(0,0,0,.28); backdrop-filter:blur(8px); }
+  .brand .eyebrow { font-size:10px; letter-spacing:.24em; text-transform:uppercase; color:var(--acid); }
+  .brand h1 { margin:3px 0 0; font-family:Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif; font-size:24px; letter-spacing:.045em; font-weight:500; }
+  .brand .sub { margin-top:3px; font-size:11px; color:var(--muted); letter-spacing:.08em; text-transform:uppercase; }
+  .telemetry { position:absolute; left:22px; bottom:20px; width:min(360px, calc(100vw - 44px)); display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .card { padding:10px 12px; background:var(--panel); border:1px solid var(--line); backdrop-filter:blur(8px); box-shadow:0 12px 38px rgba(0,0,0,.25); }
+  .label { color:var(--muted); font-size:9px; letter-spacing:.17em; text-transform:uppercase; }
+  .value { margin-top:2px; font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size:20px; font-weight:800; }
+  .bar { margin-top:7px; height:5px; background:rgba(255,255,255,.08); overflow:hidden; }
+  .fill { width:0%; height:100%; background:var(--acid); transition:width .08s linear; }
+  .surface { color:var(--acid); }
+  .danger { color:#ff735f!important; }
+  .controls { position:absolute; right:20px; top:18px; width:260px; padding:12px 14px; background:var(--panel); border:1px solid var(--line); backdrop-filter:blur(8px); }
+  .controls h2 { margin:0 0 8px; font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
+  .controls dl { margin:0; display:grid; grid-template-columns:72px 1fr; gap:4px 10px; font-size:11px; }
+  .controls dt { font-family:ui-monospace, monospace; color:var(--acid); }
+  .controls dd { margin:0; color:#d0c8b6; }
+  #message { position:absolute; left:50%; top:17%; transform:translateX(-50%); text-align:center; opacity:0; transition:opacity .2s ease; text-shadow:0 4px 14px #000; }
+  #message strong { display:block; font:500 42px/1 Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif; letter-spacing:.06em; }
+  #message span { display:block; margin-top:6px; font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--acid); }
+  .reticle { position:absolute; left:50%; top:50%; width:10px; height:10px; transform:translate(-50%,-50%); opacity:.25; }
+  .reticle::before,.reticle::after { content:""; position:absolute; background:#fff; }
+  .reticle::before { left:4px; top:0; width:2px; height:10px; }
+  .reticle::after { left:0; top:4px; width:10px; height:2px; }
+  #mobile { display:none; position:absolute; inset:auto 0 14px; padding:0 14px; justify-content:space-between; align-items:end; pointer-events:auto; }
+  .pad { display:grid; grid-template-columns:58px 58px; gap:8px; }
+  .pedals { display:grid; grid-template-columns:62px 62px; gap:8px; }
+  .btn { height:58px; border:1px solid rgba(255,255,255,.22); background:rgba(10,12,10,.66); color:var(--ink); border-radius:14px; display:grid; place-items:center; font-weight:900; touch-action:none; backdrop-filter:blur(7px); }
+  .btn.active { background:rgba(216,255,87,.28); border-color:var(--acid); }
+  @media (max-width: 760px), (pointer:coarse) {
+    .controls { display:none; }
+    .telemetry { bottom:88px; grid-template-columns:repeat(2,1fr); }
+    #mobile { display:flex; }
+    .brand h1 { font-size:20px; }
+  }
+</style>
+</head>
+<body>
+<div id="hud">
+  <div class="brand">
+    <div class="eyebrow">FTS Arcade · Handling Prototype</div>
+    <h1>ZOMBIE GOLF SURVIVAL</h1>
+    <div class="sub">Granite Bay Cart Trial · State 02</div>
+  </div>
+
+  <div class="controls">
+    <h2>Cart controls</h2>
+    <dl>
+      <dt>W / ↑</dt><dd>Throttle</dd>
+      <dt>S / ↓</dt><dd>Brake / reverse</dd>
+      <dt>A D</dt><dd>Steer</dd>
+      <dt>SPACE</dt><dd>Handbrake</dd>
+      <dt>C</dt><dd>Camera distance</dd>
+      <dt>R</dt><dd>Recover cart</dd>
+    </dl>
+  </div>
+
+  <div class="telemetry">
+    <div class="card"><div class="label">Speed</div><div id="speed" class="value">00 MPH</div><div class="bar"><div id="speedFill" class="fill"></div></div></div>
+    <div class="card"><div class="label">Terrain</div><div id="surface" class="value surface">FAIRWAY</div></div>
+    <div class="card"><div class="label">Body Roll</div><div id="roll" class="value">0°</div><div class="bar"><div id="rollFill" class="fill"></div></div></div>
+    <div class="card"><div class="label">Traction</div><div id="traction" class="value">100%</div><div class="bar"><div id="tractionFill" class="fill"></div></div></div>
+  </div>
+
+  <div id="message"><strong></strong><span></span></div>
+  <div class="reticle"></div>
+
+  <div id="mobile">
+    <div class="pad"><div class="btn" data-key="left">◀</div><div class="btn" data-key="right">▶</div></div>
+    <div class="pedals"><div class="btn" data-key="brake">BRAKE</div><div class="btn" data-key="gas">GAS</div></div>
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js';
+
+const clamp = THREE.MathUtils.clamp;
+const lerp = THREE.MathUtils.lerp;
+const smoothstep = THREE.MathUtils.smoothstep;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x879b78);
+scene.fog = new THREE.FogExp2(0x879b78, 0.0058);
+
+const renderer = new THREE.WebGLRenderer({ antialias:true, powerPreference:'high-performance' });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+document.body.prepend(renderer.domElement);
+
+const camera = new THREE.PerspectiveCamera(62, innerWidth/innerHeight, .1, 800);
+
+scene.add(new THREE.HemisphereLight(0xd8e3c4, 0x33402f, 2.1));
+const sun = new THREE.DirectionalLight(0xfff2d0, 3.0);
+sun.position.set(-70, 105, 40);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048,2048);
+sun.shadow.camera.left = -110;
+sun.shadow.camera.right = 110;
+sun.shadow.camera.top = 110;
+sun.shadow.camera.bottom = -110;
+scene.add(sun);
+
+// -----------------------------------------------------------------------------
+// Granite Bay-inspired course terrain. The reference is used as a spatial mood:
+// rolling fairways, mature trees, bunkers, paths, and water threading the course.
+// -----------------------------------------------------------------------------
+const COURSE = 260;
+function terrainHeight(x,z){
+  const broad = Math.sin(x*.024)*2.2 + Math.cos(z*.028)*1.7;
+  const rolls = Math.sin((x+z)*.055)*.75 + Math.cos((x-z)*.041)*.62;
+  const ridge = 3.2*Math.exp(-((x+58)**2 + (z-18)**2)/1900);
+  const basin = -2.7*Math.exp(-((x-28)**2 + (z+14)**2)/1200);
+  return broad + rolls + ridge + basin;
+}
+
+const fairwayCenters = [
+  new THREE.Vector2(-86,-72), new THREE.Vector2(-65,-45), new THREE.Vector2(-44,-22),
+  new THREE.Vector2(-15,-3), new THREE.Vector2(18,8), new THREE.Vector2(52,19),
+  new THREE.Vector2(78,42), new THREE.Vector2(66,74), new THREE.Vector2(33,90)
+];
+const waterZones = [
+  {x:12,z:39,rx:18,rz:34},
+  {x:79,z:-48,rx:20,rz:13}
+];
+const sandZones = [
+  {x:-45,z:-12,rx:11,rz:5,rot:.35}, {x:-5,z:3,rx:8,rz:4,rot:-.2},
+  {x:47,z:26,rx:10,rz:5,rot:.8}, {x:70,z:70,rx:8,rz:4,rot:-.5},
+  {x:-76,z:-62,rx:7,rz:4,rot:.15}, {x:29,z:-66,rx:13,rz:5,rot:.1}
+];
+
+function distanceToFairway(x,z){
+  let best = Infinity;
+  for(let i=0;i<fairwayCenters.length-1;i++){
+    const a=fairwayCenters[i], b=fairwayCenters[i+1];
+    const abx=b.x-a.x, abz=b.y-a.y;
+    const t=clamp(((x-a.x)*abx+(z-a.y)*abz)/(abx*abx+abz*abz),0,1);
+    const px=a.x+abx*t, pz=a.y+abz*t;
+    best=Math.min(best,Math.hypot(x-px,z-pz));
+  }
+  return best;
+}
+function pointInEllipse(x,z,e){
+  const c=Math.cos(e.rot||0), s=Math.sin(e.rot||0);
+  const dx=x-e.x, dz=z-e.z;
+  const lx=dx*c+dz*s, lz=-dx*s+dz*c;
+  return (lx*lx)/(e.rx*e.rx)+(lz*lz)/(e.rz*e.rz) <= 1;
+}
+function getSurface(x,z){
+  if(waterZones.some(e=>pointInEllipse(x,z,e))) return {name:'WATER', grip:.25, drag:7.5, accel:.12, color:0x567a7c};
+  if(sandZones.some(e=>pointInEllipse(x,z,e))) return {name:'BUNKER', grip:.56, drag:3.8, accel:.45, color:0xc9b47b};
+  const d=distanceToFairway(x,z);
+  if(d<10) return {name:'FAIRWAY', grip:1.00, drag:.55, accel:1.00, color:0x668e43};
+  if(d<18) return {name:'FIRST CUT', grip:.86, drag:1.05, accel:.86, color:0x55763c};
+  return {name:'ROUGH', grip:.68, drag:1.65, accel:.66, color:0x3d5d35};
+}
+
+const terrainGeo = new THREE.PlaneGeometry(COURSE, COURSE, 150,150);
+terrainGeo.rotateX(-Math.PI/2);
+const pos = terrainGeo.attributes.position;
+const colors=[];
+for(let i=0;i<pos.count;i++){
+  const x=pos.getX(i), z=pos.getZ(i);
+  const h=terrainHeight(x,z);
+  pos.setY(i,h);
+  const s=getSurface(x,z);
+  const c=new THREE.Color(s.color);
+  const noise=(Math.sin(x*1.71+z*.93)+Math.sin(z*2.13-x*.37))*0.018;
+  c.offsetHSL(0,0,noise);
+  colors.push(c.r,c.g,c.b);
+}
+terrainGeo.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+terrainGeo.computeVertexNormals();
+const terrain = new THREE.Mesh(terrainGeo,new THREE.MeshStandardMaterial({vertexColors:true,roughness:1,metalness:0}));
+terrain.receiveShadow=true;
+scene.add(terrain);
+
+function ellipseMesh(zone, material, yOffset=.05, segments=64){
+  const g=new THREE.CircleGeometry(1,segments);
+  g.rotateX(-Math.PI/2);
+  const m=new THREE.Mesh(g,material);
+  m.scale.set(zone.rx,zone.rz,1);
+  m.rotation.y=-(zone.rot||0);
+  m.position.set(zone.x, terrainHeight(zone.x,zone.z)+yOffset, zone.z);
+  m.receiveShadow=true;
+  scene.add(m);
+  return m;
+}
+const waterMat = new THREE.MeshPhysicalMaterial({color:0x355f63,roughness:.18,metalness:.05,transparent:true,opacity:.88});
+const sandMat = new THREE.MeshStandardMaterial({color:0xc9b47b,roughness:1});
+waterZones.forEach(z=>ellipseMesh(z,waterMat,.16));
+sandZones.forEach(z=>ellipseMesh(z,sandMat,.10));
+
+// Cart paths
+const pathMat = new THREE.MeshStandardMaterial({color:0x66665f,roughness:1});
+function addPath(points,width=3.0){
+  const curve = new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(p[0],terrainHeight(p[0],p[1])+.08,p[1])));
+  const mesh = new THREE.Mesh(new THREE.TubeGeometry(curve,100,width,8,false),pathMat);
+  mesh.scale.y=.07;
+  mesh.receiveShadow=true;
+  scene.add(mesh);
+}
+addPath([[-105,-85],[-76,-58],[-55,-29],[-19,-8],[14,3],[49,13],[84,38],[78,78],[47,104]],1.8);
+addPath([[25,-105],[18,-74],[8,-42],[-5,-20],[-22,4],[-41,31],[-42,68]],1.55);
+
+// Trees and collision circles
+const obstacles=[];
+const trunkGeo=new THREE.CylinderGeometry(.45,.68,5.5,7);
+const crownGeo=new THREE.IcosahedronGeometry(2.8,1);
+const trunkMat=new THREE.MeshStandardMaterial({color:0x5a422e,roughness:1});
+const leafMats=[0x28452a,0x355b31,0x426537].map(c=>new THREE.MeshStandardMaterial({color:c,roughness:1}));
+function addTree(x,z,scale=1){
+  if(getSurface(x,z).name==='WATER') return;
+  const y=terrainHeight(x,z);
+  const group=new THREE.Group();
+  const trunk=new THREE.Mesh(trunkGeo,trunkMat); trunk.position.y=2.75; trunk.castShadow=true;
+  const crown=new THREE.Mesh(crownGeo,leafMats[(Math.abs((x*13+z*7)|0))%leafMats.length]);
+  crown.position.y=6.4; crown.scale.set(1.1,.9,1.1); crown.castShadow=true;
+  group.add(trunk,crown); group.position.set(x,y,z); group.scale.setScalar(scale); scene.add(group);
+  obstacles.push({x,z,r:1.3*scale});
+}
+for(let i=0;i<145;i++){
+  const x=(Math.random()-.5)*238, z=(Math.random()-.5)*238;
+  const d=distanceToFairway(x,z);
+  if(d<17 || waterZones.some(e=>pointInEllipse(x,z,e)) || sandZones.some(e=>pointInEllipse(x,z,e))) continue;
+  addTree(x,z,.72+Math.random()*.7);
+}
+// Deliberately placed tree lines
+for(let z=-95;z<110;z+=12){ addTree(-116+Math.sin(z)*3,z,.85); addTree(116+Math.cos(z)*3,z,.9); }
+
+// Checkpoint pennants make a useful handling loop.
+const gates=[[-82,-67],[-58,-40],[-31,-15],[3,1],[37,12],[66,31],[79,59],[62,86],[33,98]];
+function addGate(x,z,i){
+  const y=terrainHeight(x,z);
+  const poleMat=new THREE.MeshStandardMaterial({color:0xe6dec8,roughness:.8});
+  const pole=new THREE.Mesh(new THREE.CylinderGeometry(.06,.06,4,8),poleMat);
+  pole.position.set(x,y+2,z); pole.castShadow=true; scene.add(pole);
+  const flag=new THREE.Mesh(new THREE.PlaneGeometry(1.6,.75),new THREE.MeshStandardMaterial({color:i%2?0xd8ff57:0xcf3b2e,side:THREE.DoubleSide}));
+  flag.position.set(x+.8,y+3.45,z); flag.rotation.y=Math.PI/2; scene.add(flag);
+  const ring=new THREE.Mesh(new THREE.RingGeometry(3.2,3.5,40),new THREE.MeshBasicMaterial({color:0xd8ff57,transparent:true,opacity:.45,side:THREE.DoubleSide}));
+  ring.rotation.x=-Math.PI/2; ring.position.set(x,y+.18,z); scene.add(ring);
+}
+gates.forEach((g,i)=>addGate(g[0],g[1],i));
+
+// -----------------------------------------------------------------------------
+// Golf cart visual rig. Physics is intentionally custom and tunable rather than
+// a black-box rigid body: slip, steering, suspension feel, and rollover are clear.
+// -----------------------------------------------------------------------------
+const cartRoot = new THREE.Group();
+const cartBody = new THREE.Group();
+cartRoot.add(cartBody);
+scene.add(cartRoot);
+
+const chassisMat=new THREE.MeshStandardMaterial({color:0xe9dfc7,roughness:.62,metalness:.08});
+const trimMat=new THREE.MeshStandardMaterial({color:0x181a17,roughness:.72});
+const redMat=new THREE.MeshStandardMaterial({color:0x9d2b26,roughness:.65});
+function box(w,h,d,mat,x,y,z){ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat); m.position.set(x,y,z); m.castShadow=true; m.receiveShadow=true; cartBody.add(m); return m; }
+box(2.45,.48,4.0,chassisMat,0,1.05,0);
+box(2.25,.62,1.55,redMat,0,1.55,.35);
+box(2.20,.28,1.3,trimMat,0,2.05,.58);
+box(2.55,.14,3.25,chassisMat,0,3.32,-.02);
+box(.12,2.0,.12,trimMat,-1.02,2.35,-1.32);
+box(.12,2.0,.12,trimMat,1.02,2.35,-1.32);
+box(.12,2.0,.12,trimMat,-1.02,2.35,1.26);
+box(.12,2.0,.12,trimMat,1.02,2.35,1.26);
+const bumper=box(2.55,.35,.26,trimMat,0,.82,-2.03);
+const wheelGeo=new THREE.CylinderGeometry(.48,.48,.34,18); wheelGeo.rotateZ(Math.PI/2);
+const wheelMat=new THREE.MeshStandardMaterial({color:0x111310,roughness:.95});
+const wheels=[];
+for(const x of [-1.22,1.22]) for(const z of [-1.25,1.25]){
+  const pivot=new THREE.Group(); pivot.position.set(x,.68,z); cartBody.add(pivot);
+  const wheel=new THREE.Mesh(wheelGeo,wheelMat); wheel.castShadow=true; pivot.add(wheel);
+  wheels.push({pivot,wheel,front:z<0});
+}
+// steering wheel
+const steerWheel=new THREE.Mesh(new THREE.TorusGeometry(.33,.045,8,20),trimMat); steerWheel.position.set(-.55,2.25,-.58); steerWheel.rotation.x=Math.PI/2.6; cartBody.add(steerWheel);
+
+const state={
+  pos:new THREE.Vector3(-91,0,-78),
+  yaw:-.75,
+  speed:0,
+  steer:0,
+  roll:0,
+  pitch:0,
+  rollVel:0,
+  yawRate:0,
+  lateralSlip:0,
+  tipped:false,
+  tipTimer:0,
+  gate:0,
+  cameraMode:0
+};
+state.pos.y=terrainHeight(state.pos.x,state.pos.z)+.72;
+
+const input={gas:false,brake:false,left:false,right:false,handbrake:false};
+const keyMap={KeyW:'gas',ArrowUp:'gas',KeyS:'brake',ArrowDown:'brake',KeyA:'left',ArrowLeft:'left',KeyD:'right',ArrowRight:'right',Space:'handbrake'};
+addEventListener('keydown',e=>{
+  if(keyMap[e.code]){input[keyMap[e.code]]=true;e.preventDefault();}
+  if(!e.repeat && e.code==='KeyR') recover();
+  if(!e.repeat && e.code==='KeyC') state.cameraMode=(state.cameraMode+1)%3;
+});
+addEventListener('keyup',e=>{ if(keyMap[e.code]){input[keyMap[e.code]]=false;e.preventDefault();} });
+for(const b of document.querySelectorAll('.btn')){
+  const map={gas:'gas',brake:'brake',left:'left',right:'right'};
+  const k=map[b.dataset.key];
+  const on=e=>{e.preventDefault(); input[k]=true; b.classList.add('active');};
+  const off=e=>{e.preventDefault(); input[k]=false; b.classList.remove('active');};
+  b.addEventListener('pointerdown',on); b.addEventListener('pointerup',off); b.addEventListener('pointercancel',off); b.addEventListener('pointerleave',off);
+}
+
+let msgTimer=0;
+function flash(title,sub=''){
+  const el=document.querySelector('#message');
+  el.querySelector('strong').textContent=title;
+  el.querySelector('span').textContent=sub;
+  el.style.opacity=1; msgTimer=1.8;
+}
+function recover(){
+  const g=gates[Math.max(0,state.gate-1)]||gates[0];
+  state.pos.set(g[0],terrainHeight(g[0],g[1])+.72,g[1]);
+  state.speed=0; state.roll=0; state.pitch=0; state.rollVel=0; state.tipped=false; state.tipTimer=0;
+  flash('CART RECOVERED','Back on all four wheels');
+}
+
+function slopeAt(x,z){
+  const e=.35;
+  return {
+    dx:(terrainHeight(x+e,z)-terrainHeight(x-e,z))/(2*e),
+    dz:(terrainHeight(x,z+e)-terrainHeight(x,z-e))/(2*e)
+  };
+}
+
+const clock=new THREE.Clock();
+const camPos=new THREE.Vector3(), camTarget=new THREE.Vector3();
+function updatePhysics(dt){
+  dt=Math.min(dt,.035);
+  const surf=getSurface(state.pos.x,state.pos.z);
+  const steerInput=(input.left?1:0)-(input.right?1:0);
+  const steerLimit=lerp(.72,.28,clamp(Math.abs(state.speed)/21,0,1));
+  state.steer=lerp(state.steer,steerInput*steerLimit,1-Math.exp(-dt*7));
+
+  let drive=0;
+  if(input.gas) drive += state.speed<-1 ? 15 : 8.6;
+  if(input.brake) drive += state.speed>1 ? -18 : -5.8;
+  drive*=surf.accel;
+
+  const slope=slopeAt(state.pos.x,state.pos.z);
+  const fwdX=Math.sin(state.yaw), fwdZ=Math.cos(state.yaw);
+  const grade=slope.dx*fwdX+slope.dz*fwdZ;
+  const gravityAlong=-grade*7.0;
+  const aero=.017*state.speed*Math.abs(state.speed);
+  const rolling=surf.drag*Math.sign(state.speed)*(Math.abs(state.speed)>.05?1:0);
+  state.speed += (drive + gravityAlong - aero - rolling)*dt;
+  state.speed=clamp(state.speed,-9,25);
+  if(!input.gas&&!input.brake&&Math.abs(state.speed)<.08) state.speed=0;
+
+  const handGrip=input.handbrake?.28:1;
+  const speedAbs=Math.abs(state.speed);
+  const steerAuthority=clamp(speedAbs/2.5,0,1);
+  const targetYawRate=state.steer*state.speed*.082*steerAuthority;
+  state.yawRate=lerp(state.yawRate,targetYawRate,1-Math.exp(-dt*(5.2*surf.grip*handGrip+1)));
+
+  // Lateral slip is the ingredient that makes this feel more Warthog-like than kart-like.
+  const slipDemand=Math.abs(state.yawRate)*speedAbs*.065;
+  const grip=surf.grip*handGrip;
+  state.lateralSlip=lerp(state.lateralSlip,clamp(slipDemand*(1.25-grip),0,.78),1-Math.exp(-dt*4));
+  state.yaw += state.yawRate*dt*(1+state.lateralSlip*.8);
+
+  const lateralX=Math.cos(state.yaw), lateralZ=-Math.sin(state.yaw);
+  state.pos.x += (fwdX*state.speed + lateralX*state.speed*state.lateralSlip*Math.sign(state.steer)*.18)*dt;
+  state.pos.z += (fwdZ*state.speed + lateralZ*state.speed*state.lateralSlip*Math.sign(state.steer)*.18)*dt;
+
+  // Tree collisions: soft impulse, not a hard dead stop.
+  for(const o of obstacles){
+    const dx=state.pos.x-o.x,dz=state.pos.z-o.z, dist=Math.hypot(dx,dz), min=o.r+1.15;
+    if(dist<min){
+      const nx=dx/(dist||1),nz=dz/(dist||1); state.pos.x=o.x+nx*min; state.pos.z=o.z+nz*min;
+      state.speed*=-.18; state.yawRate+=((Math.random()-.5)*1.2); flash('TREE CHECK','The cart remains technically operable'); break;
+    }
+  }
+
+  // Course boundary
+  if(Math.abs(state.pos.x)>124||Math.abs(state.pos.z)>124){ state.pos.x=clamp(state.pos.x,-124,124); state.pos.z=clamp(state.pos.z,-124,124); state.speed*=-.25; }
+
+  const newH=terrainHeight(state.pos.x,state.pos.z)+.72;
+  state.pos.y=lerp(state.pos.y,newH,1-Math.exp(-dt*13));
+
+  const lateralAccel=state.yawRate*state.speed;
+  const slopeRoll=Math.atan((slope.dx*Math.cos(state.yaw)-slope.dz*Math.sin(state.yaw)))*.55;
+  const targetRoll=clamp(-lateralAccel*.055 + slopeRoll,-1.1,1.1);
+  state.rollVel += (targetRoll-state.roll)*dt*18;
+  state.rollVel *= Math.exp(-dt*5.5);
+  state.roll += state.rollVel*dt;
+  const targetPitch=clamp(Math.atan(grade)*.72,-.38,.38);
+  state.pitch=lerp(state.pitch,targetPitch,1-Math.exp(-dt*6));
+
+  // Top-heavy rollover envelope. A slide can save you; abrupt high-grip turns cannot.
+  const rolloverLoad=Math.abs(lateralAccel)*surf.grip + Math.abs(state.roll)*8.5;
+  if(!state.tipped && rolloverLoad>11.8 && speedAbs>9){
+    state.tipTimer += dt*(rolloverLoad-11.8);
+    if(state.tipTimer>.2){ state.tipped=true; state.rollVel += Math.sign(state.roll||-state.steer)*5.2; flash('ROLLOVER','Press R to recover'); }
+  } else state.tipTimer=Math.max(0,state.tipTimer-dt*2);
+  if(state.tipped){ state.rollVel+=Math.sign(state.roll||1)*dt*1.4; state.speed*=Math.exp(-dt*2.8); }
+
+  // Water kills momentum and requests recovery.
+  if(surf.name==='WATER' && speedAbs<1.5){ flash('CART SUBMERGED','Press R to recover'); }
+
+  // Gates
+  const g=gates[state.gate];
+  if(g && Math.hypot(state.pos.x-g[0],state.pos.z-g[1])<4.5){
+    state.gate++;
+    if(state.gate>=gates.length){ flash('HANDLING LOOP COMPLETE','Run it again, faster and cleaner'); state.gate=0; }
+    else flash(`CHECKPOINT ${state.gate}/${gates.length}`,'Keep the shiny side up');
+  }
+}
+
+function updateVisual(dt){
+  cartRoot.position.copy(state.pos);
+  cartRoot.rotation.y=state.yaw;
+  const suspensionBob=Math.sin(performance.now()*.012*Math.max(1,Math.abs(state.speed)))*Math.min(.045,Math.abs(state.speed)*.002);
+  cartBody.position.y=suspensionBob;
+  cartBody.rotation.z=state.roll;
+  cartBody.rotation.x=state.pitch;
+  for(const w of wheels){
+    if(w.front) w.pivot.rotation.y=-state.steer*.9;
+    w.wheel.rotation.x -= state.speed*dt/0.48;
+  }
+  steerWheel.rotation.z=-state.steer*2.2;
+
+  const modes=[{d:10.5,h:5.1},{d:16,h:8.2},{d:7.2,h:3.2}];
+  const mode=modes[state.cameraMode];
+  const fwd=new THREE.Vector3(Math.sin(state.yaw),0,Math.cos(state.yaw));
+  const right=new THREE.Vector3(Math.cos(state.yaw),0,-Math.sin(state.yaw));
+  camPos.copy(state.pos).addScaledVector(fwd,-mode.d).addScaledVector(right,state.steer*1.1).add(new THREE.Vector3(0,mode.h,0));
+  camTarget.copy(state.pos).addScaledVector(fwd,5.0).add(new THREE.Vector3(0,1.45,0));
+  camera.position.lerp(camPos,1-Math.exp(-dt*5.2));
+  const look=new THREE.Vector3(); camera.getWorldDirection(look); look.multiplyScalar(10).add(camera.position);
+  look.lerp(camTarget,1-Math.exp(-dt*7)); camera.lookAt(look);
+}
+
+const speedEl=document.querySelector('#speed'), speedFill=document.querySelector('#speedFill');
+const surfaceEl=document.querySelector('#surface'), rollEl=document.querySelector('#roll'), rollFill=document.querySelector('#rollFill');
+const tractionEl=document.querySelector('#traction'), tractionFill=document.querySelector('#tractionFill');
+function updateHUD(){
+  const mph=Math.round(Math.abs(state.speed)*2.237);
+  const surf=getSurface(state.pos.x,state.pos.z);
+  const rollDeg=Math.round(Math.abs(THREE.MathUtils.radToDeg(state.roll)));
+  speedEl.textContent=String(mph).padStart(2,'0')+' MPH'; speedFill.style.width=clamp(mph/56*100,0,100)+'%';
+  surfaceEl.textContent=surf.name; surfaceEl.classList.toggle('danger',surf.name==='WATER');
+  rollEl.textContent=rollDeg+'°'; rollEl.classList.toggle('danger',rollDeg>34); rollFill.style.width=clamp(rollDeg/60*100,0,100)+'%';
+  const traction=Math.round(surf.grip*(input.handbrake?28:100)); tractionEl.textContent=traction+'%'; tractionFill.style.width=traction+'%';
+  if(msgTimer>0){ msgTimer-=1/60; if(msgTimer<=0) document.querySelector('#message').style.opacity=0; }
+}
+
+function animate(){
+  const dt=clock.getDelta();
+  updatePhysics(dt); updateVisual(dt); updateHUD();
+  renderer.render(scene,camera);
+  requestAnimationFrame(animate);
+}
+requestAnimationFrame(animate);
+
+addEventListener('resize',()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); });
+flash('CART HANDLING LAB','Hit the checkpoints and test the rollover envelope');
+</script>
+</body>
+</html>

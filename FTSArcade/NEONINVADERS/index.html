@@ -1,0 +1,1477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-42GJ11SXE3"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-42GJ11SXE3');
+  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>NEON INVADERS</title>
+
+  <!-- ── Primary Meta ─────────────────────────────────────────────────────── -->
+  <meta name="description" content="NEON INVADERS — A retro pixel space shooter with 5 waves, neon glow, animated sprites, and epic bosses." />
+
+  <!-- ── Favicons ─────────────────────────────────────────────────────────── -->
+  <link rel="icon" type="image/png" href="../fts-favicon.png">
+  <link rel="shortcut icon" type="image/png" href="../fts-favicon.png">
+  <link rel="apple-touch-icon" href="../fts-favicon.png">
+
+  <!-- ── Open Graph (Facebook, Discord, iMessage, etc.) ────────────────────── -->
+  <meta property="og:title" content="NEON INVADERS">
+  <meta property="og:description" content="Defend the neon realm in this high-octane arcade experience.">
+  <meta property="og:url" content="https://mofrymatic.github.io/the-KitchenFTSArcade/NEONINVADERS/neon_invaders.html">
+  <meta property="og:type" content="website">
+
+  <meta property="og:image" content="https://mofrymatic.github.io/the-Kitchen/FTSArcade/NEONINVADERS/ni_preview.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:type" content="image/png">
+  <!--
+    After updating the image URL above, validate your card at:
+    https://cards-dev.twitter.com/validator
+  -->
+
+  <style>
+    :root {
+      /* JS sets --ctrl-h to 76px on mobile; stays 0px on desktop so canvas fills freely */
+      --ctrl-h: 0px;
+    }
+    html {
+      overscroll-behavior: none;
+    }
+    body {
+      margin: 0;
+      background: #000010;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      height: 100vh;
+      overflow: hidden;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      overscroll-behavior: none;
+    }
+    canvas {
+      display: block;
+      image-rendering: pixelated;
+      border: 2px solid #1a1a2e;
+      box-shadow: 0 0 50px rgba(0, 216, 216, 0.1);
+      /* Scale to fit screen on both axes without ever growing past native 600px.
+         Formula: whichever is smallest — native size, viewport width, or the
+         width that keeps canvas within the remaining height after UI + controls. */
+      width: min(600px, 100vw, calc((100vh - 40px - var(--ctrl-h)) * 600 / 520));
+      height: auto;
+    }
+    #ui {
+      font-family: monospace;
+      font-size: 13px;
+      display: flex;
+      gap: 32px;
+      margin-bottom: 6px;
+      /* Match canvas width so it never overflows on small screens */
+      width: min(600px, 100vw);
+      padding: 0 8px;
+      box-sizing: border-box;
+    }
+    #ui span {
+      flex: 1;
+      text-shadow: 0 0 15px currentColor;
+      letter-spacing: 2px;
+      font-weight: bold;
+    }
+    #score-el { color: #00d8d8; }
+    #lives-el  { color: #f800f8; text-align: center; }
+    #wave-el   { color: #7b5fff; text-align: right; }
+
+    /* ── Touch Controls ───────────────────────────────────────────────── */
+    #touch-controls {
+      display: none;           /* JS shows this on touch devices */
+      width: min(600px, 100vw);
+      box-sizing: border-box;
+      padding: 8px 12px 4px;
+      gap: 10px;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 6px;
+    }
+    .touch-btn {
+      font-family: monospace;
+      font-size: 22px;
+      font-weight: bold;
+      color: #00d8d8;
+      background: rgba(0, 216, 216, 0.08);
+      border: 2px solid rgba(0, 216, 216, 0.55);
+      border-radius: 10px;
+      width: 82px;
+      height: 56px;
+      cursor: pointer;
+      touch-action: none;
+      -webkit-tap-highlight-color: transparent;
+      text-shadow: 0 0 10px #00d8d8;
+      box-shadow: 0 0 10px rgba(0, 216, 216, 0.18), inset 0 0 8px rgba(0, 216, 216, 0.04);
+      transition: background 0.07s, box-shadow 0.07s;
+    }
+    .touch-btn.pressed {
+      background: rgba(0, 216, 216, 0.26);
+      box-shadow: 0 0 22px rgba(0, 216, 216, 0.5), inset 0 0 12px rgba(0, 216, 216, 0.12);
+    }
+    .fire-btn {
+      font-size: 13px;
+      letter-spacing: 2px;
+      color: #f800f8;
+      background: rgba(248, 0, 248, 0.08);
+      border-color: rgba(248, 0, 248, 0.55);
+      text-shadow: 0 0 10px #f800f8;
+      box-shadow: 0 0 10px rgba(248, 0, 248, 0.18), inset 0 0 8px rgba(248, 0, 248, 0.04);
+      width: 110px;
+      flex-shrink: 0;
+    }
+    .fire-btn.pressed {
+      background: rgba(248, 0, 248, 0.26);
+      box-shadow: 0 0 22px rgba(248, 0, 248, 0.5), inset 0 0 12px rgba(248, 0, 248, 0.12);
+    }
+
+    /* ── Mobile Name-Entry Overlay ────────────────────────────────────── */
+    #mobile-name-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 18, 0.94);
+      z-index: 999;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      font-family: monospace;
+    }
+    #mobile-name-overlay.visible { display: flex; }
+    .mn-title {
+      font-size: 22px;
+      font-weight: bold;
+      color: #f8b800;
+      text-shadow: 0 0 20px #f8b800;
+      letter-spacing: 3px;
+    }
+    .mn-sub {
+      font-size: 13px;
+      color: #aaccee;
+      letter-spacing: 2px;
+    }
+    #mobile-name-input {
+      background: #050520;
+      color: #58d854;
+      border: 2px solid #58d854;
+      text-align: center;
+      font-family: monospace;
+      font-size: 38px;
+      letter-spacing: 16px;
+      padding: 10px 16px;
+      width: 178px;
+      text-transform: uppercase;
+      outline: none;
+      caret-color: #58d854;
+      text-shadow: 0 0 18px #58d854;
+      box-shadow: 0 0 22px rgba(88, 216, 84, 0.32);
+    }
+    #mobile-name-submit {
+      font-family: monospace;
+      font-size: 16px;
+      font-weight: bold;
+      letter-spacing: 3px;
+      color: #000010;
+      background: linear-gradient(135deg, #58d854, #00d8d8);
+      border: none;
+      padding: 14px 36px;
+      cursor: pointer;
+      text-transform: uppercase;
+      box-shadow: 0 0 22px rgba(88, 216, 84, 0.38);
+      -webkit-tap-highlight-color: transparent;
+    }
+  </style>
+</head>
+<body>
+
+<div id="ui">
+  <span id="score-el">SCORE: 0</span>
+  <span id="lives-el">▶ ▶ ▶</span>
+  <span id="wave-el">WAVE: 1/5</span>
+</div>
+<canvas id="c" width="600" height="520"></canvas>
+
+<!-- ── Mobile touch controls (shown on touch devices via JS) ── -->
+<div id="touch-controls">
+  <button class="touch-btn" id="btn-left"  aria-label="Move Left">◀</button>
+  <button class="touch-btn fire-btn" id="btn-fire" aria-label="Fire">FIRE</button>
+  <button class="touch-btn" id="btn-right" aria-label="Move Right">▶</button>
+</div>
+
+<!-- ── Mobile name-entry overlay ── -->
+<div id="mobile-name-overlay">
+  <div class="mn-title">NEW HIGH SCORE!</div>
+  <div class="mn-sub">ENTER YOUR NAME (3 CHARS)</div>
+  <input id="mobile-name-input" type="text" maxlength="3"
+    autocomplete="off" autocorrect="off" spellcheck="false"
+    autocapitalize="characters" inputmode="text">
+  <button id="mobile-name-submit">SUBMIT ▶</button>
+</div>
+
+<script>
+// ── MOBILE DETECTION ─────────────────────────────────────────────────────────
+const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+              || ('ontouchstart' in window)
+              || navigator.maxTouchPoints > 0;
+
+// ── PERF TIER ────────────────────────────────────────────────────────────────
+// One switch drives every cost decision below. Desktop keeps the original
+// look; mobile trades invisible detail (trail length, particle count, extra
+// glow passes) for frame budget. Nothing gameplay-affecting changes.
+const LOW = isMobile;
+const SOCIAL_PREVIEW = false;   // flip true on desktop to regenerate og image
+
+const PERF = {
+  gridCols:      LOW ? 19 : 31,
+  gridRows:      LOW ? 16 : 26,
+  partMul:       LOW ? 0.45 : 1,
+  partCap:       LOW ? 140 : 500,
+  partTrail:     LOW ? 0 : 7,
+  bulletTrail:   LOW ? 4 : 9,
+  aBulletTrail:  LOW ? 3 : 6,
+  gridShadow:    LOW ? 0 : 5,
+  maxDpr:        LOW ? 2 : 2,
+};
+
+// ── DYNAMIC ASSET GENERATION ─────────────────────────────────────────────────
+function generateBranding() {
+  // 1. Create Favicon (32x32)
+  const favCanvas = document.createElement('canvas');
+  favCanvas.width = 32; favCanvas.height = 32;
+  const fctx = favCanvas.getContext('2d');
+
+  fctx.fillStyle = '#00d8d8';
+  const miniCrab = [
+    [0,1,0,0,0,0,1,0],[1,0,1,1,1,1,0,1],[1,1,1,1,1,1,1,1],[1,1,0,1,1,0,1,1],
+    [1,1,1,1,1,1,1,1],[0,1,1,1,1,1,1,0],[0,1,0,0,0,0,1,0],[1,0,0,0,0,0,0,1]
+  ];
+  miniCrab.forEach((row, r) => row.forEach((pixel, c) => {
+    if (pixel) fctx.fillRect(c * 4, r * 4, 4, 4);
+  }));
+  const link = document.createElement('link');
+  link.rel = 'icon'; link.href = favCanvas.toDataURL();
+  document.head.appendChild(link);
+
+  // 2. Create Social Preview (1200x630)
+  // MOBILE: skipped entirely. 756k px of shadowBlur'd fillRect at boot is a
+  // multi-hundred-ms hitch on integrated/mobile GPUs, and the artifact is
+  // thrown away — it's a build-time asset generator, not a runtime need.
+  if (isMobile || !SOCIAL_PREVIEW) return;
+  // Un-comment the appendChild line below to see/save the image for hosting.
+  const ogCanvas = document.createElement('canvas');
+  ogCanvas.width = 1200; ogCanvas.height = 630;
+  const octx = ogCanvas.getContext('2d');
+
+  octx.fillStyle = '#000010';
+  octx.fillRect(0, 0, 1200, 630);
+
+  // Draw decorative alien sprites on preview
+  octx.fillStyle = '#00d8d8';
+  const previewAlien = [
+    [0,1,0,0,0,0,0,1,0],[0,0,1,0,0,0,1,0,0],[0,0,1,1,1,1,1,0,0],
+    [0,1,1,0,1,0,1,1,0],[1,1,1,1,1,1,1,1,1],[0,1,1,1,1,1,1,1,0],
+    [1,0,0,1,0,1,0,0,1],[0,1,0,0,0,0,0,1,0]
+  ];
+  const alienColors = ['#f83800','#f800f8','#00d8d8','#7b5fff','#58d854'];
+  for (let gi = 0; gi < 5; gi++) {
+    for (let gj = 0; gj < 9; gj++) {
+      const ax = 80 + gj * 120, ay = 80 + gi * 80;
+      octx.fillStyle = alienColors[gi % alienColors.length];
+      octx.shadowColor = alienColors[gi % alienColors.length];
+      octx.shadowBlur = 12;
+      previewAlien.forEach((row, r) => row.forEach((px, c) => {
+        if (px) octx.fillRect(ax + c * 8, ay + r * 8, 8, 8);
+      }));
+    }
+  }
+
+  // Title
+  octx.shadowColor = '#7b5fff';
+  octx.shadowBlur = 40;
+  octx.textAlign = 'center';
+  octx.fillStyle = '#7b5fff';
+  octx.font = 'bold 96px monospace';
+  octx.fillText('NEON INVADERS', 600, 490);
+
+  octx.font = '32px monospace';
+  octx.fillStyle = '#00d8d8';
+  octx.shadowColor = '#00d8d8';
+  octx.shadowBlur = 20;
+  octx.fillText('5 WAVES  ·  5 BOSSES  ·  CAN YOU SURVIVE?', 600, 570);
+
+  // Un-comment to show the canvas so you can right-click → Save Image:
+  // ogCanvas.style.cssText='position:fixed;top:0;left:0;z-index:9999;width:600px;height:315px;';
+  // document.body.appendChild(ogCanvas);
+}
+generateBranding();
+
+// ── CONSTANTS ────────────────────────────────────────────────────────────────
+const C = document.getElementById('c'), ctx = C.getContext('2d');
+const W = 600, H = 520, ROWS = 5, COLS = 11, MAX_WAVES = 5;
+
+// ── 2-frame animated sprites ──────────────────────────────────────────────────
+const SPRITE_FRAMES = {
+  // Type A: squid
+  A: [
+    [[0,0,1,0,0,0,1,0,0],[0,0,0,1,0,1,0,0,0],[0,0,1,1,1,1,1,0,0],[0,1,1,0,1,0,1,1,0],[1,1,1,1,1,1,1,1,1],[1,0,1,1,1,1,1,0,1],[1,0,1,0,0,0,1,0,1],[0,0,0,1,0,1,0,0,0]],
+    [[0,1,0,0,0,0,0,1,0],[0,0,1,0,0,0,1,0,0],[0,0,1,1,1,1,1,0,0],[0,1,1,0,1,0,1,1,0],[1,1,1,1,1,1,1,1,1],[0,1,1,1,1,1,1,1,0],[1,0,0,1,0,1,0,0,1],[0,1,0,0,0,0,0,1,0]],
+  ],
+  // Type B: crab
+  B: [
+    [[0,1,0,0,0,0,0,1,0],[1,0,1,0,0,0,1,0,1],[1,0,1,1,1,1,1,0,1],[1,1,1,0,1,0,1,1,1],[1,1,1,1,1,1,1,1,1],[0,1,1,1,1,1,1,1,0],[0,0,1,0,0,0,1,0,0],[0,1,0,0,0,0,0,1,0]],
+    [[0,0,0,1,0,1,0,0,0],[0,0,1,1,0,1,1,0,0],[0,1,1,1,1,1,1,1,0],[1,1,0,0,1,0,0,1,1],[1,1,1,1,1,1,1,1,1],[0,1,1,1,1,1,1,1,0],[0,1,0,1,0,1,0,1,0],[1,0,0,0,0,0,0,0,1]],
+  ],
+  // Type C: octopus
+  C: [
+    [[0,0,0,1,1,0,0,0],[0,0,1,1,1,1,0,0],[0,1,1,1,1,1,1,0],[1,1,0,1,1,0,1,1],[1,1,1,1,1,1,1,1],[0,0,1,0,0,1,0,0],[0,1,0,1,1,0,1,0],[1,0,1,0,0,1,0,1]],
+    [[0,0,0,1,1,0,0,0],[0,0,1,1,1,1,0,0],[0,1,1,1,1,1,1,0],[1,1,0,1,1,0,1,1],[1,1,1,1,1,1,1,1],[0,1,0,0,0,0,1,0],[1,0,1,1,1,1,0,1],[0,0,0,1,1,0,0,0]],
+  ],
+};
+const ROW_TYPES = ['A','A','B','B','C'];
+
+const BOSS_SPRITES = [
+  [[0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0],[0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0],[0,1,1,0,1,0,1,1,1,1,0,1,0,1,1,0],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[1,0,1,0,1,0,0,1,1,0,0,1,0,1,0,1],[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],[0,1,1,0,0,1,0,1,1,0,1,0,0,1,1,0],[0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0],[0,0,0,1,0,1,0,1,1,0,1,0,1,0,0,0],[0,0,0,0,1,0,1,0,0,1,0,1,0,0,0,0]],
+  [[1,0,0,0,1,1,1,1,1,1,1,1,0,0,0,1],[1,1,0,1,0,1,1,1,1,1,1,0,1,0,1,1],[0,1,1,1,1,0,1,1,1,1,0,1,1,1,1,0],[0,0,1,1,1,1,0,1,1,0,1,1,1,1,0,0],[0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0],[1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1],[1,0,1,1,0,1,1,1,1,1,1,0,1,1,0,1],[1,1,0,1,1,0,1,1,1,1,0,1,1,0,1,1],[0,1,1,0,1,1,1,0,0,1,1,1,0,1,1,0],[0,0,1,1,0,1,0,1,1,0,1,0,1,1,0,0]],
+  [[0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0],[0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],[1,1,1,0,0,1,1,1,1,1,1,0,0,1,1,1],[1,1,0,1,1,0,1,1,1,1,0,1,1,0,1,1],[1,1,0,1,1,0,1,1,1,1,0,1,1,0,1,1],[1,1,1,0,0,1,1,1,1,1,1,0,0,1,1,1],[1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1],[0,1,1,1,0,0,0,1,1,0,0,0,1,1,1,0],[0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0],[0,0,0,1,1,0,1,0,0,1,0,1,1,0,0,0]],
+  [[1,0,0,0,1,1,1,1,1,1,1,1,0,0,0,1],[1,1,0,1,0,1,1,1,1,1,1,0,1,0,1,1],[0,1,1,1,1,0,1,1,1,1,0,1,1,1,1,0],[0,0,1,1,1,1,0,1,1,0,1,1,1,1,0,0],[0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0],[1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1],[1,0,1,1,0,1,1,1,1,1,1,0,1,1,0,1],[1,1,0,1,1,0,1,1,1,1,0,1,1,0,1,1],[0,1,1,0,1,1,1,0,0,1,1,1,0,1,1,0],[0,0,1,1,0,1,0,1,1,0,1,0,1,1,0,0]],
+  [[0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0],[0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0],[0,1,1,1,0,0,1,1,1,1,0,0,1,1,1,0],[1,1,0,1,1,1,1,1,1,1,1,1,1,0,1,1],[1,0,1,0,1,0,1,1,1,1,0,1,0,1,0,1],[1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1],[1,0,1,1,0,1,1,1,1,1,1,0,1,1,0,1],[0,1,1,1,1,0,1,1,1,1,0,1,1,1,1,0],[0,0,1,1,1,1,1,0,0,1,1,1,1,1,0,0],[0,0,0,1,0,1,0,1,1,0,1,0,1,0,0,0]],
+];
+const BOSS_NAMES  = ['THE SAUCER','SPIDER CRAB','THE SKULL','DREAD DRAGON','THE MOTHERSHIP'];
+
+// ── BOSS SPEC ────────────────────────────────────────────────────────────────
+// Each boss now owns an attack pattern, a size, and a cadence. HP alone was
+// never the difficulty curve — a longer healthbar on identical behavior just
+// makes the same fight take longer. The pattern is the fight.
+//
+// px      : sprite cell size. 3 was the old value for everything; bosses now
+//           physically grow across the run (bigger target, but bigger threat).
+// hp      : raised across the board to account for the player's new tools.
+// pattern : which attack script runs. See bossAttack().
+// cadence : ms between attack cycles at full HP. Enrage cuts this.
+// moveMs  : ms between horizontal steps. Lower = faster slide.
+// step    : px per horizontal step.
+const BOSS = [
+  { name:'THE SAUCER',     px:4, hp:55,  pattern:'aimed',  cadence:1100, moveMs:110, step:8,  col:'#f83800' },
+  { name:'SPIDER CRAB',    px:4, hp:75,  pattern:'adds',   cadence:1250, moveMs:95,  step:9,  col:'#00d8d8' },
+  { name:'THE SKULL',      px:5, hp:100, pattern:'beam',   cadence:1500, moveMs:85,  step:10, col:'#f800f8' },
+  { name:'DREAD DRAGON',   px:5, hp:130, pattern:'spiral', cadence:900,  moveMs:75,  step:11, col:'#fca044' },
+  { name:'THE MOTHERSHIP', px:6, hp:165, pattern:'all',    cadence:850,  moveMs:70,  step:12, col:'#7b00d4' },
+];
+const BOSS_HP = BOSS.map(b => b.hp);
+
+// Sprites are 16 wide x 10 tall in cells; these derive the pixel hitbox.
+const bossW = i => 16 * BOSS[i].px;
+const bossH = i => 10 * BOSS[i].px;
+
+// ── Enrage ───────────────────────────────────────────────────────────────────
+// Below this HP fraction the boss visibly turns on you: color shifts hot,
+// movement and fire rate spike, and the transition punches the screen. This is
+// the cheapest way to make a fight feel dangerous exactly when the player
+// thinks they've won.
+const ENRAGE_AT = 0.35;
+const ENRAGE_COL = '#ff2200';
+const enraged = bo => bo.hp / BOSS_HP[bo.idx] <= ENRAGE_AT;
+
+// ── Weak point ───────────────────────────────────────────────────────────────
+// Center-mass core. Hits here deal 3x. Rewards players who hold the center
+// lane and eat more risk instead of plinking safely from the wings.
+const WEAK_MUL = 3;
+
+// ── Punish window ────────────────────────────────────────────────────────────
+// After every heavy attack the boss is exposed for this long: it stops moving,
+// stops shooting, and takes 2x. This is the "something back" — the fight has a
+// rhythm you can learn and exploit rather than a wall you out-tank.
+const PUNISH_MS  = 900;
+const PUNISH_MUL = 2;
+
+const WAVE_PALETTES = [
+  ['#f83800','#f83800','#0058f8','#0058f8','#00a800'],
+  ['#f800f8','#f800f8','#00d8d8','#00d8d8','#f8b800'],
+  ['#7b00d4','#7b00d4','#f87858','#f87858','#58d854'],
+  ['#004058','#004058','#e40058','#e40058','#fca044'],
+  ['#0078f8','#0078f8','#f85898','#f85898','#b8f818'],
+];
+const BOSS_COLORS = BOSS.map(b => b.col);
+const BOSS_TAGLINE = [
+  'IT TRACKS YOUR MOVEMENT',
+  'IT DOES NOT COME ALONE',
+  'IT CUTS THROUGH EVERYTHING',
+  'IT FILLS THE SKY',
+  'IT HAS LEARNED ALL OF THEM',
+];
+function getPalette(w) { return WAVE_PALETTES[(w - 1) % WAVE_PALETTES.length]; }
+
+// ── grid ──────────────────────────────────────────────────────────────────────
+// Structure-of-Arrays, same layout fts-mesh-v2 will upload straight to a VBO.
+// Desktop 31x26 = 806 nodes. Mobile 19x16 = 304 nodes (~2.6x less work per
+// frame in BOTH the spring integrator and the stroke path).
+const GCOLS = PERF.gridCols, GROWS = PERF.gridRows;
+const GSW = W / (GCOLS - 1), GSH = H / (GROWS - 1);
+const GN = GCOLS * GROWS;
+const gOX = new Float32Array(GN), gOY = new Float32Array(GN);
+const gX  = new Float32Array(GN), gY  = new Float32Array(GN);
+const gVX = new Float32Array(GN), gVY = new Float32Array(GN);
+for (let r = 0, i = 0; r < GROWS; r++)
+  for (let c = 0; c < GCOLS; c++, i++) {
+    gOX[i] = gX[i] = c * GSW;
+    gOY[i] = gY[i] = r * GSH;
+  }
+
+// Sleep detection: when the mesh has settled we skip the integrator entirely.
+// We can't skip drawGrid (the mesh is always visible) but the settled node
+// positions are identical to origin, so we stroke a cached static path.
+let gridEnergy = 1, gridAsleep = false, staticPath = null;
+
+function buildStaticPath() {
+  const p = new Path2D();
+  for (let r = 0; r < GROWS; r++) {
+    p.moveTo(gOX[r * GCOLS], gOY[r * GCOLS]);
+    for (let c = 1; c < GCOLS; c++) { const i = r * GCOLS + c; p.lineTo(gOX[i], gOY[i]); }
+  }
+  for (let c = 0; c < GCOLS; c++) {
+    p.moveTo(gOX[c], gOY[c]);
+    for (let r = 1; r < GROWS; r++) { const i = r * GCOLS + c; p.lineTo(gOX[i], gOY[i]); }
+  }
+  return p;
+}
+staticPath = buildStaticPath();
+
+function updateGrid(dt) {
+  if (gridAsleep) return;
+  const k = 0.065, d = 0.87, f = dt / 16;
+  let e = 0;
+  for (let i = 0; i < GN; i++) {
+    const vx = (gVX[i] + (gOX[i] - gX[i]) * k) * d;
+    const vy = (gVY[i] + (gOY[i] - gY[i]) * k) * d;
+    gVX[i] = vx; gVY[i] = vy;
+    gX[i] += vx * f; gY[i] += vy * f;
+    e += Math.abs(vx) + Math.abs(vy);
+  }
+  gridEnergy = e;
+  if (e < 0.04 * GN) {           // settled — snap to origin and sleep
+    gX.set(gOX); gY.set(gOY); gVX.fill(0); gVY.fill(0);
+    gridAsleep = true;
+  }
+}
+
+const R_RAD = 220;
+function ripple(wx, wy, str) {
+  gridAsleep = false;
+  // Only touch nodes inside the radius instead of scanning all GN every call.
+  const c0 = Math.max(0, Math.floor((wx - R_RAD) / GSW));
+  const c1 = Math.min(GCOLS - 1, Math.ceil((wx + R_RAD) / GSW));
+  const r0 = Math.max(0, Math.floor((wy - R_RAD) / GSH));
+  const r1 = Math.min(GROWS - 1, Math.ceil((wy + R_RAD) / GSH));
+  for (let r = r0; r <= r1; r++) {
+    const base = r * GCOLS;
+    for (let c = c0; c <= c1; c++) {
+      const i = base + c;
+      const dx = gOX[i] - wx, dy = gOY[i] - wy;
+      const d2 = dx * dx + dy * dy;
+      if (d2 < 25 || d2 > R_RAD * R_RAD) continue;   // squared compare, no sqrt in the reject path
+      const d = Math.sqrt(d2);
+      const f = str * (1 - d / R_RAD) / (d < 12 ? 12 : d);
+      gVX[i] -= dx * f; gVY[i] -= dy * f;
+    }
+  }
+}
+
+function drawGrid(gc) {
+  ctx.save();
+  ctx.lineWidth = 0.75; ctx.strokeStyle = gc; ctx.globalAlpha = 0.35;
+  if (PERF.gridShadow) { ctx.shadowColor = gc; ctx.shadowBlur = PERF.gridShadow; }
+  if (gridAsleep) {
+    // Settled: one cached Path2D, two stroke calls' worth of geometry in one.
+    ctx.stroke(staticPath);
+  } else {
+    for (let r = 0; r < GROWS; r++) {
+      const base = r * GCOLS;
+      ctx.beginPath(); ctx.moveTo(gX[base], gY[base]);
+      for (let c = 1; c < GCOLS; c++) { const i = base + c; ctx.lineTo(gX[i], gY[i]); }
+      ctx.stroke();
+    }
+    for (let c = 0; c < GCOLS; c++) {
+      ctx.beginPath(); ctx.moveTo(gX[c], gY[c]);
+      for (let r = 1; r < GROWS; r++) { const i = r * GCOLS + c; ctx.lineTo(gX[i], gY[i]); }
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+
+// ── particles ─────────────────────────────────────────────────────────────────
+let particles = [];
+const P_TRAIL = PERF.partTrail;
+function spawnParticles(x, y, col, n, spd) {
+  n = Math.max(3, Math.round(n * PERF.partMul));
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * Math.PI * 2, s = spd * (0.25 + Math.random() * 0.75);
+    particles.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 1, decay: 0.022 + Math.random() * 0.022, col, sz: 1.5 + Math.random() * 3, trail: [] });
+  }
+}
+function spawnRing(x, y, col, n, spd) {
+  n = Math.max(6, Math.round(n * PERF.partMul));
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2, s = spd * (0.8 + Math.random() * 0.4);
+    particles.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 1, decay: 0.014, col, sz: 2 + Math.random() * 2, trail: [] });
+  }
+}
+function updateParticles(dt) {
+  const f = dt / 16;
+  // In-place compaction — the old code allocated a fresh array (and often a
+  // second sliced one) every frame, feeding the GC during exactly the moments
+  // the frame budget is tightest.
+  let w = 0;
+  for (let i = 0; i < particles.length; i++) {
+    const p = particles[i];
+    if (P_TRAIL) { p.trail.unshift({ x: p.x, y: p.y }); if (p.trail.length > P_TRAIL) p.trail.pop(); }
+    p.x += p.vx * f; p.y += p.vy * f; p.vx *= 0.965; p.vy *= 0.965; p.life -= p.decay * f;
+    if (p.life > 0) particles[w++] = p;
+  }
+  particles.length = w;
+  if (w > PERF.partCap) particles.splice(0, w - PERF.partCap);
+}
+function drawParticles() {
+  if (!particles.length) return;
+  // One save/restore for the whole batch, not one per particle. State is set
+  // once; only globalAlpha and shadowColor vary per particle.
+  ctx.save();
+  ctx.fillStyle = '#ffffff';
+  for (let i = 0; i < particles.length; i++) {
+    const p = particles[i], a = p.life * p.life;
+    if (P_TRAIL && p.trail.length > 1) {
+      ctx.globalAlpha = a * 0.4; ctx.strokeStyle = p.col; ctx.shadowColor = p.col;
+      ctx.shadowBlur = 8; ctx.lineWidth = p.sz * 0.55;
+      ctx.beginPath(); ctx.moveTo(p.x, p.y);
+      for (let t = 0; t < p.trail.length; t++) ctx.lineTo(p.trail[t].x, p.trail[t].y);
+      ctx.stroke();
+      ctx.fillStyle = '#ffffff';
+    }
+    ctx.globalAlpha = a; ctx.shadowColor = p.col; ctx.shadowBlur = LOW ? 8 : 16;
+    ctx.fillRect(p.x - p.sz / 2, p.y - p.sz / 2, p.sz, p.sz);
+  }
+  ctx.restore();
+}
+
+let shakeAmt = 0;
+function addShake(v) { shakeAmt = Math.min(shakeAmt + v, 20); }
+function getShake() { shakeAmt *= 0.86; return shakeAmt < 0.1 ? [0,0] : [(Math.random() - .5) * shakeAmt, (Math.random() - .5) * shakeAmt]; }
+
+function makeBunker(bx, by) {
+  const bl = [];
+  for (let r = 0; r < 18; r++) for (let c = 0; c < 24; c++) {
+    if (r >= 12 && c >= 8 && c <= 15) continue;
+    if (r <= 1 && (c <= 1 || c >= 22)) continue;
+    bl.push({ x: bx + c * 3, y: by + r * 3, alive: true });
+  }
+  return bl;
+}
+function getScores() { try { return JSON.parse(localStorage.getItem('si_gw') || '[]'); } catch { return []; } }
+function saveScore(e) {
+  let a = getScores(); a.push(e); a.sort((x, y) => y.score - x.score); a = a.slice(0, 5);
+  try { localStorage.setItem('si_gw', JSON.stringify(a)); } catch {} return a;
+}
+
+// ── state ─────────────────────────────────────────────────────────────────────
+let S;
+function init(persist) {
+  const wave = persist && S ? S.wave : 1, score = persist && S ? S.score : 0, lives = persist && S ? S.lives : 3;
+  const aliens = []; for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) aliens.push({ row: r, col: c, alive: true, x: 0, y: 0 });
+  const bunkers = []; for (let i = 0; i < 4; i++) bunkers.push(...makeBunker(75 + i * 130, 380));
+  particles = [];
+  S = { aliens, bunkers, alienDir: 1, alienDx: 24, alienDy: 16, alienTimer: 0,
+    alienInterval: Math.max(150, 800 - (wave - 1) * 60),
+    px: W / 2 - 16, py: H - 50, pw: 32, ph: 12,
+    bullets: [], abullets: [], keys: {}, score, lives, wave,
+    phase: 'announce', announceTimer: 2400, shootCD: 0,
+    boss: null, flash: false, flashTimer: 0,
+    minions: [], beams: [], enrageFlash: 0, critFlash: 0,
+    nameEntry: { name: '' }, time: 0 };
+  layoutAliens(); updateHUD(); prewarmWave(wave);
+}
+function layoutAliens() { for (const a of S.aliens) { a.x = 40 + a.col * 48; a.y = 80 + a.row * 40; } }
+// ~55 aliens x ~1500 bunker blocks = 82k AABB tests on every alien step.
+// Aliens only reach the bunker band late in a wave, so reject on the y-range
+// first: until then this costs one comparison per alien instead of 1500.
+const BUNKER_Y0 = 380, BUNKER_Y1 = 380 + 18 * 3;
+function alienBodyVsBunkers() {
+  for (const a of S.aliens) {
+    if (!a.alive) continue;
+    if (a.y + 24 < BUNKER_Y0 || a.y > BUNKER_Y1) continue;
+    for (const b of S.bunkers) {
+      if (!b.alive) continue;
+      if (a.x < b.x + 3 && a.x + 27 > b.x && a.y < b.y + 3 && a.y + 24 > b.y) b.alive = false;
+    }
+  }
+}
+
+const aliveBuf = new Array(ROWS * COLS);
+
+let lastT = 0;
+function tick(ts) {
+  requestAnimationFrame(tick);
+  // First real frame: lastT is 0, so dt would be the full page-load timestamp.
+  // Clamped to 50 already, but seed it properly so wave 1 doesn't start mid-step.
+  if (!lastT) { lastT = ts; return; }
+  const dt = Math.min(ts - lastT, 50); lastT = ts;
+  update(dt); draw();
+}
+
+// Dead bunker blocks were kept in the array forever, so every bullet still
+// walked all ~1500 entries to find the ~800 that remain. Compact once a frame.
+function pruneBunkers() {
+  const b = S.bunkers; let w = 0;
+  for (let i = 0; i < b.length; i++) if (b[i].alive) b[w++] = b[i];
+  b.length = w;
+}
+
+function update(dt) {
+  S.time += dt; updateGrid(dt); updateParticles(dt); pruneBunkers();
+  const ph = S.phase;
+  if (ph === 'announce') { S.announceTimer -= dt; if (S.announceTimer <= 0) S.phase = 'play'; return; }
+  if (ph === 'bossannounce') { S.announceTimer -= dt; if (S.announceTimer <= 0) { S.phase = 'boss'; spawnBoss(); } return; }
+  if (ph === 'namentry' || ph === 'over' || ph === 'win') return;
+
+  S.shootCD = Math.max(0, S.shootCD - dt);
+  // Boss patterns demand real repositioning; base speed was tuned for a
+  // slow-marching alien block and can't clear a sweeping beam in time.
+  const mv = S.phase === 'boss' ? 6.6 : 5;
+  if (S.keys['ArrowLeft']  || S.keys['a']) S.px = Math.max(0, S.px - mv);
+  if (S.keys['ArrowRight'] || S.keys['d']) S.px = Math.min(W - 36, S.px + mv);
+  if ((S.keys[' '] || S.keys['ArrowUp']) && S.shootCD <= 0) {
+    // Boss fights unlock a faster cadence and a twin shot. The bosses got a
+    // lot meaner; the player gets real firepower back rather than just being
+    // asked to dodge more. This is the "something back."
+    const inBoss = S.phase === 'boss';
+    if (inBoss) {
+      S.bullets.push({ x: S.px + 7,  y: S.py - 4, w: 3, h: 10, spd: 8, trail: [] });
+      S.bullets.push({ x: S.px + 22, y: S.py - 4, w: 3, h: 10, spd: 8, trail: [] });
+      S.shootCD = 190;
+    } else {
+      S.bullets.push({ x: S.px + 14, y: S.py - 4, w: 3, h: 10, spd: 7, trail: [] });
+      S.shootCD = 280;
+    }
+    ripple(S.px + 16, S.py, 1);
+  }
+
+  if (ph === 'play') {
+    S.bullets = S.bullets.filter(b => {
+      b.trail.unshift({ x: b.x, y: b.y }); if (b.trail.length > PERF.bulletTrail) b.trail.pop();
+      b.y -= b.spd; if (b.y < 0) return false;
+      for (const a of S.aliens) {
+        if (!a.alive) continue;
+        if (b.x < a.x + 27 && b.x + b.w > a.x && b.y < a.y + 24 && b.y + b.h > a.y) {
+          a.alive = false; S.score += 10 * (5 - a.row); updateHUD();
+          const pal = getPalette(S.wave); spawnParticles(a.x + 13, a.y + 12, pal[a.row], 20, 4.5);
+          spawnRing(a.x + 13, a.y + 12, pal[a.row], 8, 2.5); ripple(a.x + 13, a.y + 12, 3); addShake(3.5);
+          if (!S.aliens.some(x => x.alive)) { triggerBoss(); return false; } return false;
+        }
+      }
+      for (const bl of S.bunkers) {
+        if (!bl.alive) continue;
+        if (b.x < bl.x + 3 && b.x + b.w > bl.x && b.y < bl.y + 3 && b.y + b.h > bl.y) {
+          bl.alive = false; spawnParticles(bl.x + 1, bl.y + 1, '#58d854', 5, 2.5); ripple(bl.x, bl.y, 1); return false;
+        }
+      }
+      return true;
+    });
+
+    // Reused scratch buffer — .filter() here allocated a 55-element array
+    // every frame, plus a Set + 2 more arrays on every alien shot.
+    let aliveN = 0;
+    for (const a of S.aliens) if (a.alive) aliveBuf[aliveN++] = a;
+
+    S.alienTimer += dt;
+    if (S.alienTimer >= S.alienInterval) {
+      S.alienTimer = 0; let hitEdge = false;
+      for (let i = 0; i < aliveN; i++) { const a = aliveBuf[i]; a.x += S.alienDx * S.alienDir; if (a.x <= 10 || a.x + 27 >= W - 10) hitEdge = true; }
+      if (hitEdge) { S.alienDir *= -1; for (let i = 0; i < aliveN; i++) aliveBuf[i].y += S.alienDy; }
+      S.alienInterval = Math.max(100, 800 - (S.aliens.length - aliveN) * 12 - (S.wave - 1) * 60);
+      alienBodyVsBunkers();
+    }
+    if (aliveN && Math.random() < 0.002 * dt / 16 * aliveN / 10 + 0.001) {
+      // Pick a random live alien, then walk to the lowest one in its column.
+      // Statistically equivalent to the old set-of-columns pick, zero allocs.
+      const seed = aliveBuf[Math.floor(Math.random() * aliveN)];
+      let shooter = seed;
+      for (let i = 0; i < aliveN; i++) {
+        const a = aliveBuf[i];
+        if (a.col === seed.col && a.row > shooter.row) shooter = a;
+      }
+      S.abullets.push({ x: shooter.x + 12, y: shooter.y + 24, w: 4, h: 12, spd: 4, trail: [] });
+    }
+    S.abullets = S.abullets.filter(b => {
+      b.trail.unshift({ x: b.x, y: b.y }); if (b.trail.length > PERF.aBulletTrail) b.trail.pop();
+      b.y += b.spd; if (b.y > H) return false;
+      if (b.x < S.px + S.pw && b.x + b.w > S.px && b.y < S.py + S.ph && b.y + b.h > S.py) { playerHit(); return false; }
+      for (const bl of S.bunkers) {
+        if (!bl.alive) continue;
+        if (b.x < bl.x + 3 && b.x + b.w > bl.x && b.y < bl.y + 3 && b.y + b.h > bl.y) { bl.alive = false; spawnParticles(bl.x, bl.y, '#58d854', 4, 2); return false; }
+      }
+      return true;
+    });
+    for (let i = 0; i < aliveN; i++) if (aliveBuf[i].y + 24 >= S.py) { triggerGameOver(); return; }
+  }
+
+  if (ph === 'boss' && S.boss) {
+    const bo = S.boss, idx = bo.idx, spec = BOSS[idx];
+    const BW = bossW(idx), BH = bossH(idx);
+    const rage = enraged(bo);
+
+    // Enrage transition — fires once, and it should feel like a threat.
+    if (rage && !bo.wasEnraged) {
+      bo.wasEnraged = true;
+      addShake(16);
+      spawnRing(bo.x + BW / 2, bo.y + BH / 2, ENRAGE_COL, 30, 6);
+      ripple(bo.x + BW / 2, bo.y + BH / 2, 10);
+      S.enrageFlash = 700;
+    }
+    if (S.enrageFlash > 0) S.enrageFlash -= dt;
+
+    // ── Player bullets vs boss ───────────────────────────────────────────
+    // Damage is no longer flat. Weak point (center core) multiplies, and the
+    // punish window after a heavy attack multiplies again. Stacked, a core hit
+    // during a punish window is 6x — that's the aggression payoff.
+    const vulnerable = bo.state !== 'entry';
+    // Weak point is a HORIZONTAL band only. Player bullets travel upward and
+    // are consumed on first overlap — i.e. always at the boss's bottom edge —
+    // so any vertically-inset core box is geometrically unreachable and the
+    // crit could never fire. Gating on x alone makes "hold the centre lane"
+    // the actual skill expression, which is what we wanted anyway.
+    const wpX0 = bo.x + BW * 0.34, wpX1 = bo.x + BW * 0.66;
+
+    S.bullets = S.bullets.filter(b => {
+      b.trail.unshift({ x: b.x, y: b.y }); if (b.trail.length > PERF.bulletTrail) b.trail.pop();
+      b.y -= b.spd; if (b.y < 0) return false;
+      // S.boss guard: twin shots mean two bullets can land in the same filter
+      // pass, and the second would re-enter bossDefeated() on a null boss.
+      if (S.boss && vulnerable && b.x < bo.x + BW && b.x + b.w > bo.x && b.y < bo.y + BH && b.y + b.h > bo.y) {
+        const core = b.x + b.w > wpX0 && b.x < wpX1;
+        // Twin shot fires two bullets that land on the SAME frame, so a naive
+        // crit multiplier gets applied twice per trigger pull — 2 x 3 = 6 dmg,
+        // which deleted a 14 HP boss in two pulls. Crit is per-pull, not
+        // per-bullet, so each bullet carries half of it.
+        let dmg = 1;
+        if (core) dmg *= WEAK_MUL / 2;
+        if (bo.state === 'punish') dmg *= PUNISH_MUL;
+        bo.hp -= dmg;
+        S.score += 50 * dmg; updateHUD();
+        S.flash = true; S.flashTimer = 80;
+        const hitCol = core ? '#ffffff' : BOSS_COLORS[idx];
+        spawnParticles(b.x + 1, b.y, hitCol, core ? 20 : 10, core ? 5 : 3.5);
+        if (core) { spawnRing(b.x, b.y, '#ffee00', 8, 3); S.critFlash = 220; }
+        ripple(b.x, b.y, core ? 4 : 2); addShake(core ? 8 : 5);
+        if (bo.hp <= 0) { bossDefeated(); return false; }
+        return false;
+      }
+      for (const bl of S.bunkers) {
+        if (!bl.alive) continue;
+        if (b.x < bl.x + 3 && b.x + b.w > bl.x && b.y < bl.y + 3 && b.y + b.h > bl.y) { bl.alive = false; return false; }
+      }
+      return true;
+    });
+    if (!S.boss) return;   // bossDefeated() cleared it
+    if (S.critFlash > 0) S.critFlash -= dt;
+
+    // ── State machine ────────────────────────────────────────────────────
+    bo.stateTimer -= dt;
+    if (bo.state === 'entry') {
+      bo.y += 0.11 * dt;                      // descend into position
+      if (bo.y >= 40) { bo.y = 40; bo.state = 'active'; bo.shootTimer = spec.cadence * 0.5; addShake(10); }
+    } else {
+      // Movement — frozen during telegraph and punish, so both read clearly.
+      if (bo.state === 'active') {
+        bo.moveTimer += dt;
+        const moveMs = rage ? spec.moveMs * 0.6 : spec.moveMs;
+        const step = rage ? spec.step * 1.4 : spec.step;
+        if (bo.moveTimer > moveMs) {
+          bo.moveTimer = 0;
+          bo.x += bo.dir * step;
+          if (bo.x <= 10) { bo.x = 10; bo.dir = 1; bo.y += 8; }
+          if (bo.x + BW >= W - 10) { bo.x = W - 10 - BW; bo.dir = -1; bo.y += 8; }
+        }
+        bo.shootTimer -= dt;
+        if (bo.shootTimer <= 0) {
+          bo.state = 'telegraph';
+          bo.stateTimer = rage ? 320 : 480;   // windup tell
+          bo.telegraphKind = pickPattern(bo, spec);
+        }
+      } else if (bo.state === 'telegraph' && bo.stateTimer <= 0) {
+        bossAttack(bo, spec, bo.telegraphKind, rage);
+        bo.state = 'punish';
+        bo.stateTimer = rage ? PUNISH_MS * 0.65 : PUNISH_MS;
+      } else if (bo.state === 'punish' && bo.stateTimer <= 0) {
+        bo.state = 'active';
+        bo.shootTimer = rage ? spec.cadence * 0.55 : spec.cadence;
+      }
+    }
+
+    if (bo.y + BH >= S.py) { triggerGameOver(); return; }
+    if (S.flashTimer > 0) { S.flashTimer -= dt; if (S.flashTimer <= 0) S.flash = false; }
+
+    updateMinions(dt);
+    updateBeams(dt);
+
+    S.abullets = S.abullets.filter(b => {
+      b.trail.unshift({ x: b.x, y: b.y }); if (b.trail.length > PERF.aBulletTrail) b.trail.pop();
+      // Boss bullets can now carry velocity on both axes (aimed / spiral shots).
+      b.x += (b.vx || 0); b.y += (b.vy !== undefined ? b.vy : b.spd);
+      if (b.y > H || b.y < -20 || b.x < -20 || b.x > W + 20) return false;
+      if (b.x < S.px + S.pw && b.x + b.w > S.px && b.y < S.py + S.ph && b.y + b.h > S.py) { playerHit(); return false; }
+      for (const bl of S.bunkers) {
+        if (!bl.alive) continue;
+        if (b.x < bl.x + 3 && b.x + b.w > bl.x && b.y < bl.y + 3 && b.y + b.h > bl.y) { bl.alive = false; return false; }
+      }
+      return true;
+    });
+  }
+}
+
+// ── ATTACK PATTERNS ──────────────────────────────────────────────────────────
+// The Mothership cycles every other boss's pattern; everyone else has one.
+function pickPattern(bo, spec) {
+  if (spec.pattern !== 'all') return spec.pattern;
+  const cycle = ['aimed', 'adds', 'beam', 'spiral'];
+  return cycle[bo.subPattern++ % cycle.length];
+}
+
+function bossAttack(bo, spec, kind, rage) {
+  const idx = bo.idx, BW = bossW(idx), BH = bossH(idx);
+  const cx = bo.x + BW / 2, cy = bo.y + BH;
+  const spd = 4 + S.wave * 0.4 + (rage ? 1.2 : 0);
+  addShake(rage ? 7 : 4);
+  ripple(cx, cy, 3);
+
+  if (kind === 'aimed') {
+    // Leads the player's position. Standing still is now a mistake.
+    const n = rage ? 5 : 3;
+    for (let i = 0; i < n; i++) {
+      const tx = S.px + S.pw / 2, ty = S.py;
+      const spreadAng = (i - (n - 1) / 2) * 0.20;
+      let ang = Math.atan2(ty - cy, tx - cx) + spreadAng;
+      S.abullets.push({ x: cx - 2, y: cy, w: 4, h: 12,
+        vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd, trail: [] });
+    }
+  } else if (kind === 'adds') {
+    // Escorts. Cap so the screen never becomes unreadable.
+    const cap = rage ? 5 : 3;
+    const want = rage ? 3 : 2;
+    for (let i = 0; i < want && S.minions.length < cap; i++)
+      spawnMinion(bo.x + (i ? BW - 27 : 0), bo.y + BH);
+    // ...plus a token volley so 'adds' isn't a free window
+    for (let i = -1; i <= 1; i++)
+      S.abullets.push({ x: cx + i * 16, y: cy, w: 4, h: 12, vx: 0, vy: spd, trail: [] });
+  } else if (kind === 'beam') {
+    // Sweeping laser with a telegraph preview, then a lethal sweep.
+    const n = rage ? 2 : 1;
+    for (let i = 0; i < n; i++) {
+      S.beams.push({
+        x: i === 0 ? cx : (bo.dir > 0 ? 60 : W - 60),
+        hw: 9, phase: 'tell', t: 520, fireMs: rage ? 1100 : 900,
+        vx: (i === 0 ? bo.dir : -bo.dir) * (rage ? 3.1 : 2.2),
+        col: BOSS_COLORS[idx],
+      });
+    }
+  } else if (kind === 'spiral') {
+    // Rotating barrage. Readable if you track the rotation, lethal if not.
+    const arms = rage ? 12 : 9;
+    bo.spiralAng += 0.55;
+    for (let i = 0; i < arms; i++) {
+      const ang = bo.spiralAng + (i / arms) * Math.PI * 2;
+      // lower hemisphere only — no shots the player physically cannot see coming
+      const vy = Math.sin(ang) * spd;
+      if (vy < 0.15) continue;
+      S.abullets.push({ x: cx - 2, y: cy - 6, w: 4, h: 10,
+        vx: Math.cos(ang) * spd, vy, trail: [] });
+    }
+  }
+}
+
+function spawnBoss() {
+  const idx = S.wave - 1, spec = BOSS[idx];
+  S.boss = {
+    idx,
+    x: W / 2 - bossW(idx) / 2,
+    y: -bossH(idx) - 10,     // starts off-screen; descends during 'entry'
+    dir: 1, hp: spec.hp,
+    moveTimer: 0, shootTimer: 0,
+    state: 'entry',          // entry -> active -> (telegraph -> fire -> punish) -> active
+    stateTimer: 0,
+    wasEnraged: false,
+    beamX: 0, beamDir: 1,    // sweeping laser
+    spiralAng: 0,            // rotating barrage
+    subPattern: 0,           // Mothership cycling
+  };
+  S.minions = [];
+  S.beams = [];
+  S.bullets = []; S.abullets = [];
+}
+
+// ── Minions (Spider Crab adds) ───────────────────────────────────────────────
+function spawnMinion(bx, by) {
+  S.minions.push({
+    x: bx, y: by, vx: (Math.random() < 0.5 ? -1 : 1) * (1.1 + Math.random() * 0.6),
+    vy: 0.45 + Math.random() * 0.35, hp: 2, shootTimer: 600 + Math.random() * 800,
+    row: 2, col: 0,
+  });
+}
+
+function updateMinions(dt) {
+  const f = dt / 16;
+  let w = 0;
+  for (let i = 0; i < S.minions.length; i++) {
+    const m = S.minions[i];
+    m.x += m.vx * f; m.y += m.vy * f;
+    if (m.x <= 6 || m.x + 27 >= W - 6) m.vx *= -1;
+    if (m.y > H - 120) m.vy = -Math.abs(m.vy);
+    if (m.y < 60) m.vy = Math.abs(m.vy);
+    m.shootTimer -= dt;
+    if (m.shootTimer <= 0) {
+      m.shootTimer = 900 + Math.random() * 900;
+      S.abullets.push({ x: m.x + 12, y: m.y + 24, w: 4, h: 12, spd: 4.2, trail: [] });
+    }
+    // player bullet collision
+    for (let j = 0; j < S.bullets.length; j++) {
+      const b = S.bullets[j];
+      if (b.x < m.x + 27 && b.x + b.w > m.x && b.y < m.y + 24 && b.y + b.h > m.y) {
+        m.hp--; S.bullets.splice(j, 1); j--;
+        spawnParticles(m.x + 13, m.y + 12, '#00d8d8', 8, 3);
+        if (m.hp <= 0) {
+          S.score += 25; updateHUD();
+          spawnRing(m.x + 13, m.y + 12, '#00d8d8', 10, 3.5);
+          ripple(m.x + 13, m.y + 12, 3); addShake(3);
+          m.dead = true;
+        }
+        break;
+      }
+    }
+    // body-check the player
+    if (!m.dead && m.x < S.px + S.pw && m.x + 27 > S.px && m.y < S.py + S.ph && m.y + 24 > S.py) {
+      m.dead = true; playerHit();
+    }
+    if (!m.dead) S.minions[w++] = m;
+  }
+  S.minions.length = w;
+}
+
+// ── Beams (Skull sweeping laser) ─────────────────────────────────────────────
+// A beam has a telegraph phase (thin preview line, no damage) then a fire
+// phase (thick, lethal). The tell is the whole point: scary but readable.
+function updateBeams(dt) {
+  let w = 0;
+  for (let i = 0; i < S.beams.length; i++) {
+    const bm = S.beams[i];
+    bm.t -= dt;
+    if (bm.phase === 'tell' && bm.t <= 0) { bm.phase = 'fire'; bm.t = bm.fireMs; addShake(6); }
+    else if (bm.phase === 'fire') {
+      bm.x += bm.vx * (dt / 16);
+      // lethal only during fire
+      if (S.px + S.pw > bm.x - bm.hw && S.px < bm.x + bm.hw) playerHit();
+      if (bm.t <= 0) bm.dead = true;
+    }
+    if (!bm.dead) S.beams[w++] = bm;
+  }
+  S.beams.length = w;
+}
+function triggerBoss() { S.phase = 'bossannounce'; S.announceTimer = 2400; S.bullets = []; S.abullets = []; }
+function bossDefeated() {
+  const idx = S.boss.idx, BW = bossW(idx), BH = bossH(idx);
+  const bx = S.boss.x + BW / 2, by = S.boss.y + BH / 2;
+  spawnRing(bx, by, BOSS_COLORS[idx], 40, 6);
+  spawnRing(bx, by, '#ffffff', 24, 9);
+  for (let i = 0; i < 5; i++)
+    spawnParticles(S.boss.x + Math.random() * BW, S.boss.y + Math.random() * BH, BOSS_COLORS[idx], 25, 7);
+  ripple(bx, by, 14); addShake(22);
+  S.boss = null; S.bullets = []; S.abullets = []; S.minions = []; S.beams = [];
+  if (S.wave >= MAX_WAVES) { triggerWin(); return; }
+  S.wave++;
+  S.phase = 'announce'; S.announceTimer = 2400; updateHUD();
+  setTimeout(() => {
+    const sc = S.score, wv = S.wave, lv = S.lives;
+    init(false); S.score = sc; S.wave = wv; S.lives = lv;
+    S.alienInterval = Math.max(150, 800 - (wv - 1) * 60);
+    S.phase = 'announce'; S.announceTimer = 2400; updateHUD();
+  }, 100);
+}
+function playerHit() {
+  spawnRing(S.px + 16, S.py + 6, '#00d8d8', 24, 5);
+  spawnParticles(S.px + 16, S.py + 6, '#0078f8', 20, 6);
+  ripple(S.px + 16, S.py + 6, 5); addShake(12);
+  S.lives--; updateHUD(); if (S.lives <= 0) triggerGameOver(); else S.px = W / 2 - 16;
+}
+function triggerGameOver() { S.phase = 'over'; checkHS(); }
+function triggerWin()      { S.phase = 'win';  checkHS(); }
+function checkHS() {
+  const sc = getScores();
+  if (sc.length < 5 || S.score > sc[sc.length - 1].score) {
+    S.phase = 'namentry';
+    if (isMobile && window._mobileNameEntry) window._mobileNameEntry.show();
+  }
+}
+// Cached element refs + dirty-check. updateHUD fires on every alien kill and
+// every boss hit; innerHTML on a text-shadowed element forces style recalc.
+const elScore = document.getElementById('score-el');
+const elLives = document.getElementById('lives-el');
+const elWave  = document.getElementById('wave-el');
+let hudScore = -1, hudLives = -1, hudWave = -1;
+function updateHUD() {
+  if (S.score !== hudScore) { hudScore = S.score; elScore.textContent = 'SCORE: ' + S.score; }
+  if (S.lives !== hudLives) { hudLives = S.lives; elLives.textContent = '▶ '.repeat(Math.max(0, S.lives)).trim(); }
+  if (S.wave  !== hudWave)  { hudWave  = S.wave;  elWave.textContent  = 'WAVE: ' + S.wave + '/' + MAX_WAVES; }
+}
+
+// ── animated sprite renderer ──────────────────────────────────────────────────
+const ANIM_PERIOD = 380, COL_PHASE = 0.52, ROW_PHASE = 0.09;
+function alienFrame(a) {
+  const phase = S.time / ANIM_PERIOD + a.col * COL_PHASE + a.row * ROW_PHASE;
+  return Math.floor(phase) % 2;
+}
+// ── SPRITE CACHE ──────────────────────────────────────────────────────────────
+// Was: ~72 shadowBlur'd fillRects per alien, x2 passes, x55 aliens = ~8000
+// blurred rect fills every single frame. shadowBlur is the single most
+// expensive 2D op there is and it was being paid per-pixel-per-frame.
+//
+// Now: each (type, frame, color) combo is rasterized ONCE into an offscreen
+// canvas with the blur baked in. The hot path is one drawImage per alien.
+// Cache key includes color because the palette rotates per wave — 5 palettes
+// x 3 types x 2 frames is a bounded 30-ish entries, built lazily on first use.
+const PAD = 8;                 // margin so the glow halo isn't clipped
+const spriteCache = new Map();
+
+function bakeSprite(grid, px, color, blur, coreAlpha) {
+  const cols = grid[0].length, rows = grid.length;
+  const w = cols * px + PAD * 2, h = rows * px + PAD * 2;
+  const off = document.createElement('canvas');
+  off.width = w; off.height = h;
+  const o = off.getContext('2d');
+  o.shadowColor = color; o.shadowBlur = blur; o.fillStyle = color;
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++)
+    if (grid[r][c]) o.fillRect(PAD + c * px, PAD + r * px, px, px);
+  o.shadowBlur = blur * 0.22;
+  o.fillStyle = coreAlpha === 1 ? '#ffffff' : `rgba(255,255,255,${coreAlpha})`;
+  const ip = Math.max(1, px - 2);
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++)
+    if (grid[r][c]) o.fillRect(PAD + c * px + 1, PAD + r * px + 1, ip, ip);
+  return off;
+}
+
+function getAlienSprite(type, frame, color) {
+  const key = 'a|' + type + frame + color;
+  let s = spriteCache.get(key);
+  if (!s) { s = bakeSprite(SPRITE_FRAMES[type][frame], 3, color, 18, 1); spriteCache.set(key, s); }
+  return s;
+}
+function getBossSprite(idx, color, flash) {
+  const key = 'b|' + idx + (flash ? 'F' : color);
+  let s = spriteCache.get(key);
+  if (!s) {
+    const px = BOSS[idx].px;
+    s = flash
+      ? bakeSprite(BOSS_SPRITES[idx], px, '#ffffff', 26, 0)   // flash frame: solid white, no inner pass
+      : bakeSprite(BOSS_SPRITES[idx], px, color, 26, 0.65);
+    spriteCache.set(key, s);
+  }
+  return s;
+}
+// Warm the cache for a wave so the first frame after an announce doesn't hitch.
+function prewarmWave(w) {
+  const pal = getPalette(w);
+  for (let r = 0; r < ROWS; r++) for (let f = 0; f < 2; f++) getAlienSprite(ROW_TYPES[r], f, pal[r]);
+  const idx = (w - 1) % BOSS_COLORS.length;
+  getBossSprite(idx, BOSS_COLORS[idx], false);
+  getBossSprite(idx, BOSS_COLORS[idx], true);
+  getBossSprite(idx, ENRAGE_COL, false);   // enrage palette, baked ahead of the transition
+}
+
+function glowSprite(type, frame, x, y, px, color) {
+  ctx.drawImage(getAlienSprite(type, frame, color), x - PAD, y - PAD);
+}
+function glowBoss(idx, x, y, px, color, flash) {
+  ctx.drawImage(getBossSprite(idx, color, flash), x - PAD, y - PAD);
+}
+function glowText(txt, x, y, sz, col, alpha) {
+  ctx.save(); ctx.globalAlpha = alpha || 1; ctx.font = 'bold ' + sz + 'px monospace';
+  ctx.textAlign = 'center'; ctx.shadowColor = col; ctx.shadowBlur = 32; ctx.fillStyle = col; ctx.fillText(txt, x, y);
+  ctx.shadowBlur = 10; ctx.fillStyle = '#ffffff'; ctx.globalAlpha = (alpha || 1) * 0.9; ctx.fillText(txt, x, y);
+  ctx.restore();
+}
+
+// Vignette is geometrically static — built once, not 60x/sec.
+const VIGNETTE = (() => {
+  const g = ctx.createRadialGradient(W / 2, H / 2, H * 0.28, W / 2, H / 2, H * 0.82);
+  g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,20,0.72)');
+  return g;
+})();
+
+// ── draw ──────────────────────────────────────────────────────────────────────
+function draw() {
+  const pal = getPalette(S.wave); const [sx, sy] = getShake();
+  ctx.fillStyle = '#000010'; ctx.fillRect(0, 0, W, H);
+  let gc;
+  // The whole arena reacts to enrage — mesh included.
+  if (S.phase === 'boss' && S.boss && enraged(S.boss)) gc = ENRAGE_COL;
+  else if (S.phase === 'boss' || S.phase === 'bossannounce') gc = BOSS_COLORS[S.wave - 1];
+  else { const t = S.time / 3000; gc = `hsl(${185 + Math.sin(t) * 20},100%,45%)`; }
+  drawGrid(gc);
+
+  ctx.save(); ctx.translate(sx, sy);
+
+  // bunkers — ~1500 blocks. Was 1500 separate shadowBlur'd fillRect calls.
+  // Now: accumulate every live block into ONE path, fill once. The glow is
+  // resolved by the compositor a single time instead of 1500 times.
+  ctx.save(); ctx.shadowColor = '#58d854'; ctx.shadowBlur = 7; ctx.fillStyle = '#58d854';
+  ctx.beginPath();
+  for (const bl of S.bunkers) if (bl.alive) ctx.rect(bl.x, bl.y, 3, 3);
+  ctx.fill();
+  ctx.restore();
+
+  // aliens
+  if (S.phase === 'play' || S.phase === 'bossannounce') {
+    ctx.save();
+    for (const a of S.aliens) {
+      if (!a.alive) continue;
+      ctx.globalAlpha = 0.82 + 0.18 * Math.sin(S.time / 260 + a.col * 0.35 + a.row * 0.22);
+      glowSprite(ROW_TYPES[a.row], alienFrame(a), a.x, a.y, 3, pal[a.row]);
+    }
+    ctx.restore();
+  }
+
+  // ── minions (drawn under the boss) ──
+  if (S.minions && S.minions.length) {
+    ctx.save();
+    for (const m of S.minions) {
+      ctx.globalAlpha = 0.9;
+      glowSprite('B', (S.time / 200 | 0) % 2, m.x, m.y, 3, '#00d8d8');
+    }
+    ctx.restore();
+  }
+
+  // ── beams ──
+  // Telegraph draws a thin, semi-transparent preview so the player can read
+  // the incoming sweep. Fire draws the lethal column. The tell IS the fairness.
+  if (S.beams && S.beams.length) {
+    ctx.save();
+    for (const bm of S.beams) {
+      if (bm.phase === 'tell') {
+        const blink = 0.25 + 0.35 * Math.abs(Math.sin(S.time / 60));
+        ctx.globalAlpha = blink; ctx.fillStyle = bm.col;
+        ctx.shadowColor = bm.col; ctx.shadowBlur = 12;
+        ctx.fillRect(bm.x - 1.5, 0, 3, H);
+      } else {
+        ctx.globalAlpha = 0.85; ctx.fillStyle = bm.col;
+        ctx.shadowColor = bm.col; ctx.shadowBlur = 26;
+        ctx.fillRect(bm.x - bm.hw, 0, bm.hw * 2, H);
+        ctx.globalAlpha = 1; ctx.fillStyle = '#ffffff'; ctx.shadowBlur = 10;
+        ctx.fillRect(bm.x - bm.hw * 0.32, 0, bm.hw * 0.64, H);
+      }
+    }
+    ctx.restore();
+  }
+
+  // boss
+  if (S.boss && S.phase === 'boss') {
+    const bo = S.boss, idx = bo.idx;
+    const BW = bossW(idx), BH = bossH(idx);
+    const rage = enraged(bo);
+    const bodyCol = rage ? ENRAGE_COL : BOSS_COLORS[idx];
+
+    // Telegraph: the boss swells and glows white-hot just before it attacks.
+    let pulse = 0.8 + 0.2 * Math.sin(S.time / 180);
+    if (bo.state === 'telegraph') pulse = 0.72 + 0.28 * Math.abs(Math.sin(S.time / 45));
+    if (rage) pulse = Math.min(1, pulse + 0.12);
+
+    ctx.save();
+    ctx.globalAlpha = bo.state === 'entry' ? 0.85 : pulse;
+    glowBoss(idx, bo.x, bo.y, BOSS[idx].px, bodyCol, S.flash || bo.state === 'telegraph');
+    ctx.restore();
+
+    // Punish window marker — a visible "hit me now" ring. This is the reward
+    // signal for the aggression the player is being asked to take on.
+    if (bo.state === 'punish') {
+      const t = 0.45 + 0.35 * Math.sin(S.time / 90);
+      ctx.save(); ctx.globalAlpha = t;
+      ctx.strokeStyle = '#ffee00'; ctx.lineWidth = 2;
+      ctx.shadowColor = '#ffee00'; ctx.shadowBlur = 14;
+      ctx.strokeRect(bo.x - 4, bo.y - 4, BW + 8, BH + 8);
+      ctx.restore();
+    }
+
+    // Weak point indicator — only visible while vulnerable, so the player
+    // learns where to aim without it cluttering the entry animation.
+    // Drawn on the UNDERSIDE, because that's where shots actually land. The
+    // indicator has to match the real hitbox or it teaches the wrong lesson.
+    if (bo.state !== 'entry') {
+      const wx = bo.x + BW * 0.34, ww = BW * 0.32, wy = bo.y + BH;
+      const cf = S.critFlash > 0 ? 1 : 0.35 + 0.20 * Math.sin(S.time / 130);
+      ctx.save(); ctx.globalAlpha = cf;
+      ctx.strokeStyle = S.critFlash > 0 ? '#ffffff' : '#ffee00'; ctx.lineWidth = 2;
+      ctx.shadowColor = '#ffee00'; ctx.shadowBlur = 12;
+      ctx.beginPath();
+      ctx.moveTo(wx, wy + 3); ctx.lineTo(wx + ww, wy + 3);
+      // downward ticks marking the lane edges
+      ctx.moveTo(wx, wy + 3); ctx.lineTo(wx, wy + 9);
+      ctx.moveTo(wx + ww, wy + 3); ctx.lineTo(wx + ww, wy + 9);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // ── health bar ──
+    const bW = 220, bH2 = 9, bx = (W - bW) / 2 - sx, by = 12 - sy;
+    ctx.save();
+    ctx.fillStyle = '#0a0a1a'; ctx.fillRect(bx, by, bW, bH2);
+    const frac = Math.max(0, bo.hp / BOSS_HP[idx]);
+    const bc = rage ? ENRAGE_COL : frac > 0.6 ? BOSS_COLORS[idx] : frac > 0.35 ? '#fca044' : '#f83800';
+    ctx.shadowColor = bc; ctx.shadowBlur = rage ? 16 : 8; ctx.fillStyle = bc;
+    ctx.fillRect(bx, by, Math.round(bW * frac), bH2);
+    // enrage threshold notch — tells the player where the fight gets worse
+    const ex = bx + bW * ENRAGE_AT;
+    ctx.shadowBlur = 0; ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.fillRect(ex - 1, by - 2, 2, bH2 + 4);
+    ctx.strokeStyle = '#222244'; ctx.lineWidth = 1; ctx.strokeRect(bx, by, bW, bH2);
+    ctx.fillStyle = '#fff'; ctx.font = '10px monospace'; ctx.textAlign = 'center';
+    ctx.fillText(BOSS_NAMES[idx] + (rage ? '  ·  ENRAGED' : ''), W / 2, by + bH2 + 13);
+    ctx.restore();
+  }
+
+  // Enrage screen-flash — brief red wash on the transition.
+  if (S.enrageFlash > 0) {
+    ctx.save();
+    ctx.globalAlpha = Math.min(0.4, S.enrageFlash / 700 * 0.4);
+    ctx.fillStyle = ENRAGE_COL; ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+  }
+
+  // player
+  const eg = 0.5 + 0.5 * Math.sin(S.time / 70);
+  ctx.save();
+  ctx.shadowColor = `rgba(0,120,248,${eg})`; ctx.shadowBlur = 18 + eg * 12;
+  ctx.fillStyle = `rgb(0,${120 + Math.round(eg * 100)},248)`;
+  ctx.fillRect(S.px + 2, S.py + 4, 28, 8); ctx.fillRect(S.px + 13, S.py, 6, 6); ctx.fillRect(S.px, S.py + 8, 32, 4);
+  ctx.shadowBlur = 5; ctx.fillStyle = 'rgba(255,255,255,0.85)';
+  ctx.fillRect(S.px + 6, S.py + 5, 20, 4); ctx.fillRect(S.px + 14, S.py + 1, 4, 4);
+  ctx.restore();
+
+  // player bullets — trails batched into one path, bodies into another.
+  if (S.bullets.length) {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(0,200,255,0.3)'; ctx.lineWidth = 2;
+    ctx.shadowColor = '#00d8d8'; ctx.shadowBlur = 10;
+    ctx.beginPath();
+    for (const b of S.bullets) {
+      if (b.trail.length < 2) continue;
+      ctx.moveTo(b.x + 1, b.y);
+      for (let t = 0; t < b.trail.length; t++) ctx.lineTo(b.trail[t].x + 1, b.trail[t].y);
+    }
+    ctx.stroke();
+    ctx.shadowBlur = 16; ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    for (const b of S.bullets) ctx.rect(b.x, b.y, b.w, b.h);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // alien bullets
+  if (S.abullets.length) {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(248,88,0,0.3)'; ctx.lineWidth = 2;
+    ctx.shadowColor = '#f85800'; ctx.shadowBlur = 10;
+    ctx.beginPath();
+    for (const b of S.abullets) {
+      if (b.trail.length < 2) continue;
+      ctx.moveTo(b.x + 2, b.y);
+      for (let t = 0; t < b.trail.length; t++) ctx.lineTo(b.trail[t].x + 2, b.trail[t].y);
+    }
+    ctx.stroke();
+    ctx.shadowBlur = 14; ctx.fillStyle = '#f88800';
+    ctx.beginPath();
+    for (const b of S.abullets) {
+      ctx.rect(b.x, b.y, b.w, 4);
+      ctx.rect(b.x + (b.y % 8 < 4 ? 2 : -2), b.y + 4, b.w, 4);
+      ctx.rect(b.x, b.y + 8, b.w, 4);
+    }
+    ctx.fill();
+    ctx.restore();
+  }
+
+  drawParticles();
+  ctx.save(); ctx.shadowColor = '#58d854'; ctx.shadowBlur = 10; ctx.fillStyle = '#38a820';
+  ctx.fillRect(0, H - 6, W, 2); ctx.restore();
+  ctx.fillStyle = VIGNETTE; ctx.fillRect(0, 0, W, H);
+  ctx.restore();
+
+  // overlays
+  ctx.textAlign = 'center';
+  if (S.phase === 'announce') {
+    const a = Math.min(1, S.announceTimer / 500);
+    ctx.save(); ctx.fillStyle = `rgba(0,0,20,${0.6 * a})`; ctx.fillRect(0, 0, W, H); ctx.restore();
+    glowText('WAVE ' + S.wave, W / 2, H / 2 - 10, 56, pal[0], a);
+    ctx.save(); ctx.globalAlpha = a * 0.75; ctx.fillStyle = '#aaccee'; ctx.font = '16px monospace'; ctx.textAlign = 'center';
+    ctx.fillText(S.wave === 1 ? 'GOOD LUCK COMMANDER' : "THEY'RE BACK", W / 2, H / 2 + 38); ctx.restore();
+  }
+  if (S.phase === 'bossannounce') {
+    const idx = S.wave - 1, a = Math.min(1, S.announceTimer / 500);
+    ctx.save(); ctx.fillStyle = `rgba(0,0,20,${0.65 * a})`; ctx.fillRect(0, 0, W, H); ctx.restore();
+    glowText('WARNING', W / 2, H / 2 - 36, 36, BOSS_COLORS[idx], a);
+    glowText(BOSS_NAMES[idx], W / 2, H / 2 + 12, 28, BOSS_COLORS[idx], a);
+    ctx.save(); ctx.globalAlpha = a * 0.65; ctx.fillStyle = '#ccccee'; ctx.font = '14px monospace'; ctx.textAlign = 'center';
+    ctx.fillText('APPROACHES', W / 2, H / 2 + 42);
+    // Name the threat. Telling the player what's coming is free intimidation
+    // and it front-loads the pattern they're about to have to learn.
+    ctx.globalAlpha = a * 0.5; ctx.fillStyle = BOSS_COLORS[idx]; ctx.font = '11px monospace';
+    ctx.fillText(BOSS_TAGLINE[idx], W / 2, H / 2 + 66);
+    ctx.globalAlpha = a * 0.38; ctx.fillStyle = '#889'; ctx.font = '10px monospace';
+    ctx.fillText('AIM FOR THE CORE', W / 2, H / 2 + 86);
+    ctx.restore();
+  }
+  if (S.phase === 'over' || S.phase === 'win') {
+    ctx.fillStyle = 'rgba(0,0,18,0.76)'; ctx.fillRect(0, 0, W, H);
+    const hc = S.phase === 'win' ? '#f8b800' : '#f83800';
+    glowText(S.phase === 'win' ? 'YOU WIN!' : 'GAME OVER', W / 2, H / 2 - 64, 34, hc, 1);
+    ctx.save(); ctx.fillStyle = '#aaccee'; ctx.font = '14px monospace'; ctx.textAlign = 'center';
+    ctx.fillText('SCORE: ' + S.score + '   WAVE: ' + S.wave + '/' + MAX_WAVES, W / 2, H / 2 - 32); ctx.restore();
+    drawScoreTable(H / 2);
+    ctx.save(); ctx.fillStyle = '#445566'; ctx.font = '12px monospace'; ctx.textAlign = 'center';
+    ctx.fillText(isMobile ? 'TAP SCREEN TO RESTART' : 'press R to restart', W / 2, H - 20); ctx.restore();
+  }
+  if (S.phase === 'namentry') {
+    ctx.fillStyle = 'rgba(0,0,18,0.84)'; ctx.fillRect(0, 0, W, H);
+    glowText('NEW HIGH SCORE: ' + S.score, W / 2, 76, 20, '#f8b800', 1);
+    ctx.save(); ctx.fillStyle = '#aaccee'; ctx.font = '15px monospace'; ctx.textAlign = 'center';
+    ctx.fillText('ENTER NAME (3 chars):', W / 2, 116); ctx.restore();
+    const nm = S.nameEntry.name.padEnd(3, '_');
+    glowText(nm.split('').join('  '), W / 2, 162, 38, '#58d854', 1);
+    ctx.save(); ctx.fillStyle = '#445566'; ctx.font = '12px monospace'; ctx.textAlign = 'center';
+    ctx.fillText('type letters   ENTER to confirm', W / 2, 200); ctx.restore();
+    drawScoreTable(228);
+  }
+}
+
+function drawScoreTable(y) {
+  const scores = getScores(); if (!scores.length) return;
+  glowText('HIGH SCORES', W / 2, y + 6, 14, '#f8b800', 0.9);
+  const cols = ['#f8b800','#7b5fff','#00d8d8','#f800f8','#58d854'];
+  scores.forEach((e, i) => {
+    ctx.save(); ctx.fillStyle = cols[i] || '#556677'; ctx.font = '12px monospace';
+    ctx.textAlign = 'center'; ctx.globalAlpha = 0.9;
+    ctx.fillText((i + 1) + '.  ' + (e.name || '???').padEnd(4) + ' ' + String(e.score).padStart(7, ' ') + '  W' + e.wave, W / 2, y + 24 + i * 19);
+    ctx.restore();
+  });
+}
+
+window.addEventListener('keydown', e => {
+  if (S.phase === 'namentry') {
+    const ne = S.nameEntry;
+    if (e.key === 'Enter' && ne.name.length > 0) {
+      saveScore({ name: ne.name.toUpperCase(), score: S.score, wave: S.wave });
+      S.phase = S.wave >= MAX_WAVES ? 'win' : 'over';
+    } else if (e.key === 'Backspace') {
+      ne.name = ne.name.slice(0, -1);
+    } else if (/^[a-zA-Z0-9]$/.test(e.key) && ne.name.length < 3) {
+      ne.name += e.key.toUpperCase();
+    }
+    return;
+  }
+  S.keys[e.key] = true;
+  if (e.key === 'r' || e.key === 'R') { particles = []; init(false); }
+  if ([' ', 'ArrowLeft', 'ArrowRight', 'ArrowUp'].includes(e.key)) e.preventDefault();
+});
+window.addEventListener('keyup', e => { if (S.phase !== 'namentry') S.keys[e.key] = false; });
+
+// Returning from a backgrounded tab: reset the clock so the first frame back
+// isn't a giant dt (mobile browsers park RAF aggressively on lock/app-switch).
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) { lastT = 0; gridAsleep = false; }
+});
+
+init(false);
+requestAnimationFrame(tick);
+
+// ── MOBILE SETUP ─────────────────────────────────────────────────────────────
+if (isMobile) {
+  // 1. Adjust canvas height budget so it doesn't overlap controls
+  document.documentElement.style.setProperty('--ctrl-h', '76px');
+
+  // 2. Show the touch control bar
+  const touchControls = document.getElementById('touch-controls');
+  touchControls.style.display = 'flex';
+
+  // 3. Wire up each button to the existing S.keys system
+  function bindTouchBtn(id, key) {
+    const el = document.getElementById(id);
+    function down(e) {
+      e.preventDefault();
+      if (S && S.phase !== 'namentry') {
+        S.keys[key] = true;
+        el.classList.add('pressed');
+      }
+    }
+    function up(e) {
+      e.preventDefault();
+      if (S) S.keys[key] = false;
+      el.classList.remove('pressed');
+    }
+    el.addEventListener('touchstart',  down, { passive: false });
+    el.addEventListener('touchend',    up,   { passive: false });
+    el.addEventListener('touchcancel', up,   { passive: false });
+  }
+  bindTouchBtn('btn-left',  'ArrowLeft');
+  bindTouchBtn('btn-right', 'ArrowRight');
+  bindTouchBtn('btn-fire',  ' ');
+
+  // 4. Tap canvas to restart on game-over / win screens
+  document.getElementById('c').addEventListener('touchstart', e => {
+    e.preventDefault();
+    if (S && (S.phase === 'over' || S.phase === 'win')) {
+      particles = [];
+      init(false);
+    }
+  }, { passive: false });
+
+  // 5. Mobile name-entry overlay wiring
+  const nameOverlay  = document.getElementById('mobile-name-overlay');
+  const nameInput    = document.getElementById('mobile-name-input');
+  const nameSubmit   = document.getElementById('mobile-name-submit');
+
+  function submitMobileName() {
+    const name = nameInput.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3);
+    if (!name.length) return;
+    saveScore({ name, score: S.score, wave: S.wave });
+    S.phase = S.wave >= MAX_WAVES ? 'win' : 'over';
+    nameOverlay.classList.remove('visible');
+    nameInput.blur();
+  }
+
+  // Exposed so checkHS() can call it
+  window._mobileNameEntry = {
+    show() {
+      nameInput.value = '';
+      nameOverlay.classList.add('visible');
+      // Small delay lets the overlay paint before keyboard opens
+      setTimeout(() => nameInput.focus(), 120);
+    }
+  };
+
+  nameSubmit.addEventListener('touchend', e => { e.preventDefault(); submitMobileName(); }, { passive: false });
+  nameSubmit.addEventListener('click', submitMobileName);
+  nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') submitMobileName(); });
+}
+</script>
+
+</body>
+</html>

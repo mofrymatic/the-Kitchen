@@ -1,0 +1,736 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#020814">
+<meta name="color-scheme" content="dark">
+<title>Camelot · FTS Arcade</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;background:#020814;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+canvas{display:block;position:fixed;top:0;left:0;cursor:crosshair;background:#020814}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+// ═══════════════════════════════════════════════════════════════════════
+//  CAMELOT · OBLITERATUS — v1
+//  FTS Arcade · single-canvas / single-script cabinet
+//  Joust-lineage jouster, single-input control scheme (see KID_PACKET).
+// ═══════════════════════════════════════════════════════════════════════
+(function(){
+'use strict';
+
+// ── Sandbox-safe storage ─────────────────────────────────────────────
+function safeGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+function safeSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){ /* sandboxed iframe: degrade silently */ } }
+
+// ── Dry-run shell report stub ────────────────────────────────────────
+function reportToShell(evt){
+  try{ if (window.parent && window.parent !== window) window.parent.postMessage({type:'FTS_EVENT', cabinet:'camelot', evt}, '*'); }
+  catch(e){ /* no shell listening yet — dry run */ }
+}
+
+// ── Seeded RNG (mulberry32) — structurally ready for replay/score authority ──
+function mulberry32(seed){
+  return function(){
+    seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const RUN_SEED = (Date.now() ^ 0x9e3779b9) >>> 0; // N=1: not fixed — flip to a constant for deterministic replay testing
+let rng = mulberry32(RUN_SEED);
+
+// ── Canvas / letterboxed logical viewport ───────────────────────────
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const LOGICAL_W = 960, LOGICAL_H = 540;
+let W = 0, H = 0, dpr = 1, worldScale = 1, offX = 0, offY = 0;
+
+function toLogical(clientX, clientY){
+  return { x: (clientX - offX) / worldScale, y: (clientY - offY) / worldScale };
+}
+
+// ── Palette (Obliteratus) ───────────────────────────────────────────
+const PAL = {
+  void: '#020814',
+  cyan: '20,234,255',
+  gold: '255,207,61',
+  red:  '255,39,69',
+  magenta: '255,40,183',
+  ember: '255,120,20',
+};
+function rgba(rgb, a){ return `rgba(${rgb},${a})`; }
+
+// ── Dot-grid background (baked once, static — cheap ambient parallax) ──
+let bgTile = null;
+function buildBgTile(){
+  const size = 64;
+  const off = document.createElement('canvas');
+  off.width = off.height = size;
+  const o = off.getContext('2d');
+  o.fillStyle = PAL.void;
+  o.fillRect(0,0,size,size);
+  o.fillStyle = rgba(PAL.cyan, .16);
+  o.beginPath(); o.arc(size/2, size/2, 1.4, 0, Math.PI*2); o.fill();
+  bgTile = off;
+}
+let bgPattern = null;
+
+// ── CRT scanline overlay (baked once as a small tile pattern) ───────
+let scanTile = null, scanPattern = null;
+function buildScanTile(){
+  const off = document.createElement('canvas');
+  off.width = 4; off.height = 4;
+  const o = off.getContext('2d');
+  o.clearRect(0,0,4,4);
+  o.fillStyle = 'rgba(0,0,0,.20)';
+  o.fillRect(0,0,4,1);
+  o.fillRect(0,2,4,1);
+  scanTile = off;
+}
+
+function resize(){
+  dpr = Math.min(window.devicePixelRatio || 1, 2);
+  W = window.innerWidth; H = window.innerHeight;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  canvas.width = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  worldScale = Math.min(W / LOGICAL_W, H / LOGICAL_H);
+  offX = (W - LOGICAL_W * worldScale) / 2;
+  offY = (H - LOGICAL_H * worldScale) / 2;
+  ctx.setTransform(dpr * worldScale, 0, 0, dpr * worldScale, dpr * offX, dpr * offY);
+  ctx.imageSmoothingEnabled = false;
+  bgPattern = ctx.createPattern(bgTile, 'repeat');
+  scanPattern = ctx.createPattern(scanTile, 'repeat');
+}
+
+// ── Tiny procedural audio bus (muted by default, per standing constraint) ──
+const AUDIO = {
+  ctx: null, master: null, muted: true,
+  init(){
+    if (this.ctx) return true;
+    try{
+      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+      this.master = this.ctx.createGain();
+      this.master.gain.value = this.muted ? 0 : 0.5;
+      this.master.connect(this.ctx.destination);
+      return true;
+    }catch(e){ return false; }
+  },
+  unlock(){ if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume(); },
+  setMuted(m){
+    this.muted = m;
+    if (this.master) this.master.gain.setTargetAtTime(m ? 0 : 0.5, this.ctx.currentTime, .05);
+  },
+  tone(freq, dur, type, gain, sweepTo){
+    if (!this.init()) return;
+    this.unlock();
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const g = this.ctx.createGain();
+    osc.type = type || 'sine';
+    osc.frequency.setValueAtTime(freq, t);
+    if (sweepTo) osc.frequency.exponentialRampToValueAtTime(Math.max(20, sweepTo), t + dur);
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(gain, t + .008);
+    g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    osc.connect(g); g.connect(this.master);
+    osc.start(t); osc.stop(t + dur + .02);
+  },
+  noise(dur, gain){
+    if (!this.init()) return;
+    this.unlock();
+    const t = this.ctx.currentTime;
+    const n = this.ctx.sampleRate * dur;
+    const buf = this.ctx.createBuffer(1, n, this.ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i=0;i<n;i++) d[i] = (rng()*2-1) * (1 - i/n);
+    const src = this.ctx.createBufferSource();
+    src.buffer = buf;
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(gain, t);
+    g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    src.connect(g); g.connect(this.master);
+    src.start(t);
+  },
+};
+function sfx(name){
+  switch(name){
+    case 'flap': AUDIO.tone(260, .12, 'sine', .10, 420); break;
+    case 'enemyDown': AUDIO.tone(340, .18, 'triangle', .12, 90); break;
+    case 'egg': AUDIO.tone(520, .10, 'sine', .09, 900); break;
+    case 'hatch': AUDIO.tone(180, .22, 'sawtooth', .08, 260); break;
+    case 'death': AUDIO.noise(.30, .16); AUDIO.tone(140, .30, 'sawtooth', .10, 40); break;
+    case 'wave': for(let i=0;i<4;i++) setTimeout(()=>AUDIO.tone(300+i*90,.14,'triangle',.09), i*70); break;
+    case 'collect': AUDIO.tone(700,.08,'sine',.08,1100); break;
+  }
+}
+
+// ── World constants ──────────────────────────────────────────────────
+const GRAVITY = 1500;
+const FLAP_VY = -380;
+const FLAP_VX_ACCEL = 58;   // horizontal thrust added per flap, only when steering left/right
+const START_VX = 90;        // initial drift on spawn — after that, inertia is untouched except by flaps/bounces
+const MAX_VX = 260;
+const LAVA_TOP = 480;
+const PLAYER_R = 14;
+const ENEMY_R = { 0: 13, 1: 11 };
+const EGG_R = 8;
+
+const PLATFORMS = [
+  { x: 60,  y: 120, w: 170, h: 14 },
+  { x: 730, y: 120, w: 170, h: 14 },
+  { x: 400, y: 230, w: 160, h: 14 },
+  { x: 150, y: 340, w: 150, h: 14 },
+  { x: 660, y: 340, w: 150, h: 14 },
+  { x: 0,   y: 470, w: 190, h: 16 }, // base ledge, sits right above the lava line
+  { x: 770, y: 470, w: 190, h: 16 },
+];
+
+// ── State ─────────────────────────────────────────────────────────────
+const state = {
+  phase: 'title', // title | playing | dying | over
+  score: 0,
+  highScore: parseInt(safeGet('camelot_hs') || '0', 10) || 0,
+  lives: 3,
+  wave: 0,
+  waveBanner: 0,
+  time: 0,
+  shake: 0,
+};
+
+const player = { x: 480, y: 90, vx: START_VX, vy: 0, r: PLAYER_R, alive: true, invuln: 0, flapAnim: 0, grounded: false };
+let enemies = [];
+let eggs = [];
+let particles = [];
+let popups = [];
+
+function resetPlayer(){
+  player.x = 480; player.y = 90; player.vx = START_VX; player.vy = 0;
+  player.alive = true; player.invuln = 2.0; player.flapAnim = 0; player.grounded = false;
+}
+
+function spawnPopup(x, y, text, rgb){
+  popups.push({ x, y, text, rgb, life: 0.9 });
+}
+
+// ── Platform collision (one-way: land on top only while falling) ────
+function resolvePlatformCollision(e){
+  e.grounded = false;
+  if (e.vy < 0) return; // rising through — no landing check needed
+  for (const p of PLATFORMS){
+    const withinX = e.x + e.r*0.6 > p.x && e.x - e.r*0.6 < p.x + p.w;
+    if (!withinX) continue;
+    const feetPrev = (e.y - e.vy*0.0167) + e.r; // approx previous-frame feet position
+    const feetNow = e.y + e.r;
+    if (feetPrev <= p.y && feetNow >= p.y){
+      e.y = p.y - e.r;
+      e.vy = 0;
+      e.grounded = true;
+    }
+  }
+}
+
+function wrapHorizontal(e){
+  const pad = e.r;
+  if (e.x < -pad) e.x = LOGICAL_W + pad;
+  else if (e.x > LOGICAL_W + pad) e.x = -pad;
+}
+function bounceHorizontal(e){
+  const pad = e.r;
+  if (e.x < pad){ e.x = pad; e.vx = Math.abs(e.vx); }
+  else if (e.x > LOGICAL_W - pad){ e.x = LOGICAL_W - pad; e.vx = -Math.abs(e.vx); }
+}
+
+// ── Particles (tiny ephemeral bursts, no pooling needed at this scale) ──
+function burst(x, y, rgb, n){
+  for (let i=0;i<n;i++){
+    const a = rng()*Math.PI*2, sp = 60 + rng()*140;
+    particles.push({ x, y, vx: Math.cos(a)*sp, vy: Math.sin(a)*sp, life: .35 + rng()*.25, rgb });
+  }
+}
+
+// ── Player control: Flap (+ optional steering direction) ─────────────
+// dir: -1 (left), 0 (neutral — pure vertical, inertia untouched), 1 (right)
+function flap(dir){
+  if (state.phase === 'title' || state.phase === 'over'){ startGame(); return; }
+  if (state.phase !== 'playing') return;
+  player.vy = FLAP_VY;
+  if (dir){
+    player.vx = Math.max(-MAX_VX, Math.min(MAX_VX, player.vx + dir * FLAP_VX_ACCEL));
+  }
+  // dir === 0: vertical impulse only — existing horizontal velocity carries, untouched.
+  player.flapAnim = 1;
+  sfx('flap');
+}
+
+function startGame(){
+  state.phase = 'playing';
+  state.score = 0; state.lives = 3; state.wave = 0;
+  enemies = []; eggs = []; particles = []; popups = [];
+  resetPlayer();
+  nextWave();
+  reportToShell({ type:'game_start', seed: RUN_SEED });
+}
+
+function nextWave(){
+  state.wave++;
+  const count = Math.min(3 + state.wave, 8);
+  for (let i=0;i<count;i++){
+    const p = PLATFORMS[1 + Math.floor(rng()*(PLATFORMS.length-3))]; // spawn on an interior platform
+    const tier = (state.wave >= 2 && rng() < 0.35) ? 1 : 0;
+    enemies.push({
+      x: p.x + 20 + rng()*(p.w-40), y: p.y - ENEMY_R[tier] - 1,
+      vx: (rng()<0.5?-1:1) * (60 + rng()*50 + tier*30), vy: 0,
+      r: ENEMY_R[tier], tier, aiTimer: rng()*0.6, alive: true, grounded: false, flapAnim: 0,
+    });
+  }
+  state.waveBanner = 1.6;
+  sfx('wave');
+}
+
+// ── Combat: altitude check on overlap ────────────────────────────────
+const ALT_TOLERANCE = 5;
+function resolveCombat(dt){
+  if (!player.alive || player.invuln > 0) return;
+  for (const e of enemies){
+    if (!e.alive) continue;
+    const dx = player.x - e.x, dy = player.y - e.y;
+    const dist = Math.hypot(dx, dy);
+    if (dist > (player.r + e.r) * 0.82) continue;
+    const diff = (player.y) - (e.y);
+    if (diff < -ALT_TOLERANCE){
+      // player higher — enemy dies, drops an egg
+      const gain = 250 + e.tier*150;
+      spawnPopup(e.x, e.y - 10, '+' + gain, e.tier===1?PAL.magenta:PAL.red);
+      killEnemy(e, true);
+      state.score += gain;
+      state.shake = Math.max(state.shake, 4);
+    } else if (diff > ALT_TOLERANCE){
+      killPlayer();
+      return;
+    } else {
+      // near-equal altitude: a tie, bounce apart (classic joust-lineage rule)
+      const push = 90;
+      player.vx += (dx>=0?1:-1) * push * dt;
+      e.vx += (dx>=0?-1:1) * push * dt;
+    }
+  }
+}
+
+function killEnemy(e, dropEgg){
+  e.alive = false;
+  burst(e.x, e.y, e.tier===1?PAL.magenta:PAL.red, 14);
+  sfx('enemyDown');
+  if (dropEgg){
+    eggs.push({ x: e.x, y: e.y, vx: e.vx*0.3, vy: -60, r: EGG_R, hatchTimer: 9 + rng()*3, grounded: false });
+  }
+  enemies = enemies.filter(x => x !== e);
+}
+
+function killPlayer(){
+  if (!player.alive || player.invuln > 0) return;
+  player.alive = false;
+  burst(player.x, player.y, PAL.gold, 20);
+  state.shake = 10;
+  sfx('death');
+  state.lives--;
+  reportToShell({ type:'player_death', score: state.score, wave: state.wave });
+  if (state.lives <= 0){
+    endGame();
+  } else {
+    setTimeout(() => { if (state.phase === 'playing') resetPlayer(); }, 900);
+  }
+}
+
+function endGame(){
+  state.phase = 'over';
+  if (state.score > state.highScore){
+    state.highScore = state.score;
+    safeSet('camelot_hs', String(state.highScore));
+  }
+  reportToShell({ type:'game_over', score: state.score, wave: state.wave });
+}
+
+// ── Update ────────────────────────────────────────────────────────────
+function updatePlayer(dt){
+  if (!player.alive) return;
+  player.invuln = Math.max(0, player.invuln - dt);
+  player.flapAnim = Math.max(0, player.flapAnim - dt*3);
+  player.vy += GRAVITY * dt;
+  // No horizontal decay: lateral inertia persists until the next flap (with a
+  // held direction), a wall wrap, or a combat bounce changes it.
+  player.x += player.vx * dt;
+  player.y += player.vy * dt;
+  wrapHorizontal(player);
+  resolvePlatformCollision(player);
+  if (player.y + player.r > LAVA_TOP){
+    killPlayer();
+  }
+  player.y = Math.max(player.r, Math.min(player.y, LOGICAL_H - 2));
+}
+
+function updateEnemies(dt){
+  for (const e of enemies){
+    e.aiTimer -= dt;
+    e.flapAnim = Math.max(0, e.flapAnim - dt*3);
+    if (e.aiTimer <= 0){
+      e.aiTimer = 0.35 + rng()*0.9;
+      const tracking = e.tier === 1 && player.alive && player.y < e.y - 12;
+      if (rng() < (tracking ? 0.78 : 0.42)){
+        e.vy = FLAP_VY * 0.82;
+        e.vx += (rng() < 0.5 ? -1 : 1) * 26;
+        e.vx = Math.max(-MAX_VX*0.8, Math.min(MAX_VX*0.8, e.vx));
+        e.flapAnim = 1;
+      }
+    }
+    e.vy += GRAVITY * dt;
+    e.x += e.vx * dt;
+    e.y += e.vy * dt;
+    bounceHorizontal(e);
+    resolvePlatformCollision(e);
+    if (e.y + e.r > LAVA_TOP){
+      killEnemy(e, false);
+    }
+  }
+}
+
+function updateEggs(dt){
+  for (const eg of eggs){
+    eg.vy += GRAVITY * dt;
+    eg.x += eg.vx * dt;
+    eg.y += eg.vy * dt;
+    wrapHorizontal(eg);
+    resolvePlatformCollision(eg);
+    eg.hatchTimer -= dt;
+    if (eg.y + eg.r > LAVA_TOP){
+      eg.dead = true;
+      continue;
+    }
+    if (player.alive && player.invuln <= 0){
+      const d = Math.hypot(player.x - eg.x, player.y - eg.y);
+      if (d < player.r + eg.r){
+        state.score += 750;
+        spawnPopup(eg.x, eg.y - 8, '+750', PAL.gold);
+        burst(eg.x, eg.y, PAL.gold, 10);
+        sfx('collect');
+        eg.dead = true;
+      }
+    }
+    if (eg.hatchTimer <= 0 && !eg.dead){
+      enemies.push({
+        x: eg.x, y: eg.y, vx: (rng()<0.5?-1:1)*70, vy: -40,
+        r: ENEMY_R[0], tier: 0, aiTimer: rng()*0.5, alive: true, grounded: false, flapAnim: 0,
+      });
+      sfx('hatch');
+      eg.dead = true;
+    }
+  }
+  eggs = eggs.filter(e => !e.dead);
+}
+
+function updateParticles(dt){
+  for (const p of particles){
+    p.life -= dt;
+    p.vy += GRAVITY * 0.4 * dt;
+    p.x += p.vx * dt; p.y += p.vy * dt;
+  }
+  particles = particles.filter(p => p.life > 0);
+  for (const p of popups){
+    p.life -= dt;
+    p.y -= 26 * dt;
+  }
+  popups = popups.filter(p => p.life > 0);
+}
+
+function checkWaveClear(){
+  if (state.phase === 'playing' && enemies.length === 0 && eggs.length === 0){
+    state.score += 500;
+    nextWave();
+  }
+}
+
+function update(dt){
+  state.time += dt;
+  state.shake = Math.max(0, state.shake - dt*30);
+  state.waveBanner = Math.max(0, state.waveBanner - dt);
+  if (state.phase === 'playing'){
+    updatePlayer(dt);
+    updateEnemies(dt);
+    updateEggs(dt);
+    resolveCombat(dt);
+    checkWaveClear();
+  }
+  updateParticles(dt);
+}
+
+// ── Drawing helpers ───────────────────────────────────────────────────
+function drawGlyph(x, y, r, rgb, flapAnim, alpha){
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.translate(x, y);
+  const wing = 0.4 + flapAnim*0.9;
+  ctx.strokeStyle = rgba(rgb, .9);
+  ctx.lineWidth = 2;
+  ctx.shadowColor = rgba(rgb, .8);
+  ctx.shadowBlur = 8;
+  // body
+  ctx.fillStyle = rgba(rgb, .85);
+  ctx.beginPath();
+  ctx.moveTo(r*1.1, 0);
+  ctx.lineTo(-r*0.7, -r*0.7);
+  ctx.lineTo(-r*0.3, 0);
+  ctx.lineTo(-r*0.7, r*0.7);
+  ctx.closePath();
+  ctx.fill();
+  // wings
+  ctx.beginPath();
+  ctx.moveTo(-r*0.2, -r*0.2);
+  ctx.lineTo(-r*0.2 - r*wing, -r*1.3*wing);
+  ctx.lineTo(r*0.1, -r*0.3);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(-r*0.2, r*0.2);
+  ctx.lineTo(-r*0.2 - r*wing, r*1.3*wing);
+  ctx.lineTo(r*0.1, r*0.3);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawScene(){
+  ctx.save();
+  if (state.shake > 0.3){
+    ctx.translate((rng()-0.5)*state.shake, (rng()-0.5)*state.shake);
+  }
+  ctx.fillStyle = PAL.void;
+  ctx.fillRect(-40, -40, LOGICAL_W+80, LOGICAL_H+80);
+  ctx.fillStyle = bgPattern;
+  ctx.fillRect(-40, -40, LOGICAL_W+80, LOGICAL_H+80);
+
+  // platforms
+  for (const p of PLATFORMS){
+    ctx.fillStyle = rgba(PAL.cyan, .12);
+    ctx.fillRect(p.x, p.y, p.w, p.h);
+    ctx.strokeStyle = rgba(PAL.cyan, .8);
+    ctx.shadowColor = rgba(PAL.cyan, .6);
+    ctx.shadowBlur = 6;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(p.x+1, p.y+1, p.w-2, p.h-2);
+    ctx.shadowBlur = 0;
+  }
+
+  // lava
+  const lavaFlicker = Math.sin(state.time*4)*4;
+  const grad = ctx.createLinearGradient(0, LAVA_TOP, 0, LOGICAL_H);
+  grad.addColorStop(0, rgba(PAL.ember, .9));
+  grad.addColorStop(1, rgba(PAL.red, .95));
+  ctx.fillStyle = grad;
+  ctx.fillRect(190, LAVA_TOP + lavaFlicker*0.3, 580, LOGICAL_H - LAVA_TOP);
+  ctx.strokeStyle = rgba(PAL.gold, .5);
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(190, LAVA_TOP + lavaFlicker);
+  for (let x=190; x<=770; x+=20) ctx.lineTo(x, LAVA_TOP + Math.sin(state.time*4 + x*0.05)*4);
+  ctx.stroke();
+
+  // eggs
+  for (const eg of eggs){
+    const urgent = eg.hatchTimer < 2.5;
+    const pulse = urgent ? (0.5 + 0.5*Math.sin(state.time*14)) : 1;
+    ctx.save();
+    ctx.globalAlpha = 0.7 + pulse*0.3;
+    ctx.fillStyle = rgba(PAL.gold, .9);
+    ctx.shadowColor = rgba(PAL.gold, .8);
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.ellipse(eg.x, eg.y, eg.r*0.75, eg.r, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // enemies
+  for (const e of enemies){
+    ctx.save();
+    ctx.translate(e.x, e.y);
+    ctx.scale(e.vx < 0 ? -1 : 1, 1);
+    ctx.translate(-e.x, -e.y);
+    drawGlyph(e.x, e.y, e.r, e.tier===1?PAL.magenta:PAL.red, e.flapAnim, 1);
+    ctx.restore();
+  }
+
+  // player
+  if (player.alive){
+    const alpha = player.invuln > 0 ? (0.4 + 0.4*Math.sin(state.time*18)) : 1;
+    ctx.save();
+    ctx.translate(player.x, player.y);
+    ctx.scale(player.vx < 0 ? -1 : 1, 1);
+    ctx.translate(-player.x, -player.y);
+    drawGlyph(player.x, player.y, player.r, PAL.gold, player.flapAnim, alpha);
+    ctx.restore();
+  }
+
+  // particles
+  for (const p of particles){
+    ctx.globalAlpha = Math.max(0, p.life / .5);
+    ctx.fillStyle = rgba(p.rgb, 1);
+    ctx.fillRect(p.x-1.5, p.y-1.5, 3, 3);
+  }
+  ctx.globalAlpha = 1;
+
+  // score popups (reinforces the attack-from-above payoff)
+  ctx.textAlign = 'center';
+  for (const p of popups){
+    ctx.globalAlpha = Math.max(0, Math.min(1, p.life / .3));
+    ctx.font = '700 13px "Courier New",monospace';
+    ctx.fillStyle = rgba(p.rgb, 1);
+    ctx.fillText(p.text, p.x, p.y);
+  }
+  ctx.globalAlpha = 1;
+
+  ctx.restore();
+}
+
+function crisp(text, x, y, font, fill, align){
+  ctx.font = font;
+  ctx.textAlign = align || 'left';
+  ctx.textBaseline = 'alphabetic';
+  ctx.shadowColor = 'rgba(0,0,0,.85)';
+  ctx.shadowBlur = 4;
+  ctx.fillStyle = fill;
+  ctx.fillText(text, x, y);
+  ctx.shadowBlur = 0;
+}
+
+function drawHud(){
+  crisp('SCORE ' + String(state.score).padStart(6,'0'), 20, 30, '700 18px "Courier New",monospace', rgba(PAL.gold,.95), 'left');
+  crisp('HIGH ' + String(state.highScore).padStart(6,'0'), 20, 50, '700 11px "Courier New",monospace', rgba(PAL.cyan,.7), 'left');
+  crisp('WAVE ' + state.wave, LOGICAL_W-20, 30, '700 18px "Courier New",monospace', rgba(PAL.cyan,.95), 'right');
+  for (let i=0;i<state.lives;i++){
+    ctx.save();
+    drawGlyph(LOGICAL_W-24 - i*22, 50, 7, PAL.gold, 0, .9);
+    ctx.restore();
+  }
+  if (state.waveBanner > 0){
+    ctx.globalAlpha = Math.min(1, state.waveBanner);
+    crisp('WAVE ' + state.wave, LOGICAL_W/2, 70, '900 22px "Courier New",monospace', rgba(PAL.magenta,.95), 'center');
+    ctx.globalAlpha = 1;
+  }
+
+  // mute toggle chip, top-right corner (peripheral chrome, not the game input)
+  crisp(AUDIO.muted ? 'AUDIO: OFF (tap ♪)' : 'AUDIO: ON (tap ♪)', LOGICAL_W-20, LOGICAL_H-14, '700 10px "Courier New",monospace', rgba(PAL.cyan,.55), 'right');
+}
+
+function drawOverlay(){
+  if (state.phase === 'playing') return;
+  ctx.save();
+  ctx.fillStyle = 'rgba(1,3,10,.72)';
+  ctx.fillRect(0,0,LOGICAL_W,LOGICAL_H);
+  ctx.textAlign = 'center';
+  const title = state.phase === 'over' ? 'OBLITERATED' : 'CAMELOT';
+  crisp(title, LOGICAL_W/2, LOGICAL_H/2-70, '900 56px "Courier New",monospace', rgba(PAL.gold,.95), 'center');
+  crisp('FTS ARCADE  //  BRAZEN', LOGICAL_W/2, LOGICAL_H/2-32, '700 12px "Courier New",monospace', rgba(PAL.cyan,.85), 'center');
+  if (state.phase === 'over'){
+    crisp('SCORE ' + state.score + '   ·   WAVE ' + state.wave, LOGICAL_W/2, LOGICAL_H/2+8, '700 15px "Courier New",monospace', '#fff', 'center');
+  } else {
+    crisp('JOUST FOR THE REALM', LOGICAL_W/2, LOGICAL_H/2+8, '700 14px "Courier New",monospace', 'rgba(210,230,245,.9)', 'center');
+  }
+  crisp('ARROWS + FLAP TO STEER  ·  OR TAP LEFT/RIGHT HALF  ·  STRIKE FROM ABOVE', LOGICAL_W/2, LOGICAL_H/2+38, '600 12px "Courier New",monospace', 'rgba(200,225,245,.8)', 'center');
+  const pulse = 0.55 + Math.sin(state.time*4.5)*.35;
+  ctx.globalAlpha = pulse;
+  crisp(state.phase === 'over' ? 'TAP / CLICK / SPACE TO FLY AGAIN' : 'TAP / CLICK / SPACE TO FLAP AND BEGIN', LOGICAL_W/2, LOGICAL_H/2+72, '700 13px "Courier New",monospace', rgba(PAL.cyan,.95), 'center');
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
+function drawScanlines(){
+  ctx.save();
+  ctx.globalCompositeOperation = 'multiply';
+  ctx.fillStyle = scanPattern;
+  ctx.fillRect(-40,-40,LOGICAL_W+80,LOGICAL_H+80);
+  ctx.restore();
+}
+
+function render(){
+  drawScene();
+  drawScanlines();
+  drawHud();
+  drawOverlay();
+}
+
+// ── Input: Flap, steerable ────────────────────────────────────────────
+// Touch/mouse: which half of the arena you tap sets the steering direction
+// for that flap (left half = accelerate left, right half = accelerate right).
+// Keyboard: hold Left/Right (or A/D) to set steering direction, tap
+// Space/Up/Z/W to flap in that direction — held direction alone does nothing;
+// only a flap converts it into thrust, so inertia is otherwise untouched.
+function isMuteHit(lx, ly){
+  return lx > LOGICAL_W-150 && lx < LOGICAL_W-10 && ly > LOGICAL_H-26 && ly < LOGICAL_H-4;
+}
+function handlePointer(clientX, clientY){
+  const { x, y } = toLogical(clientX, clientY);
+  if (isMuteHit(x, y)){
+    AUDIO.setMuted(!AUDIO.muted);
+    return;
+  }
+  const dir = x < LOGICAL_W/2 ? -1 : 1;
+  flap(dir);
+}
+canvas.addEventListener('mousedown', e => handlePointer(e.clientX, e.clientY));
+canvas.addEventListener('touchstart', e => {
+  e.preventDefault();
+  const t = e.touches[0];
+  handlePointer(t.clientX, t.clientY);
+}, { passive: false });
+
+const keys = { left: false, right: false, flapHeld: false };
+const FLAP_KEYS = ['Space', 'ArrowUp', 'KeyZ', 'KeyW'];
+window.addEventListener('keydown', e => {
+  if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true;
+  if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
+  if (FLAP_KEYS.includes(e.code)){
+    e.preventDefault();
+    if (!keys.flapHeld){ // edge-trigger: one flap per press, no key-repeat spam
+      keys.flapHeld = true;
+      const dir = keys.right && !keys.left ? 1 : (keys.left && !keys.right ? -1 : 0);
+      flap(dir);
+    }
+  }
+}, { passive: false });
+window.addEventListener('keyup', e => {
+  if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false;
+  if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
+  if (FLAP_KEYS.includes(e.code)) keys.flapHeld = false;
+});
+document.addEventListener('visibilitychange', () => { if (document.hidden) state.shake = 0; });
+window.addEventListener('resize', resize);
+
+// ── Game loop ─────────────────────────────────────────────────────────
+let lastTime = 0;
+function frame(now){
+  const dt = Math.min(.033, Math.max(0, (now - lastTime) / 1000));
+  lastTime = now;
+  update(dt);
+  render();
+  requestAnimationFrame(frame);
+}
+
+// Read-only peek for the behavioral test harness — never written to by game logic.
+window.__CAMELOT_DEBUG__ = { player, get enemies(){ return enemies; }, get eggs(){ return eggs; }, state };
+
+// ── Boot ─────────────────────────────────────────────────────────────
+buildBgTile();
+buildScanTile();
+resize();
+lastTime = performance.now();
+requestAnimationFrame(frame);
+
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hexagon Puzzle</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            color: #fff;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            font-size: 2.5em;
+        }
+
+        .instructions {
+            margin-bottom: 20px;
+            text-align: center;
+            opacity: 0.8;
+            font-size: 0.9em;
+        }
+
+        .game-container {
+            display: flex;
+            gap: 40px;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .grid-container {
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        .grid-title {
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        #hexGrid {
+            position: relative;
+            width: 606px;
+            height: 560px;
+        }
+
+        .bank-container {
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            max-width: 500px;
+        }
+
+        .bank-title {
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        #hexBank {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            min-height: 200px;
+        }
+
+        .hex-slot {
+            position: absolute;
+            width: 121px;
+            height: 140px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .hex-slot:hover {
+            transform: scale(1.05);
+        }
+
+        .hex-slot.highlight {
+            filter: brightness(1.3);
+        }
+
+        .hex-piece {
+            width: 121px;
+            height: 140px;
+            cursor: grab;
+            position: relative;
+            transition: transform 0.15s;
+        }
+
+        .hex-piece:active {
+            cursor: grabbing;
+        }
+
+        .hex-piece.dragging {
+            opacity: 0.8;
+            z-index: 1000;
+            transform: scale(1.1);
+        }
+
+        .hex-piece svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .bank-slot {
+            width: 121px;
+            height: 140px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .reset-btn {
+            margin-top: 20px;
+            padding: 12px 30px;
+            font-size: 1em;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .reset-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+    </style>
+</head>
+<body>
+    <h1>Hexagon Puzzle</h1>
+    <div class="instructions">
+        Drag hexagons from the bank to the grid. Right-click to rotate pieces.
+    </div>
+
+    <div class="game-container">
+        <div class="grid-container">
+            <div class="grid-title">Puzzle Grid</div>
+            <div id="hexGrid"></div>
+        </div>
+
+        <div class="bank-container">
+            <div class="bank-title">Piece Bank</div>
+            <div id="hexBank"></div>
+        </div>
+    </div>
+
+    <button class="reset-btn" onclick="resetPuzzle()">Reset Puzzle</button>
+
+
+    <script>
+        // Color definitions
+        const COLORS = {
+            'B': { name: 'Blue', hex: '#4a90d9', dark: '#3a7bc8' },
+            'G': { name: 'Green', hex: '#2ecc71', dark: '#27ae60' },
+            'P': { name: 'Pink', hex: '#ff9ed2', dark: '#ff7ac0' },
+            'R': { name: 'Red', hex: '#c0392b', dark: '#962d22' },
+            'T': { name: 'Violet', hex: '#9b59b6', dark: '#8e44ad' },
+            'Y': { name: 'Yellow', hex: '#f1c40f', dark: '#d4ac0d' }
+        };
+
+        // Alphabetical order for arrow colors
+        const COLOR_ORDER = ['B', 'G', 'P', 'R', 'T', 'Y'];
+
+        // Parse edge arrows and sort alphabetically
+        function parseEdge(edgeStr) {
+            if (edgeStr === 'X') return [];
+            const arrows = edgeStr.split('');
+            // Sort by color name alphabetically
+            arrows.sort((a, b) => {
+                const nameA = COLORS[a]?.name || '';
+                const nameB = COLORS[b]?.name || '';
+                return nameA.localeCompare(nameB);
+            });
+            return arrows;
+        }
+
+        // Puzzle piece definitions
+        // Edges order: NE, E, SE, SW, W, NW (clockwise from NE)
+        const PUZZLE_PIECES = [
+            { color: 'B', edges: ['X', 'Y', 'X', 'G', 'X', 'X'] },
+            { color: 'Y', edges: ['X', 'X', 'X', 'X', 'X', 'X'] },
+            { color: 'P', edges: ['X', 'X', 'X', 'RP', 'X', 'X'] },
+            { color: 'G', edges: ['X', 'G', 'X', 'G', 'X', 'X'] },
+            { color: 'G', edges: ['Y', 'Y', 'RG', 'X', 'G', 'X'] },
+            { color: 'Y', edges: ['X', 'X', 'Y', 'X', 'X', 'Y'] },
+            { color: 'B', edges: ['X', 'X', 'T', 'X', 'X', 'P'] },
+            { color: 'G', edges: ['G', 'X', 'G', 'X', 'X', 'X'] },
+            { color: 'B', edges: ['X', 'X', 'P', 'X', 'X', 'G'] },
+            { color: 'R', edges: ['X', 'X', 'X', 'X', 'X', 'X'] },
+            { color: 'Y', edges: ['X', 'X', 'X', 'X', 'X', 'X'] },
+            { color: 'T', edges: ['X', 'X', 'X', 'X', 'BGRY', 'X'] },
+            { color: 'B', edges: ['X', 'X', 'G', 'X', 'X', 'G'] },
+            { color: 'P', edges: ['RP', 'X', 'X', 'X', 'X', 'X'] },
+            { color: 'G', edges: ['X', 'X', 'X', 'G', 'X', 'G'] },
+            { color: 'B', edges: ['T', 'X', 'X', 'T', 'X', 'YYY'] },
+            { color: 'G', edges: ['PP', 'G', 'X', 'X', 'X', 'G'] },
+            { color: 'G', edges: ['G', 'X', 'X', 'X', 'G', 'X'] },
+            { color: 'T', edges: ['X', 'X', 'X', 'X', 'X', 'BGGR'] }
+        ];
+
+        // Grid layout (row counts)
+        const GRID_ROWS = [3, 4, 5, 4, 3];
+
+        // State
+        let pieces = [];
+        let gridSlots = [];
+        let draggedPiece = null;
+        let dragOffsetX = 0;
+        let dragOffsetY = 0;
+
+        // Initialize pieces with parsed edges and random rotation
+        function initPieces() {
+            pieces = PUZZLE_PIECES.map((p, idx) => ({
+                id: idx,
+                color: p.color,
+                edges: p.edges.map(e => parseEdge(e)),
+                rotation: Math.floor(Math.random() * 6), // Random rotation 0-5
+                location: 'bank', // 'bank' or grid slot index
+                element: null
+            }));
+            // Shuffle for random order in bank
+            pieces.sort(() => Math.random() - 0.5);
+        }
+
+        // Rotate edges array by rotation amount
+        function getRotatedEdges(edges, rotation) {
+            const rotated = [];
+            for (let i = 0; i < 6; i++) {
+                rotated.push(edges[(i - rotation + 6) % 6]);
+            }
+            return rotated;
+        }
+
+        // Create SVG for a hexagon piece
+        function createHexSVG(piece) {
+            const color = COLORS[piece.color];
+            const rotatedEdges = getRotatedEdges(piece.edges, piece.rotation);
+            
+            // Pointy-top hexagon geometry
+            // For a hex with radius r (center to vertex): width = r*sqrt(3), height = 2*r
+            // We want the hex to fill the viewBox exactly
+            const viewWidth = 121;
+            const viewHeight = 140;
+            const cx = viewWidth / 2;
+            const cy = viewHeight / 2;
+            const size = viewHeight / 2; // radius = half of height
+            
+            const points = [];
+            for (let i = 0; i < 6; i++) {
+                const angle = (Math.PI / 3) * i - Math.PI / 2;
+                points.push({
+                    x: cx + size * Math.cos(angle),
+                    y: cy + size * Math.sin(angle)
+                });
+            }
+            
+            const pointsStr = points.map(p => `${p.x},${p.y}`).join(' ');
+            
+            // Edge midpoints for arrows (inside the hexagon)
+            const edgeMids = [];
+            for (let i = 0; i < 6; i++) {
+                const p1 = points[i];
+                const p2 = points[(i + 1) % 6];
+                const midX = (p1.x + p2.x) / 2;
+                const midY = (p1.y + p2.y) / 2;
+                const angle = Math.atan2(midY - cy, midX - cx);
+                edgeMids.push({
+                    x: midX,
+                    y: midY,
+                    angle: angle
+                });
+            }
+            
+            // Edge indices: 0=NE, 1=E, 2=SE, 3=SW, 4=W, 5=NW
+            const edgeMapping = [0, 1, 2, 3, 4, 5];
+            
+            let arrowsSVG = '';
+            for (let edgeIdx = 0; edgeIdx < 6; edgeIdx++) {
+                const arrows = rotatedEdges[edgeIdx];
+                if (arrows.length === 0) continue;
+                
+                const mid = edgeMids[edgeMapping[edgeIdx]];
+                const baseAngle = mid.angle;
+                
+                // Draw arrows inside hexagon pointing outward toward edge
+                const arrowLen = 18;
+                const spacing = 10;
+                const totalWidth = (arrows.length - 1) * spacing;
+                const distFromEdge = 28; // How far inside from the edge
+                
+                for (let ai = 0; ai < arrows.length; ai++) {
+                    const arrowColor = COLORS[arrows[ai]];
+                    const offset = ai * spacing - totalWidth / 2;
+                    
+                    // Perpendicular offset along the edge
+                    const perpAngle = baseAngle + Math.PI / 2;
+                    
+                    // Start position (inside the hexagon)
+                    const startX = mid.x - distFromEdge * Math.cos(baseAngle) + offset * Math.cos(perpAngle);
+                    const startY = mid.y - distFromEdge * Math.sin(baseAngle) + offset * Math.sin(perpAngle);
+                    
+                    // Tip position (closer to edge)
+                    const tipX = startX + arrowLen * Math.cos(baseAngle);
+                    const tipY = startY + arrowLen * Math.sin(baseAngle);
+                    
+                    // Arrow head - proper triangle
+                    const headLength = 12;
+                    const headWidth = 4;
+                    const headAngle1 = baseAngle + Math.PI / 2;
+                    const headAngle2 = baseAngle - Math.PI / 2;
+                    // Base of the arrowhead (where it meets the shaft)
+                    const headBaseX = tipX - headLength * 0.3 * Math.cos(baseAngle);
+                    const headBaseY = tipY - headLength * 0.3 * Math.sin(baseAngle);
+                    const head1X = headBaseX + headWidth * Math.cos(headAngle1);
+                    const head1Y = headBaseY + headWidth * Math.sin(headAngle1);
+                    const head2X = headBaseX + headWidth * Math.cos(headAngle2);
+                    const head2Y = headBaseY + headWidth * Math.sin(headAngle2);
+                    
+                    // White outline for visibility
+                    arrowsSVG += `
+                        <line x1="${startX}" y1="${startY}" x2="${headBaseX}" y2="${headBaseY}" 
+                              stroke="#fff" stroke-width="6" stroke-linecap="round"/>
+                        <polygon points="${tipX},${tipY} ${head1X},${head1Y} ${head2X},${head2Y}" 
+                                 fill="#fff" stroke="#fff" stroke-width="3" stroke-linejoin="round"/>
+                    `;
+                    
+                    // Actual colored arrow
+                    arrowsSVG += `
+                        <line x1="${startX}" y1="${startY}" x2="${headBaseX}" y2="${headBaseY}" 
+                              stroke="${arrowColor.hex}" stroke-width="4" stroke-linecap="round"/>
+                        <polygon points="${tipX},${tipY} ${head1X},${head1Y} ${head2X},${head2Y}" 
+                                 fill="${arrowColor.hex}"/>
+                    `;
+                }
+            }
+            
+            return `
+                <svg viewBox="0 0 ${viewWidth} ${viewHeight}" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="grad_${piece.id}" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:${color.hex};stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:${color.dark};stop-opacity:1" />
+                        </linearGradient>
+                    </defs>
+                    <polygon points="${pointsStr}" fill="url(#grad_${piece.id})" 
+                             stroke="#222" stroke-width="2" stroke-linejoin="round"/>
+                    ${arrowsSVG}
+                </svg>
+            `;
+        }
+
+        // Create hex slot SVG (empty placeholder)
+        function createSlotSVG() {
+            const viewWidth = 121;
+            const viewHeight = 140;
+            const cx = viewWidth / 2;
+            const cy = viewHeight / 2;
+            const size = viewHeight / 2;
+            const points = [];
+            for (let i = 0; i < 6; i++) {
+                const angle = (Math.PI / 3) * i - Math.PI / 2;
+                points.push(`${cx + size * Math.cos(angle)},${cy + size * Math.sin(angle)}`);
+            }
+            return `
+                <svg viewBox="0 0 ${viewWidth} ${viewHeight}" xmlns="http://www.w3.org/2000/svg">
+                    <polygon points="${points.join(' ')}" fill="rgba(255,255,255,0.08)" 
+                             stroke="rgba(255,255,255,0.25)" stroke-width="2"/>
+                </svg>
+            `;
+        }
+
+        // Initialize the grid
+        function initGrid() {
+            const grid = document.getElementById('hexGrid');
+            grid.innerHTML = '';
+            gridSlots = [];
+            
+            // For pointy-top hexagons with truly adjacent placement:
+            // Container matches SVG viewBox exactly (121x140)
+            // Hex radius = 70 (half of height)
+            // Hex width = radius * sqrt(3) = 70 * 1.732 = ~121
+            // Horizontal spacing = width = 121
+            // Vertical spacing = height * 0.75 = 140 * 0.75 = 105
+            const hexWidth = 121;
+            const hexHeight = 140;
+            const horizSpacing = hexWidth;
+            const vertSpacing = hexHeight * 0.75;
+            
+            let slotIdx = 0;
+            const totalRows = GRID_ROWS.length;
+            
+            for (let row = 0; row < totalRows; row++) {
+                const count = GRID_ROWS[row];
+                const maxCount = 5;
+                const offsetX = (maxCount - count) * horizSpacing / 2;
+                
+                for (let col = 0; col < count; col++) {
+                    const slot = document.createElement('div');
+                    slot.className = 'hex-slot';
+                    slot.dataset.slotIndex = slotIdx;
+                    slot.innerHTML = createSlotSVG();
+                    
+                    const x = offsetX + col * horizSpacing;
+                    const y = row * vertSpacing;
+                    
+                    slot.style.left = x + 'px';
+                    slot.style.top = y + 'px';
+                    
+                    slot.addEventListener('dragover', handleDragOver);
+                    slot.addEventListener('drop', handleDrop);
+                    slot.addEventListener('dragenter', handleDragEnter);
+                    slot.addEventListener('dragleave', handleDragLeave);
+                    
+                    grid.appendChild(slot);
+                    gridSlots.push({ element: slot, piece: null, x, y });
+                    slotIdx++;
+                }
+            }
+        }
+
+        // Initialize the bank
+        function initBank() {
+            const bank = document.getElementById('hexBank');
+            bank.innerHTML = '';
+            
+            pieces.forEach(piece => {
+                if (piece.location === 'bank') {
+                    const slot = document.createElement('div');
+                    slot.className = 'bank-slot';
+                    
+                    const pieceEl = createPieceElement(piece);
+                    slot.appendChild(pieceEl);
+                    bank.appendChild(slot);
+                }
+            });
+            
+            bank.addEventListener('dragover', handleBankDragOver);
+            bank.addEventListener('drop', handleBankDrop);
+        }
+
+        // Create a piece DOM element
+        function createPieceElement(piece) {
+            const el = document.createElement('div');
+            el.className = 'hex-piece';
+            el.draggable = true;
+            el.dataset.pieceId = piece.id;
+            el.innerHTML = createHexSVG(piece);
+            
+            el.addEventListener('dragstart', handleDragStart);
+            el.addEventListener('dragend', handleDragEnd);
+            el.addEventListener('contextmenu', handleRightClick);
+            
+            piece.element = el;
+            return el;
+        }
+
+        // Update a piece's SVG
+        function updatePieceSVG(piece) {
+            if (piece.element) {
+                piece.element.innerHTML = createHexSVG(piece);
+            }
+        }
+
+        // Drag handlers
+        function handleDragStart(e) {
+            const pieceId = parseInt(e.target.dataset.pieceId);
+            draggedPiece = pieces.find(p => p.id === pieceId);
+            e.target.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', pieceId);
+        }
+
+        function handleDragEnd(e) {
+            e.target.classList.remove('dragging');
+            document.querySelectorAll('.hex-slot').forEach(s => s.classList.remove('highlight'));
+            draggedPiece = null;
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        }
+
+        function handleDragEnter(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('highlight');
+        }
+
+        function handleDragLeave(e) {
+            e.currentTarget.classList.remove('highlight');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('highlight');
+            
+            if (!draggedPiece) return;
+            
+            const slotIndex = parseInt(e.currentTarget.dataset.slotIndex);
+            const slot = gridSlots[slotIndex];
+            
+            // If slot already has a piece, return it to bank
+            if (slot.piece !== null) {
+                const existingPiece = pieces.find(p => p.id === slot.piece);
+                if (existingPiece) {
+                    existingPiece.location = 'bank';
+                }
+            }
+            
+            // Remove piece from previous location
+            if (typeof draggedPiece.location === 'number') {
+                gridSlots[draggedPiece.location].piece = null;
+                gridSlots[draggedPiece.location].element.innerHTML = createSlotSVG();
+            }
+            
+            // Place piece in new slot
+            draggedPiece.location = slotIndex;
+            slot.piece = draggedPiece.id;
+            
+            // Update visuals
+            slot.element.innerHTML = '';
+            const pieceEl = createPieceElement(draggedPiece);
+            slot.element.appendChild(pieceEl);
+            
+            // Refresh bank
+            refreshBank();
+        }
+
+        function handleBankDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        }
+
+        function handleBankDrop(e) {
+            e.preventDefault();
+            
+            if (!draggedPiece) return;
+            
+            // Remove piece from grid if it was there
+            if (typeof draggedPiece.location === 'number') {
+                gridSlots[draggedPiece.location].piece = null;
+                gridSlots[draggedPiece.location].element.innerHTML = createSlotSVG();
+            }
+            
+            draggedPiece.location = 'bank';
+            refreshBank();
+        }
+
+        // Right-click to rotate
+        function handleRightClick(e) {
+            e.preventDefault();
+            const pieceId = parseInt(e.currentTarget.dataset.pieceId);
+            const piece = pieces.find(p => p.id === pieceId);
+            if (piece) {
+                piece.rotation = (piece.rotation + 1) % 6;
+                updatePieceSVG(piece);
+            }
+        }
+
+        // Refresh the bank display
+        function refreshBank() {
+            const bank = document.getElementById('hexBank');
+            bank.innerHTML = '';
+            
+            pieces.filter(p => p.location === 'bank').forEach(piece => {
+                const slot = document.createElement('div');
+                slot.className = 'bank-slot';
+                
+                const pieceEl = createPieceElement(piece);
+                slot.appendChild(pieceEl);
+                bank.appendChild(slot);
+            });
+        }
+
+        // Reset puzzle
+        function resetPuzzle() {
+            initPieces();
+            initGrid();
+            initBank();
+        }
+
+        // Initialize on load
+        window.addEventListener('load', () => {
+            initPieces();
+            initGrid();
+            initBank();
+        });
+    </script>
+</body>
+</html>

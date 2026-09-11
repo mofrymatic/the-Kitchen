@@ -1,0 +1,1732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-RKGFHBL5R6"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-RKGFHBL5R6');
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RED EYE — Movement Prototype v0.1</title>
+
+<!-- ── Primary Meta ─────────────────────────────────────────────────────── -->
+<meta name="description" content="RED EYE 3rd Person Platformer Module" />
+
+<!-- ── Favicons ─────────────────────────────────────────────────────────── -->
+<link rel="icon" type="image/png" href="../fts-favicon.png">
+<link rel="shortcut icon" type="image/png" href="../fts-favicon.png">
+<link rel="apple-touch-icon" href="../fts-favicon.png">
+
+<!-- ── Open Graph (Facebook, Discord, iMessage, etc.) ────────────────────── -->
+<meta property="og:title" content="Mecha Sonic Isometric">
+<meta property="og:description" content="Step up to the FishTacoStand Arcade: a retro cabinet hub for Neon Invaders, Astroids, Cave Racer, RED EYE, Packman, Tetris, and more.">
+<meta property="og:url" content="https://frymatic.us/FTSArcade/FTSArcade/R3D3Y3/index.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="FishTacoStand Arcade">
+
+<meta property="og:image" content="https://frymatic.us/FTSArcade/FishTacoStand.png">
+<meta property="og:image:alt" content="FishTacoStand Arcade cabinet menu with clickable retro games.">
+<meta property="og:image:type" content="image/png">
+
+<!-- ── Twitter / X Card ─────────────────────────────────────────────────── -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="FishTacoStand Arcade">
+<meta name="twitter:description" content="A retro arcade hub serving Neon Invaders, Astroids, Cave Racer, RED EYE, Packman, Tetris, and more.">
+<meta name="twitter:image" content="https://frymatic.us/FTSArcade/FishTacoStand.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Press+Start+2P&display=swap" rel="stylesheet">
+
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #000; overflow: hidden; font-family: 'Courier New', monospace; }
+  #canvas-container { width: 100vw; height: 100vh; }
+  canvas { display: block; }
+
+  /* HUD */
+  #hud {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; z-index: 10;
+  }
+
+  /* State badge */
+  #state-badge {
+    position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+    background: rgba(0,0,0,0.7); border: 1px solid #ff2200;
+    color: #ff2200; padding: 4px 16px; font-size: 11px; letter-spacing: 4px;
+    text-transform: uppercase; font-family: 'Courier New', monospace;
+  }
+
+  /* Debug overlay */
+  #debug {
+    position: fixed; top: 16px; left: 16px;
+    background: rgba(0,0,0,0.8); border: 1px solid #333;
+    color: #0f0; padding: 12px; font-size: 11px; line-height: 1.7;
+    font-family: 'Courier New', monospace; min-width: 220px;
+    display: none;
+  }
+  #debug.visible { display: block; }
+  #debug .label { color: #888; }
+  #debug .val { color: #0f0; }
+
+  /* Crosshair */
+  #crosshair {
+    position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    width: 20px; height: 20px; pointer-events: none; opacity: 0.5;
+  }
+  #crosshair::before, #crosshair::after {
+    content: ''; position: absolute; background: #fff;
+  }
+  #crosshair::before { width: 2px; height: 20px; left: 9px; top: 0; }
+  #crosshair::after { width: 20px; height: 2px; top: 9px; left: 0; }
+
+  /* Hotkey panel */
+  #hotkey-panel {
+    position: fixed; right: 0; top: 0; height: 100%;
+    width: 360px; background: rgba(0,0,0,0.92);
+    border-left: 1px solid #222; padding: 20px;
+    font-family: 'Courier New', monospace; color: #ccc;
+    overflow-y: auto; transform: translateX(100%);
+    transition: transform 0.3s ease; z-index: 100;
+    pointer-events: all;
+  }
+  #hotkey-panel.open { transform: translateX(0); }
+  #hotkey-panel h2 { color: #ff2200; font-size: 13px; letter-spacing: 3px;
+    text-transform: uppercase; margin-bottom: 20px; border-bottom: 1px solid #222; padding-bottom: 10px; }
+  #hotkey-panel h3 { color: #888; font-size: 10px; letter-spacing: 2px;
+    text-transform: uppercase; margin: 16px 0 8px; }
+  .hk-row { display: flex; align-items: center; padding: 5px 0;
+    border-bottom: 1px solid #111; font-size: 11px; }
+  .hk-action { flex: 1; color: #999; }
+  .hk-key { background: #1a1a1a; border: 1px solid #333; padding: 2px 8px;
+    border-radius: 3px; color: #fff; font-size: 10px; cursor: pointer;
+    transition: all 0.15s; min-width: 60px; text-align: center; }
+  .hk-key:hover { border-color: #ff2200; color: #ff2200; }
+  .hk-key.recording { border-color: #ff0; color: #ff0; animation: blink 0.5s infinite; }
+  .hk-key.conflict { border-color: #f80; color: #f80; }
+  @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+  .panel-btn {
+    background: #111; border: 1px solid #333; color: #ccc;
+    padding: 6px 12px; font-size: 10px; letter-spacing: 1px;
+    text-transform: uppercase; cursor: pointer; font-family: 'Courier New', monospace;
+    transition: all 0.15s; margin: 4px 4px 0 0;
+    pointer-events: all;
+  }
+  .panel-btn:hover { border-color: #ff2200; color: #ff2200; }
+  .panel-close { float: right; background: none; border: none; color: #ff2200;
+    font-size: 18px; cursor: pointer; pointer-events: all; }
+
+  /* Settings menu */
+  #settings-menu {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    background: rgba(0,0,0,0.96); border: 1px solid #333;
+    padding: 30px; width: 400px; font-family: 'Courier New', monospace;
+    color: #ccc; z-index: 200; display: none;
+    pointer-events: all;
+  }
+  #settings-menu.open { display: block; }
+  #settings-menu h2 { color: #ff2200; font-size: 13px; letter-spacing: 3px;
+    margin-bottom: 20px; text-transform: uppercase; }
+  .setting-row { display: flex; align-items: center; margin-bottom: 12px; font-size: 11px; }
+  .setting-row label { flex: 1; color: #888; }
+  .setting-row input[type=range] { width: 120px; accent-color: #ff2200; }
+  .setting-row input[type=checkbox] { accent-color: #ff2200; }
+  .setting-val { width: 40px; text-align: right; color: #fff; }
+
+  /* Quick help */
+  #quick-help {
+    position: fixed; bottom: 16px; left: 16px;
+    background: rgba(0,0,0,0.7); border: 1px solid #222;
+    color: #555; padding: 10px 14px; font-size: 10px;
+    line-height: 1.8; font-family: 'Courier New', monospace;
+    pointer-events: none;
+  }
+  #quick-help span { color: #888; }
+  #quick-help.hidden { display: none; }
+
+  /* Action flash */
+  #action-flash {
+    position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    font-size: 28px; font-family: 'Courier New', monospace;
+    color: #ff2200; letter-spacing: 4px; text-transform: uppercase;
+    pointer-events: none; opacity: 0;
+    text-shadow: 0 0 20px #ff2200;
+    transition: opacity 0.1s;
+  }
+
+  /* Cooldown bars */
+  #cooldowns {
+    position: fixed; bottom: 16px; right: 16px;
+    display: flex; flex-direction: column; gap: 4px; pointer-events: none;
+  }
+  .cd-bar { display: flex; align-items: center; gap: 8px; font-size: 10px;
+    font-family: 'Courier New', monospace; color: #555; }
+  .cd-track { width: 80px; height: 4px; background: #111; border: 1px solid #222; }
+  .cd-fill { height: 100%; background: #ff2200; width: 0%; transition: width 0.05s; }
+
+  /* Spin charge indicator */
+  #spin-charge {
+    position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+    width: 120px; height: 8px; background: #111; border: 1px solid #333;
+    display: none;
+  }
+  #spin-charge-fill { height: 100%; background: linear-gradient(90deg, #ff2200, #ff8800);
+    width: 0%; transition: width 0.05s; }
+
+  /* Overlay vignette */
+  #vignette {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.6) 100%);
+    pointer-events: none; z-index: 5;
+  }
+
+  /* Stomp shockwave */
+  #shockwave {
+    position: fixed; bottom: 40%; left: 50%; transform: translateX(-50%);
+    width: 10px; height: 10px; border-radius: 50%;
+    border: 2px solid #ff2200; pointer-events: none;
+    opacity: 0;
+  }
+</style>
+</head>
+<body>
+<div id="canvas-container"></div>
+<div id="vignette"></div>
+
+<div id="hud">
+  <div id="state-badge">IDLE</div>
+
+  <div id="debug">
+    <div><span class="label">STATE  </span><span class="val" id="d-state">—</span></div>
+    <div><span class="label">VEL    </span><span class="val" id="d-vel">0.00</span></div>
+    <div><span class="label">GRND   </span><span class="val" id="d-grnd">—</span></div>
+    <div><span class="label">POS    </span><span class="val" id="d-pos">0,0,0</span></div>
+    <div><span class="label">CAM    </span><span class="val" id="d-cam">FOLLOW_ISO</span></div>
+    <div><span class="label">CHORD  </span><span class="val" id="d-chord">—</span></div>
+    <div><span class="label">DASH CD</span><span class="val" id="d-dash">READY</span></div>
+    <div><span class="label">HOVER  </span><span class="val" id="d-hover">—</span></div>
+    <div><span class="label">FPS    </span><span class="val" id="d-fps">—</span></div>
+  </div>
+
+  <div id="crosshair"></div>
+</div>
+
+<div id="quick-help">
+  <span>WASD</span> Move &nbsp; <span>SHIFT</span> Run &nbsp; <span>SPACE</span> Jump &nbsp; <span>SPACE×2</span> Hover<br>
+  <span>R</span> Hold=Spin Charge → Release=Dash &nbsp; <span>CTRL+SPC</span> Stomp<br>
+  <span>TAB</span> Controls &nbsp; <span>ESC</span> Settings &nbsp; <span>F3</span> Debug &nbsp; <span>H</span> Help<br>
+  <span>RMB Drag</span> Orbit &nbsp; <span>Wheel</span> Zoom &nbsp; <span>C</span> Reset Cam &nbsp; <span>V</span> Cam Mode
+</div>
+
+<div id="action-flash"></div>
+
+<div id="cooldowns">
+  <div class="cd-bar"><span>DASH</span><div class="cd-track"><div class="cd-fill" id="cd-dash"></div></div></div>
+</div>
+
+<div id="spin-charge"><div id="spin-charge-fill"></div></div>
+
+<div id="hotkey-panel">
+  <button class="panel-close" id="panel-close-btn">✕</button>
+  <h2>⚙ Control Bindings</h2>
+  <div id="hk-content"></div>
+  <div style="margin-top:20px;">
+    <button class="panel-btn" id="btn-reset-keys">Reset Defaults</button>
+    <button class="panel-btn" id="btn-export-keys">Export JSON</button>
+    <button class="panel-btn" id="btn-import-keys">Import JSON</button>
+  </div>
+</div>
+
+<div id="settings-menu">
+  <h2>⚙ Settings</h2>
+  <div class="setting-row">
+    <label>Mouse Sensitivity</label>
+    <input type="range" id="s-sensitivity" min="0.1" max="3" step="0.1" value="1">
+    <span class="setting-val" id="sv-sensitivity">1.0</span>
+  </div>
+  <div class="setting-row">
+    <label>Camera Distance</label>
+    <input type="range" id="s-camdist" min="5" max="25" step="1" value="12">
+    <span class="setting-val" id="sv-camdist">12</span>
+  </div>
+  <div class="setting-row">
+    <label>Camera Height</label>
+    <input type="range" id="s-camheight" min="2" max="15" step="1" value="7">
+    <span class="setting-val" id="sv-camheight">7</span>
+  </div>
+  <div class="setting-row">
+    <label>Invert Y</label>
+    <input type="checkbox" id="s-inverty">
+  </div>
+  <div class="setting-row">
+    <label>Show Grid</label>
+    <input type="checkbox" id="s-showgrid" checked>
+  </div>
+  <div class="setting-row">
+    <label>Show Pivot Debug</label>
+    <input type="checkbox" id="s-showpivots">
+  </div>
+  <div style="margin-top:20px;">
+    <button class="panel-btn" id="s-reset-pos">Reset Position</button>
+    <button class="panel-btn" id="s-close">Close [ESC]</button>
+  </div>
+</div>
+
+<div id="shockwave"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ============================================================
+// 1. CONSTANTS
+// ============================================================
+const WALK_SPEED = 4;
+const RUN_SPEED = 8;
+const DASH_SPEED = 16;
+const JUMP_FORCE = 10;
+const GRAVITY = 24;
+const AIR_CONTROL = 0.45;
+const FRICTION = 10;
+const TURN_SPEED = 12;
+const CAM_FOLLOW_SPEED = 6;
+const DASH_COOLDOWN = 0.5;
+const SPIN_CHARGE_TIME = 0.6;
+const HOVER_DURATION = 0.75;
+const GROUND_Y = 0;
+const DOUBLE_TAP_WINDOW = 250;
+
+const CAMERA_MODES = ['FOLLOW_ISO', 'FREE_ORBIT', 'DEBUG_RIG'];
+
+// ============================================================
+// 2. INPUT MANAGER
+// ============================================================
+const Input = (() => {
+  const keys = {};
+  const prevKeys = {};
+  const tapTracker = {};
+  let mouseX = 0, mouseY = 0, mouseDX = 0, mouseDY = 0;
+  let mouseButtons = {};
+  let wheelDelta = 0;
+  let pointerLocked = false;
+
+  document.addEventListener('keydown', e => {
+    const k = e.code;
+    if (!keys[k]) {
+      // tap tracking
+      if (!tapTracker[k]) tapTracker[k] = { count: 0, time: 0 };
+      const now = performance.now();
+      if (now - tapTracker[k].time < DOUBLE_TAP_WINDOW) {
+        tapTracker[k].count++;
+      } else {
+        tapTracker[k].count = 1;
+      }
+      tapTracker[k].time = now;
+    }
+    keys[k] = true;
+    e.preventDefault();
+  });
+
+  document.addEventListener('keyup', e => {
+    keys[e.code] = false;
+    e.preventDefault();
+  });
+
+  document.addEventListener('mousedown', e => { mouseButtons[e.button] = true; });
+  document.addEventListener('mouseup', e => { mouseButtons[e.button] = false; });
+
+  document.addEventListener('mousemove', e => {
+    if (document.pointerLockElement) {
+      mouseDX += e.movementX;
+      mouseDY += e.movementY;
+    } else {
+      mouseDX += e.movementX;
+      mouseDY += e.movementY;
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+    }
+  });
+
+  document.addEventListener('wheel', e => { wheelDelta += e.deltaY; e.preventDefault(); }, { passive: false });
+
+  return {
+    isDown: k => !!keys[k],
+    isUp: k => !keys[k],
+    wasDoubleTapped: (k, resetAfter = true) => {
+      if (tapTracker[k] && tapTracker[k].count >= 2) {
+        if (resetAfter) tapTracker[k].count = 0;
+        return true;
+      }
+      return false;
+    },
+    getTapCount: k => tapTracker[k] ? tapTracker[k].count : 0,
+    clearTaps: k => { if (tapTracker[k]) tapTracker[k].count = 0; },
+    getMouseDelta: () => ({ dx: mouseDX, dy: mouseDY }),
+    clearMouseDelta: () => { mouseDX = 0; mouseDY = 0; },
+    isMouseDown: b => !!mouseButtons[b],
+    getWheelDelta: () => wheelDelta,
+    clearWheelDelta: () => { wheelDelta = 0; },
+    raw: keys
+  };
+})();
+
+// ============================================================
+// 3. HOTKEY MANAGER
+// ============================================================
+const DEFAULT_BINDINGS = {
+  moveForward:   { code: 'KeyW',      label: 'Move Forward',     category: 'Movement' },
+  moveBackward:  { code: 'KeyS',      label: 'Move Backward',    category: 'Movement' },
+  moveLeft:      { code: 'KeyA',      label: 'Move Left',        category: 'Movement' },
+  moveRight:     { code: 'KeyD',      label: 'Move Right',       category: 'Movement' },
+  run:           { code: 'ShiftLeft', label: 'Run Modifier',     category: 'Movement' },
+  jump:          { code: 'Space',     label: 'Jump / Hover',     category: 'Movement' },
+  crouch:        { code: 'ControlLeft', label: 'Crouch/Stomp Prep', category: 'Movement' },
+  dash:          { code: 'KeyQ',      label: 'Quick Dash',       category: 'Movement' },
+  spinCharge:    { code: 'KeyR',      label: 'Spin Charge (Hold)', category: 'Action' },
+  clawL:         { code: 'KeyQ',      label: 'Left Claw',        category: 'Action' },
+  clawR:         { code: 'KeyE',      label: 'Right Claw',       category: 'Action' },
+  interact:      { code: 'KeyF',      label: 'Interact',         category: 'Action' },
+  camReset:      { code: 'KeyC',      label: 'Reset Camera',     category: 'Camera' },
+  camMode:       { code: 'KeyV',      label: 'Toggle Cam Mode',  category: 'Camera' },
+  toggleHelp:    { code: 'KeyH',      label: 'Toggle Help',      category: 'UI' },
+  openControls:  { code: 'Tab',       label: 'Controls Panel',   category: 'UI' },
+  openSettings:  { code: 'Escape',    label: 'Settings',         category: 'UI' },
+  toggleDebug:   { code: 'F3',        label: 'Debug Overlay',    category: 'Debug' },
+  togglePivots:  { code: 'KeyB',      label: 'Show Pivots',      category: 'Debug' },
+  wave:          { code: 'KeyZ',      label: 'Wave Emote',       category: 'Emote' },
+};
+
+const HotkeyManager = (() => {
+  let bindings = {};
+  let recording = null;
+
+  function load() {
+    const saved = localStorage.getItem('redeye_bindings');
+    if (saved) {
+      try { bindings = { ...JSON.parse(saved) }; }
+      catch { bindings = {}; }
+    }
+    // fill defaults
+    for (const [k, v] of Object.entries(DEFAULT_BINDINGS)) {
+      if (!bindings[k]) bindings[k] = { ...v };
+    }
+  }
+
+  function save() {
+    localStorage.setItem('redeye_bindings', JSON.stringify(bindings));
+  }
+
+  function getCode(action) {
+    return bindings[action]?.code || DEFAULT_BINDINGS[action]?.code;
+  }
+
+  function isDown(action) {
+    return Input.isDown(getCode(action));
+  }
+
+  function startRecording(action, el) {
+    recording = { action, el };
+    el.classList.add('recording');
+    el.textContent = '...';
+
+    const onKey = e => {
+      e.preventDefault();
+      e.stopPropagation();
+      bindings[action].code = e.code;
+      el.textContent = e.code.replace('Key', '').replace('Arrow', '↑').replace('Space', 'SPC');
+      el.classList.remove('recording');
+      // conflict check
+      const conflicts = Object.entries(bindings)
+        .filter(([k, v]) => k !== action && v.code === e.code);
+      if (conflicts.length) el.classList.add('conflict');
+      document.removeEventListener('keydown', onKey, true);
+      recording = null;
+      save();
+    };
+    document.addEventListener('keydown', onKey, true);
+  }
+
+  return { load, save, getCode, isDown, startRecording, bindings, DEFAULT_BINDINGS };
+})();
+
+HotkeyManager.load();
+
+// ============================================================
+// 4. SCENE SETUP
+// ============================================================
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.1;
+document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0a0a0f);
+scene.fog = new THREE.Fog(0x0a0a0f, 40, 80);
+
+// Lighting
+const ambient = new THREE.AmbientLight(0x223344, 0.8);
+scene.add(ambient);
+
+const sun = new THREE.DirectionalLight(0xfff0e0, 1.8);
+sun.position.set(10, 20, 10);
+sun.castShadow = true;
+sun.shadow.mapSize.width = 2048;
+sun.shadow.mapSize.height = 2048;
+sun.shadow.camera.near = 0.1;
+sun.shadow.camera.far = 80;
+sun.shadow.camera.left = -30;
+sun.shadow.camera.right = 30;
+sun.shadow.camera.top = 30;
+sun.shadow.camera.bottom = -30;
+sun.shadow.bias = -0.001;
+scene.add(sun);
+
+const fillLight = new THREE.DirectionalLight(0x4466ff, 0.4);
+fillLight.position.set(-8, 5, -5);
+scene.add(fillLight);
+
+const rimLight = new THREE.PointLight(0xff2200, 0.6, 20);
+rimLight.position.set(0, 8, -5);
+scene.add(rimLight);
+
+// Camera
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 200);
+camera.position.set(0, 12, 14);
+camera.lookAt(0, 0, 0);
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// ============================================================
+// 5. ENVIRONMENT
+// ============================================================
+// Ground plane
+const groundGeo = new THREE.PlaneGeometry(80, 80);
+const groundMat = new THREE.MeshStandardMaterial({
+  color: 0x111118, roughness: 0.9, metalness: 0.1
+});
+const ground = new THREE.Mesh(groundGeo, groundMat);
+ground.rotation.x = -Math.PI / 2;
+ground.receiveShadow = true;
+scene.add(ground);
+
+// Grid
+const gridHelper = new THREE.GridHelper(80, 40, 0x223333, 0x112222);
+gridHelper.material.opacity = 0.6;
+gridHelper.material.transparent = true;
+scene.add(gridHelper);
+
+// Test blocks
+function makeBlock(w, h, d, color, x, y, z) {
+  const geo = new THREE.BoxGeometry(w, h, d);
+  const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.7, metalness: 0.2 });
+  const m = new THREE.Mesh(geo, mat);
+  m.position.set(x, y + h / 2, z);
+  m.castShadow = true;
+  m.receiveShadow = true;
+  scene.add(m);
+  return m;
+}
+
+const platforms = [];
+platforms.push(makeBlock(4, 1, 4, 0x1a2a3a, 8, 0, 0));
+platforms.push(makeBlock(3, 2, 3, 0x1a2a3a, 8, 1, -5));
+platforms.push(makeBlock(6, 0.5, 2, 0x1a2a3a, -8, 0, -4));
+platforms.push(makeBlock(2, 3, 2, 0x1a3a2a, -10, 0, 4));
+platforms.push(makeBlock(10, 0.5, 2, 0x2a1a1a, 0, 0, -10)); // ramp approx
+
+// Ramp
+const rampGeo = new THREE.BoxGeometry(4, 0.3, 6);
+const rampMat = new THREE.MeshStandardMaterial({ color: 0x1a2a3a, roughness: 0.8 });
+const ramp = new THREE.Mesh(rampGeo, rampMat);
+ramp.position.set(4, 0.5, 8);
+ramp.rotation.x = Math.PI * 0.08;
+ramp.castShadow = true;
+ramp.receiveShadow = true;
+scene.add(ramp);
+
+// Ring markers
+function makeRing(x, z) {
+  const geo = new THREE.TorusGeometry(1.2, 0.08, 8, 24);
+  const mat = new THREE.MeshStandardMaterial({
+    color: 0xffdd00, emissive: 0xffaa00, emissiveIntensity: 0.5,
+    roughness: 0.3, metalness: 0.8
+  });
+  const m = new THREE.Mesh(geo, mat);
+  m.position.set(x, 1.5, z);
+  m.castShadow = false;
+  scene.add(m);
+  return m;
+}
+const rings = [makeRing(0, -12), makeRing(5, -12), makeRing(-5, -12)];
+
+// Orbs
+const orbs = [];
+function makeOrb(x, z) {
+  const geo = new THREE.SphereGeometry(0.3, 12, 8);
+  const mat = new THREE.MeshStandardMaterial({
+    color: 0x00ffcc, emissive: 0x00ffcc, emissiveIntensity: 0.8,
+    roughness: 0.1, metalness: 0.3
+  });
+  const m = new THREE.Mesh(geo, mat);
+  m.position.set(x, 0.5, z);
+  scene.add(m);
+  orbs.push({ mesh: m, baseY: 0.5, active: true });
+  return m;
+}
+for (let i = 0; i < 8; i++) {
+  makeOrb(Math.cos(i / 8 * Math.PI * 2) * 6, Math.sin(i / 8 * Math.PI * 2) * 6);
+}
+
+// Pivot debug helpers (hidden by default)
+const pivotHelpers = [];
+function makePivotHelper(parent) {
+  const geo = new THREE.SphereGeometry(0.06, 6, 4);
+  const mat = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+  const m = new THREE.Mesh(geo, mat);
+  m.visible = false;
+  parent.add(m);
+  pivotHelpers.push(m);
+  return m;
+}
+
+// ============================================================
+// 6. CHARACTER FACTORY
+// ============================================================
+function buildCharacter() {
+  const root = new THREE.Group();
+  root.name = 'Root';
+
+  // Materials
+  const blueMat = new THREE.MeshStandardMaterial({ color: 0x1a6ab5, roughness: 0.4, metalness: 0.5 });
+  const darkBlueMat = new THREE.MeshStandardMaterial({ color: 0x0d3d6e, roughness: 0.5, metalness: 0.5 });
+  const silverMat = new THREE.MeshStandardMaterial({ color: 0xc0c8d0, roughness: 0.3, metalness: 0.8 });
+  const whiteMat = new THREE.MeshStandardMaterial({ color: 0xe8eef0, roughness: 0.4, metalness: 0.3 });
+  const redMat = new THREE.MeshStandardMaterial({ color: 0xcc1111, roughness: 0.5, metalness: 0.4 });
+  const goldMat = new THREE.MeshStandardMaterial({ color: 0xd4a020, roughness: 0.3, metalness: 0.8, emissive: 0x442200, emissiveIntensity: 0.2 });
+  const blackMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8, metalness: 0.2 });
+  const eyeMat = new THREE.MeshStandardMaterial({
+    color: 0xff1100, emissive: 0xff1100, emissiveIntensity: 2.0,
+    roughness: 0.1, metalness: 0.1
+  });
+  const darkPanelMat = new THREE.MeshStandardMaterial({ color: 0x0a1520, roughness: 0.9, metalness: 0.1 });
+
+  function box(w, h, d, mat) {
+    const geo = new THREE.BoxGeometry(w, h, d);
+    return new THREE.Mesh(geo, mat);
+  }
+  function sphere(r, mat) {
+    const geo = new THREE.SphereGeometry(r, 12, 8);
+    return new THREE.Mesh(geo, mat);
+  }
+  function cyl(rt, rb, h, mat, segs = 8) {
+    const geo = new THREE.CylinderGeometry(rt, rb, h, segs);
+    return new THREE.Mesh(geo, mat);
+  }
+
+  // PELVIS / CORE
+  const pelvis = new THREE.Group(); pelvis.name = 'Pelvis';
+  root.add(pelvis);
+  makePivotHelper(pelvis);
+
+  const hipBlock = box(0.7, 0.5, 0.55, darkBlueMat);
+  pelvis.add(hipBlock);
+
+  // TORSO
+  const torso = new THREE.Group(); torso.name = 'Torso';
+  torso.position.y = 0.55;
+  pelvis.add(torso);
+  makePivotHelper(torso);
+
+  const torsoMesh = box(0.85, 0.75, 0.65, blueMat);
+  torso.add(torsoMesh);
+
+  // Chest core ring (gold intake)
+  const chestRing = cyl(0.22, 0.22, 0.1, goldMat, 16);
+  chestRing.rotation.x = Math.PI / 2;
+  chestRing.position.set(0, 0.05, 0.33);
+  torso.add(chestRing);
+
+  const chestGlow = sphere(0.14, eyeMat);
+  chestGlow.position.set(0, 0.05, 0.38);
+  chestGlow.scale.z = 0.3;
+  torso.add(chestGlow);
+
+  // Back spikes (swept quill shell)
+  const spikeGroup = new THREE.Group();
+  spikeGroup.position.set(0, 0.25, -0.3);
+  torso.add(spikeGroup);
+
+  for (let i = 0; i < 4; i++) {
+    const spike = box(0.12, 0.6 - i * 0.1, 0.12, darkBlueMat);
+    spike.position.set((i - 1.5) * 0.18, 0.25 + i * 0.05, -i * 0.08);
+    spike.rotation.x = -0.3 - i * 0.1;
+    spike.rotation.z = (i - 1.5) * 0.15;
+    spikeGroup.add(spike);
+  }
+
+  // HEAD
+  const headGroup = new THREE.Group(); headGroup.name = 'Head';
+  headGroup.position.y = 0.6;
+  torso.add(headGroup);
+  makePivotHelper(headGroup);
+
+  const headShell = sphere(0.38, blueMat);
+  headShell.scale.set(1, 0.95, 0.9);
+  headGroup.add(headShell);
+
+  // Face plate / muzzle
+  const muzzle = box(0.36, 0.22, 0.18, whiteMat);
+  muzzle.position.set(0, -0.06, 0.28);
+  headGroup.add(muzzle);
+
+  // Eye visor base
+  const visorBase = box(0.44, 0.14, 0.08, blackMat);
+  visorBase.position.set(0, 0.1, 0.3);
+  headGroup.add(visorBase);
+
+  // Eyes (RED EMISSIVE)
+  const eyeL = sphere(0.075, eyeMat);
+  eyeL.position.set(-0.13, 0.1, 0.34);
+  eyeL.scale.x = 1.2;
+  headGroup.add(eyeL);
+
+  const eyeR = sphere(0.075, eyeMat);
+  eyeR.position.set(0.13, 0.1, 0.34);
+  eyeR.scale.x = 1.2;
+  headGroup.add(eyeR);
+
+  // Point lights for eyes
+  const eyeGlowL = new THREE.PointLight(0xff0000, 0.8, 2);
+  eyeGlowL.position.set(-0.13, 0.1, 0.5);
+  headGroup.add(eyeGlowL);
+  const eyeGlowR = new THREE.PointLight(0xff0000, 0.8, 2);
+  eyeGlowR.position.set(0.13, 0.1, 0.5);
+  headGroup.add(eyeGlowR);
+
+  // Ears
+  const earL = new THREE.Group(); earL.name = 'EarL';
+  earL.position.set(-0.28, 0.28, 0.05);
+  headGroup.add(earL);
+  const earLMesh = box(0.1, 0.28, 0.08, blueMat);
+  earLMesh.rotation.z = 0.3;
+  earL.add(earLMesh);
+  const earLInner = box(0.06, 0.18, 0.05, goldMat);
+  earLInner.position.set(-0.01, 0, 0.025);
+  earLInner.rotation.z = 0.3;
+  earL.add(earLInner);
+
+  const earR = new THREE.Group(); earR.name = 'EarR';
+  earR.position.set(0.28, 0.28, 0.05);
+  headGroup.add(earR);
+  const earRMesh = box(0.1, 0.28, 0.08, blueMat);
+  earRMesh.rotation.z = -0.3;
+  earR.add(earRMesh);
+  const earRInner = box(0.06, 0.18, 0.05, goldMat);
+  earRInner.position.set(0.01, 0, 0.025);
+  earRInner.rotation.z = -0.3;
+  earR.add(earRInner);
+
+  // HEAD SPIKES (quill cluster)
+  const headSpikeGroup = new THREE.Group();
+  headSpikeGroup.position.set(0, 0.3, -0.2);
+  headGroup.add(headSpikeGroup);
+  for (let i = 0; i < 3; i++) {
+    const hs = box(0.09, 0.35, 0.08, darkBlueMat);
+    hs.position.set((i - 1) * 0.14, 0.12, -i * 0.04);
+    hs.rotation.x = -0.4;
+    hs.rotation.z = (i - 1) * 0.2;
+    headSpikeGroup.add(hs);
+  }
+
+  // ARMS
+  // Left Arm
+  const armLGroup = new THREE.Group(); armLGroup.name = 'ArmL';
+  armLGroup.position.set(-0.55, 0.2, 0);
+  torso.add(armLGroup);
+  makePivotHelper(armLGroup);
+
+  const upperArmL = box(0.2, 0.38, 0.2, blueMat);
+  upperArmL.position.y = -0.19;
+  armLGroup.add(upperArmL);
+
+  // Elbow joint
+  const elbowL = new THREE.Group(); elbowL.name = 'ElbowL';
+  elbowL.position.y = -0.38;
+  armLGroup.add(elbowL);
+  makePivotHelper(elbowL);
+
+  const forearmL = box(0.17, 0.32, 0.18, silverMat);
+  forearmL.position.y = -0.16;
+  elbowL.add(forearmL);
+
+  // Hand
+  const handLGroup = new THREE.Group(); handLGroup.name = 'HandL';
+  handLGroup.position.y = -0.32;
+  elbowL.add(handLGroup);
+  makePivotHelper(handLGroup);
+
+  const handL = box(0.22, 0.2, 0.2, whiteMat);
+  handLGroup.add(handL);
+
+  // Claws
+  for (let i = 0; i < 3; i++) {
+    const claw = box(0.05, 0.1, 0.05, blackMat);
+    claw.position.set((i - 1) * 0.07, -0.15, 0.06);
+    claw.rotation.x = 0.4;
+    handLGroup.add(claw);
+  }
+
+  // Right Arm
+  const armRGroup = new THREE.Group(); armRGroup.name = 'ArmR';
+  armRGroup.position.set(0.55, 0.2, 0);
+  torso.add(armRGroup);
+  makePivotHelper(armRGroup);
+
+  const upperArmR = box(0.2, 0.38, 0.2, blueMat);
+  upperArmR.position.y = -0.19;
+  armRGroup.add(upperArmR);
+
+  const elbowR = new THREE.Group(); elbowR.name = 'ElbowR';
+  elbowR.position.y = -0.38;
+  armRGroup.add(elbowR);
+  makePivotHelper(elbowR);
+
+  const forearmR = box(0.17, 0.32, 0.18, silverMat);
+  forearmR.position.y = -0.16;
+  elbowR.add(forearmR);
+
+  const handRGroup = new THREE.Group(); handRGroup.name = 'HandR';
+  handRGroup.position.y = -0.32;
+  elbowR.add(handRGroup);
+  makePivotHelper(handRGroup);
+
+  const handR = box(0.22, 0.2, 0.2, whiteMat);
+  handRGroup.add(handR);
+
+  for (let i = 0; i < 3; i++) {
+    const claw = box(0.05, 0.1, 0.05, blackMat);
+    claw.position.set((i - 1) * 0.07, -0.15, 0.06);
+    claw.rotation.x = 0.4;
+    handRGroup.add(claw);
+  }
+
+  // LEGS
+  // Left Leg
+  const legLGroup = new THREE.Group(); legLGroup.name = 'LegL';
+  legLGroup.position.set(-0.25, -0.25, 0);
+  pelvis.add(legLGroup);
+  makePivotHelper(legLGroup);
+
+  const thighL = box(0.23, 0.42, 0.22, blueMat);
+  thighL.position.y = -0.21;
+  legLGroup.add(thighL);
+
+  const kneeL = new THREE.Group(); kneeL.name = 'KneeL';
+  kneeL.position.y = -0.42;
+  legLGroup.add(kneeL);
+  makePivotHelper(kneeL);
+
+  const shinL = box(0.19, 0.4, 0.19, darkBlueMat);
+  shinL.position.y = -0.2;
+  kneeL.add(shinL);
+
+  const ankleL = new THREE.Group(); ankleL.name = 'AnkleL';
+  ankleL.position.y = -0.4;
+  kneeL.add(ankleL);
+  makePivotHelper(ankleL);
+
+  const footL = box(0.28, 0.16, 0.42, redMat);
+  footL.position.set(0.0, -0.05, 0.1);
+  ankleL.add(footL);
+
+  const heelL = box(0.18, 0.1, 0.14, redMat);
+  heelL.position.set(0, -0.03, -0.18);
+  ankleL.add(heelL);
+
+  // Right Leg
+  const legRGroup = new THREE.Group(); legRGroup.name = 'LegR';
+  legRGroup.position.set(0.25, -0.25, 0);
+  pelvis.add(legRGroup);
+  makePivotHelper(legRGroup);
+
+  const thighR = box(0.23, 0.42, 0.22, blueMat);
+  thighR.position.y = -0.21;
+  legRGroup.add(thighR);
+
+  const kneeR = new THREE.Group(); kneeR.name = 'KneeR';
+  kneeR.position.y = -0.42;
+  legRGroup.add(kneeR);
+  makePivotHelper(kneeR);
+
+  const shinR = box(0.19, 0.4, 0.19, darkBlueMat);
+  shinR.position.y = -0.2;
+  kneeR.add(shinR);
+
+  const ankleR = new THREE.Group(); ankleR.name = 'AnkleR';
+  ankleR.position.y = -0.4;
+  kneeR.add(ankleR);
+  makePivotHelper(ankleR);
+
+  const footR = box(0.28, 0.16, 0.42, redMat);
+  footR.position.set(0.0, -0.05, 0.1);
+  ankleR.add(footR);
+
+  const heelR = box(0.18, 0.1, 0.14, redMat);
+  heelR.position.set(0, -0.03, -0.18);
+  ankleR.add(heelR);
+
+  // Shadow caster
+  root.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = false; } });
+
+  return {
+    root, pelvis, torso, headGroup,
+    armLGroup, elbowL, handLGroup,
+    armRGroup, elbowR, handRGroup,
+    legLGroup, kneeL, ankleL,
+    legRGroup, kneeR, ankleR,
+    spikeGroup, headSpikeGroup,
+    eyeGlowL, eyeGlowR, chestGlow,
+    earL, earR
+  };
+}
+
+const char = buildCharacter();
+char.root.position.y = 1.3; // stand on ground
+scene.add(char.root);
+
+// ============================================================
+// 7. CHARACTER CONTROLLER
+// ============================================================
+const controller = {
+  velocity: new THREE.Vector3(),
+  position: new THREE.Vector3(0, 1.3, 0),
+  yaw: 0,
+  grounded: true,
+  state: 'IDLE',
+  prevState: 'IDLE',
+
+  // Timers / cooldowns
+  dashCooldown: 0,
+  spinChargeTimer: 0,
+  spinCharged: false,
+  hoverTimer: 0,
+  hoverActive: false,
+  jumpCount: 0,
+  landTimer: 0,
+  dashActive: false,
+  dashTimer: 0,
+  dashDirection: new THREE.Vector3(),
+  stompActive: false,
+  waveTimer: 0,
+  clawTimer: 0,
+  clawSide: 0,
+
+  // tap state
+  jumpTapTime: 0,
+};
+
+const moveDir = new THREE.Vector3();
+const camRight = new THREE.Vector3();
+const camForward = new THREE.Vector3();
+
+// ============================================================
+// 8. CAMERA CONTROLLER
+// ============================================================
+const camState = {
+  mode: 0,
+  modeNames: CAMERA_MODES,
+  theta: Math.PI / 6,
+  phi: Math.PI * 0.28,
+  distance: 12,
+  targetDist: 12,
+  targetPhi: Math.PI * 0.28,
+  sensitivity: 1.0,
+  invertY: false,
+  targetHeight: 7,
+  camTarget: new THREE.Vector3(),
+};
+
+let settings = {
+  sensitivity: 1.0,
+  camDist: 12,
+  camHeight: 7,
+  invertY: false,
+  showGrid: true,
+  showPivots: false,
+};
+
+function loadSettings() {
+  const saved = localStorage.getItem('redeye_settings');
+  if (saved) { try { Object.assign(settings, JSON.parse(saved)); } catch {} }
+}
+function saveSettings() { localStorage.setItem('redeye_settings', JSON.stringify(settings)); }
+loadSettings();
+
+// Apply settings
+camState.distance = settings.camDist;
+camState.targetDist = settings.camDist;
+camState.targetPhi = Math.PI * (settings.camHeight / 30);
+gridHelper.visible = settings.showGrid;
+
+// ============================================================
+// 9. ANIMATION CONTROLLER
+// ============================================================
+const Anim = {
+  time: 0,
+  walkCycle: 0,
+  landSquash: 0,
+  dashLean: 0,
+  spinAngle: 0,
+  bobAmt: 0,
+  clawSwipeL: 0,
+  clawSwipeR: 0,
+
+  update(dt, state, vel) {
+    this.time += dt;
+    const speed = Math.sqrt(vel.x * vel.x + vel.z * vel.z);
+    const isMoving = speed > 0.5;
+    const cycleSpeed = state === 'RUN' ? 8 : 5;
+
+    if (isMoving && controller.grounded) {
+      this.walkCycle += dt * cycleSpeed;
+    }
+
+    if (state === 'SPIN_CHARGE' || state === 'SPIN_DASH') {
+      this.spinAngle += dt * (state === 'SPIN_DASH' ? 30 : 10);
+    } else {
+      this.spinAngle *= 0.85;
+    }
+
+    if (this.landSquash > 0) this.landSquash -= dt * 4;
+    if (this.dashLean > 0) this.dashLean -= dt * 3;
+
+    // Claw animations
+    if (this.clawSwipeL > 0) this.clawSwipeL -= dt * 4;
+    if (this.clawSwipeR > 0) this.clawSwipeR -= dt * 4;
+
+    // Apply poses
+    const wc = this.walkCycle;
+    const swing = state === 'RUN' ? 0.55 : 0.35;
+    const isAir = !controller.grounded;
+    const isSpin = state === 'SPIN_CHARGE' || state === 'SPIN_DASH';
+
+    // CURL BALL for spin
+    if (isSpin) {
+      char.torso.rotation.x = THREE.MathUtils.lerp(char.torso.rotation.x, 0.8, 0.12);
+      char.headGroup.rotation.x = THREE.MathUtils.lerp(char.headGroup.rotation.x, -0.5, 0.12);
+      char.armLGroup.rotation.x = THREE.MathUtils.lerp(char.armLGroup.rotation.x, 1.2, 0.12);
+      char.armRGroup.rotation.x = THREE.MathUtils.lerp(char.armRGroup.rotation.x, 1.2, 0.12);
+      char.legLGroup.rotation.x = THREE.MathUtils.lerp(char.legLGroup.rotation.x, -1.0, 0.12);
+      char.legRGroup.rotation.x = THREE.MathUtils.lerp(char.legRGroup.rotation.x, -1.0, 0.12);
+      char.root.rotation.z = this.spinAngle;
+      return;
+    }
+
+    char.root.rotation.z = THREE.MathUtils.lerp(char.root.rotation.z, 0, 0.12);
+
+    // Torso bob
+    const idleBob = Math.sin(this.time * 1.5) * 0.03;
+    char.pelvis.position.y = isMoving ? Math.abs(Math.sin(wc)) * 0.04 : idleBob;
+
+    // Land squash
+    const squash = Math.max(0, this.landSquash);
+    char.pelvis.scale.y = 1 - squash * 0.25;
+    char.pelvis.scale.x = 1 + squash * 0.15;
+
+    // Head idle servo drift
+    const headDrift = Math.sin(this.time * 0.8) * 0.04;
+    const headNod = isMoving ? Math.sin(wc) * 0.1 : 0;
+    char.headGroup.rotation.x = THREE.MathUtils.lerp(char.headGroup.rotation.x, headNod, 0.1);
+    char.headGroup.rotation.y = THREE.MathUtils.lerp(char.headGroup.rotation.y, headDrift, 0.05);
+
+    // Torso lean on run/dash
+    const torsoLean = state === 'RUN' ? -0.18 : (state === 'DASH' ? -0.3 : 0);
+    const torsoTwist = isMoving ? Math.sin(wc) * 0.08 : Math.sin(this.time * 0.7) * 0.02;
+    char.torso.rotation.x = THREE.MathUtils.lerp(char.torso.rotation.x, torsoLean, 0.1);
+    char.torso.rotation.y = THREE.MathUtils.lerp(char.torso.rotation.y, torsoTwist, 0.1);
+
+    // Arm swing (walk/run)
+    const armFwd = Math.sin(wc) * swing;
+    char.armLGroup.rotation.x = THREE.MathUtils.lerp(char.armLGroup.rotation.x,
+      this.clawSwipeL > 0 ? -1.2 : (isAir ? 0.4 : armFwd), 0.12);
+    char.armRGroup.rotation.x = THREE.MathUtils.lerp(char.armRGroup.rotation.x,
+      this.clawSwipeR > 0 ? -1.2 : (isAir ? 0.4 : -armFwd), 0.12);
+
+    char.armLGroup.rotation.z = THREE.MathUtils.lerp(char.armLGroup.rotation.z,
+      isAir ? 0.4 : 0.15, 0.08);
+    char.armRGroup.rotation.z = THREE.MathUtils.lerp(char.armRGroup.rotation.z,
+      isAir ? -0.4 : -0.15, 0.08);
+
+    // Elbow bend
+    char.elbowL.rotation.x = THREE.MathUtils.lerp(char.elbowL.rotation.x,
+      isMoving ? 0.4 : 0.2, 0.1);
+    char.elbowR.rotation.x = THREE.MathUtils.lerp(char.elbowR.rotation.x,
+      isMoving ? 0.4 : 0.2, 0.1);
+
+    // Leg swing
+    const legFwd = Math.sin(wc) * swing * 0.9;
+    char.legLGroup.rotation.x = THREE.MathUtils.lerp(char.legLGroup.rotation.x,
+      isAir ? -0.3 : -legFwd, 0.12);
+    char.legRGroup.rotation.x = THREE.MathUtils.lerp(char.legRGroup.rotation.x,
+      isAir ? -0.3 : legFwd, 0.12);
+
+    // Knee bend on walk
+    const kneeBend = isMoving ? Math.max(0, Math.sin(wc)) * 0.5 : 0;
+    char.kneeL.rotation.x = THREE.MathUtils.lerp(char.kneeL.rotation.x, kneeBend + (isAir ? 0.4 : 0), 0.1);
+    char.kneeR.rotation.x = THREE.MathUtils.lerp(char.kneeR.rotation.x, kneeBend + (isAir ? 0.4 : 0), 0.1);
+
+    // Hover burst — arms out
+    if (state === 'HOVER') {
+      char.armLGroup.rotation.z = THREE.MathUtils.lerp(char.armLGroup.rotation.z, 1.0, 0.15);
+      char.armRGroup.rotation.z = THREE.MathUtils.lerp(char.armRGroup.rotation.z, -1.0, 0.15);
+    }
+
+    // Jump pose
+    if (state === 'JUMP' || state === 'FALL') {
+      char.legLGroup.rotation.x = THREE.MathUtils.lerp(char.legLGroup.rotation.x, -0.5, 0.12);
+      char.legRGroup.rotation.x = THREE.MathUtils.lerp(char.legRGroup.rotation.x, -0.5, 0.12);
+    }
+
+    // Stomp windup
+    if (state === 'STOMP') {
+      char.armLGroup.rotation.x = THREE.MathUtils.lerp(char.armLGroup.rotation.x, -1.5, 0.15);
+      char.armRGroup.rotation.x = THREE.MathUtils.lerp(char.armRGroup.rotation.x, -1.5, 0.15);
+      char.legLGroup.rotation.x = THREE.MathUtils.lerp(char.legLGroup.rotation.x, 0.5, 0.15);
+      char.legRGroup.rotation.x = THREE.MathUtils.lerp(char.legRGroup.rotation.x, 0.5, 0.15);
+    }
+
+    // Wave emote
+    if (state === 'WAVE') {
+      char.armRGroup.rotation.x = THREE.MathUtils.lerp(char.armRGroup.rotation.x, -1.3, 0.12);
+      char.armRGroup.rotation.z = THREE.MathUtils.lerp(char.armRGroup.rotation.z, 0.5, 0.12);
+      char.handRGroup.rotation.z = Math.sin(this.time * 8) * 0.4;
+    }
+
+    // Ear flick on run
+    if (state === 'RUN') {
+      char.earL.rotation.z = Math.sin(this.time * 6) * 0.15 + 0.3;
+      char.earR.rotation.z = Math.sin(this.time * 6 + Math.PI) * 0.15 - 0.3;
+    } else {
+      char.earL.rotation.z = THREE.MathUtils.lerp(char.earL.rotation.z, 0, 0.05);
+      char.earR.rotation.z = THREE.MathUtils.lerp(char.earR.rotation.z, 0, 0.05);
+    }
+
+    // Eye glow pulse on hover/jump
+    const glowIntensity = (state === 'HOVER' || state === 'JUMP') ?
+      1.0 + Math.sin(this.time * 10) * 0.5 : 0.8;
+    char.eyeGlowL.intensity = glowIntensity;
+    char.eyeGlowR.intensity = glowIntensity;
+  }
+};
+
+// ============================================================
+// 10. SETTINGS UI
+// ============================================================
+const settingsMenu = document.getElementById('settings-menu');
+const hotkeyPanel = document.getElementById('hotkey-panel');
+
+function buildHotkeyPanel() {
+  const container = document.getElementById('hk-content');
+  container.innerHTML = '';
+
+  const categories = {};
+  for (const [action, data] of Object.entries(HotkeyManager.bindings)) {
+    if (!categories[data.category]) categories[data.category] = [];
+    categories[data.category].push({ action, ...data });
+  }
+
+  for (const [cat, items] of Object.entries(categories)) {
+    const h = document.createElement('h3');
+    h.textContent = cat;
+    container.appendChild(h);
+
+    for (const item of items) {
+      const row = document.createElement('div');
+      row.className = 'hk-row';
+      const label = document.createElement('span');
+      label.className = 'hk-action';
+      label.textContent = item.label;
+      const key = document.createElement('button');
+      key.className = 'hk-key';
+      key.textContent = item.code.replace('Key', '').replace('Arrow', '↑').replace('ShiftLeft', 'SHIFT').replace('ControlLeft', 'CTRL').replace('Space', 'SPC').replace('Escape', 'ESC').replace('Tab', 'TAB');
+      key.addEventListener('click', () => {
+        HotkeyManager.startRecording(item.action, key);
+      });
+      row.appendChild(label);
+      row.appendChild(key);
+      container.appendChild(row);
+    }
+  }
+}
+
+buildHotkeyPanel();
+
+document.getElementById('panel-close-btn').addEventListener('click', () => {
+  hotkeyPanel.classList.remove('open');
+});
+
+document.getElementById('btn-reset-keys').addEventListener('click', () => {
+  for (const [k, v] of Object.entries(HotkeyManager.DEFAULT_BINDINGS)) {
+    HotkeyManager.bindings[k] = { ...v };
+  }
+  HotkeyManager.save();
+  buildHotkeyPanel();
+});
+
+document.getElementById('btn-export-keys').addEventListener('click', () => {
+  const json = JSON.stringify(HotkeyManager.bindings, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'redeye_controls.json';
+  a.click();
+});
+
+document.getElementById('btn-import-keys').addEventListener('click', () => {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.onchange = e => {
+    const file = e.target.files[0];
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        Object.assign(HotkeyManager.bindings, data);
+        HotkeyManager.save();
+        buildHotkeyPanel();
+      } catch {}
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+});
+
+// Settings sliders
+document.getElementById('s-sensitivity').addEventListener('input', e => {
+  settings.sensitivity = parseFloat(e.target.value);
+  document.getElementById('sv-sensitivity').textContent = settings.sensitivity.toFixed(1);
+  saveSettings();
+});
+document.getElementById('s-camdist').addEventListener('input', e => {
+  settings.camDist = parseInt(e.target.value);
+  document.getElementById('sv-camdist').textContent = settings.camDist;
+  camState.targetDist = settings.camDist;
+  saveSettings();
+});
+document.getElementById('s-camheight').addEventListener('input', e => {
+  settings.camHeight = parseInt(e.target.value);
+  document.getElementById('sv-camheight').textContent = settings.camHeight;
+  saveSettings();
+});
+document.getElementById('s-inverty').addEventListener('change', e => {
+  settings.invertY = e.target.checked;
+  saveSettings();
+});
+document.getElementById('s-showgrid').addEventListener('change', e => {
+  settings.showGrid = e.target.checked;
+  gridHelper.visible = settings.showGrid;
+  saveSettings();
+});
+document.getElementById('s-showpivots').addEventListener('change', e => {
+  settings.showPivots = e.target.checked;
+  pivotHelpers.forEach(p => p.visible = settings.showPivots);
+  saveSettings();
+});
+document.getElementById('s-reset-pos').addEventListener('click', () => {
+  controller.position.set(0, 1.3, 0);
+  controller.velocity.set(0, 0, 0);
+  controller.yaw = 0;
+});
+document.getElementById('s-close').addEventListener('click', () => {
+  settingsMenu.classList.remove('open');
+});
+
+// Sync initial values
+document.getElementById('s-sensitivity').value = settings.sensitivity;
+document.getElementById('sv-sensitivity').textContent = settings.sensitivity.toFixed(1);
+document.getElementById('s-camdist').value = settings.camDist;
+document.getElementById('sv-camdist').textContent = settings.camDist;
+document.getElementById('s-camheight').value = settings.camHeight;
+document.getElementById('sv-camheight').textContent = settings.camHeight;
+document.getElementById('s-inverty').checked = settings.invertY;
+document.getElementById('s-showgrid').checked = settings.showGrid;
+document.getElementById('s-showpivots').checked = settings.showPivots;
+
+// ============================================================
+// 11. FLASH / FX
+// ============================================================
+const flashEl = document.getElementById('action-flash');
+function showFlash(text) {
+  flashEl.textContent = text;
+  flashEl.style.opacity = '1';
+  clearTimeout(flashEl._timeout);
+  flashEl._timeout = setTimeout(() => { flashEl.style.opacity = '0'; }, 600);
+}
+
+function triggerShockwave() {
+  const sw = document.getElementById('shockwave');
+  sw.style.opacity = '1';
+  sw.style.width = '10px';
+  sw.style.height = '10px';
+  sw.style.transition = 'none';
+  requestAnimationFrame(() => {
+    sw.style.transition = 'all 0.5s ease-out';
+    sw.style.width = '200px';
+    sw.style.height = '200px';
+    sw.style.opacity = '0';
+    sw.style.bottom = '38%';
+  });
+}
+
+// ============================================================
+// 12. MAIN LOOP
+// ============================================================
+let prevTime = performance.now();
+let fpsTimer = 0;
+let fpsFrames = 0;
+let fpsDisplay = 60;
+
+// Toggle states
+let helpVisible = true;
+let debugVisible = false;
+
+// Key press tracking (one-shot)
+const justPressed = {};
+const prevKeyState = {};
+
+function wasJustPressed(code) {
+  const cur = Input.isDown(code);
+  const prev = prevKeyState[code] || false;
+  return cur && !prev;
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+
+  const now = performance.now();
+  const dt = Math.min((now - prevTime) / 1000, 0.05);
+  prevTime = now;
+
+  fpsTimer += dt;
+  fpsFrames++;
+  if (fpsTimer >= 0.5) {
+    fpsDisplay = Math.round(fpsFrames / fpsTimer);
+    fpsTimer = 0; fpsFrames = 0;
+  }
+
+  const settingsOpen = settingsMenu.classList.contains('open');
+  const panelOpen = hotkeyPanel.classList.contains('open');
+  const uiOpen = settingsOpen || panelOpen;
+
+  // ---- ONE-SHOT UI KEYS (all situations) ----
+  if (wasJustPressed('Tab') && !settingsOpen) {
+    hotkeyPanel.classList.toggle('open');
+  }
+  if (wasJustPressed('Escape')) {
+    if (panelOpen) hotkeyPanel.classList.remove('open');
+    else settingsMenu.classList.toggle('open');
+  }
+  if (wasJustPressed('F3')) {
+    debugVisible = !debugVisible;
+    document.getElementById('debug').classList.toggle('visible', debugVisible);
+  }
+  if (wasJustPressed('KeyH')) {
+    helpVisible = !helpVisible;
+    document.getElementById('quick-help').classList.toggle('hidden', !helpVisible);
+  }
+  if (wasJustPressed('KeyB')) {
+    settings.showPivots = !settings.showPivots;
+    pivotHelpers.forEach(p => p.visible = settings.showPivots);
+    document.getElementById('s-showpivots').checked = settings.showPivots;
+  }
+  if (wasJustPressed('KeyV')) {
+    camState.mode = (camState.mode + 1) % CAMERA_MODES.length;
+    showFlash(CAMERA_MODES[camState.mode]);
+  }
+  if (wasJustPressed('KeyC')) {
+    camState.theta = Math.PI / 6;
+    camState.phi = Math.PI * 0.28;
+  }
+
+  // Update prev key state
+  for (const code of Object.keys(Input.raw)) {
+    prevKeyState[code] = Input.isDown(code);
+  }
+
+  // ---- CAMERA MOUSE ----
+  const md = Input.getMouseDelta();
+  const rmb = Input.isMouseDown(2);
+
+  if (rmb || camState.mode === 1) {
+    const sens = settings.sensitivity * 0.005;
+    const invertFactor = settings.invertY ? -1 : 1;
+    camState.theta -= md.dx * sens;
+    camState.phi += md.dy * sens * invertFactor;
+    camState.phi = Math.max(0.1, Math.min(Math.PI * 0.45, camState.phi));
+  }
+  Input.clearMouseDelta();
+
+  const wd = Input.getWheelDelta();
+  camState.targetDist += wd * 0.01;
+  camState.targetDist = Math.max(4, Math.min(25, camState.targetDist));
+  Input.clearWheelDelta();
+  camState.distance += (camState.targetDist - camState.distance) * 5 * dt;
+
+  // ---- MOVEMENT (only when UI closed) ----
+  if (!uiOpen) {
+    // Camera forward/right for movement
+    const sinT = Math.sin(camState.theta);
+    const cosT = Math.cos(camState.theta);
+    camForward.set(-sinT, 0, -cosT).normalize();
+    camRight.set(cosT, 0, -sinT).normalize();
+
+    let moving = false;
+    moveDir.set(0, 0, 0);
+
+    if (Input.isDown('KeyW')) { moveDir.addScaledVector(camForward, 1); moving = true; }
+    if (Input.isDown('KeyS')) { moveDir.addScaledVector(camForward, -1); moving = true; }
+    if (Input.isDown('KeyA')) { moveDir.addScaledVector(camRight, -1); moving = true; }
+    if (Input.isDown('KeyD')) { moveDir.addScaledVector(camRight, 1); moving = true; }
+    if (moving) moveDir.normalize();
+
+    const isRunning = Input.isDown('ShiftLeft') || Input.isDown('ShiftRight');
+    const isCrouching = Input.isDown('ControlLeft') || Input.isDown('ControlRight');
+    const targetSpeed = isRunning ? RUN_SPEED : WALK_SPEED;
+
+    // Dash cooldown
+    if (controller.dashCooldown > 0) controller.dashCooldown -= dt;
+
+    // DASH - active
+    if (controller.dashActive) {
+      controller.dashTimer -= dt;
+      controller.velocity.x = controller.dashDirection.x * DASH_SPEED;
+      controller.velocity.z = controller.dashDirection.z * DASH_SPEED;
+      if (controller.dashTimer <= 0) {
+        controller.dashActive = false;
+        controller.state = controller.grounded ? 'IDLE' : 'FALL';
+      }
+    }
+
+    // SPIN CHARGE / SPIN DASH
+    const spinKey = Input.isDown('KeyR');
+    if (spinKey && !controller.dashActive) {
+      controller.spinChargeTimer += dt;
+      controller.state = 'SPIN_CHARGE';
+      document.getElementById('spin-charge').style.display = 'block';
+      document.getElementById('spin-charge-fill').style.width =
+        Math.min(100, (controller.spinChargeTimer / SPIN_CHARGE_TIME) * 100) + '%';
+      if (controller.spinChargeTimer >= SPIN_CHARGE_TIME) {
+        controller.spinCharged = true;
+      }
+    }
+
+    const spinWasDown = prevKeyState['KeyR'];
+    if (!spinKey && spinWasDown && controller.spinChargeTimer > 0.1) {
+      // Release spin dash
+      document.getElementById('spin-charge').style.display = 'none';
+      if (controller.spinCharged && controller.dashCooldown <= 0) {
+        const dashDir = moving ? moveDir.clone() : new THREE.Vector3(-Math.sin(controller.yaw), 0, -Math.cos(controller.yaw));
+        controller.dashDirection.copy(dashDir);
+        controller.dashActive = true;
+        controller.dashTimer = 0.35;
+        controller.dashCooldown = DASH_COOLDOWN;
+        controller.spinCharged = false;
+        controller.state = 'SPIN_DASH';
+        showFlash('SPIN DASH');
+      }
+      controller.spinChargeTimer = 0;
+    }
+
+    if (!spinKey) {
+      document.getElementById('spin-charge').style.display = 'none';
+      if (!Input.isDown('KeyR')) controller.spinChargeTimer = 0;
+    }
+
+    // JUMP
+    const spaceDown = Input.isDown('Space');
+    const spaceWasDown = prevKeyState['Space'];
+    if (spaceDown && !spaceWasDown) {
+      if (controller.grounded) {
+        controller.velocity.y = JUMP_FORCE;
+        controller.grounded = false;
+        controller.jumpCount = 1;
+        controller.state = 'JUMP';
+        controller.jumpTapTime = now;
+        showFlash('JUMP');
+      } else if (controller.jumpCount === 1 && !controller.hoverActive) {
+        // Double jump / hover burst
+        controller.hoverActive = true;
+        controller.hoverTimer = HOVER_DURATION;
+        controller.velocity.y = JUMP_FORCE * 0.6;
+        controller.jumpCount = 2;
+        controller.state = 'HOVER';
+        showFlash('HOVER BURST');
+      }
+    }
+
+    // GROUND STOMP (CTRL + SPACE)
+    const stompInput = isCrouching && spaceDown && !spaceWasDown && !controller.grounded;
+    if (stompInput && !controller.stompActive) {
+      controller.velocity.y = -JUMP_FORCE * 1.5;
+      controller.stompActive = true;
+      controller.hoverActive = false;
+      controller.state = 'STOMP';
+      showFlash('STOMP');
+    }
+
+    // HOVER
+    if (controller.hoverActive) {
+      controller.hoverTimer -= dt;
+      if (controller.hoverTimer <= 0) {
+        controller.hoverActive = false;
+        controller.state = 'FALL';
+      }
+    }
+
+    // WAVE emote
+    if (wasJustPressed('KeyZ')) {
+      controller.waveTimer = 1.5;
+      controller.state = 'WAVE';
+      showFlash('👋');
+    }
+    if (controller.waveTimer > 0) {
+      controller.waveTimer -= dt;
+      if (controller.waveTimer <= 0) controller.state = 'IDLE';
+    }
+
+    // CLAW attacks
+    if (wasJustPressed('KeyQ') && controller.state !== 'SPIN_CHARGE') {
+      Anim.clawSwipeL = 1.0;
+      controller.clawTimer = 0.3;
+      showFlash('CLAW L');
+    }
+    if (wasJustPressed('KeyE') && controller.state !== 'SPIN_CHARGE') {
+      Anim.clawSwipeR = 1.0;
+      controller.clawTimer = 0.3;
+      showFlash('CLAW R');
+    }
+
+    // DOUBLE-TAP W = burst
+    if (Input.wasDoubleTapped('KeyW') && controller.grounded && controller.dashCooldown <= 0 && !controller.dashActive) {
+      const dashDir = camForward.clone();
+      controller.dashDirection.copy(dashDir);
+      controller.dashActive = true;
+      controller.dashTimer = 0.2;
+      controller.dashCooldown = DASH_COOLDOWN;
+      showFlash('BURST');
+    }
+
+    // Ground movement
+    if (!controller.dashActive && controller.state !== 'SPIN_CHARGE') {
+      if (controller.grounded) {
+        if (moving) {
+          const accel = 20;
+          controller.velocity.x += (moveDir.x * targetSpeed - controller.velocity.x) * Math.min(1, accel * dt);
+          controller.velocity.z += (moveDir.z * targetSpeed - controller.velocity.z) * Math.min(1, accel * dt);
+        } else {
+          const fric = Math.min(1, FRICTION * dt);
+          controller.velocity.x *= (1 - fric);
+          controller.velocity.z *= (1 - fric);
+        }
+      } else {
+        // Air control
+        if (moving) {
+          controller.velocity.x += moveDir.x * targetSpeed * AIR_CONTROL * dt * 10;
+          controller.velocity.z += moveDir.z * targetSpeed * AIR_CONTROL * dt * 10;
+          const hSpd = Math.sqrt(controller.velocity.x ** 2 + controller.velocity.z ** 2);
+          if (hSpd > RUN_SPEED) {
+            controller.velocity.x *= RUN_SPEED / hSpd;
+            controller.velocity.z *= RUN_SPEED / hSpd;
+          }
+        }
+      }
+    }
+
+    // Hover reduces gravity
+    const gravMult = controller.hoverActive ? 0.15 : 1;
+    controller.velocity.y -= GRAVITY * gravMult * dt;
+
+    // Integrate position
+    controller.position.addScaledVector(controller.velocity, dt);
+
+    // Ground collision
+    const charHeight = 1.3;
+    if (controller.position.y <= charHeight) {
+      controller.position.y = charHeight;
+      if (!controller.grounded && controller.velocity.y < -2) {
+        Anim.landSquash = Math.min(1, Math.abs(controller.velocity.y) / 15);
+        if (controller.stompActive) {
+          triggerShockwave();
+          showFlash('IMPACT');
+          controller.stompActive = false;
+        }
+      }
+      controller.grounded = true;
+      controller.jumpCount = 0;
+      controller.hoverActive = false;
+      controller.hoverTimer = 0;
+      if (controller.velocity.y < 0) controller.velocity.y = 0;
+    } else {
+      controller.grounded = false;
+    }
+
+    // Platform collision (simple AABB top only)
+    for (const plat of platforms) {
+      const px = plat.position.x, py = plat.position.y, pz = plat.position.z;
+      const gs = plat.geometry.parameters;
+      const hw = gs.width / 2 + 0.3, hh = gs.height, hd = gs.depth / 2 + 0.3;
+      const dx = controller.position.x - px;
+      const dz = controller.position.z - pz;
+      if (Math.abs(dx) < hw && Math.abs(dz) < hd) {
+        const topY = py + hh / 2 + charHeight - hh / 2;
+        if (controller.position.y <= topY + 0.2 && controller.velocity.y <= 0) {
+          controller.position.y = topY;
+          controller.grounded = true;
+          controller.jumpCount = 0;
+          controller.hoverActive = false;
+          if (controller.velocity.y < 0) controller.velocity.y = 0;
+        }
+      }
+    }
+
+    // Character facing
+    const hSpd = Math.sqrt(controller.velocity.x ** 2 + controller.velocity.z ** 2);
+    if (hSpd > 0.5 && moving) {
+      const targetYaw = Math.atan2(controller.velocity.x, controller.velocity.z);
+      const diff = ((targetYaw - controller.yaw + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
+      controller.yaw += diff * Math.min(1, TURN_SPEED * dt);
+    }
+
+    // Determine state
+    if (controller.state !== 'WAVE' && controller.state !== 'SPIN_CHARGE' && controller.state !== 'SPIN_DASH') {
+      if (!controller.grounded) {
+        if (controller.velocity.y > 1) controller.state = 'JUMP';
+        else if (controller.hoverActive) controller.state = 'HOVER';
+        else if (controller.stompActive) controller.state = 'STOMP';
+        else controller.state = 'FALL';
+      } else if (controller.dashActive) {
+        controller.state = 'DASH';
+      } else if (hSpd > 5.5) {
+        controller.state = 'RUN';
+      } else if (hSpd > 0.5) {
+        controller.state = 'WALK';
+      } else {
+        controller.state = 'IDLE';
+      }
+    }
+
+    // Clamp world bounds
+    const BOUND = 38;
+    controller.position.x = Math.max(-BOUND, Math.min(BOUND, controller.position.x));
+    controller.position.z = Math.max(-BOUND, Math.min(BOUND, controller.position.z));
+
+    // Orb collection
+    for (const orb of orbs) {
+      if (!orb.active) continue;
+      const dx = controller.position.x - orb.mesh.position.x;
+      const dz = controller.position.z - orb.mesh.position.z;
+      if (Math.sqrt(dx * dx + dz * dz) < 1.2) {
+        orb.active = false;
+        orb.mesh.visible = false;
+      }
+    }
+  }
+
+  // Apply position / rotation to root
+  char.root.position.copy(controller.position);
+  char.root.rotation.y = controller.yaw;
+
+  // Ring rotation
+  const t = performance.now() / 1000;
+  for (const ring of rings) {
+    ring.rotation.y += dt * 2;
+  }
+
+  // Orb bob
+  for (const orb of orbs) {
+    if (orb.active) {
+      orb.mesh.position.y = orb.baseY + Math.sin(t * 2 + orb.mesh.position.x) * 0.15;
+      orb.mesh.rotation.y += dt * 2;
+    }
+  }
+
+  // ---- ANIMATION ----
+  Anim.update(dt, controller.state, controller.velocity);
+
+  // ---- CAMERA ----
+  const camTarget = controller.position.clone().add(new THREE.Vector3(0, 0.5, 0));
+  camState.camTarget.lerp(camTarget, CAM_FOLLOW_SPEED * dt);
+
+  const debugPullback = camState.mode === 2 ? 1.4 : 1;
+  const cx = camState.camTarget.x + Math.sin(camState.theta) * Math.cos(camState.phi) * camState.distance * debugPullback;
+  const cy = camState.camTarget.y + Math.sin(camState.phi) * camState.distance;
+  const cz = camState.camTarget.z + Math.cos(camState.theta) * Math.cos(camState.phi) * camState.distance * debugPullback;
+
+  camera.position.lerp(new THREE.Vector3(cx, cy, cz), 8 * dt);
+  camera.lookAt(camState.camTarget);
+
+  // Rim light follows character
+  rimLight.position.set(
+    controller.position.x,
+    controller.position.y + 4,
+    controller.position.z - 3
+  );
+
+  // ---- DEBUG OVERLAY ----
+  if (debugVisible) {
+    const v = controller.velocity;
+    const spd = Math.sqrt(v.x * v.x + v.z * v.z).toFixed(2);
+    document.getElementById('d-state').textContent = controller.state;
+    document.getElementById('d-vel').textContent = spd;
+    document.getElementById('d-grnd').textContent = controller.grounded ? 'YES' : 'AIR';
+    document.getElementById('d-pos').textContent =
+      `${controller.position.x.toFixed(1)},${controller.position.y.toFixed(1)},${controller.position.z.toFixed(1)}`;
+    document.getElementById('d-cam').textContent = CAMERA_MODES[camState.mode];
+    document.getElementById('d-chord').textContent = controller.dashActive ? 'DASH' : controller.hoverActive ? 'HOVER' : '—';
+    document.getElementById('d-dash').textContent = controller.dashCooldown > 0 ? controller.dashCooldown.toFixed(2) : 'READY';
+    document.getElementById('d-hover').textContent = controller.hoverActive ? controller.hoverTimer.toFixed(2) : '—';
+    document.getElementById('d-fps').textContent = fpsDisplay;
+  }
+
+  document.getElementById('state-badge').textContent = controller.state;
+
+  // Dash cooldown bar
+  const cdFill = document.getElementById('cd-dash');
+  cdFill.style.width = controller.dashCooldown > 0 ?
+    (controller.dashCooldown / DASH_COOLDOWN * 100) + '%' : '0%';
+
+  // Render
+  renderer.render(scene, camera);
+}
+
+animate();
+
+// ============================================================
+// 13. CANVAS EVENTS (prevent RMB context menu)
+// ============================================================
+renderer.domElement.addEventListener('contextmenu', e => e.preventDefault());
+
+// Prevent keyboard scroll
+window.addEventListener('keydown', e => {
+  if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.code)) {
+    e.preventDefault();
+  }
+});
+</script>
+</body>
+</html>

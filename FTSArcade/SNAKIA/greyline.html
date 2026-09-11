@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>GREYLINE · FTS ARCADE</title>
+<meta name="description" content="GREYLINE — a monochrome LCD serpent, rebuilt for the FTS Arcade. Grey glass, hard pixels, free forever.">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;background:#050810;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+canvas{display:block;position:fixed;top:0;left:0;touch-action:none;image-rendering:pixelated;image-rendering:crisp-edges}
+#c{z-index:1}
+
+:root{
+  --ui-cyan:#48dcff;--ui-blue:#1688ff;--ui-violet:#b35cff;--ui-gold:#ffbd25;
+  --ui-green:#45ffc0;--ui-red:#ff536b;--ui-ink:#030813;--ui-panel:rgba(3,10,24,.94);
+  --ui-line:rgba(72,220,255,.42);--ui-text:#dff7ff;--ui-muted:#7aa3bc;
+}
+
+/* ── CRT chrome (Obliteratus) — static overlay, zero per-frame cost ── */
+#crt{
+  position:fixed;inset:0;z-index:5;pointer-events:none;
+  background:
+    repeating-linear-gradient(rgba(0,0,0,0) 0px,rgba(0,0,0,0) 1px,rgba(0,0,0,.16) 2px,rgba(0,0,0,.16) 3px),
+    radial-gradient(ellipse at center,rgba(0,0,0,0) 55%,rgba(0,0,0,.55) 100%);
+}
+
+/* ── DOM landing menu (attract screen shown once on load) ─────────── */
+#menu-layer{
+  position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(ellipse at 50% 30%,rgba(10,26,50,.9),rgba(2,6,14,.98));
+  font-family:ui-monospace,'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+}
+#menu-layer.hidden{display:none}
+.menu-card{width:min(420px,92vw);padding:30px 26px 24px;text-align:center;
+  border:1px solid rgba(72,220,255,.28);background:var(--ui-panel);
+  box-shadow:0 0 40px rgba(20,140,255,.14),inset 0 0 30px rgba(20,140,255,.05);border-radius:4px}
+.g-title{font-family:'Arial Black','Helvetica Neue',Arial,sans-serif;font-weight:900;
+  font-size:clamp(38px,9vw,64px);line-height:.86;letter-spacing:-.04em;color:#c7d6dc;
+  text-shadow:0 0 4px #8fa3ab,0 0 18px rgba(160,190,200,.5),3px 3px 0 #1a2530}
+.g-sub{margin-top:6px;color:var(--ui-cyan);font-size:11px;letter-spacing:.32em;opacity:.75}
+.g-hi{margin:18px 0 4px;color:var(--ui-muted);font-size:10px;letter-spacing:.16em}
+.g-hi b{display:block;color:var(--ui-gold);font-size:clamp(22px,5vw,30px);letter-spacing:.03em;margin-top:2px}
+.stepper{display:grid;grid-template-columns:38px 1fr 38px;gap:8px;margin:18px 0 6px;align-items:stretch}
+.step-btn{border:0;min-height:38px;font-size:18px;font-weight:900;cursor:pointer;
+  background:linear-gradient(180deg,rgba(6,24,50,.92),rgba(2,10,24,.96));
+  border:1px solid rgba(54,202,255,.5);color:var(--ui-cyan);border-radius:3px}
+.step-value{display:grid;place-items:center;background:rgba(5,12,25,.95);color:var(--ui-gold);
+  font-size:15px;font-weight:900;letter-spacing:.1em;border:1px solid rgba(40,185,255,.3);border-radius:3px}
+.step-label{margin-top:-2px;margin-bottom:10px;color:var(--ui-muted);font-size:9px;letter-spacing:.2em;text-align:center}
+.arcade-btn{
+  width:100%;min-height:48px;margin-top:6px;border-radius:3px;font-family:inherit;
+  appearance:none;border:1px solid rgba(54,202,255,.58);cursor:pointer;font-weight:900;
+  letter-spacing:.1em;text-transform:uppercase;font-size:14px;
+  background:linear-gradient(180deg,rgba(6,24,50,.92),rgba(2,10,24,.96));color:var(--ui-cyan);
+  box-shadow:inset 0 0 14px rgba(28,147,255,.08);transition:.12s transform,.12s border-color;
+}
+.arcade-btn:active{transform:scale(.97)}
+.arcade-btn.primary{color:var(--ui-gold);border-color:rgba(255,185,32,.75);
+  background:linear-gradient(180deg,rgba(58,35,4,.9),rgba(18,12,2,.96));
+  box-shadow:0 0 18px rgba(255,166,0,.13),inset 0 0 12px rgba(255,190,40,.08)}
+.arcade-btn.ghost{margin-top:8px;border-color:rgba(122,163,188,.35);color:var(--ui-muted);font-size:11px;min-height:38px}
+.g-how{margin-top:14px;padding-top:12px;border-top:1px solid rgba(60,185,255,.18);
+  color:#8db2c8;font-size:10.5px;line-height:1.55;letter-spacing:.02em;text-align:left;display:none}
+.g-how.open{display:block}
+.g-how b{color:var(--ui-gold)}
+
+/* ── Touch NUI (d-pad) ─────────────────────────────────────────────── */
+#nui,#nui-pause{display:none}
+@media(pointer:coarse){#nui,#nui-pause{display:flex}}
+#nui{
+  position:fixed;left:0;right:0;bottom:0;z-index:50;height:var(--nui-h,196px);
+  pointer-events:none;align-items:center;justify-content:center;
+  background:linear-gradient(to top,rgba(5,8,16,.75) 0%,transparent 100%);
+}
+#dpad{position:relative;width:168px;height:168px;pointer-events:none}
+.db{
+  position:absolute;pointer-events:all;touch-action:none;-webkit-tap-highlight-color:transparent;
+  appearance:none;border:0;cursor:pointer;width:54px;height:54px;border-radius:10px;
+  background:rgba(5,10,24,.72);border:1.5px solid rgba(80,200,255,.28);
+  box-shadow:0 0 12px rgba(60,180,255,.10),inset 0 0 10px rgba(60,160,255,.04);
+  color:rgba(80,210,255,.75);font-size:20px;display:flex;align-items:center;justify-content:center;
+  transition:background .06s,border-color .06s,color .06s,transform .06s;
+}
+.db:active,.db.hit{background:rgba(60,190,255,.15);border-color:rgba(80,220,255,.9);
+  color:#00ffff;transform:scale(.9);box-shadow:0 0 20px rgba(60,200,255,.5)}
+#db-up{left:57px;top:0}#db-down{left:57px;bottom:0}
+#db-left{left:0;top:57px}#db-right{right:0;top:57px}
+#nui-pause{
+  position:fixed;top:14px;right:14px;z-index:60;pointer-events:all;touch-action:none;
+  -webkit-tap-highlight-color:transparent;appearance:none;border:0;cursor:pointer;
+  width:42px;height:34px;border-radius:7px;background:rgba(5,12,28,.7);
+  border:1.5px solid rgba(80,190,255,.28);color:rgba(80,210,255,.72);font-weight:900;
+  font-family:ui-monospace,monospace;font-size:12px;letter-spacing:1.5px;align-items:center;justify-content:center;
+}
+#nui-pause:active{background:rgba(60,190,255,.14);color:#00ffff}
+#mute-btn{
+  position:fixed;top:14px;left:14px;z-index:60;pointer-events:all;
+  font-family:ui-monospace,monospace;font-size:10px;letter-spacing:.1em;
+  color:rgba(0,210,255,.65);background:rgba(2,14,32,.5);border:1px solid rgba(0,190,255,.3);
+  padding:7px 11px;cursor:pointer;border-radius:3px;
+}
+#mute-btn.on{color:#ffee00;border-color:rgba(255,220,0,.55)}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="crt"></div>
+
+<!-- ── Attract / landing menu ─────────────────────────────────────── -->
+<div id="menu-layer">
+  <div class="menu-card">
+    <div class="g-title">GREYLINE</div>
+    <div class="g-sub">· FTS ARCADE ·</div>
+    <div class="g-hi">HIGH SCORE<b id="menu-hiscore">0</b></div>
+    <div class="stepper">
+      <button class="step-btn" id="level-down">−</button>
+      <div class="step-value" id="level-value">SPEED 3</div>
+      <button class="step-btn" id="level-up">+</button>
+    </div>
+    <button class="arcade-btn primary" id="menu-start">START</button>
+    <button class="arcade-btn ghost" id="menu-how">HOW TO PLAY</button>
+    <div class="g-how" id="how-panel">
+      Guide the line to each pixel of food — every bite grows you and adds points.
+      A bright pulsing glyph is <b>bonus food</b>: worth more, but it blinks out fast.
+      Touch the walls or your own tail and the line goes dark. Arrows / WASD to steer,
+      swipe on mobile, <b>P</b> to pause, <b>M</b> to mute.
+    </div>
+  </div>
+</div>
+
+<!-- ── Touch controls ─────────────────────────────────────────────── -->
+<button id="mute-btn">SOUND: OFF</button>
+<button id="nui-pause">II</button>
+<div id="nui">
+  <div id="dpad">
+    <button class="db" id="db-up">▲</button>
+    <button class="db" id="db-left">◀</button>
+    <button class="db" id="db-right">▶</button>
+    <button class="db" id="db-down">▼</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════
+//  GREYLINE · FTS ARCADE — Nokia-era monochrome Snake
+//
+//  Style brief: the "B-lcd" grey-glass brick renderer from ZITTRIS
+//  (tetris.html) is the reference, not a decoration — real handheld LCDs
+//  had no hue at all, only luminance, so the playfield here is drawn
+//  entirely in a luminance-ramped grey (lcdRamp/lcdGlyph, ported near-
+//  verbatim) while the surrounding chrome stays Obliteratus cyan/gold —
+//  same idea as a colorful cabinet housing a monochrome screen.
+//
+//  Cabinet contract: single <canvas>, single <script>, sandbox-safe
+//  localStorage, mulberry32 RNG, muted-by-default Web Audio (no
+//  AudioContext until unmute), dry-run reportToShell + gaEvent stubs,
+//  jsdom-safe boot gate.
+// ═══════════════════════════════════════════════════════════════════════
+
+(function boot(){
+  if (typeof window === 'undefined' || typeof document === 'undefined') return; // jsdom / non-DOM safety
+
+  // ── mulberry32 — deterministic seeded RNG (food placement + future replay) ──
+  function mulberry32(seed){
+    let s = seed >>> 0;
+    return function(){
+      s = (s + 0x6D2B79F5) | 0;
+      let t = Math.imul(s ^ (s >>> 15), 1 | s);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  const bootSeed = ((Date.now() ^ ((performance.now() * 1000) | 0)) >>> 0);
+  let rng = mulberry32(bootSeed);
+  // Reserved for future score-authority work: replaying a run means
+  // replacing `rng` with mulberry32(loggedSeed) and feeding the same
+  // input log back through tick() — the seed and an input log are the
+  // only two fields a deterministic replay needs, so both are kept
+  // trivially swappable rather than baked into gameplay code.
+  let runSeed = bootSeed;
+  const inputLog = []; // {tick, dir} — reserved, not yet persisted anywhere
+
+  // ── sandbox-safe localStorage ────────────────────────────────────
+  const Store = (function(){
+    const mem = {};
+    let ok = true;
+    try { const k='__fts_test__'; window.localStorage.setItem(k,'1'); window.localStorage.removeItem(k); }
+    catch(e){ ok = false; }
+    return {
+      get(key, fallback){
+        if (ok) { try { const v = window.localStorage.getItem(key); return v===null ? fallback : v; } catch(e){ ok=false; } }
+        return (key in mem) ? mem[key] : fallback;
+      },
+      set(key, val){
+        if (ok) { try { window.localStorage.setItem(key, val); return; } catch(e){ ok=false; } }
+        mem[key] = val;
+      }
+    };
+  })();
+  const HI_KEY = 'fts_greyline_highscore';
+
+  // ── dry-run shell/analytics stubs — console-log only until wired ──
+  function reportToShell(payload){
+    const msg = Object.assign({ source:'fts-arcade', cabinet:'greyline', dryRun:true, ts:Date.now() }, payload);
+    console.log('[GREYLINE][reportToShell:dry-run]', msg);
+    try { if (window.parent && window.parent !== window) window.parent.postMessage(msg, '*'); } catch(e){}
+  }
+  function gaEvent(name, params){
+    const payload = Object.assign({ cabinet:'greyline' }, params || {});
+    console.log('[GREYLINE][gaEvent:dry-run]', name, payload);
+    // Live wiring: swap for real gtag('event', name, payload) once this
+    // cabinet's GA4 Measurement ID is confirmed (see ZITTRIS placeholder note).
+  }
+
+  // ── canvas: single visible <canvas>, offscreen low-res backbuffer ──
+  const dispCanvas = document.getElementById('c');
+  const dispCtx = dispCanvas.getContext('2d');
+  if (!dispCtx) return; // no 2D context available — nothing to boot
+  const PIXEL_SCALE = 3; // backbuffer px -> screen px, chunky-LCD look
+  const back = document.createElement('canvas');
+  const ctx = back.getContext('2d');
+
+  let winW=0, winH=0, W=0, H=0;
+  let CELL=0, COLS=0, ROWS=0, GX=0, GY=0; // grid origin in backbuffer px
+  let nuiActive = false;
+
+  function resize(){
+    winW = window.innerWidth; winH = window.innerHeight;
+    dispCanvas.style.width = winW+'px'; dispCanvas.style.height = winH+'px';
+    dispCanvas.width = winW; dispCanvas.height = winH;
+
+    W = back.width  = Math.max(1, Math.round(winW / PIXEL_SCALE));
+    H = back.height = Math.max(1, Math.round(winH / PIXEL_SCALE));
+
+    const topBar = 16;                                    // score strip, backbuffer px
+    const nuiH   = nuiActive ? Math.min(196/PIXEL_SCALE, H*0.26) : 6;
+    const usableH = Math.max(20, H - topBar - nuiH);
+    const usableW = Math.max(20, W - 4);
+
+    const targetCell = Math.max(3, Math.round(6 * (W/220 > 1 ? Math.min(W/220,1.6) : 1)));
+    CELL = Math.max(3, Math.min(targetCell, Math.floor(usableW/14), Math.floor(usableH/10)));
+    COLS = Math.max(10, Math.floor(usableW / CELL));
+    ROWS = Math.max(8, Math.floor(usableH / CELL));
+    GX = Math.round((W - COLS*CELL) / 2);
+    GY = topBar + Math.round((usableH - ROWS*CELL) / 2);
+
+    resetIfOutOfBounds();
+  }
+  window.addEventListener('resize', resize);
+
+  // ── grey-LCD renderer — ported from ZITTRIS drawBrick_lcd/lcdRamp ──
+  function lcdRamp(lum, dimmed){
+    const base = dimmed ? 60 : Math.round(70 + lum*130);
+    const shade = v => { v = Math.max(0, Math.min(255, Math.round(v))); return `rgb(${v},${Math.min(255,v+Math.round(v*.04))},${Math.max(0,v-4)})`; };
+    return { light:shade(base+46), mid:shade(base), dark:shade(base-52), border:shade(base-70) };
+  }
+  function drawLcdCell(gx, gy, lum, opts){
+    opts = opts || {};
+    const x = GX + gx*CELL, y = GY + gy*CELL;
+    const gap = Math.max(1, CELL*.08);
+    const px = x+gap, py = y+gap, w = CELL-gap*2, h = CELL-gap*2;
+    const { light, mid, dark, border } = lcdRamp(lum, !!opts.dimmed);
+    if (opts.flash){ ctx.fillStyle = '#eef2ee'; ctx.fillRect(px,py,w,h); return; }
+    ctx.fillStyle = dark; ctx.fillRect(px,py,w,h);
+    const bez = Math.max(1, Math.round(CELL*.12));
+    ctx.fillStyle = mid; ctx.fillRect(px+bez,py+bez,Math.max(1,w-bez*2),Math.max(1,h-bez*2));
+    ctx.fillStyle = light;
+    ctx.fillRect(px+bez,py+bez,Math.max(1,w-bez*2),bez);
+    ctx.fillRect(px+bez,py+bez,bez,Math.max(1,h-bez*2));
+    if (opts.glyph) drawGlyph(opts.glyph, px, py, w, h, border);
+    ctx.strokeStyle = border; ctx.lineWidth = Math.max(1, CELL*.06);
+    ctx.strokeRect(px+.5,py+.5,w-1,h-1);
+  }
+  function drawGlyph(kind, x, y, w, h, ink){
+    const cx=x+w/2, cy=y+h/2, s=Math.min(w,h)*.3;
+    if (s < 1) return;
+    ctx.fillStyle = ink; ctx.strokeStyle = ink;
+    if (kind === 'food'){ // diamond
+      ctx.beginPath(); ctx.moveTo(cx,cy-s); ctx.lineTo(cx+s,cy); ctx.lineTo(cx,cy+s); ctx.lineTo(cx-s,cy); ctx.closePath(); ctx.fill();
+    } else if (kind === 'bonus'){ // plus
+      const t=Math.max(1,s*.5); ctx.fillRect(cx-t/2,cy-s,t,s*2); ctx.fillRect(cx-s,cy-t/2,s*2,t);
+    } else if (kind === 'eyes'){
+      const r=Math.max(.6,s*.22);
+      ctx.fillRect(cx-s*.55-r,cy-s*.15,r*2,r*2);
+      ctx.fillRect(cx+s*.55-r,cy-s*.15,r*2,r*2);
+    }
+  }
+
+  // ── game state ────────────────────────────────────────────────────
+  const SPEED_MS = [260,225,195,168,144,122,102,86,72,60]; // index = start speed 0..9
+  let gs = {
+    state: 'title',    // title | playing | paused | gameover
+    snake: [],         // [{x,y}, ...] head first
+    dir: {x:1,y:0}, queuedDirs: [],
+    food: null, bonus: null, bonusTicks: 0,
+    score: 0, best: parseInt(Store.get(HI_KEY,'0'),10) || 0,
+    startSpeed: 3, tick: 0, acc: 0, growth: 0,
+    justAte: 0, flashHead: 0,
+  };
+
+  function occupied(x,y,skipTail){
+    const n = gs.snake.length - (skipTail?1:0);
+    for (let i=0;i<n;i++) if (gs.snake[i].x===x && gs.snake[i].y===y) return true;
+    return false;
+  }
+  function placeFood(){
+    const free = [];
+    for (let y=0;y<ROWS;y++) for (let x=0;x<COLS;x++){
+      if (!occupied(x,y,false) && !(gs.food&&gs.food.x===x&&gs.food.y===y)) free.push({x,y});
+    }
+    if (!free.length) return null;
+    return free[Math.floor(rng()*free.length)];
+  }
+
+  function resetGame(){
+    resize();
+    const cx = Math.floor(COLS/2), cy = Math.floor(ROWS/2);
+    gs.snake = [{x:cx,y:cy},{x:cx-1,y:cy},{x:cx-2,y:cy}];
+    gs.dir = {x:1,y:0}; gs.queuedDirs = [];
+    gs.score = 0; gs.tick = 0; gs.acc = 0; gs.growth = 0;
+    gs.bonus = null; gs.bonusTicks = 0; gs.justAte = 0;
+    runSeed = ((Date.now() ^ ((performance.now()*1000)|0)) >>> 0);
+    rng = mulberry32(runSeed);
+    inputLog.length = 0;
+    gs.food = placeFood();
+    gs.state = 'playing';
+    gs.startedAt = Date.now();
+  }
+  function resetIfOutOfBounds(){
+    // Only matters mid-game on an aggressive resize; keeps things simple
+    // by just re-seating a fresh board rather than trying to migrate state.
+    if (gs.state === 'playing' && gs.snake.length){
+      const dead = gs.snake.some(s => s.x>=COLS || s.y>=ROWS);
+      if (dead) gs.food = placeFood();
+    }
+  }
+
+  function queueDir(dx,dy){
+    const last = gs.queuedDirs.length ? gs.queuedDirs[gs.queuedDirs.length-1] : gs.dir;
+    if (dx === -last.x && dy === -last.y) return; // no direct reversal
+    if (last.x===dx && last.y===dy) return;
+    if (gs.queuedDirs.length < 2) gs.queuedDirs.push({x:dx,y:dy});
+  }
+
+  function speedMs(){
+    const base = SPEED_MS[gs.startSpeed] || SPEED_MS[3];
+    const ramp = Math.min(60, Math.floor(gs.score/40) * 4); // gentle acceleration with length
+    return Math.max(48, base - ramp);
+  }
+
+  function step(){
+    if (gs.queuedDirs.length) gs.dir = gs.queuedDirs.shift();
+    inputLog.push({ t: gs.tick, dx: gs.dir.x, dy: gs.dir.y });
+
+    const head = gs.snake[0];
+    const nx = head.x + gs.dir.x, ny = head.y + gs.dir.y;
+
+    if (nx<0 || ny<0 || nx>=COLS || ny>=ROWS){ return gameOver(); }
+    const willGrow = gs.growth > 0 || (gs.food && nx===gs.food.x && ny===gs.food.y) || (gs.bonus && nx===gs.bonus.x && ny===gs.bonus.y);
+    if (occupied(nx, ny, !willGrow)) return gameOver();
+
+    gs.snake.unshift({x:nx,y:ny});
+    let ate = false;
+    if (gs.food && nx===gs.food.x && ny===gs.food.y){
+      gs.score += 10; gs.growth += 1; gs.justAte = 6; ate = true;
+      gs.food = placeFood();
+      SFX.eat();
+      if (gs.snake.length % 5 === 0 && !gs.bonus && rng() < 0.6){
+        gs.bonus = placeFood(); gs.bonusTicks = 45;
+      }
+    }
+    if (gs.bonus && nx===gs.bonus.x && ny===gs.bonus.y){
+      gs.score += 50; gs.growth += 2; gs.justAte = 8; ate = true;
+      gs.bonus = null; gs.bonusTicks = 0;
+      SFX.bonus();
+    }
+    if (gs.bonus){ gs.bonusTicks--; if (gs.bonusTicks <= 0) gs.bonus = null; }
+
+    if (gs.growth > 0) gs.growth--; else gs.snake.pop();
+    if (!ate && gs.justAte > 0) gs.justAte--;
+    gs.tick++;
+  }
+
+  function gameOver(){
+    gs.state = 'gameover';
+    gs.flashHead = 10;
+    SFX.crash();
+    const isHigh = gs.score > gs.best;
+    if (isHigh){ gs.best = gs.score; Store.set(HI_KEY, String(gs.best)); }
+    reportToShell({ event:'game_over', score: gs.score, length: gs.snake.length, is_high_score: isHigh, seed: runSeed });
+    gaEvent('game_over', { score: gs.score, length: gs.snake.length, is_high_score: isHigh });
+  }
+
+  // ── audio — procedural, muted by default, no AudioContext until unmute ──
+  const SFX = (function(){
+    let actx = null, muted = true;
+    function ensure(){
+      if (actx) return actx;
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      actx = new AC();
+      return actx;
+    }
+    function tone(freq, dur, type, gain, delay){
+      if (muted) return;
+      const ac = ensure(); if (!ac) return;
+      if (ac.state === 'suspended') ac.resume().catch(()=>{});
+      const t0 = ac.currentTime + (delay||0);
+      const osc = ac.createOscillator(), g = ac.createGain();
+      osc.type = type || 'square'; osc.frequency.setValueAtTime(freq, t0);
+      g.gain.setValueAtTime(0, t0);
+      g.gain.linearRampToValueAtTime(gain||0.08, t0+0.008);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+      osc.connect(g); g.connect(ac.destination);
+      osc.start(t0); osc.stop(t0+dur+0.02);
+    }
+    return {
+      setMuted(m){ muted = m; if(!muted) ensure(); },
+      isMuted(){ return muted; },
+      eat(){ tone(660,0.07,'square',0.07); },
+      bonus(){ tone(880,0.08,'square',0.08); tone(1320,0.09,'square',0.07,0.07); },
+      crash(){ tone(180,0.32,'sawtooth',0.10); tone(90,0.34,'sawtooth',0.08,0.05); },
+      start(){ tone(440,0.06,'square',0.06); tone(660,0.08,'square',0.06,0.07); tone(880,0.1,'square',0.06,0.14); },
+    };
+  })();
+
+  // ── input ────────────────────────────────────────────────────────
+  window.addEventListener('keydown', e => {
+    const k = e.key;
+    if (gs.state === 'playing'){
+      if (k==='ArrowUp'||k==='w'||k==='W') queueDir(0,-1);
+      else if (k==='ArrowDown'||k==='s'||k==='S') queueDir(0,1);
+      else if (k==='ArrowLeft'||k==='a'||k==='A') queueDir(-1,0);
+      else if (k==='ArrowRight'||k==='d'||k==='D') queueDir(1,0);
+      else if (k==='p'||k==='P'||k==='Escape') togglePause();
+    } else if (gs.state === 'paused'){
+      if (k==='p'||k==='P'||k==='Escape') togglePause();
+    } else if (gs.state === 'gameover'){
+      if (k==='Enter'||k===' ') startFromOverlay();
+    }
+    if (k==='m'||k==='M') toggleMute();
+  });
+
+  function togglePause(){
+    if (gs.state==='playing'){ gs.state='paused'; }
+    else if (gs.state==='paused'){ gs.state='playing'; }
+  }
+  function startFromOverlay(){ resetGame(); SFX.start(); }
+
+  function toggleMute(){
+    const nowMuted = !SFX.isMuted();
+    SFX.setMuted(nowMuted);
+    document.getElementById('mute-btn').classList.toggle('on', !nowMuted);
+    document.getElementById('mute-btn').textContent = 'SOUND: ' + (nowMuted ? 'OFF' : 'ON');
+  }
+  document.getElementById('mute-btn').addEventListener('click', toggleMute);
+  document.getElementById('nui-pause').addEventListener('click', () => {
+    if (gs.state==='playing'||gs.state==='paused') togglePause();
+    else if (gs.state==='gameover'||gs.state==='title') startFromOverlay();
+  });
+
+  // ── swipe ────────────────────────────────────────────────────────
+  (function setupSwipe(){
+    let sx=0, sy=0, t0=0;
+    dispCanvas.addEventListener('touchstart', e=>{
+      const t=e.touches[0]; sx=t.clientX; sy=t.clientY; t0=Date.now();
+    }, {passive:true});
+    dispCanvas.addEventListener('touchend', e=>{
+      if (!e.changedTouches.length) return;
+      if (gs.state !== 'playing'){ if (gs.state==='title'||gs.state==='gameover') startFromOverlay(); return; }
+      const t=e.changedTouches[0];
+      const dx=t.clientX-sx, dy=t.clientY-sy, dur=(Date.now()-t0)/1000;
+      const adx=Math.abs(dx), ady=Math.abs(dy);
+      if (dur<0.4 && Math.max(adx,ady)>24){
+        if (adx>ady) queueDir(dx>0?1:-1, 0); else queueDir(0, dy>0?1:-1);
+      }
+    }, {passive:true});
+  })();
+
+  // ── d-pad ────────────────────────────────────────────────────────
+  function bindDpad(id, dx, dy){
+    const el = document.getElementById(id); if (!el) return;
+    el.addEventListener('pointerdown', e=>{
+      e.preventDefault(); el.classList.add('hit');
+      if (gs.state==='title'||gs.state==='gameover') { startFromOverlay(); return; }
+      if (gs.state==='paused') gs.state='playing';
+      queueDir(dx,dy);
+    }, {passive:false});
+    const up = e=>{ e.preventDefault(); el.classList.remove('hit'); };
+    el.addEventListener('pointerup', up, {passive:false});
+    el.addEventListener('pointercancel', up, {passive:false});
+  }
+  bindDpad('db-up',0,-1); bindDpad('db-down',0,1); bindDpad('db-left',-1,0); bindDpad('db-right',1,0);
+
+  // ── DOM landing menu ─────────────────────────────────────────────
+  function refreshMenu(){
+    document.getElementById('menu-hiscore').textContent = String(gs.best);
+    document.getElementById('level-value').textContent = 'SPEED ' + gs.startSpeed;
+  }
+  document.getElementById('level-down').addEventListener('click', ()=>{ gs.startSpeed = Math.max(0,gs.startSpeed-1); refreshMenu(); });
+  document.getElementById('level-up').addEventListener('click', ()=>{ gs.startSpeed = Math.min(9,gs.startSpeed+1); refreshMenu(); });
+  document.getElementById('menu-start').addEventListener('click', ()=>{
+    document.getElementById('menu-layer').classList.add('hidden');
+    startFromOverlay();
+  });
+  document.getElementById('menu-how').addEventListener('click', e=>{
+    document.getElementById('how-panel').classList.toggle('open');
+  });
+
+  // gameover / paused states hide the DOM menu and render on-canvas instead,
+  // matching the "press to continue" cadence of the original cabinet.
+
+  // ── render ───────────────────────────────────────────────────────
+  function drawBoard(){
+    ctx.fillStyle = '#0b1016';
+    ctx.fillRect(GX-2, GY-2, COLS*CELL+4, ROWS*CELL+4);
+    ctx.strokeStyle = 'rgba(140,160,170,.18)'; ctx.lineWidth = 1;
+    ctx.strokeRect(GX-1.5, GY-1.5, COLS*CELL+3, ROWS*CELL+3);
+
+    // dot-matrix seam lines — faint, off at very small cell sizes
+    if (CELL >= 6){
+      ctx.globalAlpha = 0.10; ctx.fillStyle = '#000';
+      for (let x=0;x<=COLS;x++) ctx.fillRect(GX+x*CELL,GY,0.5,ROWS*CELL);
+      for (let y=0;y<=ROWS;y++) ctx.fillRect(GX,GY+y*CELL,COLS*CELL,0.5);
+      ctx.globalAlpha = 1;
+    }
+
+    if (gs.food) drawLcdCell(gs.food.x, gs.food.y, 0.55, { glyph:'food' });
+    if (gs.bonus){
+      const blinking = gs.bonusTicks < 14 && (gs.bonusTicks % 4 < 2);
+      if (!blinking) drawLcdCell(gs.bonus.x, gs.bonus.y, 0.9, { glyph:'bonus' });
+    }
+
+    for (let i=gs.snake.length-1; i>=0; i--){
+      const seg = gs.snake[i];
+      const isHead = i===0;
+      const lum = isHead ? (gs.flashHead>0 && gs.flashHead%2===0 ? 1 : 0.78) : Math.max(0.28, 0.62 - i*0.015);
+      drawLcdCell(seg.x, seg.y, lum, { glyph: isHead ? 'eyes' : null, dimmed: !isHead && gs.state==='paused' });
+    }
+    if (gs.flashHead>0) gs.flashHead--;
+
+    // score strip
+    ctx.fillStyle = '#7aa3bc'; ctx.font = `${Math.max(7,Math.round(H*0.032))}px ui-monospace, monospace`;
+    ctx.textBaseline = 'top';
+    ctx.fillText(`SCORE ${gs.score}`, GX, 3);
+    const bestTxt = `BEST ${gs.best}`;
+    ctx.fillText(bestTxt, W - GX - ctx.measureText(bestTxt).width, 3);
+  }
+
+  function drawCenterPanel(lines, opts){
+    opts = opts || {};
+    const pw = Math.min(W*0.86, 180), lh = Math.max(9, H*0.05);
+    const ph = lines.length*lh + 20;
+    const px = (W-pw)/2, py = (H-ph)/2;
+    ctx.fillStyle = 'rgba(3,10,24,.92)';
+    ctx.fillRect(px,py,pw,ph);
+    ctx.strokeStyle = opts.accent || 'rgba(72,220,255,.5)';
+    ctx.lineWidth = 1; ctx.strokeRect(px+.5,py+.5,pw-1,ph-1);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    lines.forEach((ln,i)=>{
+      ctx.fillStyle = ln.color || '#dff7ff';
+      ctx.font = `${ln.bold ? '900 ':''}${ln.size || Math.round(lh*0.62)}px ${ln.font || 'ui-monospace, monospace'}`;
+      ctx.fillText(ln.text, W/2, py + 14 + i*lh + lh/2);
+    });
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  }
+
+  function drawPaused(){
+    drawCenterPanel([
+      { text:'PAUSED', color:'#48dcff', bold:true, size:Math.round(H*0.055) },
+      { text:'P / TAP TO RESUME', color:'#7aa3bc', size:Math.round(H*0.03) },
+    ]);
+  }
+  function drawGameOver(){
+    drawCenterPanel([
+      { text:'LINE BROKEN', color:'#ff536b', bold:true, size:Math.round(H*0.05) },
+      { text:`SCORE ${gs.score}`, color:'#dff7ff', size:Math.round(H*0.036) },
+      { text: gs.score>=gs.best ? 'NEW BEST!' : `BEST ${gs.best}`, color:'#ffbd25', size:Math.round(H*0.03) },
+      { text:'TAP / ENTER TO RETRY', color:'#7aa3bc', size:Math.round(H*0.026) },
+    ], { accent:'rgba(255,83,107,.5)' });
+  }
+
+  let lastTs = 0;
+  function loop(ts){
+    const dt = Math.min((ts-lastTs)/1000, 0.05); lastTs = ts;
+
+    if (gs.state === 'playing'){
+      gs.acc += dt*1000;
+      const ms = speedMs();
+      while (gs.acc >= ms){ gs.acc -= ms; step(); if (gs.state!=='playing') break; }
+    }
+
+    ctx.fillStyle = '#050810'; ctx.fillRect(0,0,W,H);
+    if (gs.state==='playing' || gs.state==='paused' || gs.state==='gameover'){
+      drawBoard();
+      if (gs.state==='paused') drawPaused();
+      if (gs.state==='gameover') drawGameOver();
+    }
+
+    dispCtx.imageSmoothingEnabled = false;
+    dispCtx.clearRect(0,0,dispCanvas.width,dispCanvas.height);
+    dispCtx.drawImage(back, 0,0, back.width, back.height, 0,0, dispCanvas.width, dispCanvas.height);
+
+    requestAnimationFrame(loop);
+  }
+
+  // ── go ───────────────────────────────────────────────────────────
+  function setupNUI(){
+    nuiActive = window.matchMedia('(pointer:coarse)').matches
+      || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
+  }
+  setupNUI();
+  refreshMenu();
+  resize();
+  requestAnimationFrame(ts => { lastTs = ts; requestAnimationFrame(loop); });
+
+  const sessionStart = Date.now();
+  gaEvent('node_entry', {});
+  window.addEventListener('pagehide', ()=>{
+    gaEvent('node_exit', { dwell_ms: Date.now()-sessionStart, score: gs.score, is_high_score: gs.score>=gs.best });
+  });
+
+  // Reserved test surface — not exercised by any harness yet, but kept
+  // stable so a future jsdom behavioral gate can import real logic
+  // instead of stubbing it (see ZITTRIS harness-integrity learnings).
+  window.GREYLINE_TEST = { mulberry32, gs, step, resetGame, queueDir, speedMs };
+})();
+</script>
+</body>
+</html>

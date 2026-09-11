@@ -1,0 +1,1436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>SNAKIA · FTS ARCADE</title>
+
+<!-- Primary Meta -->
+<meta name="description" content="SNAKIA — the indestructible pocket snake, rebuilt for the FTS Arcade with monochrome LCD pixels, tactile controls, and mobile play.">
+<meta name="theme-color" content="#111612">
+
+<!-- Favicons -->
+<link rel="icon" type="image/png" href="fts-favicon.png">
+<link rel="shortcut icon" type="image/png" href="fts-favicon.png">
+<link rel="apple-touch-icon" href="fts-favicon.png">
+
+<!-- Open Graph -->
+<meta property="og:title" content="SNAKIA · FTS ARCADE">
+<meta property="og:description" content="Pocket Snake with the indestructible spirit of a 2002 mobile phone. Monochrome LCD, hard pixels, tactile controls, free forever.">
+<meta property="og:url" content="https://frymatic.us/FTSArcade/snakia.html">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://frymatic.us/FTSArcade/snakia-preview.png">
+<meta property="og:image:secure_url" content="https://frymatic.us/FTSArcade/snakia-preview.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:alt" content="SNAKIA on a rugged early-2000s monochrome mobile phone display">
+<meta property="og:site_name" content="FTS Arcade">
+
+<!-- Twitter / X Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="SNAKIA · FTS ARCADE">
+<meta name="twitter:description" content="Indestructible pocket Snake. Monochrome LCD pixels, tactile controls, and mobile play — free forever in the FTS Arcade.">
+<meta name="twitter:image" content="https://frymatic.us/FTSArcade/snakia-preview.png">
+<meta name="twitter:image:alt" content="SNAKIA on a rugged early-2000s monochrome mobile phone display">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+/* ── ZOOM AUTHORITY, LAYER 1 ─────────────────────────────────────────
+   touch-action is NOT an inherited property. Setting it on html/body
+   alone leaves every descendant at `auto`, so a two-finger pinch that
+   lands on the console panel, the HUD strip, or a menu button is handled
+   by the browser as a page zoom before any JS sees it. That is the exact
+   escape hatch that let a pinch on the control pad zoom the cabinet.
+   Declared on the universal selector so it actually covers everything,
+   then handed back only to the two surfaces that legitimately scroll. ── */
+*{touch-action:none}
+#menu-layer,.g-how,.menu-card{touch-action:pan-y}
+html,body{width:100%;height:100%;background:#0c100d;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;overscroll-behavior:none;
+  -webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{transition:background .25s ease;background:
+  radial-gradient(circle at 50% -10%,var(--body-bg-radial),transparent 34%),
+  repeating-linear-gradient(90deg,rgba(255,255,255,.012) 0 1px,transparent 1px 5px),
+  var(--bg-grad)}
+canvas{display:block;position:fixed;top:0;left:0;touch-action:none;image-rendering:pixelated;image-rendering:crisp-edges}
+#c{z-index:1}
+
+
+:root{
+  --ui-cyan:#b7d67a;--ui-blue:#8caf56;--ui-violet:#667d66;--ui-gold:#dfe7ab;
+  --ui-green:#cce08a;--ui-red:#d8a183;--ui-ink:#11181b;--ui-panel:rgba(26,35,44,.96);
+  --ui-line:rgba(180,212,140,.34);--ui-text:#e8f4cc;--ui-muted:#a7bca0;
+  /* Glass + ink sampled from a real early-2000s reflective panel:
+     glass #dade4a, deepest energised segment #3d4517 — a 7.0:1 ratio.
+     Kept in sync with LCD_DAY in the script; the canvas is the source
+     of truth for gameplay, these vars only dress the DOM chrome. */
+  --lcd:#dade4a;--lcd-deep:#2f3612;--shell:#9c9787;--shell-hi:#d9d4c2;--rubber:#4d4a3d;
+  --bg-grad:linear-gradient(180deg,#dcd8c9 0%,#c1bca8 24%,#8a8570 100%);
+  --glow:none;--panel-title-alert:#d8a183;--body-bg-radial:rgba(225,220,195,.2);
+}
+/* ── Night mode — original-Kindle-at-night: near-black glass, every
+   glyph a soft cyan backlight glow instead of the daytime LCD tint ── */
+body.theme-night{
+  --ui-cyan:#7ef6ff;--ui-blue:#38dbff;--ui-violet:#47a5c8;--ui-gold:#caffff;
+  --ui-green:#92fbff;--ui-red:#92fbff;--ui-ink:#02090c;--ui-panel:rgba(3,13,19,.97);
+  --ui-line:rgba(90,238,255,.48);--ui-text:#ddfcff;--ui-muted:#78d8ea;
+  --lcd:#071a21;--lcd-deep:#010406;--shell:#041016;--shell-hi:#153643;--rubber:#07161d;
+  --bg-grad:linear-gradient(180deg,#031117,#01070a 72%,#000203);
+  --glow:0 0 7px rgba(110,245,255,.88),0 0 18px rgba(36,220,255,.50);
+  --panel-title-alert:#9af8ff;--body-bg-radial:rgba(50,225,255,.12);
+}
+
+/* ── CRT chrome (Obliteratus) — static overlay, zero per-frame cost ── */
+#crt{
+  position:fixed;inset:0;z-index:5;pointer-events:none;opacity:.42;
+  background:
+    repeating-linear-gradient(0deg,rgba(18,28,18,.035) 0 1px,transparent 1px 4px),
+    radial-gradient(ellipse at center,transparent 58%,rgba(0,0,0,.38) 100%);
+}
+
+/* ── DOM landing menu (attract screen shown once on load) ─────────── */
+#menu-layer{
+  position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;
+  padding:max(12px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));
+  overflow:auto;
+  background:radial-gradient(ellipse at 50% 22%,rgba(210,235,170,.28),transparent 34%),linear-gradient(180deg,#e3dfd0,#c7c2ac 36%,#8a8570 100%);
+  font-family:ui-monospace,'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+}
+#menu-layer.hidden{display:none}
+.menu-card{position:relative;width:min(430px,94vw);padding:54px 30px 28px;text-align:center;
+  border:2px solid #8f8a78;background:linear-gradient(155deg,#d6d1bf 0%,#b6b09b 42%,#79745f 100%);
+  box-shadow:0 24px 70px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.1),inset 0 -10px 22px rgba(0,0,0,.22);
+  border-radius:34px 34px 50px 50px;outline:1px solid rgba(90,86,68,.16)}
+.menu-card::before{content:"";position:absolute;top:22px;left:50%;width:86px;height:8px;transform:translateX(-50%);border-radius:99px;background:#3a372c;box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 1px 0 rgba(255,255,255,.05)}
+.menu-card::after{content:"SNAKIA  •  SERIES 2002";position:absolute;left:0;right:0;bottom:9px;color:#d8eb9f;font-size:7px;letter-spacing:.24em;font-weight:900}
+.g-title{font-family:Impact,'Arial Black','Helvetica Neue',Arial,sans-serif;font-weight:900;
+  font-size:clamp(42px,10vw,66px);line-height:.88;letter-spacing:.06em;color:#e0dfcb;
+  text-shadow:0 2px 0 #cfc9b4,0 4px 0 #6b6650,0 0 16px rgba(218,220,190,.08)}
+.g-sub{margin:12px auto 0;width:max-content;padding:5px 10px;border:1px solid rgba(24,37,24,.7);background:var(--lcd);color:#1b260a;font-size:10px;font-weight:900;letter-spacing:.28em;box-shadow:inset 0 0 12px rgba(49,70,23,.22)}
+.g-hi{margin:18px 0 4px;padding:10px 12px;background:linear-gradient(180deg,#dade4a,#bcc134);border:4px solid #171f08;outline:1px solid #e9efa8;color:#2f3612;font-size:9px;font-weight:900;letter-spacing:.18em;box-shadow:inset 0 0 18px rgba(50,70,12,.25),0 5px 12px rgba(0,0,0,.28)}
+.g-hi b{display:block;color:#111a06;font-family:ui-monospace,monospace;font-size:clamp(22px,5vw,30px);letter-spacing:.08em;margin-top:2px;text-shadow:1px 1px 0 rgba(225,240,170,.45)}
+.stepper{display:grid;grid-template-columns:38px 1fr 38px;gap:8px;margin:18px 0 6px;align-items:stretch}
+.step-btn{border:0;min-height:42px;font-size:18px;font-weight:900;cursor:pointer;
+  background:linear-gradient(180deg,#77786d,#3c4039 45%,#262b27 100%);
+  border:1px solid #8c8b7d;color:#e4e3d0;border-radius:16px 16px 11px 11px;box-shadow:inset 0 2px 0 rgba(255,255,255,.16),0 4px 0 #111511,0 7px 12px rgba(0,0,0,.24)}
+.step-value{display:grid;place-items:center;background:#d2d845;color:#2f3612;
+  font-size:14px;font-weight:900;letter-spacing:.1em;border:3px solid #101510;border-radius:3px;box-shadow:inset 0 0 10px rgba(40,55,35,.22)}
+.step-label{margin-top:-2px;margin-bottom:10px;color:var(--ui-muted);font-size:9px;letter-spacing:.2em;text-align:center}
+.arcade-btn{
+  width:100%;min-height:48px;margin-top:8px;border-radius:18px 18px 12px 12px;font-family:inherit;
+  appearance:none;border:1px solid #818276;cursor:pointer;font-weight:900;
+  letter-spacing:.11em;text-transform:uppercase;font-size:13px;
+  background:linear-gradient(180deg,#696b61,#3f443d 45%,#252a26 100%);color:#e4e3d0;
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.14),0 4px 0 #111511,0 8px 14px rgba(0,0,0,.22);transition:.08s transform,.08s filter;
+}
+.arcade-btn:active{transform:translateY(3px);filter:brightness(.9);box-shadow:inset 0 1px 4px rgba(0,0,0,.3),0 1px 0 #111511}
+.arcade-btn.primary{color:#132009;border-color:#d8eba0;background:linear-gradient(180deg,#bce43a,#8ab417 58%,#6f9910);box-shadow:inset 0 2px 0 rgba(255,255,255,.28),0 4px 0 #34402e,0 9px 15px rgba(0,0,0,.25)}
+.arcade-btn.ghost{margin-top:8px;border-color:rgba(122,163,188,.35);color:var(--ui-muted);font-size:11px;min-height:38px}
+.g-how{margin-top:14px;padding-top:12px;border-top:1px solid rgba(60,185,255,.18);
+  color:#8db2c8;font-size:10.5px;line-height:1.55;letter-spacing:.02em;text-align:left;display:none}
+.g-how.open{display:block}
+.g-how b{color:var(--ui-gold)}
+
+/* ── Touch NUI — d-pad/joystick hybrid console, docked below the LCD
+   glass so it never sits over the field of play. Controls lean further
+   into a physical handheld feel: molded shell, beveled ring, inset well,
+   and a small pause key parked in the bottom-right. ── */
+#nui,#nui-pause{display:none}
+@media(pointer:coarse){#nui{display:flex}}
+#nui{
+  position:fixed;left:0;right:0;bottom:0;z-index:50;height:var(--nui-h,236px);
+  pointer-events:none;align-items:center;justify-content:center;overflow:visible;
+  padding:10px max(18px,env(safe-area-inset-right)) max(18px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left));
+  background:
+    radial-gradient(circle at 50% -30%,rgba(255,255,255,.16),transparent 35%),
+    linear-gradient(180deg,#d6d1c0 0%,#bcb6a1 18%,#948e77 50%,#68634f 100%);
+  border-top:2px solid rgba(255,252,240,.35);
+  box-shadow:0 -14px 32px rgba(0,0,0,.38),inset 0 2px 0 rgba(255,255,255,.18),inset 0 -12px 22px rgba(0,0,0,.2);
+  transition:background .25s ease,border-color .25s ease;
+}
+#nui::before{
+  content:"";position:absolute;inset:0;pointer-events:none;opacity:.18;
+  background:
+    repeating-linear-gradient(0deg,rgba(255,255,255,.025) 0 2px,rgba(0,0,0,0) 2px 10px),
+    repeating-linear-gradient(90deg,rgba(255,255,255,.018) 0 2px,rgba(0,0,0,0) 2px 10px),
+    linear-gradient(180deg,rgba(255,255,255,.08),transparent 22%,transparent 78%,rgba(0,0,0,.08));
+}
+body.theme-night #nui{
+  background:
+    radial-gradient(circle at 50% -30%,rgba(125,245,255,.2),transparent 35%),
+    linear-gradient(180deg,#2b4b64 0%,#18374c 16%,#0d2132 48%,#041017 100%);
+  border-top-color:rgba(126,246,255,.35);
+  box-shadow:0 -14px 32px rgba(0,0,0,.5),inset 0 2px 0 rgba(180,245,255,.16),inset 0 -12px 24px rgba(0,0,0,.36);
+}
+body.theme-night #nui::before{opacity:.26}
+#nui-cluster{
+  position:relative;display:flex;align-items:center;justify-content:center;
+  width:100%;height:100%;pointer-events:none;
+}
+/* the actual touch target — deliberately larger than the visible ring
+   so a thumb landing near, not on, the ring still registers a move */
+#dpad{
+  position:relative;width:232px;height:232px;pointer-events:all;touch-action:none;
+  -webkit-tap-highlight-color:transparent;display:flex;align-items:center;justify-content:center;
+  cursor:grab;flex:0 0 auto;margin:0 auto;
+}
+#dpad::before{
+  content:"";position:absolute;inset:14px;border-radius:50%;pointer-events:none;
+  background:
+    repeating-linear-gradient(0deg,rgba(255,255,255,.02) 0 2px,transparent 2px 8px),
+    repeating-linear-gradient(90deg,rgba(255,255,255,.018) 0 2px,transparent 2px 8px),
+    radial-gradient(circle at 35% 30%,rgba(255,255,255,.14),transparent 24%),
+    linear-gradient(180deg,rgba(255,255,255,.1),rgba(0,0,0,.2));
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.14),inset 0 -8px 14px rgba(0,0,0,.26);
+}
+#dpad.grabbed #dpad-ring{border-color:var(--ui-cyan);box-shadow:0 10px 16px rgba(0,0,0,.42),0 0 0 6px rgba(184,200,142,.12)}
+#dpad-ring{
+  position:absolute;width:182px;height:182px;border-radius:50%;pointer-events:none;
+  background:
+    repeating-linear-gradient(0deg,rgba(255,255,255,.025) 0 2px,transparent 2px 7px),
+    repeating-linear-gradient(90deg,rgba(255,255,255,.02) 0 2px,transparent 2px 7px),
+    radial-gradient(circle at 50% 50%,transparent 0 41%,rgba(255,255,255,.05) 42% 43%,transparent 44%),
+    linear-gradient(180deg,#c9c3ae 0%,#a49d84 46%,#5f5a48 100%);
+  border:2px solid rgba(230,225,205,.4);
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.16),inset 0 -8px 12px rgba(0,0,0,.28),0 10px 14px rgba(0,0,0,.32);
+  transition:border-color .1s ease,box-shadow .1s ease;
+}
+body.theme-night #dpad-ring{
+  background:
+    repeating-linear-gradient(0deg,rgba(126,246,255,.02) 0 2px,transparent 2px 7px),
+    repeating-linear-gradient(90deg,rgba(126,246,255,.018) 0 2px,transparent 2px 7px),
+    radial-gradient(circle at 50% 50%,transparent 0 41%,rgba(126,246,255,.05) 42% 43%,transparent 44%),
+    linear-gradient(180deg,#1a3a50 0%,#102535 46%,#061118 100%);
+  border-color:rgba(126,246,255,.28);
+  box-shadow:inset 0 2px 0 rgba(180,245,255,.1),inset 0 -8px 12px rgba(0,0,0,.46),0 10px 14px rgba(0,0,0,.48);
+}
+#dpad-knob{
+  position:absolute;width:72px;height:72px;border-radius:50%;pointer-events:none;
+  background:
+    repeating-linear-gradient(0deg,rgba(255,255,255,.022) 0 2px,transparent 2px 6px),
+    repeating-linear-gradient(90deg,rgba(255,255,255,.018) 0 2px,transparent 2px 6px),
+    radial-gradient(circle at 38% 30%,#b4b8aa 0%,#818677 34%,#50574c 64%,#242b26 100%);
+  border:1px solid rgba(242,245,237,.72);
+  box-shadow:inset 0 3px 0 rgba(255,255,255,.3),inset 0 -9px 13px rgba(0,0,0,.34),0 3px 0 rgba(16,21,16,.55),0 10px 16px rgba(0,0,0,.44);
+  transition:transform .15s cubic-bezier(.2,1.4,.4,1);
+}
+body.theme-night #dpad-knob{
+  background:
+    repeating-linear-gradient(0deg,rgba(126,246,255,.02) 0 2px,transparent 2px 6px),
+    repeating-linear-gradient(90deg,rgba(126,246,255,.016) 0 2px,transparent 2px 6px),
+    radial-gradient(circle at 38% 30%,#73858d 0%,#455960 34%,#22333a 64%,#0b1518 100%);
+  border-color:rgba(214,252,255,.52);
+  box-shadow:inset 0 3px 0 rgba(220,252,255,.2),inset 0 -9px 13px rgba(0,0,0,.46),0 3px 0 rgba(0,0,0,.65),0 10px 16px rgba(0,0,0,.54);
+}
+#dpad.grabbed #dpad-knob{transition:none;border-color:var(--ui-cyan)}
+.db-glyph{
+  position:absolute;pointer-events:none;color:rgba(233,245,228,.72);font-size:18px;font-weight:900;
+  text-shadow:0 1px 0 rgba(0,0,0,.28),0 -1px 0 rgba(255,255,255,.12);
+  transition:color .1s ease,transform .1s ease,text-shadow .1s ease;
+}
+body.theme-night .db-glyph{color:rgba(164,238,247,.74);text-shadow:0 0 6px rgba(74,224,255,.24)}
+.db-glyph.active{color:var(--ui-cyan);text-shadow:var(--glow);transform:scale(1.2)}
+#glyph-up{top:7px;left:50%;transform:translateX(-50%)}
+#glyph-down{bottom:7px;left:50%;transform:translateX(-50%)}
+#glyph-left{left:7px;top:50%;transform:translateY(-50%)}
+#glyph-right{right:7px;top:50%;transform:translateY(-50%)}
+.db-glyph.active#glyph-up{transform:translateX(-50%) scale(1.2)}
+.db-glyph.active#glyph-down{transform:translateX(-50%) scale(1.2)}
+.db-glyph.active#glyph-left{transform:translateY(-50%) scale(1.2)}
+.db-glyph.active#glyph-right{transform:translateY(-50%) scale(1.2)}
+#nui-pause{
+  position:absolute;right:max(18px,env(safe-area-inset-right));bottom:max(14px,env(safe-area-inset-bottom));
+  display:flex;width:54px;height:42px;align-items:center;justify-content:center;
+  margin:0;pointer-events:all;touch-action:none;z-index:60;
+  -webkit-tap-highlight-color:transparent;appearance:none;border:0;cursor:pointer;
+  border-radius:14px;background:
+    repeating-linear-gradient(0deg,rgba(255,255,255,.03) 0 2px,transparent 2px 6px),
+    repeating-linear-gradient(90deg,rgba(255,255,255,.025) 0 2px,transparent 2px 6px),
+    linear-gradient(180deg,#c2c6ba 0%,#84897d 48%,#4b5248 100%);
+  border:1px solid rgba(244,244,232,.7);color:#eef2e3;font-weight:900;
+  font-family:ui-monospace,monospace;font-size:18px;letter-spacing:0;
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.3),inset 0 -7px 11px rgba(0,0,0,.28),0 4px 0 rgba(21,26,20,.55),0 10px 16px rgba(0,0,0,.28);
+}
+#nui-pause::before{
+  content:"PAUSE";position:absolute;bottom:-16px;left:50%;transform:translateX(-50%);
+  font-size:8px;letter-spacing:.18em;color:rgba(230,240,224,.66);font-weight:900;pointer-events:none;
+}
+body.theme-night #nui-pause{
+  background:
+    repeating-linear-gradient(0deg,rgba(126,246,255,.02) 0 2px,transparent 2px 6px),
+    repeating-linear-gradient(90deg,rgba(126,246,255,.018) 0 2px,transparent 2px 6px),
+    linear-gradient(180deg,#365f6f 0%,#1c3e4c 48%,#0c1b22 100%);
+  border-color:rgba(199,252,255,.42);color:#e2ffff;
+  box-shadow:inset 0 2px 0 rgba(225,253,255,.16),inset 0 -7px 11px rgba(0,0,0,.42),0 4px 0 rgba(0,0,0,.65),0 10px 16px rgba(0,0,0,.42);
+}
+#nui-pause:active{transform:translateY(2px);box-shadow:inset 0 2px 5px rgba(0,0,0,.28),0 2px 0 rgba(21,26,20,.55)}
+body.theme-night #nui-pause:active{box-shadow:inset 0 2px 5px rgba(0,0,0,.5),0 2px 0 rgba(0,0,0,.65)}
+@media(pointer:fine){
+  #nui-pause{display:flex;position:fixed;right:18px;bottom:18px}
+}
+
+/* ── Menu-over-controls: while the attract screen is up (title state,
+   menu-layer visible), the touch d-pad and the fine-pointer pause button
+   both sit at a higher z-index than the menu and poke out from behind
+   it / block taps on it. Gate them off the menu's own hidden state
+   instead of duplicating a "has the game started" flag in JS — this
+   selector's specificity (2 IDs) already beats the pointer:coarse /
+   pointer:fine rules above without needing !important. ── */
+#menu-layer:not(.hidden) ~ #nui,
+#menu-layer:not(.hidden) ~ #nui #nui-pause{display:none}
+
+/* ── HUD bar — score, sound, best & theme all live in one crisp strip,
+   rendered as real DOM text (never the pixel-scaled game backbuffer) so
+   it stays sharp at any zoom or device pixel ratio ────────────────── */
+#hud-bar{
+  position:fixed;top:0;left:0;right:0;z-index:15;height:var(--hud-h,44px);
+  display:flex;align-items:center;justify-content:space-between;gap:6px;
+  padding:max(6px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) 6px max(10px,env(safe-area-inset-left));
+  background:linear-gradient(180deg,var(--ui-panel),rgba(5,8,6,.72) 82%,transparent);
+  font-family:ui-monospace,'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+  font-weight:900;letter-spacing:.09em;pointer-events:none;transition:background .25s ease;
+}
+#hud-bar > *{pointer-events:all}
+.hud-score{color:var(--ui-text);font-size:clamp(11px,3.6vw,14px);text-shadow:var(--glow);white-space:nowrap;min-width:0}
+.hud-best{color:var(--ui-muted);font-size:clamp(11px,3.6vw,14px);text-shadow:var(--glow);white-space:nowrap;text-align:right}
+.hud-controls{display:flex;align-items:center;gap:6px;flex:0 0 auto}
+.hud-btn{
+  font-family:inherit;font-size:9.5px;letter-spacing:.1em;font-weight:900;
+  color:var(--ui-text);background:linear-gradient(180deg,var(--shell-hi),var(--shell) 60%,var(--ui-ink));
+  border:1px solid var(--ui-line);padding:6px 9px;cursor:pointer;border-radius:11px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 2px 0 var(--ui-ink);white-space:nowrap;
+}
+#mute-btn.on{color:var(--ui-ink);background:linear-gradient(180deg,var(--ui-cyan),var(--ui-blue) 70%);border-color:var(--ui-gold)}
+
+/* ── theme toggle — icon-only day/night slider, no text label. Track
+   shares the shell/matte-plastic vars so it always matches the cabinet
+   frame; the knob glides between a dim moon and a lit sun glyph. ── */
+.theme-toggle{appearance:none;border:0;padding:0;background:none;cursor:pointer;flex:0 0 auto;-webkit-tap-highlight-color:transparent}
+.tt-track{
+  position:relative;display:block;width:46px;height:24px;border-radius:999px;
+  background:linear-gradient(180deg,var(--shell-hi),var(--shell) 65%);
+  border:1px solid var(--ui-line);
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.14);
+  transition:background .25s ease,border-color .25s ease;
+}
+.tt-icon{position:absolute;top:50%;width:12px;height:12px;transform:translateY(-50%);pointer-events:none;transition:opacity .2s ease}
+.tt-icon.tt-sun{right:5px;opacity:.95}
+.tt-icon.tt-sun circle{fill:#f0c94a;stroke:#1a1408;stroke-width:1.4}
+.tt-icon.tt-sun line{stroke:#1a1408;stroke-width:1.7;stroke-linecap:round}
+.tt-icon.tt-moon{left:5px;opacity:.55}
+.tt-icon.tt-moon path{fill:#eef2ff;stroke:#141b22;stroke-width:1;stroke-linejoin:round}
+.tt-knob{
+  position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;
+  background:radial-gradient(circle at 34% 28%,#fff,#c7c2ac 55%,#726d5c 100%);
+  box-shadow:0 1px 2px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.5);
+  transition:transform .22s cubic-bezier(.3,1.5,.4,1),background .22s ease;
+}
+.theme-toggle[aria-checked="true"] .tt-knob{transform:translateX(22px);background:radial-gradient(circle at 34% 28%,#eafcff,#7fe0ff 55%,#134450 100%)}
+.theme-toggle[aria-checked="true"] .tt-icon.tt-moon{opacity:1}
+.theme-toggle[aria-checked="true"] .tt-icon.tt-sun{opacity:.35}
+body.theme-night .tt-track{background:linear-gradient(180deg,#1c3e4c,#0c1b22 70%);border-color:rgba(199,252,255,.42)}
+
+@media(max-width:380px){
+  .hud-score,.hud-best{font-size:10px}
+  .hud-btn{padding:5px 7px;font-size:8.5px}
+  .tt-track{width:40px;height:21px}
+  .tt-knob{width:15px;height:15px}
+  .theme-toggle[aria-checked="true"] .tt-knob{transform:translateX(19px)}
+}
+
+/* ── ZOOM AUTHORITY, LAYER 4 — the escape hatch ───────────────────────
+   Every zoom block below is best-effort: iOS Safari has ignored
+   user-scalable=no since iOS 10, and a determined pinch on an OS-level
+   accessibility zoom is outside the page's reach entirely. So the last
+   layer is not another block — it's a way out. The moment the visual
+   viewport reports a scale above 1, this chip appears above everything
+   and offers one tap to snap back. Highest z-index in the document by
+   design: if the cabinet is zoomed, this is the one control that must
+   still be reachable. ── */
+#zoom-reset{
+  position:fixed;left:50%;top:max(56px,calc(env(safe-area-inset-top) + 52px));
+  transform:translateX(-50%) translateY(-8px);z-index:9999;display:none;opacity:0;
+  appearance:none;cursor:pointer;pointer-events:all;touch-action:none;
+  -webkit-tap-highlight-color:transparent;
+  font-family:ui-monospace,'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+  font-size:11px;font-weight:900;letter-spacing:.16em;padding:11px 18px;border-radius:13px;
+  color:#2f3612;background:linear-gradient(180deg,#dade4a,#bcc134);
+  border:2px solid #171f08;box-shadow:0 6px 18px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.35);
+  transition:opacity .18s ease,transform .18s ease;
+}
+#zoom-reset.show{display:block;opacity:1;transform:translateX(-50%) translateY(0)}
+body.theme-night #zoom-reset{
+  color:#02090c;background:linear-gradient(180deg,#92fbff,#38dbff);
+  border-color:#0d3d48;box-shadow:0 6px 18px rgba(0,0,0,.6),0 0 16px rgba(56,219,255,.45);
+}
+
+/* ── In-game center panel (paused / game over) — DOM, always crisp ── */
+#panel-overlay{
+  position:fixed;inset:0;z-index:25;display:none;align-items:center;justify-content:center;
+  pointer-events:none;padding:16px;
+}
+#panel-overlay.show{display:flex}
+.panel-box{
+  pointer-events:all;min-width:min(74vw,230px);max-width:min(90vw,320px);
+  padding:16px 20px 14px;text-align:center;background:var(--ui-panel);
+  border:1px solid var(--ui-line);box-shadow:0 12px 30px rgba(0,0,0,.5);
+  font-family:ui-monospace,'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+}
+.panel-box.alert{border-color:var(--panel-title-alert)}
+.panel-title{font-size:clamp(18px,5.4vw,24px);font-weight:900;letter-spacing:.1em;
+  color:var(--ui-green);text-shadow:var(--glow);margin-bottom:8px}
+.panel-title.alert{color:var(--panel-title-alert)}
+.panel-line{font-size:clamp(11px,3.4vw,14px);letter-spacing:.06em;color:var(--ui-text);
+  text-shadow:var(--glow);margin-top:4px}
+.panel-line.muted{color:var(--ui-muted)}
+
+/* SNAKIA mobile hardening */
+@media(max-width:520px){
+  .menu-card{width:min(94vw,410px);padding:44px 18px 26px;border-radius:28px 28px 42px 42px}
+  .menu-card::before{top:18px;width:72px}
+  .g-title{font-size:clamp(38px,13vw,56px)}
+  .stepper{margin-top:14px}
+  .g-how{font-size:10px;line-height:1.45;max-height:26vh;overflow:auto}
+}
+@media(max-height:620px){
+  #menu-layer{align-items:flex-start}
+  .menu-card{margin:auto;padding-top:36px;padding-bottom:22px}
+  .menu-card::before{top:14px;height:6px}
+  .g-title{font-size:clamp(34px,9vh,52px)}
+  .g-sub{margin-top:7px}.g-hi{margin-top:10px;padding:6px 10px}.stepper{margin:10px 0 4px}
+  .arcade-btn{min-height:42px;margin-top:5px}.g-how{margin-top:8px;padding-top:8px;max-height:22vh;overflow:auto}
+}
+@media(pointer:coarse) and (orientation:landscape){
+  #nui{--nui-h:138px;justify-content:center;padding-right:max(18px,env(safe-area-inset-right))}
+  #nui-cluster{width:100%}
+  #dpad{transform:scale(.72);transform-origin:center;width:204px;height:204px}
+  #nui-pause{right:max(10px,env(safe-area-inset-right));bottom:max(8px,env(safe-area-inset-bottom));transform:none}
+  #hud-bar{--hud-h:38px}
+  .hud-btn{padding:5px 8px;font-size:8.5px}
+}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="crt"></div>
+
+<!-- ── Zoom recovery — hidden until the visual viewport reports scale>1 ── -->
+<button id="zoom-reset" type="button" aria-label="Reset zoom to fit the cabinet">RESET VIEW</button>
+
+<!-- ── Attract / landing menu ─────────────────────────────────────── -->
+<div id="menu-layer">
+  <div class="menu-card">
+    <div class="g-title">SNAKIA</div>
+    <div class="g-sub">· FTS ARCADE ·</div>
+    <div class="g-hi">HIGH SCORE<b id="menu-hiscore">0</b></div>
+    <div class="stepper">
+      <button class="step-btn" id="level-down">−</button>
+      <div class="step-value" id="level-value">SPEED 3</div>
+      <button class="step-btn" id="level-up">+</button>
+    </div>
+    <button class="arcade-btn primary" id="menu-start">START</button>
+    <button class="arcade-btn ghost" id="menu-how">HOW TO PLAY</button>
+    <div class="g-how" id="how-panel">
+      Guide SNAKIA to each pixel of food — every bite grows you and adds points.
+      A bright pulsing glyph is <b>bonus food</b>: worth more, but it blinks out fast.
+      Touch the walls or your own tail and the LCD goes quiet. Arrows / WASD to steer,
+      swipe on mobile, <b>P</b> to pause, <b>M</b> to mute.
+    </div>
+  </div>
+</div>
+
+<!-- ── HUD bar — score / sound / theme / best, all in one crisp strip ── -->
+<div id="hud-bar">
+  <span class="hud-score" id="hud-score">SCORE 0</span>
+  <div class="hud-controls">
+    <button class="hud-btn" id="mute-btn">SOUND: OFF</button>
+    <button class="theme-toggle" id="theme-btn" type="button" role="switch" aria-checked="false" aria-label="Toggle night display">
+      <span class="tt-track">
+        <svg class="tt-icon tt-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.4 14.7A8.5 8.5 0 1 1 9.3 3.6a7 7 0 0 0 11.1 11.1Z"/></svg>
+        <svg class="tt-icon tt-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.6"/><g><line x1="12" y1="1.6" x2="12" y2="4.6"/><line x1="12" y1="19.4" x2="12" y2="22.4"/><line x1="1.6" y1="12" x2="4.6" y2="12"/><line x1="19.4" y1="12" x2="22.4" y2="12"/><line x1="4.4" y1="4.4" x2="6.5" y2="6.5"/><line x1="17.5" y1="17.5" x2="19.6" y2="19.6"/><line x1="4.4" y1="19.6" x2="6.5" y2="17.5"/><line x1="17.5" y1="6.5" x2="19.6" y2="4.4"/></g></svg>
+        <span class="tt-knob"></span>
+      </span>
+    </button>
+  </div>
+  <span class="hud-best" id="hud-best">BEST 0</span>
+</div>
+
+<!-- ── In-game center panel — paused / game over ─────────────────── -->
+<div id="panel-overlay">
+  <div class="panel-box" id="panel-box">
+    <div class="panel-title" id="panel-title">PAUSED</div>
+    <div class="panel-line" id="panel-line1"></div>
+    <div class="panel-line muted" id="panel-line2"></div>
+    <div class="panel-line muted" id="panel-line3"></div>
+  </div>
+</div>
+
+<!-- ── Touch controls ─────────────────────────────────────────────── -->
+<div id="nui">
+  <div id="nui-cluster">
+    <div id="dpad">
+      <div id="dpad-ring"></div>
+      <div class="db-glyph" id="glyph-up">▲</div>
+      <div class="db-glyph" id="glyph-down">▼</div>
+      <div class="db-glyph" id="glyph-left">◀</div>
+      <div class="db-glyph" id="glyph-right">▶</div>
+      <div id="dpad-knob"></div>
+    </div>
+    <button id="nui-pause" aria-label="Pause game">||</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════
+//  SNAKIA · FTS ARCADE — circa-2002 indestructible-phone monochrome Snake
+//
+//  Style brief: the "B-lcd" grey-glass brick renderer from ZITTRIS
+//  (tetris.html) is the reference, not a decoration — real handheld LCDs
+//  had no hue at all, only luminance, so the playfield here is drawn
+//  entirely in a luminance-ramped grey (lcdRamp/lcdGlyph, ported near-
+//  verbatim) while the surrounding chrome stays Obliteratus cyan/gold —
+//  same idea as a colorful cabinet housing a monochrome screen.
+//
+//  Cabinet contract: single <canvas>, single <script>, sandbox-safe
+//  localStorage, mulberry32 RNG, muted-by-default Web Audio (no
+//  AudioContext until unmute), dry-run reportToShell + gaEvent stubs,
+//  jsdom-safe boot gate.
+// ═══════════════════════════════════════════════════════════════════════
+
+(function boot(){
+  if (typeof window === 'undefined' || typeof document === 'undefined') return; // jsdom / non-DOM safety
+
+  // ── ZOOM AUTHORITY ──────────────────────────────────────────────────
+  //  A zoomed cabinet is an unplayable cabinet: the board is sized to the
+  //  viewport at resize() time, so any scale above 1 crops the field of
+  //  play and strands the d-pad off-screen. Four layers, each covering a
+  //  hole the layer above it leaves open:
+  //
+  //   L1 (CSS)  `*{touch-action:none}` — the fix for the reported bug.
+  //             touch-action does not inherit, so the previous
+  //             `html,body{touch-action:none}` left every descendant at
+  //             `auto`. A pinch starting on the console panel around the
+  //             d-pad was therefore consumed by the browser as a page
+  //             zoom before a single line of this file ran.
+  //   L2 (meta) viewport user-scalable=no — honoured by Android Chrome,
+  //             IGNORED by iOS Safari since iOS 10. Kept, not trusted.
+  //   L3 (JS)   the handlers below: iOS's proprietary gesture* events,
+  //             multi-touch start/move, double-tap, and ctrl+wheel
+  //             (desktop trackpad pinch).
+  //   L4 (JS)   the watchdog + RESET VIEW chip. Everything above is a
+  //             block; this one is a recovery, because on iOS a block
+  //             can always lose and the user is then stuck — which is
+  //             precisely the "no clear way to zoom back out" half of
+  //             the report. Blocks fail silently; the way out must not.
+  const ZoomAuthority = (function(){
+    const vpMeta = document.querySelector('meta[name="viewport"]');
+    const chip   = document.getElementById('zoom-reset');
+    // Two content strings that render identically but differ as strings.
+    // Safari only re-evaluates scale constraints when the attribute VALUE
+    // changes, so a snap-back has to alternate rather than re-set the
+    // same text. The 1.0/1.0001 pair is visually indistinguishable.
+    const VP_A = 'width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover';
+    const VP_B = 'width=device-width, initial-scale=1.0001, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover';
+    let flip = false;
+
+    // N=1 FLAG: 1.02 is a first-pass hypothesis, not a measured value.
+    // Low enough to catch a deliberate pinch, high enough to ignore the
+    // sub-percent scale jitter some Android keyboards/URL bars produce.
+    // If the chip ever flickers on a real device, raise this first.
+    const SCALE_EPS = 1.02;
+
+    function scale(){
+      const vv = window.visualViewport;
+      return vv && typeof vv.scale === 'number' ? vv.scale : 1;
+    }
+    function zoomed(){ return scale() > SCALE_EPS; }
+
+    // Best-effort snap-back. On Android Chrome the meta rewrite is
+    // authoritative. On iOS Safari it usually works and sometimes does
+    // not — hence the chip stays up until the watchdog SEES scale return
+    // to 1, rather than optimistically hiding itself after one attempt.
+    function snapBack(){
+      if (vpMeta){
+        flip = !flip;
+        vpMeta.setAttribute('content', flip ? VP_B : VP_A);
+      }
+      try { window.scrollTo(0, 0); } catch(e){}
+      if (typeof resize === 'function') { try { resize(); } catch(e){} }
+    }
+
+    function syncChip(){
+      if (!chip) return;
+      chip.classList.toggle('show', zoomed());
+    }
+
+    // ── L3: gesture blocks ──
+    const block = e => { if (e.cancelable) e.preventDefault(); };
+    ['gesturestart','gesturechange','gestureend'].forEach(n =>
+      document.addEventListener(n, block, { passive:false }));
+
+    // Multi-touch is blocked at touchSTART as well as touchmove. Safari
+    // commits to a pinch on the second finger landing, so cancelling only
+    // at touchmove is already a frame too late.
+    const multi = e => { if (e.touches.length > 1 && e.cancelable) e.preventDefault(); };
+    document.addEventListener('touchstart', multi, { passive:false });
+    document.addEventListener('touchmove',  multi, { passive:false });
+
+    // Double-tap-to-zoom. Scoped to non-interactive targets: the previous
+    // pass cancelled EVERY touchend within 300ms of another, anywhere in
+    // the document, which also suppressed the synthetic click on a second
+    // rapid tap — so double-tapping PAUSE, or +/− on the speed stepper,
+    // silently dropped the second press. Buttons keep their taps.
+    const INTERACTIVE = 'button,a,input,select,textarea,[role="switch"],[role="button"]';
+    let lastTapEnd = 0;
+    document.addEventListener('touchend', e => {
+      const now = Date.now();
+      const onControl = e.target && e.target.closest && e.target.closest(INTERACTIVE);
+      if (!onControl && now - lastTapEnd <= 300 && e.cancelable) e.preventDefault();
+      lastTapEnd = now;
+    }, { passive:false });
+
+    // Desktop: trackpad pinch and ctrl+scroll arrive as a wheel event.
+    // Deliberately NOT blocking ctrl/cmd +/-/0 keyboard zoom — that is a
+    // considered accessibility action with an obvious, discoverable undo,
+    // unlike an accidental pinch.
+    document.addEventListener('wheel', e => {
+      if ((e.ctrlKey || e.metaKey) && e.cancelable) e.preventDefault();
+    }, { passive:false });
+    document.addEventListener('dblclick', block, { passive:false });
+
+    // ── L4: watchdog ──
+    const vv = window.visualViewport;
+    if (vv && typeof vv.addEventListener === 'function'){
+      vv.addEventListener('resize', syncChip);
+      vv.addEventListener('scroll', syncChip);
+    }
+    if (chip){
+      chip.addEventListener('click', e => {
+        e.preventDefault();
+        snapBack();
+        // Re-check rather than assume success; if iOS refused, the chip
+        // correctly stays visible and the user can tap again.
+        setTimeout(syncChip, 220);
+      });
+    }
+    syncChip();
+
+    return { scale, zoomed, snapBack, syncChip, SCALE_EPS, VP_A, VP_B };
+  })();
+
+  // ── mulberry32 — deterministic seeded RNG (food placement + future replay) ──
+  function mulberry32(seed){
+    let s = seed >>> 0;
+    return function(){
+      s = (s + 0x6D2B79F5) | 0;
+      let t = Math.imul(s ^ (s >>> 15), 1 | s);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  const bootSeed = ((Date.now() ^ ((performance.now() * 1000) | 0)) >>> 0);
+  let rng = mulberry32(bootSeed);
+  // Reserved for future score-authority work: replaying a run means
+  // replacing `rng` with mulberry32(loggedSeed) and feeding the same
+  // input log back through tick() — the seed and an input log are the
+  // only two fields a deterministic replay needs, so both are kept
+  // trivially swappable rather than baked into gameplay code.
+  let runSeed = bootSeed;
+  const inputLog = []; // {tick, dir} — reserved, not yet persisted anywhere
+
+  // ── sandbox-safe localStorage ────────────────────────────────────
+  const Store = (function(){
+    const mem = {};
+    let ok = true;
+    try { const k='__fts_test__'; window.localStorage.setItem(k,'1'); window.localStorage.removeItem(k); }
+    catch(e){ ok = false; }
+    return {
+      get(key, fallback){
+        if (ok) { try { const v = window.localStorage.getItem(key); return v===null ? fallback : v; } catch(e){ ok=false; } }
+        return (key in mem) ? mem[key] : fallback;
+      },
+      set(key, val){
+        if (ok) { try { window.localStorage.setItem(key, val); return; } catch(e){ ok=false; } }
+        mem[key] = val;
+      }
+    };
+  })();
+  const HI_KEY = 'fts_snakia_highscore';
+  const THEME_KEY = 'fts_snakia_theme';
+
+  // ── theme — "day" (paper LCD) vs "night" (Kindle-at-night cyan glow) ──
+  let theme = Store.get(THEME_KEY, 'day') === 'night' ? 'night' : 'day';
+  function applyTheme(t){
+    theme = t;
+    document.body.classList.toggle('theme-night', t === 'night');
+    const btn = document.getElementById('theme-btn');
+    if (btn){
+      btn.setAttribute('aria-checked', t === 'night' ? 'true' : 'false');
+      btn.setAttribute('aria-label', t === 'night' ? 'Switch to day display' : 'Switch to night display');
+    }
+    Store.set(THEME_KEY, t);
+  }
+  function toggleTheme(){ applyTheme(theme === 'night' ? 'day' : 'night'); }
+
+  // ── dry-run shell/analytics stubs — console-log only until wired ──
+  function reportToShell(payload){
+    const msg = Object.assign({ source:'fts-arcade', cabinet:'snakia', dryRun:true, ts:Date.now() }, payload);
+    console.log('[SNAKIA][reportToShell:dry-run]', msg);
+    try { if (window.parent && window.parent !== window) window.parent.postMessage(msg, '*'); } catch(e){}
+  }
+  function gaEvent(name, params){
+    const payload = Object.assign({ cabinet:'snakia' }, params || {});
+    console.log('[SNAKIA][gaEvent:dry-run]', name, payload);
+    // Live wiring: swap for real gtag('event', name, payload) once this
+    // cabinet's GA4 Measurement ID is confirmed (see ZITTRIS placeholder note).
+  }
+
+  // ── canvas: single visible <canvas>, offscreen low-res backbuffer ──
+  const dispCanvas = document.getElementById('c');
+  const dispCtx = dispCanvas.getContext('2d');
+  if (!dispCtx) return; // no 2D context available — nothing to boot
+  const PIXEL_SCALE = 2; // slightly finer backbuffer for a denser early-phone LCD look
+  const back = document.createElement('canvas');
+  const ctx = back.getContext('2d');
+
+  let winW=0, winH=0, W=0, H=0, hudH=0;
+  let CELL=0, COLS=0, ROWS=0, GX=0, GY=0; // grid origin in backbuffer px
+  let nuiActive = false;
+  const hudBarEl = document.getElementById('hud-bar');
+  const nuiEl = document.getElementById('nui');
+
+  function resize(){
+    winW = window.innerWidth; winH = window.innerHeight;
+    hudH = hudBarEl ? hudBarEl.offsetHeight : 0;
+    dispCanvas.style.width = winW+'px'; dispCanvas.style.height = (winH-hudH)+'px';
+    dispCanvas.style.top = hudH+'px';
+    dispCanvas.width = winW; dispCanvas.height = winH-hudH;
+
+    W = back.width  = Math.max(1, Math.round(winW / PIXEL_SCALE));
+    H = back.height = Math.max(1, Math.round((winH-hudH) / PIXEL_SCALE));
+
+    const topBar = 6;                                     // breathing room, backbuffer px
+    // Reserve the real, measured console-panel height so the board never
+    // renders under the d-pad — it lives entirely outside the field of play.
+    const nuiPx  = nuiActive && nuiEl ? nuiEl.offsetHeight : 0;
+    const nuiH   = nuiActive ? Math.max(nuiPx / PIXEL_SCALE, H*0.24) : 6;
+    const usableH = Math.max(20, H - topBar - nuiH);
+    const usableW = Math.max(20, W - 4);
+
+    const targetCell = Math.max(4, Math.round(8 * (W/220 > 1 ? Math.min(W/220,1.55) : 1)));
+    CELL = Math.max(3, Math.min(targetCell, Math.floor(usableW/14), Math.floor(usableH/10)));
+    COLS = Math.max(10, Math.floor(usableW / CELL));
+    ROWS = Math.max(8, Math.floor(usableH / CELL));
+    GX = Math.round((W - COLS*CELL) / 2);
+    GY = topBar + Math.round((usableH - ROWS*CELL) / 2);
+
+    resetIfOutOfBounds();
+  }
+  window.addEventListener('resize', resize);
+
+  // ── LCD renderer — TWO PANELS, TWO POLARITIES ───────────────────────
+  //
+  //  The bug this replaces: both themes shared ONE ramp in which a higher
+  //  `lum` always meant a LIGHTER swatch. That is correct for the night
+  //  panel, which is emissive — a backlit segment glows, so more energy
+  //  means more light. It is exactly backwards for the day panel, which
+  //  is reflective. A reflective segment has no light of its own; it
+  //  ABSORBS. More energy means DARKER.
+  //
+  //  Running the emissive ramp on the reflective panel pushed the day ink
+  //  UP toward the glass instead of down away from it. Measured, the head
+  //  segment's body tone against the old #9fca1f glass came out at a
+  //  1.36:1 contrast ratio — near-invisible, and desaturated enough to
+  //  read as grey rather than as ink. That is the reported "ashy grey".
+  //
+  //  Reference target (sampled from a real early-2000s panel): glass
+  //  #dade4a, deepest energised segment #3d4517 — 7.0:1.
+  //
+  //  So: night keeps the original emissive ramp VERBATIM (it was never
+  //  wrong and the night look is already signed off). Day gets a new
+  //  absorptive ramp that interpolates DOWN from glass toward ink.
+  //
+  //  N=1 FLAG: every constant in LCD_DAY is a first-pass hypothesis fitted
+  //  to one screenshot, not a theory-crafted value. Tune INK and GHOST
+  //  together first — they set the two ends of the whole ramp; everything
+  //  else is derived from them.
+  const LCD_DAY = {
+    GLASS: [218, 222,  74],  // #dade4a — sampled, unenergised glass
+    INK:   [ 47,  54,  18],  // #2f3612 — sampled floor, a touch below #3d4517
+    GHOST: [155, 163,  58],  // #9ba33a — a barely-energised segment
+    BEVEL_LIFT: 0.30,        // how far the highlight edge rises toward glass
+    DARK_SINK:  0.45,        // how far the outer ring sinks toward ink
+    BORDER_SINK:0.85,        // outline is nearly full ink — it carries the read
+    DIM_FADE:   0.62,        // paused segments relax back toward the glass
+    FLASH:     [ 32,  38,  12], // an eat-flash SATURATES the segment, not blows it out
+  };
+
+  function mix(a, b, t){
+    return [
+      Math.round(a[0] + (b[0]-a[0])*t),
+      Math.round(a[1] + (b[1]-a[1])*t),
+      Math.round(a[2] + (b[2]-a[2])*t),
+    ];
+  }
+  const rgbStr = c => `rgb(${c[0]},${c[1]},${c[2]})`;
+
+  // Day: absorptive. lum 0 = ghost (barely there), lum 1 = full ink.
+  function lcdRampDay(lum, dimmed){
+    const D = LCD_DAY;
+    let t = Math.max(0, Math.min(1, lum));
+    if (dimmed) t *= (1 - D.DIM_FADE);       // fade toward the glass, don't jump to a fixed grey
+    const core = mix(D.GHOST, D.INK, t);
+    return {
+      light : rgbStr(mix(core, D.GLASS, D.BEVEL_LIFT)),
+      mid   : rgbStr(core),
+      dark  : rgbStr(mix(core, D.INK, D.DARK_SINK)),
+      border: rgbStr(mix(core, D.INK, D.BORDER_SINK)),
+    };
+  }
+
+  // Night: emissive. Unchanged from the shipped build, byte for byte —
+  // the night panel was never the complaint and is pinned by the harness
+  // against a golden table so this refactor cannot have drifted it.
+  function lcdRampNight(lum, dimmed){
+    const base = dimmed ? 58 : Math.round(72 + lum*118);
+    const shade = v => {
+      v = Math.max(0, Math.min(255, Math.round(v)));
+      const r = Math.round(v*.18), g = Math.min(255,Math.round(v*.86)), b = Math.min(255,Math.round(v*1.02));
+      return `rgb(${r},${g},${b})`;
+    };
+    return { light:shade(base+38), mid:shade(base), dark:shade(base-48), border:shade(base-72) };
+  }
+
+  function lcdRamp(lum, dimmed){
+    return (theme === 'night' ? lcdRampNight : lcdRampDay)(lum, dimmed);
+  }
+
+  // The eat-flash has a polarity too. Night blows the backlight out to
+  // near-white; day drives the segment to full absorption. The old shared
+  // '#eef2ee' punched a white hole in the daytime glass — a reflective
+  // panel physically cannot go brighter than its own unlit surface.
+  function lcdFlash(){
+    return theme === 'night' ? '#eef2ee' : rgbStr(LCD_DAY.FLASH);
+  }
+  function drawLcdCell(gx, gy, lum, opts){
+    opts = opts || {};
+    const x = GX + gx*CELL, y = GY + gy*CELL;
+    const gap = Math.max(1, CELL*.08);
+    const px = x+gap, py = y+gap, w = CELL-gap*2, h = CELL-gap*2;
+    const { light, mid, dark, border } = lcdRamp(lum, !!opts.dimmed);
+    if (opts.flash){ ctx.fillStyle = lcdFlash(); ctx.fillRect(px,py,w,h); return; }
+    ctx.fillStyle = dark; ctx.fillRect(px,py,w,h);
+    const bez = Math.max(1, Math.round(CELL*.12));
+    ctx.fillStyle = mid; ctx.fillRect(px+bez,py+bez,Math.max(1,w-bez*2),Math.max(1,h-bez*2));
+    ctx.fillStyle = light;
+    ctx.fillRect(px+bez,py+bez,Math.max(1,w-bez*2),bez);
+    ctx.fillRect(px+bez,py+bez,bez,Math.max(1,h-bez*2));
+    if (opts.pixelGrid && w >= 8 && h >= 8){
+      const sx = Math.max(1, Math.floor(w/6)), sy = Math.max(1, Math.floor(h/6));
+      ctx.globalAlpha = 0.2;
+      ctx.fillStyle = border;
+      for (let yy = py + sy; yy < py + h - sy; yy += sy + 1){
+        for (let xx = px + sx; xx < px + w - sx; xx += sx + 1){
+          ctx.fillRect(xx, yy, 1, 1);
+        }
+      }
+      ctx.globalAlpha = 1;
+    }
+    if (opts.glyph) drawGlyph(opts.glyph, px, py, w, h, border);
+    ctx.strokeStyle = border; ctx.lineWidth = Math.max(1, CELL*.06);
+    ctx.strokeRect(px+.5,py+.5,w-1,h-1);
+  }
+
+  function drawSnakeBodySegment(gx, gy, prevDir, nextDir, lum, opts){
+    opts = opts || {};
+    const x = GX + gx*CELL, y = GY + gy*CELL;
+    const gap = Math.max(1, CELL*.08);
+    const px = x+gap, py = y+gap, w = CELL-gap*2, h = CELL-gap*2;
+    const { light, mid, dark, border } = lcdRamp(lum, !!opts.dimmed);
+    const cols = Math.max(8, Math.floor(w / Math.max(1, Math.floor(CELL/10) || 1)));
+    const rows = Math.max(8, Math.floor(h / Math.max(1, Math.floor(CELL/10) || 1)));
+    const sx = w / cols, sy = h / rows;
+    const x0 = Math.floor(cols * 0.28), x1 = Math.ceil(cols * 0.72);
+    const y0 = Math.floor(rows * 0.28), y1 = Math.ceil(rows * 0.72);
+    const dirs = [];
+    if (prevDir) dirs.push(prevDir);
+    if (nextDir) dirs.push(nextDir);
+
+    function inMask(ix, iy){
+      let on = (ix >= x0 && ix < x1 && iy >= y0 && iy < y1);
+      for (const d of dirs){
+        if (d.x < 0 && ix < x1 && iy >= y0 && iy < y1) on = true;
+        if (d.x > 0 && ix >= x0 && iy >= y0 && iy < y1) on = true;
+        if (d.y < 0 && iy < y1 && ix >= x0 && ix < x1) on = true;
+        if (d.y > 0 && iy >= y0 && ix >= x0 && ix < x1) on = true;
+      }
+      return on;
+    }
+    function toneFor(ix, iy){
+      const stripe = ((ix + iy) % 3 === 0);
+      const ridge = ((ix - iy + 64) % 4 === 0);
+      if (ridge) return light;
+      if (stripe) return mid;
+      return dark;
+    }
+
+    for (let iy = 0; iy < rows; iy++){
+      for (let ix = 0; ix < cols; ix++){
+        if (!inMask(ix, iy)) continue;
+        const fx = px + ix * sx, fy = py + iy * sy;
+        ctx.fillStyle = toneFor(ix, iy);
+        ctx.fillRect(fx, fy, Math.ceil(sx), Math.ceil(sy));
+      }
+    }
+
+    ctx.strokeStyle = border;
+    ctx.lineWidth = Math.max(1, CELL*.05);
+    for (let iy = 0; iy < rows; iy++){
+      for (let ix = 0; ix < cols; ix++){
+        if (!inMask(ix, iy)) continue;
+        const left = ix === 0 || !inMask(ix-1, iy);
+        const right = ix === cols-1 || !inMask(ix+1, iy);
+        const up = iy === 0 || !inMask(ix, iy-1);
+        const down = iy === rows-1 || !inMask(ix, iy+1);
+        if (!(left || right || up || down)) continue;
+        const fx = px + ix * sx, fy = py + iy * sy;
+        if (left){ ctx.beginPath(); ctx.moveTo(fx, fy); ctx.lineTo(fx, fy + sy); ctx.stroke(); }
+        if (right){ ctx.beginPath(); ctx.moveTo(fx + sx, fy); ctx.lineTo(fx + sx, fy + sy); ctx.stroke(); }
+        if (up){ ctx.beginPath(); ctx.moveTo(fx, fy); ctx.lineTo(fx + sx, fy); ctx.stroke(); }
+        if (down){ ctx.beginPath(); ctx.moveTo(fx, fy + sy); ctx.lineTo(fx + sx, fy + sy); ctx.stroke(); }
+      }
+    }
+  }
+  function drawGlyph(kind, x, y, w, h, ink){
+    const cx=x+w/2, cy=y+h/2, s=Math.min(w,h)*.3;
+    if (s < 1) return;
+    ctx.fillStyle = ink; ctx.strokeStyle = ink;
+    if (kind === 'food'){ // diamond
+      ctx.beginPath(); ctx.moveTo(cx,cy-s); ctx.lineTo(cx+s,cy); ctx.lineTo(cx,cy+s); ctx.lineTo(cx-s,cy); ctx.closePath(); ctx.fill();
+    } else if (kind === 'bonus'){ // plus
+      const t=Math.max(1,s*.5); ctx.fillRect(cx-t/2,cy-s,t,s*2); ctx.fillRect(cx-s,cy-t/2,s*2,t);
+    }
+  }
+
+  // ── directional wedge — head and tail-tip renderer ─────────────────
+  // Both ends taper toward a point; only the *meaning* of the local +X
+  // axis differs. Head: +X is fed gs.dir, so the point is the nose,
+  // facing the way the snake is about to move. Tail: +X is fed the
+  // vector from the second-to-last segment to the last one, which (since
+  // every segment is one grid step behind the one ahead of it) always
+  // points away from the body — so the same "point at +X" shape reads as
+  // a trailing wisp with zero extra branching. `flatFrac` is how much of
+  // the cell stays a full-height block before the taper starts: high for
+  // a stout snout, low for a thin trailing point. Direction is always
+  // axis-aligned (snake never moves diagonally), so the 90°-multiple
+  // rotation stays perfectly pixel-grid-aligned — no aliasing risk.
+  function wedgePathAt(h, flatFrac){
+    const xFlat = -h + (2*h)*flatFrac;
+    ctx.beginPath();
+    ctx.moveTo(-h,-h); ctx.lineTo(xFlat,-h); ctx.lineTo(h,0);
+    ctx.lineTo(xFlat,h); ctx.lineTo(-h,h); ctx.closePath();
+  }
+  function drawWedgeSegment(gx, gy, dir, lum, opts){
+    opts = opts || {};
+    const x = GX + gx*CELL, y = GY + gy*CELL;
+    const cx = x + CELL/2, cy = y + CELL/2;
+    const gap = Math.max(1, CELL*.08);
+    const half = (CELL - gap*2) / 2;
+    const flatFrac = opts.flatFrac != null ? opts.flatFrac : 0.5;
+    const angle = Math.atan2(dir.y, dir.x);
+    const { light, mid, dark, border } = lcdRamp(lum, !!opts.dimmed);
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(angle);
+
+    if (opts.flash){
+      wedgePathAt(half, flatFrac); ctx.fillStyle = lcdFlash(); ctx.fill();
+      ctx.restore(); return;
+    }
+    wedgePathAt(half, flatFrac); ctx.fillStyle = dark; ctx.fill();
+    const bez = Math.max(1, CELL*.14);
+    wedgePathAt(Math.max(1,half-bez), flatFrac); ctx.fillStyle = mid; ctx.fill();
+    ctx.fillStyle = light;
+    ctx.fillRect(-half+bez, -half+bez, Math.max(1, half*flatFrac*1.1), bez);
+
+    if (opts.eyes){
+      const er = Math.max(.6, half*.14), ex = half*0.4;
+      ctx.fillStyle = border;
+      ctx.beginPath(); ctx.arc(ex, -half*0.32, er, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(ex,  half*0.32, er, 0, Math.PI*2); ctx.fill();
+    }
+
+    wedgePathAt(half, flatFrac);
+    ctx.strokeStyle = border; ctx.lineWidth = Math.max(1, CELL*.06);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // ── game state ────────────────────────────────────────────────────
+  const SPEED_MS = [260,225,195,168,144,122,102,86,72,60]; // index = start speed 0..9
+  let gs = {
+    state: 'title',    // title | playing | paused | gameover
+    snake: [],         // [{x,y}, ...] head first
+    dir: {x:1,y:0}, queuedDirs: [],
+    food: null, bonus: null, bonusTicks: 0,
+    score: 0, best: parseInt(Store.get(HI_KEY,'0'),10) || 0,
+    startSpeed: 3, tick: 0, acc: 0, growth: 0,
+    justAte: 0, flashHead: 0,
+  };
+
+  function occupied(x,y,skipTail){
+    const n = gs.snake.length - (skipTail?1:0);
+    for (let i=0;i<n;i++) if (gs.snake[i].x===x && gs.snake[i].y===y) return true;
+    return false;
+  }
+  function placeFood(){
+    const free = [];
+    for (let y=0;y<ROWS;y++) for (let x=0;x<COLS;x++){
+      if (!occupied(x,y,false) && !(gs.food&&gs.food.x===x&&gs.food.y===y)) free.push({x,y});
+    }
+    if (!free.length) return null;
+    return free[Math.floor(rng()*free.length)];
+  }
+
+  function resetGame(){
+    resize();
+    const cx = Math.floor(COLS/2), cy = Math.floor(ROWS/2);
+    gs.snake = [{x:cx,y:cy},{x:cx-1,y:cy},{x:cx-2,y:cy}];
+    gs.dir = {x:1,y:0}; gs.queuedDirs = [];
+    gs.score = 0; gs.tick = 0; gs.acc = 0; gs.growth = 0;
+    gs.bonus = null; gs.bonusTicks = 0; gs.justAte = 0;
+    runSeed = ((Date.now() ^ ((performance.now()*1000)|0)) >>> 0);
+    rng = mulberry32(runSeed);
+    inputLog.length = 0;
+    gs.food = placeFood();
+    gs.state = 'playing';
+    gs.startedAt = Date.now();
+  }
+  function resetIfOutOfBounds(){
+    // Only matters mid-game on an aggressive resize; keeps things simple
+    // by just re-seating a fresh board rather than trying to migrate state.
+    if (gs.state === 'playing' && gs.snake.length){
+      const dead = gs.snake.some(s => s.x>=COLS || s.y>=ROWS);
+      if (dead) gs.food = placeFood();
+    }
+  }
+
+  function queueDir(dx,dy){
+    const last = gs.queuedDirs.length ? gs.queuedDirs[gs.queuedDirs.length-1] : gs.dir;
+    if (dx === -last.x && dy === -last.y) return; // no direct reversal
+    if (last.x===dx && last.y===dy) return;
+    if (gs.queuedDirs.length < 2) gs.queuedDirs.push({x:dx,y:dy});
+  }
+
+  function speedMs(){
+    const base = SPEED_MS[gs.startSpeed] || SPEED_MS[3];
+    const ramp = Math.min(60, Math.floor(gs.score/40) * 4); // gentle acceleration with length
+    return Math.max(48, base - ramp);
+  }
+
+  function step(){
+    if (gs.queuedDirs.length) gs.dir = gs.queuedDirs.shift();
+    inputLog.push({ t: gs.tick, dx: gs.dir.x, dy: gs.dir.y });
+
+    const head = gs.snake[0];
+    const nx = head.x + gs.dir.x, ny = head.y + gs.dir.y;
+
+    if (nx<0 || ny<0 || nx>=COLS || ny>=ROWS){ return gameOver(); }
+    const willGrow = gs.growth > 0 || (gs.food && nx===gs.food.x && ny===gs.food.y) || (gs.bonus && nx===gs.bonus.x && ny===gs.bonus.y);
+    if (occupied(nx, ny, !willGrow)) return gameOver();
+
+    gs.snake.unshift({x:nx,y:ny});
+    let ate = false;
+    if (gs.food && nx===gs.food.x && ny===gs.food.y){
+      gs.score += 10; gs.growth += 1; gs.justAte = 6; ate = true;
+      gs.food = placeFood();
+      SFX.eat();
+      if (gs.snake.length % 5 === 0 && !gs.bonus && rng() < 0.6){
+        gs.bonus = placeFood(); gs.bonusTicks = 45;
+      }
+    }
+    if (gs.bonus && nx===gs.bonus.x && ny===gs.bonus.y){
+      gs.score += 50; gs.growth += 2; gs.justAte = 8; ate = true;
+      gs.bonus = null; gs.bonusTicks = 0;
+      SFX.bonus();
+    }
+    if (gs.bonus){ gs.bonusTicks--; if (gs.bonusTicks <= 0) gs.bonus = null; }
+
+    if (gs.growth > 0) gs.growth--; else gs.snake.pop();
+    if (!ate && gs.justAte > 0) gs.justAte--;
+    gs.tick++;
+  }
+
+  function gameOver(){
+    gs.state = 'gameover';
+    gs.flashHead = 10;
+    SFX.crash();
+    const isHigh = gs.score > gs.best;
+    if (isHigh){ gs.best = gs.score; Store.set(HI_KEY, String(gs.best)); }
+    reportToShell({ event:'game_over', score: gs.score, length: gs.snake.length, is_high_score: isHigh, seed: runSeed });
+    gaEvent('game_over', { score: gs.score, length: gs.snake.length, is_high_score: isHigh });
+  }
+
+  // ── audio — procedural, muted by default, no AudioContext until unmute ──
+  const SFX = (function(){
+    let actx = null, muted = true;
+    function ensure(){
+      if (actx) return actx;
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      actx = new AC();
+      return actx;
+    }
+    function tone(freq, dur, type, gain, delay){
+      if (muted) return;
+      const ac = ensure(); if (!ac) return;
+      if (ac.state === 'suspended') ac.resume().catch(()=>{});
+      const t0 = ac.currentTime + (delay||0);
+      const osc = ac.createOscillator(), g = ac.createGain();
+      osc.type = type || 'square'; osc.frequency.setValueAtTime(freq, t0);
+      g.gain.setValueAtTime(0, t0);
+      g.gain.linearRampToValueAtTime(gain||0.08, t0+0.008);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+      osc.connect(g); g.connect(ac.destination);
+      osc.start(t0); osc.stop(t0+dur+0.02);
+    }
+    return {
+      setMuted(m){ muted = m; if(!muted) ensure(); },
+      isMuted(){ return muted; },
+      eat(){ tone(660,0.07,'square',0.07); },
+      bonus(){ tone(880,0.08,'square',0.08); tone(1320,0.09,'square',0.07,0.07); },
+      crash(){ tone(180,0.32,'sawtooth',0.10); tone(90,0.34,'sawtooth',0.08,0.05); },
+      start(){ tone(440,0.06,'square',0.06); tone(660,0.08,'square',0.06,0.07); tone(880,0.1,'square',0.06,0.14); },
+    };
+  })();
+
+  // ── input ────────────────────────────────────────────────────────
+  window.addEventListener('keydown', e => {
+    const k = e.key;
+    if (gs.state === 'playing'){
+      if (k==='ArrowUp'||k==='w'||k==='W') queueDir(0,-1);
+      else if (k==='ArrowDown'||k==='s'||k==='S') queueDir(0,1);
+      else if (k==='ArrowLeft'||k==='a'||k==='A') queueDir(-1,0);
+      else if (k==='ArrowRight'||k==='d'||k==='D') queueDir(1,0);
+      else if (k==='p'||k==='P'||k==='Escape') togglePause();
+    } else if (gs.state === 'paused'){
+      if (k==='p'||k==='P'||k==='Escape') togglePause();
+    } else if (gs.state === 'gameover'){
+      if (k==='Enter'||k===' ') startFromOverlay();
+    }
+    if (k==='m'||k==='M') toggleMute();
+  });
+
+  function togglePause(){
+    if (gs.state==='playing'){ gs.state='paused'; }
+    else if (gs.state==='paused'){ gs.state='playing'; }
+  }
+  function startFromOverlay(){ resetGame(); SFX.start(); }
+
+  function toggleMute(){
+    const nowMuted = !SFX.isMuted();
+    SFX.setMuted(nowMuted);
+    document.getElementById('mute-btn').classList.toggle('on', !nowMuted);
+    document.getElementById('mute-btn').textContent = 'SOUND: ' + (nowMuted ? 'OFF' : 'ON');
+  }
+  document.getElementById('mute-btn').addEventListener('click', toggleMute);
+  document.getElementById('theme-btn').addEventListener('click', toggleTheme);
+  applyTheme(theme);
+  document.getElementById('nui-pause').addEventListener('click', () => {
+    if (gs.state==='playing'||gs.state==='paused') togglePause();
+    else if (gs.state==='gameover'||gs.state==='title') startFromOverlay();
+  });
+
+  // ── swipe ────────────────────────────────────────────────────────
+  (function setupSwipe(){
+    let sx=0, sy=0, t0=0;
+    dispCanvas.addEventListener('touchstart', e=>{
+      const t=e.touches[0]; sx=t.clientX; sy=t.clientY; t0=Date.now();
+    }, {passive:true});
+    dispCanvas.addEventListener('touchend', e=>{
+      // Precautionary, not a fix for observed browser behaviour: a real
+      // TouchEvent always carries changedTouches. Synthetic events relayed
+      // by an embedding shell may not, and an exception thrown here would
+      // escape into the listener and abort the tap.
+      if (!e.changedTouches || !e.changedTouches.length) return;
+      if (gs.state !== 'playing'){ if (gs.state==='title'||gs.state==='gameover') startFromOverlay(); return; }
+      const t=e.changedTouches[0];
+      const dx=t.clientX-sx, dy=t.clientY-sy, dur=(Date.now()-t0)/1000;
+      const adx=Math.abs(dx), ady=Math.abs(dy);
+      if (dur<0.4 && Math.max(adx,ady)>24){
+        if (adx>ady) queueDir(dx>0?1:-1, 0); else queueDir(0, dy>0?1:-1);
+      }
+    }, {passive:true});
+  })();
+
+  // ── d-pad / joystick hybrid ─────────────────────────────────────────
+  // A single large pointer-capture zone (bigger than the visible ring, so
+  // a thumb landing near — not precisely on — the ring still registers)
+  // reads drag angle and snaps to one of 4 grid directions. Dragging
+  // continuously updates direction without lifting the thumb, which is
+  // far more forgiving than four small discrete buttons.
+  (function setupDpad(){
+    const zone = document.getElementById('dpad');
+    const knob = document.getElementById('dpad-knob');
+    if (!zone || !knob) return;
+    const glyphs = {
+      up: document.getElementById('glyph-up'), down: document.getElementById('glyph-down'),
+      left: document.getElementById('glyph-left'), right: document.getElementById('glyph-right'),
+    };
+    const DIR_VEC = { up:{x:0,y:-1}, down:{x:0,y:1}, left:{x:-1,y:0}, right:{x:1,y:0} };
+    const DEADZONE = 16;   // px from center before a direction registers — flag for playtest
+    const KNOB_RANGE = 42; // px the visual knob can travel from center
+
+    let activePointerId = null, activeDir = null;
+
+    function setActive(dir){
+      if (dir === activeDir) return;
+      activeDir = dir;
+      for (const k in glyphs) glyphs[k].classList.toggle('active', k === dir);
+    }
+    function clearActive(){ activeDir = null; for (const k in glyphs) glyphs[k].classList.remove('active'); }
+    function moveKnob(dx, dy){
+      const mag = Math.hypot(dx, dy) || 1;
+      const clamped = Math.min(mag, KNOB_RANGE);
+      knob.style.transform = `translate(${(dx/mag)*clamped}px, ${(dy/mag)*clamped}px)`;
+    }
+    function resetKnob(){ knob.style.transform = 'translate(0,0)'; }
+    function angleToDir(dx, dy){
+      return Math.abs(dx) > Math.abs(dy) ? (dx>0?'right':'left') : (dy>0?'down':'up');
+    }
+    function applyPoint(clientX, clientY){
+      const r = zone.getBoundingClientRect();
+      const dx = clientX - (r.left + r.width/2), dy = clientY - (r.top + r.height/2);
+      moveKnob(dx, dy);
+      if (Math.hypot(dx, dy) < DEADZONE) return;
+      const dir = angleToDir(dx, dy);
+      if (dir !== activeDir){
+        setActive(dir);
+        const v = DIR_VEC[dir];
+        if (gs.state==='title'||gs.state==='gameover'){ startFromOverlay(); }
+        else { if (gs.state==='paused') gs.state='playing'; queueDir(v.x, v.y); }
+      }
+    }
+
+    zone.addEventListener('pointerdown', e=>{
+      if (activePointerId !== null) return;
+      activePointerId = e.pointerId;
+      try { zone.setPointerCapture(activePointerId); } catch(err){}
+      zone.classList.add('grabbed');
+      if (gs.state==='title'||gs.state==='gameover'){ startFromOverlay(); }
+      else if (gs.state==='paused'){ gs.state='playing'; }
+      applyPoint(e.clientX, e.clientY);
+      e.preventDefault();
+    }, {passive:false});
+
+    zone.addEventListener('pointermove', e=>{
+      if (e.pointerId !== activePointerId) return;
+      applyPoint(e.clientX, e.clientY);
+      e.preventDefault();
+    }, {passive:false});
+
+    const release = e=>{
+      if (e.pointerId !== activePointerId) return;
+      activePointerId = null;
+      zone.classList.remove('grabbed');
+      resetKnob(); clearActive();
+    };
+    zone.addEventListener('pointerup', release, {passive:false});
+    zone.addEventListener('pointercancel', release, {passive:false});
+  })();
+
+  // ── DOM landing menu ─────────────────────────────────────────────
+  function refreshMenu(){
+    document.getElementById('menu-hiscore').textContent = String(gs.best);
+    document.getElementById('level-value').textContent = 'SPEED ' + gs.startSpeed;
+  }
+  document.getElementById('level-down').addEventListener('click', ()=>{ gs.startSpeed = Math.max(0,gs.startSpeed-1); refreshMenu(); });
+  document.getElementById('level-up').addEventListener('click', ()=>{ gs.startSpeed = Math.min(9,gs.startSpeed+1); refreshMenu(); });
+  document.getElementById('menu-start').addEventListener('click', ()=>{
+    document.getElementById('menu-layer').classList.add('hidden');
+    startFromOverlay();
+  });
+  document.getElementById('menu-how').addEventListener('click', e=>{
+    document.getElementById('how-panel').classList.toggle('open');
+  });
+
+  // gameover / paused states hide the DOM menu and render on-canvas instead,
+  // matching the "press to continue" cadence of the original cabinet.
+
+  // ── render ───────────────────────────────────────────────────────
+  function drawBoard(){
+    // Nokia-era LCD: glass inside a thick, abuse-proof bezel — khaki-green
+    // by day, near-black lit by cyan backlight at night (see lcdRamp).
+    const bezelOuter = theme==='night' ? '#040a0c' : '#5f5b4c';
+    const bezelGlass  = theme==='night' ? '#071a21' : rgbStr(LCD_DAY.GLASS);
+    const bezelEdge   = theme==='night' ? '#0d3d48' : '#c9c4b0';
+    // Seam lines are the same ink the segments use, just at 8% alpha —
+    // one constant, so retuning INK can never leave the grid behind.
+    const seamInk     = theme==='night' ? '#1ce7ff' : rgbStr(LCD_DAY.INK);
+    ctx.fillStyle = bezelOuter;
+    ctx.fillRect(GX-4, GY-4, COLS*CELL+8, ROWS*CELL+8);
+    ctx.fillStyle = bezelGlass;
+    ctx.fillRect(GX-2, GY-2, COLS*CELL+4, ROWS*CELL+4);
+    ctx.strokeStyle = bezelEdge; ctx.lineWidth = 1;
+    ctx.strokeRect(GX-1.5, GY-1.5, COLS*CELL+3, ROWS*CELL+3);
+
+    // dot-matrix seam lines — faint, off at very small cell sizes
+    if (CELL >= 6){
+      ctx.globalAlpha = theme==='night' ? 0.09 : 0.08; ctx.fillStyle = seamInk;
+      for (let x=0;x<=COLS;x++) ctx.fillRect(GX+x*CELL,GY,0.5,ROWS*CELL);
+      for (let y=0;y<=ROWS;y++) ctx.fillRect(GX,GY+y*CELL,COLS*CELL,0.5);
+      ctx.globalAlpha = 1;
+    }
+
+    if (gs.food) drawLcdCell(gs.food.x, gs.food.y, 0.55, { glyph:'food', pixelGrid:true });
+    if (gs.bonus){
+      const blinking = gs.bonusTicks < 14 && (gs.bonusTicks % 4 < 2);
+      if (!blinking) drawLcdCell(gs.bonus.x, gs.bonus.y, 0.9, { glyph:'bonus', pixelGrid:true });
+    }
+
+    const last = gs.snake.length - 1;
+    for (let i=last; i>=0; i--){
+      const seg = gs.snake[i];
+      const dimmed = i!==0 && gs.state==='paused';
+      if (i === 0){
+        // Head — nose points along current travel direction, mostly a
+        // stout block (flatFrac .6) so it still reads as "the front" at
+        // very small cell sizes, with a bright flash on the frame it eats.
+        const lum = (gs.flashHead>0 && gs.flashHead%2===0) ? 1 : 0.9;
+        drawWedgeSegment(seg.x, seg.y, gs.dir, lum, { flatFrac:0.6, eyes:true, dimmed });
+      } else if (i === last && last > 0){
+        // Tail tip — direction is derived from the segment ahead of it,
+        // which (by construction) always points away from the body, so
+        // the taper trails backward like a wisp. Thin (flatFrac .22) and
+        // dim so it visually fades out at the very end of the line.
+        const before = gs.snake[i-1];
+        const tdir = { x: seg.x-before.x, y: seg.y-before.y };
+        drawWedgeSegment(seg.x, seg.y, tdir, 0.3, { flatFrac:0.22, dimmed });
+      } else {
+        // Middle body — render an articulated pixel-elbow / trunk tile so
+        // the snake reads as one patterned organism rather than a train of
+        // disconnected squares. Straight runs stay banded; turns become
+        // chunky L-joints, all with a repeating scaley matrix.
+        const towardHead = { x: gs.snake[i-1].x - seg.x, y: gs.snake[i-1].y - seg.y };
+        const towardTail = { x: gs.snake[i+1].x - seg.x, y: gs.snake[i+1].y - seg.y };
+        const lum = Math.max(0.32, 0.68 - i*0.012);
+        drawSnakeBodySegment(seg.x, seg.y, towardHead, towardTail, lum, { dimmed });
+      }
+    }
+    if (gs.flashHead>0) gs.flashHead--;
+  }
+
+  // ── crisp DOM HUD — score/best & the paused/game-over panel are real
+  // text nodes, never the low-res pixel-scaled backbuffer, so they stay
+  // sharp at any zoom or device pixel ratio instead of upscaling blur ──
+  const hudScoreEl = document.getElementById('hud-score');
+  const hudBestEl  = document.getElementById('hud-best');
+  const panelOverlayEl = document.getElementById('panel-overlay');
+  const panelBoxEl   = document.getElementById('panel-box');
+  const panelTitleEl = document.getElementById('panel-title');
+  const panelLine1El = document.getElementById('panel-line1');
+  const panelLine2El = document.getElementById('panel-line2');
+  const panelLine3El = document.getElementById('panel-line3');
+
+  let lastHudScore = null, lastHudBest = null, lastPanelState = null, lastPanelScore = null;
+  function syncHud(){
+    if (gs.score !== lastHudScore){ hudScoreEl.textContent = `SCORE ${gs.score}`; lastHudScore = gs.score; }
+    if (gs.best !== lastHudBest){ hudBestEl.textContent = `BEST ${gs.best}`; lastHudBest = gs.best; }
+  }
+  function syncPanel(){
+    const relevant = gs.state === 'paused' || gs.state === 'gameover';
+    if (!relevant){
+      if (lastPanelState !== null){ panelOverlayEl.classList.remove('show'); lastPanelState = null; }
+      return;
+    }
+    if (gs.state === lastPanelState && !(gs.state === 'gameover' && gs.score !== lastPanelScore)) return;
+    lastPanelState = gs.state; lastPanelScore = gs.score;
+    panelOverlayEl.classList.add('show');
+    if (gs.state === 'paused'){
+      panelBoxEl.classList.remove('alert'); panelTitleEl.classList.remove('alert');
+      panelTitleEl.textContent = 'PAUSED';
+      panelLine1El.textContent = 'P / TAP TO RESUME';
+      panelLine2El.textContent = '';
+      panelLine3El.textContent = '';
+    } else {
+      panelBoxEl.classList.add('alert'); panelTitleEl.classList.add('alert');
+      panelTitleEl.textContent = 'SIGNAL LOST';
+      panelLine1El.textContent = `SCORE ${gs.score}`;
+      panelLine2El.textContent = gs.score >= gs.best ? 'NEW BEST!' : `BEST ${gs.best}`;
+      panelLine3El.textContent = 'TAP / ENTER TO RETRY';
+    }
+  }
+
+  let lastTs = 0;
+  function loop(ts){
+    const dt = Math.min((ts-lastTs)/1000, 0.05); lastTs = ts;
+
+    if (gs.state === 'playing'){
+      gs.acc += dt*1000;
+      const ms = speedMs();
+      while (gs.acc >= ms){ gs.acc -= ms; step(); if (gs.state!=='playing') break; }
+    }
+
+    // Surround = the plastic the glass is set into, not a backdrop. Day
+    // was a blue-grey (#6f85ad) that fought the beige NUI shell directly
+    // beneath it and pushed the whole daytime frame toward that same
+    // ashy read; pulled to the shell's own mid-tone so bezel, surround
+    // and console panel are one continuous piece of moulded plastic.
+    ctx.fillStyle = theme==='night' ? '#020507' : '#8a8570'; ctx.fillRect(0,0,W,H);
+    if (gs.state==='playing' || gs.state==='paused' || gs.state==='gameover'){
+      drawBoard();
+    }
+    syncHud();
+    syncPanel();
+
+    dispCtx.imageSmoothingEnabled = false;
+    dispCtx.clearRect(0,0,dispCanvas.width,dispCanvas.height);
+    dispCtx.drawImage(back, 0,0, back.width, back.height, 0,0, dispCanvas.width, dispCanvas.height);
+
+    requestAnimationFrame(loop);
+  }
+
+  // ── go ───────────────────────────────────────────────────────────
+  function setupNUI(){
+    // matchMedia is missing or throws in some sandboxed WebViews (and in
+    // jsdom). It was called bare here, so a single missing API took the
+    // ENTIRE cabinet down at boot — not just the touch console. Same
+    // sandbox-safety posture as the localStorage wrapper above: probe,
+    // fall back, never let a host-environment gap be fatal.
+    let coarse = false;
+    try {
+      if (typeof window.matchMedia === 'function') {
+        coarse = !!window.matchMedia('(pointer:coarse)').matches;
+      }
+    } catch(e){ coarse = false; }
+    nuiActive = coarse || ('ontouchstart' in window && (navigator.maxTouchPoints || 0) > 0);
+  }
+  setupNUI();
+  refreshMenu();
+  resize();
+  requestAnimationFrame(ts => { lastTs = ts; requestAnimationFrame(loop); });
+
+  const sessionStart = Date.now();
+  gaEvent('node_entry', {});
+  window.addEventListener('pagehide', ()=>{
+    gaEvent('node_exit', { dwell_ms: Date.now()-sessionStart, score: gs.score, is_high_score: gs.score>=gs.best });
+  });
+
+  // Reserved test surface — not exercised by any harness yet, but kept
+  // stable so a future jsdom behavioral gate can import real logic
+  // instead of stubbing it (see ZITTRIS harness-integrity learnings).
+  window.SNAKIA_TEST = {
+    mulberry32, gs, step, resetGame, queueDir, speedMs,
+    // Renderer surface — the harness asserts contrast/polarity against the
+    // SAME functions the browser paints with, never a re-derived copy.
+    lcdRamp, lcdRampDay, lcdRampNight, lcdFlash, LCD_DAY, mix, rgbStr,
+    getTheme: () => theme, applyTheme,
+    ZoomAuthority,
+  };
+})();
+</script>
+</body>
+</html>

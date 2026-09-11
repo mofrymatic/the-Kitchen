@@ -1,0 +1,1253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>TRON RACER</title>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>RC Racer · FTS ARCADE</title>
+
+<!-- ── Primary Meta ─────────────────────────────────────────────── -->
+<meta name="description" content="RC PRO-AM — Remote control racing, Rare gems.">
+
+<!-- ── Favicons ─────────────────────────────────────────────────────────── -->
+<link rel="icon" type="image/png" href="fts-favicon.png">
+<link rel="shortcut icon" type="image/png" href="fts-favicon.png">
+<link rel="apple-touch-icon" href="fts-favicon.png">
+
+<!-- ── Open Graph ────────────────────────────────────────────────── -->
+<meta property="og:title" content="RC Racer">
+<meta property="og:description" content="Classic isometric, RC Racing — track hazards, boosts, and collision action.">
+<meta property="og:url" content="https://frymatic.us/FTSArcade/rc-racer.html">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://frymatic.us/FTSArcade/rc_preview.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+
+<!-- ── Twitter / X Card ─────────────────────────────────────────────────── -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="RC Racer">
+<meta name="twitter:description" content="Classic isometric, RC Racing — track hazards, boosts, and collision action.">
+<meta name="twitter:image" content="https://frymatic.us/FTSArcade/rc_preview.png">
+
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #000; overflow: hidden; }
+  #game-wrapper {
+    display: flex; flex-direction: column;
+    width: 100vw; height: 100vh;
+    align-items: center; justify-content: center;
+    background: #000;
+  }
+  #viewport { position: relative; flex: 1; width: 100%; overflow: hidden; }
+  #canvas { display: block; width: 100%; height: 100%; }
+
+  #hud-panel {
+    width: 100%; height: 110px;
+    background: #000010;
+    border-top: 2px solid #00ffff;
+    box-shadow: 0 -6px 30px #00ffff33;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 12px; gap: 10px; flex-shrink: 0;
+  }
+  .hud-box {
+    background: #00000a;
+    border: 1px solid #00ffff;
+    border-radius: 2px;
+    padding: 6px 14px;
+    font-family: 'Courier New', monospace;
+    color: #00ffff; font-size: 22px; font-weight: bold;
+    line-height: 1.3; min-width: 130px; letter-spacing: 2px;
+    text-shadow: 0 0 8px #00ffff;
+    box-shadow: 0 0 10px #00ffff22;
+  }
+  .hud-box .hud-label {
+    font-size: 11px; color: #ff00ff; letter-spacing: 3px;
+    display: block; text-shadow: 0 0 6px #ff00ff;
+  }
+  #minimap-box {
+    background: #000018;
+    border: 1px solid #00ffff;
+    border-radius: 2px;
+    width: 160px; height: 90px;
+    display: flex; align-items: center; justify-content: center;
+    position: relative; overflow: hidden;
+    box-shadow: 0 0 12px #00ffff33;
+  }
+  #minimap-canvas { display: block; }
+  .hud-mph { font-size: 36px; color: #00ffff; text-align: right; text-shadow: 0 0 12px #00ffff; }
+  .hud-mph-label { font-size: 13px; color: #ff00ff; }
+
+  #overlay {
+    position: absolute; inset: 0;
+    background: #000000f5;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 16px; z-index: 100;
+  }
+  #overlay h1 {
+    font-family: 'Courier New', monospace;
+    font-size: 56px; color: #00ffff; letter-spacing: 12px;
+    text-shadow: 0 0 20px #00ffff, 0 0 60px #00ffff66, 0 0 100px #00ffff33;
+    animation: title-pulse 2s ease-in-out infinite alternate;
+  }
+  @keyframes title-pulse {
+    from { text-shadow: 0 0 20px #00ffff, 0 0 60px #00ffff55; }
+    to   { text-shadow: 0 0 32px #00ffff, 0 0 90px #00ffffaa, 0 0 140px #00ffff44; }
+  }
+  #overlay .subtitle {
+    font-family: 'Courier New', monospace;
+    color: #ff00ff; font-size: 13px; letter-spacing: 8px;
+    text-shadow: 0 0 10px #ff00ff;
+  }
+  #overlay .copy {
+    font-family: 'Courier New', monospace;
+    color: #0099cc; font-size: 11px; letter-spacing: 3px;
+    text-align: center; line-height: 2.4;
+  }
+  #start-btn {
+    font-family: 'Courier New', monospace;
+    background: transparent; color: #00ffff;
+    border: 2px solid #00ffff;
+    padding: 14px 52px; font-size: 20px; font-weight: bold;
+    letter-spacing: 5px; cursor: pointer; text-transform: uppercase;
+    margin-top: 8px;
+    text-shadow: 0 0 10px #00ffff;
+    box-shadow: 0 0 18px #00ffff44, inset 0 0 18px #00ffff0a;
+    transition: all 0.15s;
+  }
+  #start-btn:hover { background: #00ffff15; box-shadow: 0 0 36px #00ffff88, inset 0 0 24px #00ffff22; }
+  #lap-flash {
+    position: absolute; top: 35%; left: 50%; transform: translateX(-50%);
+    font-family: 'Courier New', monospace;
+    font-size: 44px; font-weight: bold; color: #00ffff; letter-spacing: 8px;
+    text-shadow: 0 0 20px #00ffff, 0 0 50px #00ffff88;
+    pointer-events: none; opacity: 0; transition: opacity 0.25s;
+    white-space: nowrap; z-index: 50;
+  }
+  #pos-badge {
+    position: absolute; top: 12px; right: 16px;
+    font-family: 'Courier New', monospace;
+    font-size: 28px; color: #00ffff;
+    background: #00000099; border: 1px solid #00ffff44;
+    padding: 4px 12px; letter-spacing: 3px;
+    text-shadow: 0 0 10px #00ffff; z-index: 10;
+  }
+  #weapon-panel {
+    background: #00000a; border: 1px solid #00ffff;
+    border-radius: 2px; padding: 4px 12px;
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    box-shadow: 0 0 10px #00ffff22;
+  }
+  .weapon-label {
+    font-family: 'Courier New', monospace;
+    font-size: 10px; color: #ff00ff; letter-spacing: 3px;
+    text-shadow: 0 0 6px #ff00ff;
+  }
+  .weapon-slots { display: flex; gap: 10px; align-items: center; }
+  .weapon-slot { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+  .weapon-icon { font-size: 22px; line-height: 1; filter: grayscale(1) brightness(0.2); transition: filter 0.15s; }
+  .weapon-icon.active { filter: none; }
+  .weapon-key { font-family: 'Courier New', monospace; font-size: 8px; color: #006688; letter-spacing: 1px; }
+  @keyframes turbo-pulse {
+    from { filter: none; }
+    to   { filter: brightness(2) drop-shadow(0 0 6px #00ffff); }
+  }
+  .turbo-flash { animation: turbo-pulse 0.18s infinite alternate; }
+</style>
+</head>
+<body>
+<div id="game-wrapper">
+  <div id="viewport">
+    <canvas id="canvas"></canvas>
+    <div id="lap-flash">LAP 2</div>
+    <div id="pos-badge">1ST</div>
+    <div id="overlay">
+      <h1>TRON RACER</h1>
+      <div class="subtitle">LIGHT CYCLE ARENA</div>
+      <div class="copy">
+        RACE 3 LAPS TO ADVANCE<br>
+        ARROWS / WASD TO DRIVE · SPACE = BRAKE<br>
+        Z = MISSILE · X = BOMB · C = TURBO
+      </div>
+      <button id="start-btn" onclick="startGame()">PRESS START</button>
+    </div>
+  </div>
+  <div id="hud-panel">
+    <div class="hud-box">
+      <span class="hud-label">SCORE</span>
+      <span id="hud-score">000000</span><br>
+      <span class="hud-label">LAP</span>
+      <span id="hud-lap">1/3</span>
+      &nbsp;&nbsp;
+      <span class="hud-label" style="display:inline">LVL</span>
+      <span id="hud-level">1</span>
+    </div>
+    <div id="minimap-box">
+      <canvas id="minimap-canvas" width="150" height="84"></canvas>
+    </div>
+    <div id="weapon-panel">
+      <span class="weapon-label">WEAPONS</span>
+      <div class="weapon-slots">
+        <div class="weapon-slot">
+          <span class="weapon-icon" id="w-missile">🚀</span>
+          <span class="weapon-key">[Z]</span>
+        </div>
+        <div class="weapon-slot">
+          <span class="weapon-icon" id="w-bomb">💣</span>
+          <span class="weapon-key">[X]</span>
+        </div>
+        <div class="weapon-slot">
+          <span class="weapon-icon" id="w-turbo">⚡</span>
+          <span class="weapon-key">[C]</span>
+        </div>
+      </div>
+    </div>
+    <div class="hud-box" style="text-align:right">
+      <span class="hud-label" style="text-align:right;display:block">MPH</span>
+      <span class="hud-mph" id="hud-mph">0</span><br>
+      <span class="hud-label">PLACE</span>
+      <span id="hud-place" style="font-size:18px">1ST</span>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════════════
+//  RC PRO-AM — Three.js Recreation
+//  True isometric perspective, NES faithful visuals
+// ═══════════════════════════════════════════════════════════════
+
+const canvas = document.getElementById('canvas');
+const vp = document.getElementById('viewport');
+
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: false });
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x000008);
+
+// ── ISOMETRIC CAMERA ────────────────────────────────────────────
+// RC Pro-Am uses a ~30° above, looking diagonally down-right
+const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 300);
+function resizeRenderer() {
+  const w = vp.clientWidth, h = vp.clientHeight;
+  renderer.setSize(w, h);
+  const aspect = w / h;
+  const zoom = 18;
+  camera.left   = -zoom * aspect;
+  camera.right  =  zoom * aspect;
+  camera.top    =  zoom;
+  camera.bottom = -zoom;
+  camera.updateProjectionMatrix();
+}
+resizeRenderer();
+window.addEventListener('resize', resizeRenderer);
+
+// Isometric angle: 45° azimuth, ~35° elevation (classic iso)
+camera.position.set(30, 30, 30);
+camera.lookAt(0, 0, 0);
+
+// ── LIGHTING ────────────────────────────────────────────────────
+scene.add(new THREE.AmbientLight(0x001133, 0.5));
+// Tron arena lights — colored point lights at cardinal positions
+const arenaLights = [
+  { pos: [ 40,  8,  0], color: 0x00ffff, intensity: 1.2 },
+  { pos: [-40,  8,  0], color: 0x00ffff, intensity: 1.2 },
+  { pos: [  0,  8, 40], color: 0xff00ff, intensity: 1.0 },
+  { pos: [  0,  8,-40], color: 0xff00ff, intensity: 1.0 },
+];
+arenaLights.forEach(({ pos, color, intensity }) => {
+  const light = new THREE.PointLight(color, intensity, 80);
+  light.position.set(...pos);
+  scene.add(light);
+});
+
+// ── TRACK DEFINITION ────────────────────────────────────────────
+// Oval loop, matches RC Pro-Am layout (wide corners, straight sections)
+const TRACK_WAYPOINTS = [
+  [ 0,  26], [ 8,  26], [16,  22], [22,  16], [26,   8],
+  [26,  -8], [22, -16], [16, -22], [ 8, -26], [-8, -26],
+  [-16,-22], [-22,-16], [-26, -8], [-26,  8], [-22,  16],
+  [-16,  22], [-8,  26]
+];
+
+const curve = new THREE.CatmullRomCurve3(
+  TRACK_WAYPOINTS.map(([x,z]) => new THREE.Vector3(x, 0, z)),
+  true, 'catmullrom', 0.4
+);
+
+const TRACK_WIDTH = 7.5;
+const CURVE_SEGMENTS = 300;
+
+// ── TRON GRID FLOOR ─────────────────────────────────────────────
+// Dark base plane + glowing cyan grid lines
+function buildGrass() {
+  // Base plane — near-black
+  const base = new THREE.Mesh(
+    new THREE.PlaneGeometry(200, 200),
+    new THREE.MeshBasicMaterial({ color: 0x000008 })
+  );
+  base.rotation.x = -Math.PI / 2;
+  base.position.y = -0.02;
+  scene.add(base);
+
+  // Grid lines — thin planes in cyan, emissive
+  const gridSize = 160, spacing = 8;
+  const lineMat = new THREE.MeshBasicMaterial({ color: 0x003344, transparent: true, opacity: 0.55 });
+  for (let i = -gridSize/2; i <= gridSize/2; i += spacing) {
+    // Lines along Z
+    const mz = new THREE.Mesh(new THREE.PlaneGeometry(0.12, gridSize), lineMat);
+    mz.rotation.x = -Math.PI/2;
+    mz.position.set(i, -0.01, 0);
+    scene.add(mz);
+    // Lines along X
+    const mx = new THREE.Mesh(new THREE.PlaneGeometry(gridSize, 0.12), lineMat);
+    mx.rotation.x = -Math.PI/2;
+    mx.position.set(0, -0.01, i);
+    scene.add(mx);
+  }
+}
+buildGrass();
+
+// ── TRACK SURFACE ────────────────────────────────────────────────
+function buildTrack() {
+  const pts = curve.getPoints(CURVE_SEGMENTS);
+
+  // ── Road base (gray asphalt)
+  const positions = [], uvs = [], indices = [];
+  for (let i = 0; i <= pts.length; i++) {
+    const curr = pts[i % pts.length];
+    const next = pts[(i+1) % pts.length];
+    const dir = new THREE.Vector3().subVectors(next, curr).normalize();
+    const right = new THREE.Vector3(-dir.z, 0, dir.x);
+    const l = curr.clone().addScaledVector(right, -TRACK_WIDTH);
+    const r = curr.clone().addScaledVector(right, TRACK_WIDTH);
+    l.y = r.y = 0.01;
+    positions.push(l.x,l.y,l.z, r.x,r.y,r.z);
+    const u = i / pts.length;
+    uvs.push(0, u, 1, u);
+  }
+  for (let i = 0; i < pts.length; i++) {
+    const a = i*2, b = a+1, c = a+2, d = a+3;
+    indices.push(a,b,c, b,d,c);
+  }
+  const roadGeo = new THREE.BufferGeometry();
+  roadGeo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  roadGeo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  roadGeo.setIndex(indices);
+  roadGeo.computeVertexNormals();
+  const roadMesh = new THREE.Mesh(roadGeo, new THREE.MeshBasicMaterial({ color: 0x00050f }));
+  roadMesh.receiveShadow = true;
+  scene.add(roadMesh);
+
+  // ── Yellow/black dashed curb stripes (NES style)
+  buildCurbs(pts);
+
+  // ── Yellow direction arrows on road
+  buildArrows(pts);
+
+  // ── Checkered start/finish
+  buildStartLine(pts);
+}
+
+function buildCurbs(pts) {
+  // Both edges: alternating yellow/black dashes
+  [-1, 1].forEach(side => {
+    const edgeOffset = side * (TRACK_WIDTH - 0.5);
+    for (let i = 0; i < pts.length; i++) {
+      const curr = pts[i];
+      const next = pts[(i+1) % pts.length];
+      const dir = new THREE.Vector3().subVectors(next, curr).normalize();
+      const right = new THREE.Vector3(-dir.z, 0, dir.x);
+
+      const dashIdx = Math.floor(i / 2);
+      const color = (dashIdx % 2 === 0) ? 0x00ffff : 0x001122;
+
+      const center = curr.clone().addScaledVector(right, edgeOffset);
+      const w = 0.85, len = curr.distanceTo(next) + 0.05;
+
+      const geo = new THREE.PlaneGeometry(w, len);
+      const mat = new THREE.MeshBasicMaterial({ color });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.rotation.x = -Math.PI/2;
+      mesh.position.set(center.x, 0.02, center.z);
+      const angle = Math.atan2(dir.x, dir.z);
+      mesh.rotation.z = angle;
+      scene.add(mesh);
+    }
+  });
+}
+
+function buildArrows(pts) {
+  // Place direction arrows every ~30 segments
+  for (let i = 10; i < pts.length; i += 30) {
+    const curr = pts[i];
+    const next = pts[(i+5) % pts.length];
+    const dir = new THREE.Vector3().subVectors(next, curr).normalize();
+
+    const arrowShape = new THREE.Shape();
+    arrowShape.moveTo(0, 0.8);
+    arrowShape.lineTo(0.5, 0);
+    arrowShape.lineTo(0.2, 0);
+    arrowShape.lineTo(0.2, -0.8);
+    arrowShape.lineTo(-0.2, -0.8);
+    arrowShape.lineTo(-0.2, 0);
+    arrowShape.lineTo(-0.5, 0);
+    arrowShape.closePath();
+
+    const geo = new THREE.ShapeGeometry(arrowShape);
+    const mat = new THREE.MeshBasicMaterial({ color: 0xff00ff, side: THREE.DoubleSide });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.rotation.x = -Math.PI/2;
+    mesh.position.set(curr.x, 0.03, curr.z);
+    const angle = Math.atan2(dir.x, dir.z);
+    mesh.rotation.z = -angle;
+    mesh.scale.setScalar(1.6);
+    scene.add(mesh);
+  }
+}
+
+function buildStartLine(pts) {
+  const p0 = pts[0], p1 = pts[1];
+  const dir = new THREE.Vector3().subVectors(p1, p0).normalize();
+  const right = new THREE.Vector3(-dir.z, 0, dir.x);
+  const angle = Math.atan2(dir.x, dir.z);
+
+  const cols = 8;
+  for (let c = -cols/2; c < cols/2; c++) {
+    for (let r = 0; r < 2; r++) {
+      const col = (c + r) % 2 === 0 ? 0x00ffff : 0x000033;
+      const tile = new THREE.Mesh(
+        new THREE.PlaneGeometry(TRACK_WIDTH / (cols/2), 1.5),
+        new THREE.MeshBasicMaterial({ color: col })
+      );
+      tile.rotation.x = -Math.PI/2;
+      tile.position.copy(p0.clone()
+        .addScaledVector(right, (c + 0.5) * TRACK_WIDTH / (cols/2))
+        .addScaledVector(dir, (r - 0.5) * 1.5));
+      tile.position.y = 0.04;
+      tile.rotation.z = -angle;
+      scene.add(tile);
+    }
+  }
+}
+
+buildTrack();
+
+// ── TRON SCENERY: LIGHT TOWERS ──────────────────────────────────
+// Tall glowing pillars around the arena perimeter
+function addLightTower(x, z, color) {
+  const g = new THREE.Group();
+  // Base block
+  const base = new THREE.Mesh(
+    new THREE.BoxGeometry(1.2, 0.4, 1.2),
+    new THREE.MeshBasicMaterial({ color: 0x001122 })
+  );
+  base.position.y = 0.2;
+  g.add(base);
+  // Tall shaft
+  const shaft = new THREE.Mesh(
+    new THREE.BoxGeometry(0.25, 7, 0.25),
+    new THREE.MeshBasicMaterial({ color: 0x001122 })
+  );
+  shaft.position.y = 3.9;
+  g.add(shaft);
+  // Glowing top cap
+  const cap = new THREE.Mesh(
+    new THREE.BoxGeometry(0.6, 0.5, 0.6),
+    new THREE.MeshBasicMaterial({ color })
+  );
+  cap.position.y = 7.65;
+  g.add(cap);
+  // Point light at top
+  const light = new THREE.PointLight(color, 0.8, 22);
+  light.position.y = 8.2;
+  g.add(light);
+  // Glowing edge lines (thin flat quads on each face of shaft)
+  const edgeMat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.7 });
+  [[0.13,0,0.27,7],[0,0,0.27,7],[0.27,0,0,7],[0.27,0,0,7]].forEach((_, fi) => {
+    const ex = fi < 2 ? 0.13 : 0; const ez = fi < 2 ? 0 : 0.13;
+    const edge = new THREE.Mesh(new THREE.PlaneGeometry(0.06, 7), edgeMat);
+    edge.position.set(ex * (fi%2===0?1:-1), 3.9, ez * (fi<2?0:fi===2?1:-1));
+    edge.rotation.y = fi * Math.PI/2;
+    g.add(edge);
+  });
+  g.position.set(x, 0, z);
+  scene.add(g);
+}
+
+const towerSpots = [
+  { x:-40, z:-40, c:0x00ffff }, { x: 40, z:-40, c:0xff00ff },
+  { x:-40, z: 40, c:0xff00ff }, { x: 40, z: 40, c:0x00ffff },
+  { x:-40, z:  0, c:0x00ffff }, { x: 40, z:  0, c:0x00ffff },
+  { x:  0, z: 40, c:0xff00ff }, { x:  0, z:-40, c:0xff00ff },
+  { x:-28, z:-40, c:0x00ffff }, { x: 28, z:-40, c:0x00ffff },
+  { x:-28, z: 40, c:0xff00ff }, { x: 28, z: 40, c:0xff00ff },
+  { x:-40, z:-20, c:0x00ffff }, { x: 40, z: 20, c:0x00ffff },
+];
+towerSpots.forEach(({ x, z, c }) => addLightTower(x, z, c));
+
+// ── LIGHT CYCLE FACTORY ──────────────────────────────────────────
+// Tron-style light cycle: sleek low wedge body, glowing edges, lit wheels
+function createTruck(glowColor, darkColor) {
+  const g = new THREE.Group();
+  const dark = new THREE.MeshBasicMaterial({ color: 0x000814 });
+  const glow = new THREE.MeshBasicMaterial({ color: glowColor });
+  const dimGlow = new THREE.MeshBasicMaterial({ color: glowColor, transparent: true, opacity: 0.5 });
+
+  // Main body — low flat wedge
+  const body = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.32, 2.2), dark);
+  body.position.set(0, 0.42, 0);
+  g.add(body);
+
+  // Cockpit canopy — narrow raised section
+  const canopy = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.28, 1.1), dark);
+  canopy.position.set(0, 0.7, 0.1);
+  g.add(canopy);
+
+  // Canopy visor (glowing)
+  const visor = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.12, 0.06),
+    new THREE.MeshBasicMaterial({ color: glowColor, transparent: true, opacity: 0.9 }));
+  visor.position.set(0, 0.72, 0.66);
+  g.add(visor);
+
+  // Glowing edge lines along body sides
+  const edgeMat = new THREE.MeshBasicMaterial({ color: glowColor });
+  // Left / right long edges
+  [-0.71, 0.71].forEach(x => {
+    const edge = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 2.2), edgeMat);
+    edge.position.set(x, 0.59, 0);
+    g.add(edge);
+  });
+  // Front edge
+  const front = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.05, 0.05), edgeMat);
+  front.position.set(0, 0.59, 1.12);
+  g.add(front);
+  // Rear edge
+  const rear = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.05, 0.05), edgeMat);
+  rear.position.set(0, 0.59, -1.12);
+  g.add(rear);
+
+  // Headlight bar — thin glowing strip
+  const hbar = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.1, 0.06), edgeMat);
+  hbar.position.set(0, 0.46, 1.14);
+  g.add(hbar);
+
+  // Engine exhaust glow (rear)
+  const exhaust = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.18, 0.08), glow);
+  exhaust.position.set(0, 0.44, -1.15);
+  g.add(exhaust);
+
+  // Wheels — thin discs with glowing rims
+  const wGeo = new THREE.CylinderGeometry(0.38, 0.38, 0.12, 12);
+  const rimGeo = new THREE.CylinderGeometry(0.38, 0.38, 0.14, 12, 1, true);
+  [[-0.82, 0.38, 0.72],[0.82, 0.38, 0.72],[-0.82, 0.38, -0.72],[0.82, 0.38, -0.72]].forEach(([wx,wy,wz]) => {
+    const wheel = new THREE.Mesh(wGeo, dark);
+    wheel.rotation.z = Math.PI/2;
+    wheel.position.set(wx, wy, wz);
+    g.add(wheel);
+    const rim = new THREE.Mesh(rimGeo, edgeMat);
+    rim.rotation.z = Math.PI/2;
+    rim.position.set(wx, wy, wz);
+    g.add(rim);
+  });
+
+  // Underbody glow — point light close to ground
+  const underGlow = new THREE.PointLight(glowColor, 1.4, 7);
+  underGlow.position.set(0, 0.15, 0);
+  g.add(underGlow);
+
+  g.position.y = 0.0;
+  return g;
+}
+
+// ── PLAYER ───────────────────────────────────────────────────────
+const playerTruck = createTruck(0x00ffff, 0x000814); // cyan — player light cycle
+scene.add(playerTruck);
+
+// ── AI TRUCKS ────────────────────────────────────────────────────
+const AI_DEFS = [
+  { body: 0xff00ff, cab: 0x000814 },  // magenta
+  { body: 0xff6600, cab: 0x000814 },  // orange
+  { body: 0x88ff00, cab: 0x000814 },  // lime
+];
+const aiTrucks = AI_DEFS.map((def, i) => {
+  const truck = createTruck(def.body, def.cab);
+  scene.add(truck);
+  return {
+    mesh: truck,
+    t: 0.2 + i * 0.18,
+    speed: 0,
+    lateral: (i - 1) * 2.2,
+    angle: 0,
+    lapCount: 0,
+    baseSpeed: 0.00195 + i * 0.00018,
+    spinTimer: 0,        // frames remaining in spin-out (0 = normal)
+    spinAngle: 0,        // accumulated spin rotation
+  };
+});
+
+// ── WEAPON SYSTEM ────────────────────────────────────────────────
+// Pickup mesh types: 0=missile, 1=bomb, 2=turbo
+
+function createPickupMesh(type) {
+  const g = new THREE.Group();
+  if (type === 0) {
+    // Missile → Identity Disc: flat glowing torus (red/orange)
+    const disc = new THREE.Mesh(
+      new THREE.TorusGeometry(0.38, 0.09, 8, 20),
+      new THREE.MeshBasicMaterial({ color: 0xff2200 })
+    );
+    g.add(disc);
+    const inner = new THREE.Mesh(
+      new THREE.TorusGeometry(0.22, 0.04, 6, 16),
+      new THREE.MeshBasicMaterial({ color: 0xff6600, transparent: true, opacity: 0.7 })
+    );
+    g.add(inner);
+    const center = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.08, 0.08, 0.06, 8),
+      new THREE.MeshBasicMaterial({ color: 0xff4400 })
+    );
+    g.add(center);
+    // Point light
+    { const pl = new THREE.PointLight(0xff2200, 1.2, 5); g.add(pl); }
+  } else if (type === 1) {
+    // Bomb → Derez Sphere: magenta pulsing core + outer ring
+    const core = new THREE.Mesh(
+      new THREE.SphereGeometry(0.28, 8, 6),
+      new THREE.MeshBasicMaterial({ color: 0x220033 })
+    );
+    g.add(core);
+    const ring = new THREE.Mesh(
+      new THREE.TorusGeometry(0.46, 0.07, 6, 18),
+      new THREE.MeshBasicMaterial({ color: 0xff00ff })
+    );
+    ring.rotation.x = Math.PI / 2;
+    g.add(ring);
+    const ring2 = new THREE.Mesh(
+      new THREE.TorusGeometry(0.46, 0.04, 6, 18),
+      new THREE.MeshBasicMaterial({ color: 0xff00ff, transparent: true, opacity: 0.4 })
+    );
+    g.add(ring2);
+    { const pl = new THREE.PointLight(0xff00ff, 1.0, 5); g.add(pl); }
+  } else {
+    // Turbo → Power Node: vertical cyan prism, glowing
+    const prism = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.15, 0.28, 0.8, 6),
+      new THREE.MeshBasicMaterial({ color: 0x001122 })
+    );
+    g.add(prism);
+    const top = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.02, 0.15, 0.18, 6),
+      new THREE.MeshBasicMaterial({ color: 0x00ffff })
+    );
+    top.position.y = 0.49;
+    g.add(top);
+    for (let i = 0; i < 6; i++) {
+      const edge = new THREE.Mesh(
+        new THREE.BoxGeometry(0.04, 0.8, 0.04),
+        new THREE.MeshBasicMaterial({ color: 0x00ffff })
+      );
+      edge.position.x = Math.cos(i/6*Math.PI*2) * 0.27;
+      edge.position.z = Math.sin(i/6*Math.PI*2) * 0.27;
+      g.add(edge);
+    }
+    { const pl = new THREE.PointLight(0x00ffff, 1.4, 6); g.add(pl); }
+  }
+  return g;
+}
+
+// Pickup spawn positions along track (T values, lateral offset)
+const PICKUP_DEFS = [
+  { type: 0, t: 0.15, lat:  2.0 },  // missile
+  { type: 1, t: 0.32, lat: -2.0 },  // bomb
+  { type: 2, t: 0.50, lat:  1.5 },  // turbo
+  { type: 0, t: 0.65, lat: -1.5 },  // missile
+  { type: 1, t: 0.80, lat:  2.0 },  // bomb
+  { type: 2, t: 0.92, lat: -2.0 },  // turbo
+];
+
+const pickups = PICKUP_DEFS.map(def => {
+  const mesh = createPickupMesh(def.type);
+  const spawnPos = worldPos(def.t, def.lat);
+  mesh.position.set(spawnPos.x, 0.9, spawnPos.z);
+  scene.add(mesh);
+  return {
+    mesh,
+    type: def.type,
+    t: def.t,
+    lat: def.lat,
+    active: true,
+    respawnTimer: 0,
+  };
+});
+
+// Active bombs placed in the world by player
+const activeBombs = []; // { mesh, pos, timer }
+
+// Inventory and turbo state
+const playerInventory = { missile: 0, bomb: 0, turbo: 0 };
+let turboTimer = 0;       // frames remaining
+const TURBO_FRAMES = 180; // 3s at 60fps
+const SPIN_FRAMES  = 72;  // ~1.2s spin-out
+
+// Fired missile state (one at a time)
+let activeMissile = null; // { mesh, t, lat, speed }
+
+function createMissileMesh() {
+  const g = new THREE.Group();
+  // Identity Disc in flight — flat torus spinning
+  const disc = new THREE.Mesh(
+    new THREE.TorusGeometry(0.3, 0.07, 6, 16),
+    new THREE.MeshBasicMaterial({ color: 0xff2200 })
+  );
+  g.add(disc);
+  const pl = new THREE.PointLight(0xff2200, 1.5, 6);
+  g.add(pl);
+  return g;
+}
+
+function createBombMesh() {
+  const g = new THREE.Group();
+  const sphere = new THREE.Mesh(
+    new THREE.SphereGeometry(0.24, 8, 6),
+    new THREE.MeshBasicMaterial({ color: 0x110022 })
+  );
+  g.add(sphere);
+  const ring = new THREE.Mesh(
+    new THREE.TorusGeometry(0.38, 0.06, 6, 16),
+    new THREE.MeshBasicMaterial({ color: 0xff00ff })
+  );
+  ring.rotation.x = Math.PI / 2;
+  g.add(ring);
+  const pl = new THREE.PointLight(0xff00ff, 1.2, 5);
+  g.add(pl);
+  return g;
+}
+
+// Fire missile: find nearest AI ahead on track
+function fireMissile() {
+  if (!playerInventory.missile || activeMissile) return;
+  playerInventory.missile = 0;
+  const mesh = createMissileMesh();
+  scene.add(mesh);
+  activeMissile = { mesh, t: playerT + 0.01, lat: playerLateral * 0.5, speed: MAX_SPEED * 2.0 };
+}
+
+// Drop bomb at player position
+function dropBomb() {
+  if (!playerInventory.bomb) return;
+  playerInventory.bomb = 0;
+  const mesh = createBombMesh();
+  const pos = worldPos(playerT, playerLateral);
+  pos.y = 0.3;
+  mesh.position.copy(pos);
+  scene.add(mesh);
+  activeBombs.push({ mesh, t: playerT, lat: playerLateral, timer: 300 }); // 5s fuse
+}
+
+// Activate turbo
+function activateTurbo() {
+  if (!playerInventory.turbo || turboTimer > 0) return;
+  playerInventory.turbo = 0;
+  turboTimer = TURBO_FRAMES;
+}
+
+// Trigger spin-out on AI
+function spinOutAI(ai) {
+  if (ai.spinTimer > 0) return; // already spinning
+  ai.spinTimer = SPIN_FRAMES;
+  ai.spinAngle = ai.angle;
+  ai.speed *= 0.1;
+}
+
+// Update weapon HUD icons
+function updateWeaponHUD() {
+  const slots = [
+    { id: 'w-missile', has: playerInventory.missile > 0, turbo: false },
+    { id: 'w-bomb',    has: playerInventory.bomb > 0,    turbo: false },
+    { id: 'w-turbo',   has: playerInventory.turbo > 0 || turboTimer > 0, turbo: turboTimer > 0 },
+  ];
+  slots.forEach(({ id, has, turbo: isTurboActive }) => {
+    const el = document.getElementById(id);
+    el.classList.toggle('active', has);
+    el.classList.toggle('turbo-flash', isTurboActive);
+  });
+}
+
+// ── PHYSICS CONSTANTS ────────────────────────────────────────────
+const MAX_SPEED    = 0.003;
+const ACCEL        = 0.00015;
+const BRAKE_FORCE  = 0.0003;
+const FRICTION     = 0.983;
+const STEER_RATE   = 0.038;
+const LAT_FRICTION = 0.90;
+const WALL_BOUNCE  = 0.6;
+const OFFTRACK_SLP = 0.55;
+const LAT_LIMIT    = TRACK_WIDTH - 1.4;
+
+// ── GAME STATE ───────────────────────────────────────────────────
+let playerT = 0.005;
+let playerSpeed = 0;
+let playerLateral = 0;
+let playerAngle = 0;
+let lapCount = 0;
+let score = 0;
+let lapStart = 0;
+let raceStart = 0;
+let gameRunning = false;
+let level = 1;
+const TOTAL_LAPS = 3;
+let finishShown = false;
+
+// ── LIGHT TRAILS ─────────────────────────────────────────────────
+// Each cycle leaves a glowing ribbon trail — the signature TRON effect
+const TRAIL_LEN = 48;  // positions to remember
+const trailColors = [0x00ffff, 0xff00ff, 0xff6600, 0x88ff00];
+const allCycles = [null, ...new Array(3).fill(null)]; // player + 3 AI (filled after trucks created)
+
+function makeTrailLine(color) {
+  const positions = new Float32Array(TRAIL_LEN * 3);
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geo.setDrawRange(0, 0);
+  const mat = new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.85, linewidth: 2 });
+  const line = new THREE.Line(geo, mat);
+  line.frustumCulled = false;
+  scene.add(line);
+  return { line, positions, geo, count: 0 };
+}
+
+// Trails: one per cycle (player + 3 AI)
+const trails = trailColors.map(c => makeTrailLine(c));
+
+function updateTrail(trail, x, y, z) {
+  const pos = trail.positions;
+  // Shift existing positions back by one slot
+  for (let i = (TRAIL_LEN - 1) * 3; i >= 3; i -= 3) {
+    pos[i]   = pos[i-3];
+    pos[i+1] = pos[i-2];
+    pos[i+2] = pos[i-1];
+  }
+  pos[0] = x; pos[1] = y + 0.25; pos[2] = z;
+  trail.count = Math.min(trail.count + 1, TRAIL_LEN);
+  trail.geo.setDrawRange(0, trail.count);
+  trail.geo.attributes.position.needsUpdate = true;
+}
+
+// ── INPUT ────────────────────────────────────────────────────────
+const keys = {};
+const GAME_KEYS = new Set(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyW','KeyA','KeyS','KeyD','Space','KeyZ','KeyX','KeyC']);
+addEventListener('keydown', e => {
+  if (GAME_KEYS.has(e.code)) {
+    keys[e.code] = true;
+    e.preventDefault();
+    // One-shot weapon fires on keydown, not held
+    if (gameRunning) {
+      if (e.code === 'KeyZ') fireMissile();
+      if (e.code === 'KeyX') dropBomb();
+      if (e.code === 'KeyC') activateTurbo();
+    }
+  }
+});
+addEventListener('keyup',   e => { keys[e.code] = false; });
+const pressing = code => !!keys[code];
+const gas   = () => pressing('ArrowUp')   || pressing('KeyW');
+const brake = () => pressing('ArrowDown') || pressing('KeyS') || pressing('Space');
+const left  = () => pressing('ArrowLeft') || pressing('KeyA');
+const right = () => pressing('ArrowRight')|| pressing('KeyD');
+
+// ── TRACK HELPERS ────────────────────────────────────────────────
+function trackFrame(t) {
+  const pos = curve.getPoint(t);
+  const tan = curve.getTangent(t).normalize();
+  const rgt = new THREE.Vector3(-tan.z, 0, tan.x);
+  return { pos, tan, rgt };
+}
+function worldPos(t, lat) {
+  const { pos, tan, rgt } = trackFrame(t);
+  return pos.clone().addScaledVector(rgt, lat);
+}
+
+// ── CAMERA FOLLOW ────────────────────────────────────────────────
+// Keep isometric offset locked to player, scroll world
+const ISO_OFFSET = new THREE.Vector3(28, 28, 28);
+let camTarget = new THREE.Vector3();
+
+// ── MINIMAP ───────────────────────────────────────────────────────
+const mmCanvas = document.getElementById('minimap-canvas');
+const mmCtx = mmCanvas.getContext('2d');
+const MM_W = 150, MM_H = 84;
+
+function drawMinimap() {
+  mmCtx.fillStyle = '#000010';
+  mmCtx.fillRect(0, 0, MM_W, MM_H);
+
+  const scale = 2.6, cx = MM_W/2, cz = MM_H/2;
+  function toMM(x, z) { return [cx + x*scale, cz + z*scale]; }
+
+  // Draw track outline
+  const pts = curve.getPoints(200);
+  mmCtx.strokeStyle = '#00ffff';
+  mmCtx.shadowColor = '#00ffff';
+  mmCtx.shadowBlur = 4;
+  mmCtx.lineWidth = 6;
+  mmCtx.beginPath();
+  pts.forEach((p, i) => {
+    const [mx, mz] = toMM(p.x, p.z);
+    i === 0 ? mmCtx.moveTo(mx, mz) : mmCtx.lineTo(mx, mz);
+  });
+  mmCtx.closePath();
+  mmCtx.stroke();
+
+  // AI blips
+  aiTrucks.forEach(ai => {
+    const wp = worldPos(ai.t, ai.lateral);
+    const [mx, mz] = toMM(wp.x, wp.z);
+    mmCtx.fillStyle = ai.mesh.children[0]?.material?.color ? '#ff00ff' : '#ff6600';
+    const aiColors = ['#ff00ff','#ff6600','#88ff00'];
+    const aiIdx = aiTrucks.indexOf(ai);
+    mmCtx.fillStyle = aiColors[aiIdx] || '#ff00ff';
+    mmCtx.fillRect(mx-3, mz-3, 6, 6);
+  });
+
+  // Player blip
+  const pp = worldPos(playerT, playerLateral);
+  const [px, pz] = toMM(pp.x, pp.z);
+  mmCtx.fillStyle = '#00ffff';
+  mmCtx.shadowColor = '#00ffff';
+  mmCtx.shadowBlur = 6;
+  mmCtx.fillRect(px-4, pz-4, 8, 8);
+}
+
+// ── LAP FLASH ────────────────────────────────────────────────────
+function flashMsg(txt, dur = 1800) {
+  const el = document.getElementById('lap-flash');
+  el.textContent = txt;
+  el.style.opacity = '1';
+  setTimeout(() => el.style.opacity = '0', dur);
+}
+
+// ── HUD UPDATE ────────────────────────────────────────────────────
+function fmtScore(n) { return String(n).padStart(6, '0'); }
+
+function updateHUD() {
+  const mph = Math.round((playerSpeed / MAX_SPEED) * 85);
+  document.getElementById('hud-mph').textContent = mph;
+  document.getElementById('hud-score').textContent = fmtScore(score);
+  document.getElementById('hud-lap').textContent = `${Math.min(lapCount+1, TOTAL_LAPS)}/${TOTAL_LAPS}`;
+  document.getElementById('hud-level').textContent = level;
+
+  const pProg = playerT + lapCount;
+  const numAhead = aiTrucks.filter(a => (a.t + a.lapCount) > pProg).length;
+  const labels = ['1ST','2ND','3RD','4TH'];
+  const posStr = labels[numAhead] || '4TH';
+  document.getElementById('hud-place').textContent = posStr;
+  document.getElementById('pos-badge').textContent = posStr;
+}
+
+// ── START GAME ────────────────────────────────────────────────────
+function startGame() {
+  document.getElementById('overlay').style.display = 'none';
+  gameRunning = true;
+  playerT = 0.005;
+  playerSpeed = 0;
+  playerLateral = 0;
+  playerAngle = 0;
+  lapCount = 0;
+  score = 0;
+  raceStart = lapStart = Date.now();
+  finishShown = false;
+
+  aiTrucks.forEach((ai, i) => {
+    ai.t = 0.03 + i * 0.06;
+    ai.lateral = (i - 1) * 2.0;
+    ai.speed = 0;
+    ai.lapCount = 0;
+    ai.spinTimer = 0;
+    ai.spinAngle = 0;
+  });
+
+  // Reset weapons
+  playerInventory.missile = 0;
+  playerInventory.bomb = 0;
+  playerInventory.turbo = 0;
+  turboTimer = 0;
+  if (activeMissile) { scene.remove(activeMissile.mesh); activeMissile = null; }
+  activeBombs.forEach(b => scene.remove(b.mesh));
+  activeBombs.length = 0;
+  pickups.forEach(pk => { pk.active = true; pk.mesh.visible = true; pk.respawnTimer = 0; });
+
+  // Clear trails
+  trails.forEach(t => { t.count = 0; t.geo.setDrawRange(0, 0); });
+
+  // Sync mesh positions immediately — no flash frame
+  aiTrucks.forEach(ai => {
+    const ap = worldPos(ai.t, ai.lateral);
+    ap.y = 0.05;
+    ai.mesh.position.copy(ap);
+  });
+  const pp0 = worldPos(playerT, playerLateral);
+  pp0.y = 0.05;
+  playerTruck.position.copy(pp0);
+}
+
+// ── COLLISION ────────────────────────────────────────────────────
+function handleCollisions() {
+  const pp = worldPos(playerT, playerLateral);
+  aiTrucks.forEach(ai => {
+    const ap = worldPos(ai.t, ai.lateral);
+    if (pp.distanceTo(ap) < 2.2) {
+      playerSpeed *= 0.35;
+      ai.speed *= 0.35;
+      playerLateral += (pp.x - ap.x) * 0.4;
+      score = Math.max(0, score - 50);
+    }
+  });
+}
+
+// ── MAIN LOOP ─────────────────────────────────────────────────────
+const clock = new THREE.Clock();
+
+function animate() {
+  requestAnimationFrame(animate);
+  const rawDt = clock.getDelta();
+  const dt = Math.min(rawDt, 0.05); // cap at 50ms to avoid spiral-of-death
+  const scale = dt * 60; // normalize to 60fps baseline
+
+  if (gameRunning) {
+    // ── Turbo timer
+    if (turboTimer > 0) turboTimer = Math.max(0, turboTimer - scale);
+    const effectiveMaxSpeed = MAX_SPEED * (turboTimer > 0 ? 1.5 : 1.0);
+
+    // ── Player physics
+    if (gas())   playerSpeed = Math.min(playerSpeed + ACCEL * scale, effectiveMaxSpeed);
+    if (brake())  playerSpeed = Math.max(playerSpeed - BRAKE_FORCE * scale, 0);
+    playerSpeed *= Math.pow(FRICTION, scale);
+
+    const { rgt } = trackFrame(playerT);
+    if (left())  playerLateral -= STEER_RATE * (playerSpeed / MAX_SPEED + 0.25) * scale;
+    if (right()) playerLateral += STEER_RATE * (playerSpeed / MAX_SPEED + 0.25) * scale;
+    playerLateral *= Math.pow(LAT_FRICTION, scale);
+
+    if (Math.abs(playerLateral) > LAT_LIMIT) {
+      playerLateral = Math.sign(playerLateral) * LAT_LIMIT;
+      playerSpeed *= OFFTRACK_SLP;
+    }
+
+    playerT += playerSpeed * scale;
+    if (playerT >= 1.0) {
+      playerT -= 1.0;
+      lapCount++;
+      score += 1000 + Math.max(0, 500 - Math.floor((Date.now() - lapStart) / 100));
+      lapStart = Date.now();
+
+      if (lapCount >= TOTAL_LAPS && !finishShown) {
+        finishShown = true;
+        gameRunning = false;
+        setTimeout(showFinish, 600);
+      } else if (lapCount < TOTAL_LAPS) {
+        flashMsg(`LAP ${lapCount + 1}`);
+      }
+    }
+
+    // ── Place player truck
+    const pp = worldPos(playerT, playerLateral);
+    pp.y = 0.05;
+    playerTruck.position.copy(pp);
+    const { tan: ptan } = trackFrame(playerT);
+    const targetAngle = Math.atan2(ptan.x, ptan.z) + (left() ? 0.15 : right() ? -0.15 : 0);
+    playerAngle += (targetAngle - playerAngle) * 0.15;
+    playerTruck.rotation.y = playerAngle;
+
+    // ── AI trucks
+    aiTrucks.forEach(ai => {
+      if (ai.spinTimer > 0) {
+        // Spin-out: rotate and decelerate, don't steer
+        ai.spinTimer = Math.max(0, ai.spinTimer - scale);
+        ai.spinAngle += 0.12 * scale;  // full rotation over ~52 frames
+        ai.mesh.rotation.y = ai.spinAngle;
+        ai.speed *= Math.pow(0.94, scale);
+        // Still advance position (slow drift)
+        ai.t += ai.speed * scale;
+        if (ai.t >= 1.0) { ai.t -= 1.0; ai.lapCount++; }
+        const ap = worldPos(ai.t, ai.lateral);
+        ap.y = 0.05;
+        ai.mesh.position.copy(ap);
+        return; // skip normal steering
+      }
+
+      const wobble = Math.sin(Date.now() * 0.0005 + ai.t * 8) * 0.0002;
+      ai.speed = Math.min(ai.speed + 0.00009 * scale, ai.baseSpeed + wobble);
+      ai.speed *= Math.pow(0.988, scale);
+      ai.lateral += Math.sin(Date.now() * 0.0008 + ai.t * 6) * 0.012;
+      ai.lateral = Math.max(-LAT_LIMIT * 0.75, Math.min(LAT_LIMIT * 0.75, ai.lateral));
+      ai.t += ai.speed * scale;
+      if (ai.t >= 1.0) { ai.t -= 1.0; ai.lapCount++; }
+
+      const ap = worldPos(ai.t, ai.lateral);
+      ap.y = 0.05;
+      ai.mesh.position.copy(ap);
+      const { tan: atan } = trackFrame(ai.t);
+      ai.angle += (Math.atan2(atan.x, atan.z) - ai.angle) * 0.12;
+      ai.mesh.rotation.y = ai.angle;
+    });
+
+    handleCollisions();
+    score += Math.floor(playerSpeed / MAX_SPEED * 2 * scale);
+
+    // ── Weapon tick ─────────────────────────────────────────────
+
+    // Pickups: float, spin, check overlap, respawn
+    const now = Date.now();
+    const playerWorldPos = worldPos(playerT, playerLateral);
+    pickups.forEach(pk => {
+      if (pk.active) {
+        // Float + spin animation
+        pk.mesh.position.y = 0.9 + Math.sin(now * 0.003 + pk.t * 20) * 0.18;
+        pk.mesh.rotation.y += 0.06 * scale;
+        // Spin inner ring differently for TRON flicker feel
+        if (pk.mesh.children[1]) pk.mesh.children[1].rotation.x += 0.08 * scale;
+
+        // Overlap check with player
+        const dist = playerWorldPos.distanceTo(pk.mesh.position);
+        if (dist < 1.8) {
+          const typeName = ['missile','bomb','turbo'][pk.type];
+          if (playerInventory[typeName] === 0) {
+            playerInventory[typeName] = 1;
+            pk.active = false;
+            pk.respawnTimer = 480; // 8s at 60fps
+            pk.mesh.visible = false;
+            flashMsg('  ' + ['MISSILE','BOMB','TURBO'][pk.type] + '!', 900);
+          }
+        }
+      } else {
+        pk.respawnTimer -= scale;
+        if (pk.respawnTimer <= 0) {
+          pk.active = true;
+          pk.mesh.visible = true;
+        }
+      }
+    });
+
+    // Missile: advance forward, check AI hit
+    if (activeMissile) {
+      activeMissile.t += activeMissile.speed * scale;
+      if (activeMissile.t >= 1.0) activeMissile.t -= 1.0;
+      const mPos = worldPos(activeMissile.t, activeMissile.lat);
+      mPos.y = 0.7;
+      activeMissile.mesh.position.copy(mPos);
+
+      // Orient + spin disc along track direction
+      const { tan: mtan } = trackFrame(activeMissile.t);
+      activeMissile.mesh.rotation.y = Math.atan2(mtan.x, mtan.z);
+      if (activeMissile.mesh.children[0]) activeMissile.mesh.children[0].rotation.z += 0.18 * scale;
+
+      // Check AI hit (T-distance check, wrapping)
+      let hit = false;
+      aiTrucks.forEach(ai => {
+        if (hit || ai.spinTimer > 0) return;
+        const tDiff = ((activeMissile.t - ai.t) + 1.0) % 1.0;
+        const aiPos = worldPos(ai.t, ai.lateral);
+        if (activeMissile.mesh.position.distanceTo(aiPos) < 2.0) {
+          spinOutAI(ai);
+          score += 200;
+          hit = true;
+        }
+      });
+
+      // Travelled too far (>40% of track) without hitting — despawn
+      const travelDist = ((activeMissile.t - playerT) + 1.0) % 1.0;
+      if (hit || travelDist > 0.35) {
+        scene.remove(activeMissile.mesh);
+        activeMissile = null;
+      }
+    }
+
+    // Bombs: tick fuse, check AI contact
+    for (let i = activeBombs.length - 1; i >= 0; i--) {
+      const bomb = activeBombs[i];
+      bomb.timer -= scale;
+      // Blink when nearly expired
+      if (bomb.timer < 90) {
+        bomb.mesh.visible = Math.floor(bomb.timer / 6) % 2 === 0;
+      }
+
+      // Check if any AI drives over it
+      let detonated = false;
+      aiTrucks.forEach(ai => {
+        if (detonated || ai.spinTimer > 0) return;
+        const aiPos = worldPos(ai.t, ai.lateral);
+        if (bomb.mesh.position.distanceTo(aiPos) < 1.8) {
+          spinOutAI(ai);
+          score += 150;
+          detonated = true;
+        }
+      });
+
+      if (detonated || bomb.timer <= 0) {
+        scene.remove(bomb.mesh);
+        activeBombs.splice(i, 1);
+      }
+    }
+
+    updateWeaponHUD();
+
+    // ── Light trails
+    const pwp = worldPos(playerT, playerLateral);
+    updateTrail(trails[0], pwp.x, pwp.y, pwp.z);
+    aiTrucks.forEach((ai, i) => {
+      const awp = worldPos(ai.t, ai.lateral);
+      updateTrail(trails[i+1], awp.x, awp.y, awp.z);
+    });
+
+    // ── Camera: iso follow player
+    const pWorld = worldPos(playerT, playerLateral);
+    camTarget.lerp(pWorld, 1 - Math.pow(1 - 0.08, scale));
+    camera.position.set(
+      camTarget.x + ISO_OFFSET.x,
+      ISO_OFFSET.y,
+      camTarget.z + ISO_OFFSET.z
+    );
+    camera.lookAt(camTarget.x, 0, camTarget.z);
+
+    drawMinimap();
+    updateHUD();
+  }
+
+  renderer.render(scene, camera);
+}
+
+function showFinish() {
+  const ov = document.getElementById('overlay');
+  ov.innerHTML = `
+    <h1 style="font-size:42px;color:#00ffff;text-shadow:0 0 20px #00ffff">DEREZZED!</h1>
+    <div class="subtitle" style="color:#ff00ff;text-shadow:0 0 8px #ff00ff">CYCLE COMPLETE</div>
+    <div class="copy" style="font-size:13px;line-height:2.4">
+      FINAL SCORE: <span style="color:#00ffff;font-size:18px;text-shadow:0 0 8px #00ffff">${fmtScore(score)}</span><br>
+      LEVEL ${level} COMPLETE
+    </div>
+    <button id="start-btn" onclick="nextLevel()" style="font-family:'Courier New',monospace;background:transparent;color:#00ffff;border:2px solid #00ffff;padding:14px 52px;font-size:20px;font-weight:bold;letter-spacing:5px;cursor:pointer;text-shadow:0 0 10px #00ffff;box-shadow:0 0 20px #00ffff44;margin-top:8px">NEXT RACE</button>
+  `;
+  ov.style.display = 'flex';
+  ov.style.position = 'absolute';
+}
+
+function nextLevel() {
+  level++;
+  finishShown = false;
+  startGame();
+}
+
+animate();
+</script>
+</body>
+</html>

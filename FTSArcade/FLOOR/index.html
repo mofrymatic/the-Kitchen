@@ -22,14 +22,17 @@
 <link rel="preload" as="image" href="fts_sprites.png">
 <link rel="preload" as="image" href="fts-arcade-fixture-atlas.png">
 <link rel="preload" as="image" href="the-Cabinet.png">
-<title>FTS Arcade Floor 0.8.0 Streamlined</title>
+<link rel="preload" as="audio" href="crowd.mp3" type="audio/mpeg">
+<title>FTS Arcade Floor 0.9.0 Spatial Crowd</title>
 <!-- 0.5.2 art fit: external world/fixture/screen atlases + Cabinets01-Cabinets04, exact per-CRT crops. -->
 <!-- 0.7.0 feel pass: outer ring 430->510, ceiling 132->192, jump 132->156. Sprint stays 22 mph. Cabinet layout frozen. -->
+<!-- 0.8.1 movement pass: threshold-based Apex-inspired slide, landing-slide buffer, momentum-preserving slide jumps and air steering. -->
+<!-- 0.9.0 soundscape pass: four cardinal crowd zones, HRTF panning, opposite-quadrant muting, random-offset adjacent-zone handoffs. -->
 
 <!-- ── FA3D Meta ─────────────────────────────────────────── -->
 <meta name="description" content="FTS Arcade - a first-person 2.5D cabinet portal hub.">
 <meta property="og:title" content="FTS Arcade">
-<meta property="og:description" content="Walk the arcade. Enter a cabinet. Go somewhere else.">
+<meta property="og:description" content="Walk the arcade. Mingle with the crowd. Play a game. Explore beyond.">
 <meta property="og:type" content="website">
 
 
@@ -44,15 +47,15 @@
     <meta property="og:description" content="FTS Arcade Floor - a first-person 2.5D cabinet portal hub.">
     <meta property="og:url"         content="https://frymatic.us/FTSArcade/">
     <meta property="og:type"        content="website">
-    <meta property="og:site_name"   content="FishTacoStand Arcade">
+    <meta property="og:site_name"   content="FTS Arcade Floor">
     <meta property="og:image"       content="https://frymatic.us/FTSArcade/FLOOR/floor_preview.png">
-    <meta property="og:image:alt"   content="Walk the arcade. Enter a cabinet. Go somewhere else.">
+    <meta property="og:image:alt"   content="Walk the arcade. Mingle with the crowd. Play a game. Explore beyond.">
     <meta property="og:image:type"  content="image/png">
 
     <!-- ── Twitter / X ──────────────────────────────────────────── -->
     <meta name="twitter:card"        content="summary_large_image">
     <meta name="twitter:title"       content="FTS Arcade Floor">
-    <meta name="twitter:description" content="Walk the arcade. Enter a cabinet. Go somewhere else.">
+    <meta name="twitter:description" content="Walk the arcade. Mingle with the crowd. Play a game. Explore beyond.">
     <meta name="twitter:image"       content="https://frymatic.us/FTSArcade/FLOOR/floor_preview.png">
 
 
@@ -99,7 +102,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;image-renderi
 <div id="brand"><b>FTS ARCADE</b>CIRCULAR FLOOR / A-Z CABINET PORTAL HUB</div>
 <div id="prompt"></div>
 <div id="toolbar"><button id="mapBtn">MAP: OFF</button><button id="audioBtn">AUDIO: OFF</button></div>
-<div id="lock"><div><b>FTS ARCADE</b><br><span class="pink">THE RING</span><br><br>WASD MOVE / MOUSE LOOK / SHIFT RUN<br>SPACE JUMP / CTRL OR C CROUCH + SLIDE<br>E OR CLICK INTERACT / M MAP / N AUDIO<br><span style="opacity:.55">DEV: K KALEIDO / P PLANE BACKEND</span><br><br>CLICK TO WALK IN</div></div>
+<div id="lock"><div><b>FTS ARCADE</b><br><span class="pink">THE RING</span><br><br>WASD MOVE / MOUSE LOOK / SHIFT RUN<br>SPACE JUMP / CTRL OR C CROUCH + SLIDE<br>E OR CLICK INTERACT / M MAP / N SPATIAL AUDIO<br><span style="opacity:.55">DEV: K KALEIDO / P PLANE BACKEND</span><br><br>CLICK TO WALK IN</div></div>
 <div id="modal"><div id="modalCard"><div id="modalEyebrow">LEAVE FTS ARCADE?</div><div id="modalTitle"></div><div id="modalCopy"></div><div id="modalActions"><button id="cancelBtn">STAY HERE</button><button id="confirmBtn">LEAVE ARCADE</button></div></div></div>
 <div id="touchMove"><div id="touchKnob"></div></div><button id="touchCrouch">SLIDE</button><button id="touchAct">ENTER</button>
 <script>
@@ -109,7 +112,7 @@ const RUNTIME_ERRORS=[];
 addEventListener('error',e=>{if(e.error||e.message)RUNTIME_ERRORS.push(String(e.error&&e.error.stack||e.message||e.error));});
 addEventListener('unhandledrejection',e=>RUNTIME_ERRORS.push(String(e.reason&&e.reason.stack||e.reason||'unhandled rejection')));
 
-const VERSION='fts-arcade-floor-0.8.0-streamlined';
+const VERSION='fts-arcade-floor-0.9.0-spatial-crowd';
 const TAU=Math.PI*2, DEG=Math.PI/180;
 // Dimensional contract: 1 engine unit = 1 inch.
 // =============================================================================
@@ -129,7 +132,19 @@ const KINETIC={
  simHz:60,walkSpeed:SPEED_WALK,sprintSpeed:SPEED_RUN,crouchSpeed:58,strafeFactor:.90,reverseFactor:.72,
  accelLambda:12,brakeLambda:18,reverseLambda:10,baseFov:76*Math.PI/180,sprintFov:84*Math.PI/180,
  crouchFov:74*Math.PI/180,slideFov:82*Math.PI/180,jumpVel:156,gravity:386,
- slideMinSpeed:72,slideDuration:.72,slideBoost:1.06,slideFriction:2.7,slideSteerLambda:2.4,
+
+ // 0.8.1 APEX-STYLE SLIDE MODEL
+ // Sliding is speed/state driven rather than a canned crouch dash. A grounded
+ // slide needs real run momentum; an airborne crouch can buffer a landing slide.
+ // The first simulation frame gets a small speed boost, then drag ramps up as
+ // momentum falls. Jumping out preserves the horizontal velocity instead of
+ // immediately snapping it back toward the ground movement target.
+ slideMinSpeed:198,slideLandMinSpeed:92,slideLandMinDownVel:72,
+ slideExitSpeed:86,slideMaxTime:1.35,slideBoostSpeed:24,slideMaxSpeed:424,
+ slideFastFriction:.72,slideSlowFriction:4.8,slideSteerLambda:2.0,slideSteerScale:.20,
+ slideRearmDelay:.34,slideJumpCarry:.985,
+ airAccelLambda:2.35,airBrakeLambda:.45,airSpeedCap:438,airDrag:.055,
+
  stanceLambda:18,fovLambda:8,maxCatchupSteps:8
 };
 // Derived jump numbers, so tuning conversations happen in apex/hang-time/reach
@@ -188,6 +203,26 @@ const PORTALS={
  tokens:'https://frymatic.us/FTSArcade/tokens/',
  adDeal:'https://frymatic.us/menu/gas-works.html'
 };
+
+// 0.9.0 SPATIAL CROWDSCAPE ------------------------------------------------------
+// Schematic contract: I=north, II=east, III=south, IV=west. The dominant axis
+// assigns the player to a quadrant; diagonal boundaries are stable and symmetric.
+const CROWD_AUDIO_URL='crowd.mp3';
+const CROWD_QUADRANTS=['I','II','III','IV'];
+const CROWD_OPPOSITE={I:'III',II:'IV',III:'I',IV:'II'};
+const CROWD_ZONE_POSES={
+ I:{x:0,y:RING.outer*.67},
+ II:{x:RING.outer*.67,y:0},
+ III:{x:0,y:-RING.outer*.67},
+ IV:{x:-RING.outer*.67,y:0}
+};
+function crowdQuadrantAt(x,y){
+ const ax=Math.abs(x),ay=Math.abs(y);
+ if(ay>=ax)return y>=0?'I':'III';
+ return x>=0?'II':'IV';
+}
+function crowdDesiredFor(q){return CROWD_QUADRANTS.filter(k=>k!==CROWD_OPPOSITE[q]);}
+
 
 const ASSET_NAMES={
  world:'fts-arcade-world-atlas.png',
@@ -356,26 +391,26 @@ function ringDefs(){
 const CABINET_ROSTER=[
  ['A','ASTROIDS OBLITERATUS','../astroids.html',1, '_blank'],
  ['B','BRAZEN TOWER','../BRAZENTOWER',17, '_blank'],
- ['C','CAMELOT','../camelot.html',18, '_blank'],
- ['D','CAVE RACER','../cave-racer.html',3, '_blank'],
- ['E','COVEN BLITZ','../coven-blitz.html',4, '_blank'],
- ['F','CRAWFORD COUNTY','../crawford-county.html',5, '_blank'],
- ['G','GRACE BLAND','../grace_bland_clocktower.html',7, '_blank'],
- ['H','MINESWEEPER','../minesweeper.html',8, '_blank'],
- ['I','NEON INVADERS','../neon-invaders.html',9, '_blank'],
- ['J','RC RACER','../rc-racer.html',10, '_blank'],
+ ['C','CAMELOT','../CAMELOT',18, '_blank'],
+ ['D','CAVE RACER','../CAVERACER',3, '_blank'],
+ ['E','COVEN BLITZ','../COVENBLITZ',4, '_blank'],
+ ['F','CRAWFORD COUNTY','../CRAWFORDCOUNTY',5, '_blank'],
+ ['G','GRACE BLAND','../GRACE',7, '_blank'],
+ ['H','MINESWEEPER','../MINESWEEPER',8, '_blank'],
+ ['I','NEON INVADERS','../NEONINVADERS',9, '_blank'],
+ ['J','RC RACER','../RCRACER',10, '_blank'],
  ['K','RED EYE','../REDEYE/',11, '_blank'],
- ['L','SNAKIA','../snakia.html',17, '_blank'],
- ['M','UNDERHALL','../underhall.html',13, '_blank'],
- ['N','VECTOR SIEGE','../vector-siege.html',16, '_blank'],
- ['O','ZOMBIE GOLF SURVIVAL','../zombie-golf-survival.html',15, '_blank'],
- ['P','AUXOR','../auxigen.html',2, '_blank'],
- ['Q','VECTOR SQUADRON','../starfox-shooter7.html',12, '_blank'],
+ ['L','SNAKIA','../SNAKIA',17, '_blank'],
+ ['M','UNDERHALL','../UNDERHALL',13, '_blank'],
+ ['N','VECTOR SIEGE','../VECTORSIEGE',16, '_blank'],
+ ['O','ZOMBIE GOLF SURVIVAL','../SOVTHPAWZOMBIES',15, '_blank'],
+ ['P','AUXOR','../AUXOR',2, '_blank'],
+ ['Q','VECTOR SQUADRON','../ASTROVULPIS',12, '_blank'],
  ['R','FTS ARCADE HUB','https://frymatic.us/FTSArcade/',6, '_blank'],
- ['S','MOONSHOT PINBALL','../moonshot-pinball.html',25, '_blank'],
- ['T','GRID WARDEN','../grid-warden.html',24, '_blank'],
- ['U','PLINKO','../plinko.html',20, '_blank'],
- ['V','TOURNAMENT CONDUCTOR','../tournament.html',22, '_blank'],
+ ['S','MOONSHOT PINBALL','../PINBALL',25, '_blank'],
+ ['T','GRID WARDEN','../GRIDWARDEN',24, '_blank'],
+ ['U','PLINKO','../PLINKO',20, '_blank'],
+ ['V','TOURNAMENT CONDUCTOR','../TOURNAMENT',22, '_blank'],
  ['W','FREE PLAY','https://frymatic.us/FTSArcade/',6, '_blank'],
  ['X','COMING SOON','https://frymatic.us/FTSArcade/',17, '_blank'],
  ['Y','EVENT SERIES','../adapter-test.html',22, '_blank'],
@@ -425,16 +460,16 @@ const AUTHORING={
   {id:'DJ_SIGN',x:104,y:320,deg:-90,w:54,z0:48,z1:68,mat:'FIX_DJ_SIGN',label:'DJ / PERFORMANCE',url:'https://frymatic.us/FTSArcade/',cta:'OPEN ARCADE HUB'}
  ],
  posters:[
-  {deg:8,label:'BRAZEN TOWER',url:'../BRAZENTOWER',cta:'CLIMB THE TOWER'},
-  {deg:82,label:'RED EYE',url:'../REDEYE/',cta:'ENTER RED EYE'},
-  {deg:98,label:'TOURNAMENT',url:'../tournament.html',cta:'VIEW TOURNAMENTS'},
-  {deg:172,label:'FTS ARCADE',url:'https://frymatic.us/FTSArcade/',cta:'OPEN ARCADE HUB'},
-  {deg:188,label:'MOONSHOT PINBALL',url:'../moonshot-pinball.html',cta:'PLAY MOONSHOT'},
-  {deg:208,label:'GRID WARDEN',url:'../grid-warden.html',cta:'PLAY GRID WARDEN'},
-  {deg:252,label:'CAVE RACER',url:'../cave-racer.html',cta:'RACE CAVE RACER'},
-  {deg:288,label:'PLINKO',url:'../plinko.html',cta:'DROP INTO PLINKO'},
-  {deg:332,label:'EVENT SERIES',url:'../adapter-test.html',cta:'OPEN EVENT SERIES'},
-  {deg:352,label:'BRAZEN INDEX',url:'https://frymatic.us/',cta:'OPEN BRAZEN INDEX'}
+  {deg:8,label:'POSTER 1',url:'../BRAZENTOWER',cta:'CLIMB THE TOWER'},
+  {deg:82,label:'POSTER 1',url:'../REDEYE/',cta:'ENTER RED EYE'},
+  {deg:98,label:'POSTER 3',url:'../TOURNAMENT',cta:'VIEW TOURNAMENTS'},
+  {deg:172,label:'POSTER 4',url:'https://frymatic.us/FTSArcade/',cta:'OPEN ARCADE HUB'},
+  {deg:188,label:'POSTER 5',url:'../PINBALL',cta:'PLAY MOONSHOT'},
+  {deg:208,label:'POSTER 6',url:'../GRIDWARDEN',cta:'PLAY GRID WARDEN'},
+  {deg:252,label:'POSTER 7',url:'../CAVERACER',cta:'RACE CAVE RACER'},
+  {deg:288,label:'POSTER 8',url:'../PLINKo',cta:'DROP INTO PLINKO'},
+  {deg:332,label:'POSTER 9',url:'../TOURNAMENT',cta:'OPEN EVENT SERIES'},
+  {deg:352,label:'POSTER 10',url:'https://frymatic.us/',cta:'OPEN BRAZEN INDEX'}
  ]
 };
 
@@ -580,7 +615,8 @@ class Sim{
   this.map=map;this.x=map.spawn.x;this.y=map.spawn.y;this.ang=map.spawn.ang;this.pitch=0;
   this.vx=0;this.vy=0;this.vz=0;this.jumpZ=0;this.grounded=true;
   this.sector=this.sectorAt(this.x,this.y);this.t=0;this.bob=0;this.steps=0;this.blocked=0;
-  this.stance=0;this.eyeHeight=EYE;this.slideT=0;this.slideDirX=0;this.slideDirY=0;this.currentFov=FOV;
+  this.stance=0;this.eyeHeight=EYE;this.slideT=0;this.slideElapsed=0;this.slideRearm=0;
+  this.slideDirX=0;this.slideDirY=0;this.slideBuffered=false;this.currentFov=FOV;
  }
  sectorAt(x,y){for(const s of this.map.sectors)if(Geom.pointInPoly(x,y,s.poly))return s.idx;return-1;}
  eyeZ(){const floor=this.sector>=0?this.map.sectors[this.sector].floor:0,bob=this.grounded&&this.slideT<=0?Math.sin(this.bob)*(1.2*(1-this.stance*.55)):0;return floor+this.eyeHeight+this.jumpZ+bob;}
@@ -589,33 +625,96 @@ class Sim{
   const sec=this.sectorAt(nx,ny);if(sec<0){this.blocked++;return false;}this.x=nx;this.y=ny;this.sector=sec;return true;}
  look(dx,dy,sens){this.ang-=dx*sens;while(this.ang>Math.PI)this.ang-=TAU;while(this.ang<-Math.PI)this.ang+=TAU;this.pitch-=dy*sens*210;this.pitch=Math.max(-LOOK_DOWN,Math.min(LOOK_UP,this.pitch));}
  beginSlide(){
-  if(!this.grounded||this.slideT>0)return false;
+  if(!this.grounded){this.slideBuffered=true;return false;}
+  if(this.slideT>0||this.slideRearm>0)return false;
   const sp=Math.hypot(this.vx,this.vy);if(sp<KINETIC.slideMinSpeed)return false;
-  this.slideT=KINETIC.slideDuration;const inv=1/(sp||1);this.slideDirX=this.vx*inv;this.slideDirY=this.vy*inv;
-  this.vx*=KINETIC.slideBoost;this.vy*=KINETIC.slideBoost;return true;
+  return this.startSlide(sp);
  }
- jump(){if(!this.grounded)return false;this.grounded=false;this.vz=KINETIC.jumpVel;this.jumpZ=.01;this.slideT=0;return true;}
+ startSlide(speed){
+  const sp=Number.isFinite(speed)?speed:Math.hypot(this.vx,this.vy);if(sp<=.001)return false;
+  const inv=1/sp;this.slideDirX=this.vx*inv;this.slideDirY=this.vy*inv;
+  const boosted=Math.min(KINETIC.slideMaxSpeed,sp+KINETIC.slideBoostSpeed);
+  this.vx=this.slideDirX*boosted;this.vy=this.slideDirY*boosted;
+  this.slideT=KINETIC.slideMaxTime;this.slideElapsed=0;this.slideBuffered=false;return true;
+ }
+ endSlide(rearm=true){
+  if(this.slideT<=0)return;this.slideT=0;this.slideElapsed=0;
+  if(rearm)this.slideRearm=Math.max(this.slideRearm,KINETIC.slideRearmDelay);
+ }
+ jump(){
+  if(!this.grounded)return false;
+  const sliding=this.slideT>0;
+  if(sliding){this.vx*=KINETIC.slideJumpCarry;this.vy*=KINETIC.slideJumpCarry;this.endSlide(true);}
+  this.grounded=false;this.vz=KINETIC.jumpVel;this.jumpZ=.01;
+  this.slideBuffered=false;return true;
+ }
  step(dt,input){
-  this.t+=dt;const ca=Math.cos(this.ang),sa=Math.sin(this.ang);
+  this.t+=dt;this.slideRearm=Math.max(0,this.slideRearm-dt);
+  if(!input.crouch)this.slideBuffered=false;
+  else if(!this.grounded)this.slideBuffered=true;
+
+  const ca=Math.cos(this.ang),sa=Math.sin(this.ang);
   let f=(input.fwd?1:0)-(input.back?1:0),r=(input.right?1:0)-(input.left?1:0),mag=Math.hypot(f,r);
   if(mag>1){f/=mag;r/=mag;mag=1;}
-  const crouched=!!input.crouch&&this.slideT<=0,base=crouched?KINETIC.crouchSpeed:(input.run?KINETIC.sprintSpeed:KINETIC.walkSpeed);
+  const crouched=!!input.crouch&&this.slideT<=0;
+  const base=crouched?KINETIC.crouchSpeed:(input.run?KINETIC.sprintSpeed:KINETIC.walkSpeed);
   const forward=f*base*(f<0?KINETIC.reverseFactor:1),strafe=r*base*KINETIC.strafeFactor;
   const tx=ca*forward+sa*strafe,ty=sa*forward-ca*strafe;
+
   if(this.slideT>0){
-   this.slideT=Math.max(0,this.slideT-dt);const decay=Math.exp(-KINETIC.slideFriction*dt);this.vx*=decay;this.vy*=decay;
-   if(mag>.01){const steer=(1-Math.exp(-KINETIC.slideSteerLambda*dt))*.34;this.vx+=(tx-this.vx)*steer;this.vy+=(ty-this.vy)*steer;}
+   this.slideElapsed+=dt;this.slideT=Math.max(0,KINETIC.slideMaxTime-this.slideElapsed);
+   const sp=Math.hypot(this.vx,this.vy);
+   const slowBand=Math.max(1,KINETIC.sprintSpeed-KINETIC.slideExitSpeed);
+   const slow=Math.max(0,Math.min(1,(KINETIC.sprintSpeed-sp)/slowBand));
+   const friction=KINETIC.slideFastFriction+(KINETIC.slideSlowFriction-KINETIC.slideFastFriction)*slow*slow;
+   const decay=Math.exp(-friction*dt);this.vx*=decay;this.vy*=decay;
+
+   // Steering rotates the velocity vector toward input without injecting free
+   // speed. This keeps wide Apex-like carving but rejects instant 90-degree snaps.
+   if(mag>.01){
+    const wx=ca*f+sa*r*KINETIC.strafeFactor,wy=sa*f-ca*r*KINETIC.strafeFactor,wl=Math.hypot(wx,wy)||1;
+    const cur=Math.hypot(this.vx,this.vy),dx=wx/wl*cur,dy=wy/wl*cur;
+    const steer=(1-Math.exp(-KINETIC.slideSteerLambda*dt))*KINETIC.slideSteerScale;
+    this.vx+=(dx-this.vx)*steer;this.vy+=(dy-this.vy)*steer;
+   }
+   if(!input.crouch||Math.hypot(this.vx,this.vy)<KINETIC.slideExitSpeed||this.slideT<=0)this.endSlide(true);
+  }else if(!this.grounded){
+   // Air movement keeps the launch velocity primary. Inputs bend the trajectory
+   // progressively; releasing movement adds only a trace of drag.
+   if(mag>.01){
+    const wx=ca*f+sa*r*KINETIC.strafeFactor,wy=sa*f-ca*r*KINETIC.strafeFactor,wl=Math.hypot(wx,wy)||1;
+    const sp=Math.hypot(this.vx,this.vy),desired=Math.min(KINETIC.airSpeedCap,Math.max(sp,input.run?KINETIC.sprintSpeed:KINETIC.walkSpeed));
+    const dx=wx/wl*desired,dy=wy/wl*desired,k=1-Math.exp(-KINETIC.airAccelLambda*dt);
+    this.vx+=(dx-this.vx)*k;this.vy+=(dy-this.vy)*k;
+    const capped=Math.hypot(this.vx,this.vy);
+    if(capped>KINETIC.airSpeedCap){const q=KINETIC.airSpeedCap/capped;this.vx*=q;this.vy*=q;}
+   }else{
+    const airDecay=Math.exp(-KINETIC.airDrag*dt);this.vx*=airDecay;this.vy*=airDecay;
+   }
   }else{
    const dot=this.vx*tx+this.vy*ty,lambda=mag<=.001?KINETIC.brakeLambda:(dot<0?KINETIC.reverseLambda:KINETIC.accelLambda),k=1-Math.exp(-lambda*dt);
    this.vx+=(tx-this.vx)*k;this.vy+=(ty-this.vy)*k;
   }
+
   const ox=this.x,oy=this.y,nx=this.x+this.vx*dt,ny=this.y+this.vy*dt;
   if(!this.tryMove(nx,ny)){
    if(!this.tryMove(this.x+this.vx*dt,this.y))this.vx*=.18;
    if(!this.tryMove(this.x,this.y+this.vy*dt))this.vy*=.18;
   }
-  if(!this.grounded){this.jumpZ+=this.vz*dt;this.vz-=KINETIC.gravity*dt;if(this.jumpZ<=0){this.jumpZ=0;this.vz=0;this.grounded=true;}}
-  const moved=Math.hypot(this.x-ox,this.y-oy);if(moved>.001&&this.grounded&&this.slideT<=0)this.bob+=moved*.05*(crouched?.68:1);
+
+  let landed=false,landingDown=0;
+  if(!this.grounded){
+   this.jumpZ+=this.vz*dt;this.vz-=KINETIC.gravity*dt;
+   if(this.jumpZ<=0){landingDown=Math.max(0,-this.vz);this.jumpZ=0;this.vz=0;this.grounded=true;landed=true;}
+  }
+  if(landed&&input.crouch&&this.slideBuffered&&this.slideRearm<=0){
+   const sp=Math.hypot(this.vx,this.vy);
+   if(sp>=KINETIC.slideLandMinSpeed&&landingDown>=KINETIC.slideLandMinDownVel)this.startSlide(sp);
+   else this.slideBuffered=false;
+  }
+
+  const moved=Math.hypot(this.x-ox,this.y-oy);
+  if(moved>.001&&this.grounded&&this.slideT<=0)this.bob+=moved*.05*(crouched?.68:1);
   else if(moved<=.001)this.bob+=(Math.round(this.bob/Math.PI)*Math.PI-this.bob)*(1-Math.exp(-8*dt));
   const stanceTarget=(input.crouch||this.slideT>0)?1:0,stanceK=1-Math.exp(-KINETIC.stanceLambda*dt);this.stance+=(stanceTarget-this.stance)*stanceK;this.eyeHeight=EYE+(CROUCH_EYE-EYE)*this.stance;
   const fovTarget=this.slideT>0?KINETIC.slideFov:(input.crouch?KINETIC.crouchFov:(input.run&&mag>.15?KINETIC.sprintFov:KINETIC.baseFov)),fovK=1-Math.exp(-KINETIC.fovLambda*dt);this.currentFov+=(fovTarget-this.currentFov)*fovK;
@@ -763,7 +862,7 @@ function paint(sim,d){const v=d.view,w=v.w,h=v.h;ctx.fillStyle='#03050a';ctx.fil
  if(VIGNETTE){ctx.fillStyle=VIGNETTE;ctx.fillRect(0,0,w,h);}ctx.fillStyle='rgba(220,238,255,.62)';ctx.fillRect(w/2-5,h/2,3,1);ctx.fillRect(w/2+3,h/2,3,1);ctx.fillRect(w/2,h/2-5,1,3);ctx.fillRect(w/2,h/2+3,1,3);
 }
 
-function drawMap(sim,w,h){const sc=Math.min(w,h)*.34/RING.outer,ox=w-RING.outer*sc-16,oy=RING.outer*sc+16,P=(x,y)=>[ox+x*sc,oy-y*sc];ctx.fillStyle='rgba(2,5,10,.72)';ctx.beginPath();ctx.arc(ox,oy,RING.outer*sc+8,0,TAU);ctx.fill();for(const ln of sim.map.lines){const a=sim.map.verts[ln.v1],b=sim.map.verts[ln.v2],p=P(a.x,a.y),q=P(b.x,b.y);ctx.strokeStyle=ln.back>=0?'rgba(80,140,220,.25)':'rgba(210,220,235,.65)';ctx.lineWidth=ln.back>=0?.6:1.2;ctx.beginPath();ctx.moveTo(p[0],p[1]);ctx.lineTo(q[0],q[1]);ctx.stroke();}for(const c of sim.map.cabinets){const p=P(c.x,c.y);ctx.fillStyle='rgba(255,90,210,.74)';ctx.fillRect(p[0]-2,p[1]-2,4,4);ctx.fillStyle='rgba(255,255,255,.9)';ctx.font='5px monospace';ctx.fillText(c.letter,p[0]+3,p[1]-3);}for(const f of sim.map.fixtures){const p=P(f.x,f.y);ctx.fillStyle='rgba(100,190,255,.55)';ctx.fillRect(p[0]-1.5,p[1]-1.5,3,3);}for(const a of sim.map.ads){const p=P(a.x,a.y);ctx.fillStyle='rgba(255,201,95,.82)';ctx.fillRect(p[0]-2,p[1]-2,4,4);}for(const e of sim.map.exits){const p=P(e.x,e.y);ctx.fillStyle='rgba(255,91,69,.95)';ctx.fillRect(p[0]-3,p[1]-3,6,6);}const p=P(sim.x,sim.y);ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(p[0],p[1]);ctx.lineTo(p[0]+Math.cos(sim.ang)*12,p[1]-Math.sin(sim.ang)*12);ctx.stroke();ctx.fillStyle='#fff';ctx.fillRect(p[0]-2,p[1]-2,4,4);}
+function drawMap(sim,w,h){const sc=Math.min(w,h)*.34/RING.outer,ox=w-RING.outer*sc-16,oy=RING.outer*sc+16,P=(x,y)=>[ox+x*sc,oy-y*sc];ctx.fillStyle='rgba(2,5,10,.72)';ctx.beginPath();ctx.arc(ox,oy,RING.outer*sc+8,0,TAU);ctx.fill();ctx.font='bold 9px monospace';ctx.textAlign='center';ctx.textBaseline='middle';for(const [q,pose] of Object.entries(CROWD_ZONE_POSES)){const qp=P(pose.x*.72,pose.y*.72),current=q===crowdQuadrantAt(sim.x,sim.y),opposite=q===CROWD_OPPOSITE[crowdQuadrantAt(sim.x,sim.y)];ctx.fillStyle=opposite?'rgba(255,255,255,.20)':(current?'rgba(255,201,95,.95)':'rgba(113,184,255,.65)');ctx.fillText(q,qp[0],qp[1]);}ctx.textAlign='start';ctx.textBaseline='alphabetic';for(const ln of sim.map.lines){const a=sim.map.verts[ln.v1],b=sim.map.verts[ln.v2],p=P(a.x,a.y),q=P(b.x,b.y);ctx.strokeStyle=ln.back>=0?'rgba(80,140,220,.25)':'rgba(210,220,235,.65)';ctx.lineWidth=ln.back>=0?.6:1.2;ctx.beginPath();ctx.moveTo(p[0],p[1]);ctx.lineTo(q[0],q[1]);ctx.stroke();}for(const c of sim.map.cabinets){const p=P(c.x,c.y);ctx.fillStyle='rgba(255,90,210,.74)';ctx.fillRect(p[0]-2,p[1]-2,4,4);ctx.fillStyle='rgba(255,255,255,.9)';ctx.font='5px monospace';ctx.fillText(c.letter,p[0]+3,p[1]-3);}for(const f of sim.map.fixtures){const p=P(f.x,f.y);ctx.fillStyle='rgba(100,190,255,.55)';ctx.fillRect(p[0]-1.5,p[1]-1.5,3,3);}for(const a of sim.map.ads){const p=P(a.x,a.y);ctx.fillStyle='rgba(255,201,95,.82)';ctx.fillRect(p[0]-2,p[1]-2,4,4);}for(const e of sim.map.exits){const p=P(e.x,e.y);ctx.fillStyle='rgba(255,91,69,.95)';ctx.fillRect(p[0]-3,p[1]-3,6,6);}const p=P(sim.x,sim.y);ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(p[0],p[1]);ctx.lineTo(p[0]+Math.cos(sim.ang)*12,p[1]-Math.sin(sim.ang)*12);ctx.stroke();ctx.fillStyle='#fff';ctx.fillRect(p[0]-2,p[1]-2,4,4);}
 
 const map=buildLevel(),MAP_ERRORS=MapBuilder.validate(map),sim=new Sim(map);const input={fwd:0,back:0,left:0,right:0,run:0,crouch:0,jump:0};
 
@@ -784,11 +883,70 @@ addEventListener('mousemove',e=>{if(document.pointerLockElement===canvas&&!modal
 canvas.addEventListener('mousedown',e=>{if(e.button!==0)return;if(coarse())return;if(document.pointerLockElement!==canvas){canvas.requestPointerLock&&canvas.requestPointerLock();return;}if(activeTarget)openConfirm(activeTarget);});
 document.addEventListener('pointerlockchange',()=>{if(coarse())return;lockEl.classList.toggle('hidden',document.pointerLockElement===canvas||modal.classList.contains('show'));});
 function coarse(){return matchMedia&&matchMedia('(pointer:coarse)').matches;}
-lockEl.addEventListener('click',()=>{if(coarse())lockEl.classList.add('hidden');else canvas.requestPointerLock&&canvas.requestPointerLock();});
+lockEl.addEventListener('click',()=>{if(!SpatialCrowd.on)toggleAudio();if(coarse())lockEl.classList.add('hidden');else canvas.requestPointerLock&&canvas.requestPointerLock();});
 mapBtn.addEventListener('click',()=>{showMap=!showMap;mapBtn.textContent='MAP: '+(showMap?'ON':'OFF');mapBtn.classList.toggle('on',showMap);});
 
-const AudioMini={ctx:null,on:false,master:null,osc:null,lfo:null,init(){if(this.ctx)return;const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;this.ctx=new AC();this.master=this.ctx.createGain();this.master.gain.value=0;this.master.connect(this.ctx.destination);const f=this.ctx.createBiquadFilter();f.type='lowpass';f.frequency.value=180;f.connect(this.master);this.osc=this.ctx.createOscillator();this.osc.type='sawtooth';this.osc.frequency.value=48;this.osc.connect(f);this.osc.start();this.lfo=this.ctx.createOscillator();const lg=this.ctx.createGain();this.lfo.frequency.value=.08;lg.gain.value=70;this.lfo.connect(lg);lg.connect(f.frequency);this.lfo.start();},set(v){this.init();if(!this.ctx)return;this.on=v;if(this.ctx.state==='suspended')this.ctx.resume();this.master.gain.setTargetAtTime(v ? .18 : 0,this.ctx.currentTime,.08);}};
-function toggleAudio(){AudioMini.set(!AudioMini.on);audioBtn.textContent='AUDIO: '+(AudioMini.on?'ON':'OFF');audioBtn.classList.toggle('on',AudioMini.on);}audioBtn.addEventListener('click',toggleAudio);
+const SpatialCrowd={
+ ctx:null,master:null,buffer:null,loading:null,on:false,quadrant:null,voices:Object.create(null),retired:new Set(),
+ zoneGain:.31,masterGain:.78,fadeIn:1.35,fadeOut:1.6,
+ init(){
+  if(this.ctx)return true;
+  const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return false;
+  this.ctx=new AC();this.master=this.ctx.createGain();this.master.gain.value=0;this.master.connect(this.ctx.destination);
+  return true;
+ },
+ async load(){
+  if(this.buffer)return this.buffer;if(this.loading)return this.loading;if(!this.init())return null;
+  this.loading=fetch(CROWD_AUDIO_URL,{cache:'force-cache'}).then(r=>{if(!r.ok)throw new Error('crowd audio HTTP '+r.status);return r.arrayBuffer();}).then(ab=>this.ctx.decodeAudioData(ab)).then(buf=>{this.buffer=buf;return buf;}).catch(err=>{RUNTIME_ERRORS.push('spatial audio: '+String(err&&err.message||err));console.error('[FTS ARCADE] crowd.mp3 load failure',err);return null;});
+  return this.loading;
+ },
+ _paramNow(param,value,now){try{param.cancelScheduledValues(now);}catch(e){}param.setValueAtTime(Number.isFinite(param.value)?param.value:value,now);},
+ _pannerAt(pose){
+  const p=this.ctx.createPanner();p.panningModel='HRTF';p.distanceModel='inverse';p.refDistance=130;p.maxDistance=1500;p.rolloffFactor=.42;p.coneInnerAngle=360;p.coneOuterAngle=360;
+  if(p.positionX){p.positionX.value=pose.x;p.positionY.value=0;p.positionZ.value=-pose.y;}else p.setPosition(pose.x,0,-pose.y);
+  return p;
+ },
+ _startZone(q){
+  if(!this.on||!this.buffer||this.voices[q])return;
+  const now=this.ctx.currentTime,src=this.ctx.createBufferSource(),gain=this.ctx.createGain(),panner=this._pannerAt(CROWD_ZONE_POSES[q]);
+  src.buffer=this.buffer;src.loop=true;gain.gain.value=0;src.connect(panner);panner.connect(gain);gain.connect(this.master);
+  const offset=this.buffer.duration>1?Math.random()*Math.max(.01,this.buffer.duration-.05):0;
+  const voice={q,src,panner,gain,offset,startedAt:now};this.voices[q]=voice;
+  gain.gain.setValueAtTime(0,now);gain.gain.linearRampToValueAtTime(this.zoneGain,now+this.fadeIn);
+  src.onended=()=>{try{src.disconnect();panner.disconnect();gain.disconnect();}catch(e){}this.retired.delete(voice);if(this.voices[q]===voice)delete this.voices[q];};
+  src.start(0,offset);
+ },
+ _stopZone(q){
+  const voice=this.voices[q];if(!voice)return;delete this.voices[q];this.retired.add(voice);
+  const now=this.ctx.currentTime;this._paramNow(voice.gain.gain,this.zoneGain,now);voice.gain.gain.linearRampToValueAtTime(0,now+this.fadeOut);
+  setTimeout(()=>{try{voice.src.stop();}catch(e){}},Math.ceil((this.fadeOut+.12)*1000));
+ },
+ _applyTopology(q){
+  const desired=new Set(crowdDesiredFor(q));
+  for(const k of CROWD_QUADRANTS){if(desired.has(k)){if(!this.voices[k])this._startZone(k);}else this._stopZone(k);}
+  this.quadrant=q;
+ },
+ _listener(sim){
+  if(!this.ctx)return;const L=this.ctx.listener,x=sim.x,z=-sim.y,fx=Math.cos(sim.ang),fz=-Math.sin(sim.ang),now=this.ctx.currentTime;
+  if(L.positionX){L.positionX.setValueAtTime(x,now);L.positionY.setValueAtTime(0,now);L.positionZ.setValueAtTime(z,now);L.forwardX.setValueAtTime(fx,now);L.forwardY.setValueAtTime(0,now);L.forwardZ.setValueAtTime(fz,now);L.upX.setValueAtTime(0,now);L.upY.setValueAtTime(1,now);L.upZ.setValueAtTime(0,now);}else{L.setPosition(x,0,z);L.setOrientation(fx,0,fz,0,1,0);}
+ },
+ async set(v){
+  if(!this.init())return false;this.on=!!v;
+  if(this.ctx.state==='suspended')try{await this.ctx.resume();}catch(e){}
+  const now=this.ctx.currentTime;this._paramNow(this.master.gain,0,now);this.master.gain.setTargetAtTime(this.on?this.masterGain:0,now,this.on?.18:.12);
+  if(!this.on){for(const q of CROWD_QUADRANTS)this._stopZone(q);this.quadrant=null;return false;}
+  const buf=await this.load();if(!buf||!this.on){if(!buf)this.on=false;return false;}this._applyTopology(crowdQuadrantAt(sim.x,sim.y));this._listener(sim);return true;
+ },
+ update(sim){
+  if(!this.on||!this.ctx||!this.buffer)return;this._listener(sim);const q=crowdQuadrantAt(sim.x,sim.y);if(q!==this.quadrant)this._applyTopology(q);
+ },
+ activeZones(){return CROWD_QUADRANTS.filter(q=>!!this.voices[q]);},
+ status(){const q=crowdQuadrantAt(sim.x,sim.y),opp=CROWD_OPPOSITE[q];return{on:this.on,quadrant:q,opposite:opp,active:this.activeZones(),loaded:!!this.buffer};}
+};
+async function toggleAudio(){
+ const next=!SpatialCrowd.on;audioBtn.textContent=next?'AUDIO: LOADING':'AUDIO: OFF';audioBtn.classList.toggle('on',next);
+ const ok=await SpatialCrowd.set(next);audioBtn.textContent='AUDIO: '+(SpatialCrowd.on&&ok?'SPATIAL':'OFF');audioBtn.classList.toggle('on',SpatialCrowd.on&&ok);
+}audioBtn.addEventListener('click',toggleAudio);
 
 // Coarse-pointer controls: left stick moves, right-side drag looks, ENTER uses the active portal.
 const touchMove=document.getElementById('touchMove'),touchKnob=document.getElementById('touchKnob'),touchAct=document.getElementById('touchAct'),touchCrouch=document.getElementById('touchCrouch');let movePid=null,lookPid=null,lastLook=null;
@@ -799,7 +957,7 @@ touchCrouch.addEventListener('pointerdown',e=>{input.crouch=1;sim.beginSlide();t
 touchCrouch.addEventListener('pointerup',e=>{input.crouch=0;e.preventDefault();});touchCrouch.addEventListener('pointercancel',()=>{input.crouch=0;});
 
 let last=0,fpsAcc=0,fpsN=0,fps=0,frames=0,simAcc=0;
-function loop(ts){const frameDt=Math.min((ts-last)/1000||.016,.12);last=ts;simAcc=Math.min(.20,simAcc+frameDt);const fixedDt=1/KINETIC.simHz;let simSteps=0;while(simAcc>=fixedDt&&simSteps<KINETIC.maxCatchupSteps){sim.step(fixedDt,input);simAcc-=fixedDt;simSteps++;}RenderCore.solve(sim,dl,RW,RH);paint(sim,dl);if(showMap)drawMap(sim,RW,RH);updatePrompt();fpsAcc+=frameDt;fpsN++;if(fpsAcc>.45){fps=fpsN/fpsAcc;fpsAcc=0;fpsN=0;}if((frames++&7)===0){const moveState=sim.slideT>0?'SLIDE':input.crouch?'CROUCH':input.run?'RUN':'WALK';telemetry.textContent=VERSION+' | '+RW+'x'+RH+' | '+fps.toFixed(0)+' fps | '+moveState+' | Z '+sim.jumpZ.toFixed(0)+' | SEC '+(sim.sector+1)+'/'+map.sectors.length+' | CAB '+map.cabinets.length+' A-Z | FIX '+map.fixtures.length+' | ADS '+map.ads.length+' | VIS '+dl.stats.sectors+'s '+dl.stats.solidFaces+'g/'+dl.stats.culledSolids+'c/'+dl.stats.lodParts+'l'+(dl.stats.grows?' GROW '+dl.stats.grows:'')+(dl.stats.dropped?' DROP '+dl.stats.dropped:'')+' | PLN '+PLANE_BACKEND.active.toUpperCase()+'/'+PLANE_MAPPING.mode.toUpperCase()+' | ART '+(IMG.ready?'ATLAS':'FALLBACK')+(MAP_ERRORS.length?' | MAP ERR '+MAP_ERRORS.length:'');}requestAnimationFrame(loop);}
+function loop(ts){const frameDt=Math.min((ts-last)/1000||.016,.12);last=ts;simAcc=Math.min(.20,simAcc+frameDt);const fixedDt=1/KINETIC.simHz;let simSteps=0;while(simAcc>=fixedDt&&simSteps<KINETIC.maxCatchupSteps){sim.step(fixedDt,input);simAcc-=fixedDt;simSteps++;}SpatialCrowd.update(sim);RenderCore.solve(sim,dl,RW,RH);paint(sim,dl);if(showMap)drawMap(sim,RW,RH);updatePrompt();fpsAcc+=frameDt;fpsN++;if(fpsAcc>.45){fps=fpsN/fpsAcc;fpsAcc=0;fpsN=0;}if((frames++&7)===0){const moveState=sim.slideT>0?'SLIDE':input.crouch?'CROUCH':input.run?'RUN':'WALK';telemetry.textContent=VERSION+' | '+RW+'x'+RH+' | '+fps.toFixed(0)+' fps | '+moveState+' | Z '+sim.jumpZ.toFixed(0)+' | SEC '+(sim.sector+1)+'/'+map.sectors.length+' | CAB '+map.cabinets.length+' A-Z | FIX '+map.fixtures.length+' | ADS '+map.ads.length+' | VIS '+dl.stats.sectors+'s '+dl.stats.solidFaces+'g/'+dl.stats.culledSolids+'c/'+dl.stats.lodParts+'l'+(dl.stats.grows?' GROW '+dl.stats.grows:'')+(dl.stats.dropped?' DROP '+dl.stats.dropped:'')+' | PLN '+PLANE_BACKEND.active.toUpperCase()+'/'+PLANE_MAPPING.mode.toUpperCase()+' | AUD '+(SpatialCrowd.on?(SpatialCrowd.quadrant||crowdQuadrantAt(sim.x,sim.y))+'>'+SpatialCrowd.activeZones().join(''):'OFF')+' | ART '+(IMG.ready?'ATLAS':'FALLBACK')+(MAP_ERRORS.length?' | MAP ERR '+MAP_ERRORS.length:'');}requestAnimationFrame(loop);}
 addEventListener('resize',resize);if(window.visualViewport)visualViewport.addEventListener('resize',resize);
 Promise.all([
  loadImage(ASSET_FILES.world,'world'),loadImage(ASSET_FILES.cab1,'Cabinets01'),loadImage(ASSET_FILES.cab2,'Cabinets02'),loadImage(ASSET_FILES.cab3,'Cabinets03'),loadImage(ASSET_FILES.cab4,'Cabinets04'),loadImage(ASSET_FILES.screen,'screen'),loadImage(ASSET_FILES.fixture,'fixture'),loadImage(ASSET_FILES.cabinetRef,'the-Cabinet')
@@ -858,7 +1016,8 @@ const REF_TESTS={
  // The extra floor must actually be reachable, not walled off by the shift.
  widerFloorIsWalkable:()=>{const s=sim.sectorAt(0,-(RING.outer-30));return s>=0;},
  kineticMovement:()=>KINETIC.strafeFactor===.90&&KINETIC.reverseFactor===.72&&KINETIC.accelLambda===12&&KINETIC.brakeLambda===18&&KINETIC.reverseLambda===10,
- crouchSlideSystem:()=>CROUCH_EYE<EYE&&KINETIC.slideDuration>.5&&typeof sim.beginSlide==='function'&&'stance' in sim&&'slideT' in sim,
+ crouchSlideSystem:()=>CROUCH_EYE<EYE&&KINETIC.slideMaxTime>.5&&typeof sim.beginSlide==='function'&&typeof sim.startSlide==='function'&&typeof sim.endSlide==='function'&&'stance' in sim&&'slideT' in sim,
+ apexSlideModel:()=>KINETIC.slideMinSpeed>KINETIC.walkSpeed&&KINETIC.slideLandMinSpeed<KINETIC.slideMinSpeed&&KINETIC.slideBoostSpeed>0&&KINETIC.slideFastFriction<KINETIC.slideSlowFriction&&KINETIC.slideJumpCarry>.95&&KINETIC.slideJumpCarry<=1&&KINETIC.airAccelLambda<KINETIC.accelLambda,
  jumpSystem:()=>KINETIC.jumpVel>0&&KINETIC.gravity>0&&typeof sim.jump==='function'&&'jumpZ' in sim,
  fixedStepMovement:()=>KINETIC.simHz===60&&KINETIC.maxCatchupSteps>=6,
  planeSectorFrames:()=>map.sectors.length===RING.sides&&map.sectors.every(s=>Number.isFinite(s.planeAng)&&Number.isFinite(s.planeOx)&&Number.isFinite(s.planeOy)),
@@ -872,6 +1031,10 @@ const REF_TESTS={
  softwareFrameAllocated:()=>!!PLANE_SOFT.canvas&&!!PLANE_SOFT.ctx&&!!PLANE_SOFT.image&&!!PLANE_SOFT.u32&&PLANE_SOFT.width===RW&&PLANE_SOFT.height===RH,
  touchLookParity:()=>TOUCH_LOOK_SENS/MOUSE_LOOK_SENS<=1.2,
  ringSectors:()=>map.sectors.length===RING.sides,
+ spatialAudioQuadrants:()=>crowdQuadrantAt(0,300)==='I'&&crowdQuadrantAt(300,0)==='II'&&crowdQuadrantAt(0,-300)==='III'&&crowdQuadrantAt(-300,0)==='IV',
+ spatialAudioOpposites:()=>CROWD_QUADRANTS.every(q=>CROWD_OPPOSITE[CROWD_OPPOSITE[q]]===q&&crowdDesiredFor(q).length===3&&!crowdDesiredFor(q).includes(CROWD_OPPOSITE[q])),
+ spatialAudioZonePoses:()=>CROWD_QUADRANTS.every(q=>CROWD_ZONE_POSES[q]&&Number.isFinite(CROWD_ZONE_POSES[q].x)&&Number.isFinite(CROWD_ZONE_POSES[q].y)),
+ spatialAudioTrackLocal:()=>CROWD_AUDIO_URL==='crowd.mp3'&&!/^https?:/i.test(CROWD_AUDIO_URL),
  spawnInsideMap:()=>sim.sectorAt(map.spawn.x,map.spawn.y)>=0,
  fixturesPresent:()=>map.fixtures.some(f=>f.id==='TOKEN_VEND')&&map.fixtures.some(f=>f.id==='JUKEBOX')&&map.fixtures.some(f=>f.id==='WHITEBOARD')&&map.fixtures.some(f=>f.id==='BULLETIN'),
  adInventory:()=>map.ads.length===8&&map.ads.every(a=>a.url.includes('inventory=')),
@@ -895,12 +1058,13 @@ function runRefTests(){
  }
  return{version:VERSION,pass:failures.length===0,passed:Object.values(results).filter(v=>v===true).length,total:Object.keys(REF_TESTS).length,failures,results,mapErrors:MAP_ERRORS.slice(),assetErrors:IMG.errors.slice(),runtimeErrors:RUNTIME_ERRORS.slice(),screenAtlas:SCREEN_ATLAS_META};
 }
-window.__FTS_ARCADE__={VERSION,map,sim,MapBuilder,Geom,RenderCore,DrawLists,MATERIALS,MAP_ERRORS,CABINET_ROSTER,CABINET_DIM,AISLE,PORTALS,ASSET_NAMES,CABINET_PART_RECTS,CABINET_REF_RECTS,SCREEN_ATLAS_META,SCREEN_RECTS,screenRect,AUTHORING,KINETIC,JUMP,RENDER,PERF,RING,CABINET_LAYOUT_SNAPSHOT,cabinetLayoutSignature:()=>cabinetLayoutSignature(map),PLATFORM,PLANE_BACKEND,PLANE_STATS,setPlaneBackend,togglePlaneBackend,PLANE_MAPPING,setPlaneMappingMode,togglePlaneMapping,MOUSE_LOOK_SENS,TOUCH_LOOK_SENS,solidAabb,cabinetClearOfOffice,exportAuthoring:()=>JSON.stringify(AUTHORING,null,2),tests:REF_TESTS,runTests:runRefTests};
+window.__FTS_ARCADE__={VERSION,map,sim,MapBuilder,Geom,RenderCore,DrawLists,MATERIALS,MAP_ERRORS,CABINET_ROSTER,CABINET_DIM,AISLE,PORTALS,ASSET_NAMES,CABINET_PART_RECTS,CABINET_REF_RECTS,SCREEN_ATLAS_META,SCREEN_RECTS,screenRect,AUTHORING,KINETIC,JUMP,RENDER,PERF,RING,CABINET_LAYOUT_SNAPSHOT,cabinetLayoutSignature:()=>cabinetLayoutSignature(map),PLATFORM,PLANE_BACKEND,PLANE_STATS,setPlaneBackend,togglePlaneBackend,PLANE_MAPPING,setPlaneMappingMode,togglePlaneMapping,MOUSE_LOOK_SENS,TOUCH_LOOK_SENS,SpatialCrowd,CROWD_AUDIO_URL,CROWD_QUADRANTS,CROWD_OPPOSITE,CROWD_ZONE_POSES,crowdQuadrantAt,crowdDesiredFor,solidAabb,cabinetClearOfOffice,exportAuthoring:()=>JSON.stringify(AUTHORING,null,2),tests:REF_TESTS,runTests:runRefTests};
 const qs=new URLSearchParams(location.search);
 setPlaneBackend(qs.get('planeBackend')||qs.get('backend')||'auto');
 setPlaneMappingMode(qs.get('planes')||qs.get('plane')||'world');
 if(qs.get('preview')==='1')lockEl.classList.add('hidden');
 if(qs.get('map')==='1'){showMap=true;mapBtn.textContent='MAP: ON';mapBtn.classList.add('on');}
+if(qs.get('audio')==='1'){const armAudio=e=>{removeEventListener('pointerdown',armAudio,true);removeEventListener('keydown',armAudio,true);if(e&&e.target===audioBtn)return;if(!SpatialCrowd.on)toggleAudio();};addEventListener('pointerdown',armAudio,true);addEventListener('keydown',armAudio,true);}
 if(qs.get('test')==='1'){
  const showTests=()=>{
   const r=runRefTests();

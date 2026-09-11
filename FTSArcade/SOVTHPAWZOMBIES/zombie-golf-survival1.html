@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#050108">
+<meta name="color-scheme" content="dark">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Golfing vs. The Undead — Prototype</title>
+
+<meta name="description" content="Golfing vs. The Undead — Prototype">
+<link rel="canonical" href="https://frymatic.us/FTSArcade/zombie-golf-survival.html">
+<link rel="icon" type="image/png" href="fts-favicon.png">
+<link rel="shortcut icon" type="image/png" href="fts-favicon.png">
+<link rel="apple-touch-icon" href="fts-favicon.png">
+
+<meta property="og:title" content="Golfing vs. The Undead — Prototype">
+<meta property="og:description" content="Full throttle. No limits. Fly the caped flyer through a living neon techno cavern.">
+<meta property="og:url" content="https://frymatic.us/FTSArcade/zombie-golf-survival">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="FTS Arcade">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://frymatic.us/FTSArcade/zgs_preview.png">
+<meta property="og:image:secure_url" content="https://frymatic.us/FTSArcade/zgs_preview.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1672">
+<meta property="og:image:height" content="941">
+<meta property="og:image:alt" content="Golfing vs. The Undead — Prototype">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Golfing vs. The Undead — Prototype">
+<meta name="twitter:description" content="Full throttle. No limits. Tear open the living grid behind you.">
+<meta name="twitter:image" content="https://frymatic.us/FTSArcade/zgs_preview.png">
+<meta name="twitter:image:alt" content="Golfing vs. The Undead — Prototype">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --forest:#0e2b1c;
+    --forest-deep:#0a1f14;
+    --cream:#f2ede0;
+    --blood:#c31f2b;
+    --blood-dim:#7a1620;
+    --teal:#6fae9c;
+    --olive:#3f5b3a;
+    --amber:#d9b25c;
+    --sand:#dcc79b;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:var(--forest-deep);
+    font-family:'JetBrains Mono',monospace;color:var(--cream);}
+  #game-root{position:relative;width:100vw;height:100vh;}
+  canvas{position:absolute;top:0;left:0;display:block;image-rendering:pixelated;}
+  #hud{position:absolute;inset:0;pointer-events:none;}
+
+  .panel{
+    position:absolute;background:linear-gradient(180deg,var(--forest) 0%,var(--forest-deep) 100%);
+    border:2px solid #1d4a30;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.03);
+    padding:10px 14px;
+  }
+
+  /* --- top bar --- */
+  #topbar{top:14px;left:14px;right:14px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;pointer-events:none;}
+  #brand{display:flex;flex-direction:column;gap:2px;}
+  #brand .title{font-family:'Anton',sans-serif;font-size:22px;letter-spacing:.5px;color:var(--cream);
+    text-shadow:0 2px 0 var(--forest-deep);line-height:1;}
+  #brand .title .undead{color:var(--blood);}
+  #brand .tag{font-size:9px;letter-spacing:2px;color:var(--teal);text-transform:uppercase;}
+
+  #stat-cluster{display:flex;gap:10px;}
+  .stat-box{min-width:108px;}
+  .stat-label{font-size:9px;letter-spacing:1.5px;color:var(--teal);text-transform:uppercase;margin-bottom:4px;}
+  .stat-value{font-family:'Anton',sans-serif;font-size:20px;color:var(--amber);}
+
+  #healthwrap{width:150px;}
+  #healthbar-track{height:12px;background:#1a1a12;border-radius:6px;overflow:hidden;border:1px solid #000;margin-top:4px;}
+  #healthbar-fill{height:100%;width:100%;background:linear-gradient(90deg,#7a1620,var(--blood));transition:width .15s ease;}
+
+  /* --- bottom left instructions --- */
+  #instructions{bottom:14px;left:14px;font-size:10px;line-height:1.7;color:#cfd8cf;max-width:230px;}
+  #instructions b{color:var(--amber);}
+  #instructions .row{display:flex;justify-content:space-between;gap:10px;}
+
+  /* --- prompt above player --- */
+  #prompt{position:absolute;transform:translate(-50%,-100%);font-size:11px;letter-spacing:1px;
+    padding:4px 9px;border-radius:5px;background:var(--blood);color:var(--cream);
+    box-shadow:0 3px 8px rgba(0,0,0,.5);white-space:nowrap;opacity:0;transition:opacity .15s;font-weight:800;
+    pointer-events:none;}
+
+  /* --- putt dial (novel overlay) --- */
+  #putt-dial{position:absolute;left:50%;bottom:26px;transform:translateX(-50%);width:260px;
+    opacity:0;pointer-events:none;transition:opacity .12s;text-align:center;}
+  #putt-dial.active{opacity:1;}
+  #putt-dial canvas{display:block;margin:0 auto;}
+  #putt-dial .caption{font-size:9px;letter-spacing:2px;color:var(--teal);margin-top:2px;text-transform:uppercase;}
+
+  /* --- banners --- */
+  #banner{position:absolute;top:38%;left:50%;transform:translate(-50%,-50%) scale(.85);
+    font-family:'Anton',sans-serif;font-size:34px;color:var(--amber);text-shadow:0 4px 0 #000;
+    letter-spacing:2px;opacity:0;transition:all .25s ease;text-align:center;pointer-events:none;}
+  #banner.show{opacity:1;transform:translate(-50%,-50%) scale(1);}
+
+  /* --- start / gameover overlay --- */
+  .overlay{position:absolute;inset:0;background:rgba(6,16,10,.88);display:flex;align-items:center;
+    justify-content:center;flex-direction:column;gap:16px;z-index:20;text-align:center;padding:20px;}
+  .overlay.hidden{display:none;}
+  .overlay h1{font-family:'Anton',sans-serif;font-size:clamp(28px,6vw,54px);margin:0;letter-spacing:1px;color:var(--cream);}
+  .overlay h1 .undead{color:var(--blood);}
+  .overlay p{max-width:520px;font-size:13px;line-height:1.8;color:#cfd8cf;margin:0;}
+  .overlay .credit{font-size:10px;letter-spacing:2px;color:var(--teal);text-transform:uppercase;}
+  button.cta{font-family:'Anton',sans-serif;letter-spacing:1.5px;font-size:18px;background:var(--blood);
+    color:var(--cream);border:none;padding:14px 34px;border-radius:6px;cursor:pointer;
+    box-shadow:0 6px 0 var(--blood-dim);transition:transform .08s;}
+  button.cta:active{transform:translateY(4px);box-shadow:0 2px 0 var(--blood-dim);}
+  .kv{display:flex;gap:26px;font-size:11px;color:var(--amber);letter-spacing:1px;flex-wrap:wrap;justify-content:center;}
+  .kv b{display:block;font-family:'Anton',sans-serif;font-size:24px;color:var(--cream);}
+
+  #pointer-flag{position:absolute;bottom:14px;right:14px;font-size:9px;letter-spacing:1px;color:#8fa08f;
+    text-align:right;line-height:1.6;}
+</style>
+</head>
+<body>
+<div id="game-root">
+  <canvas id="game"></canvas>
+  <div id="hud">
+    <div id="prompt"></div>
+
+    <div id="putt-dial">
+      <canvas id="dial-canvas" width="260" height="120"></canvas>
+      <div class="caption">Hold to charge · release to putt</div>
+    </div>
+
+    <div id="banner"></div>
+
+    <div class="panel" id="topbar" style="background:none;border:none;box-shadow:none;padding:0;">
+      <div class="panel" id="brand" style="padding:8px 16px;">
+        <div class="title">GOLFING vs. THE <span class="undead">UNDEAD</span></div>
+        <div class="tag">Fore the green · Fear the undead</div>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <div class="panel stat-box"><div class="stat-label">Holes Sunk</div><div class="stat-value" id="stat-holes">0</div></div>
+        <div class="panel stat-box"><div class="stat-label">Undead Felled</div><div class="stat-value" id="stat-kills">0</div></div>
+        <div class="panel stat-box" id="healthwrap">
+          <div class="stat-label">Survivor Health</div>
+          <div id="healthbar-track"><div id="healthbar-fill"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" id="instructions">
+      <div class="row"><span><b>WASD</b></span><span>move</span></div>
+      <div class="row"><span><b>Mouse</b></span><span>aim</span></div>
+      <div class="row"><span><b>Click (tap)</b></span><span>melee swing</span></div>
+      <div class="row"><span><b>Near ball → hold click</b></span><span>charge putt</span></div>
+      <div class="row"><span><b>Release</b></span><span>fire putt at needle position</span></div>
+    </div>
+
+    <div id="pointer-flag">2.5D isometric billboard hack<br>painter's-algorithm depth sort · procedural sprite fallback</div>
+  </div>
+
+  <div class="overlay" id="start-overlay">
+    <h1>GOLFING vs. THE <span class="undead">UNDEAD</span></h1>
+    <p>The green never closes. Putt the ball into the cup to bank the hole, swing your club to keep the shamblers off your back,
+       and stay close to a resting ball to arm your putter automatically. Survive the back nine.</p>
+    <button class="cta" id="start-btn">TEE OFF</button>
+    <div class="credit">Prototype v0.1.0-sprint · click-to-lock aim</div>
+  </div>
+
+  <div class="overlay hidden" id="gameover-overlay">
+    <h1>YOU'VE BEEN <span class="undead">CLAIMED</span></h1>
+    <div class="kv">
+      <div><b id="go-holes">0</b>HOLES SUNK</div>
+      <div><b id="go-kills">0</b>UNDEAD FELLED</div>
+      <div><b id="go-time">0s</b>SURVIVED</div>
+    </div>
+    <button class="cta" id="restart-btn">TRY AGAIN</button>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* =========================================================================
+   GOLFING vs. THE UNDEAD — isometric 2.5D prototype
+   -------------------------------------------------------------------------
+   Rendering strategy ("the hack"):
+     - World positions are stored as continuous (x,y) tile coordinates.
+     - Screen projection uses the classic 2:1 diamond matrix, flattened
+       further (TILE_H is small relative to TILE_W) for a higher, more
+       overhead camera angle than a "true" 26.57° isometric.
+     - Every drawable (tiles, props, actors, ball, particles) is placed in
+       one array and painter's-algorithm sorted by world depth (x+y) each
+       frame, so nearer-to-camera things simply draw last and occlude
+       correctly without any real 3D geometry or z-buffer.
+     - Actors have a *ground shadow* (flat ellipse, locked to x/y) rendered
+       decoupled from their *sprite offset* (a z-height in screen pixels).
+       That decoupling is what sells jumps/arcs/collapses as 3D — the
+       shadow stays pinned to the world while the sprite floats above it.
+     - Sprites are procedural (canvas primitives) by default, but the
+       loader below will happily swap in real PNG atlases the moment
+       files matching the names in SPRITE_SOURCES exist alongside this
+       page (matching the frame layout from the Sprite Sheet doc).
+   ========================================================================= */
+
+// ---------------------------------------------------------------- canvas --
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+let DPR = Math.min(window.devicePixelRatio || 1, 2);
+
+function resize(){
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = innerWidth * DPR;
+  canvas.height = innerHeight * DPR;
+  canvas.style.width = innerWidth + 'px';
+  canvas.style.height = innerHeight + 'px';
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+}
+addEventListener('resize', resize);
+resize();
+
+// ------------------------------------------------------------- iso proj --
+// Flatter than true isometric => "fairly high overhead" read.
+const TILE_W = 132, TILE_H = 54;
+
+function toScreen(wx, wy){
+  return {
+    x: (wx - wy) * (TILE_W/2),
+    y: (wx + wy) * (TILE_H/2)
+  };
+}
+// World-space unit vectors that correspond to visual W/A/S/D directions
+// (derived by inverting the projection matrix above).
+const DIR = {
+  w:[-1,-1], s:[1,1], a:[-1,1], d:[1,-1]
+};
+function norm(v){ const l=Math.hypot(v[0],v[1])||1; return [v[0]/l, v[1]/l]; }
+const DIRN = { w:norm(DIR.w), a:norm(DIR.a), s:norm(DIR.s), d:norm(DIR.d) };
+
+// ----------------------------------------------------------- sprite mgr --
+// Tries to load real atlas PNGs from ./sprites/. Falls back silently.
+const SPRITE_SOURCES = {
+  player: 'sprites/player_atlas.png',
+  zombieA: 'sprites/zombie_a_atlas.png',
+  zombieB: 'sprites/zombie_b_atlas.png',
+  zombieC: 'sprites/zombie_c_atlas.png',
+};
+const sprites = {};
+Object.keys(SPRITE_SOURCES).forEach(key=>{
+  const img = new Image();
+  img.src = SPRITE_SOURCES[key];
+  img.onload = ()=>{ sprites[key] = img; };
+  img.onerror = ()=>{ /* stays undefined -> procedural fallback used */ };
+});
+
+// ------------------------------------------------------------- constants -
+const PLAYER_SPEED = 3.15;
+const PLAYER_MAX_HP = 100;
+const MELEE_RANGE = 1.35, MELEE_ANGLE = Math.PI*0.62, MELEE_COOLDOWN = 0.42, MELEE_DAMAGE = 1;
+const PUTT_RANGE = 1.05;
+const PUTT_MAX_CHARGE = 1.15;
+const BALL_FRICTION = 1.55;
+const HOLE_RADIUS = 0.34;
+const SINK_SPEED_MAX = 2.6;
+const ZOMBIE_CONTACT_DPS = 16;
+const COURSE_MIN = -8.6, COURSE_MAX = 8.6;
+
+// ------------------------------------------------------------------ state
+const keys = {};
+const mouse = { sx: innerWidth/2, sy: innerHeight/2, down: false };
+let running = false, paused = false;
+let lastT = 0, elapsed = 0;
+let spawnTimer = 2.2, spawnInterval = 3.4;
+let holesSunk = 0, kills = 0;
+
+const camera = { x:0, y:0 };
+
+const player = {
+  x:0, y:0, z:0, facing: Math.PI*0.75,
+  hp: PLAYER_MAX_HP,
+  state:'idle', animT:0,
+  meleeCooldown:0, meleeSwingT:0,
+  invulnT:0,
+  puttReady:false, puttCharging:false, chargeT:0,
+  needlePos:0.5, needleDir:1,
+};
+
+const ball = {
+  x: 1.4, y: 1.4, z:0, vx:0, vy:0, vz:0,
+  radius: 0.16, resting:true, sunk:false, sinkT:0,
+};
+const HOLE = { x: -2.2, y: -2.2 };
+
+const zombies = [];
+const particles = [];
+const tombstones = [
+  {x:-4.6,y:3.1}, {x:5.3,y:-3.8}, {x:-6.1,y:-1.4}, {x:3.4,y:5.6}, {x:-1.8,y:-5.9}
+];
+
+function resetGame(){
+  holesSunk = 0; kills = 0; elapsed = 0;
+  spawnTimer = 2.2; spawnInterval = 3.4;
+  player.x=0; player.y=0.6; player.hp = PLAYER_MAX_HP; player.state='idle';
+  player.meleeCooldown=0; player.puttReady=false; player.puttCharging=false; player.chargeT=0; player.invulnT=0;
+  ball.x=1.4; ball.y=1.4; ball.z=0; ball.vx=0; ball.vy=0; ball.vz=0; ball.sunk=false; ball.sinkT=0;
+  zombies.length = 0; particles.length = 0;
+  updateStatDOM();
+}
+
+// -------------------------------------------------------------- input ----
+addEventListener('keydown', e=>{ keys[e.key.toLowerCase()] = true; });
+addEventListener('keyup', e=>{ keys[e.key.toLowerCase()] = false; });
+canvas.addEventListener('mousemove', e=>{ mouse.sx = e.clientX; mouse.sy = e.clientY; });
+canvas.addEventListener('mousedown', e=>{
+  if(e.button !== 0) return;
+  mouse.down = true;
+  if(player.puttReady && !ball.sunk){
+    player.puttCharging = true;
+    player.chargeT = 0;
+    player.needlePos = 0.5; player.needleDir = 1;
+  }
+});
+addEventListener('mouseup', e=>{
+  if(e.button !== 0) return;
+  mouse.down = false;
+  if(player.puttCharging){
+    firePutt();
+    player.puttCharging = false;
+  } else if(!player.puttReady){
+    tryMelee();
+  }
+});
+
+function worldMouse(){
+  // inverse-project screen mouse (relative to camera) back to world coords
+  const rx = mouse.sx - innerWidth/2;
+  const ry = mouse.sy - innerHeight/2;
+  const a = TILE_W/2, b = TILE_H/2;
+  const wx = (b*rx + a*ry) / (2*a*b) + camera.x;
+  const wy = (-b*rx + a*ry) / (2*a*b) + camera.y;
+  return {x:wx, y:wy};
+}
+
+// ------------------------------------------------------------- combat ----
+function tryMelee(){
+  if(player.meleeCooldown > 0) return;
+  player.meleeCooldown = MELEE_COOLDOWN;
+  player.state = 'melee'; player.meleeSwingT = 0.3; player.animT = 0;
+  const wm = worldMouse();
+  player.facing = Math.atan2(wm.y - player.y, wm.x - player.x);
+
+  spawnParticle(
+    player.x + Math.cos(player.facing)*0.9,
+    player.y + Math.sin(player.facing)*0.9,
+    'swing'
+  );
+
+  for(const z of zombies){
+    if(z.state === 'die') continue;
+    const dx = z.x - player.x, dy = z.y - player.y;
+    const dist = Math.hypot(dx,dy);
+    if(dist > MELEE_RANGE) continue;
+    const ang = Math.atan2(dy,dx);
+    let diff = Math.abs(ang - player.facing);
+    if(diff > Math.PI) diff = Math.PI*2 - diff;
+    if(diff <= MELEE_ANGLE/2){
+      damageZombie(z, MELEE_DAMAGE, dx/dist, dy/dist, 0.55);
+    }
+  }
+}
+
+function damageZombie(z, dmg, kx, ky, knock){
+  z.health -= dmg;
+  z.hitFlash = 0.18;
+  z.vx += kx*knock; z.vy += ky*knock;
+  spawnParticle(z.x, z.y, 'blood');
+  if(z.health <= 0 && z.state !== 'die'){
+    z.state = 'die'; z.animT = 0; kills++; updateStatDOM();
+  }
+}
+
+function firePutt(){
+  const power = Math.min(player.chargeT / PUTT_MAX_CHARGE, 1);
+  const deviation = Math.abs(player.needlePos - 0.5) * 2; // 0 perfect .. 1 worst
+  const accuracy = 1 - deviation;
+  const wm = worldMouse();
+  let ang = Math.atan2(wm.y - ball.y, wm.x - ball.x);
+  const spread = (1-accuracy) * 0.5 * (Math.random() < 0.5 ? -1 : 1);
+  ang += spread;
+
+  const speed = (2.4 + power*7.2) * (0.55 + 0.45*accuracy);
+  ball.vx = Math.cos(ang) * speed;
+  ball.vy = Math.sin(ang) * speed;
+  ball.vz = 1.6 + power*1.4;
+  ball.resting = false;
+  player.state = 'putt'; player.animT = 0;
+  player.facing = ang;
+  spawnParticle(ball.x, ball.y, 'puff');
+}
+
+function spawnParticle(x,y,type){
+  particles.push({x,y,z:0.2,vx:(Math.random()-0.5)*1.2,vy:(Math.random()-0.5)*1.2,
+    vz: type==='blood'?1.4:0.6, life: type==='swing'?0.22:0.5, maxLife: type==='swing'?0.22:0.5, type});
+}
+
+// ------------------------------------------------------------- zombies ---
+const ZTYPES = [
+  {key:'A', color:'#6fae9c', dark:'#3d6b5c', hp:2, speed:1.15, r:0.34, sprite:'zombieA'},
+  {key:'B', color:'#8a6a5a', dark:'#553f34', hp:2, speed:1.3,  r:0.34, sprite:'zombieB'},
+  {key:'C', color:'#9aa08f', dark:'#5c6152', hp:3, speed:0.85, r:0.44, sprite:'zombieC'},
+];
+function spawnZombie(){
+  const t = ZTYPES[Math.floor(Math.random()*ZTYPES.length)];
+  const ang = Math.random()*Math.PI*2;
+  const dist = 9.5;
+  zombies.push({
+    x: player.x + Math.cos(ang)*dist, y: player.y + Math.sin(ang)*dist,
+    z:0, vx:0, vy:0, health: t.hp, maxHealth: t.hp, type: t,
+    state:'walk', animT: Math.random()*10, hitFlash:0, contactCd:0,
+  });
+}
+
+function updateZombies(dt){
+  for(const z of zombies){
+    z.animT += dt;
+    if(z.hitFlash>0) z.hitFlash -= dt;
+    if(z.state === 'die'){
+      z.animT += dt;
+      continue;
+    }
+    const dx = player.x - z.x, dy = player.y - z.y;
+    const dist = Math.hypot(dx,dy) || 0.0001;
+    if(dist > 0.75){
+      const spd = z.type.speed;
+      z.vx = (dx/dist) * spd; z.vy = (dy/dist) * spd;
+    } else {
+      z.vx *= 0.8; z.vy *= 0.8;
+      z.contactCd -= dt;
+      if(z.contactCd <= 0 && player.invulnT<=0){
+        player.hp -= ZOMBIE_CONTACT_DPS * 0.5;
+        player.invulnT = 0.5; z.contactCd = 0.5;
+        spawnParticle(player.x, player.y, 'blood');
+        flashDamage();
+      }
+    }
+    // gentle separation between zombies
+    for(const other of zombies){
+      if(other===z || other.state==='die') continue;
+      const ox = z.x-other.x, oy = z.y-other.y;
+      const od = Math.hypot(ox,oy);
+      if(od>0 && od < 0.5){
+        z.vx += (ox/od)*0.6*dt*10; z.vy += (oy/od)*0.6*dt*10;
+      }
+    }
+    z.x += z.vx*dt; z.y += z.vy*dt;
+    z.vx *= 0.9; z.vy *= 0.9;
+
+    // ball collision — knock the crawlers around
+    if(!ball.sunk){
+      const bdx = ball.x - z.x, bdy = ball.y - z.y;
+      const bd = Math.hypot(bdx,bdy);
+      const bspeed = Math.hypot(ball.vx, ball.vy);
+      if(bd < z.type.r + ball.radius + 0.05 && bspeed > 1.4){
+        damageZombie(z, 1, bdx/bd, bdy/bd, 1.1);
+        ball.vx *= -0.35; ball.vy *= -0.35;
+      }
+    }
+  }
+  for(let i=zombies.length-1;i>=0;i--){
+    if(zombies[i].state==='die' && zombies[i].animT > 1.1) zombies.splice(i,1);
+  }
+}
+
+let dmgFlashT = 0;
+function flashDamage(){ dmgFlashT = 0.25; }
+
+// --------------------------------------------------------------- ball ----
+function updateBall(dt){
+  if(ball.sunk){
+    ball.sinkT += dt;
+    return;
+  }
+  // gravity / arc
+  if(ball.z > 0 || ball.vz !== 0){
+    ball.vz -= 6.2*dt;
+    ball.z += ball.vz*dt;
+    if(ball.z <= 0){ ball.z = 0; ball.vz = 0; }
+  }
+  const speed = Math.hypot(ball.vx, ball.vy);
+  if(speed > 0.02){
+    const decel = BALL_FRICTION*dt;
+    const ns = Math.max(0, speed-decel);
+    const sc = ns/speed;
+    ball.vx *= sc; ball.vy *= sc;
+    ball.x += ball.vx*dt; ball.y += ball.vy*dt;
+    ball.resting = false;
+  } else {
+    ball.vx = 0; ball.vy = 0; ball.resting = true;
+  }
+  if(ball.x < COURSE_MIN+0.3){ ball.x = COURSE_MIN+0.3; ball.vx *= -0.5; }
+  if(ball.x > COURSE_MAX-0.3){ ball.x = COURSE_MAX-0.3; ball.vx *= -0.5; }
+  if(ball.y < COURSE_MIN+0.3){ ball.y = COURSE_MIN+0.3; ball.vy *= -0.5; }
+  if(ball.y > COURSE_MAX-0.3){ ball.y = COURSE_MAX-0.3; ball.vy *= -0.5; }
+
+  const hd = Math.hypot(ball.x-HOLE.x, ball.y-HOLE.y);
+  if(hd < HOLE_RADIUS && speed < SINK_SPEED_MAX && ball.z < 0.05){
+    ball.sunk = true; ball.sinkT = 0;
+    holesSunk++; updateStatDOM();
+    showBanner('HOLE COMPLETE');
+    setTimeout(respawnBall, 1400);
+  } else if(hd < HOLE_RADIUS*1.6 && ball.z < 0.05){
+    // gentle gravitational pull toward cup lip
+    ball.vx += (HOLE.x-ball.x)*dt*1.4;
+    ball.vy += (HOLE.y-ball.y)*dt*1.4;
+  }
+}
+function respawnBall(){
+  const ang = Math.random()*Math.PI*2;
+  ball.x = HOLE.x + Math.cos(ang)*(4+Math.random()*3);
+  ball.y = HOLE.y + Math.sin(ang)*(4+Math.random()*3);
+  ball.x = Math.max(COURSE_MIN+1, Math.min(COURSE_MAX-1, ball.x));
+  ball.y = Math.max(COURSE_MIN+1, Math.min(COURSE_MAX-1, ball.y));
+  ball.vx=0; ball.vy=0; ball.vz=0; ball.z=0; ball.sunk=false;
+}
+
+// -------------------------------------------------------------- player ---
+function updatePlayer(dt){
+  if(player.meleeCooldown>0) player.meleeCooldown -= dt;
+  if(player.invulnT>0) player.invulnT -= dt;
+
+  let mx=0,my=0;
+  if(keys['w']){ mx+=DIRN.w[0]; my+=DIRN.w[1]; }
+  if(keys['s']){ mx+=DIRN.s[0]; my+=DIRN.s[1]; }
+  if(keys['a']){ mx+=DIRN.a[0]; my+=DIRN.a[1]; }
+  if(keys['d']){ mx+=DIRN.d[0]; my+=DIRN.d[1]; }
+  const moving = (mx!==0||my!==0);
+  if(moving){
+    const l = Math.hypot(mx,my); mx/=l; my/=l;
+    if(!player.puttCharging){
+      player.x += mx*PLAYER_SPEED*dt;
+      player.y += my*PLAYER_SPEED*dt;
+      player.x = Math.max(COURSE_MIN, Math.min(COURSE_MAX, player.x));
+      player.y = Math.max(COURSE_MIN, Math.min(COURSE_MAX, player.y));
+    }
+  }
+
+  // proximity putt arm/disarm
+  const bd = Math.hypot(player.x-ball.x, player.y-ball.y);
+  player.puttReady = (bd < PUTT_RANGE) && ball.resting && !ball.sunk && !player.puttCharging;
+  if(player.puttCharging){
+    const bdNow = Math.hypot(player.x-ball.x, player.y-ball.y);
+    if(bdNow > PUTT_RANGE*1.6){ player.puttCharging = false; } // walked away mid-charge
+  }
+
+  if(player.puttCharging){
+    player.chargeT = Math.min(player.chargeT + dt, PUTT_MAX_CHARGE);
+    const freq = 2.4 + (player.chargeT/PUTT_MAX_CHARGE)*6.5;
+    player.needlePos += player.needleDir * freq * dt * 0.5;
+    if(player.needlePos > 1){ player.needlePos = 1; player.needleDir = -1; }
+    if(player.needlePos < 0){ player.needlePos = 0; player.needleDir = 1; }
+    const wm = worldMouse();
+    player.facing = Math.atan2(wm.y-ball.y, wm.x-ball.x);
+    player.state = 'aim';
+  } else if(player.meleeSwingT > 0){
+    player.meleeSwingT -= dt;
+    if(player.meleeSwingT<=0) player.state = moving? 'walk':'idle';
+  } else if(player.state==='putt'){
+    player.animT += dt;
+    if(player.animT>0.4) player.state = moving?'walk':'idle';
+  } else {
+    player.state = moving ? 'walk' : (player.puttReady ? 'ready':'idle');
+    if(!player.puttReady){
+      const wm = worldMouse();
+      if(!moving) player.facing = Math.atan2(wm.y-player.y, wm.x-player.x);
+    } else {
+      player.facing = Math.atan2(ball.y-player.y, ball.x-player.x);
+    }
+  }
+  player.animT += dt;
+  player.hp = Math.max(0, Math.min(PLAYER_MAX_HP, player.hp));
+  if(player.hp<=0) triggerGameOver();
+}
+
+// --------------------------------------------------------- particles -----
+function updateParticles(dt){
+  for(let i=particles.length-1;i>=0;i--){
+    const p = particles[i];
+    p.life -= dt;
+    if(p.life<=0){ particles.splice(i,1); continue; }
+    p.x += p.vx*dt; p.y += p.vy*dt;
+    p.z += p.vz*dt; p.vz -= 4*dt;
+    if(p.z<0) p.z=0;
+  }
+}
+
+// ---------------------------------------------------------------- draw ---
+function drawGround(){
+  // innerWidth/innerHeight are already CSS pixels (the ctx transform handles
+  // DPR separately), so the loop bounds must NOT be divided by DPR again —
+  // doing so under-covers the viewport on high-DPI screens and leaves gaps.
+  const cols = Math.ceil(innerWidth / (TILE_W/2)) + 6;
+  const rows = Math.ceil(innerHeight / (TILE_H/2)) + 6;
+  const startX = Math.floor(camera.x) - cols/2;
+  const startY = Math.floor(camera.y) - rows/2;
+
+  for(let gy = startY; gy < startY+rows; gy++){
+    for(let gx = startX; gx < startX+cols; gx++){
+      if(gx < COURSE_MIN-1 || gx > COURSE_MAX+1 || gy < COURSE_MIN-1 || gy > COURSE_MAX+1) continue;
+      const s = toScreen(gx-camera.x, gy-camera.y);
+      const sx = s.x + innerWidth/2, sy = s.y + innerHeight/2;
+      const checker = (Math.floor(gx)+Math.floor(gy)) % 2 === 0;
+      const distFromHole = Math.hypot(gx-HOLE.x, gy-HOLE.y);
+      let base = checker ? '#4c7a3f' : '#4a7539';
+      if(distFromHole < 2.6) base = checker ? '#5c9448' : '#5a9145';
+      // bunker patch
+      if(Math.hypot(gx-4.5, gy-2.5) < 1.6) base = checker ? '#d9c491' : '#d4bd85';
+      // rough edge near course boundary
+      if(gx < COURSE_MIN+1.4 || gx > COURSE_MAX-1.4 || gy < COURSE_MIN+1.4 || gy > COURSE_MAX-1.4){
+        base = checker ? '#375c30' : '#345729';
+      }
+      drawDiamond(sx, sy, base);
+    }
+  }
+  // hole cup
+  const hs = worldToScreenAbs(HOLE.x, HOLE.y);
+  ctx.save();
+  ctx.beginPath();
+  ctx.ellipse(hs.x, hs.y+6, TILE_W*0.16, TILE_H*0.16, 0,0,Math.PI*2);
+  ctx.fillStyle = '#12200f';
+  ctx.fill();
+  ctx.restore();
+  // flag
+  ctx.save();
+  ctx.strokeStyle = '#e6dfca'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(hs.x, hs.y-4); ctx.lineTo(hs.x, hs.y-46); ctx.stroke();
+  ctx.fillStyle = '#c31f2b';
+  ctx.beginPath();
+  ctx.moveTo(hs.x, hs.y-46); ctx.lineTo(hs.x+22, hs.y-40); ctx.lineTo(hs.x, hs.y-34);
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+function drawDiamond(sx, sy, color){
+  ctx.beginPath();
+  ctx.moveTo(sx, sy - TILE_H/2);
+  ctx.lineTo(sx + TILE_W/2, sy);
+  ctx.lineTo(sx, sy + TILE_H/2);
+  ctx.lineTo(sx - TILE_W/2, sy);
+  ctx.closePath();
+  ctx.fillStyle = color;
+  ctx.fill();
+}
+function worldToScreenAbs(wx,wy){
+  const s = toScreen(wx-camera.x, wy-camera.y);
+  return { x: s.x + innerWidth/2, y: s.y + innerHeight/2 };
+}
+
+function drawShadow(sx,sy, rx, alpha){
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.beginPath();
+  ctx.ellipse(sx, sy, rx, rx*0.4, 0, 0, Math.PI*2);
+  ctx.fillStyle = '#000';
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawTombstone(t){
+  const s = worldToScreenAbs(t.x, t.y);
+  drawShadow(s.x, s.y+4, 16, 0.25);
+  ctx.save();
+  ctx.translate(s.x, s.y);
+  ctx.fillStyle = '#8a8a80';
+  ctx.strokeStyle = '#4b4b44'; ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(-11,4); ctx.lineTo(-11,-16);
+  ctx.quadraticCurveTo(-11,-26, 0,-26);
+  ctx.quadraticCurveTo(11,-26, 11,-16);
+  ctx.lineTo(11,4);
+  ctx.closePath();
+  ctx.fill(); ctx.stroke();
+  ctx.restore();
+}
+
+function drawBall(){
+  if(ball.sunk){
+    if(ball.sinkT < 0.5){
+      const s = worldToScreenAbs(HOLE.x, HOLE.y);
+      const shrink = 1-ball.sinkT/0.5;
+      ctx.save();
+      ctx.globalAlpha = shrink;
+      ctx.beginPath();
+      ctx.ellipse(s.x, s.y+4, 7*shrink, 4*shrink, 0,0,Math.PI*2);
+      ctx.fillStyle = '#f2ede0';
+      ctx.fill();
+      ctx.restore();
+    }
+    return;
+  }
+  const s = worldToScreenAbs(ball.x, ball.y);
+  drawShadow(s.x, s.y+6, 7, 0.3);
+  ctx.save();
+  ctx.translate(s.x, s.y - ball.z*40);
+  ctx.beginPath();
+  ctx.arc(0,0,6.5,0,Math.PI*2);
+  const grad = ctx.createRadialGradient(-2,-2,1,0,0,7);
+  grad.addColorStop(0,'#ffffff'); grad.addColorStop(1,'#d8d4c8');
+  ctx.fillStyle = grad; ctx.fill();
+  ctx.strokeStyle = '#b8b4a8'; ctx.lineWidth=0.7; ctx.stroke();
+  ctx.restore();
+}
+
+function drawZombie(z){
+  const s = worldToScreenAbs(z.x, z.y);
+  const t = z.type;
+  const bob = z.state==='die' ? 0 : Math.sin(z.animT*7)*2.2;
+  const collapse = z.state==='die' ? Math.min(1, z.animT/0.6) : 0;
+
+  drawShadow(s.x, s.y+8, 13*t.r/0.34*(1+collapse*0.3), 0.32*(1-collapse*0.4));
+
+  ctx.save();
+  ctx.translate(s.x, s.y - 10 + bob*0.4 + collapse*14);
+  ctx.rotate(collapse * (Math.PI/2.1) * (Math.sin(z.x*13)>0?1:-1));
+
+  const flashy = z.hitFlash>0;
+  const bodyColor = flashy ? '#ffffff' : t.color;
+  const darkColor = flashy ? '#eeeeee' : t.dark;
+  const scale = t.r/0.34;
+
+  // legs (shamble)
+  const legSwing = Math.sin(z.animT*6) * 5;
+  ctx.strokeStyle = darkColor; ctx.lineWidth = 5*scale; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(-4*scale, 4); ctx.lineTo(-4*scale+legSwing*0.3, 16*scale); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(4*scale, 4); ctx.lineTo(4*scale-legSwing*0.3, 16*scale); ctx.stroke();
+
+  // arms reaching forward
+  ctx.beginPath(); ctx.moveTo(-9*scale,-10*scale); ctx.lineTo(-15*scale, -2*scale + Math.sin(z.animT*5)*2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(9*scale,-10*scale); ctx.lineTo(15*scale, -2*scale - Math.sin(z.animT*5)*2); ctx.stroke();
+
+  // torso
+  ctx.fillStyle = bodyColor;
+  ctx.beginPath();
+  ctx.ellipse(0,-8*scale, 10*scale, 13*scale, 0,0,Math.PI*2);
+  ctx.fill();
+  ctx.strokeStyle = darkColor; ctx.lineWidth=1.5; ctx.stroke();
+
+  // head
+  ctx.beginPath();
+  ctx.arc(0,-22*scale, 7*scale, 0, Math.PI*2);
+  ctx.fillStyle = bodyColor; ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#c31f2b';
+  ctx.beginPath(); ctx.arc(-2.4*scale,-23*scale,1.3*scale,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(2.4*scale,-23*scale,1.3*scale,0,Math.PI*2); ctx.fill();
+
+  ctx.restore();
+
+  // threat health pips
+  if(z.state!=='die' && z.health < z.maxHealth){
+    ctx.save();
+    const w = 20;
+    ctx.translate(s.x - w/2, s.y - 46*scale);
+    ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillRect(0,0,w,4);
+    ctx.fillStyle = '#c31f2b'; ctx.fillRect(0,0,w*(z.health/z.maxHealth),4);
+    ctx.restore();
+  }
+}
+
+function drawPlayer(){
+  const s = worldToScreenAbs(player.x, player.y);
+  const walking = player.state==='walk';
+  const bob = walking ? Math.abs(Math.sin(player.animT*9))*3 : Math.sin(player.animT*2.4)*0.8;
+
+  drawShadow(s.x, s.y+8, 13, 0.32);
+
+  ctx.save();
+  ctx.translate(s.x, s.y - 10 - bob);
+
+  const flash = (player.invulnT>0) && Math.floor(player.animT*14)%2===0;
+
+  // club / arm swing geometry
+  let clubAngle = player.facing + Math.PI/2;
+  let armExtend = 12;
+  if(player.state==='melee'){
+    const p = 1 - Math.max(0,player.meleeSwingT)/0.3;
+    clubAngle = player.facing - Math.PI*0.7 + p*Math.PI*1.3;
+    armExtend = 16;
+  } else if(player.state==='aim'){
+    clubAngle = player.facing + Math.PI/2 - 0.25;
+  } else if(player.state==='putt'){
+    const p = Math.min(1, player.animT/0.4);
+    clubAngle = player.facing + Math.PI/2 - (1-p)*1.1;
+  }
+
+  // legs
+  const legSwing = walking ? Math.sin(player.animT*9)*6 : 0;
+  ctx.strokeStyle = '#2c3f27'; ctx.lineWidth = 5.5; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(-4,4); ctx.lineTo(-4+legSwing,15); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(4,4); ctx.lineTo(4-legSwing,15); ctx.stroke();
+
+  // torso
+  ctx.fillStyle = flash ? '#ffffff' : '#4d6b3e';
+  ctx.beginPath();
+  ctx.ellipse(0,-9,9,12,0,0,Math.PI*2);
+  ctx.fill();
+  ctx.strokeStyle = '#2c3f27'; ctx.lineWidth=1.5; ctx.stroke();
+
+  // club (drawn before front arm so it reads under the hand)
+  ctx.save();
+  ctx.translate(2,-13);
+  ctx.rotate(clubAngle);
+  ctx.strokeStyle = '#3a2c1c'; ctx.lineWidth = 2.4; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0, armExtend+16); ctx.stroke();
+  ctx.fillStyle = '#c9c9c9';
+  ctx.beginPath(); ctx.ellipse(0, armExtend+18, 4, 2.4, Math.PI/2,0,Math.PI*2); ctx.fill();
+  ctx.restore();
+
+  // arms
+  ctx.strokeStyle = flash ? '#ffffff' : '#4d6b3e'; ctx.lineWidth=4.5; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(-7,-14); ctx.lineTo(-7+Math.cos(clubAngle)*8, -14+Math.sin(clubAngle)*8); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(6,-14); ctx.lineTo(6+Math.cos(clubAngle)*8, -14+Math.sin(clubAngle)*8); ctx.stroke();
+
+  // head + helmet
+  ctx.beginPath(); ctx.arc(0,-25,6.5,0,Math.PI*2);
+  ctx.fillStyle = flash ? '#ffffff' : '#d8b48a'; ctx.fill();
+  ctx.fillStyle = flash ? '#ffffff' : '#4a6b3d';
+  ctx.beginPath(); ctx.arc(0,-26,6.8,Math.PI,Math.PI*2); ctx.fill();
+
+  ctx.restore();
+
+  // melee swing arc VFX
+  if(player.state==='melee' && player.meleeSwingT>0){
+    ctx.save();
+    ctx.translate(s.x, s.y-16);
+    const p = 1-player.meleeSwingT/0.3;
+    ctx.strokeStyle = `rgba(242,237,224,${0.6*(1-p)})`;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(0,0, 34, player.facing-MELEE_ANGLE/2, player.facing-MELEE_ANGLE/2 + p*MELEE_ANGLE);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // ready-to-putt prompt marker
+  if(player.puttReady){
+    ctx.save();
+    ctx.translate(s.x, s.y - 52 + Math.sin(elapsed*4)*2);
+    ctx.fillStyle = '#d9b25c';
+    ctx.beginPath();
+    ctx.moveTo(0,-6); ctx.lineTo(5,3); ctx.lineTo(-5,3); ctx.closePath(); ctx.fill();
+    ctx.restore();
+  }
+}
+
+function drawParticles(){
+  for(const p of particles){
+    const s = worldToScreenAbs(p.x, p.y);
+    const a = Math.max(0, p.life/p.maxLife);
+    ctx.save();
+    ctx.globalAlpha = a;
+    if(p.type==='blood'){
+      ctx.fillStyle = '#8f1c22';
+      ctx.beginPath(); ctx.arc(s.x, s.y - p.z*30, 2.4, 0, Math.PI*2); ctx.fill();
+    } else if(p.type==='puff'){
+      ctx.fillStyle = 'rgba(255,255,255,.6)';
+      ctx.beginPath(); ctx.arc(s.x, s.y - p.z*30, 5+(1-a)*6, 0, Math.PI*2); ctx.fill();
+    } else {
+      ctx.strokeStyle = `rgba(242,237,224,${a})`;
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(s.x, s.y-10, 8+(1-a)*14, 0, Math.PI*1.4); ctx.stroke();
+    }
+    ctx.restore();
+  }
+}
+
+// trajectory preview — dotted arc + predicted stop ghost, drawn in world space
+function drawTrajectoryPreview(){
+  if(!player.puttCharging) return;
+  const power = Math.min(player.chargeT / PUTT_MAX_CHARGE, 1);
+  const wm = worldMouse();
+  const ang = Math.atan2(wm.y-ball.y, wm.x-ball.x);
+  const speed = (2.4 + power*7.2);
+  let sx = ball.x, sy = ball.y;
+  let vx = Math.cos(ang)*speed, vy = Math.sin(ang)*speed;
+  const steps = 22;
+  ctx.save();
+  for(let i=0;i<steps;i++){
+    const dt = 0.045;
+    const sp = Math.hypot(vx,vy);
+    if(sp>0.02){
+      const decel = BALL_FRICTION*dt;
+      const ns = Math.max(0, sp-decel);
+      const sc = ns/sp; vx*=sc; vy*=sc;
+    } else { vx=0; vy=0; }
+    sx += vx*dt; sy += vy*dt;
+    if(i%2===0){
+      const s = worldToScreenAbs(sx,sy);
+      const fade = 1 - i/steps;
+      ctx.globalAlpha = 0.25 + fade*0.55;
+      ctx.fillStyle = '#d9b25c';
+      ctx.beginPath(); ctx.arc(s.x, s.y - Math.sin(i/steps*Math.PI)*14*power, 2.3, 0, Math.PI*2); ctx.fill();
+    }
+  }
+  const ghost = worldToScreenAbs(sx,sy);
+  ctx.globalAlpha = 0.55;
+  ctx.strokeStyle = '#f2ede0'; ctx.lineWidth = 1.4;
+  ctx.beginPath(); ctx.arc(ghost.x, ghost.y, 6, 0, Math.PI*2); ctx.stroke();
+  ctx.restore();
+}
+
+// ------------------------------------------------------- master render --
+function render(){
+  ctx.clearRect(0,0,innerWidth,innerHeight);
+
+  // sky/backdrop wash
+  const grad = ctx.createLinearGradient(0,0,0,innerHeight);
+  grad.addColorStop(0,'#cfe0c9'); grad.addColorStop(1,'#eef2e6');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0,0,innerWidth,innerHeight);
+
+  drawGround();
+
+  const drawables = [];
+  for(const t of tombstones) drawables.push({depth:t.x+t.y-0.01, fn:()=>drawTombstone(t)});
+  drawables.push({depth: player.x+player.y, fn: drawPlayer});
+  if(!ball.sunk || ball.sinkT<0.5) drawables.push({depth: ball.x+ball.y+0.001, fn: drawBall});
+  for(const z of zombies) drawables.push({depth: z.x+z.y, fn: ()=>drawZombie(z)});
+  for(const p of particles) drawables.push({depth: p.x+p.y+0.002, fn: ()=>{} }); // particles drawn on top, see below
+
+  drawables.sort((a,b)=>a.depth-b.depth);
+  for(const d of drawables) d.fn();
+
+  drawTrajectoryPreview();
+  drawParticles();
+
+  if(dmgFlashT>0){
+    ctx.save();
+    ctx.globalAlpha = Math.min(0.35, dmgFlashT);
+    ctx.fillStyle = '#c31f2b';
+    ctx.fillRect(0,0,innerWidth,innerHeight);
+    ctx.restore();
+  }
+}
+
+// ---------------------------------------------------------------- HUD ----
+const promptEl = document.getElementById('prompt');
+const puttDialWrap = document.getElementById('putt-dial');
+const dialCanvas = document.getElementById('dial-canvas');
+const dialCtx = dialCanvas.getContext('2d');
+const bannerEl = document.getElementById('banner');
+let bannerT = 0;
+
+function showBanner(text){
+  bannerEl.textContent = text;
+  bannerEl.classList.add('show');
+  bannerT = 1.4;
+}
+
+function updateHUD(dt){
+  // floating prompt above player
+  if(player.puttReady && !player.puttCharging){
+    const s = worldToScreenAbs(player.x, player.y);
+    promptEl.style.left = s.x+'px';
+    promptEl.style.top = (s.y-58)+'px';
+    promptEl.textContent = 'HOLD CLICK TO PUTT';
+    promptEl.style.opacity = 1;
+  } else {
+    promptEl.style.opacity = 0;
+  }
+
+  // putt dial
+  if(player.puttCharging){
+    puttDialWrap.classList.add('active');
+    drawDial();
+  } else {
+    puttDialWrap.classList.remove('active');
+  }
+
+  if(bannerT>0){
+    bannerT -= dt;
+    if(bannerT<=0) bannerEl.classList.remove('show');
+  }
+  if(dmgFlashT>0) dmgFlashT -= dt;
+}
+
+function drawDial(){
+  const w = dialCanvas.width, h = dialCanvas.height;
+  dialCtx.clearRect(0,0,w,h);
+  const cx = w/2, cy = h-14, radius = 92;
+
+  // power arc (fills as you charge — outer track)
+  const power = Math.min(player.chargeT/PUTT_MAX_CHARGE, 1);
+  dialCtx.lineWidth = 10; dialCtx.lineCap='round';
+  dialCtx.strokeStyle = 'rgba(255,255,255,.12)';
+  dialCtx.beginPath(); dialCtx.arc(cx,cy,radius, Math.PI, Math.PI*2); dialCtx.stroke();
+
+  const pGrad = dialCtx.createLinearGradient(cx-radius,0,cx+radius,0);
+  pGrad.addColorStop(0,'#6fae9c'); pGrad.addColorStop(0.6,'#d9b25c'); pGrad.addColorStop(1,'#c31f2b');
+  dialCtx.strokeStyle = pGrad;
+  dialCtx.beginPath(); dialCtx.arc(cx,cy,radius, Math.PI, Math.PI + Math.PI*power); dialCtx.stroke();
+
+  // accuracy needle track (inner)
+  const innerR = 66;
+  dialCtx.lineWidth = 6;
+  dialCtx.strokeStyle = 'rgba(255,255,255,.15)';
+  dialCtx.beginPath(); dialCtx.arc(cx,cy,innerR, Math.PI, Math.PI*2); dialCtx.stroke();
+  // sweet-spot band
+  dialCtx.strokeStyle = 'rgba(111,174,156,.85)';
+  dialCtx.lineWidth = 6;
+  dialCtx.beginPath(); dialCtx.arc(cx,cy,innerR, Math.PI+Math.PI*0.42, Math.PI+Math.PI*0.58); dialCtx.stroke();
+
+  // needle
+  const needleAng = Math.PI + Math.PI*player.needlePos;
+  const nx = cx + Math.cos(needleAng)*innerR;
+  const ny = cy + Math.sin(needleAng)*innerR;
+  dialCtx.strokeStyle = '#f2ede0'; dialCtx.lineWidth = 3;
+  dialCtx.beginPath(); dialCtx.moveTo(cx,cy); dialCtx.lineTo(nx,ny); dialCtx.stroke();
+  dialCtx.fillStyle = '#f2ede0';
+  dialCtx.beginPath(); dialCtx.arc(nx,ny,4,0,Math.PI*2); dialCtx.fill();
+  dialCtx.beginPath(); dialCtx.arc(cx,cy,5,0,Math.PI*2); dialCtx.fill();
+
+  dialCtx.font = '800 11px "JetBrains Mono"';
+  dialCtx.fillStyle = '#d9b25c'; dialCtx.textAlign='left';
+  dialCtx.fillText('POWER', cx-radius, cy+18);
+  dialCtx.textAlign='right';
+  dialCtx.fillText('ACCURACY', cx+radius, cy+18);
+}
+
+function updateStatDOM(){
+  document.getElementById('stat-holes').textContent = holesSunk;
+  document.getElementById('stat-kills').textContent = kills;
+  document.getElementById('healthbar-fill').style.width = Math.max(0,player.hp) + '%';
+}
+
+// --------------------------------------------------------- game over -----
+function triggerGameOver(){
+  if(!running) return;
+  running = false;
+  document.getElementById('go-holes').textContent = holesSunk;
+  document.getElementById('go-kills').textContent = kills;
+  document.getElementById('go-time').textContent = Math.floor(elapsed)+'s';
+  document.getElementById('gameover-overlay').classList.remove('hidden');
+}
+
+// ------------------------------------------------------------- loop ------
+function loop(t){
+  requestAnimationFrame(loop);
+  if(!lastT) lastT = t;
+  let dt = (t-lastT)/1000; lastT = t;
+  dt = Math.min(dt, 0.05);
+  if(!running) return;
+  elapsed += dt;
+
+  updatePlayer(dt);
+  updateBall(dt);
+  updateZombies(dt);
+  updateParticles(dt);
+  updateStatDOM();
+
+  spawnTimer -= dt;
+  if(spawnTimer<=0){
+    spawnZombie();
+    spawnInterval = Math.max(1.15, spawnInterval*0.985);
+    spawnTimer = spawnInterval;
+  }
+
+  camera.x += (player.x - camera.x) * Math.min(1, dt*5);
+  camera.y += (player.y - camera.y) * Math.min(1, dt*5);
+
+  render();
+  updateHUD(dt);
+}
+requestAnimationFrame(loop);
+
+// ----------------------------------------------------------- boot UI -----
+document.getElementById('start-btn').addEventListener('click', ()=>{
+  document.getElementById('start-overlay').classList.add('hidden');
+  resetGame();
+  running = true; lastT = 0;
+});
+document.getElementById('restart-btn').addEventListener('click', ()=>{
+  document.getElementById('gameover-overlay').classList.add('hidden');
+  resetGame();
+  running = true; lastT = 0;
+});
+
+// idle render before start so the course isn't blank behind the overlay
+render();
+
+})();
+</script>
+</body>
+</html>
