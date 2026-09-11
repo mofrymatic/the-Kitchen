@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FishTacoStand Arcade</title>
+    <!-- ── Primary Meta ─────────────────────────────────────────────────────── -->
+    <meta name="description" content="FishTacoStand Arcade — a playful retro arcade hub serving Neon Invaders, Astroids, Cave Racer, RED EYE, Packman, Tetris, and more." />
+
+    <!-- ── Favicons ─────────────────────────────────────────────────────────── -->
+    <link rel="icon" type="image/png" href="fts-favicon.png">
+    <link rel="shortcut icon" type="image/png" href="fts-favicon.png">
+    <link rel="apple-touch-icon" href="fts-favicon.png">
+
+    <!-- ── Open Graph (Facebook, Discord, iMessage, etc.) ────────────────────── -->
+    <meta property="og:title" content="FishTacoStand Arcade">
+    <meta property="og:description" content="Step up to the FishTacoStand Arcade: a retro cabinet hub for Neon Invaders, Astroids, Cave Racer, RED EYE, Packman, Tetris, and more.">
+    <meta property="og:url" content="https://frymatic.us/FTSArcade/">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="FishTacoStand Arcade">
+
+    <meta property="og:image" content="https://frymatic.us/FTSArcade/FishTacoStand.png">
+    <meta property="og:image:alt" content="FishTacoStand Arcade cabinet menu with clickable retro games.">
+    <meta property="og:image:type" content="image/png">
+
+    <!-- ── Twitter / X Card ─────────────────────────────────────────────────── -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="FishTacoStand Arcade">
+    <meta name="twitter:description" content="A retro arcade hub serving Neon Invaders, Astroids, Cave Racer, RED EYE, Packman, Tetris, and more.">
+    <meta name="twitter:image" content="https://frymatic.us/FTSArcade/FishTacoStand.png">
+
+    <!--
+      For best Discord/iMessage/Twitter cards, replace the og:image/twitter:image
+      URL above with a dedicated 1200x630 preview image when available.
+      Validate after deploy:
+      https://cards-dev.twitter.com/validator
+      https://developers.facebook.com/tools/debug/
+    -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --neon-blue: #00d9ff;
+            --neon-pink: #ff006e;
+            --neon-yellow: #ffbe0b;
+            --neon-green: #00ff88;
+            --neon-purple: #a855f7;
+            --neon-red: #ff0040;
+            --dark-bg: #0a0a0f;
+            --arcade-glow: 0 0 20px currentColor, 0 0 40px currentColor;
+        }
+
+        body {
+            background: var(--dark-bg);
+            font-family: 'Press Start 2P', monospace;
+            overflow-x: hidden;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* CRT scan lines effect */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.15) 0px,
+                transparent 1px,
+                transparent 2px,
+                rgba(0, 0, 0, 0.15) 3px
+            );
+            pointer-events: none;
+            z-index: 1000;
+            animation: flicker 0.15s infinite;
+        }
+
+        @keyframes flicker {
+            0%, 100% { opacity: 0.95; }
+            50% { opacity: 0.98; }
+        }
+
+        /* Animated background */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(0, 217, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 50%, rgba(255, 0, 110, 0.1) 0%, transparent 50%);
+            animation: bgPulse 4s ease-in-out infinite alternate;
+            z-index: -1;
+        }
+
+        @keyframes bgPulse {
+            0% { opacity: 0.3; }
+            100% { opacity: 0.6; }
+        }
+
+        .arcade-container {
+            position: relative;
+            max-width: 95vw;
+            margin: 2rem auto;
+            filter: drop-shadow(0 0 40px rgba(0, 217, 255, 0.3));
+        }
+
+        .arcade-title {
+            text-align: center;
+            margin-bottom: 2rem;
+            font-family: 'Bungee', sans-serif;
+            font-size: clamp(1.5rem, 5vw, 3rem);
+            color: var(--neon-yellow);
+            text-shadow: var(--arcade-glow);
+            animation: titleGlow 2s ease-in-out infinite alternate;
+            letter-spacing: 0.2em;
+        }
+
+        @keyframes titleGlow {
+            0% { text-shadow: 0 0 10px var(--neon-yellow), 0 0 20px var(--neon-yellow); }
+            100% { text-shadow: 0 0 20px var(--neon-yellow), 0 0 40px var(--neon-yellow), 0 0 60px var(--neon-yellow); }
+        }
+
+        .cabinet-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .arcade-image {
+            display: block;
+            max-width: 100%;
+            height: auto;
+            border-radius: 12px;
+        }
+
+        .game-overlay {
+            position: absolute;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border: 2px solid transparent;
+            background: rgba(0, 0, 0, 0);
+        }
+
+        .game-overlay:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: currentColor;
+            transform: scale(1.05);
+            z-index: 10;
+        }
+
+        .game-overlay::before {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 4px;
+            padding: 4px;
+            background: linear-gradient(45deg, currentColor, transparent, currentColor);
+            -webkit-mask: 
+                linear-gradient(#fff 0 0) content-box, 
+                linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .game-overlay:hover::before {
+            opacity: 1;
+            animation: borderRotate 1.5s linear infinite;
+        }
+
+        @keyframes borderRotate {
+            0% { filter: hue-rotate(0deg); }
+            100% { filter: hue-rotate(360deg); }
+        }
+
+        .game-overlay::after {
+            content: attr(data-game);
+            position: absolute;
+            bottom: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: currentColor;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 10px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s, bottom 0.3s;
+            text-shadow: 0 0 10px currentColor;
+            border: 1px solid currentColor;
+        }
+
+        .game-overlay:hover::after {
+            opacity: 1;
+            bottom: -50px;
+        }
+
+        /* Individual game colors */
+        .neon-invaders {
+            color: var(--neon-blue);
+            /* Top left */
+            left: 35.51%;
+            top: 33.47%;
+            width: 11.75%;
+            height: 19.76%;
+        }
+
+        .astroids {
+            color: var(--neon-yellow);
+            /* Top center */
+            left: 48.30%;
+            top: 33.47%;
+            width: 11.75%;
+            height: 19.76%;
+        }
+
+        .cave-racer {
+            color: var(--neon-blue);
+            /* Top right */
+            left: 61.10%;
+            top: 33.47%;
+            width: 11.75%;
+            height: 19.76%;
+        }
+
+        .red-eye {
+            color: var(--neon-red);
+            /* Bottom left */
+            left: 35.51%;
+            top: 54.69%;
+            width: 11.75%;
+            height: 16.83%;
+        }
+
+        .pac-man {
+            color: var(--neon-yellow);
+            /* Bottom center */
+            left: 48.30%;
+            top: 55.47%;
+            width: 11.75%;
+            height: 16.05%;
+        }
+
+        .tetris {
+            color: var(--neon-purple);
+            /* Bottom right */
+            left: 61%;
+            top: 60%;
+            width: 13%;
+            height: 23%;
+        }
+
+        .instructions {
+            text-align: center;
+            margin-top: 3rem;
+            font-size: 12px;
+            color: var(--neon-green);
+            text-shadow: 0 0 10px var(--neon-green);
+            animation: blink 1.5s ease-in-out infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .credit-text {
+            position: absolute;
+            bottom: 2%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 10px;
+            color: var(--neon-blue);
+            text-shadow: 0 0 10px var(--neon-blue);
+        }
+
+        @media (max-width: 768px) {
+            .arcade-title {
+                font-size: 1.2rem;
+                margin-bottom: 1rem;
+            }
+
+            .game-overlay::after {
+                font-size: 8px;
+                padding: 6px 12px;
+            }
+
+            .instructions {
+                font-size: 10px;
+                padding: 0 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1 class="arcade-title">🌮 BRAZEN FTS ARCADE 🌮</h1>
+    
+    <div class="arcade-container">
+        <div class="cabinet-wrapper">
+            <img src="FishTacoStand.png" alt="Arcade Cabinet" class="arcade-image">
+            
+            <!-- Clickable game overlays -->
+            <a href="https://frymatic.us/FTSArcade/neon-invaders.html" target="_blank" 
+               class="game-overlay neon-invaders" 
+               data-game="NEON INVADERS"
+               aria-label="Play Neon Invaders"></a>
+            
+            <a href="https://frymatic.us/FTSArcade/astroids.html" target="_blank" 
+               class="game-overlay astroids" 
+               data-game="ASTROIDS"
+               aria-label="Play Astroids"></a>
+            
+            <a href="https://frymatic.us/FTSArcade/cave_racer.html" target="_blank" 
+               class="game-overlay cave-racer" 
+               data-game="CAVE RACER"
+               aria-label="Play Cave Racer"></a>
+            
+            <a href="https://frymatic.us/FTSArcade/redeye-hud.html" target="_blank" 
+               class="game-overlay red-eye" 
+               data-game="RED EYE"
+               aria-label="Play Red Eye"></a>
+            
+            <a href="https://frymatic.us/FTSArcade/packman.html" target="_blank" 
+               class="game-overlay pac-man" 
+               data-game="PAC MAN"
+               aria-label="Play Pac Man"></a>
+            
+            <a href="https://frymatic.us/FTSArcade/tetris.html" target="_blank" 
+               class="game-overlay tetris" 
+               data-game="TETRIS"
+               aria-label="Play Tetris"></a>
+
+            <div class="credit-text">INSERT COIN</div>
+        </div>
+    </div>
+
+    <p class="instructions">
+        ▲ HOVER OVER GAMES TO SELECT ▲<br>
+        CLICK TO PLAY
+    </p>
+
+    <script>
+        // Add sound effects on hover (optional - using Web Audio API)
+        const gameOverlays = document.querySelectorAll('.game-overlay');
+        
+        // Create audio context for hover sounds
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const audioCtx = new AudioContext();
+        
+        function playHoverSound() {
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            oscillator.frequency.value = 800;
+            oscillator.type = 'square';
+            
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+            
+            oscillator.start(audioCtx.currentTime);
+            oscillator.stop(audioCtx.currentTime + 0.1);
+        }
+        
+        function playClickSound() {
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            oscillator.frequency.value = 1200;
+            oscillator.type = 'square';
+            
+            gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+            
+            oscillator.start(audioCtx.currentTime);
+            oscillator.stop(audioCtx.currentTime + 0.15);
+        }
+        
+        gameOverlays.forEach(overlay => {
+            overlay.addEventListener('mouseenter', () => {
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                playHoverSound();
+            });
+            
+            overlay.addEventListener('click', (e) => {
+                playClickSound();
+            });
+        });
+
+        // Konami code easter egg
+        const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+        let konamiIndex = 0;
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === konamiCode[konamiIndex]) {
+                konamiIndex++;
+                if (konamiIndex === konamiCode.length) {
+                    document.body.style.animation = 'rainbow 2s linear infinite';
+                    const style = document.createElement('style');
+                    style.textContent = `
+                        @keyframes rainbow {
+                            0% { filter: hue-rotate(0deg); }
+                            100% { filter: hue-rotate(360deg); }
+                        }
+                    `;
+                    document.head.appendChild(style);
+                    konamiIndex = 0;
+                }
+            } else {
+                konamiIndex = 0;
+            }
+        });
+    </script>
+</body>
+</html>
