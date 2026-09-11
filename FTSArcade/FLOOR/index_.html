@@ -1,1654 +1,995 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
+    <!-- REF 0.4.1: analytics only on hosted HTTP(S); file:// stays console-clean. -->
+    <script>
+    if (/^https?:$/.test(location.protocol)) {
+      window.dataLayer = window.dataLayer || [];
+      window.gtag = function(){ dataLayer.push(arguments); };
+      gtag('js', new Date()); gtag('config', 'G-M9CD6TWFZE');
+      const ga=document.createElement('script'); ga.async=true;
+      ga.src='https://www.googletagmanager.com/gtag/js?id=G-M9CD6TWFZE';
+      document.head.appendChild(ga);
+    }
+    </script>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>Bistro Math — Tikka Tikka Parkour Bowl</title>
+<link rel="preload" as="image" href="fts-arcade-world-atlas.png">
+<link rel="preload" as="image" href="Cabinets01.png">
+<link rel="preload" as="image" href="Cabinets02.png">
+<link rel="preload" as="image" href="Cabinets03.png">
+<link rel="preload" as="image" href="Cabinets04.png">
+<link rel="preload" as="image" href="fts_sprites.png">
+<link rel="preload" as="image" href="fts-arcade-fixture-atlas.png">
+<link rel="preload" as="image" href="the-Cabinet.png">
+<title>FTS Arcade Floor 0.8.1 Apex Slide</title>
+<!-- 0.5.2 art fit: external world/fixture/screen atlases + Cabinets01-Cabinets04, exact per-CRT crops. -->
+<!-- 0.7.0 feel pass: outer ring 430->510, ceiling 132->192, jump 132->156. Sprint stays 22 mph. Cabinet layout frozen. -->
+<!-- 0.8.1 movement pass: threshold-based Apex-inspired slide, landing-slide buffer, momentum-preserving slide jumps and air steering. -->
+
+<!-- ── FA3D Meta ─────────────────────────────────────────── -->
+<meta name="description" content="FTS Arcade - a first-person 2.5D cabinet portal hub.">
+<meta property="og:title" content="FTS Arcade">
+<meta property="og:description" content="Walk the arcade. Enter a cabinet. Go somewhere else.">
+<meta property="og:type" content="website">
+
+
+
+    <!-- ── Favicons ─────────────────────────────────────────────── -->
+    <link rel="icon" type="image/png" href="../fts-favicon.png">
+    <link rel="shortcut icon" type="image/png" href="../fts-favicon.png">
+    <link rel="apple-touch-icon" href="../fts-favicon.png">
+
+    <!-- ── Open Graph ───────────────────────────────────────────── -->
+    <meta property="og:title"       content="FTS Arcade Floor">
+    <meta property="og:description" content="FTS Arcade Floor - a first-person 2.5D cabinet portal hub.">
+    <meta property="og:url"         content="https://frymatic.us/FTSArcade/">
+    <meta property="og:type"        content="website">
+    <meta property="og:site_name"   content="FishTacoStand Arcade">
+    <meta property="og:image"       content="https://frymatic.us/FTSArcade/FLOOR/floor_preview.png">
+    <meta property="og:image:alt"   content="Walk the arcade. Enter a cabinet. Go somewhere else.">
+    <meta property="og:image:type"  content="image/png">
+
+    <!-- ── Twitter / X ──────────────────────────────────────────── -->
+    <meta name="twitter:card"        content="summary_large_image">
+    <meta name="twitter:title"       content="FTS Arcade Floor">
+    <meta name="twitter:description" content="Walk the arcade. Enter a cabinet. Go somewhere else.">
+    <meta name="twitter:image"       content="https://frymatic.us/FTSArcade/FLOOR/floor_preview.png">
+
+
 <style>
-:root{
-  --court:#17565f; --runoff:#8c3a2e; --line:#edf2f0; --ghost:#c9a227;
-  --hall:#3a4046; --ink:#0a0d0f; --dim:#7e8b90;
-}
-*{box-sizing:border-box}
-html,body{margin:0;height:100%;background:var(--ink);overflow:hidden;
-  font-family:ui-sans-serif,"Helvetica Neue",Helvetica,"Arial Narrow",Arial,sans-serif;
-  font-variant-numeric:tabular-nums;-webkit-text-size-adjust:100%;color:var(--line)}
-#c{position:fixed;inset:0;width:100%;height:100%;display:block;
-  image-rendering:pixelated;image-rendering:crisp-edges;background:#05080a;touch-action:none}
-
-/* readout ------------------------------------------------------------ */
-#readout{position:fixed;left:max(18px,env(safe-area-inset-left));bottom:max(18px,env(safe-area-inset-bottom));
-  z-index:5;pointer-events:none;line-height:1;text-shadow:0 1px 3px rgba(0,0,0,.85)}
-#speed{font-size:60px;font-weight:700;letter-spacing:-.03em;display:block}
-#speed span{font-size:16px;font-weight:400;letter-spacing:.02em;color:var(--dim);margin-left:6px}
-#state{font-size:15px;font-weight:600;letter-spacing:.09em;margin-top:7px;color:var(--ghost);min-height:18px}
-#state.grounded{color:var(--dim)} #state.air{color:var(--line)} #state.ride{color:#5fd0c4}
-
-#trace{position:fixed;right:max(18px,env(safe-area-inset-right));bottom:max(18px,env(safe-area-inset-bottom));
-  z-index:5;pointer-events:none;font-size:11px;line-height:1.65;color:var(--dim);text-align:right;
-  text-shadow:0 1px 3px rgba(0,0,0,.85)}
-#trace b{color:var(--line);font-weight:600}
-#note{position:fixed;left:50%;top:16%;transform:translateX(-50%);z-index:6;pointer-events:none;
-  font-size:14px;letter-spacing:.06em;color:var(--ghost);opacity:0;transition:opacity .25s}
-#note.show{opacity:1}
-
-/* entry --------------------------------------------------------------- */
-#entry{position:fixed;inset:0;z-index:20;background:
-  linear-gradient(180deg,rgba(5,8,10,.94),rgba(5,8,10,.99)),
-  repeating-linear-gradient(90deg,transparent 0 46px,rgba(237,242,240,.045) 46px 48px);
-  display:flex;flex-direction:column;justify-content:center;padding:0 clamp(24px,7vw,110px)}
-#entry.hidden{display:none}
-#entry h1{margin:0;font-size:clamp(38px,8vw,86px);font-weight:700;letter-spacing:-.035em;line-height:.95}
-#entry h1 em{font-style:normal;display:block;color:var(--dim);font-size:.36em;font-weight:400;
-  letter-spacing:.01em;margin-top:14px}
-#dims{margin:34px 0 30px;display:flex;flex-wrap:wrap;gap:26px 40px;max-width:640px}
-#dims div{font-size:12px;color:var(--dim);line-height:1.5}
-#dims b{display:block;font-size:20px;color:var(--line);font-weight:600;letter-spacing:-.01em}
-#entry p{margin:0 0 30px;max-width:52ch;font-size:14px;line-height:1.65;color:var(--dim)}
-#entry p kbd{font:inherit;font-weight:600;color:var(--line);background:rgba(237,242,240,.09);
-  border-radius:3px;padding:1px 6px}
-#go{align-self:flex-start;background:var(--court);color:var(--line);border:0;border-radius:2px;
-  padding:15px 34px;font:inherit;font-size:15px;font-weight:600;letter-spacing:.04em;cursor:pointer}
-#go:hover{background:#1d6d78} #go:focus-visible{outline:2px solid var(--ghost);outline-offset:3px}
-
-/* touch --------------------------------------------------------------- */
-.touch{position:fixed;z-index:8;display:none;touch-action:none;-webkit-user-select:none;user-select:none}
-body.coarse .touch{display:block}
-#pad{left:max(20px,env(safe-area-inset-left));bottom:max(96px,calc(env(safe-area-inset-bottom) + 78px));
-  width:132px;height:132px;border-radius:50%;border:1.5px solid rgba(237,242,240,.2);
-  background:rgba(10,13,15,.34)}
-#knob{position:absolute;left:50%;top:50%;width:52px;height:52px;margin:-26px 0 0 -26px;border-radius:50%;
-  background:rgba(237,242,240,.28)}
-#hop{right:max(22px,env(safe-area-inset-right));bottom:max(104px,calc(env(safe-area-inset-bottom) + 86px));
-  width:96px;height:96px;border-radius:50%;border:1.5px solid rgba(95,208,196,.4);
-  background:rgba(23,86,95,.42);color:var(--line);font:inherit;font-size:12px;font-weight:600;
-  letter-spacing:.08em;display:none}
-body.coarse #hop{display:block}
-#sprintPad{right:max(22px,env(safe-area-inset-right));bottom:max(20px,env(safe-area-inset-bottom));
-  width:96px;height:56px;border-radius:3px;border:1.5px solid rgba(237,242,240,.2);
-  background:rgba(10,13,15,.34);color:var(--dim);font:inherit;font-size:11px;font-weight:600;
-  letter-spacing:.08em;display:none}
-body.coarse #sprintPad{display:block}
-#sprintPad.on{border-color:var(--ghost);color:var(--ghost)}
-@media (prefers-reduced-motion:reduce){#note{transition:none}}
-
-#roster{position:fixed;top:14px;left:14px;z-index:7;background:rgba(5,8,10,.72);padding:10px 12px;font-size:11px;line-height:1.5;pointer-events:none;border-left:2px solid #c9a227}#roster b{font-size:12px}.blue{color:#8fd7cf}.red{color:#e79a8e}#score{position:fixed;top:14px;right:14px;z-index:7;font-size:13px;letter-spacing:.08em;background:rgba(5,8,10,.72);padding:10px 12px;pointer-events:none}#passhint{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:7;font-size:12px;background:rgba(5,8,10,.72);padding:8px 12px;pointer-events:none}
+:root{--pink:#ff59d5;--blue:#71b8ff;--gold:#ffc95f;--red:#ff5b45;--ink:#05070b;--panel:rgba(7,9,14,.88)}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;background:#04060a;overflow:hidden;overscroll-behavior:none;user-select:none;touch-action:none;-webkit-user-select:none}
+body{font-family:"Courier New",monospace}
+canvas{position:fixed;inset:0;width:100%;height:100%;display:block;image-rendering:pixelated;cursor:crosshair}
+#telemetry{position:fixed;z-index:7;left:12px;top:10px;color:rgba(170,202,235,.72);font:10px/1.55 "Courier New",monospace;letter-spacing:.08em;text-shadow:0 0 7px rgba(35,105,255,.35);pointer-events:none}
+#brand{position:fixed;z-index:7;right:12px;top:10px;text-align:right;color:rgba(255,255,255,.64);font:10px/1.45 "Courier New",monospace;letter-spacing:.16em;pointer-events:none}
+#brand b{display:block;color:var(--gold);font-size:13px;letter-spacing:.22em}
+#prompt{position:fixed;z-index:8;left:50%;bottom:34px;transform:translateX(-50%);min-width:min(640px,92vw);max-width:92vw;padding:10px 16px;border:1px solid rgba(112,184,255,.35);background:rgba(4,7,12,.78);color:#ecf5ff;text-align:center;font:12px/1.45 "Courier New",monospace;letter-spacing:.09em;opacity:0;transition:opacity .12s,border-color .12s;pointer-events:none;box-shadow:0 0 22px rgba(40,105,220,.14)}
+#prompt.show{opacity:1;border-color:rgba(255,89,213,.55)}
+#prompt .kind{color:var(--pink)}
+#prompt .key{color:var(--gold)}
+#toolbar{position:fixed;z-index:9;right:12px;bottom:12px;display:flex;gap:6px}
+#toolbar button{border:1px solid rgba(113,184,255,.3);background:rgba(6,9,15,.8);color:rgba(190,220,250,.82);padding:7px 9px;font:10px "Courier New",monospace;letter-spacing:.08em;cursor:pointer}
+#toolbar button.on{border-color:rgba(255,201,95,.7);color:var(--gold)}
+#lock{position:fixed;z-index:20;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 55%,rgba(10,18,35,.67),rgba(3,5,8,.93) 62%);cursor:pointer;text-align:center;color:#e8f3ff;font:13px/2 "Courier New",monospace;letter-spacing:.14em;text-shadow:0 0 10px rgba(60,150,255,.4)}
+#lock.hidden{display:none}
+#lock b{color:var(--gold);font-size:19px;letter-spacing:.25em}
+#lock .pink{color:var(--pink)}
+#modal{position:fixed;z-index:30;inset:0;display:none;align-items:center;justify-content:center;background:rgba(1,3,7,.78)}
+#modal.show{display:flex}
+#modalCard{width:min(560px,90vw);border:1px solid rgba(255,89,213,.55);background:rgba(8,10,16,.97);padding:24px;box-shadow:0 0 50px rgba(255,70,190,.12);color:#e9f2fa}
+#modalEyebrow{color:var(--pink);font:10px "Courier New",monospace;letter-spacing:.18em;margin-bottom:10px}
+#modalTitle{font:bold 22px/1.2 "Courier New",monospace;letter-spacing:.08em;color:#fff;margin-bottom:12px}
+#modalCopy{font:12px/1.65 "Courier New",monospace;color:#aebccc;margin-bottom:20px}
+#modalActions{display:flex;justify-content:flex-end;gap:8px}
+#modalActions button{padding:9px 13px;border:1px solid rgba(113,184,255,.38);background:#080b12;color:#dceafa;font:11px "Courier New",monospace;letter-spacing:.09em;cursor:pointer}
+#modalActions #confirmBtn{border-color:rgba(255,201,95,.64);color:var(--gold)}
+#touchMove,#touchAct,#touchCrouch{display:none;position:fixed;z-index:15}
+#touchMove{left:max(18px,env(safe-area-inset-left));bottom:max(22px,env(safe-area-inset-bottom));width:112px;height:112px;border:1px solid rgba(113,184,255,.26);border-radius:50%;background:rgba(6,10,18,.18)}
+#touchKnob{position:absolute;left:35px;top:35px;width:42px;height:42px;border:1px solid rgba(255,255,255,.35);border-radius:50%;background:rgba(100,150,230,.16)}
+#touchAct{right:max(20px,env(safe-area-inset-right));bottom:max(28px,env(safe-area-inset-bottom));width:82px;height:82px;border-radius:50%;border:1px solid rgba(255,89,213,.42);background:rgba(18,7,20,.28);color:#fff;font:bold 10px "Courier New",monospace;letter-spacing:.08em}
+#touchCrouch{right:max(112px,calc(env(safe-area-inset-right) + 92px));bottom:max(38px,calc(env(safe-area-inset-bottom) + 10px));width:68px;height:68px;border-radius:50%;border:1px solid rgba(113,184,255,.38);background:rgba(6,10,18,.3);color:#ddecff;font:bold 9px "Courier New",monospace;letter-spacing:.07em}
+@media(pointer:coarse){#touchMove,#touchAct,#touchCrouch{display:block}#toolbar{bottom:calc(120px + env(safe-area-inset-bottom))}#prompt{bottom:calc(124px + env(safe-area-inset-bottom))}#telemetry{font-size:8px;max-width:72vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#brand{display:none}}
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
-<div id="roster"><b>TIKKA TIKKA / STAFF</b><br><span class="blue">YOU — MOCHA · tortie · captain</span><br><span class="blue">MISO · orange tabby · runner</span><br><span class="blue">BEANS · corgi · screen</span><br><span class="blue">PIP · green-cheek conure · aerial</span><br><span class="red">VS SESAME · tuxedo</span><br><span class="red">VS JUNIPER · greyhound</span><br><span class="red">VS OLIVE · calico</span><br><span class="red">VS PEPPER · green-cheek conure</span></div><div id="score">SERVICE BELLS <b id="bells">0</b> · CHAIN <b id="chain">0</b>/5</div><div id="passhint">E — pass Tikka · SPACE — pounce</div>
-
-
-<div id="readout"><span id="speed">0.0<span>m/s</span></span><div id="state" class="grounded">grounded</div></div>
-<div id="trace"></div>
-<div id="note"></div>
-
-<div id="pad" class="touch"><div id="knob"></div></div>
-<button id="hop" class="touch">hop</button>
-<button id="sprintPad" class="touch">sprint</button>
-
-<div id="entry">
-  <h1>Bistro Math<em>Tikka Tikka — the court stays sacred; the building becomes the game.</em></h1>
-  <div id="dims">
-    <div><b>12 × 8</b>café floor, metres</div>
-    <div><b>7.2</b>metres of playable vertical</div>
-    <div><b>360°</b>bleachers + upper ring</div>
-    <div><b>3</b>parkour strata</div>
-  </div>
-  <p>You are <b>Mocha</b>, 13-year-old tortie and café captain. The 12 × 8 court is unchanged; everything around it is now traversal. Move with <kbd>W A S D</kbd>, <kbd>shift</kbd> to scamper. Hold <kbd>space</kbd> near a wall to ride it. <b>Tap</b> <kbd>space</kbd> mid-ride for a pivot pounce — the cat coils and launches at an angle between your heading and the wall normal. The outer Panton ring glows above the bleachers; reach it from the deck to unlock the high lane. <kbd>E</kbd> passes the Tikka. <kbd>M</kbd> toggles plan view; <kbd>R</kbd> resets.</p>
-  <button id="go">Enter the bowl</button>
-</div>
+<div id="telemetry">BOOTING...</div>
+<div id="brand"><b>FTS ARCADE</b>CIRCULAR FLOOR / A-Z CABINET PORTAL HUB</div>
+<div id="prompt"></div>
+<div id="toolbar"><button id="mapBtn">MAP: OFF</button><button id="audioBtn">AUDIO: OFF</button></div>
+<div id="lock"><div><b>FTS ARCADE</b><br><span class="pink">THE RING</span><br><br>WASD MOVE / MOUSE LOOK / SHIFT RUN<br>SPACE JUMP / CTRL OR C CROUCH + SLIDE<br>E OR CLICK INTERACT / M MAP / N AUDIO<br><span style="opacity:.55">DEV: K KALEIDO / P PLANE BACKEND</span><br><br>CLICK TO WALK IN</div></div>
+<div id="modal"><div id="modalCard"><div id="modalEyebrow">LEAVE FTS ARCADE?</div><div id="modalTitle"></div><div id="modalCopy"></div><div id="modalActions"><button id="cancelBtn">STAY HERE</button><button id="confirmBtn">LEAVE ARCADE</button></div></div></div>
+<div id="touchMove"><div id="touchKnob"></div></div><button id="touchCrouch">SLIDE</button><button id="touchAct">ENTER</button>
 <script>
 'use strict';
-const VERSION = 'bistro-tikka-parkour-0.3.0';
-const TAU = Math.PI * 2, DEG = Math.PI / 180;
-const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
-const $ = id => document.getElementById(id);
 
-/* ═══════════════════════════════════════════════════════════════════════
-   DIMENSIONAL CONTRACT — 1 engine unit = 1 metre.
+const RUNTIME_ERRORS=[];
+addEventListener('error',e=>{if(e.error||e.message)RUNTIME_ERRORS.push(String(e.error&&e.error.stack||e.message||e.error));});
+addEventListener('unhandledrejection',e=>RUNTIME_ERRORS.push(String(e.reason&&e.reason.stack||e.reason||'unhandled rejection')));
 
-   The arcade floor authored in inches because a cabinet is an inch-scale
-   object. A futsal court is authored in metres by the sport's own laws, so
-   the contract follows the subject rather than the lineage. Every number
-   below that has a real-world referent cites it.
-   ═══════════════════════════════════════════════════════════════════════ */
+const VERSION='fts-arcade-floor-0.8.1-apex-slide';
+const TAU=Math.PI*2, DEG=Math.PI/180;
+// Dimensional contract: 1 engine unit = 1 inch.
+// =============================================================================
+// 0.7.0 FEEL PASS
+//   RING.outer      430 -> 510   +80 in of floor radius on every heading
+//   RING.ceil       132 -> 192   +60 in of headroom (11 ft room)
+//   KINETIC.jumpVel 132 -> 156   apex 22.6 -> 31.5 in, hang 0.68 -> 0.81 s
+//   SPEED_RUN       387.2        22 mph, UNCHANGED (locked by runSpeed22mph)
+//   Cabinet placement UNCHANGED  (locked by cabinetLayoutFrozen against a
+//                                 signature snapshotted from 0.6.4)
+// Deliberately NOT done this pass: no new cabinets, no agility gates, no
+// re-packing of the pods. Walk the wider ring first, then author from feel.
+// =============================================================================
+const RING={outer:510,inner:118,sides:32,ceil:192};
+const PLAYER_R=11,PLAYER_H=74,EYE=69,CROUCH_EYE=44,SPEED_WALK=84,SPEED_RUN=387.2,ACCEL=10; // 22 mph sprint - LOCKED
+const KINETIC={
+ simHz:60,walkSpeed:SPEED_WALK,sprintSpeed:SPEED_RUN,crouchSpeed:58,strafeFactor:.90,reverseFactor:.72,
+ accelLambda:12,brakeLambda:18,reverseLambda:10,baseFov:76*Math.PI/180,sprintFov:84*Math.PI/180,
+ crouchFov:74*Math.PI/180,slideFov:82*Math.PI/180,jumpVel:156,gravity:386,
 
-/* FIFA Futsal Laws of the Game, Law 1. International match dimensions.
-   Length 38–42, width 20–25; 40 × 20 is the common build. Ceiling minimum
-   is 4 m, but 7 m is the international recommendation and it is what makes
-   a wall ride worth having, so 7 m is the authored value. */
-const COURT = {
-  length: 12, width: 8,
-  lineW: 0.08,               // marking width, Law 1
-  centreCircle: 3,           // radius
-  penaltyR: 6,               // quarter-circle radius from each post
-  penaltyStraight: 3.16,     // parallel segment joining the arcs
-  penaltyMark: 6, secondMark: 10,
-  cornerArc: 0.25,
-  goalW: 3, goalH: 2,        // Law 2
-  postR: 0.04                // 8 cm section, halved
+ // 0.8.1 APEX-STYLE SLIDE MODEL
+ // Sliding is speed/state driven rather than a canned crouch dash. A grounded
+ // slide needs real run momentum; an airborne crouch can buffer a landing slide.
+ // The first simulation frame gets a small speed boost, then drag ramps up as
+ // momentum falls. Jumping out preserves the horizontal velocity instead of
+ // immediately snapping it back toward the ground movement target.
+ slideMinSpeed:198,slideLandMinSpeed:92,slideLandMinDownVel:72,
+ slideExitSpeed:86,slideMaxTime:1.35,slideBoostSpeed:24,slideMaxSpeed:424,
+ slideFastFriction:.72,slideSlowFriction:4.8,slideSteerLambda:2.0,slideSteerScale:.20,
+ slideRearmDelay:.34,slideJumpCarry:.985,
+ airAccelLambda:2.35,airBrakeLambda:.45,airSpeedCap:438,airDrag:.055,
+
+ stanceLambda:18,fovLambda:8,maxCatchupSteps:8
+};
+// Derived jump numbers, so tuning conversations happen in apex/hang-time/reach
+// instead of re-deriving v^2/2g by hand every time someone touches jumpVel.
+//   apex     peak height of the feet above the floor, inches
+//   hang     total airtime, seconds
+//   reach    horizontal distance covered by a full-speed sprint jump, inches
+const JUMP={
+ apex:KINETIC.jumpVel*KINETIC.jumpVel/(2*KINETIC.gravity),
+ hang:2*KINETIC.jumpVel/KINETIC.gravity,
+ get reach(){return KINETIC.sprintSpeed*this.hang;}
+};
+// Render ranges are derived from the ring instead of hardcoded. 0.6.4 carried
+// literal 860 (solid cull, = 2 x the old 430 outer) and 780 (fog far). Left
+// alone, a 510 ring would have culled far-wall dressing mid-room and crushed
+// the far side to full shadow.
+//   solidCull  cabinets/fixtures past this distance are skipped entirely
+//   fogFar     distance at which shading reaches the darkest shade band
+// fogFar scales with the ring so the falloff *ratio* matches 0.6.4. If the room
+// should instead read as genuinely bigger and darker at the rim, hardcode 780.
+const RENDER={solidCull:2*RING.outer,fogFar:Math.round(RING.outer*(780/430))};
+// 0.8.0: spend geometry only where the camera can see it. The 0.7.0 sweep peaked
+// near 23 wall spans per screen column, so start at 40x width and grow only if a
+// future scene proves it necessary instead of permanently reserving 120x.
+const PERF={
+ wallSpanFactor:40,wallSpanMaxFactor:80,
+ cabinetNear:220,cabinetMid:390,frustumPad:1.30,
+ coarseScale:2.15,coarseTallScale:2.45
+};
+const CABINET_DIM={w:40,d:40,h:78,control:40,screenBayTop:68.5,screenCenter:55.5,screenW:35,controlW:36.5,controlD:17.5};
+const AISLE={secondary:47.25,primary:70.87,merge:141.73}; // 1.2m / 1.8m / 3.6m references, inches
+const FOV=KINETIC.baseFov,NEAR=.6,SHADES=11,TILE_H=256,LOOK_UP=180,LOOK_DOWN=320;
+const MOUSE_LOOK_SENS=.0021,TOUCH_LOOK_SENS=.00235;
+// Horizontal-plane architecture:
+// - PATTERN: fast CanvasPattern transform path for browsers that execute it correctly.
+// - SOFTWARE: explicit world -> texel scanline rasterizer; no DOMMatrix / pattern mutation.
+// iOS/iPadOS defaults to SOFTWARE because all iOS browsers share WebKit's Canvas backend.
+const PLATFORM={
+ ua:(navigator&&navigator.userAgent)||'',
+ ios:/iP(?:hone|ad|od)/.test((navigator&&navigator.userAgent)||'')||(/Macintosh/.test((navigator&&navigator.userAgent)||'')&&((navigator&&navigator.maxTouchPoints)||0)>1)
+};
+const PLANE_BACKEND={requested:'auto',active:PLATFORM.ios?'software':'pattern'};
+function setPlaneBackend(mode){const m=String(mode||'auto').toLowerCase();PLANE_BACKEND.requested=(m==='software'||m==='pattern')?m:'auto';PLANE_BACKEND.active=PLANE_BACKEND.requested==='auto'?(PLATFORM.ios?'software':'pattern'):PLANE_BACKEND.requested;return PLANE_BACKEND.active;}
+function togglePlaneBackend(){return setPlaneBackend(PLANE_BACKEND.active==='software'?'pattern':'software');}
+// Mapping is world-locked by default, matching the correct desktop presentation.
+// 'sector' is retained as an alternate art direction. 'kaleido' is now explicit,
+// deterministic, and independent of browser bugs: it rotates each sector's material
+// basis with camera yaw around that sector's own center.
+const PLANE_MAPPING={mode:'world'};
+function setPlaneMappingMode(mode){const m=String(mode||'world').toLowerCase();PLANE_MAPPING.mode=(m==='sector'||m==='kaleido'||m==='view')?(m==='view'?'kaleido':m):'world';return PLANE_MAPPING.mode;}
+function togglePlaneMapping(){return setPlaneMappingMode(PLANE_MAPPING.mode==='kaleido'?'world':'kaleido');}
+const PORTALS={
+ lobby:'https://frymatic.us/FTSArcade/REDEYE',
+ theaters:'https://frymatic.us/FTSArcade/REDEYE',
+ redeye:'https://frymatic.us/FTSArcade/REDEYE/',
+ tokens:'https://frymatic.us/FTSArcade/tokens/',
+ adDeal:'https://frymatic.us/menu/gas-works.html'
 };
 
-/* The playing rectangle is frozen: the original 12 × 8 court plus its
-   one-metre runoff remains exactly where it was. The refactor grows OUT from
-   that rectangle. A concourse, a five-tier bowl, a service gap, then the hall
-   shell form three distinct traversal bands without moving a line of soccer. */
-const HALL = {
-  runoff: 1.0,
-  concourse: 1.35,
-  standRows: 5,
-  standTread: 0.55,
-  standRise: 0.42,
-  standFascia: 0.46,
-  shellGap: 0.90,
-  cornerGap: 1.15,
-  ceiling: 7.2
+const ASSET_NAMES={
+ world:'fts-arcade-world-atlas.png',
+ cab1:['Cabinets01.png','cabinets01.png'],
+ cab2:['Cabinets02.png','cabinets02.png'],
+ cab3:['Cabinets03.png','cabinets03.png'],
+ cab4:['Cabinets04.png','cabinets04.png'],
+ screen:'fts_sprites.png',
+ fixture:'fts-arcade-fixture-atlas.png',
+ cabinetRef:['the-Cabinet.png','the-cabinet.png','./the-Cabinet.png','./the-cabinet.png']
 };
-HALL.playX1 = -COURT.length / 2 - HALL.runoff;
-HALL.playX2 =  COURT.length / 2 + HALL.runoff;
-HALL.playY1 = -COURT.width / 2 - HALL.runoff;
-HALL.playY2 =  COURT.width / 2 + HALL.runoff;
-HALL.standDepth = HALL.standRows * HALL.standTread;
-HALL.standInnerX = COURT.length / 2 + HALL.runoff + HALL.concourse;
-HALL.standInnerY = COURT.width  / 2 + HALL.runoff + HALL.concourse;
-HALL.standOuterX = HALL.standInnerX + HALL.standDepth;
-HALL.standOuterY = HALL.standInnerY + HALL.standDepth;
-HALL.x1 = -HALL.standOuterX - HALL.shellGap;
-HALL.x2 =  HALL.standOuterX + HALL.shellGap;
-HALL.y1 = -HALL.standOuterY - HALL.shellGap;
-HALL.y2 =  HALL.standOuterY + HALL.shellGap;
-HALL.deckTop = HALL.standFascia + (HALL.standRows - 1) * HALL.standRise;
+const ASSET_FILES=ASSET_NAMES;
+const WORLD_RECTS={
+ WALL_MARBLE:[16,16,64,64],WALL_BLACK_GOLD:[96,16,64,64],WALL_LIGHT:[176,16,64,64],WALL_RIB:[256,16,64,64],WALL_GOLD:[336,16,64,64],
+ FLOOR_BLACK:[416,16,64,64],FLOOR_ALT:[496,16,64,64],FLOOR_RED:[576,16,64,64],OFFICE_WOOD:[656,16,64,64],OFFICE_DARK:[736,16,64,64],
+ STAGE_RED:[816,16,64,64],BRASS_PANEL:[896,16,64,64],CEILING_DARK:[16,96,64,64],EXIT:[96,96,64,64],OFFICE:[176,96,64,64],
+ STAGE:[256,96,64,64],DJ:[336,96,64,64],FTS:[416,96,64,64],NEON_PINK:[496,96,64,64],NEON_BLUE:[576,96,64,64],NEON_GOLD:[656,96,64,64]
+};
+const FIXTURE_RECTS={VEND_DRINK:[16,16,64,64],VEND_SNACK:[96,16,64,64],JUKEBOX:[176,16,64,64],WHITEBOARD:[256,16,64,64],BULLETIN:[336,16,64,64],TOKEN:[416,16,64,64],POSTER_1:[496,16,64,64],POSTER_2:[576,16,64,64],POSTER_3:[656,16,64,64],AD_SPACE:[736,16,64,64],AD_DEAL:[816,16,64,64],WAYFIND:[896,16,64,64],OFFICE_DOOR:[16,96,64,64],STAGE_SIGN:[96,96,64,64],DJ_SIGN:[176,96,64,64],POSTER_4:[256,96,64,64]};
+const SKIN_PARTS=['MARQUEE','LEFT','RIGHT','CONTROL','FRONT'];
 
-const PARKOUR = {
-  upperRingZ: 3.18,
-  upperRingW: 0.62,
-  wallShelfZ: 4.18,
-  sidelineTrussZ: 5.02,
-  towerPad: 0.72,
-  towerStep: 0.55
+// the-Cabinet.png is now a surgical hardware/detail source only.
+// Never use it on the control deck or as a full-width lower-front skin: that
+// source contains the red/white trim that was bleeding across cabinet faces.
+const CABINET_REF_RECTS={
+ COIN_DOOR:[330,978,112,214],
+ // Clean toe/kick region, deliberately cropped below the striped control trim.
+ KICK_PLATE:[87,1210,598,84]
 };
 
-/* ── coil-spring pivot-pounce ────────────────────────────────────────────
-   A cat pounce is not a wall-jump. A wall-jump fires straight off the normal;
-   a pounce coils into the wall, loading the hind legs, then launches at an
-   angle between the travel tangent and the wall normal. The pivot-blend is the
-   design axis: 0 = launch perpendicular (pure wall-jump), 1 = launch tangent
-   (sprint through the corner). 0.60 plants between them — enough outward push
-   to clear the wall with visible curvature of the exit trajectory.
-
-   Trigger: SPACE tap (edge, not hold) while riding AND rideT >= minRideT.
-   Hold-jump is unaffected — it fills the holdLiftBudget on continuous contact
-   as before. The tap must be a fresh press; holding space before attaching will
-   not trigger the coil. windT is the dip window; release fires even if Space is
-   released early — the spring is committed once the coil begins. */
-const COIL = {
-  minRideT:    0.05,       // ride must have lasted this long before tap coils
-  windT:       0.08,       // coil dip duration, s (≈5 sim ticks at 60 Hz)
-  dipVz:      -1.8,        // vz pulled toward this during wind-up
-  dipLambda:   14,         // pull responsiveness
-  upMult:      1.14,       // dismountUp multiplier at spring release
-  pivotBlend:  0.60,       // tangent ↔ normal blend of the exit direction
-  fovDip:     -4 * DEG     // brief FOV iris just before spring
+// Crops measured from Cabinets01-Cabinets04. Transparent helper-label bands are excluded.
+const CABINET_PART_RECTS={
+ A:['cab1',{MARQUEE:[60,90,341,92],LEFT:[13,172,115,368],RIGHT:[316,172,113,368],CONTROL:[124,363,192,94],FRONT:[142,496,161,103]}],
+ B:['cab1',{MARQUEE:[471,90,316,88],LEFT:[440,172,115,369],RIGHT:[703,172,113,369],CONTROL:[544,365,167,95],FRONT:[547,490,162,108]}],
+ C:['cab1',{MARQUEE:[866,89,342,119],LEFT:[826,173,127,368],RIGHT:[1121,173,127,368],CONTROL:[944,366,185,94],FRONT:[950,481,172,117]}],
+ D:['cab1',{MARQUEE:[49,704,352,118],LEFT:[14,785,119,355],RIGHT:[312,785,117,357],CONTROL:[125,971,191,93],FRONT:[130,1105,181,90]}],
+ E:['cab1',{MARQUEE:[468,704,322,92],LEFT:[435,785,118,356],RIGHT:[706,785,115,356],CONTROL:[542,973,172,96],FRONT:[550,1105,156,89]}],
+ F:['cab1',{MARQUEE:[865,704,341,118],LEFT:[829,785,122,359],RIGHT:[1122,785,122,359],CONTROL:[943,971,188,93],FRONT:[946,1105,181,89]}],
+ G:['cab2',{MARQUEE:[42,76,354,140],LEFT:[8,172,121,385],RIGHT:[308,172,115,385],CONTROL:[122,384,190,76],FRONT:[126,504,181,113]}],
+ H:['cab2',{MARQUEE:[455,76,345,136],LEFT:[432,171,116,386],RIGHT:[704,171,117,386],CONTROL:[542,383,168,77],FRONT:[546,508,158,109]}],
+ I:['cab2',{MARQUEE:[861,76,358,136],LEFT:[830,170,121,387],RIGHT:[1126,169,120,388],CONTROL:[945,383,186,77],FRONT:[948,504,180,113]}],
+ J:['cab2',{MARQUEE:[17,703,382,146],LEFT:[13,785,128,392],RIGHT:[306,785,118,365],CONTROL:[127,970,184,113],FRONT:[133,1105,171,110]}],
+ K:['cab2',{MARQUEE:[435,703,365,146],LEFT:[431,785,128,362],RIGHT:[711,785,112,362],CONTROL:[538,970,177,84],FRONT:[542,1105,170,106]}],
+ L:['cab2',{MARQUEE:[853,703,353,146],LEFT:[831,785,146,362],RIGHT:[1124,785,118,363],CONTROL:[944,970,185,113],FRONT:[953,1105,170,77]}],
+ M:['cab3',{MARQUEE:[51,76,348,136],LEFT:[13,173,119,372],RIGHT:[313,173,115,372],CONTROL:[125,360,191,94],FRONT:[139,485,167,132]}],
+ N:['cab3',{MARQUEE:[441,76,372,146],LEFT:[434,158,125,387],RIGHT:[695,158,125,387],CONTROL:[544,362,166,89],FRONT:[549,488,156,108]}],
+ O:['cab3',{MARQUEE:[858,76,375,146],LEFT:[827,174,117,370],RIGHT:[1113,158,128,386],CONTROL:[938,360,187,94],FRONT:[947,486,172,131]}],
+ P:['cab3',{MARQUEE:[50,703,351,146],LEFT:[16,785,114,359],RIGHT:[313,785,114,359],CONTROL:[125,970,191,77],FRONT:[134,1105,177,87]}],
+ Q:['cab3',{MARQUEE:[438,703,378,146],LEFT:[434,785,125,358],RIGHT:[695,785,125,358],CONTROL:[543,970,168,77],FRONT:[545,1105,163,87]}],
+ R:['cab3',{MARQUEE:[872,703,330,113],LEFT:[827,785,120,359],RIGHT:[1122,785,117,360],CONTROL:[938,970,190,76],FRONT:[942,1105,181,86]}],
+ S:['cab4',{MARQUEE:[60,88,302,134],LEFT:[12,174,123,366],RIGHT:[241,158,121,382],CONTROL:[114,370,150,79],FRONT:[114,484,150,115]}],
+ T:['cab4',{MARQUEE:[364,73,281,149],LEFT:[361,158,89,382],RIGHT:[556,158,90,382],CONTROL:[444,370,120,79],FRONT:[444,483,120,114]}],
+ U:['cab4',{MARQUEE:[651,87,280,135],LEFT:[644,174,91,366],RIGHT:[841,158,91,382],CONTROL:[724,370,127,79],FRONT:[724,483,127,115]}],
+ V:['cab4',{MARQUEE:[944,87,303,135],LEFT:[932,174,106,366],RIGHT:[1144,158,106,382],CONTROL:[1023,370,137,79],FRONT:[1023,484,137,115]}],
+ W:['cab4',{MARQUEE:[35,703,304,146],LEFT:[18,785,108,353],RIGHT:[232,785,107,353],CONTROL:[111,967,137,76],FRONT:[111,1077,137,115]}],
+ X:['cab4',{MARQUEE:[356,704,273,121],LEFT:[342,785,96,353],RIGHT:[544,785,95,353],CONTROL:[429,967,124,76],FRONT:[429,1077,124,115]}],
+ Y:['cab4',{MARQUEE:[653,703,267,122],LEFT:[640,787,92,351],RIGHT:[838,787,93,351],CONTROL:[723,967,126,76],FRONT:[723,1077,126,115]}],
+ Z:['cab4',{MARQUEE:[943,703,301,146],LEFT:[931,785,104,353],RIGHT:[1141,785,103,353],CONTROL:[1026,967,125,76],FRONT:[1026,1076,125,116]}]
 };
-
-/* ── body model ─────────────────────────────────────────────────────────
-   Ported from the arcade floor and converted out of inches. That build ran
-   11 / 74 / 69 / 44 in; the person it describes is 1.88 m tall with a
-   1.75 m eye, which is a big adult male and a deliberate choice there. Kept
-   as-is so the two products describe the same body. */
-const BODY = {
-  radius: 0.16,     // compact adult cat collision radius
-  height: 0.32,     // torso clearance; ears are presentation
-  eye: 0.27,        // Mocha eye line
-  crouchEye: 0.20
-};
-
-/* ── kinetics ───────────────────────────────────────────────────────────
-   Speeds are futsal-plausible rather than ported: 6.2 / 9.4 m/s is a brisk
-   run and a genuine sprint, and 9.4 m/s over a 40 m court is 4.3 s end to
-   end, which is the number that decides whether the space feels big.
-
-   The asymmetry block IS ported wholesale from the arcade floor. Separate
-   accel / brake / reverse lambdas plus strafe and reverse scalars are the
-   single largest felt-experience asset in that file and they are not
-   sport-specific. */
-const KINETIC = {
-  simHz: 60, renderCeilingHz: 90,
-  walkSpeed: 2.2, sprintSpeed: 6.8, crouchSpeed: 1.4,
-  strafeFactor: 0.90, reverseFactor: 0.72,
-  accelLambda: 12, brakeLambda: 18, reverseLambda: 10,
-  airControl: 0.34,          // fraction of ground accel available airborne
-  baseFov: 76 * DEG, sprintFov: 84 * DEG, crouchFov: 74 * DEG, rideFov: 88 * DEG,
-  stanceLambda: 18, fovLambda: 8, rollLambda: 9,
-  jumpVel: 7.4, gravity: 15.5,
-  coyote: 0.11,              // grace window after leaving ground
-  jumpBuffer: 0.12,          // grace window before landing
-  maxCatchupSteps: 12, hardFrameClamp: 0.25,
-  renderBudgetMs: 22.2,
-  qualityTiers: [1, 0.875, 0.80, 0.70],
-  qualityNames: ['ultra', 'high', 'medium', 'safe']
-};
-
-/* Gravity is 18.6 rather than 9.81. Real gravity at these speeds produces a
-   float that reads as low-g and makes the ceiling feel close; roughly 1.9 g
-   is the standard shooter cheat and it is what makes a 5.4 m/s jump land in
-   0.58 s instead of 1.1 s. Stated here rather than buried. */
-
-/* ── derived movement numbers ───────────────────────────────────────────
-   The arcade floor's JUMP object exists so tuning conversations happen in
-   apex / hang / reach instead of re-deriving v²/2g by hand. Same pattern,
-   extended to the ride. */
-const JUMP = {
-  get apex()  { return KINETIC.jumpVel ** 2 / (2 * KINETIC.gravity); },
-  get hang()  { return 2 * KINETIC.jumpVel / KINETIC.gravity; },
-  get reach() { return KINETIC.sprintSpeed * this.hang; }
-};
-
-/* ── wall ride ──────────────────────────────────────────────────────────
-   Lucio, not skating. Attach while airborne and moving roughly along a
-   wall; momentum is projected onto the wall plane and preserved, gravity is
-   replaced by a gentle settle, and the dismount trades a little of the
-   along-wall speed for height and outward push.
-
-   alignMax is the important one. The wall normal points into the room, so a
-   velocity moving away from the wall has a positive dot with it. Allowing
-   up to 0.30 means you can drift outward slightly and still hold on, which
-   is what stops the ride feeling like a magnet.
-
-   maxHold is intentionally a hard contact clock. The old build did expire
-   the ride, but a held jump could reattach to the same wall 0.22 s later,
-   making a finite ride look infinite. A spent-wall lock now requires real
-   separation (rearmDist) or a landing before that face can be caught again.
-
-   Held jump is variable-height rather than an infinite climb: each contact
-   owns holdLiftBudget seconds. Releasing jump pauses that budget, so a later
-   re-hold can catch a falling glide, but no input can buy more wall time. */
-const RIDE = {
-  attachDist: 0.62,     // distance from the player surface to the wall plane
-  minSpeed: 3.4,        // horizontal speed floor to attach and to hold
-  alignMax: 0.30,       // max outward component of the unit velocity
-  settle: -0.62,        // vertical target when jump is not actively catching the ride, m/s
-  settleLambda: 5.5,    // how fast vz relaxes toward settle
-  holdLift: 2.35,       // Mario-style held-jump vertical target while lift budget remains
-  holdLiftLambda: 7.5,  // catch responsiveness; higher feels more like grabbing the wall
-  holdLiftBudget: 0.58, // seconds of lift per wall contact; release pauses the spend
-  gain: 1.9,            // along-wall acceleration while attached, m/s²
-  gainCap: 11.2,        // speed the ride accelerates toward — faster than a sprint
-  maxHold: 1.90,        // HARD wall-contact lifetime; input cannot extend this
-  nominal: 0.9,         // the length of a ride actually played, for tuning maths
-  reattach: 0.18,       // generic debounce for wall transfers
-  rearmDist: 0.92,      // same wall stays spent until the body surface gets this far away
-  dismountUp: 7.7,      // reserved for the future explicit wall-launch / backflip path
-  dismountOut: 3.6,     // reserved outward impulse along the wall normal
-  roll: 17 * DEG        // camera roll toward the wall
-};
-
-/* Derived ride numbers, same reason as JUMP: tune in climb / span / stack,
-   not in impulse components.
-
-   climb is quoted for a RIDE.nominal ride rather than a maximal one, because
-   0.9 s is the ride people actually play — you attach, carry, and launch.
-   Quoting the 2.6 s figure would describe a hold nobody uses and would have
-   hidden the fact that the first tuning pass made a full ride lose 3.5 m.
-   sag is that worst case, kept visible next to it.
-     climb  net height gained by a nominal ride plus its dismount
-     sag    height lost by holding on for the full maxHold and not launching
-     span   ground covered along the wall in a full-length ride
-     stack  nominal rides needed to reach the deck top from the floor */
-const RIDE_DERIVED = {
-  get climb() { return RIDE.settle * RIDE.nominal + RIDE.dismountUp ** 2 / (2 * KINETIC.gravity); },
-  get sag()   { return RIDE.settle * RIDE.maxHold; },
-  get span()  { return Math.min(RIDE.gainCap, KINETIC.sprintSpeed + RIDE.gain * RIDE.maxHold) * RIDE.maxHold; },
-  get stack() { return this.climb > 0.05 ? HALL.deckTop / this.climb : Infinity; }
-};
-
-/* ── look ───────────────────────────────────────────────────────────────
-   Asymmetric clamps ported in spirit from the arcade floor's 180/320 px
-   split: you look down more than up because the floor is where the work is.
-   Expressed in radians here because pitch is a real rotation in this
-   renderer, not a raster shear. */
-const LOOK = { up: 78 * DEG, down: 84 * DEG, mouse: 0.0021, touch: 0.00235 };
-
-/* ═══════════════════════════════════════════════════════════════════════
-   SURFACES
-
-   Everything is generated at load into raw pixel buffers. Nothing is
-   embedded as base64 and nothing is fetched, so the file stays portable and
-   the texture budget is a runtime cost rather than a download.
-   ═══════════════════════════════════════════════════════════════════════ */
-const MAT = { FLOOR:0, PAD:1, UPPER:2, CEIL:3, PANEL:4, FASCIA:5, SEAT:6, RISER:7, POST:8, DECK:9, CATWALK:10, SCRATCH:11, CUSHION:12, CROWD:13, TRUSS:14, CONCOURSE:15,
-              PANTON_PINK:16, PANTON_GLOW:17 };
-const tex = [];
-/* Non-clamped materials tile. scale = texture repeats per metre. */
-const matScale = { [MAT.PAD]:0.55, [MAT.UPPER]:0.42, [MAT.CEIL]:0.30, [MAT.PANEL]:1,
-                   [MAT.FASCIA]:0.50, [MAT.SEAT]:0.9, [MAT.RISER]:0.9, [MAT.POST]:1, [MAT.DECK]:0.7,
-                   [MAT.CATWALK]:0.8, [MAT.SCRATCH]:1.5, [MAT.CUSHION]:1.0, [MAT.CROWD]:1.2, [MAT.TRUSS]:1.1, [MAT.CONCOURSE]:0.65,
-                   [MAT.PANTON_PINK]:0.70, [MAT.PANTON_GLOW]:1.20 };
-const matClamp = new Set([MAT.FLOOR]);
-
-function bake(w, h, draw) {
-  const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
-  const g = cv.getContext('2d', { willReadFrequently: true });
-  g.imageSmoothingEnabled = false; draw(g, w, h);
-  return { w, h, d: g.getImageData(0, 0, w, h).data };
-}
-
-/* ── the floor ──────────────────────────────────────────────────────────
-   One texture across the whole 43 × 23 m hall floor, UV-clamped, so the
-   markings are authored once in real metres instead of being chased around
-   as geometry. 1536 px across 43 m is 35.7 px/m, which puts an 8 cm line at
-   just under 3 px — thin enough to read as a painted line at this render
-   resolution, thick enough not to drop out.
-
-   Every line is drawn twice: a wider pass at low alpha, then the crisp one
-   on top. The renderer samples nearest-neighbour with no mip chain, so
-   without that soft skirt the markings crawl and sparkle when the camera
-   moves. It is a poor substitute for a mip pyramid and it is enough. */
-const FLOOR_PPM = 1536 / (HALL.playX2 - HALL.playX1);
-function bakeFloor() {
-  const W = 1536, H = Math.round((HALL.playY2 - HALL.playY1) * FLOOR_PPM);
-  return bake(W, H, (g) => {
-    const X = x => (x - HALL.playX1) * FLOOR_PPM, Y = y => (y - HALL.playY1) * FLOOR_PPM;
-    const S = m => m * FLOOR_PPM;
-
-    /* Frozen legacy floor: same 14 × 10 texture extent, same paint order,
-       same resolution. The parkour concourse is a separate material/geometry. */
-    g.fillStyle = '#7c3327'; g.fillRect(0, 0, W, H);
-    const grd = g.createLinearGradient(0, 0, 0, H);
-    grd.addColorStop(0, '#17565f'); grd.addColorStop(.5, '#1a626c'); grd.addColorStop(1, '#17565f');
-    g.fillStyle = grd;
-    g.fillRect(X(-COURT.length/2), Y(-COURT.width/2), S(COURT.length), S(COURT.width));
-
-    /* subtle poured-surface mottle so large flat areas are not dead */
-    for (let i = 0; i < 5200; i++) {
-      const x = Math.random() * W, y = Math.random() * H;
-      g.fillStyle = `rgba(${Math.random()<.5?0:255},255,255,${Math.random()*.028})`;
-      g.fillRect(x, y, 1 + Math.random() * 3, 1 + Math.random() * 3);
-    }
-
-    const stroke = (color, widthM, path, alpha = 1) => {
-      g.strokeStyle = color; g.lineCap = 'butt'; g.lineJoin = 'miter';
-      g.globalAlpha = alpha * 0.32; g.lineWidth = S(widthM) + 2.2; path();
-      g.globalAlpha = alpha;        g.lineWidth = S(widthM);       path();
-      g.globalAlpha = 1;
-    };
-    const seg = (x1, y1, x2, y2) => () => {
-      g.beginPath(); g.moveTo(X(x1), Y(y1)); g.lineTo(X(x2), Y(y2)); g.stroke();
-    };
-    const rect = (x1, y1, x2, y2) => () => {
-      g.beginPath(); g.rect(X(x1), Y(y1), S(x2 - x1), S(y2 - y1)); g.stroke();
-    };
-    const arc = (cx, cy, r, a0, a1) => () => {
-      g.beginPath(); g.arc(X(cx), Y(cy), S(r), a0, a1); g.stroke();
-    };
-
-    /* ghost lines — a real multi-sport hall carries two or three other
-       courts in contrasting paint, and leaving them out is what makes a
-       generated sports hall look like a lobby with a green floor. */
-    const GH_R = '#b8453a', GH_Y = '#c9a227';
-    const bbL = 28, bbW = 15;                     // FIBA basketball, 28 × 15
-    stroke(GH_R, .05, rect(-bbL/2, -bbW/2, bbL/2, bbW/2), .5);
-    stroke(GH_R, .05, arc(0, 0, 1.8, 0, TAU), .5);
-    for (const s of [-1, 1]) {
-      stroke(GH_R, .05, rect(s * bbL/2, -2.45, s * (bbL/2 - 5.8), 2.45), .5);
-      stroke(GH_R, .05, arc(s * (bbL/2 - 5.8), 0, 1.8, 0, TAU), .5);
-    }
-    const bdL = 13.4, bdW = 6.1;                  // badminton, laid across
-    for (const s of [-1, 1]) {
-      stroke(GH_Y, .04, rect(s * 3.6 - bdW/2, -bdL/2, s * 3.6 + bdW/2, bdL/2), .45);
-      stroke(GH_Y, .04, seg(s * 3.6 - bdW/2, 0, s * 3.6 + bdW/2, 0), .45);
-    }
-
-    /* futsal, Law 1 — drawn last so it sits over the ghosts */
-    const L = '#edf2f0', hw = COURT.width / 2, hl = COURT.length / 2;
-    /* Penalty area, Law 1: a quarter circle of radius 6 from the outside of
-       each post, the two joined by a 3.16 m line parallel to the goal line.
-       Sweeps are tabulated rather than nested in ternaries. The first pass
-       wrote them as conditionals and two of the four came out with equal
-       start and end angles, which draws nothing at all and is invisible
-       until someone looks at that corner of the floor.
-
-       Canvas angles here: 0 points toward +x, and because Y() maps world +y
-       onto increasing canvas y, sweeps run from +x toward +y. */
-    const HALF = Math.PI / 2;
-    const PEN = {                        // [south arc, north arc] as [from, to]
-      '-1': [[Math.PI * 1.5, TAU], [0, HALF]],            // west goal, opens toward +x
-      '1':  [[Math.PI, Math.PI * 1.5], [HALF, Math.PI]]   // east goal, opens toward -x
-    };
-    const CORNER = {                     // goal side -> touch line side
-      '-1': { '-1': [0, HALF],        '1': [Math.PI * 1.5, TAU] },
-      '1':  { '-1': [HALF, Math.PI],  '1': [Math.PI, Math.PI * 1.5] }
-    };
-    stroke(L, COURT.lineW, rect(-hl, -hw, hl, hw));              // touch + goal lines
-    stroke(L, COURT.lineW, seg(0, -hw, 0, hw));                  // halfway
-    stroke(L, COURT.lineW, arc(0, 0, COURT.centreCircle, 0, TAU));
-    g.fillStyle = L;
-    const dot = (x, y, r) => { g.beginPath(); g.arc(X(x), Y(y), S(r), 0, TAU); g.fill(); };
-    dot(0, 0, COURT.lineW);
-    for (const s of [-1, 1]) {
-      const gx = s * hl, py = COURT.goalW / 2 + COURT.postR * 2;   // 1.58 m, arc centres
-      const [south, north] = PEN[s];
-      stroke(L, COURT.lineW, arc(gx, -py, COURT.penaltyR, south[0], south[1]));
-      stroke(L, COURT.lineW, arc(gx,  py, COURT.penaltyR, north[0], north[1]));
-      stroke(L, COURT.lineW, seg(gx - s * COURT.penaltyR, -py, gx - s * COURT.penaltyR, py));
-      dot(gx - s * COURT.penaltyMark, 0, COURT.lineW * 1.6);       // penalty mark, 6 m
-      dot(gx - s * COURT.secondMark, 0, COURT.lineW * 1.6);        // second mark, 10 m
-      for (const t of [-1, 1]) {
-        const c = CORNER[s][t];
-        stroke(L, COURT.lineW, arc(gx, t * hw, COURT.cornerArc, c[0], c[1]));
-      }
-      /* substitution zone marks on the bench touch line, 80 cm long and
-         straddling it, at 2.5 m and 7.5 m either side of halfway */
-      for (const m of [2.5, 7.5]) stroke(L, COURT.lineW, seg(s * m, -hw - .4, s * m, -hw + .4));
-    }
-  });
-}
-
-/* ── everything else ────────────────────────────────────────────────────
-   Small tiling panels. Kept deliberately plain: the floor carries the
-   information in this room and the walls are there to be ridden, not read. */
-function noise(g, w, h, amt, light) {
-  for (let i = 0; i < w * h * 0.5; i++) {
-    const v = (Math.random() - .5) * amt;
-    g.fillStyle = `rgba(${v > 0 ? 255 : 0},${v > 0 ? 255 : 0},${v > 0 ? 255 : 0},${Math.abs(v) / 255 * (light || 1)})`;
-    g.fillRect((Math.random() * w) | 0, (Math.random() * h) | 0, 1, 1);
-  }
-}
-function bakeSurfaces() {
-  tex[MAT.FLOOR] = bakeFloor();
-
-  tex[MAT.PAD] = bake(64, 64, (g, w, h) => {       // 2 m wall padding, dark blue
-    g.fillStyle = '#16323d'; g.fillRect(0, 0, w, h);
-    g.fillStyle = 'rgba(0,0,0,.34)'; g.fillRect(0, 0, w, 2); g.fillRect(0, h - 2, w, 2);
-    g.fillStyle = 'rgba(237,242,240,.05)'; g.fillRect(0, 3, w, 1);
-    noise(g, w, h, 26);
-  });
-  tex[MAT.UPPER] = bake(64, 64, (g, w, h) => {     // painted blockwork above the pad
-    g.fillStyle = '#4a5158'; g.fillRect(0, 0, w, h);
-    g.strokeStyle = 'rgba(0,0,0,.26)'; g.lineWidth = 1;
-    for (let y = 0; y < h; y += 16) {
-      g.beginPath(); g.moveTo(0, y + .5); g.lineTo(w, y + .5); g.stroke();
-      const off = (y / 16) % 2 ? 16 : 0;
-      for (let x = off; x < w; x += 32) { g.beginPath(); g.moveTo(x + .5, y); g.lineTo(x + .5, y + 16); g.stroke(); }
-    }
-    noise(g, w, h, 30);
-  });
-  tex[MAT.CEIL] = bake(64, 64, (g, w, h) => {      // dark deck, exposed structure
-    g.fillStyle = '#191e23'; g.fillRect(0, 0, w, h);
-    g.fillStyle = '#232a30'; g.fillRect(0, 0, 6, h); g.fillRect(32, 0, 6, h);
-    noise(g, w, h, 20);
-  });
-  tex[MAT.PANEL] = bake(32, 32, (g, w, h) => {     // high-bay luminaire
-    g.fillStyle = '#f2f6ee'; g.fillRect(0, 0, w, h);
-    g.fillStyle = 'rgba(140,160,150,.30)';
-    for (let x = 3; x < w; x += 7) g.fillRect(x, 0, 1, h);
-  });
-  tex[MAT.FASCIA] = bake(64, 64, (g, w, h) => {    // THE ridable face. Sheet steel.
-    g.fillStyle = '#2a3138'; g.fillRect(0, 0, w, h);
-    for (let x = 0; x < w; x += 8) {               // vertical rib profile
-      g.fillStyle = 'rgba(237,242,240,.085)'; g.fillRect(x, 0, 2, h);
-      g.fillStyle = 'rgba(0,0,0,.30)'; g.fillRect(x + 5, 0, 2, h);
-    }
-    g.fillStyle = 'rgba(201,162,39,.5)'; g.fillRect(0, h - 5, w, 2);  // hazard stripe at deck lip
-    noise(g, w, h, 18);
-  });
-  tex[MAT.SEAT] = bake(64, 64, (g, w, h) => {      // seating tread
-    g.fillStyle = '#39434a'; g.fillRect(0, 0, w, h);
-    for (let x = 0; x < w; x += 21) { g.fillStyle = '#7c3327'; g.fillRect(x + 2, 6, 17, 22); }
-    noise(g, w, h, 22);
-  });
-  tex[MAT.RISER] = bake(64, 64, (g, w, h) => {
-    g.fillStyle = '#262c32'; g.fillRect(0, 0, w, h);
-    g.fillStyle = 'rgba(0,0,0,.4)'; g.fillRect(0, 0, w, 3);
-    noise(g, w, h, 16);
-  });
-  tex[MAT.DECK] = bake(64, 64, (g, w, h) => {
-    g.fillStyle = '#333b42'; g.fillRect(0, 0, w, h); noise(g, w, h, 24);
-  });
-  tex[MAT.POST] = bake(16, 16, (g, w, h) => {      // goal frame
-    g.fillStyle = '#e8ece9'; g.fillRect(0, 0, w, h);
-    g.fillStyle = 'rgba(0,0,0,.18)'; g.fillRect(0, 0, 2, h);
-  });
-  tex[MAT.CATWALK] = bake(64, 64, (g, w, h) => {
-    g.fillStyle = '#20292e'; g.fillRect(0,0,w,h);
-    g.strokeStyle = 'rgba(201,162,39,.55)'; g.lineWidth = 2;
-    for (let x=-h; x<w+h; x+=16) { g.beginPath(); g.moveTo(x,0); g.lineTo(x+h,h); g.stroke(); }
-    noise(g,w,h,22);
-  });
-  tex[MAT.SCRATCH] = bake(64, 64, (g, w, h) => {
-    g.fillStyle = '#8d7451'; g.fillRect(0,0,w,h);
-    g.strokeStyle = 'rgba(35,24,16,.42)'; g.lineWidth = 2;
-    for (let y=2; y<h; y+=5) { g.beginPath(); g.moveTo(0,y); g.lineTo(w,y+((y/5)%2?2:-2)); g.stroke(); }
-    noise(g,w,h,30);
-  });
-  tex[MAT.CUSHION] = bake(48, 48, (g, w, h) => {
-    g.fillStyle = '#6f2f2c'; g.fillRect(0,0,w,h);
-    g.fillStyle = 'rgba(237,242,240,.08)'; g.fillRect(3,3,w-6,3);
-    noise(g,w,h,18);
-  });
-  tex[MAT.CROWD] = bake(32, 32, (g, w, h) => {
-    g.fillStyle = '#59666b'; g.fillRect(0,0,w,h);
-    g.fillStyle = '#d0b27b'; g.fillRect(4,4,w-8,h-8);
-    g.fillStyle = '#12181c'; g.fillRect(8,8,5,5); g.fillRect(w-13,8,5,5);
-  });
-  tex[MAT.TRUSS] = bake(32, 32, (g, w, h) => {
-    g.fillStyle = '#11171b'; g.fillRect(0,0,w,h);
-    g.strokeStyle = 'rgba(237,242,240,.32)'; g.lineWidth = 2;
-    g.beginPath(); g.moveTo(0,0); g.lineTo(w,h); g.moveTo(w,0); g.lineTo(0,h); g.stroke();
-  });
-  tex[MAT.CONCOURSE] = bake(64, 64, (g, w, h) => {
-    g.fillStyle = '#252c31'; g.fillRect(0,0,w,h);
-    g.fillStyle = 'rgba(201,162,39,.15)'; g.fillRect(0,30,w,4);
-    g.fillStyle = 'rgba(237,242,240,.045)';
-    for (let x=0;x<w;x+=16) g.fillRect(x,0,1,h);
-    noise(g,w,h,20);
-  });
-
-  /* ── Panton Visiona outer rim materials ─────────────────────────────────
-     The Visiona 2 installation uses concentric layers: cold electric blue on
-     the exterior shell, warm magenta in the middle layer, amber-orange glow at
-     the core. In-game the player inhabits the inner ring, so magenta is the
-     ridable wall and the amber emits from the top cap, backlighting the arena. */
-  tex[MAT.PANTON_PINK] = bake(64, 64, (g, w, h) => {
-    g.fillStyle = '#b8347f'; g.fillRect(0,0,w,h);
-    /* horizontal fabric weave bands — Panton used textured foam throughout */
-    for (let y = 0; y < h; y += 4) {
-      g.fillStyle = y % 8 < 4 ? 'rgba(255,90,160,.10)' : 'rgba(80,0,45,.18)';
-      g.fillRect(0, y, w, 3.5);
-    }
-    /* subtle vertical contour highlight at 1/3 mark */
-    g.fillStyle = 'rgba(255,180,220,.06)'; g.fillRect(w/3-2, 0, 5, h);
-    noise(g, w, h, 20);
-  });
-  tex[MAT.PANTON_GLOW] = bake(32, 16, (g, w, h) => {
-    /* warm amber-to-orange gradient — the "hot core" in the Panton palette */
-    const grd = g.createLinearGradient(0, 0, 0, h);
-    grd.addColorStop(0,   '#ffd000');
-    grd.addColorStop(0.4, '#ff8800');
-    grd.addColorStop(1,   '#ff3a00');
-    g.fillStyle = grd; g.fillRect(0, 0, w, h);
-    g.fillStyle = 'rgba(255,255,200,.30)'; g.fillRect(0, 0, w, 2);
-  });
-}
-
-/* ═══════════════════════════════════════════════════════════════════════
-   GEOMETRY
-
-   Faces carry a precomputed normal, centroid and bounding radius. The
-   arcade lineage never needed those because its solver was a 2D portal
-   walk; a real rasterizer does, because they are what let a face be
-   rejected before any per-vertex work happens. See renderFace.
-   ═══════════════════════════════════════════════════════════════════════ */
-const faces = [];
-const SOLIDS = [];   // axis-aligned collision boxes
-const WALLS  = [];   // vertical ridable planes: {nx, ny, px, py, zTop, a0, a1, axis}
-
-function quad(p, mat, opts = {}) {
-  const a = p[0], b = p[1], c = p[2];
-  let nx = (b.y - a.y) * (c.z - a.z) - (b.z - a.z) * (c.y - a.y);
-  let ny = (b.z - a.z) * (c.x - a.x) - (b.x - a.x) * (c.z - a.z);
-  let nz = (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
-  const L = Math.hypot(nx, ny, nz) || 1; nx /= L; ny /= L; nz /= L;
-  let cx = 0, cy = 0, cz = 0;
-  for (const q of p) { cx += q.x; cy += q.y; cz += q.z; }
-  cx /= p.length; cy /= p.length; cz /= p.length;
-  let r = 0;
-  for (const q of p) r = Math.max(r, Math.hypot(q.x - cx, q.y - cy, q.z - cz));
-  faces.push({ verts: p, mat, nx, ny, nz, cx, cy, cz, r,
-               emissive: !!opts.emissive, light: opts.light == null ? 1 : opts.light });
-}
-const V = (x, y, z, u, v) => ({ x, y, z, u, v });
-
-/* A face in a world-axis plane gets its UVs straight from world metres, so
-   tiling is continuous wherever two surfaces meet. */
-function planeQuad(axis, at, a0, a1, b0, b1, mat, flip, opts) {
-  let p;
-  if (axis === 'x')      p = [V(at,a0,b0,a0,b0), V(at,a1,b0,a1,b0), V(at,a1,b1,a1,b1), V(at,a0,b1,a0,b1)];
-  else if (axis === 'y') p = [V(a0,at,b0,a0,b0), V(a1,at,b0,a1,b0), V(a1,at,b1,a1,b1), V(a0,at,b1,a0,b1)];
-  else                   p = [V(a0,b0,at,a0,b0), V(a1,b0,at,a1,b0), V(a1,b1,at,a1,b1), V(a0,b1,at,a0,b1)];
-  if (flip) p.reverse();
-  quad(p, mat, opts);
-}
-
-function box(x1, y1, z1, x2, y2, z2, mats, opts = {}) {
-  const m = typeof mats === 'number' ? { side: mats, top: mats } : mats;
-  planeQuad('x', x2, y1, y2, z1, z2, m.side, false, opts);
-  planeQuad('x', x1, y1, y2, z1, z2, m.side, true,  opts);
-  planeQuad('y', y2, x1, x2, z1, z2, m.side, true,  opts);
-  planeQuad('y', y1, x1, x2, z1, z2, m.side, false, opts);
-  planeQuad('z', z2, x1, x2, y1, y2, m.top,  false, opts);
-  if (opts.bottom) planeQuad('z', z1, x1, x2, y1, y2, m.side, true, opts);
-  if (opts.collide !== false) SOLIDS.push({ x1, y1, z1, x2, y2, z2 });
-  if (opts.ride !== false) {
-    WALLS.push({ nx:  1, ny: 0, px: x2, py: 0, zTop: z2, a0: y1, a1: y2, axis: 'y' });
-    WALLS.push({ nx: -1, ny: 0, px: x1, py: 0, zTop: z2, a0: y1, a1: y2, axis: 'y' });
-    WALLS.push({ nx: 0, ny:  1, px: 0, py: y2, zTop: z2, a0: x1, a1: x2, axis: 'x' });
-    WALLS.push({ nx: 0, ny: -1, px: 0, py: y1, zTop: z2, a0: x1, a1: x2, axis: 'x' });
-  }
-}
-
-function buildBleacherSide(side) {
-  const rise = HALL.standRise, tread = HALL.standTread;
-  const spanY = HALL.standInnerY - HALL.cornerGap;
-  const spanX = HALL.standInnerX - HALL.cornerGap;
-  for (let i = 0; i < HALL.standRows; i++) {
-    const top = HALL.standFascia + i * rise;
-    const mats = { side: i === 0 ? MAT.FASCIA : MAT.RISER, top: i === 0 ? MAT.DECK : MAT.SEAT };
-    const opts = { light: i === 0 ? .96 : .78, ride: true };
-    if (side === 'west') {
-      const front = -HALL.standInnerX - i * tread;
-      box(-HALL.standOuterX, -spanY, 0, front, spanY, top, mats, opts);
-    } else if (side === 'east') {
-      const front = HALL.standInnerX + i * tread;
-      box(front, -spanY, 0, HALL.standOuterX, spanY, top, mats, opts);
-    } else if (side === 'south') {
-      const front = -HALL.standInnerY - i * tread;
-      box(-spanX, -HALL.standOuterY, 0, spanX, front, top, mats, opts);
-    } else {
-      const front = HALL.standInnerY + i * tread;
-      box(-spanX, front, 0, spanX, HALL.standOuterY, top, mats, opts);
-    }
-  }
-}
-
-function buildCornerTree(sx, sy) {
-  /* A diagonal four-beat ascent through each corner void. Each beat is a
-     real solid with a ridable face, so the same pounce / wall-ride grammar
-     works from floor to bowl without context-sensitive parkour buttons. */
-  const bx = HALL.playX2 + .48, by = HALL.playY2 + .48;
-  const d = PARKOUR.towerStep, pad = PARKOUR.towerPad;
-  const heights = [.52, 1.05, 1.58, 2.18, 2.62];
-  for (let i = 0; i < heights.length; i++) {
-    const cx = sx * (bx + i * d * .46), cy = sy * (by + i * d * .46);
-    box(cx-pad/2, cy-pad/2, 0, cx+pad/2, cy+pad/2, heights[i],
-        { side: MAT.SCRATCH, top: i === heights.length-1 ? MAT.CUSHION : MAT.DECK },
-        { light: .90, ride: true });
-  }
-  const px = sx * (HALL.standInnerX - .24), py = sy * (HALL.standInnerY - .24);
-  box(px-.54, py-.54, 2.62, px+.54, py+.54, 2.80,
-      { side: MAT.TRUSS, top: MAT.CATWALK }, { light: .94, ride: true, bottom: true });
-}
-
-function buildUpperRing() {
-  const z1 = PARKOUR.upperRingZ, z2 = z1 + .18, w = PARKOUR.upperRingW;
-  const x = HALL.standOuterX + .20, y = HALL.standOuterY + .20;
-  box(-x-w/2, -y, z1, -x+w/2, y, z2, { side:MAT.TRUSS, top:MAT.CATWALK }, { bottom:true, light:.88 });
-  box( x-w/2, -y, z1,  x+w/2, y, z2, { side:MAT.TRUSS, top:MAT.CATWALK }, { bottom:true, light:.88 });
-  box(-x, -y-w/2, z1, x, -y+w/2, z2, { side:MAT.TRUSS, top:MAT.CATWALK }, { bottom:true, light:.88 });
-  box(-x,  y-w/2, z1, x,  y+w/2, z2, { side:MAT.TRUSS, top:MAT.CATWALK }, { bottom:true, light:.88 });
-
-  /* Four shell shelves are transfer stations: ride the wall, land, choose
-     a new direction. They deliberately sit above the seating bowl. */
-  const sz = PARKOUR.wallShelfZ;
-  for (const sy of [-1,1]) {
-    box(-2.0, sy*(HALL.standOuterY+.18)-.42, sz, 2.0, sy*(HALL.standOuterY+.18)+.42, sz+.16,
-        {side:MAT.TRUSS,top:MAT.CATWALK},{bottom:true,light:.92});
-  }
-  for (const sx of [-1,1]) {
-    box(sx*(HALL.standOuterX+.18)-.42, -1.55, sz+.35, sx*(HALL.standOuterX+.18)+.42, 1.55, sz+.51,
-        {side:MAT.TRUSS,top:MAT.CATWALK},{bottom:true,light:.92});
-  }
-
-  /* Two long sideline trusses create the high-speed upper lane while
-     staying outside the touch lines; soccer underneath remains unobstructed. */
-  const tz = PARKOUR.sidelineTrussZ;
-  for (const sy of [-1,1]) {
-    const yy = sy * (COURT.width/2 + HALL.runoff + .58);
-    box(-COURT.length/2-.45, yy-.20, tz, COURT.length/2+.45, yy+.20, tz+.20,
-        {side:MAT.TRUSS,top:MAT.CATWALK},{bottom:true,light:.96});
-  }
-}
-
-function buildParkourFurniture() {
-  /* Concourse vaults: low enough to pounce cleanly, offset so the inner
-     ring remains a fast lap rather than becoming an obstacle course. */
-  const vaults = [
-    [-4.2,-5.70, -2.6,-5.18,.42], [1.0,-5.72, 2.5,-5.20,.68],
-    [-2.3, 5.18, -.8, 5.70,.58], [2.8,5.18,4.5,5.70,.38],
-    [-7.70,-2.4,-7.18,-.9,.76], [-7.70,1.2,-7.18,2.8,.46],
-    [7.18,-2.8,7.70,-1.1,.50], [7.18,.7,7.70,2.5,.82]
-  ];
-  for (let i=0;i<vaults.length;i++) {
-    const [x1,y1,x2,y2,h]=vaults[i];
-    box(x1,y1,0,x2,y2,h,{side: i%3===0?MAT.SCRATCH:MAT.FASCIA, top:MAT.CUSHION},{light:.94,ride:true});
-  }
-
-  /* Sparse lounge blocks/spectators keep the bowl inhabited without turning
-     the software rasterizer into a crowd simulator. They are visual only. */
-  const crowd = [
-    [-4.8,-7.25],[-2.0,-7.75],[1.2,-7.3],[4.4,-7.8],
-    [-4.4,7.7],[-1.1,7.25],[2.0,7.8],[4.8,7.3],
-    [-9.2,-3.2],[-9.7,-.7],[-9.2,2.2],[9.3,-2.7],[9.7,.2],[9.25,2.8]
-  ];
-  for (let i=0;i<crowd.length;i++) {
-    const [x,y]=crowd[i], z=HALL.deckTop+.08;
-    box(x-.16,y-.14,z,x+.16,y+.14,z+.34,MAT.CROWD,{collide:false,ride:false,light:.95});
-  }
-}
-
-/* ── Panton outer rim ────────────────────────────────────────────────────
-   A new traversal layer sits just outside the hall shell at deckTop height.
-   Six staggered panels per side create the undulating silhouette of the
-   Visiona installation; height variation is authored in wH[], phase-shifted
-   per side so no two adjacent walls repeat the same profile.
-
-   Each panel is built as:
-   1. A solid pink box for collision, traversal, and sides
-   2. A thin non-colliding glow cap on the top face (emissive amber)
-
-   The glow cap is a separate box so it can be emissive without forcing all
-   faces to full brightness. It sits 2 cm above the pink body to guarantee
-   zbuf separation at all rendering distances.
-
-   The inner face of each rim panel is ridable (the wall normal points toward
-   the court) — the player rides the inside of the outer shell, consistent with
-   the bowl geometry inside. */
-const RIM = {
-  gap:    0.26,              // clearance between shell and inner rim face
-  depth:  1.40,              // wall thickness of each panel
-  capH:   0.04,              // glow cap thickness (visual only)
-  wH: [1.60, 1.85, 1.55, 1.90, 1.65, 1.80],  // panel peak heights above deckTop
-  n: 6                       // panels per side
-};
-
-function buildPantonRim() {
-  const z0  = HALL.deckTop;           // base elevation of all rim panels
-  const wH  = RIM.wH, n = RIM.n;
-
-  /* Inner and outer x/y boundaries of the rim channel */
-  const ix1 = HALL.x1 - RIM.gap, ix2 = HALL.x2 + RIM.gap;  // inner faces
-  const ox1 = ix1 - RIM.depth,   ox2 = ix2 + RIM.depth;     // outer faces
-  const iy1 = HALL.y1 - RIM.gap, iy2 = HALL.y2 + RIM.gap;
-  const oy1 = iy1 - RIM.depth,   oy2 = iy2 + RIM.depth;
-
-  /* One rim panel: pink body + amber glow cap + SOLID + ridable WALLS.
-     blueWallAxis/At/Flip identify which outer face to draw as PANTON_BLUE
-     (the face the player never sees from inside, kept for exterior reads). */
-  function rimPanel(x1, y1, x2, y2, ph) {
-    const z2 = z0 + ph;
-    /* Pink body — all four side faces share the material; the inner face
-       facing the arena is what the player rides, outer is culled from play. */
-    planeQuad('x', x2, y1, y2, z0, z2, MAT.PANTON_PINK, false, { light: .90 });
-    planeQuad('x', x1, y1, y2, z0, z2, MAT.PANTON_PINK, true,  { light: .90 });
-    planeQuad('y', y2, x1, x2, z0, z2, MAT.PANTON_PINK, true,  { light: .86 });
-    planeQuad('y', y1, x1, x2, z0, z2, MAT.PANTON_PINK, false, { light: .86 });
-    /* Pink top cap (traversal surface) */
-    planeQuad('z', z2, x1, x2, y1, y2, MAT.PANTON_PINK, false, { light: .95 });
-    /* Emissive amber glow cap 2 cm above — ensures zbuf separation */
-    planeQuad('z', z2 + RIM.capH, x1, x2, y1, y2, MAT.PANTON_GLOW, false,
-              { emissive: true, light: 1.5 });
-    /* Collision: full height including glow cap so step-up is seamless */
-    SOLIDS.push({ x1, y1, z1: z0, x2, y2, z2: z2 + RIM.capH });
-    /* Ridable planes — push all four sides; inner face is the designed route */
-    WALLS.push({ nx:  1, ny: 0, px: x2, py: 0, zTop: z2, a0: y1, a1: y2, axis: 'y' });
-    WALLS.push({ nx: -1, ny: 0, px: x1, py: 0, zTop: z2, a0: y1, a1: y2, axis: 'y' });
-    WALLS.push({ nx:  0, ny:  1, px: 0, py: y2, zTop: z2, a0: x1, a1: x2, axis: 'x' });
-    WALLS.push({ nx:  0, ny: -1, px: 0, py: y1, zTop: z2, a0: x1, a1: x2, axis: 'x' });
-  }
-
-  /* West and east sides: panels span the full y-range of the outer rim */
-  const spanY = iy2 - iy1, pY = spanY / n;
-  for (let i = 0; i < n; i++) {
-    const a0 = iy1 + i * pY, a1 = a0 + pY;
-    rimPanel(ox1, a0, ix1, a1, wH[i]);                        // west
-    rimPanel(ix2, a0, ox2, a1, wH[(i + 2) % n]);             // east, phase +2
-  }
-
-  /* South and north sides: panels span full outer x-range for corner closure */
-  const spanX = ox2 - ox1, pX = spanX / n;
-  for (let i = 0; i < n; i++) {
-    const a0 = ox1 + i * pX, a1 = a0 + pX;
-    rimPanel(a0, oy1, a1, iy1, wH[(i + 1) % n]);             // south, phase +1
-    rimPanel(a0, iy2, a1, oy2, wH[(i + 3) % n]);             // north, phase +3
-  }
-}
-
-function buildCourt() {
-  const { x1, x2, y1, y2, ceiling } = HALL, PAD = 2.0;
-
-  /* The soccer floor remains its original 14 × 10 quad and 1536px texture.
-     Four disjoint concourse slabs surround it; nothing parkour-owned overlaps it. */
-  quad([V(HALL.playX1,HALL.playY1,0,0,0), V(HALL.playX2,HALL.playY1,0,1,0),
-        V(HALL.playX2,HALL.playY2,0,1,1), V(HALL.playX1,HALL.playY2,0,0,1)], MAT.FLOOR, { light: 1 });
-  planeQuad('z', 0, x1, HALL.playX1, y1, y2, MAT.CONCOURSE, false, { light:.82 });
-  planeQuad('z', 0, HALL.playX2, x2, y1, y2, MAT.CONCOURSE, false, { light:.82 });
-  planeQuad('z', 0, HALL.playX1, HALL.playX2, y1, HALL.playY1, MAT.CONCOURSE, false, { light:.82 });
-  planeQuad('z', 0, HALL.playX1, HALL.playX2, HALL.playY2, y2, MAT.CONCOURSE, false, { light:.82 });
-  planeQuad('z', ceiling, x1, x2, y1, y2, MAT.CEIL, true, { light: .62 });
-
-  const wallRuns = [
-    ['x', x2, y1, y2, false], ['x', x1, y1, y2, true],
-    ['y', y2, x1, x2, true],  ['y', y1, x1, x2, false]
-  ];
-  for (const [axis, at, a0, a1, flip] of wallRuns) {
-    planeQuad(axis, at, a0, a1, 0, PAD, MAT.PAD, flip, { light: .80 });
-    planeQuad(axis, at, a0, a1, PAD, ceiling, MAT.UPPER, flip, { light: .92 });
-  }
-  WALLS.push({ nx:-1, ny:0, px:x2, py:0, zTop:ceiling, a0:y1, a1:y2, axis:'y' });
-  WALLS.push({ nx: 1, ny:0, px:x1, py:0, zTop:ceiling, a0:y1, a1:y2, axis:'y' });
-  WALLS.push({ nx:0, ny:-1, px:0, py:y2, zTop:ceiling, a0:x1, a1:x2, axis:'x' });
-  WALLS.push({ nx:0, ny: 1, px:0, py:y1, zTop:ceiling, a0:x1, a1:x2, axis:'x' });
-
-  /* Stadium lighting follows the larger bowl, but remains above play. */
-  for (const cx of [-6,-3,0,3,6]) for (const cy of [-3.4,3.4]) {
-    planeQuad('z', ceiling-.06, cx-1.05, cx+1.05, cy-.34, cy+.34, MAT.PANEL, true,
-              { emissive:true, light:1 });
-  }
-
-  for (const side of ['west','east','south','north']) buildBleacherSide(side);
-  for (const sx of [-1,1]) for (const sy of [-1,1]) buildCornerTree(sx,sy);
-  buildUpperRing();
-  buildParkourFurniture();
-  buildPantonRim();
-
-  /* The goals and their coordinates are unchanged. */
-  const pr = COURT.postR, hw = COURT.goalW / 2;
-  for (const s of [-1, 1]) {
-    const gx = s * COURT.length / 2;
-    for (const t of [-1, 1])
-      box(gx-pr, t*hw-pr, 0, gx+pr, t*hw+pr, COURT.goalH, MAT.POST, { light:1, ride:false });
-    box(gx-pr, -hw-pr, COURT.goalH-pr*2, gx+pr, hw+pr, COURT.goalH, MAT.POST,
-        { light:1, ride:false });
-  }
-}
-
-/* ═══════════════════════════════════════════════════════════════════════
-   RENDERER
-
-   Software rasteriser into an ImageData framebuffer with a real per-pixel
-   depth buffer. One putImageData per frame; no canvas draw call is issued
-   per column, per span or per face.
-
-   Two things are new relative to the engine this is lifted from:
-
-   1. CAMERA ROLL. cameraVert applies yaw, then pitch, then roll about the
-      view axis. Roll is the whole reason the wall ride reads as a wall ride
-      rather than as sliding along a surface, and it is only available
-      because pitch here is a rotation rather than a raster shear.
-
-   2. CULLING. The parent engine transformed every face in the scene every
-      frame — including faces behind the camera — and only rejected them
-      inside the rasteriser after a bounding box was computed. Each face now
-      carries a centroid and a bounding radius, and is tested for distance,
-      facing and frustum containment before any per-vertex work. Vertices go
-      into preallocated scratch objects rather than through two .map calls,
-      so a rejected face costs a handful of multiplies and no allocation.
-   ═══════════════════════════════════════════════════════════════════════ */
-const canvas = $('c'), ctx = canvas.getContext('2d', { alpha: false });
-let W = 480, H = 270, img = null, pix = null, zbuf = null, pixU32 = null, skyU32 = null;
-const NEAR = 0.08;
-const FOG_FAR = Math.round(Math.hypot(HALL.x2 - HALL.x1, HALL.y2 - HALL.y1) * 1.18);
-const LIGHT = (() => { const v = [0.25, -0.34, 0.90], L = Math.hypot(...v); return v.map(n => n / L); })();
-
-let qualityIndex = 2, qualityScale = KINETIC.qualityTiers[2];
-let renderCostEMA = 0, qualityClock = 0, goodClock = 0, renderCostMs = 0;
-
-function resize() {
-  const coarse = document.body.classList.contains('coarse');
-  const capW = (coarse ? 460 : 660) * qualityScale, capH = (coarse ? 340 : 400) * qualityScale;
-  W = Math.max(coarse ? 200 : 240, Math.min(Math.floor(innerWidth  * 0.70 * qualityScale), Math.floor(capW)));
-  H = Math.max(coarse ? 150 : 168, Math.min(Math.floor(innerHeight * 0.70 * qualityScale), Math.floor(capH)));
-  canvas.width = W; canvas.height = H;
-  img = ctx.createImageData(W, H); pix = img.data;
-  pixU32 = new Uint32Array(pix.buffer);    // 4× cheaper pixel writes via 32-bit view
-  zbuf = new Float32Array(W * H);
-  rebuildSky();
-}
-
-/* ── sky precompute ─────────────────────────────────────────────────────
-   One Uint32 colour per scanline, computed once at resize rather than inside
-   the clearFrame inner loop. On a 480×270 buffer that eliminates 129,600 per-
-   pixel divisions (t = y/H) and twelve colour multiplies per frame.
-
-   The Uint32 encoding is ImageData RGBA on a little-endian system:
-   value = 0xFF_BB_GG_RR where channels are byte-ordered R=LSB, A=MSB. */
-function rebuildSky() {
-  if (!H) return;
-  skyU32 = new Uint32Array(H);
-  for (let y = 0; y < H; y++) {
-    const t = y / H;
-    const r = (4 + 6 * t) | 0, g = (6 + 6 * t) | 0, b = (9 + 7 * t) | 0;
-    skyU32[y] = (0xFF000000 | (b << 16) | (g << 8) | r) >>> 0;
-  }
-}
-
-/* ── the traffic meter ──────────────────────────────────────────────────
-   Ported intact, because it is the single largest felt-experience asset in
-   the parent engine. It measures actual render cost, keeps an EMA, and
-   spends an overrun on resolution rather than on frame cadence. Hysteresis
-   both ways: 2.5 s before dropping a tier, 6 s of clean headroom before
-   climbing back, so the tier does not oscillate on a doorway. */
-function trafficMeter(frameDt, cost) {
-  renderCostEMA = renderCostEMA ? renderCostEMA * 0.85 + cost * 0.15 : cost;
-  renderCostMs = renderCostEMA; qualityClock += frameDt;
-  goodClock = renderCostEMA < KINETIC.renderBudgetMs * 0.55 ? goodClock + frameDt : 0;
-  if (qualityClock < 2.5) return;
-  qualityClock = 0;
-  const last = KINETIC.qualityTiers.length - 1;
-  if (renderCostEMA > KINETIC.renderBudgetMs && qualityIndex < last) setQuality(qualityIndex + 1, 'traffic');
-  else if (goodClock >= 6 && qualityIndex > 0) { setQuality(qualityIndex - 1, 'headroom'); goodClock = 0; }
-}
-function setQuality(next, reason) {
-  next = clamp(next | 0, 0, KINETIC.qualityTiers.length - 1);
-  if (next === qualityIndex) return;
-  qualityIndex = next; qualityScale = KINETIC.qualityTiers[next]; resize();
-  note(`raster ${KINETIC.qualityNames[next]} — ${W}×${H}, ${reason}`);
-}
-
-/* ── camera ─────────────────────────────────────────────────────────── */
-let camX = 0, camY = 0, camZ = 0, camYaw = 0, camPitch = 0, camRoll = 0, camFov = KINETIC.baseFov;
-let cy_ = 1, sy_ = 0, cp_ = 1, sp_ = 0, cr_ = 1, sr_ = 0, projD = 240, halfW = 240, halfH = 135;
-let tanH = 1, tanV = 1;
-
-function camSync() {
-  cy_ = Math.cos(camYaw); sy_ = Math.sin(camYaw);
-  cp_ = Math.cos(camPitch); sp_ = Math.sin(camPitch);
-  cr_ = Math.cos(camRoll); sr_ = Math.sin(camRoll);
-  halfW = W / 2; halfH = H / 2;
-  projD = halfW / Math.tan(camFov / 2);
-  tanH = halfW / projD; tanV = halfH / projD;
-}
-/* world -> camera. yaw about world Z, then pitch about the camera's right
-   axis, then roll about the view axis. */
-function camPoint(x, y, z, out) {
-  const dx = x - camX, dy = y - camY, dz = z - camZ;
-  const rx = dx * sy_ - dy * cy_, fz = dx * cy_ + dy * sy_;
-  const z2 = fz * cp_ + dz * sp_, y2 = dz * cp_ - fz * sp_;
-  out.x = rx * cr_ + y2 * sr_; out.y = y2 * cr_ - rx * sr_; out.z = z2;
-  return out;
-}
-
-/* ── scratch ────────────────────────────────────────────────────────── */
-const SC_A = [], SC_B = [], SC_S = [], CENT = { x: 0, y: 0, z: 0 }, TC = new Uint8Array(4);
-for (let i = 0; i < 12; i++) {
-  SC_A.push({ x:0, y:0, z:0, u:0, v:0 });
-  SC_B.push({ x:0, y:0, z:0, u:0, v:0 });
-  SC_S.push({ x:0, y:0, z:0, u:0, v:0 });
-}
-let nA = 0, nB = 0;
-
-function clipNearPoly() {
-  nB = 0;
-  for (let i = 0; i < nA; i++) {
-    const A = SC_A[i], B = SC_A[(i + 1) % nA], ai = A.z >= NEAR, bi = B.z >= NEAR;
-    if (ai) { const o = SC_B[nB++]; o.x = A.x; o.y = A.y; o.z = A.z; o.u = A.u; o.v = A.v; }
-    if (ai !== bi) {
-      const t = (NEAR - A.z) / (B.z - A.z), o = SC_B[nB++];
-      o.x = A.x + (B.x - A.x) * t; o.y = A.y + (B.y - A.y) * t; o.z = NEAR;
-      o.u = A.u + (B.u - A.u) * t; o.v = A.v + (B.v - A.v) * t;
-    }
-  }
-}
-
-function sampleTexture(mat, u, v) {
-  const t = tex[mat]; if (!t) { TC[0] = 255; TC[1] = 0; TC[2] = 255; TC[3] = 255; return TC; }
-  let x, y;
-  if (matClamp.has(mat)) {
-    x = clamp((u * (t.w - 1)) | 0, 0, t.w - 1); y = clamp((v * (t.h - 1)) | 0, 0, t.h - 1);
-  } else {
-    const s = matScale[mat] || 0.5;
-    const uu = ((u * s) % 1 + 1) % 1, vv = ((v * s) % 1 + 1) % 1;
-    x = (uu * (t.w - 1)) | 0; y = (vv * (t.h - 1)) | 0;
-  }
-  const p = (y * t.w + x) * 4;
-  TC[0] = t.d[p]; TC[1] = t.d[p + 1]; TC[2] = t.d[p + 2]; TC[3] = t.d[p + 3];
-  return TC;
-}
-
-function rasterTri(a, b, c, mat, light) {
-  let minX = Math.max(0, Math.floor(Math.min(a.x, b.x, c.x)));
-  let maxX = Math.min(W - 1, Math.ceil(Math.max(a.x, b.x, c.x)));
-  let minY = Math.max(0, Math.floor(Math.min(a.y, b.y, c.y)));
-  let maxY = Math.min(H - 1, Math.ceil(Math.max(a.y, b.y, c.y)));
-  if (maxX < minX || maxY < minY) return;
-  const den = (b.y - c.y) * (a.x - c.x) + (c.x - b.x) * (a.y - c.y);
-  if (Math.abs(den) < 1e-6) return;
-  const ia = 1/a.z, ib = 1/b.z, ic = 1/c.z;
-  const ua = a.u*ia, ub = b.u*ib, uc = c.u*ic, va = a.v*ia, vb = b.v*ib, vc = c.v*ic;
-  for (let y = minY; y <= maxY; y++) {
-    const py = y + 0.5, row = y * W;
-    for (let x = minX; x <= maxX; x++) {
-      const px = x + 0.5;
-      const w1 = ((b.y - c.y) * (px - c.x) + (c.x - b.x) * (py - c.y)) / den;
-      if (w1 < -0.001) continue;
-      const w2 = ((c.y - a.y) * (px - c.x) + (a.x - c.x) * (py - c.y)) / den;
-      if (w2 < -0.001) continue;
-      const w3 = 1 - w1 - w2; if (w3 < -0.001) continue;
-      const inv = w1*ia + w2*ib + w3*ic; if (inv <= 0) continue;
-      const z = 1 / inv, idx = row + x;
-      if (z >= zbuf[idx]) continue;
-      const tc = sampleTexture(mat, (w1*ua + w2*ub + w3*uc) * z, (w1*va + w2*vb + w3*vc) * z);
-      const fog = z > FOG_FAR ? 0.22 : 1 - (z / FOG_FAR) * 0.78;
-      const sh = light * fog;
-      /* Single 32-bit write replaces 4 byte stores. RGBA little-endian packing:
-         Uint32 = 0xFF_BB_GG_RR. Math.min guards against emissive overshoot (sh>1). */
-      pixU32[idx] = (0xFF000000
-        | (Math.min((tc[2] * sh) | 0, 255) << 16)
-        | (Math.min((tc[1] * sh) | 0, 255) <<  8)
-        |  Math.min((tc[0] * sh) | 0, 255)) >>> 0;
-      zbuf[idx] = z;
-    }
-  }
-}
-
-let statFaces = 0, statCulled = 0;
-const FAR2 = (FOG_FAR * 1.25) ** 2;
-
-function renderFace(f) {
-  /* distance, in world space, no transform */
-  const dx = f.cx - camX, dy = f.cy - camY, dz = f.cz - camZ;
-  if (dx*dx + dy*dy + dz*dz > FAR2) { statCulled++; return; }
-  /* facing, in world space, still no transform */
-  if (!f.emissive && f.nx*dx + f.ny*dy + f.nz*dz > 0) { statCulled++; return; }
-  /* frustum, from the centroid alone — one point transformed, not four */
-  camPoint(f.cx, f.cy, f.cz, CENT);
-  if (CENT.z + f.r < NEAR) { statCulled++; return; }
-  if (Math.abs(CENT.x) > CENT.z * tanH + f.r * 1.45) { statCulled++; return; }
-  if (Math.abs(CENT.y) > CENT.z * tanV + f.r * 1.45) { statCulled++; return; }
-
-  const vs = f.verts; nA = vs.length;
-  for (let i = 0; i < nA; i++) {
-    const s = vs[i], o = SC_A[i];
-    camPoint(s.x, s.y, s.z, o); o.u = s.u; o.v = s.v;
-  }
-  clipNearPoly();
-  if (nB < 3) { statCulled++; return; }
-  for (let i = 0; i < nB; i++) {
-    const q = SC_B[i], o = SC_S[i];
-    o.x = halfW + q.x / q.z * projD; o.y = halfH - q.y / q.z * projD;
-    o.z = q.z; o.u = q.u; o.v = q.v;
-  }
-  const d = Math.abs(f.nx*LIGHT[0] + f.ny*LIGHT[1] + f.nz*LIGHT[2]);
-  const light = f.emissive ? 1.6 : (0.38 + d * 0.66) * f.light;
-  statFaces++;
-  for (let i = 1; i < nB - 1; i++) rasterTri(SC_S[0], SC_S[i], SC_S[i + 1], f.mat, light);
-}
-
-function clearFrame() {
-  zbuf.fill(Infinity);
-  /* Uint32 writes: 1 store per pixel vs the original 4 (R,G,B,A separately).
-     skyU32[] is precomputed per scanline at resize — zero math in the hot path. */
-  for (let y = 0; y < H; y++) {
-    const color = skyU32[y], base = y * W;
-    for (let x = 0; x < W; x++) pixU32[base + x] = color;
-  }
-}
-
-function render3D() {
-  camSync(); clearFrame();
-  statFaces = 0; statCulled = 0;
-  for (let i = 0; i < faces.length; i++) renderFace(faces[i]);
-  ctx.putImageData(img, 0, 0);
-  if (showPlan) drawPlan();
-}
-
-/* ═══════════════════════════════════════════════════════════════════════
-   SIMULATION — fixed 60 Hz, independent of render rate.
-   ═══════════════════════════════════════════════════════════════════════ */
-const SPAWN = { x: 0, y: 2.2, yaw: -Math.PI/2 };
-const STAFF = [
- {name:'Miso',team:0,x:-2.6,y:1.0,vx:0,vy:0,z:0,role:'runner'},
- {name:'Beans',team:0,x:2.5,y:1.4,vx:0,vy:0,z:0,role:'screen'},
- {name:'Pip',team:0,x:0.3,y:-1.0,vx:0,vy:0,z:1.8,role:'aerial'},
- {name:'Sesame',team:1,x:-2.2,y:-1.8,vx:0,vy:0,z:0,role:'press'},
- {name:'Juniper',team:1,x:2.4,y:-1.7,vx:0,vy:0,z:0,role:'press'},
- {name:'Olive',team:1,x:-3.8,y:0.1,vx:0,vy:0,z:0,role:'press'},
- {name:'Pepper',team:1,x:3.6,y:0.0,vx:0,vy:0,z:1.6,role:'aerial'}
+function cabinetArt(letter,part){const a=CABINET_PART_RECTS[letter];return{sheet:a[0],rect:a[1][part]};}
+
+const SCREEN_ATLAS_META={width:2048,height:1433,cols:5,rows:5,count:25};
+// Per-sprite content bounds measured from fts_sprites.png. Individual crops matter:
+// the CRT art does not share one exact X/Y box per row/column.
+const SCREEN_RECTS=[
+ [5,10,400,266],[414,14,401,259],[824,11,400,265],[1233,10,401,266],[1643,12,400,263],
+ [8,291,393,278],[415,291,399,278],[827,291,394,278],[1238,291,392,278],[1645,291,395,278],
+ [5,586,400,260],[414,590,401,254],[824,587,400,259],[1233,587,401,260],[1643,588,400,257],
+ [5,870,400,267],[414,872,401,263],[824,871,400,264],[1233,870,401,267],[1643,871,400,265],
+ [10,1152,388,277],[415,1151,398,278],[829,1152,389,277],[1241,1151,385,278],[1648,1151,391,278]
 ];
-const TIKKA={x:0,y:2.2,z:.18,vx:0,vy:0,vz:0,owner:-1,target:null,chain:0,bells:0};
-function passTikka(){ if(TIKKA.owner!==-1)return; let best=null,bd=99; for(let i=0;i<3;i++){const a=STAFF[i],dx=a.x-sim.x,dy=a.y-sim.y,d=Math.hypot(dx,dy);if(d<bd){bd=d;best=a}} if(best){TIKKA.owner=null;TIKKA.target=best;const d=Math.hypot(best.x-sim.x,best.y-sim.y)||1;TIKKA.x=sim.x;TIKKA.y=sim.y;TIKKA.z=sim.z+.2;TIKKA.vx=(best.x-sim.x)/d*7;TIKKA.vy=(best.y-sim.y)/d*7;TIKKA.vz=1.2;}}
-function stepTikka(dt){
- for(let i=0;i<STAFF.length;i++){const a=STAFF[i], isBird=a.role==='aerial'; let tx,ty;if(a.team===0){tx=Math.sin(sim.t*.8+i*2.1)*3.8;ty=Math.cos(sim.t*.7+i)*2.4;}else{tx=TIKKA.x+Math.sin(sim.t*1.1+i)*.8;ty=TIKKA.y+Math.cos(sim.t*.9+i)*.8;} const sp=isBird?3.8:(a.role==='screen'?2.6:3.5);let dx=tx-a.x,dy=ty-a.y,d=Math.hypot(dx,dy)||1;a.vx=approach(a.vx,dx/d*sp,5,dt);a.vy=approach(a.vy,dy/d*sp,5,dt);a.x=clamp(a.x+a.vx*dt,-5.6,5.6);a.y=clamp(a.y+a.vy*dt,-3.6,3.6);a.z=isBird?1.5+Math.sin(sim.t*2+i)*.45:0;}
- if(TIKKA.owner===-1){TIKKA.x=sim.x;TIKKA.y=sim.y;TIKKA.z=sim.z+.18;} else if(TIKKA.owner && TIKKA.owner.team===0){TIKKA.x=TIKKA.owner.x;TIKKA.y=TIKKA.owner.y;TIKKA.z=TIKKA.owner.z+.18;if(Math.random()<dt*1.0){TIKKA.owner=-1;TIKKA.chain++;if(TIKKA.chain>=5){TIKKA.bells++;TIKKA.chain=0;note('SERVICE BELL — five clean passes');}}} else {TIKKA.vz-=12*dt;TIKKA.x+=TIKKA.vx*dt;TIKKA.y+=TIKKA.vy*dt;TIKKA.z=Math.max(.12,TIKKA.z+TIKKA.vz*dt);if(TIKKA.target&&Math.hypot(TIKKA.x-TIKKA.target.x,TIKKA.y-TIKKA.target.y)<.45){TIKKA.owner=TIKKA.target;TIKKA.target=null;TIKKA.chain++;if(TIKKA.chain>=5){TIKKA.bells++;TIKKA.chain=0;note('SERVICE BELL — five clean passes');}}}
- for(const a of STAFF.filter(q=>q.team===1)){if(Math.hypot(a.x-TIKKA.x,a.y-TIKKA.y)<.38){TIKKA.owner=null;TIKKA.target=null;TIKKA.chain=0;TIKKA.x=0;TIKKA.y=2.2;note(a.name+' stole the Tikka');}}
- $('bells').textContent=TIKKA.bells;$('chain').textContent=TIKKA.chain;
+function screenRect(n){return SCREEN_RECTS[Math.max(0,Math.min(SCREEN_ATLAS_META.count-1,n-1))].slice();}
+
+const MATERIALS=[];
+const MAT={};
+function mat(name,sheet,rect,opts){MAT[name]=MATERIALS.length;MATERIALS.push(Object.assign({name,sheet,rect,stretch:false},opts||{}));return MAT[name];}
+Object.keys(WORLD_RECTS).forEach(k=>mat(k,'world',WORLD_RECTS[k]));
+Object.keys(FIXTURE_RECTS).forEach(k=>mat('FIX_'+k,'fixture',FIXTURE_RECTS[k]));
+for(let cc=65;cc<=90;cc++){
+ const L=String.fromCharCode(cc);
+ for(const p of SKIN_PARTS){const a=cabinetArt(L,p);mat('SKIN_'+L+'_'+p,a.sheet,a.rect,{stretch:true});}
 }
-const sim = {
-  x: SPAWN.x, y: SPAWN.y, z: 0, vx: 0, vy: 0, vz: 0,
-  yaw: SPAWN.yaw, pitch: 0, roll: 0,
-  grounded: true, eyeH: BODY.eye, fov: KINETIC.baseFov,
-  riding: null, rideT: 0, rideSide: 0, rideLiftT: 0, reattachT: 0, rideLock: null,
-  coiling: false, coilT: 0,
-  coyoteT: 0, bufferT: 0, bob: 0, t: 0,
-  peakZ: 0, topSpeed: 0, rides: 0
-};
-const input = { fwd:0, back:0, left:0, right:0, run:0, crouch:0, jump:0, jumpEdge:false };
+mat('CAB_BLACK','solid',null,{stretch:true});
+Object.keys(CABINET_REF_RECTS).forEach(k=>mat('CAB_REF_'+k,'cabinetRef',CABINET_REF_RECTS[k],{stretch:true}));
+for(let i=1;i<=25;i++)mat('SCREEN_'+String(i).padStart(2,'0'),'screen',screenRect(i),{stretch:true});
 
-const approach = (cur, target, lambda, dt) => target + (cur - target) * Math.exp(-lambda * dt);
-
-/* ── collision ──────────────────────────────────────────────────────────
-   Cylinder against axis-aligned boxes, resolved one axis at a time. The
-   court has eleven boxes and four hall planes, so there is nothing to gain
-   from a broadphase and a linear scan stays honest. */
-const R = BODY.radius, HT = BODY.height;
-function overlaps(s, x, y, z) {
-  return x + R > s.x1 && x - R < s.x2 && y + R > s.y1 && y - R < s.y2 && z + HT > s.z1 && z < s.z2;
-}
-function resolveX(nx) {
-  const c = clamp(nx, HALL.x1 + R, HALL.x2 - R);
-  if (c !== nx) { sim.vx = 0; nx = c; }
-  for (const s of SOLIDS) {
-    if (!overlaps(s, nx, sim.y, sim.z)) continue;
-    /* standing on top of this box is not a side collision */
-    if (sim.z >= s.z2 - 0.02) continue;
-    nx = (sim.x < (s.x1 + s.x2) / 2) ? s.x1 - R : s.x2 + R; sim.vx = 0;
-  }
-  return nx;
-}
-function resolveY(ny) {
-  const c = clamp(ny, HALL.y1 + R, HALL.y2 - R);
-  if (c !== ny) { sim.vy = 0; ny = c; }
-  for (const s of SOLIDS) {
-    if (!overlaps(s, sim.x, ny, sim.z)) continue;
-    if (sim.z >= s.z2 - 0.02) continue;
-    ny = (sim.y < (s.y1 + s.y2) / 2) ? s.y1 - R : s.y2 + R; sim.vy = 0;
-  }
-  return ny;
-}
-function groundAt(x, y) {
-  let g = 0;
-  for (const s of SOLIDS) {
-    if (x + R <= s.x1 || x - R >= s.x2 || y + R <= s.y1 || y - R >= s.y2) continue;
-    if (s.z2 > g && s.z2 <= sim.z + 0.35) g = s.z2;
-  }
-  return g;
-}
-
-/* ── wall search ────────────────────────────────────────────────────────
-   Returns the nearest ridable plane the body is close enough to, or null.
-   The alignment test is the one that decides whether the mechanic feels
-   like riding or like being magnetised: a velocity pointing away from the
-   wall is allowed up to RIDE.alignMax, so drifting off is possible and the
-   player stays in charge of leaving. */
-function wallGap(w) {
-  return (w.axis === 'y' ? (sim.x - w.px) * w.nx : (sim.y - w.py) * w.ny) - R;
-}
-function sameRidePlane(a, b) {
-  if (!a || !b || a.axis !== b.axis || a.nx !== b.nx || a.ny !== b.ny) return false;
-  const ap = a.axis === 'y' ? a.px : a.py, bp = b.axis === 'y' ? b.px : b.py;
-  return Math.abs(ap - bp) < 1e-6;
-}
-function updateRideLock() {
-  const w = sim.rideLock;
-  if (!w) return;
-  if (sim.grounded || wallGap(w) >= RIDE.rearmDist) sim.rideLock = null;
-}
-
-function findWall() {
-  const sp = Math.hypot(sim.vx, sim.vy);
-  if (sp < RIDE.minSpeed) return null;
-  const ux = sim.vx / sp, uy = sim.vy / sp;
-  let best = null, bestGap = Infinity;
-  for (const w of WALLS) {
-    if (sameRidePlane(w, sim.rideLock)) continue; // coincident geometry cannot bypass the spent-wall lock
-    if (sim.z > w.zTop - 0.15) continue;
-    const along = w.axis === 'y' ? sim.y : sim.x;
-    if (along < w.a0 - R || along > w.a1 + R) continue;
-    const gap = wallGap(w);
-    if (gap > RIDE.attachDist || gap < -0.12) continue;
-    if (ux * w.nx + uy * w.ny > RIDE.alignMax) continue;
-    if (gap < bestGap) { bestGap = gap; best = w; }
-  }
-  return best;
-}
-
-function beginRide(w) {
-  sim.riding = w; sim.rideT = 0; sim.rideLiftT = 0; sim.rides++;
-  /* momentum is projected onto the wall plane, never scrubbed */
-  const vn = sim.vx * w.nx + sim.vy * w.ny;
-  sim.vx -= vn * w.nx; sim.vy -= vn * w.ny;
-  if (sim.vz < 0) sim.vz *= 0.35;
-  const rx = Math.sin(sim.yaw), ry = -Math.cos(sim.yaw);
-  sim.rideSide = (rx * -w.nx + ry * -w.ny) >= 0 ? 1 : -1;
-}
-function endRide(launch) {
-  const w = sim.riding; if (!w) return;
-  if (launch) {
-    sim.vz = RIDE.dismountUp;
-    sim.vx += w.nx * RIDE.dismountOut; sim.vy += w.ny * RIDE.dismountOut;
-  }
-  /* The wall itself is now spent. reattachT debounces transfers; rideLock
-     is the real anti-infinite-run rule and survives until separation/land. */
-  sim.rideLock = w; sim.reattachT = RIDE.reattach;
-  sim.riding = null; sim.rideT = 0; sim.rideLiftT = 0;
-}
-
-/* ── future wall backflip hooks ─────────────────────────────────────────
-   Intentionally inert in this pass. A backflip should be an explicit wall
-   dismount state, not a camera trick hidden inside wall riding. Likely path:
-
-   1. wantsWallBackflip(w): gate on a fresh jump press after some minimum
-      ride time plus an away/back intent so ordinary hold-jump never flips.
-   2. beginWallBackflip(w): preserve tangential speed, add w.normal * outward
-      impulse and an upward impulse, then call endRide semantics so the same
-      wall is locked until clear.
-   3. stepWallBackflip(dt): animate a separate visual flip phase. Do NOT fold
-      the rotation into sim.yaw/sim.pitch; keeping camera presentation apart
-      from movement heading prevents controls from rotating/inverting mid-flip.
-   4. Collision remains ordinary airborne cylinder collision throughout; the
-      flip earns style/readability, not noclip or a new physics body. */
-function wantsWallBackflip(w) { void w; return false; }
-function beginWallBackflip(w) { void w; /* reserved: impulse + flip state */ }
-function stepWallBackflip(dt) { void dt; /* reserved: presentation only */ }
-
-function step(dt) {
-  sim.t += dt;
-  stepTikka(dt);
-  const wasGrounded = sim.grounded;
-  if (sim.reattachT > 0) sim.reattachT -= dt;
-  updateRideLock();
-  if (input.jumpEdge) sim.bufferT = KINETIC.jumpBuffer;
-  if (sim.bufferT > 0) sim.bufferT -= dt;
-
-  /* ── desired horizontal velocity, in yaw space ───────────────────── */
-  const fwd = (input.fwd ? 1 : 0) - (input.back ? 1 : 0);
-  const str = (input.right ? 1 : 0) - (input.left ? 1 : 0);
-  const crouching = input.crouch && sim.grounded && !sim.riding;
-  let top = crouching ? KINETIC.crouchSpeed : (input.run ? KINETIC.sprintSpeed : KINETIC.walkSpeed);
-  let dvx = 0, dvy = 0;
-  if (fwd || str) {
-    const scale = fwd < 0 ? KINETIC.reverseFactor : 1;
-    const sx = str * KINETIC.strafeFactor, fx = fwd * scale;
-    const L = Math.hypot(fx, sx) || 1;
-    const cyw = Math.cos(sim.yaw), syw = Math.sin(sim.yaw);
-    dvx = (cyw * fx + syw * sx) / L * top;
-    dvy = (syw * fx - cyw * sx) / L * top;
-  }
-
-  if (sim.riding) {
-    /* ── attached ──────────────────────────────────────────────────── */
-    const w = sim.riding;
-    sim.rideT += dt;
-
-    /* ── COIL-SPRING PIVOT POUNCE ─────────────────────────────────────
-       A fresh SPACE tap (jumpEdge, not hold) while riding and past the
-       minimum ride time begins the coil wind-up. During the wind the
-       cat's vz is pulled downward (loading the hind legs), wall-plane
-       projection still holds horizontal heading, and steering is frozen.
-       After COIL.windT the spring fires: velocity is redirected at an
-       angle between the travel tangent and the wall normal (pivotBlend),
-       and a boosted vz launches the cat clear of the wall.
-
-       Hold-jump (continuous) is untouched — it runs only when !coiling
-       and fills holdLiftBudget as before. The two mechanics are mutually
-       exclusive: a held jump cannot become a coil, and a coil commits
-       even if Space is released mid-wind. */
-    if (!sim.coiling && input.jumpEdge && sim.rideT >= COIL.minRideT) {
-      sim.coiling = true; sim.coilT = 0;
-      input.jumpEdge = false;   // consume so bufferT and jump-at-ground don't also fire
-    }
-
-    /* Wall-plane projection applies in all ride sub-states */
-    const vn = sim.vx * w.nx + sim.vy * w.ny;
-    sim.vx -= vn * w.nx; sim.vy -= vn * w.ny;
-
-    let doNormalRide = true;
-
-    if (sim.coiling) {
-      doNormalRide = false;
-      sim.coilT += dt;
-      /* Pull vz toward the dip target — brief downward settle that loads the spring */
-      sim.vz = approach(sim.vz, COIL.dipVz, COIL.dipLambda, dt);
-
-      if (sim.coilT >= COIL.windT) {
-        /* ── spring release ──────────────────────────────────────── */
-        const sp = Math.hypot(sim.vx, sim.vy);
-        if (sp > 0.01) {
-          /* Pivot direction: blend current tangent velocity with wall normal.
-             pivotBlend=0 → pure outward launch (wall-jump feel)
-             pivotBlend=1 → pure tangent (run through the corner)
-             0.60 gives a visible arc with enough clearance to leave the wall. */
-          const tx = sim.vx / sp, ty = sim.vy / sp;
-          const ox = tx * COIL.pivotBlend + w.nx * (1 - COIL.pivotBlend);
-          const oy = ty * COIL.pivotBlend + w.ny * (1 - COIL.pivotBlend);
-          const oL = Math.hypot(ox, oy) || 1;
-          sim.vx = (ox / oL) * sp; sim.vy = (oy / oL) * sp;
-        }
-        sim.vz = RIDE.dismountUp * COIL.upMult;
-        sim.coiling = false;
-        endRide(false);   // sets rideLock + reattachT, clears sim.riding
-        note('pivot pounce');
-        /* doNormalRide stays false — skip expiry/lift block this step */
-      }
-      /* during coil: no acceleration, no steering, no hold-lift */
-    }
-
-    if (doNormalRide) {
-      /* accelerate along the wall toward the ride cap */
-      const sp = Math.hypot(sim.vx, sim.vy);
-      if (sp > 0.001 && sp < RIDE.gainCap) {
-        const add = Math.min(RIDE.gain * dt, RIDE.gainCap - sp);
-        sim.vx += sim.vx / sp * add; sim.vy += sim.vy / sp * add;
-      }
-      /* a little steering along the wall, projected so it cannot push off.
-         This is additive, so it needs its own ceiling — without the clamp a
-         long ride accelerated past gainCap and a probe measured 12.8 m/s
-         against an 11.2 cap. */
-      const pn = dvx * w.nx + dvy * w.ny;
-      sim.vx += (dvx - pn * w.nx) * 0.22 * dt * 3.0;
-      sim.vy += (dvy - pn * w.ny) * 0.22 * dt * 3.0;
-      const sp2 = Math.hypot(sim.vx, sim.vy);
-      if (sp2 > RIDE.gainCap) { sim.vx = sim.vx / sp2 * RIDE.gainCap; sim.vy = sim.vy / sp2 * RIDE.gainCap; }
-
-      /* Variable-height wall glide. Holding jump spends a finite lift budget;
-         releasing it pauses the spend, so a later hold can catch the glide.
-         rideT never pauses, so this cannot extend the wall-run lifetime. */
-      if (input.jump && sim.rideLiftT < RIDE.holdLiftBudget) {
-        sim.rideLiftT = Math.min(RIDE.holdLiftBudget, sim.rideLiftT + dt);
-        sim.vz = approach(sim.vz, RIDE.holdLift, RIDE.holdLiftLambda, dt);
-      } else {
-        sim.vz = approach(sim.vz, RIDE.settle, RIDE.settleLambda, dt);
-      }
-
-      if (wantsWallBackflip(w)) beginWallBackflip(w);
-      else if (sim.rideT >= RIDE.maxHold || Math.hypot(sim.vx, sim.vy) < RIDE.minSpeed) endRide(false);
-    }
-  } else {
-    /* ── ground and air ────────────────────────────────────────────── */
-    const cur = Math.hypot(sim.vx, sim.vy), want = Math.hypot(dvx, dvy);
-    let lambda = want > cur ? KINETIC.accelLambda : KINETIC.brakeLambda;
-    if (want > 0.01 && cur > 0.01 && (sim.vx*dvx + sim.vy*dvy) / (cur*want) < -0.25)
-      lambda = KINETIC.reverseLambda;
-    if (!sim.grounded) lambda *= KINETIC.airControl;
-    sim.vx = approach(sim.vx, dvx, lambda, dt);
-    sim.vy = approach(sim.vy, dvy, lambda, dt);
-    sim.vz -= KINETIC.gravity * dt;
-
-    /* attach — airborne, jump held, moving, near a face */
-    if (!sim.grounded && input.jump && sim.reattachT <= 0) {
-      const w = findWall();
-      if (w) beginRide(w);
-    }
-    /* jump, with coyote grace and an input buffer */
-    if (!sim.riding && sim.bufferT > 0 && (sim.grounded || sim.coyoteT > 0)) {
-      sim.vz = KINETIC.jumpVel; sim.grounded = false; sim.coyoteT = 0; sim.bufferT = 0;
-    }
-  }
-
-  /* ── integrate and resolve ─────────────────────────────────────────── */
-  sim.x = resolveX(sim.x + sim.vx * dt);
-  sim.y = resolveY(sim.y + sim.vy * dt);
-  sim.z += sim.vz * dt;
-
-  if (sim.riding) {   /* hold the body against the plane it is riding */
-    const w = sim.riding, hold = R + 0.02;
-    if (w.axis === 'y') sim.x = w.px + w.nx * hold; else sim.y = w.py + w.ny * hold;
-    if (sim.z > w.zTop - 0.15) endRide(false);
-  }
-
-  const g = groundAt(sim.x, sim.y);
-  if (sim.z <= g + 1e-4 && sim.vz <= 0) {
-    sim.z = g; sim.vz = 0; sim.grounded = true;
-    if (sim.riding) endRide(false);
-  } else {
-    sim.grounded = false;
-  }
-  const head = HALL.ceiling - HT;
-  if (sim.z > head) { sim.z = head; if (sim.vz > 0) sim.vz = 0; }
-  sim.coyoteT = sim.grounded ? KINETIC.coyote : Math.max(0, sim.coyoteT - dt);
-
-  /* ── stance, framing, telemetry ────────────────────────────────────── */
-  const speed = Math.hypot(sim.vx, sim.vy);
-  const fovTarget = (sim.riding && sim.coiling) ? KINETIC.rideFov + COIL.fovDip  // brief iris during wind-up
-    : sim.riding    ? KINETIC.rideFov
-    : crouching     ? KINETIC.crouchFov
-    : (input.run && speed > KINETIC.walkSpeed * 0.85) ? KINETIC.sprintFov : KINETIC.baseFov;
-  sim.fov  = approach(sim.fov, fovTarget, KINETIC.fovLambda, dt);
-  sim.eyeH = approach(sim.eyeH, crouching ? BODY.crouchEye : BODY.eye, KINETIC.stanceLambda, dt);
-  sim.roll = approach(sim.roll, sim.riding ? sim.rideSide * RIDE.roll : 0, KINETIC.rollLambda, dt);
-  sim.bob  = sim.grounded && speed > 0.6
-    ? sim.bob + dt * speed * 1.9
-    : approach(sim.bob % TAU, 0, 8, dt);
-
-  sim.peakZ = Math.max(sim.peakZ, sim.z);
-  sim.topSpeed = Math.max(sim.topSpeed, speed);
-  input.jumpEdge = false;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════
-   PLAN VIEW, READOUT, INPUT
-   ═══════════════════════════════════════════════════════════════════════ */
-let showPlan = false, noteT = 0;
-const noteEl = $('note'), speedEl = $('speed'), stateEl = $('state'), traceEl = $('trace');
-function note(text) { noteEl.textContent = text; noteEl.classList.add('show'); noteT = 2.0; }
-
-function drawPlan() {
-  const pad = 10, sc = Math.min((W*.38)/(HALL.x2-HALL.x1), (H*.38)/(HALL.y2-HALL.y1));
-  const ox = W-(HALL.x2-HALL.x1)*sc-pad, oy=pad;
-  const P=(x,y)=>[ox+(x-HALL.x1)*sc, oy+(y-HALL.y1)*sc];
-  ctx.save();
-  ctx.fillStyle='rgba(5,8,10,.82)';
-  ctx.fillRect(ox-3,oy-3,(HALL.x2-HALL.x1)*sc+6,(HALL.y2-HALL.y1)*sc+6);
-  ctx.strokeStyle='rgba(237,242,240,.30)'; ctx.lineWidth=1;
-  ctx.strokeRect(ox,oy,(HALL.x2-HALL.x1)*sc,(HALL.y2-HALL.y1)*sc);
-
-  /* frozen soccer rectangle */
-  ctx.strokeStyle='rgba(237,242,240,.62)';
-  let a=P(-COURT.length/2,-COURT.width/2);
-  ctx.strokeRect(a[0],a[1],COURT.length*sc,COURT.width*sc);
-  ctx.beginPath(); let m0=P(0,-COURT.width/2),m1=P(0,COURT.width/2);
-  ctx.moveTo(m0[0],m0[1]);ctx.lineTo(m1[0],m1[1]);ctx.stroke();
-
-  /* the four stand districts */
-  ctx.fillStyle='rgba(201,162,39,.24)';
-  const spanY=HALL.standInnerY-HALL.cornerGap, spanX=HALL.standInnerX-HALL.cornerGap;
-  let q=P(-HALL.standOuterX,-spanY); ctx.fillRect(q[0],q[1],HALL.standDepth*sc,spanY*2*sc);
-  q=P(HALL.standInnerX,-spanY); ctx.fillRect(q[0],q[1],HALL.standDepth*sc,spanY*2*sc);
-  q=P(-spanX,-HALL.standOuterY); ctx.fillRect(q[0],q[1],spanX*2*sc,HALL.standDepth*sc);
-  q=P(-spanX,HALL.standInnerY); ctx.fillRect(q[0],q[1],spanX*2*sc,HALL.standDepth*sc);
-
-  /* upper ring */
-  ctx.strokeStyle='rgba(95,208,196,.68)'; ctx.lineWidth=1.4;
-  a=P(-HALL.standOuterX-.2,-HALL.standOuterY-.2);
-  ctx.strokeRect(a[0],a[1],(HALL.standOuterX*2+.4)*sc,(HALL.standOuterY*2+.4)*sc);
-
-  /* corner trees */
-  ctx.fillStyle='rgba(201,162,39,.75)';
-  for(const sx of [-1,1]) for(const sy of [-1,1]) { const t=P(sx*(HALL.playX2+.9),sy*(HALL.playY2+.9));ctx.fillRect(t[0]-2,t[1]-2,4,4); }
-
-  const p=P(sim.x,sim.y);
-  ctx.strokeStyle=sim.riding?'#5fd0c4':'#edf2f0';ctx.lineWidth=1.4;
-  ctx.beginPath();ctx.moveTo(p[0],p[1]);ctx.lineTo(p[0]+Math.cos(sim.yaw)*9,p[1]+Math.sin(sim.yaw)*9);ctx.stroke();
-  ctx.fillStyle=ctx.strokeStyle;ctx.fillRect(p[0]-1.5,p[1]-1.5,3,3);
-  for(const a of STAFF){const q=P(a.x,a.y);ctx.fillStyle=a.team===0?'#8fd7cf':'#e79a8e';ctx.beginPath();ctx.arc(q[0],q[1],3,0,TAU);ctx.fill();}
-  const tb=P(TIKKA.x,TIKKA.y);ctx.fillStyle='#c9a227';ctx.beginPath();ctx.arc(tb[0],tb[1],2.5,0,TAU);ctx.fill();
-  ctx.restore();
-}
-
-let fps = 0, fpsAcc = 0, fpsN = 0;
-function updateReadout() {
-  const speed = Math.hypot(sim.vx, sim.vy);
-  speedEl.firstChild.nodeValue = speed.toFixed(1);
-  const st = sim.riding ? 'riding' : sim.grounded ? 'grounded' : 'airborne';
-  if (stateEl.textContent !== st) {
-    stateEl.textContent = st;
-    stateEl.className = sim.riding ? 'ride' : sim.grounded ? 'grounded' : 'air';
-  }
-  traceEl.innerHTML =
-      `<b>${sim.z.toFixed(1)}</b> m up · peak <b>${sim.peakZ.toFixed(1)}</b><br>`
-    + `rides <b>${sim.rides}</b> · fastest <b>${sim.topSpeed.toFixed(1)}</b> m/s<br>`
-    + `${W}×${H} ${KINETIC.qualityNames[qualityIndex]} · <b>${renderCostMs.toFixed(1)}</b> ms<br>`
-    + `${statFaces} faces drawn, ${statCulled} culled · <b>${fps.toFixed(0)}</b> fps`;
-}
-
-/* ── keyboard and mouse ─────────────────────────────────────────────── */
-const KEYS = { KeyW:'fwd', ArrowUp:'fwd', KeyS:'back', ArrowDown:'back',
-               KeyA:'left', ArrowLeft:'left', KeyD:'right', ArrowRight:'right' };
-addEventListener('keydown', e => {
-  if (KEYS[e.code]) { input[KEYS[e.code]] = 1; e.preventDefault(); }
-  if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') input.run = 1;
-  if (e.code === 'ControlLeft' || e.code === 'KeyC') { input.crouch = 1; e.preventDefault(); }
-  if (e.code === 'Space') { if (!input.jump) input.jumpEdge = true; input.jump = 1; e.preventDefault(); }
-  if (e.code === 'KeyM') { showPlan = !showPlan; note(showPlan ? 'plan view on' : 'plan view off'); }
-  if (e.code === 'KeyR') respawn();
-  if (e.code === 'KeyE') passTikka();
-});
-addEventListener('keyup', e => {
-  if (KEYS[e.code]) input[KEYS[e.code]] = 0;
-  if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') input.run = 0;
-  if (e.code === 'ControlLeft' || e.code === 'KeyC') input.crouch = 0;
-  if (e.code === 'Space') input.jump = 0;
-});
-addEventListener('mousemove', e => {
-  if (document.pointerLockElement !== canvas) return;
-  look(e.movementX || 0, e.movementY || 0, LOOK.mouse);
-});
-function look(dx, dy, sens) {
-  /* Camera-space +X is screen-right, but positive world yaw turns the view
-     left in this renderer. Subtract horizontal input so mouse/touch X maps
-     directly: drag/look right -> turn right. Vertical behavior is unchanged. */
-  sim.yaw = (sim.yaw - dx * sens) % TAU;
-  sim.pitch = clamp(sim.pitch - dy * sens, -LOOK.down, LOOK.up);
-}
-canvas.addEventListener('mousedown', () => {
-  if (!document.body.classList.contains('coarse') && document.pointerLockElement !== canvas)
-    canvas.requestPointerLock && canvas.requestPointerLock();
-});
-function respawn() {
-  sim.x = SPAWN.x; sim.y = SPAWN.y; sim.z = 0; sim.vx = sim.vy = sim.vz = 0;
-  sim.yaw = SPAWN.yaw; sim.pitch = 0; sim.riding = null; sim.rideLock = null;
-  sim.rideT = sim.rideLiftT = sim.reattachT = 0;
-  note('returned to the centre spot');
-}
-
-/* ── touch ──────────────────────────────────────────────────────────── */
-const padEl = $('pad'), knobEl = $('knob'), hopEl = $('hop'), sprintEl = $('sprintPad');
-let movePid = null, lookPid = null, lastLook = null;
-function stick(e) {
-  const r = padEl.getBoundingClientRect();
-  const dx = e.clientX - (r.left + r.width/2), dy = e.clientY - (r.top + r.height/2);
-  const L = Math.hypot(dx, dy), m = Math.min(40, L), nx = L ? dx/L : 0, ny = L ? dy/L : 0;
-  knobEl.style.transform = `translate(${nx*m}px,${ny*m}px)`;
-  input.fwd = ny < -.25 ? 1 : 0; input.back = ny > .25 ? 1 : 0;
-  input.left = nx < -.25 ? 1 : 0; input.right = nx > .25 ? 1 : 0;
-}
-padEl.addEventListener('pointerdown', e => { movePid = e.pointerId; padEl.setPointerCapture(e.pointerId); stick(e); });
-padEl.addEventListener('pointermove', e => { if (e.pointerId === movePid) stick(e); });
-const dropStick = e => {
-  if (e && e.pointerId !== movePid) return;
-  movePid = null; knobEl.style.transform = '';
-  input.fwd = input.back = input.left = input.right = 0;
-};
-padEl.addEventListener('pointerup', dropStick); padEl.addEventListener('pointercancel', dropStick);
-canvas.addEventListener('pointerdown', e => {
-  if (e.pointerType !== 'touch' || e.clientX < innerWidth * .40) return;
-  lookPid = e.pointerId; lastLook = { x: e.clientX, y: e.clientY };
-});
-canvas.addEventListener('pointermove', e => {
-  if (e.pointerId !== lookPid || !lastLook) return;
-  look(e.clientX - lastLook.x, e.clientY - lastLook.y, LOOK.touch);
-  lastLook = { x: e.clientX, y: e.clientY };
-});
-const dropLook = e => { if (e && e.pointerId !== lookPid) return; lookPid = null; lastLook = null; };
-canvas.addEventListener('pointerup', dropLook); canvas.addEventListener('pointercancel', dropLook);
-hopEl.addEventListener('pointerdown', e => { if (!input.jump) input.jumpEdge = true; input.jump = 1; e.preventDefault(); });
-hopEl.addEventListener('pointerup', e => { input.jump = 0; e.preventDefault(); });
-hopEl.addEventListener('pointercancel', () => { input.jump = 0; });
-sprintEl.addEventListener('click', () => {
-  input.run = input.run ? 0 : 1; sprintEl.classList.toggle('on', !!input.run);
-});
-addEventListener('resize', resize, { passive: true });
-
-/* ═══════════════════════════════════════════════════════════════════════
-   LOOP
-   ═══════════════════════════════════════════════════════════════════════ */
-const SIM_DT = 1 / KINETIC.simHz, RENDER_INTERVAL = 1000 / KINETIC.renderCeilingHz;
-let last = 0, accumulator = 0, renderLast = 0, started = false;
-
-function loop(now) {
-  const frameDt = Math.min(KINETIC.hardFrameClamp, (now - last) / 1000 || SIM_DT);
-  last = now; accumulator += frameDt;
-  let steps = 0;
-  while (accumulator >= SIM_DT && steps < KINETIC.maxCatchupSteps) {
-    step(SIM_DT); accumulator -= SIM_DT; steps++;
-  }
-  /* if catch-up saturated, drop the debt instead of compounding it next
-     frame — without this the accumulator ratchets and the sim spirals */
-  if (steps === KINETIC.maxCatchupSteps && accumulator >= SIM_DT) accumulator %= SIM_DT;
-  if (noteT > 0 && (noteT -= frameDt) <= 0) noteEl.classList.remove('show');
-
-  if (now - renderLast >= RENDER_INTERVAL) {
-    camX = sim.x; camY = sim.y;
-    camZ = sim.z + sim.eyeH + Math.sin(sim.bob) * 0.022;
-    camYaw = sim.yaw; camPitch = sim.pitch; camRoll = sim.roll; camFov = sim.fov;
-    const t0 = performance.now();
-    render3D();
-    const cost = performance.now() - t0;
-    const renderDt = renderLast ? Math.max(0.001, (now - renderLast) / 1000) : SIM_DT;
-    renderLast = now;
-    fpsAcc += 1 / renderDt; fpsN++;
-    if (fpsN >= 20) { fps = fpsAcc / fpsN; fpsAcc = 0; fpsN = 0; }
-    trafficMeter(renderDt, cost);
-    updateReadout();
-  }
-  requestAnimationFrame(loop);
-}
-
-/* ═══════════════════════════════════════════════════════════════════════
-   CONTRACTS
-
-   The arcade floor locked its speeds and its cabinet layout in a test suite
-   so a later feel pass could not quietly move them. Same discipline here:
-   the FIFA dimensions and the body model are contracts, the ride numbers
-   are tuning. Anything that fails is printed rather than thrown, so a
-   broken contract is visible without taking the court down with it.
-   ═══════════════════════════════════════════════════════════════════════ */
-window.__PITCH13__ = {
-  version: VERSION,
-  courtIsFrozen: () => COURT.length===12 && COURT.width===8 && COURT.goalW===3 && COURT.goalH===2
-    && COURT.penaltyR===6 && COURT.lineW===0.08 && HALL.runoff===1.0,
-  bowlIs360: () => ['west','east','south','north'].every(side => {
-    const nx = side==='west' ? 1 : side==='east' ? -1 : 0;
-    const ny = side==='south' ? 1 : side==='north' ? -1 : 0;
-    return WALLS.some(w => w.nx===nx && w.ny===ny && w.zTop>=HALL.standFascia);
-  }),
-  upperRingExists: () => SOLIDS.some(s => s.z1===PARKOUR.upperRingZ && s.z2>PARKOUR.upperRingZ),
-  cornerTreesExist: () => SOLIDS.filter(s => s.z2>=2.6 && Math.abs((s.x1+s.x2)/2)>HALL.playX2).length>=4,
-  ceilingSupportsUpperWorld: () => HALL.ceiling>PARKOUR.sidelineTrussZ+BODY.height+1,
-  bodyIsCatScale: () => BODY.height<0.4 && BODY.eye<0.35,
-  cameraHasRoll: () => { const o={x:0,y:0,z:0},save=camRoll; camRoll=.5;camSync();camPoint(1,0,1,o);const rolled=o.y;
-    camRoll=0;camSync();camPoint(1,0,1,o);camRoll=save;camSync();return Math.abs(rolled-o.y)>1e-6; },
-  ride: () => ({ climb:+RIDE_DERIVED.climb.toFixed(2), sag:+RIDE_DERIVED.sag.toFixed(2),
-                 span:+RIDE_DERIVED.span.toFixed(1), hold:RIDE.maxHold, liftBudget:RIDE.holdLiftBudget }),
-  rideClimbsNotFalls: () => RIDE_DERIVED.climb>0.4,
-  rideRespectsSpeedCap: () => RIDE.gainCap>KINETIC.sprintSpeed,
-  rideHasHardExpiry: () => RIDE.maxHold>0 && RIDE.rearmDist>RIDE.attachDist,
-  jump: () => ({ apex:+JUMP.apex.toFixed(2), hang:+JUMP.hang.toFixed(2), reach:+JUMP.reach.toFixed(1) }),
-  pantonRimExists: () => SOLIDS.some(s => s.x1 < HALL.x1 - RIM.gap - 0.1 || s.x2 > HALL.x2 + RIM.gap + 0.1),
-  pivotPounceExists: () => COIL.windT > 0 && COIL.pivotBlend > 0 && COIL.minRideT >= 0,
-  faces: () => faces.length, solids: () => SOLIDS.length, walls: () => WALLS.length
+const Geom={
+ view(px,py,ca,sa,x,y){const dx=x-px,dy=y-py;return{tx:dx*sa-dy*ca,tz:dx*ca+dy*sa};},
+ clipNear(a,b,near){const A={tx:a.tx,tz:a.tz,t:0},B={tx:b.tx,tz:b.tz,t:1};if(A.tz<near&&B.tz<near)return null;if(A.tz<near){const f=(near-A.tz)/(B.tz-A.tz);A.tx+=(B.tx-A.tx)*f;A.tz=near;A.t=f;}else if(B.tz<near){const f=(near-B.tz)/(A.tz-B.tz);B.tx+=(A.tx-B.tx)*f;B.tz=near;B.t=1-f;}return[A,B];},
+ projX(tx,tz,hw,pd){return hw+(tx/tz)*pd;},
+ projY(h,pz,tz,hor,pd){return hor-((h-pz)*pd)/tz;},
+ projDist(w,fov){return(w/2)/Math.tan(fov/2);},
+ planePatternTransform(px,py,ca,sa,hw,pd,row,depth,mapAng=0,mapOx=0,mapOy=0){
+  const k=depth/pd;if(!Number.isFinite(k)||Math.abs(k)<1e-8)return null;
+  // screen -> world affine basis for this horizontal scanline
+  const as=sa*k,cs=ca*k,bs=-ca*k,ds=sa*k,cy=row+.5,wx=px+ca*depth,wy=py+sa*depth,es=wx-as*hw-cs*cy,fs=wy-bs*hw-ds*cy;
+  // world -> material-local basis. mapAng=0/mapOrigin=0 is the legacy global mode.
+  const mc=Math.cos(mapAng),ms=Math.sin(mapAng),ex=es-mapOx,fy=fs-mapOy;
+  const A=mc*as+ms*bs,C=mc*cs+ms*ds,E=mc*ex+ms*fy;
+  const B=-ms*as+mc*bs,D=-ms*cs+mc*ds,F=-ms*ex+mc*fy;
+  const det=A*D-B*C;if(!Number.isFinite(det)||Math.abs(det)<1e-10)return null;
+  // CanvasPattern.setTransform wants material -> screen, so invert screen -> material.
+  const a=D/det,b=-B/det,c=-C/det,d=A/det;
+  return{a,b,c,d,e:-(a*E+c*F),f:-(b*E+d*F)};
+ },
+ planeMaterialFrame(sec,mode,viewAng){
+  if(mode==='sector'&&sec)return{ang:sec.planeAng,ox:sec.planeOx,oy:sec.planeOy};
+  if(mode==='kaleido'&&sec)return{ang:sec.planeAng+viewAng,ox:sec.planeOx,oy:sec.planeOy};
+  return{ang:0,ox:0,oy:0};
+ },
+ planeUV(wx,wy,sec,mode,viewAng){const f=this.planeMaterialFrame(sec,mode,viewAng),c=Math.cos(f.ang),ss=Math.sin(f.ang),dx=wx-f.ox,dy=wy-f.oy;return{u:c*dx+ss*dy,v:-ss*dx+c*dy};},
+ frontNormal(x1,y1,x2,y2){const dx=x2-x1,dy=y2-y1,L=Math.hypot(dx,dy)||1;return{nx:dy/L,ny:-dx/L};},
+ closestOnSeg(px,py,x1,y1,x2,y2){const dx=x2-x1,dy=y2-y1,l2=dx*dx+dy*dy;let t=l2===0?0:((px-x1)*dx+(py-y1)*dy)/l2;t=Math.max(0,Math.min(1,t));const x=x1+t*dx,y=y1+t*dy;return{x,y,t,d2:(px-x)*(px-x)+(py-y)*(py-y)};},
+ pointInPoly(x,y,p){let inside=false;for(let i=0,j=p.length-1;i<p.length;j=i++){const xi=p[i][0],yi=p[i][1],xj=p[j][0],yj=p[j][1];const hit=((yi>y)!==(yj>y))&&(x<(xj-xi)*(y-yi)/(yj-yi+1e-12)+xi);if(hit)inside=!inside;}return inside;},
+ area(p){let a=0;for(let i=0;i<p.length;i++){const q=p[(i+1)%p.length];a+=p[i][0]*q[1]-q[0]*p[i][1];}return a/2;},
+ makeCW(p){return this.area(p)>0?p.slice().reverse():p.slice();},
+ polar(r,a){return[Math.cos(a)*r,Math.sin(a)*r];}
 };
 
-/* ═══════════════════════════════════════════════════════════════════════
-   BOOT
-   ═══════════════════════════════════════════════════════════════════════ */
-function boot() {
-  if (matchMedia && matchMedia('(pointer:coarse)').matches) document.body.classList.add('coarse');
-  bakeSurfaces();
-  buildCourt();
-  resize();
-  camSync();
-  const T = window.__PITCH13__, fails = [];
-  for (const k of ['courtIsFrozen','bowlIs360','upperRingExists','cornerTreesExist',
-                   'ceilingSupportsUpperWorld','bodyIsCatScale','cameraHasRoll',
-                   'rideClimbsNotFalls','rideRespectsSpeedCap','rideHasHardExpiry',
-                   'pantonRimExists','pivotPounceExists'])
-    if (!T[k]()) fails.push(k);
-  if (fails.length) console.warn('[pitch13] contract failures:', fails);
-  console.log('[pitch13]', VERSION, '·', faces.length, 'faces ·',
-              SOLIDS.length, 'solids ·', WALLS.length, 'ridable planes',
-              '\n  jump', T.jump(), '\n  ride', T.ride(),
-              '\n  coil', { windT: COIL.windT, pivotBlend: COIL.pivotBlend, upMult: COIL.upMult },
-              '\n  rim panels', T.pantonRimExists() ? 'OK' : 'MISSING');
+const MapBuilder={
+ build(defs){
+  const verts=[],vmap=new Map(),lines=[],emap=new Map();
+  const V=(x,y)=>{const qx=Math.round(x*1000)/1000,qy=Math.round(y*1000)/1000,k=qx+','+qy;if(vmap.has(k))return vmap.get(k);const i=verts.length;verts.push({x:qx,y:qy});vmap.set(k,i);return i;};
+  const sectors=defs.map((d,idx)=>{const poly=Geom.makeCW(d.poly);return{idx,id:d.id,poly,floor:d.floor||0,ceil:d.ceil||RING.ceil,light:d.light||.95,ftex:d.ftex,ctex:d.ctex,wtex:d.wtex,planeAng:Number.isFinite(d.planeAng)?d.planeAng:0,planeOx:Number.isFinite(d.planeOx)?d.planeOx:0,planeOy:Number.isFinite(d.planeOy)?d.planeOy:0,lines:[]};});
+  const key=(a,b)=>a<b?a+':'+b:b+':'+a;
+  sectors.forEach(s=>{
+   for(let i=0;i<s.poly.length;i++){
+    const a=s.poly[i],b=s.poly[(i+1)%s.poly.length],v1=V(a[0],a[1]),v2=V(b[0],b[1]),k=key(v1,v2);
+    if(emap.has(k)){
+     const li=emap.get(k),ln=lines[li];
+     if(ln.back>=0)throw new Error('non-manifold edge '+k);
+     ln.back=s.idx;s.lines.push(li);
+    }else{
+     const li=lines.length;lines.push({idx:li,v1,v2,front:s.idx,back:-1,upper:s.wtex,lower:s.wtex,mid:s.wtex,midTex:-1,midBot:0,midTop:0,blocking:false,tag:''});
+     emap.set(k,li);s.lines.push(li);
+    }
+   }
+  });
+  return{verts,sectors,lines,solids:[],cabinets:[],exits:[],fixtures:[],ads:[],targets:[],spawn:{x:0,y:-300,ang:Math.PI/2}};
+ },
+ validate(map){const errs=[];for(const s of map.sectors){if(s.poly.length<3)errs.push(s.id+': too few vertices');if(Geom.area(s.poly)>=0)errs.push(s.id+': not clockwise');let sign=0;for(let i=0;i<s.poly.length;i++){const a=s.poly[i],b=s.poly[(i+1)%s.poly.length],c=s.poly[(i+2)%s.poly.length],z=(b[0]-a[0])*(c[1]-b[1])-(b[1]-a[1])*(c[0]-b[0]);if(Math.abs(z)<1e-6)continue;const q=Math.sign(z);if(sign&&q!==sign)errs.push(s.id+': non-convex');sign=q;}if(s.ceil-s.floor<PLAYER_H)errs.push(s.id+': headroom');}
+  for(const ln of map.lines){const a=map.verts[ln.v1],b=map.verts[ln.v2],n=Geom.frontNormal(a.x,a.y,b.x,b.y),mx=(a.x+b.x)/2+n.nx*.5,my=(a.y+b.y)/2+n.ny*.5;if(!Geom.pointInPoly(mx,my,map.sectors[ln.front].poly))errs.push('line '+ln.idx+': front winding');}
+  return errs;
+ }
+};
+
+function innerSquarePoint(a){
+ const c=Math.cos(a),s=Math.sin(a),k=RING.inner/Math.max(Math.abs(c),Math.abs(s));
+ return[c*k,s*k];
 }
-$('go').addEventListener('click', () => {
-  $('entry').classList.add('hidden');
-  if (!document.body.classList.contains('coarse')) canvas.requestPointerLock && canvas.requestPointerLock();
-  if (!started) { started = true; last = performance.now(); requestAnimationFrame(loop); }
-});
-boot();
+function ringDefs(){
+ const defs=[];
+ for(let i=0;i<RING.sides;i++){
+  const a0=i*TAU/RING.sides,a1=(i+1)*TAU/RING.sides,ac=(a0+a1)/2;
+  const poly=[Geom.polar(RING.outer,a0),Geom.polar(RING.outer,a1),innerSquarePoint(a1),innerSquarePoint(a0)];
+  const planeOx=poly.reduce((n,p)=>n+p[0],0)/poly.length,planeOy=poly.reduce((n,p)=>n+p[1],0)/poly.length;
+  // Each sector owns an optional local material basis. World mapping remains the
+  // default; this frame supports alternate sector-locked and intentional kaleido modes.
+  defs.push({id:'RING_'+String(i+1).padStart(2,'0'),poly,floor:0,ceil:RING.ceil,light:.90+.05*((i%4)/3),ftex:i%2?MAT.FLOOR_BLACK:MAT.FLOOR_ALT,ctex:MAT.CEILING_DARK,wtex:MAT.WALL_BLACK_GOLD,planeAng:ac,planeOx,planeOy});
+ }
+ return defs;
+}
+
+// 26 cabinet identities, A-Z. Artwork and resting-screen pairings are centralized here.
+// screen is the 1-based tile index in the supplied fts_sprites landscape CRT atlas.
+const CABINET_ROSTER=[
+ ['A','ASTROIDS OBLITERATUS','../astroids.html',1, '_blank'],
+ ['B','BRAZEN TOWER','../BRAZENTOWER',17, '_blank'],
+ ['C','CAMELOT','../CAMELOT',18, '_blank'],
+ ['D','CAVE RACER','../CAVERACER',3, '_blank'],
+ ['E','COVEN BLITZ','../COVENBLITZ',4, '_blank'],
+ ['F','CRAWFORD COUNTY','../CRAWFORDCOUNTY',5, '_blank'],
+ ['G','GRACE BLAND','../GRACE',7, '_blank'],
+ ['H','MINESWEEPER','../MINESWEEPER',8, '_blank'],
+ ['I','NEON INVADERS','../NEONINVADERS',9, '_blank'],
+ ['J','RC RACER','../RCRACER',10, '_blank'],
+ ['K','RED EYE','../REDEYE/',11, '_blank'],
+ ['L','SNAKIA','../SNAKIA',17, '_blank'],
+ ['M','UNDERHALL','../UNDERHALL',13, '_blank'],
+ ['N','VECTOR SIEGE','../VECTORSIEGE',16, '_blank'],
+ ['O','ZOMBIE GOLF SURVIVAL','../SOVTHPAWZOMBIES',15, '_blank'],
+ ['P','AUXOR','../AUXOR',2, '_blank'],
+ ['Q','VECTOR SQUADRON','../ASTROVULPIS',12, '_blank'],
+ ['R','FTS ARCADE HUB','https://frymatic.us/FTSArcade/',6, '_blank'],
+ ['S','MOONSHOT PINBALL','../PINBALL',25, '_blank'],
+ ['T','GRID WARDEN','../GRIDWARDEN',24, '_blank'],
+ ['U','PLINKO','../PLINKO',20, '_blank'],
+ ['V','TOURNAMENT CONDUCTOR','../TOURNAMENT',22, '_blank'],
+ ['W','FREE PLAY','https://frymatic.us/FTSArcade/',6, '_blank'],
+ ['X','COMING SOON','https://frymatic.us/FTSArcade/',17, '_blank'],
+ ['Y','EVENT SERIES','../adapter-test.html',22, '_blank'],
+ ['Z','BRAZEN INDEX','https://frymatic.us/',6, '_blank']
+];
+
+// -----------------------------------------------------------------------------
+// DETERMINISTIC AUTHORING SURFACE v1
+// Layout/content edits belong here first. Geometry builders consume this manifest.
+// Angles are degrees; positions are inches; links/CTAs are explicit data.
+// -----------------------------------------------------------------------------
+const AUTHORING={
+ schema:'fts-arcade-floor-authoring-1',
+ officeClearance:10,
+ // Perimeter contract. Posters, ad units, exits, vending, the token machine and
+ // the whole stage ensemble were authored in absolute inches against a 430 in
+ // outer wall. buildLevel() shifts them radially by (RING.outer - authoredOuter)
+ // so they stay ON the wall when the ring is widened; without this the wall
+ // panels would hang 80 in out in open air.
+ // Cabinet pods/singles and the office entry are floor/core furniture and are
+ // deliberately NOT shifted - that is what keeps the layout frozen.
+ perimeter:{authoredOuter:430},
+ packing:{sideGap:.5,backGap:.5},
+ stageRotateDeg:22.5,
+ cabinetPods:[
+  {front:['C','A'],back:['D','B'],cx:-300,cy:210,deg:60},
+  {front:['F','G'],back:['E','H'],cx:300,cy:210,deg:120},
+  {front:['Q','S'],back:['R','T'],cx:168.75,cy:0,deg:90},
+  {front:['U','N'],back:['V','M'],cx:-285,cy:-245,deg:135},
+  {front:['Z','X'],back:['Y','W'],cx:285,cy:-245,deg:45}
+ ],
+ cabinetSingles:[
+  {letter:'O',x:-40.25,y:148.5,deg:90},
+  {letter:'I',x:0,y:148.5,deg:90},
+  {letter:'P',x:40.25,y:148.5,deg:90},
+  {letter:'J',x:-168,y:0,deg:180},
+  {letter:'K',x:-148.5,y:40.25,deg:90},
+  {letter:'L',x:-148.5,y:-40.25,deg:-90}
+ ],
+ officeEntry:[
+  {id:'WHITEBOARD',x:-53,y:-119,deg:-90,w:48,z0:36,z1:80,mat:'FIX_WHITEBOARD',label:'WHITEBOARD',url:'https://frymatic.us/FTSArcade/',cta:'VIEW ARCADE NOTES'},
+  {id:'OFFICE_DOOR',x:0,y:-119,deg:-90,w:50,z0:0,z1:82,mat:'FIX_OFFICE_DOOR',label:'OFFICE',url:'',cta:''},
+  {id:'BULLETIN',x:53,y:-119,deg:-90,w:48,z0:36,z1:80,mat:'FIX_BULLETIN',label:'BULLETIN BOARD',url:'../tournament.html',cta:'VIEW EVENTS'}
+ ],
+ wallPortals:[
+  {id:'STAGE_SIGN',x:0,y:387,deg:-90,w:92,z0:78,z1:106,mat:'FIX_STAGE_SIGN',label:'PERFORMANCE ZONE',url:'../tournament.html',cta:'VIEW EVENTS'},
+  {id:'DJ_SIGN',x:104,y:320,deg:-90,w:54,z0:48,z1:68,mat:'FIX_DJ_SIGN',label:'DJ / PERFORMANCE',url:'https://frymatic.us/FTSArcade/',cta:'OPEN ARCADE HUB'}
+ ],
+ posters:[
+  {deg:8,label:'BRAZEN TOWER',url:'../BRAZENTOWER',cta:'CLIMB THE TOWER'},
+  {deg:82,label:'RED EYE',url:'../REDEYE/',cta:'ENTER RED EYE'},
+  {deg:98,label:'TOURNAMENT',url:'../tournament.html',cta:'VIEW TOURNAMENTS'},
+  {deg:172,label:'FTS ARCADE',url:'https://frymatic.us/FTSArcade/',cta:'OPEN ARCADE HUB'},
+  {deg:188,label:'MOONSHOT PINBALL',url:'../moonshot-pinball.html',cta:'PLAY MOONSHOT'},
+  {deg:208,label:'GRID WARDEN',url:'../grid-warden.html',cta:'PLAY GRID WARDEN'},
+  {deg:252,label:'CAVE RACER',url:'../cave-racer.html',cta:'RACE CAVE RACER'},
+  {deg:288,label:'PLINKO',url:'../plinko.html',cta:'DROP INTO PLINKO'},
+  {deg:332,label:'EVENT SERIES',url:'../adapter-test.html',cta:'OPEN EVENT SERIES'},
+  {deg:352,label:'BRAZEN INDEX',url:'https://frymatic.us/',cta:'OPEN BRAZEN INDEX'}
+ ]
+};
+
+function cabinetSolid(letter,slot,x,y,faceAng,title,url,screenIndex,target='_blank'){
+ const K=p=>MAT['SKIN_'+letter+'_'+p], black=MAT.CAB_BLACK;
+ const coin=MAT.CAB_REF_COIN_DOOR;
+ const kick=MAT.CAB_REF_KICK_PLATE;
+ const screen=MAT['SCREEN_'+String(screenIndex||17).padStart(2,'0')];
+ // "42-inch equivalent" is interpreted against each supplied landscape CRT crop.
+ // At the atlas' ~1.45-1.55 aspect ratios, a 35-inch physical width lands near a
+ // 42-inch diagonal while preserving the artwork without distortion.
+ const sr=screenRect(screenIndex||17),screenH=CABINET_DIM.screenW*(sr[3]/sr[2]);
+ const screenZ0=CABINET_DIM.screenCenter-screenH/2,screenZ1=CABINET_DIM.screenCenter+screenH/2;
+ const controlTop=CABINET_DIM.control, controlBase=controlTop-.012;
+ const screenInset=5.8, hoodDepth=18.5;
+ return{id:'CAB_'+letter,kind:'cabinet',letter,slot,title,url,target,screenIndex,x,y,ang:faceAng,w:CABINET_DIM.w,d:CABINET_DIM.d,collision:true,light:1,
+  parts:[
+   // Structural faces are deliberately plain black. Cabinets01-04 own the visible outline.
+   {role:'plinth',w:40,d:40,of:-1,ro:0,z0:0,z1:5,front:black,left:black,right:black,back:black,stretch:true},
+   {role:'left-shell', w:2,d:31,of:-1,ro:-19,z0:0,z1:CABINET_DIM.screenBayTop,front:black,left:K('LEFT'),right:black,back:black,stretch:true},
+   {role:'right-shell',w:2,d:31,of:-1,ro: 19,z0:0,z1:CABINET_DIM.screenBayTop,front:black,left:black,right:K('RIGHT'),back:black,stretch:true},
+   {role:'lower-core',w:34,d:27,of:1.5,ro:0,z0:5,z1:36.5,front:black,left:black,right:black,back:black,stretch:true},
+   // Game-specific FRONT art and plain shell own the lower face. the-Cabinet.png
+   // contributes hardware only, so its striped trim can never reach the controls.
+   {role:'front-brand',w:32,d:1.7,of:14.2,ro:0,z0:2.5,z1:16,front:K('FRONT'),left:black,right:black,back:black,stretch:true},
+   {role:'coin-boss',w:13,d:0.9,of:14.54,ro:0,z0:15.5,z1:34.5,front:black,left:black,right:black,back:black,stretch:true},
+   {role:'coin-door',w:8.4,d:1.12,of:14.9,ro:0,z0:17,z1:32.5,front:coin,left:black,right:black,back:black,stretch:true},
+   {role:'kick-plate',w:33.8,d:1.28,of:14.48,ro:0,z0:5.2,z1:11.4,front:kick,left:black,right:black,back:black,stretch:true},
+   // Keep only the top face; the old vertical lip in front of the controls is now effectively gone.
+   {role:'control',w:CABINET_DIM.controlW,d:CABINET_DIM.controlD,of:8.0,ro:0,z0:controlBase,z1:controlTop,front:black,left:black,right:black,back:black,top:K('CONTROL'),stretch:true},
+   {role:'jamb-left',w:1.65,d:hoodDepth,of:screenInset,ro:-17.9,z0:controlTop-.2,z1:CABINET_DIM.screenBayTop,front:black,left:black,right:black,back:black,stretch:true},
+   {role:'jamb-right',w:1.65,d:hoodDepth,of:screenInset,ro:17.9,z0:controlTop-.2,z1:CABINET_DIM.screenBayTop,front:black,left:black,right:black,back:black,stretch:true},
+   {role:'backdrop',w:36.5,d:2.4,of:3.7,ro:0,z0:controlTop,z1:CABINET_DIM.screenBayTop,front:black,left:black,right:black,back:black,stretch:true},
+   {role:'screen',w:CABINET_DIM.screenW,d:2,of:screenInset,ro:0,z0:screenZ0,z1:screenZ1,front:screen,left:black,right:black,back:black,stretch:true},
+   // Slim black bezel only: no photographic edge texture competing with game art.
+   {role:'bezel-left',w:1.2,d:hoodDepth,of:screenInset,ro:-17.45,z0:screenZ0-.9,z1:screenZ1+.9,front:black,left:black,right:black,back:black,stretch:true},
+   {role:'bezel-right',w:1.2,d:hoodDepth,of:screenInset,ro:17.45,z0:screenZ0-.9,z1:screenZ1+.9,front:black,left:black,right:black,back:black,stretch:true},
+   // No bottom crossbar: it projected over the rear of the control deck and
+   // read as a stray stripe from player-height viewing angles.
+   {role:'bezel-top',w:37.2,d:15.5,of:2.4,ro:0,z0:screenZ1+.45,z1:CABINET_DIM.screenBayTop,front:black,left:black,right:black,back:black,stretch:true},
+   {role:'marquee',w:40,d:18.5,of:-2,ro:0,z0:CABINET_DIM.screenBayTop,z1:CABINET_DIM.h,front:K('MARQUEE'),left:black,right:black,back:black,stretch:true},
+   {role:'back-block',w:34,d:2.2,of:-18.5,ro:0,z0:0,z1:CABINET_DIM.h,front:black,left:black,right:black,back:black,stretch:true}
+  ]};
+}
+function boxSolid(id,x,y,ang,w,d,h,front,side,opts){return Object.assign({id,kind:'box',x,y,ang,w,d,collision:true,light:.96,parts:[{w,d,of:0,z0:0,z1:h,front,side,back:side}]},opts||{});}
+function panelSolid(id,x,y,ang,w,z0,z1,front,opts){return Object.assign({id,kind:'panel',x,y,ang,w,d:2,collision:false,light:1,parts:[{w,d:2,of:0,z0,z1,front,side:MAT.WALL_RIB,back:MAT.WALL_RIB}]},opts||{});}
+function dealUrl(unit){return PORTALS.adDeal+'?inventory='+encodeURIComponent(unit)+'&source=fts-arcade-floor';}
+
+function buildLevel(){
+ const map=MapBuilder.build(ringDefs());
+ for(const ln of map.lines){
+  if(ln.back>=0){ln.blocking=false;ln.upper=MAT.WALL_GOLD;ln.lower=MAT.WALL_GOLD;continue;}
+  const a=map.verts[ln.v1],b=map.verts[ln.v2],mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
+  if(Math.max(Math.abs(mx),Math.abs(my))<RING.inner+14){ln.mid=MAT.OFFICE_DARK;ln.tag='OFFICE_CORE';}
+  else{const ang=Math.atan2(my,mx);ln.mid=Math.abs(Math.sin(ang*3))>.72?MAT.WALL_BLACK_GOLD:MAT.WALL_RIB;ln.tag='OUTER_WALL';}
+ }
+ // Radial shift for wall-anchored dressing only. See AUTHORING.perimeter.
+ // To pin any one group back to its authored radius, drop the wallR() call on
+ // that line - each group is a single independent edit.
+ const wallShift=RING.outer-AUTHORING.perimeter.authoredOuter;
+ const wallR=r=>r+wallShift;
+ const addCab=(letter,x,y,ang)=>{const row=CABINET_ROSTER.find(r=>r[0]===letter),slot=letter.charCodeAt(0)-64,c=cabinetSolid(letter,slot,x,y,ang,row[1],row[2],row[3],row[4]);map.solids.push(c);map.cabinets.push(c);map.targets.push(c);};
+ const sideSep=(CABINET_DIM.w+AUTHORING.packing.sideGap)/2;
+ const backSep=(CABINET_DIM.d+AUTHORING.packing.backGap)/2;
+ const pod4=(def)=>{const ang=def.deg*DEG,f={x:Math.cos(ang),y:Math.sin(ang)},r={x:Math.sin(ang),y:-Math.cos(ang)};def.front.forEach((L,i)=>{const rs=i?sideSep:-sideSep;addCab(L,def.cx+f.x*backSep+r.x*rs,def.cy+f.y*backSep+r.y*rs,ang);});def.back.forEach((L,i)=>{const rs=i?sideSep:-sideSep;addCab(L,def.cx-f.x*backSep+r.x*rs,def.cy-f.y*backSep+r.y*rs,ang+Math.PI);});};
+ AUTHORING.cabinetPods.forEach(pod4);
+ AUTHORING.cabinetSingles.forEach(c=>addCab(c.letter,c.x,c.y,c.deg*DEG));
+
+ // Counter-clockwise stage sweep: rotate the performance zone along the perimeter
+ // to clear more north-floor dance space while preserving the ensemble.
+ const stageDelta=(AUTHORING.stageRotateDeg||0)*DEG;
+ const addStageBox=(id,x,y,ang,w,d,h,front,side)=>{const p=rotatePose(x,wallR(y),ang,stageDelta);const s=boxSolid(id,p.x,p.y,p.ang,w,d,h,front,side,{collision:true});map.solids.push(s);return s;};
+ addStageBox('STAGE_BACK',0,366,-Math.PI/2,190,16,96,MAT.STAGE_RED,MAT.WALL_BLACK_GOLD);
+ addStageBox('STAGE_LIP',0,326,-Math.PI/2,210,48,18,MAT.STAGE,MAT.WALL_GOLD);
+ addStageBox('DJ_BOOTH',104,304,-Math.PI/2,62,26,45,MAT.DJ,MAT.WALL_RIB);
+ addStageBox('SPEAKER_L',-82,337,-Math.PI/2,24,20,74,MAT.WALL_RIB,MAT.WALL_BLACK_GOLD);
+ addStageBox('SPEAKER_R',82,337,-Math.PI/2,24,20,74,MAT.WALL_RIB,MAT.WALL_BLACK_GOLD);
+
+ const addPortalPanel=(d)=>{const stageDress=d.id==='STAGE_SIGN'||d.id==='DJ_SIGN';const pose=stageDress?rotatePose(d.x,wallR(d.y),d.deg*DEG,stageDelta):{x:d.x,y:d.y,ang:d.deg*DEG};const p=panelSolid(d.id,pose.x,pose.y,pose.ang,d.w,d.z0,d.z1,MAT[d.mat],{kind:'dressing',label:d.label,url:d.url||'',cta:d.cta||'OPEN',target:'_blank'});map.solids.push(p);map.fixtures.push(p);if(p.url)map.targets.push(p);return p;};
+ AUTHORING.wallPortals.forEach(addPortalPanel);
+ AUTHORING.officeEntry.forEach(d=>{if(d.id==='OFFICE_DOOR'){map.solids.push(panelSolid(d.id,d.x,d.y,d.deg*DEG,d.w,d.z0,d.z1,MAT[d.mat],{collision:false,label:d.label}));}else addPortalPanel(d);});
+
+ // Freestanding fixtures.
+ const fixture=(id,label,deg,r,w,d,h,matFront,kind='fixture',url='',target='_blank',cta='OPEN')=>{const a=deg*DEG,R=wallR(r),x=Math.cos(a)*R,y=Math.sin(a)*R,s=boxSolid(id,x,y,a+Math.PI,w,d,h,matFront,MAT.WALL_RIB,{kind,label,url,target,cta,collision:true});map.solids.push(s);map.fixtures.push(s);if(url)map.targets.push(s);return s;};
+ fixture('VEND_DRINK','DRINK VENDING',198,372,30,28,72,MAT.FIX_VEND_DRINK);
+ fixture('VEND_SNACK','SNACK VENDING',342,372,30,28,72,MAT.FIX_VEND_SNACK);
+ fixture('JUKEBOX','JUKEBOX',97,294,34,22,60,MAT.FIX_JUKEBOX);
+ fixture('TOKEN_VEND','FTS TOKEN VENDING',258,344,28,24,68,MAT.FIX_TOKEN,'token',PORTALS.tokens,'_blank','BUY TOKENS');
+
+ // Every poster is now content inventory: art + destination + CTA live in AUTHORING.posters.
+ AUTHORING.posters.forEach((d,i)=>{const a=d.deg*DEG,r=wallR(416),x=Math.cos(a)*r,y=Math.sin(a)*r,p=panelSolid('POSTER_'+String(i+1).padStart(2,'0'),x,y,a+Math.PI,30,42,86,MAT['FIX_POSTER_'+(1+i%4)],{kind:'dressing',label:d.label,url:d.url,cta:d.cta,target:'_blank'});map.solids.push(p);map.fixtures.push(p);map.targets.push(p);});
+
+ // Programmatic ad inventory. Every unit has a stable ID and its own deal-form URL.
+ const adAngles=[14,76,104,166,194,244,296,346];
+ adAngles.forEach((deg,i)=>{const unit='FTS-RING-'+String(i+1).padStart(2,'0'),a=deg*DEG,r=wallR(420),x=Math.cos(a)*r,y=Math.sin(a)*r,p=panelSolid('AD_'+unit,x,y,a+Math.PI,32,34,92,i%2?MAT.FIX_AD_DEAL:MAT.FIX_AD_SPACE,{kind:'ad',label:'AD SPACE '+unit,url:dealUrl(unit),target:'_blank',inventory:unit,cta:'OPEN DEAL FORM'});map.solids.push(p);map.ads.push(p);map.targets.push(p);});
+
+ // Three world exits: all use absolute URLs and always confirm before navigation.
+ const exitDefs=[
+  {id:'EXIT_LOBBY',label:'LOBBY / OFF-SITE',url:PORTALS.lobby,target:'_blank',cta:'LEAVE ARCADE',a:0},
+  {id:'EXIT_THEATERS',label:'BRAZEN THEATERS / OFF-SITE',url:PORTALS.theaters,target:'_blank',cta:'LEAVE ARCADE',a:Math.PI},
+  {id:'EXIT_REDEYE',label:'REDEYE / OFF-SITE',url:PORTALS.redeye,target:'_blank',cta:'LEAVE ARCADE',a:-Math.PI/2}
+ ];
+ exitDefs.forEach(e=>{const r=wallR(418),x=Math.cos(e.a)*r,y=Math.sin(e.a)*r,face=e.a+Math.PI,s=boxSolid(e.id,x,y,face,72,8,84,MAT.EXIT,MAT.WALL_GOLD,{kind:'exit',label:e.label,url:e.url,target:e.target,cta:e.cta,collision:true});map.solids.push(s);map.exits.push(s);map.targets.push(s);});
+ prepareStaticGeometry(map);
+ return map;
+}
+
+function basis(a){return{f:{x:Math.cos(a),y:Math.sin(a)},r:{x:Math.sin(a),y:-Math.cos(a)}};}
+function rotatePose(x,y,ang,delta){const c=Math.cos(delta),s=Math.sin(delta);return{x:x*c-y*s,y:x*s+y*c,ang:ang+delta};}
+function obbPush(px,py,s,rad){const b=basis(s.ang),dx=px-s.x,dy=py-s.y,hf=s.d/2+rad,hr=s.w/2+rad;let fr=dx*b.f.x+dy*b.f.y,rr=dx*b.r.x+dy*b.r.y;if(Math.abs(fr)>=hf||Math.abs(rr)>=hr)return null;const pf=hf-Math.abs(fr),pr=hr-Math.abs(rr);if(pf<pr){const q=fr===0?1:Math.sign(fr);fr=q*hf;}else{const q=rr===0?1:Math.sign(rr);rr=q*hr;}return{x:s.x+b.f.x*fr+b.r.x*rr,y:s.y+b.f.y*fr+b.r.y*rr};}
+function solidAabb(s){const b=basis(s.ang),hx=Math.abs(b.f.x)*(s.d/2)+Math.abs(b.r.x)*(s.w/2),hy=Math.abs(b.f.y)*(s.d/2)+Math.abs(b.r.y)*(s.w/2);return{x1:s.x-hx,x2:s.x+hx,y1:s.y-hy,y2:s.y+hy};}
+function solidCorners(s){const b=basis(s.ang),hf=s.d/2,hr=s.w/2;return[
+ {x:s.x+b.f.x*hf+b.r.x*hr,y:s.y+b.f.y*hf+b.r.y*hr},
+ {x:s.x+b.f.x*hf-b.r.x*hr,y:s.y+b.f.y*hf-b.r.y*hr},
+ {x:s.x-b.f.x*hf+b.r.x*hr,y:s.y-b.f.y*hf+b.r.y*hr},
+ {x:s.x-b.f.x*hf-b.r.x*hr,y:s.y-b.f.y*hf-b.r.y*hr}
+];}
+function rangeOnAxis(pts,ax){let lo=Infinity,hi=-Infinity;for(const p of pts){const v=p.x*ax.x+p.y*ax.y;if(v<lo)lo=v;if(v>hi)hi=v;}return{lo,hi};}
+function solidsOverlap(a,b,eps=.01){const pa=solidCorners(a),pb=solidCorners(b),axes=[basis(a.ang).f,basis(a.ang).r,basis(b.ang).f,basis(b.ang).r];
+ for(const ax of axes){const ra=rangeOnAxis(pa,ax),rb=rangeOnAxis(pb,ax);if(ra.hi<=rb.lo+eps||rb.hi<=ra.lo+eps)return false;}
+ return true;
+}
+// Frozen cabinet layout, snapshotted from 0.6.4 before the ring was widened.
+// This is the thing that makes "do not rearrange the cabinets tonight" testable.
+// Regenerate ONLY when a layout change is intentional:
+//   console.log(__FTS_ARCADE__.cabinetLayoutSignature())
+const CABINET_LAYOUT_SNAPSHOT='A:-272.34,217.41,60.0 B:-292.59,182.34,240.0 C:-307.41,237.66,60.0 D:-327.66,202.59,240.0 E:292.59,182.34,300.0 F:272.34,217.41,120.0 G:307.41,237.66,120.0 H:327.66,202.59,300.0 I:0.00,148.50,90.0 J:-168.00,0.00,180.0 K:-148.50,40.25,90.0 L:-148.50,-40.25,-90.0 M:-256.36,-245.00,315.0 N:-285.00,-216.36,135.0 O:-40.25,148.50,90.0 P:40.25,148.50,90.0 Q:148.50,20.25,90.0 R:148.50,-20.25,270.0 S:189.00,20.25,90.0 T:189.00,-20.25,270.0 U:-313.64,-245.00,135.0 V:-285.00,-273.64,315.0 W:285.00,-273.64,225.0 X:313.64,-245.00,45.0 Y:256.36,-245.00,225.0 Z:285.00,-216.36,45.0';
+function cabinetLayoutSignature(m){return m.cabinets.slice().sort((a,b)=>a.letter<b.letter?-1:1).map(c=>c.letter+':'+c.x.toFixed(2)+','+c.y.toFixed(2)+','+(c.ang/DEG).toFixed(1)).join(' ');}
+function cabinetClearOfOffice(c,gap=AUTHORING.officeClearance){const a=solidAabb(c),lim=RING.inner+gap;return a.x2<=-lim||a.x1>=lim||a.y2<=-lim||a.y1>=lim;}
+
+/* =============================================================================
+   SHIPPING PERFORMANCE CONTRACT - 0.8.0
+   -----------------------------------------------------------------------------
+   The long-form future-systems design memo moved out of the runtime file. Keep
+   this build focused on executable contracts: fixed 60 Hz simulation, world-
+   locked planes, iOS software-plane fallback, deterministic authoring, frozen
+   cabinet layout, lazy texture shading, source-atlas release, static solid face
+   preparation, object-level frustum culling, and cabinet detail LOD.
+   ============================================================================= */
+
+class Sim{
+ constructor(map){
+  this.map=map;this.x=map.spawn.x;this.y=map.spawn.y;this.ang=map.spawn.ang;this.pitch=0;
+  this.vx=0;this.vy=0;this.vz=0;this.jumpZ=0;this.grounded=true;
+  this.sector=this.sectorAt(this.x,this.y);this.t=0;this.bob=0;this.steps=0;this.blocked=0;
+  this.stance=0;this.eyeHeight=EYE;this.slideT=0;this.slideElapsed=0;this.slideRearm=0;
+  this.slideDirX=0;this.slideDirY=0;this.slideBuffered=false;this.currentFov=FOV;
+ }
+ sectorAt(x,y){for(const s of this.map.sectors)if(Geom.pointInPoly(x,y,s.poly))return s.idx;return-1;}
+ eyeZ(){const floor=this.sector>=0?this.map.sectors[this.sector].floor:0,bob=this.grounded&&this.slideT<=0?Math.sin(this.bob)*(1.2*(1-this.stance*.55)):0;return floor+this.eyeHeight+this.jumpZ+bob;}
+ lineBlocks(ln){return ln.back<0||ln.blocking;}
+ tryMove(nx,ny){const M=this.map;for(let pass=0;pass<3;pass++){let hit=false;for(const ln of M.lines){if(!this.lineBlocks(ln))continue;const a=M.verts[ln.v1],b=M.verts[ln.v2],c=Geom.closestOnSeg(nx,ny,a.x,a.y,b.x,b.y);if(c.d2>=PLAYER_R*PLAYER_R)continue;const d=Math.sqrt(c.d2)||.0001,p=(PLAYER_R-d)+.02;nx+=((nx-c.x)/d)*p;ny+=((ny-c.y)/d)*p;hit=true;}for(const s of M.solids){if(!s.collision)continue;const p=obbPush(nx,ny,s,PLAYER_R);if(p){nx=p.x;ny=p.y;hit=true;}}if(!hit)break;}
+  const sec=this.sectorAt(nx,ny);if(sec<0){this.blocked++;return false;}this.x=nx;this.y=ny;this.sector=sec;return true;}
+ look(dx,dy,sens){this.ang-=dx*sens;while(this.ang>Math.PI)this.ang-=TAU;while(this.ang<-Math.PI)this.ang+=TAU;this.pitch-=dy*sens*210;this.pitch=Math.max(-LOOK_DOWN,Math.min(LOOK_UP,this.pitch));}
+ beginSlide(){
+  if(!this.grounded){this.slideBuffered=true;return false;}
+  if(this.slideT>0||this.slideRearm>0)return false;
+  const sp=Math.hypot(this.vx,this.vy);if(sp<KINETIC.slideMinSpeed)return false;
+  return this.startSlide(sp);
+ }
+ startSlide(speed){
+  const sp=Number.isFinite(speed)?speed:Math.hypot(this.vx,this.vy);if(sp<=.001)return false;
+  const inv=1/sp;this.slideDirX=this.vx*inv;this.slideDirY=this.vy*inv;
+  const boosted=Math.min(KINETIC.slideMaxSpeed,sp+KINETIC.slideBoostSpeed);
+  this.vx=this.slideDirX*boosted;this.vy=this.slideDirY*boosted;
+  this.slideT=KINETIC.slideMaxTime;this.slideElapsed=0;this.slideBuffered=false;return true;
+ }
+ endSlide(rearm=true){
+  if(this.slideT<=0)return;this.slideT=0;this.slideElapsed=0;
+  if(rearm)this.slideRearm=Math.max(this.slideRearm,KINETIC.slideRearmDelay);
+ }
+ jump(){
+  if(!this.grounded)return false;
+  const sliding=this.slideT>0;
+  if(sliding){this.vx*=KINETIC.slideJumpCarry;this.vy*=KINETIC.slideJumpCarry;this.endSlide(true);}
+  this.grounded=false;this.vz=KINETIC.jumpVel;this.jumpZ=.01;
+  this.slideBuffered=false;return true;
+ }
+ step(dt,input){
+  this.t+=dt;this.slideRearm=Math.max(0,this.slideRearm-dt);
+  if(!input.crouch)this.slideBuffered=false;
+  else if(!this.grounded)this.slideBuffered=true;
+
+  const ca=Math.cos(this.ang),sa=Math.sin(this.ang);
+  let f=(input.fwd?1:0)-(input.back?1:0),r=(input.right?1:0)-(input.left?1:0),mag=Math.hypot(f,r);
+  if(mag>1){f/=mag;r/=mag;mag=1;}
+  const crouched=!!input.crouch&&this.slideT<=0;
+  const base=crouched?KINETIC.crouchSpeed:(input.run?KINETIC.sprintSpeed:KINETIC.walkSpeed);
+  const forward=f*base*(f<0?KINETIC.reverseFactor:1),strafe=r*base*KINETIC.strafeFactor;
+  const tx=ca*forward+sa*strafe,ty=sa*forward-ca*strafe;
+
+  if(this.slideT>0){
+   this.slideElapsed+=dt;this.slideT=Math.max(0,KINETIC.slideMaxTime-this.slideElapsed);
+   const sp=Math.hypot(this.vx,this.vy);
+   const slowBand=Math.max(1,KINETIC.sprintSpeed-KINETIC.slideExitSpeed);
+   const slow=Math.max(0,Math.min(1,(KINETIC.sprintSpeed-sp)/slowBand));
+   const friction=KINETIC.slideFastFriction+(KINETIC.slideSlowFriction-KINETIC.slideFastFriction)*slow*slow;
+   const decay=Math.exp(-friction*dt);this.vx*=decay;this.vy*=decay;
+
+   // Steering rotates the velocity vector toward input without injecting free
+   // speed. This keeps wide Apex-like carving but rejects instant 90-degree snaps.
+   if(mag>.01){
+    const wx=ca*f+sa*r*KINETIC.strafeFactor,wy=sa*f-ca*r*KINETIC.strafeFactor,wl=Math.hypot(wx,wy)||1;
+    const cur=Math.hypot(this.vx,this.vy),dx=wx/wl*cur,dy=wy/wl*cur;
+    const steer=(1-Math.exp(-KINETIC.slideSteerLambda*dt))*KINETIC.slideSteerScale;
+    this.vx+=(dx-this.vx)*steer;this.vy+=(dy-this.vy)*steer;
+   }
+   if(!input.crouch||Math.hypot(this.vx,this.vy)<KINETIC.slideExitSpeed||this.slideT<=0)this.endSlide(true);
+  }else if(!this.grounded){
+   // Air movement keeps the launch velocity primary. Inputs bend the trajectory
+   // progressively; releasing movement adds only a trace of drag.
+   if(mag>.01){
+    const wx=ca*f+sa*r*KINETIC.strafeFactor,wy=sa*f-ca*r*KINETIC.strafeFactor,wl=Math.hypot(wx,wy)||1;
+    const sp=Math.hypot(this.vx,this.vy),desired=Math.min(KINETIC.airSpeedCap,Math.max(sp,input.run?KINETIC.sprintSpeed:KINETIC.walkSpeed));
+    const dx=wx/wl*desired,dy=wy/wl*desired,k=1-Math.exp(-KINETIC.airAccelLambda*dt);
+    this.vx+=(dx-this.vx)*k;this.vy+=(dy-this.vy)*k;
+    const capped=Math.hypot(this.vx,this.vy);
+    if(capped>KINETIC.airSpeedCap){const q=KINETIC.airSpeedCap/capped;this.vx*=q;this.vy*=q;}
+   }else{
+    const airDecay=Math.exp(-KINETIC.airDrag*dt);this.vx*=airDecay;this.vy*=airDecay;
+   }
+  }else{
+   const dot=this.vx*tx+this.vy*ty,lambda=mag<=.001?KINETIC.brakeLambda:(dot<0?KINETIC.reverseLambda:KINETIC.accelLambda),k=1-Math.exp(-lambda*dt);
+   this.vx+=(tx-this.vx)*k;this.vy+=(ty-this.vy)*k;
+  }
+
+  const ox=this.x,oy=this.y,nx=this.x+this.vx*dt,ny=this.y+this.vy*dt;
+  if(!this.tryMove(nx,ny)){
+   if(!this.tryMove(this.x+this.vx*dt,this.y))this.vx*=.18;
+   if(!this.tryMove(this.x,this.y+this.vy*dt))this.vy*=.18;
+  }
+
+  let landed=false,landingDown=0;
+  if(!this.grounded){
+   this.jumpZ+=this.vz*dt;this.vz-=KINETIC.gravity*dt;
+   if(this.jumpZ<=0){landingDown=Math.max(0,-this.vz);this.jumpZ=0;this.vz=0;this.grounded=true;landed=true;}
+  }
+  if(landed&&input.crouch&&this.slideBuffered&&this.slideRearm<=0){
+   const sp=Math.hypot(this.vx,this.vy);
+   if(sp>=KINETIC.slideLandMinSpeed&&landingDown>=KINETIC.slideLandMinDownVel)this.startSlide(sp);
+   else this.slideBuffered=false;
+  }
+
+  const moved=Math.hypot(this.x-ox,this.y-oy);
+  if(moved>.001&&this.grounded&&this.slideT<=0)this.bob+=moved*.05*(crouched?.68:1);
+  else if(moved<=.001)this.bob+=(Math.round(this.bob/Math.PI)*Math.PI-this.bob)*(1-Math.exp(-8*dt));
+  const stanceTarget=(input.crouch||this.slideT>0)?1:0,stanceK=1-Math.exp(-KINETIC.stanceLambda*dt);this.stance+=(stanceTarget-this.stance)*stanceK;this.eyeHeight=EYE+(CROUCH_EYE-EYE)*this.stance;
+  const fovTarget=this.slideT>0?KINETIC.slideFov:(input.crouch?KINETIC.crouchFov:(input.run&&mag>.15?KINETIC.sprintFov:KINETIC.baseFov)),fovK=1-Math.exp(-KINETIC.fovLambda*dt);this.currentFov+=(fovTarget-this.currentFov)*fovK;
+  return this;
+ }
+}
+
+class DrawLists{
+ constructor(w,h){this.alloc(w,h);}
+ alloc(w,h){this.w=w;this.h=h;
+  const cap=Math.max(2048,w*PERF.wallSpanFactor|0);this.wN=0;
+  this.wX=new Int16Array(cap);this.wY0=new Float32Array(cap);this.wY1=new Float32Array(cap);this.wTex=new Uint8Array(cap);this.wU=new Float32Array(cap);this.wTop=new Float32Array(cap);this.wBot=new Float32Array(cap);this.wF0=new Float32Array(cap);this.wF1=new Float32Array(cap);this.wDist=new Float32Array(cap);this.wLight=new Float32Array(cap);this.wStretch=new Uint8Array(cap);
+  const scap=w*h/2|0;this.sN=0;this.sY=new Int16Array(scap);this.sX0=new Int16Array(scap);this.sX1=new Int16Array(scap);this.sFlat=new Uint8Array(scap);this.sDist=new Float32Array(scap);this.sLight=new Float32Array(scap);this.sSec=new Uint8Array(scap);
+  this.pixelDepth=new Float32Array(w*h);this.hFaces=[];this.stats={sectors:0,portals:0,lines:0,solidFaces:0,culledSolids:0,lodParts:0,grows:0,dropped:0};
+ }
+ _growWalls(){
+  const old=this.wX.length,max=Math.max(old,this.w*PERF.wallSpanMaxFactor|0);if(old>=max){this.stats.dropped++;return false;}
+  const n=Math.min(max,Math.max(old+this.w*8,old*2));
+  const grow=a=>{const b=new a.constructor(n);b.set(a);return b;};
+  this.wX=grow(this.wX);this.wY0=grow(this.wY0);this.wY1=grow(this.wY1);this.wTex=grow(this.wTex);this.wU=grow(this.wU);this.wTop=grow(this.wTop);this.wBot=grow(this.wBot);this.wF0=grow(this.wF0);this.wF1=grow(this.wF1);this.wDist=grow(this.wDist);this.wLight=grow(this.wLight);this.wStretch=grow(this.wStretch);this.stats.grows++;return true;
+ }
+ reset(){this.wN=0;this.sN=0;this.hFaces.length=0;this.stats.sectors=0;this.stats.portals=0;this.stats.lines=0;this.stats.solidFaces=0;this.stats.culledSolids=0;this.stats.lodParts=0;this.stats.grows=0;this.stats.dropped=0;}
+ wall(x,y0,y1,tex,u,top,bot,dist,light,f0,f1,stretch){if(this.wN>=this.wX.length&&!this._growWalls())return;const i=this.wN++;this.wX[i]=x;this.wY0[i]=y0;this.wY1[i]=y1;this.wTex[i]=tex;this.wU[i]=u;this.wTop[i]=top;this.wBot[i]=bot;this.wDist[i]=dist;this.wLight[i]=light;this.wF0[i]=f0;this.wF1[i]=f1;this.wStretch[i]=stretch?1:0;}
+ span(y,x0,x1,flat,dist,light,sec){if(x1<x0||this.sN>=this.sY.length){if(this.sN>=this.sY.length)this.stats.dropped++;return;}const i=this.sN++;this.sY[i]=y;this.sX0[i]=x0;this.sX1[i]=x1;this.sFlat[i]=flat;this.sDist[i]=dist;this.sLight[i]=light;this.sSec[i]=sec||0;}
+}
+
+function cabinetPartLOD(role){
+ // 0 survives at long range; 1 is mid-range silhouette/detail; 2 is close hardware.
+ if(role==='coin-boss'||role==='coin-door'||role==='bezel-left'||role==='bezel-right'||role==='back-block')return 2;
+ if(role==='kick-plate'||role==='jamb-left'||role==='jamb-right'||role==='backdrop'||role==='bezel-top')return 1;
+ return 0;
+}
+function prepareStaticGeometry(m){
+ for(const s of m.solids){
+  const ca=Math.cos(s.ang),sa=Math.sin(s.ang),fx=ca,fy=sa,rx=sa,ry=-ca,faces=[],tops=[];let radius=0;
+  for(const part of s.parts){
+   const cx=s.x+fx*(part.of||0)+rx*(part.ro||0),cy=s.y+fy*(part.of||0)+ry*(part.ro||0),hf=part.d/2,hr=part.w/2;
+   const FL={x:cx+fx*hf-rx*hr,y:cy+fy*hf-ry*hr},FR={x:cx+fx*hf+rx*hr,y:cy+fy*hf+ry*hr},BR={x:cx-fx*hf+rx*hr,y:cy-fy*hf+ry*hr},BL={x:cx-fx*hf-rx*hr,y:cy-fy*hf-ry*hr};
+   const side=part.side==null?part.front:part.side,left=part.left==null?side:part.left,right=part.right==null?side:part.right,back=part.back==null?side:part.back,stretch=!!part.stretch,lod=s.kind==='cabinet'?cabinetPartLOD(part.role):0;
+   const add=(a,b,nx,ny,tex)=>faces.push({x1:a.x,y1:a.y,x2:b.x,y2:b.y,mx:(a.x+b.x)/2,my:(a.y+b.y)/2,nx,ny,z0:part.z0,z1:part.z1,tex,light:s.light,stretch,lod,len:Math.hypot(b.x-a.x,b.y-a.y)||1});
+   add(FL,FR,fx,fy,part.front);add(FR,BR,rx,ry,right);add(BR,BL,-fx,-fy,back);add(BL,FL,-rx,-ry,left);
+   if(part.top!=null)tops.push({pts:[BL,BR,FR,FL],z:part.z1,tex:part.top,light:s.light,lod});
+   for(const p of[FL,FR,BR,BL])radius=Math.max(radius,Math.hypot(p.x-s.x,p.y-s.y));
+  }
+  s._render={faces,tops,radius:radius+2};
+ }
+ return m;
+}
+
+const RenderCore={
+ solve(sim,out,w,h){out.reset();const M=sim.map,S=M.sectors,V=M.verts,pd=Geom.projDist(w,sim.currentFov||FOV),hw=w/2,pz=sim.eyeZ(),hor=Math.round(h/2+sim.pitch),ca=Math.cos(sim.ang),sa=Math.sin(sim.ang);
+  if(!out._ytop||out._ytop[0].length!==w){out._ytop=[];out._ybot=[];for(let d=0;d<=28;d++){out._ytop.push(new Int16Array(w));out._ybot.push(new Int16Array(w));}out._pt=new Int16Array(w);out._pb=new Int16Array(w);out._ft=new Int16Array(w);out._fb=new Int16Array(w);out._ss=new Int16Array(h+8);out._nt=new Int16Array(w);out._nb=new Int16Array(w);}
+  out._ytop[0].fill(0);out._ybot[0].fill(h-1);const q=[{sec:sim.sector<0?0:sim.sector,x0:0,x1:w-1,depth:0}],seen=Array.from({length:S.length},()=>new Uint32Array(Math.ceil(Math.ceil(w/16)/32)));let jobs=0;
+  const seenJob=j=>{const b0=j.x0>>4,b1=j.x1>>4;let fresh=false;for(let b=b0;b<=b1;b++){const wi=b>>5,bit=1<<(b&31);if(!(seen[j.sec][wi]&bit)){seen[j.sec][wi]|=bit;fresh=true;}}return!fresh;};
+  while(q.length&&jobs++<220){const job=q.shift();if(job.depth>28||seenJob(job))continue;const sec=S[job.sec],depth=job.depth,ytop=out._ytop[depth],ybot=out._ybot[depth],jx0=job.x0,jx1=job.x1;out.stats.sectors++;const ct=out._pt,cb=out._pb,ft=out._ft,fb=out._fb;for(let x=jx0;x<=jx1;x++){ct[x]=h;cb[x]=-1;ft[x]=h;fb[x]=-1;}
+   const portals=[];
+   for(const li of sec.lines){const ln=M.lines[li],flip=ln.back===sec.idx,other=flip?ln.front:ln.back,p=V[flip?ln.v2:ln.v1],qq=V[flip?ln.v1:ln.v2],a0=Geom.view(sim.x,sim.y,ca,sa,p.x,p.y),b0=Geom.view(sim.x,sim.y,ca,sa,qq.x,qq.y),cl=Geom.clipNear(a0,b0,NEAR);if(!cl)continue;const A=cl[0],B=cl[1];let xa=Geom.projX(A.tx,A.tz,hw,pd),xb=Geom.projX(B.tx,B.tz,hw,pd);if(xa>=xb)continue;const sx0=Math.max(jx0,Math.ceil(xa)),sx1=Math.min(jx1,Math.ceil(xb)-1);if(sx1<sx0)continue;out.stats.lines++;const len=Math.hypot(qq.x-p.x,qq.y-p.y),iza=1/A.tz,izb=1/B.tz,ua=A.t*iza,ub=B.t*izb,back=other>=0?S[other]:null,isPortal=!!back,nxt=isPortal?{x0:w,x1:-1}:null;
+    for(let x=sx0;x<=sx1;x++){const cTop=ytop[x],cBot=ybot[x];if(cTop>cBot)continue;const f=(x+.5-xa)/(xb-xa),iz=iza+(izb-iza)*f,z=1/iz,u=(ua+(ub-ua)*f)*z*len,dist=z,yC=Geom.projY(sec.ceil,pz,z,hor,pd),yF=Geom.projY(sec.floor,pz,z,hor,pd);let wt=Math.round(yC),wb=Math.round(yF)-1;wt=Math.max(cTop,Math.min(cBot+1,wt));wb=Math.min(cBot,Math.max(cTop-1,wb));if(cTop<=wt-1){ct[x]=cTop;cb[x]=wt-1;}if(wb+1<=cBot){ft[x]=wb+1;fb[x]=cBot;}
+     if(!isPortal){if(wt<=wb)out.wall(x,wt,wb+1,ln.mid,u/64,sec.ceil,sec.floor,dist,sec.light,yC,yF,false);ytop[x]=1;ybot[x]=0;}
+     else{const yU=Geom.projY(back.ceil,pz,z,hor,pd),yL=Geom.projY(back.floor,pz,z,hor,pd);let ut=wt,ub=Math.min(wb,Math.round(yU)-1),lt=Math.max(wt,Math.round(yL)),lb=wb;if(back.ceil<sec.ceil&&ut<=ub)out.wall(x,ut,ub+1,ln.upper,u/64,sec.ceil,back.ceil,dist,sec.light,yC,yU,false);if(back.floor>sec.floor&&lt<=lb)out.wall(x,lt,lb+1,ln.lower,u/64,back.floor,sec.floor,dist,sec.light,yL,yF,false);const nt=Math.max(wt,back.ceil<sec.ceil?ub+1:wt),nb=Math.min(wb,back.floor>sec.floor?lt-1:wb);ytop[x]=1;ybot[x]=0;if(nt<=nb){nxt.x0=Math.min(nxt.x0,x);nxt.x1=Math.max(nxt.x1,x);out._nt[x]=nt;out._nb[x]=nb;}else{out._nt[x]=1;out._nb[x]=0;}}
+    }
+    if(isPortal&&nxt.x1>=nxt.x0&&depth+1<=28){const dt=out._ytop[depth+1],db=out._ybot[depth+1];for(let x=nxt.x0;x<=nxt.x1;x++){dt[x]=out._nt[x];db[x]=out._nb[x];}portals.push({sec:other,x0:nxt.x0,x1:nxt.x1,depth:depth+1});out.stats.portals++;}
+   }
+   this._plane(out,ct,cb,jx0,jx1,sec.ctex,sec.ceil,pz,hor,pd,sec.light,h,sec.idx);this._plane(out,ft,fb,jx0,jx1,sec.ftex,sec.floor,pz,hor,pd,sec.light,h,sec.idx);for(const pj of portals)q.push(pj);
+  }
+  out.view={projDist:pd,horizon:hor,pz,halfW:hw,w,h,cosA:ca,sinA:sa};this._solids(sim,out);return out;
+ },
+ _plane(out,top,bot,x0,x1,flat,z,pz,hor,pd,light,h,sec){const ss=out._ss,dz=Math.abs(z-pz);let pt=h,pb=-1;const cb=(row,a,b)=>{const dy=Math.abs(row+.5-hor),dist=dy<.5?1e6:(dz*pd)/dy;out.span(row,a,b,flat,dist,light,sec);};for(let x=x0;x<=x1+1;x++){let t=x>x1?h:top[x],b=x>x1?-1:bot[x];while(pt<t&&pt<=pb){cb(pt,ss[pt],x-1);pt++;}while(pb>b&&pb>=pt){cb(pb,ss[pb],x-1);pb--;}while(t<pt&&t<=b){ss[t]=x;t++;}while(b>pb&&b>=t){ss[b]=x;b--;}pt=x>x1?h:top[x];pb=x>x1?-1:bot[x];}},
+ _solids(sim,out){
+  const v=out.view,tanHalf=Math.tan((sim.currentFov||FOV)/2)*PERF.frustumPad,near2=PERF.cabinetNear*PERF.cabinetNear,mid2=PERF.cabinetMid*PERF.cabinetMid;
+  for(const s of sim.map.solids){
+   const rg=s._render;if(!rg)continue;const dx=s.x-sim.x,dy=s.y-sim.y,d2=dx*dx+dy*dy,r=rg.radius;
+   if(d2>(RENDER.solidCull+r)*(RENDER.solidCull+r)){out.stats.culledSolids++;continue;}
+   const tz=dx*v.cosA+dy*v.sinA,tx=dx*v.sinA-dy*v.cosA;if(tz+r<NEAR){out.stats.culledSolids++;continue;}
+   const edge=Math.max(NEAR,tz);if(Math.abs(tx)>edge*tanHalf+r*PERF.frustumPad){out.stats.culledSolids++;continue;}
+   const tier=s.kind==='cabinet'?(d2<near2?2:(d2<mid2?1:0)):2;
+   for(const f of rg.faces){if(f.lod>tier){out.stats.lodParts++;continue;}this._facePrepared(sim,out,f);}
+   if(v.pz>0)for(const t of rg.tops){if(t.lod<=tier&&v.pz>t.z+.01)this._topPrepared(sim,out,t);}
+  }
+ },
+ _topPrepared(sim,out,t){const v=out.view,p=[],pts=t.pts;let dist=0;for(let i=0;i<4;i++){const q=pts[i],dx=q.x-sim.x,dy=q.y-sim.y,tx=dx*v.sinA-dy*v.cosA,tz=dx*v.cosA+dy*v.sinA;if(tz<NEAR)return;dist+=tz;p.push({x:v.halfW+(tx/tz)*v.projDist,y:v.horizon-((t.z-v.pz)*v.projDist)/tz});}dist*=.25;let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;for(const q of p){if(q.x<minX)minX=q.x;if(q.x>maxX)maxX=q.x;if(q.y<minY)minY=q.y;if(q.y>maxY)maxY=q.y;}if(maxX<0||minX>=v.w||maxY<0||minY>=v.h)return;out.hFaces.push({p,tex:t.tex,light:t.light,dist});out.stats.solidFaces++;},
+ _facePrepared(sim,out,f){
+  if((sim.x-f.mx)*f.nx+(sim.y-f.my)*f.ny<=0)return;const v=out.view;
+  let dx=f.x1-sim.x,dy=f.y1-sim.y,atx=dx*v.sinA-dy*v.cosA,atz=dx*v.cosA+dy*v.sinA;
+  dx=f.x2-sim.x;dy=f.y2-sim.y;let btx=dx*v.sinA-dy*v.cosA,btz=dx*v.cosA+dy*v.sinA,ta=0,tb=1;
+  if(atz<NEAR&&btz<NEAR)return;
+  if(atz<NEAR){const q=(NEAR-atz)/(btz-atz);atx+=(btx-atx)*q;atz=NEAR;ta=q;}
+  else if(btz<NEAR){const q=(NEAR-btz)/(atz-btz);btx+=(atx-btx)*q;btz=NEAR;tb=1-q;}
+  let xa=v.halfW+(atx/atz)*v.projDist,xb=v.halfW+(btx/btz)*v.projDist;
+  if(xa>xb){let q=xa;xa=xb;xb=q;q=atx;atx=btx;btx=q;q=atz;atz=btz;btz=q;q=ta;ta=tb;tb=q;}
+  const sx0=Math.max(0,Math.ceil(xa)),sx1=Math.min(v.w-1,Math.ceil(xb)-1);if(sx1<sx0||xb-xa<1e-6)return;out.stats.solidFaces++;
+  const iza=1/atz,izb=1/btz,ua=ta*iza,ub=tb*izb,len=f.len;
+  for(let x=sx0;x<=sx1;x++){const q=(x+.5-xa)/(xb-xa),iz=iza+(izb-iza)*q,z=1/iz,u=(ua+(ub-ua)*q)*z*len,yT=v.horizon-((f.z1-v.pz)*v.projDist)/z,yB=v.horizon-((f.z0-v.pz)*v.projDist)/z;if(yB<=0||yT>=v.h)continue;const texU=f.stretch?(1-u/len):(-u/64);out.wall(x,Math.max(-2,yT),Math.min(v.h+2,yB),f.tex,texU,f.z1,f.z0,z,f.light,yT,yB,f.stretch);}
+ }
+};
+
+const canvas=document.getElementById('c'),ctx=canvas.getContext('2d'),telemetry=document.getElementById('telemetry'),promptEl=document.getElementById('prompt'),lockEl=document.getElementById('lock'),modal=document.getElementById('modal'),modalEyebrow=document.getElementById('modalEyebrow'),modalTitle=document.getElementById('modalTitle'),modalCopy=document.getElementById('modalCopy'),confirmBtn=document.getElementById('confirmBtn'),cancelBtn=document.getElementById('cancelBtn'),mapBtn=document.getElementById('mapBtn'),audioBtn=document.getElementById('audioBtn');
+const IMG={world:null,cab1:null,cab2:null,cab3:null,cab4:null,screen:null,fixture:null,cabinetRef:null,ready:false,artBaked:false,sourcesReleased:false,meta:{},errors:[]};let baseBank=[],texBank=[],flatBank=[],shadeTileBank=[],planePixelBank=[],RW=0,RH=0,RSCALE=1,dl=null,showMap=false,activeTarget=null,modalTarget=null,VIGNETTE=null;const PAINT_ORDER=[];const PLANE_SOFT={canvas:null,ctx:null,image:null,u32:null,width:0,height:0};const PLANE_STATS={patternTransforms:0,softwareSpans:0,softwarePixels:0};
+
+function loadImage(src,label){
+ const candidates=Array.isArray(src)?src:[src];
+ return new Promise(resolve=>{let i=0;const attempt=()=>{if(i>=candidates.length){IMG.errors.push(label||'asset');resolve(null);return;}const im=new Image();im.onload=()=>resolve(im);im.onerror=()=>{i++;attempt();};im.src=candidates[i];};attempt();});
+}
+function cropCanvas(im,r,sheet){const cv=document.createElement('canvas');cv.width=cv.height=64;const g=cv.getContext('2d');g.imageSmoothingEnabled=false;if(sheet==='solid'){g.fillStyle='#03050a';g.fillRect(0,0,64,64);}else if(im&&r)g.drawImage(im,r[0],r[1],r[2],r[3],0,0,64,64);else{g.fillStyle='#222833';g.fillRect(0,0,64,64);g.strokeStyle='#ff4a98';g.strokeRect(2,2,60,60);}return cv;}
+function shadeStrip(src,level){const cv=document.createElement('canvas');cv.width=64;cv.height=TILE_H;const g=cv.getContext('2d');g.imageSmoothingEnabled=false;for(let y=0;y<TILE_H;y+=64)g.drawImage(src,0,y,64,64);const k=level/(SHADES-1);g.globalCompositeOperation='source-atop';g.fillStyle='rgba(2,4,8,'+(k*.9)+')';g.fillRect(0,0,64,TILE_H);return cv;}
+function shadeTile(src,level){const cv=document.createElement('canvas');cv.width=cv.height=64;const g=cv.getContext('2d');g.imageSmoothingEnabled=false;g.drawImage(src,0,0);const k=level/(SHADES-1);g.globalCompositeOperation='source-atop';g.fillStyle='rgba(2,4,8,'+(k*.9)+')';g.fillRect(0,0,64,64);return cv;}
+function buildTextures(){baseBank=new Array(MATERIALS.length);texBank=new Array(MATERIALS.length);flatBank=new Array(MATERIALS.length);shadeTileBank=new Array(MATERIALS.length);planePixelBank=new Array(MATERIALS.length);IMG.ready=IMG.errors.length===0&&!!(IMG.world&&IMG.cab1&&IMG.cab2&&IMG.cab3&&IMG.cab4&&IMG.screen&&IMG.fixture&&IMG.cabinetRef);}
+function baseTile(i){
+ if(baseBank[i])return baseBank[i];const m=MATERIALS[i];return baseBank[i]=cropCanvas(IMG[m.sheet],m.rect,m.sheet);
+}
+function shadedTile(i,level){let row=shadeTileBank[i];if(!row)row=shadeTileBank[i]=new Array(SHADES);return row[level]||(row[level]=shadeTile(baseTile(i),level));}
+function wallTexture(i,level){let row=texBank[i];if(!row)row=texBank[i]=new Array(SHADES);if(row[level])return row[level];const m=MATERIALS[i];return row[level]=m.stretch?shadedTile(i,level):shadeStrip(baseTile(i),level);}
+function flatPattern(i,level){let row=flatBank[i];if(!row)row=flatBank[i]=new Array(SHADES);return row[level]||(row[level]=ctx.createPattern(shadedTile(i,level),'repeat'));}
+function planePixels(i,level){let row=planePixelBank[i];if(!row)row=planePixelBank[i]=new Array(SHADES);if(row[level])return row[level];const tile=shadedTile(i,level),g=tile.getContext('2d',{willReadFrequently:true}),img=g.getImageData(0,0,64,64);return row[level]=new Uint32Array(img.data.buffer.slice(0));}
+function bakeBaseTilesAndRelease(){
+ for(let i=0;i<MATERIALS.length;i++)baseTile(i);IMG.artBaked=true;
+ for(const k of['world','cab1','cab2','cab3','cab4','screen','fixture','cabinetRef'])IMG[k]=null;
+ IMG.sourcesReleased=true;
+}
+function ensureSoftwareFrame(w,h){if(PLANE_SOFT.width===w&&PLANE_SOFT.height===h&&PLANE_SOFT.image)return;const cv=document.createElement('canvas');cv.width=w;cv.height=h;const g=cv.getContext('2d',{alpha:true});PLANE_SOFT.canvas=cv;PLANE_SOFT.ctx=g;PLANE_SOFT.width=w;PLANE_SOFT.height=h;PLANE_SOFT.image=g.createImageData(w,h);PLANE_SOFT.u32=new Uint32Array(PLANE_SOFT.image.data.buffer);}
+function wrap64(v){v%=64;return v<0?v+64:v;}
+
+function drawAffineTri(tex,s0,s1,s2,d0,d1,d2){
+ const u0=s0[0],v0=s0[1],u1=s1[0],v1=s1[1],u2=s2[0],v2=s2[1],x0=d0.x,y0=d0.y,x1=d1.x,y1=d1.y,x2=d2.x,y2=d2.y;
+ const den=u0*(v1-v2)+u1*(v2-v0)+u2*(v0-v1);if(Math.abs(den)<1e-6)return;
+ const a=(x0*(v1-v2)+x1*(v2-v0)+x2*(v0-v1))/den,c=(x0*(u2-u1)+x1*(u0-u2)+x2*(u1-u0))/den,e=(x0*(u1*v2-u2*v1)+x1*(u2*v0-u0*v2)+x2*(u0*v1-u1*v0))/den;
+ const b=(y0*(v1-v2)+y1*(v2-v0)+y2*(v0-v1))/den,d=(y0*(u2-u1)+y1*(u0-u2)+y2*(u1-u0))/den,f=(y0*(u1*v2-u2*v1)+y1*(u2*v0-u0*v2)+y2*(u0*v1-u1*v0))/den;
+ ctx.save();ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x1,y1);ctx.lineTo(x2,y2);ctx.closePath();ctx.clip();ctx.setTransform(a,b,c,d,e,f);ctx.drawImage(tex,0,0,64,64,0,0,64,64);ctx.restore();
+}
+function paintHorizontalFace(hf,shadeOf){const tex=wallTexture(hf.tex,shadeOf(hf.dist,hf.light));if(!tex)return;const p=hf.p;drawAffineTri(tex,[0,0],[64,0],[64,64],p[0],p[1],p[2]);drawAffineTri(tex,[0,0],[64,64],[0,64],p[0],p[2],p[3]);}
+
+// Plane backend split is deliberate: software path must never touch CanvasPattern.setTransform().
+function paint(sim,d){const v=d.view,w=v.w,h=v.h;ctx.fillStyle='#03050a';ctx.fillRect(0,0,w,h);ctx.imageSmoothingEnabled=false;const zbuf=d.pixelDepth;zbuf.fill(Infinity);const shadeOf=(dist,light)=>Math.min(SHADES-1,Math.max(0,((Math.min(1,dist/RENDER.fogFar+(1-light)*.7))*(SHADES-1))|0));
+ PLANE_STATS.patternTransforms=PLANE_STATS.softwareSpans=PLANE_STATS.softwarePixels=0;
+ const planePattern=i=>{const y=d.sY[i],x0=d.sX0[i],x1=d.sX1[i],dist=d.sDist[i];if(y<0||y>=h||x1<x0)return;const p=flatPattern(d.sFlat[i],shadeOf(dist,d.sLight[i]));if(!p)return;const sec=sim.map.sectors[d.sSec[i]],frame=Geom.planeMaterialFrame(sec,PLANE_MAPPING.mode,sim.ang);const m=Geom.planePatternTransform(sim.x,sim.y,v.cosA,v.sinA,v.halfW,v.projDist,y,dist,frame.ang,frame.ox,frame.oy);if(m&&p.setTransform){PLANE_STATS.patternTransforms++;const pm=typeof DOMMatrix==='function'?new DOMMatrix([m.a,m.b,m.c,m.d,m.e,m.f]):m;p.setTransform(pm);}ctx.fillStyle=p;ctx.fillRect(x0,y,x1-x0+1,1);const off=y*w;for(let x=Math.max(0,x0);x<=Math.min(w-1,x1);x++)if(dist<zbuf[off+x])zbuf[off+x]=dist;};
+ const planeSoftware=i=>{let y=d.sY[i],x0=Math.max(0,d.sX0[i]),x1=Math.min(w-1,d.sX1[i]),dist=d.sDist[i];if(y<0||y>=h||x1<x0||!Number.isFinite(dist)||dist<=0)return;const shade=shadeOf(dist,d.sLight[i]),pix=planePixels(d.sFlat[i],shade);if(!pix)return;const sec=sim.map.sectors[d.sSec[i]],frame=Geom.planeMaterialFrame(sec,PLANE_MAPPING.mode,sim.ang),mc=Math.cos(frame.ang),ms=Math.sin(frame.ang),step=dist/v.projDist,tx0=(x0+.5-v.halfW)*step,wx0=sim.x+v.cosA*dist+v.sinA*tx0,wy0=sim.y+v.sinA*dist-v.cosA*tx0,dwx=v.sinA*step,dwy=-v.cosA*step,dx=wx0-frame.ox,dy=wy0-frame.oy;let u=wrap64(mc*dx+ms*dy),vv=wrap64(-ms*dx+mc*dy),du=mc*dwx+ms*dwy,dv=-ms*dwx+mc*dwy;const frame32=PLANE_SOFT.u32,off=y*w;PLANE_STATS.softwareSpans++;for(let x=x0;x<=x1;x++){if(dist<zbuf[off+x]){frame32[off+x]=pix[((vv|0)<<6)+(u|0)];zbuf[off+x]=dist;PLANE_STATS.softwarePixels++;}u+=du;vv+=dv;if(u>=64||u<0)u=wrap64(u);if(vv>=64||vv<0)vv=wrap64(vv);}};
+ const wall=i=>{const tex=wallTexture(d.wTex[i],shadeOf(d.wDist[i],d.wLight[i]));if(!tex)return;let u=d.wU[i]%1;if(u<0)u+=1;const sx=Math.min(63,(u*64)|0),y0=d.wY0[i],y1=d.wY1[i],span=d.wF1[i]-d.wF0[i];if(span<=.001||y1<=y0)return;let sy0,sy1;if(d.wStretch[i]){sy0=Math.max(0,Math.min(64,((y0-d.wF0[i])/span)*64));sy1=Math.max(sy0,Math.min(64,((y1-d.wF0[i])/span)*64));}else{const wh=Math.max(1,Math.min(TILE_H,Math.abs(d.wTop[i]-d.wBot[i])));sy0=Math.max(0,Math.min(TILE_H,((y0-d.wF0[i])/span)*wh));sy1=Math.max(sy0,Math.min(TILE_H,((y1-d.wF0[i])/span)*wh));}ctx.drawImage(tex,sx,sy0,1,Math.max(.05,sy1-sy0),d.wX[i],y0,1,Math.max(1,y1-y0));const x=d.wX[i],ya=Math.max(0,Math.floor(y0)),yb=Math.min(h,Math.ceil(y1));if(x>=0&&x<w)for(let y=ya;y<yb;y++)if(d.wDist[i]<zbuf[y*w+x])zbuf[y*w+x]=d.wDist[i];};
+ if(PLANE_BACKEND.active==='software'){
+  ensureSoftwareFrame(w,h);PLANE_SOFT.u32.fill(0);for(let i=0;i<d.sN;i++)planeSoftware(i);PLANE_SOFT.ctx.putImageData(PLANE_SOFT.image,0,0);ctx.drawImage(PLANE_SOFT.canvas,0,0);
+  PAINT_ORDER.length=d.wN+d.hFaces.length;let on=0;for(let i=0;i<d.wN;i++)PAINT_ORDER[on++]=0x1000000|i;for(let i=0;i<d.hFaces.length;i++)PAINT_ORDER[on++]=0x2000000|i;PAINT_ORDER.sort((a,b)=>{const ak=a>>>24,bk=b>>>24,ai=a&0xffffff,bi=b&0xffffff,ad=ak===1?d.wDist[ai]:d.hFaces[ai].dist,bd=bk===1?d.wDist[bi]:d.hFaces[bi].dist;return bd-ad||ak-bk;});for(const code of PAINT_ORDER){const k=code>>>24,i=code&0xffffff;if(k===1)wall(i);else paintHorizontalFace(d.hFaces[i],shadeOf);}
+ }else{
+  PAINT_ORDER.length=d.sN+d.wN+d.hFaces.length;let on=0;for(let i=0;i<d.sN;i++)PAINT_ORDER[on++]=i;for(let i=0;i<d.wN;i++)PAINT_ORDER[on++]=0x1000000|i;for(let i=0;i<d.hFaces.length;i++)PAINT_ORDER[on++]=0x2000000|i;PAINT_ORDER.sort((a,b)=>{const ak=a>>>24,bk=b>>>24,ai=a&0xffffff,bi=b&0xffffff,ad=ak===0?d.sDist[ai]:(ak===1?d.wDist[ai]:d.hFaces[ai].dist),bd=bk===0?d.sDist[bi]:(bk===1?d.wDist[bi]:d.hFaces[bi].dist);return bd-ad||ak-bk;});for(const code of PAINT_ORDER){const k=code>>>24,i=code&0xffffff;if(k===0)planePattern(i);else if(k===1)wall(i);else paintHorizontalFace(d.hFaces[i],shadeOf);}
+ }
+ // subtle CRT vignette and crosshair
+ if(VIGNETTE){ctx.fillStyle=VIGNETTE;ctx.fillRect(0,0,w,h);}ctx.fillStyle='rgba(220,238,255,.62)';ctx.fillRect(w/2-5,h/2,3,1);ctx.fillRect(w/2+3,h/2,3,1);ctx.fillRect(w/2,h/2-5,1,3);ctx.fillRect(w/2,h/2+3,1,3);
+}
+
+function drawMap(sim,w,h){const sc=Math.min(w,h)*.34/RING.outer,ox=w-RING.outer*sc-16,oy=RING.outer*sc+16,P=(x,y)=>[ox+x*sc,oy-y*sc];ctx.fillStyle='rgba(2,5,10,.72)';ctx.beginPath();ctx.arc(ox,oy,RING.outer*sc+8,0,TAU);ctx.fill();for(const ln of sim.map.lines){const a=sim.map.verts[ln.v1],b=sim.map.verts[ln.v2],p=P(a.x,a.y),q=P(b.x,b.y);ctx.strokeStyle=ln.back>=0?'rgba(80,140,220,.25)':'rgba(210,220,235,.65)';ctx.lineWidth=ln.back>=0?.6:1.2;ctx.beginPath();ctx.moveTo(p[0],p[1]);ctx.lineTo(q[0],q[1]);ctx.stroke();}for(const c of sim.map.cabinets){const p=P(c.x,c.y);ctx.fillStyle='rgba(255,90,210,.74)';ctx.fillRect(p[0]-2,p[1]-2,4,4);ctx.fillStyle='rgba(255,255,255,.9)';ctx.font='5px monospace';ctx.fillText(c.letter,p[0]+3,p[1]-3);}for(const f of sim.map.fixtures){const p=P(f.x,f.y);ctx.fillStyle='rgba(100,190,255,.55)';ctx.fillRect(p[0]-1.5,p[1]-1.5,3,3);}for(const a of sim.map.ads){const p=P(a.x,a.y);ctx.fillStyle='rgba(255,201,95,.82)';ctx.fillRect(p[0]-2,p[1]-2,4,4);}for(const e of sim.map.exits){const p=P(e.x,e.y);ctx.fillStyle='rgba(255,91,69,.95)';ctx.fillRect(p[0]-3,p[1]-3,6,6);}const p=P(sim.x,sim.y);ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(p[0],p[1]);ctx.lineTo(p[0]+Math.cos(sim.ang)*12,p[1]-Math.sin(sim.ang)*12);ctx.stroke();ctx.fillStyle='#fff';ctx.fillRect(p[0]-2,p[1]-2,4,4);}
+
+const map=buildLevel(),MAP_ERRORS=MapBuilder.validate(map),sim=new Sim(map);const input={fwd:0,back:0,left:0,right:0,run:0,crouch:0,jump:0};
+
+function findTarget(){const ca=Math.cos(sim.ang),sa=Math.sin(sim.ang),all=map.targets;let best=null,bscore=1e9;for(const t of all){const tc=Math.cos(t.ang),ts=Math.sin(t.ang),dd=(t.d||10)/2+24,px=t.x+tc*dd,py=t.y+ts*dd,dx=px-sim.x,dy=py-sim.y,d2=dx*dx+dy*dy;if(d2>6084)continue;const dist=Math.sqrt(d2),dot=(dx*ca+dy*sa)/(dist||1);if(dot<.28)continue;const score=dist-dot*16;if(score<bscore){bscore=score;best=t;}}return best;}
+function targetKind(t){return t.kind==='cabinet'?'CABINET '+t.letter:t.kind==='exit'?'EXIT':t.kind==='token'?'TOKEN VENDING':t.kind==='ad'?'AD INVENTORY':'WALL PORTAL';}
+let promptTargetKey='';
+function updatePrompt(){activeTarget=findTarget();const key=activeTarget?(activeTarget.id||activeTarget.letter||activeTarget.label):'';if(key===promptTargetKey)return;promptTargetKey=key;if(!activeTarget){promptEl.classList.remove('show');promptEl.textContent='';return;}const name=activeTarget.kind==='cabinet'?activeTarget.title:activeTarget.label,verb=activeTarget.cta||(activeTarget.kind==='cabinet'?'ENTER GAME':'OPEN');promptEl.innerHTML='<span class="kind">'+targetKind(activeTarget)+'</span> '+name+' &nbsp; <span class="key">[E / CLICK]</span> '+verb;promptEl.classList.add('show');}
+function openConfirm(t){if(!t||!t.url)return;modalTarget=t;if(document.pointerLockElement===canvas)document.exitPointerLock();const name=t.kind==='cabinet'?(t.letter+' / '+t.title):t.label;modalTitle.textContent=name;if(t.kind==='cabinet'){modalEyebrow.textContent='LEAVE FTS ARCADE?';modalCopy.textContent='Enter cabinet '+t.letter+' and navigate to '+t.title+'? Your browser will load '+t.url+'.';confirmBtn.textContent='ENTER CABINET';}else if(t.kind==='token'){modalEyebrow.textContent='TOKEN PURCHASE';modalCopy.textContent='Open the FTS token purchase portal? This leaves the arcade floor and loads '+t.url+'.';confirmBtn.textContent='BUY TOKENS';}else if(t.kind==='ad'){modalEyebrow.textContent='PROGRAMMATIC INVENTORY';modalCopy.textContent='Open the deal form for '+t.inventory+'? This leaves the arcade floor.';confirmBtn.textContent=t.cta||'OPEN DEAL FORM';}else if(t.kind==='dressing'){modalEyebrow.textContent='WALL PORTAL';modalCopy.textContent=(t.cta||'Open this link')+' — '+t.label+'.';confirmBtn.textContent=t.cta||'OPEN';}else{modalEyebrow.textContent='LEAVE FTS ARCADE?';modalCopy.textContent='Use this exit for '+name+'? This destination is off the arcade floor.';confirmBtn.textContent=t.cta||'LEAVE ARCADE';}modal.classList.add('show');}
+function closeConfirm(relock){modal.classList.remove('show');modalTarget=null;if(relock&&!coarse())setTimeout(()=>canvas.requestPointerLock&&canvas.requestPointerLock(),60);}
+function leaveArcade(){if(!modalTarget)return;const t=modalTarget;try{sessionStorage.setItem('fts.arcade.return',JSON.stringify({x:sim.x,y:sim.y,ang:sim.ang,t:Date.now()}));}catch(e){}window.open(t.url, t.target || '_blank');closeConfirm(true);}
+confirmBtn.addEventListener('click',leaveArcade);cancelBtn.addEventListener('click',()=>closeConfirm(true));
+
+function resize(){const vv=window.visualViewport,w=Math.round(vv&&vv.width||innerWidth||960),h=Math.round(vv&&vv.height||innerHeight||600),low=coarse()||PLATFORM.ios||((navigator.hardwareConcurrency||8)<=4);RSCALE=low?(h>900?PERF.coarseTallScale:PERF.coarseScale):(h>900?1.9:1.55);RW=Math.max(180,Math.round(w/RSCALE));RH=Math.max(120,Math.round(h/RSCALE));canvas.width=RW;canvas.height=RH;canvas.style.width=w+'px';canvas.style.height=h+'px';dl=new DrawLists(RW,RH);PLANE_SOFT.canvas=PLANE_SOFT.ctx=PLANE_SOFT.image=PLANE_SOFT.u32=null;PLANE_SOFT.width=PLANE_SOFT.height=0;ensureSoftwareFrame(RW,RH);VIGNETTE=ctx.createRadialGradient(RW/2,RH/2,Math.min(RW,RH)*.2,RW/2,RH/2,Math.max(RW,RH)*.72);VIGNETTE.addColorStop(0,'rgba(0,0,0,0)');VIGNETTE.addColorStop(1,'rgba(0,0,0,.34)');ctx.imageSmoothingEnabled=false;}
+const KEY={KeyW:'fwd',ArrowUp:'fwd',KeyS:'back',ArrowDown:'back',KeyA:'left',KeyD:'right'};
+addEventListener('keydown',e=>{if(modal.classList.contains('show')){if(e.code==='Enter'||e.code==='KeyY')leaveArcade();if(e.code==='Escape'||e.code==='KeyN')closeConfirm(true);return;}if(KEY[e.code]){input[KEY[e.code]]=1;e.preventDefault();}if(e.code==='ShiftLeft'||e.code==='ShiftRight')input.run=1;if(e.code==='ControlLeft'||e.code==='ControlRight'||e.code==='KeyC'){input.crouch=1;if(!e.repeat)sim.beginSlide();e.preventDefault();}if(e.code==='Space'){input.jump=1;if(!e.repeat)sim.jump();e.preventDefault();}if(e.code==='KeyE')openConfirm(activeTarget);if(e.code==='KeyM'){showMap=!showMap;mapBtn.textContent='MAP: '+(showMap?'ON':'OFF');mapBtn.classList.toggle('on',showMap);}if(e.code==='KeyN')toggleAudio();if(e.code==='KeyK'){togglePlaneMapping();e.preventDefault();}if(e.code==='KeyP'){togglePlaneBackend();e.preventDefault();}});
+addEventListener('keyup',e=>{if(KEY[e.code])input[KEY[e.code]]=0;if(e.code==='ShiftLeft'||e.code==='ShiftRight')input.run=0;if(e.code==='ControlLeft'||e.code==='ControlRight'||e.code==='KeyC')input.crouch=0;if(e.code==='Space')input.jump=0;});
+addEventListener('mousemove',e=>{if(document.pointerLockElement===canvas&&!modal.classList.contains('show'))sim.look(e.movementX||0,e.movementY||0,MOUSE_LOOK_SENS);});
+canvas.addEventListener('mousedown',e=>{if(e.button!==0)return;if(coarse())return;if(document.pointerLockElement!==canvas){canvas.requestPointerLock&&canvas.requestPointerLock();return;}if(activeTarget)openConfirm(activeTarget);});
+document.addEventListener('pointerlockchange',()=>{if(coarse())return;lockEl.classList.toggle('hidden',document.pointerLockElement===canvas||modal.classList.contains('show'));});
+function coarse(){return matchMedia&&matchMedia('(pointer:coarse)').matches;}
+lockEl.addEventListener('click',()=>{if(coarse())lockEl.classList.add('hidden');else canvas.requestPointerLock&&canvas.requestPointerLock();});
+mapBtn.addEventListener('click',()=>{showMap=!showMap;mapBtn.textContent='MAP: '+(showMap?'ON':'OFF');mapBtn.classList.toggle('on',showMap);});
+
+const AudioMini={ctx:null,on:false,master:null,osc:null,lfo:null,init(){if(this.ctx)return;const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;this.ctx=new AC();this.master=this.ctx.createGain();this.master.gain.value=0;this.master.connect(this.ctx.destination);const f=this.ctx.createBiquadFilter();f.type='lowpass';f.frequency.value=180;f.connect(this.master);this.osc=this.ctx.createOscillator();this.osc.type='sawtooth';this.osc.frequency.value=48;this.osc.connect(f);this.osc.start();this.lfo=this.ctx.createOscillator();const lg=this.ctx.createGain();this.lfo.frequency.value=.08;lg.gain.value=70;this.lfo.connect(lg);lg.connect(f.frequency);this.lfo.start();},set(v){this.init();if(!this.ctx)return;this.on=v;if(this.ctx.state==='suspended')this.ctx.resume();this.master.gain.setTargetAtTime(v ? .18 : 0,this.ctx.currentTime,.08);}};
+function toggleAudio(){AudioMini.set(!AudioMini.on);audioBtn.textContent='AUDIO: '+(AudioMini.on?'ON':'OFF');audioBtn.classList.toggle('on',AudioMini.on);}audioBtn.addEventListener('click',toggleAudio);
+
+// Coarse-pointer controls: left stick moves, right-side drag looks, ENTER uses the active portal.
+const touchMove=document.getElementById('touchMove'),touchKnob=document.getElementById('touchKnob'),touchAct=document.getElementById('touchAct'),touchCrouch=document.getElementById('touchCrouch');let movePid=null,lookPid=null,lastLook=null;
+function stickFromEvent(e){const r=touchMove.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,dx=e.clientX-cx,dy=e.clientY-cy,L=Math.hypot(dx,dy),m=Math.min(36,L),nx=L?dx/L:0,ny=L?dy/L:0;touchKnob.style.transform='translate('+(nx*m)+'px,'+(ny*m)+'px)';input.fwd=ny<-.2?1:0;input.back=ny>.2?1:0;input.left=nx<-.2?1:0;input.right=nx>.2?1:0;}
+touchMove.addEventListener('pointerdown',e=>{movePid=e.pointerId;touchMove.setPointerCapture(e.pointerId);stickFromEvent(e);});touchMove.addEventListener('pointermove',e=>{if(e.pointerId===movePid)stickFromEvent(e);});const releaseMove=e=>{if(e&&e.pointerId!==movePid)return;movePid=null;touchKnob.style.transform='';input.fwd=input.back=input.left=input.right=0;};touchMove.addEventListener('pointerup',releaseMove);touchMove.addEventListener('pointercancel',releaseMove);
+canvas.addEventListener('pointerdown',e=>{if(e.pointerType==='touch'&&e.clientX>innerWidth*.42){lookPid=e.pointerId;lastLook={x:e.clientX,y:e.clientY};canvas.setPointerCapture&&canvas.setPointerCapture(e.pointerId);}});canvas.addEventListener('pointermove',e=>{if(e.pointerId===lookPid&&lastLook){sim.look(e.clientX-lastLook.x,e.clientY-lastLook.y,TOUCH_LOOK_SENS);lastLook={x:e.clientX,y:e.clientY};}});const releaseLook=e=>{if(e&&e.pointerId!==lookPid)return;lookPid=null;lastLook=null;};canvas.addEventListener('pointerup',releaseLook);canvas.addEventListener('pointercancel',releaseLook);touchAct.addEventListener('click',()=>openConfirm(activeTarget));
+touchCrouch.addEventListener('pointerdown',e=>{input.crouch=1;sim.beginSlide();touchCrouch.setPointerCapture&&touchCrouch.setPointerCapture(e.pointerId);e.preventDefault();});
+touchCrouch.addEventListener('pointerup',e=>{input.crouch=0;e.preventDefault();});touchCrouch.addEventListener('pointercancel',()=>{input.crouch=0;});
+
+let last=0,fpsAcc=0,fpsN=0,fps=0,frames=0,simAcc=0;
+function loop(ts){const frameDt=Math.min((ts-last)/1000||.016,.12);last=ts;simAcc=Math.min(.20,simAcc+frameDt);const fixedDt=1/KINETIC.simHz;let simSteps=0;while(simAcc>=fixedDt&&simSteps<KINETIC.maxCatchupSteps){sim.step(fixedDt,input);simAcc-=fixedDt;simSteps++;}RenderCore.solve(sim,dl,RW,RH);paint(sim,dl);if(showMap)drawMap(sim,RW,RH);updatePrompt();fpsAcc+=frameDt;fpsN++;if(fpsAcc>.45){fps=fpsN/fpsAcc;fpsAcc=0;fpsN=0;}if((frames++&7)===0){const moveState=sim.slideT>0?'SLIDE':input.crouch?'CROUCH':input.run?'RUN':'WALK';telemetry.textContent=VERSION+' | '+RW+'x'+RH+' | '+fps.toFixed(0)+' fps | '+moveState+' | Z '+sim.jumpZ.toFixed(0)+' | SEC '+(sim.sector+1)+'/'+map.sectors.length+' | CAB '+map.cabinets.length+' A-Z | FIX '+map.fixtures.length+' | ADS '+map.ads.length+' | VIS '+dl.stats.sectors+'s '+dl.stats.solidFaces+'g/'+dl.stats.culledSolids+'c/'+dl.stats.lodParts+'l'+(dl.stats.grows?' GROW '+dl.stats.grows:'')+(dl.stats.dropped?' DROP '+dl.stats.dropped:'')+' | PLN '+PLANE_BACKEND.active.toUpperCase()+'/'+PLANE_MAPPING.mode.toUpperCase()+' | ART '+(IMG.ready?'ATLAS':'FALLBACK')+(MAP_ERRORS.length?' | MAP ERR '+MAP_ERRORS.length:'');}requestAnimationFrame(loop);}
+addEventListener('resize',resize);if(window.visualViewport)visualViewport.addEventListener('resize',resize);
+Promise.all([
+ loadImage(ASSET_FILES.world,'world'),loadImage(ASSET_FILES.cab1,'Cabinets01'),loadImage(ASSET_FILES.cab2,'Cabinets02'),loadImage(ASSET_FILES.cab3,'Cabinets03'),loadImage(ASSET_FILES.cab4,'Cabinets04'),loadImage(ASSET_FILES.screen,'screen'),loadImage(ASSET_FILES.fixture,'fixture'),loadImage(ASSET_FILES.cabinetRef,'the-Cabinet')
+]).then(([w,c1,c2,c3,c4,sc,f,cr])=>{IMG.world=w;IMG.cab1=c1;IMG.cab2=c2;IMG.cab3=c3;IMG.cab4=c4;IMG.screen=sc;IMG.fixture=f;IMG.cabinetRef=cr;for(const [k,im] of Object.entries({world:w,cab1:c1,cab2:c2,cab3:c3,cab4:c4,screen:sc,fixture:f,cabinetRef:cr}))IMG.meta[k]=im?[im.naturalWidth,im.naturalHeight]:null;buildTextures();bakeBaseTilesAndRelease();if(IMG.errors.length){telemetry.textContent=VERSION+' | ASSET ERROR: '+IMG.errors.join(', ');console.error('[FTS ARCADE] atlas load failure',IMG.errors,ASSET_FILES);}});
+resize();buildTextures();
+if(MAP_ERRORS.length)console.error('[FTS ARCADE] map validation',MAP_ERRORS);
+function screenPart(c){return c.parts.find(p=>p.role==='screen');}
+const REF_TESTS={
+ mapValid:()=>MAP_ERRORS.length===0,
+ cabinetCount:()=>map.cabinets.length===26,
+ cabinetAlphabet:()=>map.cabinets.map(c=>c.letter).sort().join('')==='ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+ exitCount:()=>map.exits.length===3,
+ geometryCabinets:()=>map.cabinets.every(c=>c.parts&&c.parts.length>=16),
+ cabinetCoinDoors:()=>map.cabinets.every(c=>{const p=c.parts.find(x=>x.role==='coin-door');return p&&p.front===MAT.CAB_REF_COIN_DOOR&&p.z0>=12&&p.z1<=34;}),
+ cabinetClassicDetails:()=>map.cabinets.every(c=>['kick-plate','coin-door','bezel-left','bezel-right','bezel-top'].every(r=>c.parts.some(p=>p.role===r))),
+ concaveCabinets:()=>map.cabinets.every(c=>c.parts.some(p=>p.role==='backdrop')&&c.parts.some(p=>p.role==='screen')&&c.parts.some(p=>p.role==='jamb-left')&&c.parts.some(p=>p.role==='jamb-right')),
+ screenPairings:()=>map.cabinets.every(c=>c.screenIndex>=1&&c.screenIndex<=25),
+ screenAtlasGrid:()=>SCREEN_ATLAS_META.count===25&&SCREEN_RECTS.length===25,
+ screenRectsInBounds:()=>Array.from({length:25},(_,i)=>screenRect(i+1)).every(r=>r[0]>=0&&r[1]>=0&&r[0]+r[2]<=SCREEN_ATLAS_META.width&&r[1]+r[3]<=SCREEN_ATLAS_META.height),
+ screenSpritesLandscape:()=>Array.from({length:25},(_,i)=>screenRect(i+1)).every(r=>r[2]/r[3]>1.35),
+ cabinetScreensLandscape:()=>map.cabinets.every(c=>{const p=screenPart(c);return p&&p.w/(p.z1-p.z0)>1.35;}),
+ screenAspectPreserved:()=>map.cabinets.every(c=>{const p=screenPart(c),r=screenRect(c.screenIndex);return p&&Math.abs(p.w/(p.z1-p.z0)-r[2]/r[3])<1e-6;}),
+ screenMaterialPairings:()=>map.cabinets.every(c=>{const p=screenPart(c);return p&&MATERIALS[p.front]&&MATERIALS[p.front].name==='SCREEN_'+String(c.screenIndex).padStart(2,'0');}),
+ cabinetProportions:()=>CABINET_DIM.control===40&&CABINET_DIM.screenBayTop===68.5&&CABINET_DIM.h===78&&CABINET_DIM.screenW===35,
+ cabinetRefMinimal:()=>Object.keys(CABINET_REF_RECTS).join(',')==='COIN_DOOR,KICK_PLATE',
+ cabinetRefDeclared:()=>!!ASSET_NAMES.cabinetRef&&Array.isArray(ASSET_NAMES.cabinetRef)&&ASSET_NAMES.cabinetRef.some(x=>/the-Cabinet\.png$/i.test(x)),
+ cabinetControlsHorizontal:()=>map.cabinets.every(c=>{const p=c.parts.find(x=>x.role==='control');return p&&p.top!=null&&(p.z1-p.z0)<=1.01;}),
+ cabinetControlDeckClean:()=>map.cabinets.every(c=>!c.parts.some(p=>p.role==='control-pedestal')&&(()=>{const p=c.parts.find(x=>x.role==='control');return p&&(p.z1-p.z0)<=.03&&p.top===MAT['SKIN_'+c.letter+'_CONTROL'];})()),
+ cabinetNoFrontCrossbar:()=>map.cabinets.every(c=>!c.parts.some(p=>p.role==='bezel-bottom'||p.role==='lower-front'||p.role==='control-pedestal')),
+ cabinetRefSurgical:()=>map.cabinets.every(c=>{const refs=c.parts.filter(p=>p.front===MAT.CAB_REF_COIN_DOOR||p.front===MAT.CAB_REF_KICK_PLATE);return refs.length===2&&refs.some(p=>p.role==='coin-door')&&refs.some(p=>p.role==='kick-plate')&&!c.parts.some(p=>p.role==='control'&&(p.front===MAT.CAB_REF_COIN_DOOR||p.front===MAT.CAB_REF_KICK_PLATE||p.top===MAT.CAB_REF_COIN_DOOR||p.top===MAT.CAB_REF_KICK_PLATE));}),
+ cabinetOfficeClearance:()=>AUTHORING.officeClearance>=8&&map.cabinets.every(c=>cabinetClearOfOffice(c,AUTHORING.officeClearance)),
+ westTrioNoOverlap:()=>{const j=map.cabinets.find(c=>c.letter==='J'),k=map.cabinets.find(c=>c.letter==='K'),l=map.cabinets.find(c=>c.letter==='L');return !!(j&&k&&l&&!solidsOverlap(j,k)&&!solidsOverlap(j,l)&&!solidsOverlap(k,l));},
+ stageSweptCCW:()=>{const sb=map.solids.find(s=>s.id==='STAGE_BACK'),dj=map.solids.find(s=>s.id==='DJ_BOOTH');return AUTHORING.stageRotateDeg>0&&!!(sb&&dj&&sb.x<-80&&dj.x<40&&sb.ang>-Math.PI/2);},
+ officeEntryFlanked:()=>{const d=AUTHORING.officeEntry.find(x=>x.id==='OFFICE_DOOR'),w=AUTHORING.officeEntry.find(x=>x.id==='WHITEBOARD'),b=AUTHORING.officeEntry.find(x=>x.id==='BULLETIN');return !!(d&&w&&b&&w.x<d.x&&b.x>d.x&&w.y===d.y&&b.y===d.y);},
+ tightCabinetPacking:()=>AUTHORING.packing.sideGap<=.5&&AUTHORING.packing.backGap<=.5,
+ wallDressingsInteractive:()=>map.fixtures.filter(f=>f.kind==='dressing').length>=AUTHORING.posters.length+AUTHORING.wallPortals.length+2&&map.fixtures.filter(f=>f.kind==='dressing').every(f=>f.url&&f.cta),
+ // --- 0.7.0 feel-pass locks -------------------------------------------------
+ runSpeed22mph:()=>Math.abs(SPEED_RUN-387.2)<.001,
+ sprintUntouched:()=>KINETIC.sprintSpeed===SPEED_RUN&&Math.abs(SPEED_RUN/17.6-22)<1e-9,
+ ringWidened:()=>RING.outer===510&&RING.inner===118&&RING.sides===32,
+ ceilingRaised:()=>RING.ceil===192&&map.sectors.every(s=>s.ceil===192),
+ jumpVelRaised:()=>KINETIC.jumpVel===156&&KINETIC.gravity===386,
+ // A jump must not punch the player's head through the ceiling plane, and the
+ // headroom margin must stay generous enough that a future +jumpVel is safe.
+ jumpClearsCeiling:()=>JUMP.apex+PLAYER_H<RING.ceil-6,
+ jumpDerivations:()=>Math.abs(JUMP.apex-31.52)<.05&&Math.abs(JUMP.hang-.808)<.005,
+ // "Don't rearrange the cabinets tonight" as an executable assertion.
+ cabinetLayoutFrozen:()=>cabinetLayoutSignature(map)===CABINET_LAYOUT_SNAPSHOT,
+ // Wall dressing must still touch the wall after the ring grew.
+ perimeterRidesWall:()=>{const inset=s=>RING.outer-Math.hypot(s.x,s.y);return map.ads.every(a=>inset(a)>=0&&inset(a)<24)&&map.exits.every(e=>inset(e)>=0&&inset(e)<24)&&map.fixtures.filter(f=>/^POSTER_/.test(f.id)).every(p=>inset(p)>=0&&inset(p)<24);},
+ stageRidesWall:()=>{const sb=map.solids.find(s=>s.id==='STAGE_BACK');return !!sb&&RING.outer-Math.hypot(sb.x,sb.y)<90;},
+ vendingRidesWall:()=>['VEND_DRINK','VEND_SNACK','TOKEN_VEND'].every(id=>{const f=map.fixtures.find(x=>x.id===id);return f&&RING.outer-Math.hypot(f.x,f.y)<170;}),
+ // Nothing on the perimeter may have been pushed outside the wall.
+ perimeterInsideRing:()=>map.solids.every(s=>Math.hypot(s.x,s.y)<=RING.outer+1),
+ renderRangesTrackRing:()=>RENDER.solidCull>=2*RING.outer&&RENDER.fogFar>RING.outer&&!/\b860\b|\bdist\/780\b/.test(String(RenderCore._solids)),
+ // The extra floor must actually be reachable, not walled off by the shift.
+ widerFloorIsWalkable:()=>{const s=sim.sectorAt(0,-(RING.outer-30));return s>=0;},
+ kineticMovement:()=>KINETIC.strafeFactor===.90&&KINETIC.reverseFactor===.72&&KINETIC.accelLambda===12&&KINETIC.brakeLambda===18&&KINETIC.reverseLambda===10,
+ crouchSlideSystem:()=>CROUCH_EYE<EYE&&KINETIC.slideMaxTime>.5&&typeof sim.beginSlide==='function'&&typeof sim.startSlide==='function'&&typeof sim.endSlide==='function'&&'stance' in sim&&'slideT' in sim,
+ apexSlideModel:()=>KINETIC.slideMinSpeed>KINETIC.walkSpeed&&KINETIC.slideLandMinSpeed<KINETIC.slideMinSpeed&&KINETIC.slideBoostSpeed>0&&KINETIC.slideFastFriction<KINETIC.slideSlowFriction&&KINETIC.slideJumpCarry>.95&&KINETIC.slideJumpCarry<=1&&KINETIC.airAccelLambda<KINETIC.accelLambda,
+ jumpSystem:()=>KINETIC.jumpVel>0&&KINETIC.gravity>0&&typeof sim.jump==='function'&&'jumpZ' in sim,
+ fixedStepMovement:()=>KINETIC.simHz===60&&KINETIC.maxCatchupSteps>=6,
+ planeSectorFrames:()=>map.sectors.length===RING.sides&&map.sectors.every(s=>Number.isFinite(s.planeAng)&&Number.isFinite(s.planeOx)&&Number.isFinite(s.planeOy)),
+ planeMappingModes:()=>{const old=PLANE_MAPPING.mode;const ok=setPlaneMappingMode('world')==='world'&&setPlaneMappingMode('sector')==='sector'&&setPlaneMappingMode('kaleido')==='kaleido';setPlaneMappingMode(old);return ok;},
+ planeBackendModes:()=>{const req=PLANE_BACKEND.requested,ok=setPlaneBackend('software')==='software'&&setPlaneBackend('pattern')==='pattern';setPlaneBackend(req);return ok;},
+ iosDefaultsSoftware:()=>!PLATFORM.ios||PLANE_BACKEND.requested!=='auto'||PLANE_BACKEND.active==='software',
+ planeTransformInvariant:()=>{const px=0,py=-300,yaw=.7,ca=Math.cos(yaw),sa=Math.sin(yaw),hw=320,pd=420,pz=69,hor=200,depth=180,tx=35,wx=px+ca*depth+sa*tx,wy=py+sa*depth-ca*tx,sy=hor+(pz*pd)/depth,row=sy-.5,ang=.9,ox=40,oy=-20,mc=Math.cos(ang),ms=Math.sin(ang),u=mc*(wx-ox)+ms*(wy-oy),vv=-ms*(wx-ox)+mc*(wy-oy),m=Geom.planePatternTransform(px,py,ca,sa,hw,pd,row,depth,ang,ox,oy),sx=hw+(tx/depth)*pd,qx=m.a*u+m.c*vv+m.e,qy=m.b*u+m.d*vv+m.f;return Math.hypot(qx-sx,qy-sy)<1e-6;},
+ softwareWorldUVInvariant:()=>{const wx=123.25,wy=-77.5,a=Geom.planeUV(wx,wy,map.sectors[0],'world',0),b=Geom.planeUV(wx,wy,map.sectors[0],'world',1.7);return Math.abs(a.u-b.u)<1e-9&&Math.abs(a.v-b.v)<1e-9;},
+ softwareProjectionInvariant:()=>{const px=12,py=-45,wx=155,wy=88,pd=420,hw=300,uv0=Geom.planeUV(wx,wy,map.sectors[0],'world',0);for(const yaw of[-.7,.1,.8]){const ca=Math.cos(yaw),sa=Math.sin(yaw),q=Geom.view(px,py,ca,sa,wx,wy);if(q.tz<=1)return false;const sx=hw+(q.tx/q.tz)*pd,tx=(sx-hw)*q.tz/pd,rx=px+ca*q.tz+sa*tx,ry=py+sa*q.tz-ca*tx,uv=Geom.planeUV(rx,ry,map.sectors[0],'world',yaw);if(Math.hypot(uv.u-uv0.u,uv.v-uv0.v)>1e-7)return false;}return true;},
+ kaleidoActuallyCouplesYaw:()=>{const s=map.sectors[0],a=Geom.planeUV(s.planeOx+20,s.planeOy+7,s,'kaleido',0),b=Geom.planeUV(s.planeOx+20,s.planeOy+7,s,'kaleido',.6);return Math.hypot(a.u-b.u,a.v-b.v)>.1;},
+ softwareFrameAllocated:()=>!!PLANE_SOFT.canvas&&!!PLANE_SOFT.ctx&&!!PLANE_SOFT.image&&!!PLANE_SOFT.u32&&PLANE_SOFT.width===RW&&PLANE_SOFT.height===RH,
+ touchLookParity:()=>TOUCH_LOOK_SENS/MOUSE_LOOK_SENS<=1.2,
+ ringSectors:()=>map.sectors.length===RING.sides,
+ spawnInsideMap:()=>sim.sectorAt(map.spawn.x,map.spawn.y)>=0,
+ fixturesPresent:()=>map.fixtures.some(f=>f.id==='TOKEN_VEND')&&map.fixtures.some(f=>f.id==='JUKEBOX')&&map.fixtures.some(f=>f.id==='WHITEBOARD')&&map.fixtures.some(f=>f.id==='BULLETIN'),
+ adInventory:()=>map.ads.length===8&&map.ads.every(a=>a.url.includes('inventory=')),
+ offsiteExits:()=>map.exits.every(e=>/^https:\/\//.test(e.url)),
+ sameDirectoryAssets:()=>Object.values(ASSET_FILES).every(v=>(Array.isArray(v)?v:[v]).every(s=>!/^https?:/i.test(s))),
+ assetDimensions:()=>{const m=IMG.meta;return m.world&&m.world[0]===1024&&m.world[1]===1024&&['cab1','cab2','cab3','cab4'].every(k=>m[k]&&m[k][0]===1254&&m[k][1]===1254)&&m.screen&&m.screen[0]===2048&&m.screen[1]===1433&&m.fixture&&m.fixture[0]===1024&&m.fixture[1]===256&&m.cabinetRef&&m.cabinetRef[0]===767&&m.cabinetRef[1]===1432;},
+ assetsReady:()=>IMG.ready&&IMG.errors.length===0,
+ sourceAtlasesReleased:()=>!IMG.artBaked||IMG.sourcesReleased,
+ staticRenderGeometry:()=>map.solids.every(s=>s._render&&s._render.faces.length>0&&Number.isFinite(s._render.radius)),
+ leanWallReserve:()=>!dl||dl.wX.length<=RW*PERF.wallSpanMaxFactor,
+ lazyShadeBanks:()=>texBank.length===MATERIALS.length&&flatBank.length===MATERIALS.length&&shadeTileBank.length===MATERIALS.length,
+ noFrameOriginTrap:()=>document.querySelectorAll('iframe,frame').length===0,
+ renderProducesGeometry:()=>!!dl&&dl.wN>0&&dl.sN>0&&dl.stats.solidFaces>0,
+ runtimeClean:()=>RUNTIME_ERRORS.length===0
+};
+function runRefTests(){
+ const results={},failures=[];
+ for(const [name,fn] of Object.entries(REF_TESTS)){
+  try{results[name]=!!fn();}catch(err){results[name]=false;results[name+'_error']=String(err&&err.stack||err);}
+  if(results[name]===false)failures.push(name);
+ }
+ return{version:VERSION,pass:failures.length===0,passed:Object.values(results).filter(v=>v===true).length,total:Object.keys(REF_TESTS).length,failures,results,mapErrors:MAP_ERRORS.slice(),assetErrors:IMG.errors.slice(),runtimeErrors:RUNTIME_ERRORS.slice(),screenAtlas:SCREEN_ATLAS_META};
+}
+window.__FTS_ARCADE__={VERSION,map,sim,MapBuilder,Geom,RenderCore,DrawLists,MATERIALS,MAP_ERRORS,CABINET_ROSTER,CABINET_DIM,AISLE,PORTALS,ASSET_NAMES,CABINET_PART_RECTS,CABINET_REF_RECTS,SCREEN_ATLAS_META,SCREEN_RECTS,screenRect,AUTHORING,KINETIC,JUMP,RENDER,PERF,RING,CABINET_LAYOUT_SNAPSHOT,cabinetLayoutSignature:()=>cabinetLayoutSignature(map),PLATFORM,PLANE_BACKEND,PLANE_STATS,setPlaneBackend,togglePlaneBackend,PLANE_MAPPING,setPlaneMappingMode,togglePlaneMapping,MOUSE_LOOK_SENS,TOUCH_LOOK_SENS,solidAabb,cabinetClearOfOffice,exportAuthoring:()=>JSON.stringify(AUTHORING,null,2),tests:REF_TESTS,runTests:runRefTests};
+const qs=new URLSearchParams(location.search);
+setPlaneBackend(qs.get('planeBackend')||qs.get('backend')||'auto');
+setPlaneMappingMode(qs.get('planes')||qs.get('plane')||'world');
+if(qs.get('preview')==='1')lockEl.classList.add('hidden');
+if(qs.get('map')==='1'){showMap=true;mapBtn.textContent='MAP: ON';mapBtn.classList.add('on');}
+if(qs.get('test')==='1'){
+ const showTests=()=>{
+  const r=runRefTests();
+  const pre=document.createElement('pre');pre.id='fts-tests';
+  pre.dataset.pass=String(r.pass);
+  pre.style.cssText='position:fixed;z-index:99;left:0;top:0;max-width:100vw;max-height:100vh;overflow:auto;background:#000;color:'+(r.pass?'#53ff8a':'#ff667a')+';padding:10px;font:12px/1.45 monospace;white-space:pre-wrap';
+  pre.textContent=JSON.stringify(r,null,2);document.body.appendChild(pre);
+ };
+ const waitAssets=()=>{if(IMG.ready||IMG.errors.length){setTimeout(showTests,180);}else setTimeout(waitAssets,60);};waitAssets();
+}
+requestAnimationFrame(loop);
 </script>
 </body>
 </html>
