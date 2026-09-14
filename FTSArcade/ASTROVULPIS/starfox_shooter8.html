@@ -595,9 +595,6 @@
         });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.shadowMap.enabled = true;
-        renderer.outputEncoding = THREE.sRGBEncoding;
-        renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.1;
         
         // Lighting
         const ambientLight = new THREE.AmbientLight(0x4400ff, 0.3);
@@ -616,129 +613,45 @@
         pointLight2.position.set(10, 5, -10);
         scene.add(pointLight2);
         
-        // Player Ship - GLB-backed 3rd person craft
+        // Player Ship - Enhanced for 3rd Person Visibility
+        // GLB Model Loading - Dopeship
         let player = null;
         let playerModelLoaded = false;
-
-        const shipConfig = {
-            url: './dopeship.glb',
-            targetSize: 4.6,       // Normalize the longest model dimension to this many world units
-            yaw: Math.PI,         // Astro Vulpis flies toward -Z; flip the authored craft to match
-            engineZ: 2.55,        // Engine plume sits behind the craft (+Z)
-            engineY: -0.05
-        };
-
-        function fitShipModel(model) {
-            model.rotation.set(0, shipConfig.yaw, 0);
-            model.updateMatrixWorld(true);
-
-            // Normalize arbitrary Blender/export scale into game-world scale.
-            let box = new THREE.Box3().setFromObject(model);
-            const size = new THREE.Vector3();
-            box.getSize(size);
-            const longestSide = Math.max(size.x, size.y, size.z) || 1;
-            const scale = shipConfig.targetSize / longestSide;
-            model.scale.setScalar(scale);
-            model.updateMatrixWorld(true);
-
-            // Re-center the authored pivot so flight physics rotate around the actual ship.
-            box = new THREE.Box3().setFromObject(model);
-            const center = new THREE.Vector3();
-            box.getCenter(center);
-            model.position.sub(center);
-            model.updateMatrixWorld(true);
-
-            console.log('Dopeship normalized:', {
-                sourceSize: size.toArray(),
-                scale,
-                targetSize: shipConfig.targetSize
-            });
-        }
-
-        function prepareShipMaterials(model) {
-            model.traverse((child) => {
-                if (!child.isMesh) return;
-
-                child.castShadow = true;
-                child.receiveShadow = true;
-
-                const materials = Array.isArray(child.material) ? child.material : [child.material];
-                materials.filter(Boolean).forEach((material) => {
-                    // Preserve the GLB's authored PBR, normal and emissive textures.
-                    // Only tune presentation properties that do not destroy texture data.
-                    if ('emissiveIntensity' in material) {
-                        material.emissiveIntensity = Math.max(material.emissiveIntensity || 1, 1.15);
-                    }
-                    if ('metalness' in material) {
-                        material.metalness = Math.max(material.metalness ?? 0, 0.35);
-                    }
-                    if ('roughness' in material) {
-                        material.roughness = Math.min(material.roughness ?? 1, 0.7);
-                    }
-                    material.needsUpdate = true;
-                });
-            });
-        }
-
-        function createEngineTrail() {
-            const trailGroup = new THREE.Group();
-            trailGroup.position.set(0, shipConfig.engineY, shipConfig.engineZ);
-
-            const coreGeometry = new THREE.ConeGeometry(0.22, 1.8, 12, 1, true);
-            const coreMaterial = new THREE.MeshBasicMaterial({
-                color: 0xffffff,
-                transparent: true,
-                opacity: 0.82,
-                depthWrite: false,
-                blending: THREE.AdditiveBlending
-            });
-            const core = new THREE.Mesh(coreGeometry, coreMaterial);
-            core.rotation.x = Math.PI / 2; // plume extends toward +Z, behind the ship
-            core.position.z = 0.75;
-            trailGroup.add(core);
-
-            const glowGeometry = new THREE.ConeGeometry(0.48, 2.8, 16, 1, true);
-            const glowMaterial = new THREE.MeshBasicMaterial({
-                color: 0x00ffff,
-                transparent: true,
-                opacity: 0.28,
-                depthWrite: false,
-                blending: THREE.AdditiveBlending
-            });
-            const glow = new THREE.Mesh(glowGeometry, glowMaterial);
-            glow.rotation.x = Math.PI / 2;
-            glow.position.z = 1.15;
-            trailGroup.add(glow);
-
-            trailGroup.userData.core = core;
-            trailGroup.userData.glow = glow;
-            return trailGroup;
-        }
-
+        
         function createPlayerShip() {
             const group = new THREE.Group();
             group.position.y = 6.5;
-
-            const visualRoot = new THREE.Group();
-            visualRoot.name = 'DopeshipVisualRoot';
-            group.add(visualRoot);
-
-            const engineTrail = createEngineTrail();
-            engineTrail.name = 'DopeshipEngineTrail';
-            group.add(engineTrail);
-            group.userData.engineTrail = engineTrail;
-
+            
+            // Load dopeship.glb model
             const loader = new THREE.GLTFLoader();
             loader.load(
-                shipConfig.url,
+                // 'https://raw.githubusercontent.com/mofrymatic/the-Kitchen/main/FTSArcade/dopeship.glb',
+                './dopeship.glb',
                 (gltf) => {
                     const model = gltf.scene;
-                    model.name = 'DopeshipGLB';
-                    prepareShipMaterials(model);
-                    fitShipModel(model);
-                    visualRoot.add(model);
+                    
+                    // Scale and orient the model (adjust these values based on how dopeship looks)
+                    model.scale.set(1.5, 1.5, 1.5);  // Start with 1.5x scale
+                    model.rotation.y = Math.PI;  // Face forward (180 degrees)
+                    
+                    // Enhance materials for neon aesthetic
+                    model.traverse((child) => {
+                        if (child.isMesh) {
+                            child.castShadow = true;
+                            child.receiveShadow = true;
+                            if (child.material) {
+                                // Boost emissive for cyberpunk neon look
+                                child.material.emissive = new THREE.Color(0x00ffff);
+                                child.material.emissiveIntensity = 0.3;
+                                child.material.metalness = 0.8;
+                                child.material.roughness = 0.2;
+                            }
+                        }
+                    });
+                    
+                    group.add(model);
                     playerModelLoaded = true;
-                    console.log('Dopeship loaded and flying');
+                    console.log('✓ Dopeship loaded and ready');
                 },
                 (progress) => {
                     if (progress.total > 0) {
@@ -748,17 +661,30 @@
                 (error) => {
                     console.error('Error loading dopeship.glb:', error);
                     console.log('Falling back to geometric ship');
-                    createFallbackShip(visualRoot);
+                    createFallbackShip(group);
                 }
             );
-
+            
+            // Engine trail glow (always visible for 3rd person feedback)
+            const trailGeometry = new THREE.ConeGeometry(0.5, 2, 8);
+            const trailMaterial = new THREE.MeshBasicMaterial({
+                color: 0x00ffff,
+                transparent: true,
+                opacity: 0.5
+            });
+            const trail = new THREE.Mesh(trailGeometry, trailMaterial);
+            trail.rotation.x = -Math.PI / 2;
+            trail.position.z = -3;
+            group.add(trail);
+            
             return group;
         }
-
-        // Fallback only if dopeship.glb cannot be fetched/decoded.
+        
+        // Fallback ship if dopeship.glb doesn't load
         function createFallbackShip(group) {
+            console.log('Using fallback ship geometry');
             const bodyGeometry = new THREE.ConeGeometry(0.8, 3, 4);
-            const bodyMaterial = new THREE.MeshPhongMaterial({
+            const bodyMaterial = new THREE.MeshPhongMaterial({ 
                 color: 0x00ffff,
                 emissive: 0x00ffff,
                 emissiveIntensity: 0.5,
@@ -768,9 +694,9 @@
             const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
             body.rotation.x = Math.PI / 2;
             group.add(body);
-
+            
             const wingGeometry = new THREE.BoxGeometry(3, 0.1, 1);
-            const wingMaterial = new THREE.MeshPhongMaterial({
+            const wingMaterial = new THREE.MeshPhongMaterial({ 
                 color: 0xff00ff,
                 emissive: 0xff00ff,
                 emissiveIntensity: 0.4,
@@ -780,13 +706,13 @@
             const wing = new THREE.Mesh(wingGeometry, wingMaterial);
             wing.position.z = -0.5;
             group.add(wing);
-
+            
             playerModelLoaded = true;
         }
-
+        
         player = createPlayerShip();
         scene.add(player);
-
+        
         // Enemy Ship
         function createEnemyShip() {
             const group = new THREE.Group();
@@ -1075,16 +1001,6 @@
                 flightPhysics.velocity.x * flightPhysics.velocity.x +
                 flightPhysics.velocity.y * flightPhysics.velocity.y
             ) * flightPhysics.boostFactor;
-
-            // Engine plume breathes with throttle/boost without affecting flight physics.
-            const engineTrail = player.userData.engineTrail;
-            if (engineTrail) {
-                const pulse = 1 + Math.sin(performance.now() * 0.025) * 0.06;
-                const thrust = 0.82 + flightPhysics.boostFactor * 0.35;
-                engineTrail.scale.set(pulse, pulse, thrust);
-                engineTrail.userData.core.material.opacity = Math.min(1, 0.62 + flightPhysics.boostFactor * 0.13);
-                engineTrail.userData.glow.material.opacity = Math.min(0.55, 0.18 + flightPhysics.boostFactor * 0.09);
-            }
             
             // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
             
