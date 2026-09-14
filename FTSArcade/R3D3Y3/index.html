@@ -283,6 +283,7 @@
 <div id="shockwave"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
 // ============================================================
 // 1. CONSTANTS
@@ -474,8 +475,12 @@ scene.background = new THREE.Color(0x0a0a0f);
 scene.fog = new THREE.Fog(0x0a0a0f, 40, 80);
 
 // Lighting
-const ambient = new THREE.AmbientLight(0x223344, 0.8);
+const ambient = new THREE.AmbientLight(0x334455, 1.05);
 scene.add(ambient);
+
+// Broad cool fill keeps the textured GLB readable even when it turns away from the sun.
+const hemi = new THREE.HemisphereLight(0x7f9dff, 0x16131b, 0.65);
+scene.add(hemi);
 
 const sun = new THREE.DirectionalLight(0xfff0e0, 1.8);
 sun.position.set(10, 20, 10);
@@ -905,8 +910,157 @@ function buildCharacter() {
 }
 
 const char = buildCharacter();
-char.root.position.y = 1.3; // stand on ground
-scene.add(char.root);
+
+// Character world root: physics/camera own this transform. Visuals live underneath it.
+const characterRoot = new THREE.Group();
+characterRoot.name = 'CharacterRoot';
+scene.add(characterRoot);
+
+// Keep the original procedural character as a no-network/no-file fallback.
+char.root.position.set(0, 0, 0);
+characterRoot.add(char.root);
+
+// GLB visual mount. mechasonic.glb is expected beside this HTML file.
+const modelMount = new THREE.Group();
+modelMount.name = 'MechaSonicMount';
+characterRoot.add(modelMount);
+
+const MODEL_URL = './mechasonic.glb';
+const MODEL_TARGET_HEIGHT = 2.3;
+const MODEL_YAW_OFFSET = 0; // rig's headfront bone indicates +Z forward, matching this controller
+
+const ModelAnim = {
+  mixer: null,
+  model: null,
+  actions: {},
+  activeAction: null,
+  activeKey: '',
+  ready: false,
+
+  // The source clips contain baked locomotion. Physics owns world translation here,
+  // so lock Hips.position to its first key while retaining all bone rotations.
+  stripRootMotion(clip) {
+    const clean = clip.clone();
+    for (const track of clean.tracks) {
+      if (/Hips\.position$/.test(track.name) && track.values.length >= 3) {
+        const x = track.values[0], y = track.values[1], z = track.values[2];
+        for (let i = 0; i < track.values.length; i += 3) {
+          track.values[i] = x;
+          track.values[i + 1] = y;
+          track.values[i + 2] = z;
+        }
+      }
+    }
+    return clean;
+  },
+
+  init(gltf) {
+    this.model = gltf.scene;
+    this.model.name = 'MechaSonicGLB';
+    this.model.rotation.y = MODEL_YAW_OFFSET;
+
+    this.model.traverse(o => {
+      if (o.isMesh) {
+        o.castShadow = true;
+        o.receiveShadow = false;
+        o.frustumCulled = false;
+        if (o.material) {
+          const mats = Array.isArray(o.material) ? o.material : [o.material];
+          mats.forEach(m => {
+            // Preserve authored emissive texture, while avoiding a crushed/dim appearance.
+            if ('envMapIntensity' in m) m.envMapIntensity = 1.15;
+            m.needsUpdate = true;
+          });
+        }
+      }
+    });
+
+    modelMount.add(this.model);
+
+    // Auto-fit the authored rig to the old gameplay silhouette and put its feet on y=-1.3
+    // because controller.position.y=1.3 represents the old character's body root.
+    this.model.updateMatrixWorld(true);
+    let box = new THREE.Box3().setFromObject(this.model);
+    const size = new THREE.Vector3();
+    box.getSize(size);
+    if (size.y > 0.001) {
+      const s = MODEL_TARGET_HEIGHT / size.y;
+      this.model.scale.multiplyScalar(s);
+      this.model.updateMatrixWorld(true);
+      box = new THREE.Box3().setFromObject(this.model);
+      this.model.position.y += -1.3 - box.min.y;
+    }
+
+    this.mixer = new THREE.AnimationMixer(this.model);
+    for (const srcClip of gltf.animations) {
+      const clip = this.stripRootMotion(srcClip);
+      // The exported baselayer is a single-frame pose; give it a harmless duration
+      // so AnimationAction can use it as a stable idle.
+      if (clip.duration <= 0.001) clip.duration = 1.0;
+      const action = this.mixer.clipAction(clip);
+      action.enabled = true;
+      this.actions[srcClip.name] = action;
+    }
+
+    char.root.visible = false;
+    this.ready = true;
+    this.play('Armature|clip0|baselayer', 0.0, 1.0);
+    console.info(`[RED EYE] Loaded ${MODEL_URL}: ${gltf.animations.length} animation clips.`);
+  },
+
+  play(name, fade = 0.16, timeScale = 1) {
+    if (!this.ready) return;
+    const next = this.actions[name] || this.actions['Armature|clip0|baselayer'];
+    if (!next) return;
+
+    const key = `${name}@${timeScale.toFixed(2)}`;
+    if (this.activeAction === next && this.activeKey === key) return;
+
+    next.enabled = true;
+    next.setEffectiveWeight(1);
+    next.setEffectiveTimeScale(timeScale);
+    next.reset().play();
+
+    if (this.activeAction && this.activeAction !== next) {
+      this.activeAction.crossFadeTo(next, fade, true);
+    }
+    this.activeAction = next;
+    this.activeKey = key;
+  },
+
+  update(dt, state) {
+    if (!this.ready || !this.mixer) return;
+
+    // Conservative mapping: use authored clips where they semantically fit, rather
+    // than pretending a missing jump/hover/stomp/attack clip already exists.
+    switch (state) {
+      case 'WALK':        this.play('Walking', 0.18, 1.0); break;
+      case 'RUN':         this.play('Running', 0.14, 1.05); break;
+      case 'DASH':        this.play('Running', 0.08, 1.55); break;
+      case 'SPIN_DASH':   this.play('Backflip', 0.06, 2.0); break;
+      case 'FALL':        this.play('Fall2', 0.12, 1.0); break;
+      case 'HOVER':       this.play('Fall2', 0.10, 0.45); break;
+      case 'STOMP':       this.play('Fall2', 0.06, 1.35); break;
+      case 'JUMP':        this.play('Fall2', 0.10, 0.75); break;
+      case 'SPIN_CHARGE': this.play('Armature|clip0|baselayer', 0.10, 1.0); break;
+      case 'WAVE':        this.play('Armature|clip0|baselayer', 0.15, 1.0); break;
+      default:            this.play('Armature|clip0|baselayer', 0.18, 1.0); break;
+    }
+
+    this.mixer.update(dt);
+  }
+};
+
+const gltfLoader = new THREE.GLTFLoader();
+gltfLoader.load(
+  MODEL_URL,
+  gltf => ModelAnim.init(gltf),
+  undefined,
+  err => {
+    console.error(`[RED EYE] Could not load ${MODEL_URL}; using procedural fallback.`, err);
+    char.root.visible = true;
+  }
+);
 
 // ============================================================
 // 7. CHARACTER CONTROLLER
@@ -1647,9 +1801,9 @@ function animate() {
     }
   }
 
-  // Apply position / rotation to root
-  char.root.position.copy(controller.position);
-  char.root.rotation.y = controller.yaw;
+  // Apply physics position / facing to the shared world root.
+  characterRoot.position.copy(controller.position);
+  characterRoot.rotation.y = controller.yaw;
 
   // Ring rotation
   const t = performance.now() / 1000;
@@ -1666,7 +1820,9 @@ function animate() {
   }
 
   // ---- ANIMATION ----
+  // Procedural animation remains alive as fallback; the loaded GLB uses its mixer.
   Anim.update(dt, controller.state, controller.velocity);
+  ModelAnim.update(dt, controller.state);
 
   // ---- CAMERA ----
   const camTarget = controller.position.clone().add(new THREE.Vector3(0, 0.5, 0));
