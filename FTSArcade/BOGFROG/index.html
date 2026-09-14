@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>FROGBONK · OBLITERATUS</title>
+<style>
+/* touch-action is NOT inherited — universal selector, not html,body. */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;touch-action:none;-webkit-tap-highlight-color:transparent}
+html,body{width:100%;height:100%;background:#000;overflow:hidden;user-select:none;-webkit-user-select:none}
+canvas{display:block;position:fixed;inset:0;image-rendering:pixelated;image-rendering:crisp-edges}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+"use strict";
+/* ═══════════════════════════════════════════════════════════════════════
+   FROGBONK · OBLITERATUS — FTS Arcade cabinet, v0.1.0
+   Mechanic homage to Frog Bog (Mattel/APh, Intellivision, 1982) and its
+   2600 sibling Frogs and Flies. Original art/name/code not reproduced;
+   this is a clean-room reconstruction on the STIC palette.
+
+   CABINET CONTRACT COMPLIANCE
+     · single standalone HTML, zero deps, zero build step
+     · single <canvas> + single <script>
+     · mulberry32 seeded RNG for sim; separate vrng for presentation
+     · sandbox-safe localStorage wrapper (guards SecurityError)
+     · Web Audio muted by default — no AudioContext until unmute
+     · reportToShell() postMessage stub, GA4 node_entry/node_exit shape
+     · all sprites + all 10 background stages baked once at boot
+     · hit-test math stays in CSS-pixel space (getBoundingClientRect)
+     · touch-action set via universal selector
+
+   N=1 FLAGS — every tuning constant below marked [N1] is a first-pass
+   estimate from a 2.1-second reference capture plus secondary sources.
+   None are play-validated. See DR block at the foot of this file.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Analytics / shell bridge (dry run) ───────────────────────────────── */
+const FTS_GA_ID = "G-XXXXXXXXXX";          // dry-run until real ID substituted
+const FTS_NODE  = "frogbonk";
+const SHELL_ORIGIN = "*";                   // TODO origin-strict before ship — see DR-4
+function reportToShell(evt, params){
+  const msg = { source:"fts-cabinet", node:FTS_NODE, ga_id:FTS_GA_ID,
+                event:evt, params:params||{}, ts:Date.now() };
+  try { if (window.parent && window.parent !== window) window.parent.postMessage(msg, SHELL_ORIGIN); } catch(_){}
+  if (typeof console !== "undefined" && console.debug) console.debug("[fts]", evt, msg.params);
+}
+
+/* ── Sandbox-safe storage ─────────────────────────────────────────────── */
+const Store = {
+  get(k, d){ try { const v = window.localStorage.getItem(k); return v===null?d:v; } catch(_){ return d; } },
+  set(k, v){ try { window.localStorage.setItem(k, String(v)); return true; } catch(_){ return false; } }
+};
+
+/* ── Deterministic RNG ────────────────────────────────────────────────── */
+function mulberry32(a){
+  return function(){
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a>>>15, 1 | a);
+    t = t + Math.imul(t ^ t>>>7, 61 | t) ^ t;
+    return ((t ^ t>>>14) >>> 0) / 4294967296;
+  };
+}
+let SEED = 0x5EED;                 // replaced at round start; score-authority relevant
+let rng  = mulberry32(SEED);       // SIM stream — flies, CPU. Never Math.random().
+let vrng = mulberry32(0xC0FFEE);   // PRESENTATION stream — splash, stars, clouds.
+const rr = (a,b) => a + rng()*(b-a);
+
+/* ── STIC palette ──────────────────────────────────────────────────────
+   General Instruments AY-3-8900 (STIC), 16 colours. Hex values are the
+   jzIntv defaults per the Intellivision Wiki — "approximations, not
+   canonical". Slot assignments below were mapped by sampling the
+   reference capture and snapping to nearest slot; the notable finding is
+   that STIC "Grey" (#BDACC8) is lavender-tinted, which is why the left
+   frog in the capture reads purple. ───────────────────────────────────── */
+const PAL = {
+  BLACK:"#000000", BLUE:"#002DFF", RED:"#FF3D10", TAN:"#C9CFAB",
+  DGREEN:"#386B3F", GREEN:"#00A756", YELLOW:"#FAEA50", WHITE:"#FFFCFF",
+  GREY:"#BDACC8", CYAN:"#24B8FF", ORANGE:"#FFB41F", OLIVE:"#546E00",
+  PINK:"#FF4E57", LTBLUE:"#A496FF", YGREEN:"#75CC80", PURPLE:"#B51A58"
+};
+
+/* ── Screen ────────────────────────────────────────────────────────────
+   160x96 is the STIC background resolution. Square pixels, matching the
+   1.667:1 screen interior measured in the reference capture. ─────────── */
+const SW = 160, SH = 96;
+const fb = document.createElement("canvas"); fb.width = SW; fb.height = SH;
+const fx = fb.getContext("2d");
+fx.imageSmoothingEnabled = false;
+
+const cvs = document.getElementById("c");
+const ctx = cvs.getContext("2d");
+
+/* ── World geometry (screen px) ───────────────────────────────────────── */
+const HORIZON   = 56;          // top of the reed band
+const WATER_Y   = 64;          // waterline
+const PAD_Y     = 76;          // pad surface the frogs stand on
+const PADS = [ {x:42, w:50}, {x:118, w:50} ];   // centres + widths
+const FLY_LO = 50, FLY_HI = 12;                  // fly roaming band (y)
+const ROUND_SECONDS = 180;     // [N1] MobyGames: three-minute limit. See DR-2.
+const STAGES = 10;             // day->night slices
+
+/* ── Tiny 3x5 bitmap font ─────────────────────────────────────────────── */
+const FONT = {
+"0":"XXX|X.X|X.X|X.X|XXX","1":".X.|XX.|.X.|.X.|XXX","2":"XXX|..X|XXX|X..|XXX",
+"3":"XXX|..X|XXX|..X|XXX","4":"X.X|X.X|XXX|..X|..X","5":"XXX|X..|XXX|..X|XXX",
+"6":"XXX|X..|XXX|X.X|XXX","7":"XXX|..X|..X|..X|..X","8":"XXX|X.X|XXX|X.X|XXX",
+"9":"XXX|X.X|XXX|..X|XXX",
+"A":"XXX|X.X|XXX|X.X|X.X","B":"XX.|X.X|XX.|X.X|XX.","C":"XXX|X..|X..|X..|XXX",
+"D":"XX.|X.X|X.X|X.X|XX.","E":"XXX|X..|XXX|X..|XXX","F":"XXX|X..|XXX|X..|X..",
+"G":"XXX|X..|X.X|X.X|XXX","H":"X.X|X.X|XXX|X.X|X.X","I":"XXX|.X.|.X.|.X.|XXX",
+"J":"..X|..X|..X|X.X|XXX","K":"X.X|X.X|XX.|X.X|X.X","L":"X..|X..|X..|X..|XXX",
+"M":"X.X|XXX|XXX|X.X|X.X","N":"XX.|X.X|X.X|X.X|X.X","O":"XXX|X.X|X.X|X.X|XXX",
+"P":"XXX|X.X|XXX|X..|X..","Q":"XXX|X.X|X.X|XXX|..X","R":"XXX|X.X|XX.|X.X|X.X",
+"S":"XXX|X..|XXX|..X|XXX","T":"XXX|.X.|.X.|.X.|.X.","U":"X.X|X.X|X.X|X.X|XXX",
+"V":"X.X|X.X|X.X|X.X|.X.","W":"X.X|X.X|XXX|XXX|X.X","X":"X.X|X.X|.X.|X.X|X.X",
+"Y":"X.X|X.X|XXX|.X.|.X.","Z":"XXX|..X|.X.|X..|XXX",
+" ":"...|...|...|...|...",".":"...|...|...|...|.X.",":":"...|.X.|...|.X.|...",
+"-":"...|...|XXX|...|...","!":".X.|.X.|.X.|...|.X.","+":"...|.X.|XXX|.X.|...",
+"/":"..X|..X|.X.|X..|X..","'":".X.|.X.|...|...|..."
+};
+const glyphCache = Object.create(null);
+function bakeGlyph(ch, col){
+  const key = ch + col;
+  if (glyphCache[key]) return glyphCache[key];
+  const rows = (FONT[ch] || FONT[" "]).split("|");
+  const g = document.createElement("canvas"); g.width = 3; g.height = 5;
+  const gc = g.getContext("2d"); gc.fillStyle = col;
+  for (let y=0;y<5;y++) for (let x=0;x<3;x++) if (rows[y][x]==="X") gc.fillRect(x,y,1,1);
+  glyphCache[key] = g; return g;
+}
+function text(str, x, y, col){
+  str = String(str).toUpperCase();
+  for (let i=0;i<str.length;i++) fx.drawImage(bakeGlyph(str[i], col), x + i*4, y);
+}
+const textW = s => String(s).length*4 - 1;
+function textC(str, cx, y, col){ text(str, Math.round(cx - textW(str)/2), y, col); }
+
+/* ── Sprite baking (boot only — never inside the loop) ────────────────── */
+function bake(rows, col){
+  const w = rows[0].length, h = rows.length;
+  const s = document.createElement("canvas"); s.width = w; s.height = h;
+  const c = s.getContext("2d"); c.fillStyle = col;
+  for (let y=0;y<h;y++) for (let x=0;x<w;x++) if (rows[y][x]==="X") c.fillRect(x,y,1,1);
+  return s;
+}
+const SPR_SIT = [
+  ".X....X.",
+  "XXX..XXX",
+  ".XXXXXX.",
+  "XXXXXXXX",
+  "X.X..X.X"
+];
+const SPR_CROUCH = [
+  "........",
+  ".X....X.",
+  "XXXXXXXX",
+  "XXXXXXXX",
+  "XX....XX"
+];
+const SPR_AIR = [
+  "...X..X...",
+  "X..XXXX..X",
+  "XXXXXXXXXX",
+  ".XX....XX.",
+  "..........."
+].map(r => r.slice(0,10));
+const SPR_SWIM = [
+  "........",
+  ".X....X.",
+  "XXXXXXXX",
+  ".XXXXXX."
+];
+const SPR_FLY_A = ["X...X",".XXX.","....."];   // wings up
+const SPR_FLY_B = [".....",".XXX.","X...X"];   // wings down
+
+let SPR = null;                       // filled by buildSprites()
+function buildSprites(){
+  SPR = {};
+  const frogCols = { P1: PAL.GREY, P2: PAL.RED };
+  for (const k in frogCols){
+    const col = frogCols[k];
+    SPR[k] = {
+      sit:    bake(SPR_SIT, col),
+      crouch: bake(SPR_CROUCH, col),
+      air:    bake(SPR_AIR, col),
+      swim:   bake(SPR_SWIM, col)
+    };
+  }
+  SPR.flyDay   = [bake(SPR_FLY_A, PAL.BLACK), bake(SPR_FLY_B, PAL.BLACK)];
+  SPR.flyNight = [bake(SPR_FLY_A, PAL.OLIVE), bake(SPR_FLY_B, PAL.OLIVE)];
+}
+
+/* ── Background stage baking ──────────────────────────────────────────
+   Ten complete 160x96 backgrounds, baked once at boot. The day->night
+   ramp is a walk through the STIC palette: YELLOW -> ORANGE -> PINK ->
+   PURPLE -> BLUE -> BLACK. The frame loop never draws a background
+   element — it blits one of these ten and moves on. ───────────────────── */
+const STAGE_THEME = [
+  /*0 noon    */ {sky:"YELLOW", cloud:"WHITE",  reedF:"GREEN",  reedN:"DGREEN", cat:"TAN",    water:"BLUE", pad:"GREEN",  vein:"DGREEN", night:0},
+  /*1         */ {sky:"YELLOW", cloud:"TAN",    reedF:"GREEN",  reedN:"DGREEN", cat:"TAN",    water:"BLUE", pad:"GREEN",  vein:"DGREEN", night:0},
+  /*2 gold    */ {sky:"ORANGE", cloud:"YELLOW", reedF:"GREEN",  reedN:"DGREEN", cat:"YELLOW", water:"BLUE", pad:"GREEN",  vein:"DGREEN", night:0},
+  /*3         */ {sky:"ORANGE", cloud:"TAN",    reedF:"DGREEN", reedN:"OLIVE",  cat:"YELLOW", water:"BLUE", pad:"GREEN",  vein:"DGREEN", night:0},
+  /*4 sunset  */ {sky:"PINK",   cloud:"ORANGE", reedF:"DGREEN", reedN:"OLIVE",  cat:"ORANGE", water:"BLUE", pad:"GREEN",  vein:"DGREEN", night:0},
+  /*5         */ {sky:"PURPLE", cloud:"PINK",   reedF:"DGREEN", reedN:"OLIVE",  cat:"PINK",   water:"BLUE", pad:"DGREEN", vein:"OLIVE",  night:0},
+  /*6 dusk    */ {sky:"PURPLE", cloud:"RED",    reedF:"OLIVE",  reedN:"BLACK",  cat:"PURPLE", water:"BLUE", pad:"DGREEN", vein:"OLIVE",  night:1},
+  /*7         */ {sky:"BLUE",   cloud:"PURPLE", reedF:"OLIVE",  reedN:"BLACK",  cat:"OLIVE",  water:"BLUE", pad:"DGREEN", vein:"OLIVE",  night:1},
+  /*8 night   */ {sky:"BLACK",  cloud:"GREY",   reedF:"OLIVE",  reedN:"BLACK",  cat:"OLIVE",  water:"BLUE", pad:"DGREEN", vein:"OLIVE",  night:1},
+  /*9 deep    */ {sky:"BLACK",  cloud:"BLACK",  reedF:"OLIVE",  reedN:"BLACK",  cat:"BLACK",  water:"BLUE", pad:"OLIVE",  vein:"BLACK",  night:1}
+];
+
+let BG = [];
+function buildBackgrounds(){
+  // Deterministic scenery layout from the presentation stream.
+  const srng = mulberry32(0xBEEF);
+  const clouds = [];
+  for (let i=0;i<4;i++) clouds.push({x:Math.floor(srng()*150), y:8+Math.floor(srng()*22), w:16+Math.floor(srng()*18)});
+  const stars = [];
+  for (let i=0;i<34;i++) stars.push({x:Math.floor(srng()*SW), y:Math.floor(srng()*(HORIZON-6))});
+  const reedTop = [];
+  for (let x=0;x<SW;x++){
+    reedTop.push(HORIZON + Math.round(3*Math.sin(x*0.21) + 2*Math.sin(x*0.63+1.2)));
+  }
+  const cattails = [];
+  for (let i=0;i<11;i++) cattails.push({x:6+Math.floor(srng()*148), h:7+Math.floor(srng()*6)});
+
+  BG = STAGE_THEME.map(T => {
+    const s = document.createElement("canvas"); s.width = SW; s.height = SH;
+    const c = s.getContext("2d");
+
+    c.fillStyle = PAL[T.sky]; c.fillRect(0,0,SW,HORIZON+6);
+
+    if (T.night){
+      c.fillStyle = PAL.WHITE;
+      for (const st of stars) if ((st.x*7+st.y*3)%5 < 3) c.fillRect(st.x, st.y, 1, 1);
+    }
+    if (T.cloud !== T.sky){
+      c.fillStyle = PAL[T.cloud];
+      for (const cl of clouds){
+        c.fillRect(cl.x, cl.y+2, cl.w, 4);
+        c.fillRect(cl.x+4, cl.y, cl.w-9, 3);
+        c.fillRect(cl.x-2, cl.y+4, cl.w+4, 2);
+      }
+    }
+
+    // Far reed band.
+    c.fillStyle = PAL[T.reedF];
+    for (let x=0;x<SW;x++) c.fillRect(x, reedTop[x], 1, WATER_Y-reedTop[x]);
+
+    // Cattails rise out of the far band and are partly occluded by the near one.
+    c.fillStyle = PAL[T.cat];
+    for (const ct of cattails){
+      const base = reedTop[ct.x] + 6;
+      c.fillRect(ct.x, base-ct.h, 1, ct.h);
+      c.fillRect(ct.x-1, base-ct.h-4, 3, 4);
+    }
+
+    // Near reed band.
+    c.fillStyle = PAL[T.reedN];
+    for (let x=0;x<SW;x++){
+      const t = reedTop[x] + 5 + Math.round(2*Math.sin(x*0.47+2.1));
+      c.fillRect(x, t, 1, WATER_Y-t);
+    }
+
+    // Water.
+    c.fillStyle = PAL[T.water]; c.fillRect(0, WATER_Y, SW, SH-WATER_Y);
+
+    // Lily pads — ellipse fill by scanline, then vein detail.
+    for (const p of PADS){
+      const rx = p.w/2, ry = 8, cy = PAD_Y + 5;
+      c.fillStyle = PAL[T.pad];
+      for (let y=-ry;y<=ry;y++){
+        const hw = Math.floor(rx*Math.sqrt(Math.max(0,1-(y*y)/(ry*ry))));
+        c.fillRect(p.x-hw, cy+y, hw*2, 1);
+      }
+      c.fillStyle = PAL[T.vein];
+      c.fillRect(p.x-rx+4, cy, p.w-8, 1);
+      for (let i=-4;i<=4;i++){
+        if (i===0) continue;
+        const vx = p.x + i*5;
+        c.fillRect(vx, cy-3, 1, 3);
+        c.fillRect(vx, cy+1, 1, 3);
+      }
+      // notch, so the pads read as lily pads rather than discs
+      c.fillStyle = PAL[T.water];
+      c.fillRect(p.x-1, cy-ry, 2, 4);
+    }
+    return s;
+  });
+}
+
+/* ── Audio — muted by default, no AudioContext until unmute ───────────── */
+const Audio_ = {
+  on:false, ac:null, bus:null,
+  toggle(){
+    this.on = !this.on;
+    if (this.on && !this.ac){
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) { this.on = false; }
+      else {
+        let ac = null;
+        try {
+          ac = new AC();
+          const bus = ac.createGain();
+          bus.gain.value = 0.16;          // FOLEY bus [N1]
+          bus.connect(ac.destination);
+          this.ac = ac; this.bus = bus;
+        } catch(_) {
+          // tear the half-built context down rather than leaking one per tap
+          if (ac && ac.close) { try { ac.close(); } catch(__){} }
+          this.on = false; this.ac = null; this.bus = null;
+        }
+      }
+    }
+    if (this.on && this.ac && this.ac.state === "suspended") { try{this.ac.resume();}catch(_){} }
+    Store.set("fb_audio", this.on ? "1" : "0");
+    return this.on;
+  },
+  blip(f0, f1, dur, type){
+    if (!this.on || !this.ac) return;
+    try {
+      const t = this.ac.currentTime;
+      const o = this.ac.createOscillator(), g = this.ac.createGain();
+      o.type = type || "square";
+      o.frequency.setValueAtTime(f0, t);
+      o.frequency.exponentialRampToValueAtTime(Math.max(20,f1), t+dur);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(1, t+0.008);
+      g.gain.exponentialRampToValueAtTime(0.0001, t+dur);
+      o.connect(g); g.connect(this.bus); o.start(t); o.stop(t+dur+0.02);
+    } catch(_){}
+  },
+  jump(){ this.blip(150, 420, 0.10); },
+  tongue(){ this.blip(900, 300, 0.06, "sawtooth"); },
+  gulp(){ this.blip(420, 120, 0.14); },
+  splash(){ this.blip(220, 60, 0.22, "triangle"); },
+  end(){ this.blip(600, 90, 0.55, "triangle"); }
+};
+
+/* ── Entities ─────────────────────────────────────────────────────────── */
+function makeFrog(id, padIdx, cpu){
+  return {
+    id, cpu,
+    x: PADS[padIdx].x, y: PAD_Y,
+    vx:0, vy:0,               // control velocity channel
+    ix:0, iy:0,               // impulse channel — kept separate (Grace Bland lesson)
+    state:"SIT",              // SIT | CROUCH | AIR | SWIM
+    face: padIdx===0 ? 1 : -1,
+    aim: padIdx===0 ? 0.35 : -0.35,
+    charge:0, charging:false,
+    tongue:0, tongueT:0, tongueCd:0,
+    score:0, swimT:0,
+    aiT:0, aiPlan:null
+  };
+}
+let flies = [];
+function spawnFly(){
+  return {
+    x: rr(8, SW-8), y: rr(FLY_HI, FLY_LO),
+    a: rr(0, Math.PI*2), sp: rr(16, 34),   // [N1] fly speed band
+    t: rr(0.3, 1.1), wing:0, alive:true
+  };
+}
+
+/* ── Game state ───────────────────────────────────────────────────────── */
+const FLY_COUNT = 5;                 // [N1]
+const G       = 260;                 // gravity px/s^2 [N1]
+const JUMP_LO = 95, JUMP_HI = 174;   // launch vy band [N1] — HI is set so the
+                                     // apex clears the 25-point fly tier; LO is set
+                                     // so a weak hop with full aim still splashes.
+const AIM_VX  = 58;                  // horizontal at aim=1 [N1]
+const TONGUE_LEN = 15;               // px [N1]
+const CPU_SKILL  = 0.62;             // 0..1 — historical AI was "a pushover" [N1]
+const SWIM_SPEED = 26;               // px/s [N1]
+
+let G_ = {
+  mode:"TITLE",       // TITLE | PLAY | OVER | ATTRACT
+  t:0, stage:0, idle:0,
+  p1:null, p2:null,
+  splash:[], pops:[],
+  best: parseInt(Store.get("fb_best","0"),10) || 0,
+  flash:0
+};
+
+function startRound(attract, seedOverride){
+  SEED = (seedOverride === undefined ? (Date.now() ^ 0x5EED) : seedOverride) >>> 0;
+  rng = mulberry32(SEED);
+  G_.p1 = makeFrog("P1", 0, !!attract);
+  G_.p2 = makeFrog("P2", 1, true);
+  flies.length = 0; for (let i=0;i<FLY_COUNT;i++) flies.push(spawnFly());
+  G_.t = 0; G_.stage = 0; G_.splash = []; G_.pops = []; G_.flash = 0;
+  G_.mode = attract ? "ATTRACT" : "PLAY";
+  if (!attract) reportToShell("node_entry", { node_id:FTS_NODE, seed:SEED });
+}
+
+/* ── Input ────────────────────────────────────────────────────────────── */
+const keys = Object.create(null);
+const IN = { left:false, right:false, jump:false, tongue:false };
+const touches = Object.create(null);
+let ZONES = [];                                  // rebuilt on layout()
+
+const KEYMAP = {
+  left:  ["ArrowLeft","a","A"],
+  right: ["ArrowRight","d","D"],
+  jump:  [" ","ArrowUp","w","W"],
+  tongue:["ArrowDown","s","S","z","Z"]
+};
+// Single source of truth: keyboard OR bezel touch. Neither clobbers the other.
+function updateInput(){
+  const held = Object.create(null);
+  for (const id in touches) if (touches[id]) held[touches[id]] = true;
+  for (const act in KEYMAP){
+    IN[act] = !!held[act] || KEYMAP[act].some(k => keys[k]);
+  }
+}
+function zoneAt(px, py){
+  for (const z of ZONES) if (px>=z.x && px<=z.x+z.w && py>=z.y && py<=z.y+z.h) return z;
+  return null;
+}
+addEventListener("keydown", e => {
+  if ([" ","ArrowLeft","ArrowRight","ArrowUp","ArrowDown"].indexOf(e.key) >= 0) e.preventDefault();
+  keys[e.key] = true; updateInput(); G_.idle = 0;
+  if (e.key === "m" || e.key === "M") Audio_.toggle();
+  if (G_.mode !== "PLAY" && (e.key === " " || e.key === "Enter")) startRound(false);
+});
+addEventListener("keyup", e => { keys[e.key] = false; updateInput(); });
+addEventListener("blur", () => { for (const k in keys) keys[k] = false; updateInput(); });
+
+const ACTION_ZONES = { left:1, right:1, jump:1, tongue:1 };
+function pointerDown(id, px, py){
+  G_.idle = 0;
+  const z = zoneAt(px, py);
+  if (z && z.id === "audio"){ Audio_.toggle(); return; }
+  if (z && z.id === "start"){ startRound(false); return; }
+  if (z && ACTION_ZONES[z.id]){ touches[id] = z.id; updateInput(); return; }
+  if (G_.mode !== "PLAY") startRound(false);
+}
+function pointerMove(id, px, py){
+  if (!(id in touches)) return;
+  const z = zoneAt(px, py);
+  touches[id] = (z && ACTION_ZONES[z.id]) ? z.id : null;
+  updateInput();
+}
+function pointerUp(id){ delete touches[id]; updateInput(); }
+
+function localPt(e){
+  const r = cvs.getBoundingClientRect();          // CSS-pixel space, always
+  return [ e.clientX - r.left, e.clientY - r.top ];
+}
+cvs.addEventListener("mousedown", e => { const p = localPt(e); pointerDown("m", p[0], p[1]); });
+addEventListener("mousemove", e => { const p = localPt(e); pointerMove("m", p[0], p[1]); });
+addEventListener("mouseup",   () => pointerUp("m"));
+cvs.addEventListener("touchstart", e => {
+  e.preventDefault();
+  for (const t of e.changedTouches){ const r = cvs.getBoundingClientRect();
+    pointerDown(t.identifier, t.clientX-r.left, t.clientY-r.top); }
+}, {passive:false});
+cvs.addEventListener("touchmove", e => {
+  e.preventDefault();
+  for (const t of e.changedTouches){ const r = cvs.getBoundingClientRect();
+    pointerMove(t.identifier, t.clientX-r.left, t.clientY-r.top); }
+}, {passive:false});
+const endTouch = e => { for (const t of e.changedTouches) pointerUp(t.identifier); };
+cvs.addEventListener("touchend", endTouch);
+cvs.addEventListener("touchcancel", endTouch);
+
+/* ── Simulation ───────────────────────────────────────────────────────── */
+function nearestPad(x){ return Math.abs(x-PADS[0].x) <= Math.abs(x-PADS[1].x) ? 0 : 1; }
+function onPad(x){
+  for (let i=0;i<PADS.length;i++) if (Math.abs(x-PADS[i].x) <= PADS[i].w/2 - 3) return i;
+  return -1;
+}
+
+function flyScore(y){
+  // [N1] Height-tiered. The reference capture shows +15 and +25 increments,
+  // which contradicts Giant Bomb's flat "two points per fly". See DR-1.
+  if (y >= 42) return 5;
+  if (y >= 32) return 10;
+  if (y >= 22) return 15;
+  return 25;
+}
+
+function frogInput(f){
+  if (f.cpu) return cpuInput(f);
+  return { left:IN.left, right:IN.right, jump:IN.jump, tongue:IN.tongue };
+}
+
+function cpuInput(f){
+  // Deterministic AI off the sim stream. Picks the fly with the best
+  // reachable arc, then commits. Error scales inversely with CPU_SKILL.
+  const out = { left:false, right:false, jump:false, tongue:false };
+  if (f.state === "SWIM") return out;
+
+  if (f.state === "AIR"){
+    // fire tongue when a fly is close to the mouth
+    for (const fl of flies){
+      if (!fl.alive) continue;
+      const dx = fl.x - (f.x + f.face*6), dy = fl.y - (f.y - 3);
+      if (Math.abs(dy) < 7 && dx*f.face > -2 && dx*f.face < TONGUE_LEN + 3){ out.tongue = true; break; }
+    }
+    return out;
+  }
+
+  f.aiT -= DT;
+  if (!f.aiPlan && f.aiT <= 0){
+    let best = null;
+    for (const fl of flies){
+      if (!fl.alive) continue;
+      const need = PAD_Y - fl.y;                       // apex height wanted
+      const v = Math.sqrt(2*G*Math.max(6, need - 4));
+      if (v < JUMP_LO*0.8 || v > JUMP_HI*1.1) continue;
+      const tUp = v/G;
+      const px = fl.x + Math.cos(fl.a)*fl.sp*tUp;      // linear prediction
+      const dx = px - f.x;
+      const aim = Math.max(-1, Math.min(1, dx/(AIM_VX*tUp*1.7)));
+      const sc = Math.abs(dx);
+      if (!best || sc < best.sc) best = { v, aim, sc };
+    }
+    if (best){
+      const err = (1 - CPU_SKILL);
+      f.aiPlan = {
+        charge: Math.max(0, Math.min(1, (best.v - JUMP_LO)/(JUMP_HI - JUMP_LO) + (rng()-0.5)*err*0.5)),
+        aim:    Math.max(-1, Math.min(1, best.aim + (rng()-0.5)*err*0.9)),
+        wait:   rr(0.05, 0.45) * (1.6 - CPU_SKILL)     // reaction delay [N1]
+      };
+    } else {
+      f.aiT = 0.25;
+    }
+  }
+
+  if (f.aiPlan){
+    if (f.aiPlan.wait > 0){ f.aiPlan.wait -= DT; return out; }
+    const want = f.aiPlan.aim;
+    if (f.aim < want - 0.06) out.right = true;
+    else if (f.aim > want + 0.06) out.left = true;
+    out.jump = true;
+    if (f.charge >= f.aiPlan.charge){ out.jump = false; f.aiPlan = null; f.aiT = rr(0.2,0.8); }
+  }
+  return out;
+}
+
+function stepFrog(f, dt){
+  const I = frogInput(f);
+
+  // tongue timers
+  if (f.tongueCd > 0) f.tongueCd -= dt;
+  if (f.tongueT > 0){
+    f.tongueT -= dt;
+    const p = 1 - Math.max(0, f.tongueT) / 0.30;
+    f.tongue = TONGUE_LEN * Math.sin(Math.min(1,p) * Math.PI);
+    if (f.tongueT <= 0) f.tongue = 0;
+  } else if (I.tongue && f.tongueCd <= 0 && f.state !== "SWIM"){
+    f.tongueT = 0.30; f.tongueCd = 0.42; Audio_.tongue();   // [N1] extend/cooldown
+  }
+
+  if (f.state === "SWIM"){
+    f.swimT -= dt;
+    const p = PADS[nearestPad(f.x)];
+    f.x += Math.sign(p.x - f.x) * SWIM_SPEED * dt;
+    f.y = WATER_Y + 4 + Math.sin(f.swimT*9)*1.2;
+    if (Math.abs(f.x - p.x) < 2 && f.swimT <= 0){ f.state = "SIT"; f.y = PAD_Y; f.vx = f.vy = 0; }
+    return;
+  }
+
+  if (f.state === "AIR"){
+    // impulse channel is folded in once, then decays — never overwritten by control
+    f.vy += G*dt + f.iy; f.iy = 0;
+    f.x  += (f.vx + f.ix) * dt; f.ix = 0;
+    f.y  += f.vy*dt;
+    if (f.x < 3) { f.x = 3; f.vx = Math.abs(f.vx)*0.4; }
+    if (f.x > SW-3){ f.x = SW-3; f.vx = -Math.abs(f.vx)*0.4; }
+    if (f.vy > 0 && f.y >= PAD_Y){
+      const pad = onPad(f.x);
+      if (pad >= 0){
+        f.y = PAD_Y; f.state = "SIT"; f.vx = 0; f.vy = 0; f.charge = 0;
+      } else if (f.y >= WATER_Y + 2){
+        f.state = "SWIM"; f.swimT = 1.4; f.vx = 0; f.vy = 0; f.charge = 0;
+        Audio_.splash();
+        for (let i=0;i<9;i++) G_.splash.push({ x:f.x, y:WATER_Y+2,
+          vx:(vrng()-0.5)*44, vy:-vrng()*52, life:0.55 });
+      }
+    }
+    return;
+  }
+
+  // grounded: aim, charge, launch
+  if (I.left)  { f.aim = Math.max(-1, f.aim - 1.9*dt); f.face = -1; }
+  if (I.right) { f.aim = Math.min( 1, f.aim + 1.9*dt); f.face =  1; }
+  if (Math.abs(f.aim) > 0.05) f.face = f.aim > 0 ? 1 : -1;
+
+  if (I.jump){
+    f.charging = true;
+    f.charge = Math.min(1, f.charge + 1.35*dt);       // ~0.74s to full [N1]
+    f.state = "CROUCH";
+  } else if (f.charging){
+    f.charging = false;
+    f.state = "AIR";
+    f.vy = -(JUMP_LO + (JUMP_HI-JUMP_LO)*f.charge);
+    f.vx = f.aim * AIM_VX;
+    f.charge = 0;
+    Audio_.jump();
+  } else {
+    f.state = "SIT";
+  }
+}
+
+function tongueTip(f){
+  return [ f.x + f.face * (4 + f.tongue), f.y - 3 ];
+}
+
+function stepFlies(dt){
+  for (const fl of flies){
+    if (!fl.alive) continue;
+    fl.t -= dt;
+    if (fl.t <= 0){ fl.a += (rng()-0.5)*2.4; fl.sp = rr(16,34); fl.t = rr(0.3,1.1); }
+    fl.x += Math.cos(fl.a)*fl.sp*dt;
+    fl.y += Math.sin(fl.a)*fl.sp*dt*0.7;
+    if (fl.x < 4)     { fl.x = 4;     fl.a = Math.PI - fl.a; }
+    if (fl.x > SW-4)  { fl.x = SW-4;  fl.a = Math.PI - fl.a; }
+    if (fl.y < FLY_HI){ fl.y = FLY_HI; fl.a = -fl.a; }
+    if (fl.y > FLY_LO){ fl.y = FLY_LO; fl.a = -fl.a; }
+    fl.wing += dt*22;
+  }
+}
+
+function checkCatch(f){
+  if (f.tongue <= 1) return;
+  const tip = tongueTip(f);
+  for (const fl of flies){
+    if (!fl.alive) continue;
+    if (Math.abs(fl.x - tip[0]) <= 4 && Math.abs(fl.y - tip[1]) <= 4){
+      fl.alive = false;
+      const pts = flyScore(fl.y);
+      f.score += pts;
+      Audio_.gulp();
+      G_.pops.push({ x:fl.x, y:fl.y, txt:"+"+pts, life:0.8,
+                     col: f.id === "P1" ? PAL.ORANGE : PAL.WHITE });
+      const nf = spawnFly(); nf.x = rr(8, SW-8); nf.y = rr(FLY_HI, FLY_LO);
+      Object.assign(fl, nf);
+      f.tongueT = Math.min(f.tongueT, 0.08);
+      break;
+    }
+  }
+}
+
+const DT = 1/60;                                  // fixed sim step
+let acc = 0, last = 0;
+
+function simulate(dt){
+  if (G_.mode === "PLAY" || G_.mode === "ATTRACT"){
+    G_.t += dt;
+    G_.stage = Math.min(STAGES-1, Math.floor(G_.t / ROUND_SECONDS * STAGES));
+    stepFrog(G_.p1, dt); stepFrog(G_.p2, dt);
+    stepFlies(dt);
+    checkCatch(G_.p1); checkCatch(G_.p2);
+    if (G_.t >= ROUND_SECONDS){
+      if (G_.mode === "PLAY"){
+        G_.best = Math.max(G_.best, G_.p1.score);
+        Store.set("fb_best", G_.best);
+        reportToShell("node_exit", { node_id:FTS_NODE, score:G_.p1.score,
+                                     opponent:G_.p2.score, seed:SEED,
+                                     duration_s:Math.round(G_.t) });
+        Audio_.end();
+        G_.mode = "OVER";
+      } else {
+        startRound(true);
+      }
+    }
+  }
+  // presentation particles use vrng only
+  for (const s of G_.splash){ s.vy += 220*dt; s.x += s.vx*dt; s.y += s.vy*dt; s.life -= dt; }
+  G_.splash = G_.splash.filter(s => s.life > 0);
+  for (const p of G_.pops){ p.y -= 14*dt; p.life -= dt; }
+  G_.pops = G_.pops.filter(p => p.life > 0);
+  if (G_.flash > 0) G_.flash -= dt;
+  G_.idle += dt;
+  if (G_.mode === "TITLE" && G_.idle > 15) startRound(true);   // attract mode
+}
+
+/* ── Render ───────────────────────────────────────────────────────────── */
+function drawFrog(f){
+  const S = SPR[f.id];
+  const night = STAGE_THEME[G_.stage].night;
+  let img, oy;
+  if (f.state === "AIR")        { img = S.air;    oy = 3; }
+  else if (f.state === "SWIM")  { img = S.swim;   oy = 2; }
+  else if (f.state === "CROUCH"){ img = S.crouch; oy = 5; }
+  else                          { img = S.sit;    oy = 5; }
+  const w = img.width;
+  // face left by mirroring
+  if (f.face < 0){
+    fx.save(); fx.scale(-1,1);
+    fx.drawImage(img, -Math.round(f.x + w/2), Math.round(f.y - oy));
+    fx.restore();
+  } else {
+    fx.drawImage(img, Math.round(f.x - w/2), Math.round(f.y - oy));
+  }
+  // aim indicator on the grounded frog (the "lean")
+  if ((f.state === "SIT" || f.state === "CROUCH") && !f.cpu){
+    fx.fillStyle = night ? PAL.CYAN : PAL.WHITE;
+    fx.fillRect(Math.round(f.x + f.aim*10), Math.round(f.y - 11), 1, 1);
+    if (f.charge > 0){
+      fx.fillStyle = PAL.ORANGE;
+      fx.fillRect(Math.round(f.x-6), Math.round(f.y-8), Math.round(12*f.charge), 1);
+    }
+  }
+  if (f.tongue > 1){
+    fx.fillStyle = PAL.PINK;
+    const x0 = Math.round(f.x + f.face*3), y0 = Math.round(f.y - 3);
+    fx.fillRect(f.face > 0 ? x0 : x0 - Math.round(f.tongue), y0, Math.round(f.tongue), 1);
+    const tip = tongueTip(f);
+    fx.fillRect(Math.round(tip[0])-1, y0-1, 2, 2);
+  }
+}
+
+function drawScreen(){
+  fx.drawImage(BG[G_.stage], 0, 0);
+  const night = STAGE_THEME[G_.stage].night;
+
+  const flySpr = night ? SPR.flyNight : SPR.flyDay;
+  for (const fl of flies){
+    if (!fl.alive) continue;
+    fx.drawImage(flySpr[(fl.wing|0) & 1], Math.round(fl.x)-2, Math.round(fl.y)-1);
+  }
+
+  drawFrog(G_.p2); drawFrog(G_.p1);
+
+  fx.fillStyle = night ? PAL.CYAN : PAL.WHITE;
+  for (const s of G_.splash) fx.fillRect(Math.round(s.x), Math.round(s.y), 1, 1);
+  for (const p of G_.pops) textC(p.txt, p.x, Math.round(p.y), p.col);
+
+  // HUD — scores overlay the sky, as on the original
+  text(String(G_.p1.score), 4, 3, PAL.ORANGE);
+  text("YOU", 4, 9, PAL.PURPLE);
+  const s2 = String(G_.p2.score);
+  text(s2, SW-4-textW(s2), 3, PAL.WHITE);
+  text("CPU", SW-4-textW("CPU"), 9, PAL.CYAN);
+  const left = Math.max(0, ROUND_SECONDS - G_.t);
+  const mm = Math.floor(left/60), ss = Math.floor(left%60);
+  textC(mm + ":" + (ss<10?"0":"") + ss, SW/2, 3, night ? PAL.TAN : PAL.OLIVE);
+
+  if (G_.mode === "TITLE"){
+    fx.fillStyle = PAL.BLACK; fx.fillRect(18, 21, SW-36, 38);
+    fx.fillStyle = PAL.GREEN; fx.fillRect(18, 21, SW-36, 1); fx.fillRect(18, 58, SW-36, 1);
+    textC("FROGBONK", SW/2, 26, PAL.GREEN);
+    textC("EAT MORE FLIES THAN THE CPU", SW/2, 36, PAL.TAN);
+    textC("BEST " + G_.best, SW/2, 44, PAL.ORANGE);
+    textC("PRESS SPACE OR TAP", SW/2, 51, PAL.WHITE);
+  }
+  if (G_.mode === "ATTRACT"){
+    textC("ATTRACT MODE - TAP TO PLAY", SW/2, 88, PAL.WHITE);
+  }
+  if (G_.mode === "OVER"){
+    fx.fillStyle = PAL.BLACK; fx.fillRect(22, 23, SW-44, 34);
+    fx.fillStyle = PAL.GREEN; fx.fillRect(22, 23, SW-44, 1); fx.fillRect(22, 56, SW-44, 1);
+    const win = G_.p1.score > G_.p2.score ? "YOU WIN"
+              : G_.p1.score < G_.p2.score ? "CPU WINS" : "DEAD HEAT";
+    textC(win, SW/2, 28, PAL.YELLOW);
+    textC(G_.p1.score + " - " + G_.p2.score, SW/2, 38, PAL.WHITE);
+    textC("SPACE / TAP TO REMATCH", SW/2, 49, PAL.TAN);
+  }
+}
+
+/* ── Layout: screen box + bezel control panel ─────────────────────────── */
+let box = { x:0, y:0, w:SW, h:SH, s:1 };
+function layout(){
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const W = window.innerWidth, H = window.innerHeight;
+  cvs.style.width = W + "px"; cvs.style.height = H + "px";
+  cvs.width = Math.round(W*dpr); cvs.height = Math.round(H*dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.imageSmoothingEnabled = false;
+
+  const portraitish = H > W * 0.72;
+  const panelH = portraitish ? Math.min(190, H*0.34) : Math.min(120, H*0.26);
+  const availH = H - panelH - 16, availW = W - 16;
+  const s = Math.max(1, Math.floor(Math.min(availW/SW, availH/SH)));
+  box.s = s; box.w = SW*s; box.h = SH*s;
+  box.x = Math.round((W - box.w)/2);
+  box.y = Math.round(Math.max(8, (H - panelH - box.h)/2));
+
+  // Control zones live in the bezel, below the screen.
+  const py = box.y + box.h + 12;
+  const ph = Math.max(56, H - py - 12);
+  const bw = Math.min(96, W*0.21), gap = Math.min(14, W*0.03);
+  const midY = py + ph/2 - bw/2;
+  ZONES = [
+    { id:"left",   x: gap,                 y: midY, w: bw, h: bw, label:"<" },
+    { id:"right",  x: gap*2 + bw,          y: midY, w: bw, h: bw, label:">" },
+    { id:"tongue", x: W - gap*2 - bw*2,    y: midY, w: bw, h: bw, label:"TONGUE" },
+    { id:"jump",   x: W - gap - bw,        y: midY, w: bw, h: bw, label:"HOP" },
+    { id:"audio",  x: W - 62,              y: 10,   w: 52, h: 22, label:"SND" },
+    { id:"start",  x: 10,                  y: 10,   w: 62, h: 22, label:"START" }
+  ];
+}
+addEventListener("resize", layout);
+addEventListener("orientationchange", () => setTimeout(layout, 120));
+if (window.visualViewport) window.visualViewport.addEventListener("resize", layout);
+
+function drawBezel(){
+  const W = parseFloat(cvs.style.width), H = parseFloat(cvs.style.height);
+  ctx.fillStyle = "#05070a"; ctx.fillRect(0,0,W,H);
+
+  // screen surround
+  ctx.fillStyle = "#0d1420";
+  ctx.fillRect(box.x-6, box.y-6, box.w+12, box.h+12);
+  ctx.fillStyle = "#1b3350";
+  ctx.fillRect(box.x-2, box.y-2, box.w+4, box.h+4);
+
+  ctx.drawImage(fb, box.x, box.y, box.w, box.h);
+
+  ctx.font = "11px 'Courier New', monospace";
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  for (const z of ZONES){
+    const held = Object.values(touches).indexOf(z.id) >= 0 ||
+                 (z.id==="left"&&IN.left)||(z.id==="right"&&IN.right)||
+                 (z.id==="jump"&&IN.jump)||(z.id==="tongue"&&IN.tongue);
+    const round = z.w === z.h;
+    ctx.beginPath();
+    if (round) ctx.arc(z.x+z.w/2, z.y+z.h/2, z.w/2, 0, Math.PI*2);
+    else ctx.rect(z.x, z.y, z.w, z.h);
+    ctx.fillStyle = held ? "rgba(0,167,86,.35)" : "rgba(20,36,56,.85)";
+    ctx.fill();
+    ctx.strokeStyle = held ? PAL.GREEN : "rgba(80,120,160,.6)";
+    ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = held ? "#fff" : "rgba(190,215,240,.9)";
+    let lbl = z.label;
+    if (z.id === "audio") lbl = Audio_.on ? "SND ON" : "SND OFF";
+    ctx.font = (round && z.w > 60 ? "13px" : "11px") + " 'Courier New', monospace";
+    ctx.fillText(lbl, z.x+z.w/2, z.y+z.h/2);
+  }
+  ctx.textAlign = "left";
+  ctx.fillStyle = "rgba(120,160,200,.55)";
+  ctx.font = "10px 'Courier New', monospace";
+  ctx.fillText("ARROWS AIM  ·  HOLD SPACE TO CHARGE, RELEASE TO HOP  ·  Z/DOWN FLICKS TONGUE  ·  M MUTES",
+               10, H - 12);
+}
+
+/* ── Main loop ────────────────────────────────────────────────────────── */
+function frame(ts){
+  if (!last) last = ts;
+  let dt = (ts - last)/1000; last = ts;
+  if (dt > 0.25) dt = 0.25;                 // tab-switch guard
+  acc += dt;
+  let steps = 0;
+  while (acc >= DT && steps < 8){ simulate(DT); acc -= DT; steps++; }
+  if (steps === 8) acc = 0;
+
+  drawScreen();
+  drawBezel();
+  requestAnimationFrame(frame);
+}
+
+/* ── Boot ─────────────────────────────────────────────────────────────── */
+buildSprites();
+buildBackgrounds();
+G_.p1 = makeFrog("P1", 0, false);
+G_.p2 = makeFrog("P2", 1, true);
+for (let i=0;i<FLY_COUNT;i++) flies.push(spawnFly());
+layout();
+reportToShell("node_entry", { node_id:FTS_NODE, screen:"title" });
+addEventListener("beforeunload", () => reportToShell("node_exit", { node_id:FTS_NODE, screen:G_.mode }));
+requestAnimationFrame(frame);
+
+/* Harness surface — no TEST_MODE flag, no loop kill switch. The harness
+   drives the real simulate()/drawScreen() path that ships. */
+window.FROGBONK = {
+  G_, flies, fliesRef:() => flies, PAL, SPR_REF:() => SPR, BG_REF:() => BG, STAGE_THEME,
+  simulate, startRound, flyScore, makeFrog, mulberry32, layout, updateInput, IN, keys,
+  drawScreen, drawBezel, frame, pointerDown, pointerUp, zonesRef:() => ZONES,
+  fbCanvas:fb, Store, Audio_, tongueTip, onPad, stepFrog, reportToShell,
+  consts:{ SW, SH, DT, G, JUMP_LO, JUMP_HI, AIM_VX, TONGUE_LEN, ROUND_SECONDS,
+           PAD_Y, WATER_Y, HORIZON, PADS, STAGES, FLY_COUNT },
+  version:"0.1.0"
+};
+
+/* ═══════════════════════════════════════════════════════════════════════
+   OPEN DECISION RECORDS
+   DR-1  SCORING MODEL — UNRESOLVED. Giant Bomb states a flat 2 pts/fly.
+         The reference capture shows the left score move 340 -> 355 -> 380,
+         i.e. +15 and +25. Height-tiered scoring (5/10/15/25) is implemented
+         as the hypothesis that fits the observed data. Needs a second
+         capture with visible fly altitude at the moment of each catch.
+   DR-2  WIN CONDITION — UNRESOLVED. MobyGames: 3-minute timer, high score
+         wins. theLogBook: first to 100 points wins. Timer is implemented;
+         the 100-point race is a one-line alternative.
+   DR-3  DIFFICULTY TIERS — NOT IMPLEMENTED. The original shipped three
+         control modes (locked arc / free arc + auto-tongue / free arc +
+         manual tongue). Only the hardest is here. Easy mode is the
+         accessibility default and should land before Gold.
+   DR-4  SHELL_ORIGIN is "*". Must be origin-strict before it mounts in
+         the FTS shell iframe, per the BYOS split-origin model.
+   DR-5  CPU_SKILL = 0.62 is unvalidated. Historical consensus is that the
+         original AI was trivially beatable; that may be the correct feel
+         to reproduce, or may be a flaw worth fixing. Design call, not a
+         fidelity call.
+   ═══════════════════════════════════════════════════════════════════════ */
+</script>
+</body>
+</html>
