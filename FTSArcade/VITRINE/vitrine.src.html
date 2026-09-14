@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Original — Red Eye Relic Entry 001</title>
+
+<meta name="description" content="A singular, naturally grown relic. Shaped by time, weather, and chance.">
+<meta name="theme-color" content="#08070a">
+<link rel="icon" href="fts-favicon.png" type="image/png">
+
+<meta property="og:title" content="The Original — Red Eye Relic Entry 001">
+<meta property="og:description" content="Found, not made. Some sticks just happen once.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="RED EYE">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=Jost:wght@200;300;400;500&display=swap" rel="stylesheet">
+
+<style>
+/* ═══════════════════════════════════════════════════════════════════
+   RED EYE VITRINE — tokens
+   Atmosphere is CSS. WebGL draws the relic and nothing else.
+   ═══════════════════════════════════════════════════════════════════ */
+:root{
+  --void:#08070a;          /* base black, violet-shifted */
+  --ash:#100d0c;           /* panel ground, warm-shifted */
+  --pane:rgba(20,16,15,.72);
+  --hair:rgba(201,162,39,.16);
+  --hair-cool:rgba(232,225,212,.09);
+
+  --bone:#e8e1d4;          /* primary text */
+  --smoke:#8a8177;         /* secondary text */
+  --dust:#5d564e;          /* tertiary / disabled */
+
+  --gild:#c9a227;          /* rarity, rules */
+  --gild-lo:#8a6f1c;
+  --eye:#ff2d2d;           /* RED EYE brand */
+  --eye-deep:#7d1008;
+  --amber:#ffd9a0;
+
+  --iris-boost:0;          /* 0..1, driven by rotation velocity */
+
+  --shell:clamp(16px,2.2vw,34px);
+  --ease:cubic-bezier(.22,.61,.36,1);
+}
+
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+
+html,body{height:100%}
+body{
+  background:var(--void);
+  color:var(--bone);
+  font-family:'Jost','Futura','Avenir Next',system-ui,sans-serif;
+  font-weight:300;
+  overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  text-rendering:optimizeLegibility;
+}
+
+.serif{font-family:'Cormorant Garamond','Didot','Hoefler Text',Georgia,serif}
+
+/* ── Atmosphere stack (all CSS, all behind the canvas) ─────────────── */
+#sky{position:fixed;inset:0;z-index:0;overflow:hidden;background:
+  radial-gradient(140% 100% at 50% 8%, #171012 0%, #0c0a0c 42%, var(--void) 78%)}
+
+/* the iris — the one memorable thing */
+#iris{
+  position:absolute;left:50%;top:44%;
+  width:min(78vh,62vw);aspect-ratio:1;
+  transform:translate(-50%,-50%) scale(calc(1 + var(--iris-boost) * .035));
+  transition:transform .5s var(--ease);
+  will-change:transform;
+}
+#iris::before{
+  content:'';position:absolute;inset:0;border-radius:50%;
+  background:
+    repeating-conic-gradient(from 0deg,
+      rgba(224,52,31,.10) 0deg .55deg,
+      transparent .55deg 1.5deg),
+    radial-gradient(circle, transparent 26%, rgba(140,17,9,.44) 40%, rgba(90,10,6,.24) 62%, transparent 74%);
+  -webkit-mask-image:radial-gradient(circle, transparent 24%, #000 38%, #000 66%, transparent 78%);
+          mask-image:radial-gradient(circle, transparent 24%, #000 38%, #000 66%, transparent 78%);
+  opacity:calc(.62 + var(--iris-boost) * .38);
+  filter:blur(.4px);
+  transition:opacity .5s var(--ease);
+}
+#iris::after{
+  content:'';position:absolute;inset:14%;border-radius:50%;
+  border:1px solid rgba(255,45,45,calc(.10 + var(--iris-boost) * .22));
+  box-shadow:0 0 90px 18px rgba(125,16,8,calc(.16 + var(--iris-boost) * .2)) inset;
+  transition:border-color .5s var(--ease),box-shadow .5s var(--ease);
+}
+
+/* raking key light, painted not raytraced */
+.shaft{
+  position:absolute;left:-8%;top:-30%;width:62%;height:150%;
+  background:linear-gradient(168deg, rgba(255,217,160,.13) 0%, rgba(255,205,140,.05) 34%, transparent 66%);
+  transform:rotate(9deg);filter:blur(26px);pointer-events:none;
+}
+.shaft.b{left:auto;right:-14%;width:46%;transform:rotate(-13deg);opacity:.42}
+
+/* ember floor */
+#floor{
+  position:absolute;left:0;right:0;bottom:0;height:38%;
+  background:
+    radial-gradient(60% 88% at 50% 104%, rgba(196,52,20,.20) 0%, rgba(90,16,6,.10) 44%, transparent 72%),
+    linear-gradient(0deg, rgba(10,6,6,.92) 0%, transparent 100%);
+}
+#floor::after{ /* wet sheen directly under the relic */
+  content:'';position:absolute;left:50%;bottom:14%;transform:translateX(-50%);
+  width:min(46vh,40vw);height:9vh;border-radius:50%;
+  background:radial-gradient(ellipse, rgba(255,180,120,.13) 0%, transparent 70%);
+  filter:blur(10px);
+}
+
+#grain{
+  position:fixed;inset:0;z-index:3;pointer-events:none;opacity:.45;
+  background-image:var(--grain-url);background-size:180px 180px;
+  mix-blend-mode:overlay;
+}
+#vignette{
+  position:fixed;inset:0;z-index:1;pointer-events:none;
+  background:radial-gradient(120% 88% at 50% 42%, transparent 46%, rgba(0,0,0,.62) 100%);
+}
+
+/* ── Stage ─────────────────────────────────────────────────────────── */
+#stage{position:fixed;inset:0;display:grid;
+  grid-template-columns:1fr clamp(340px,26vw,430px);
+  grid-template-rows:1fr auto;
+  grid-template-areas:"view panel" "dock panel";
+}
+#view{grid-area:view;position:relative;min-width:0;min-height:0}
+#gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+#gl.dragging{cursor:grabbing}
+#gl:focus-visible{outline:1px solid var(--gild);outline-offset:-3px}
+
+/* ── Left rail marginalia ──────────────────────────────────────────── */
+#rail{position:absolute;left:var(--shell);top:var(--shell);bottom:var(--shell);
+  z-index:3;display:flex;flex-direction:column;justify-content:space-between;
+  pointer-events:none;max-width:15ch}
+.mark{font-size:.62rem;font-weight:300;letter-spacing:.34em;line-height:2.1;
+  color:var(--dust);text-transform:uppercase}
+.mark.eye{color:var(--eye);letter-spacing:.26em;margin-bottom:.5em}
+.mark .sub{display:block;color:var(--dust);letter-spacing:.3em;font-size:.58rem}
+.rule{width:1px;height:52px;background:linear-gradient(180deg,var(--hair-cool),transparent);margin-bottom:1.4rem}
+
+#wordmark{position:absolute;left:var(--shell);top:var(--shell);z-index:4;pointer-events:none}
+#wordmark h1{font-size:clamp(1.05rem,1.5vw,1.4rem);font-weight:300;letter-spacing:.42em;
+  text-transform:uppercase;color:var(--bone)}
+#wordmark p{margin-top:.5em;font-size:.56rem;letter-spacing:.38em;color:var(--dust);text-transform:uppercase}
+
+#whisper{position:absolute;left:calc(var(--shell) + 10vw);top:50%;transform:translateY(-50%);
+  z-index:3;pointer-events:none;max-width:16ch}
+#whisper p{font-size:.68rem;letter-spacing:.3em;line-height:2.4;color:var(--smoke);text-transform:uppercase}
+#whisper .tick{display:block;width:34px;height:1px;background:var(--eye);margin-top:1.4rem;opacity:.8}
+
+/* ── Relic panel ───────────────────────────────────────────────────── */
+#panel{grid-area:panel;z-index:4;background:var(--pane);
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  border-left:1px solid var(--hair-cool);
+  padding:var(--shell) var(--shell) 0;
+  overflow-y:auto;overscroll-behavior:contain;
+  display:flex;flex-direction:column;gap:1.15rem;
+  scrollbar-width:thin;scrollbar-color:var(--gild-lo) transparent;
+}
+#panel::-webkit-scrollbar{width:3px}
+#panel::-webkit-scrollbar-thumb{background:var(--gild-lo)}
+
+.panel-top{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem}
+.entry{font-size:.58rem;letter-spacing:.34em;color:var(--smoke);text-transform:uppercase}
+#title{font-size:clamp(1.6rem,2.4vw,2.15rem);font-weight:300;letter-spacing:.14em;
+  line-height:1.1;margin-top:.55rem;text-transform:uppercase}
+#rarity{font-size:.66rem;letter-spacing:.34em;color:var(--gild);text-transform:uppercase;margin-top:.5rem}
+
+.badge{flex:0 0 auto;width:74px;text-align:center}
+.badge svg{width:44px;height:44px;display:block;margin:.3rem auto}
+.badge span{display:block;font-size:.44rem;letter-spacing:.26em;color:var(--smoke);text-transform:uppercase}
+
+hr.gild{border:0;height:1px;background:linear-gradient(90deg,var(--gild),rgba(201,162,39,.06));margin:.2rem 0}
+hr.thin{border:0;height:1px;background:var(--hair-cool);width:46px;margin:.2rem 0}
+
+.body{font-size:.86rem;line-height:1.85;color:#cfc7ba;max-width:44ch}
+.body em{font-style:normal;color:var(--bone)}
+.flavor{font-family:'Cormorant Garamond',Georgia,serif;font-size:1rem;font-style:italic;
+  color:var(--smoke);line-height:1.6}
+
+#unlock{display:flex;align-items:center;gap:.85rem;
+  border:1px solid rgba(255,45,45,.42);padding:.75rem .9rem;background:rgba(125,16,8,.10)}
+#unlock .dot{flex:0 0 auto;width:16px;height:16px;border-radius:50%;
+  background:radial-gradient(circle at 40% 35%, #ff6a52, var(--eye) 55%, var(--eye-deep));
+  box-shadow:0 0 12px rgba(255,45,45,.6)}
+#unlock b{display:block;font-size:.68rem;font-weight:400;letter-spacing:.2em;color:var(--eye);text-transform:uppercase}
+#unlock span{display:block;font-size:.54rem;letter-spacing:.26em;color:var(--smoke);text-transform:uppercase;margin-top:.25rem}
+
+.details{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem}
+.detail{position:relative;aspect-ratio:1;border:1px solid var(--hair-cool);background:#0c0a09;
+  overflow:hidden;cursor:pointer;padding:0;transition:border-color .25s var(--ease)}
+.detail:hover,.detail:focus-visible{border-color:var(--gild);outline:none}
+.detail img{width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity .5s var(--ease)}
+.detail img.in{opacity:1}
+.caption{text-align:center;font-size:.52rem;letter-spacing:.34em;color:var(--smoke);text-transform:uppercase}
+
+#specs{display:flex;flex-direction:column;gap:.55rem;margin-top:.2rem}
+.spec{display:flex;justify-content:space-between;align-items:baseline;gap:1rem;
+  font-size:.68rem;letter-spacing:.2em}
+.spec dt{color:var(--smoke);text-transform:uppercase;letter-spacing:.26em}
+.spec dd{color:var(--bone);text-align:right}
+.spec.is-rarity dd{color:var(--gild)}
+
+.panel-foot{margin-top:auto;padding:1.1rem 0 calc(var(--shell) + env(safe-area-inset-bottom));
+  border-top:1px solid var(--hair-cool)}
+
+/* ── Dock ──────────────────────────────────────────────────────────── */
+#dock{grid-area:dock;z-index:4;display:flex;align-items:center;gap:clamp(12px,2vw,28px);
+  padding:.85rem var(--shell) calc(.85rem + env(safe-area-inset-bottom));
+  border-top:1px solid var(--hair-cool);background:linear-gradient(0deg,rgba(8,7,10,.9),rgba(8,7,10,.45))}
+
+#views{display:flex;gap:.5rem}
+.view-btn{width:52px;height:66px;border:1px solid var(--hair-cool);background:#0c0a09;
+  padding:0;overflow:hidden;cursor:pointer;transition:border-color .25s var(--ease)}
+.view-btn[aria-pressed="true"]{border-color:var(--gild)}
+.view-btn:hover{border-color:var(--gild-lo)}
+.view-btn:focus-visible{outline:1px solid var(--gild);outline-offset:2px}
+.view-btn img{width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .5s var(--ease)}
+.view-btn img.in{opacity:1}
+
+.sep{width:1px;align-self:stretch;background:var(--hair-cool);margin:.25rem 0}
+
+#turn{flex:1;display:flex;align-items:center;justify-content:center;gap:clamp(10px,1.6vw,22px);min-width:0}
+.nudge{width:38px;height:38px;border-radius:50%;border:1px solid var(--hair-cool);
+  background:transparent;color:var(--smoke);cursor:pointer;display:grid;place-items:center;
+  transition:color .25s var(--ease),border-color .25s var(--ease);flex:0 0 auto}
+.nudge:hover{color:var(--bone);border-color:var(--gild-lo)}
+.nudge:focus-visible{outline:1px solid var(--gild);outline-offset:2px}
+#hint{font-size:.56rem;letter-spacing:.32em;color:var(--smoke);text-transform:uppercase;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+#zoom{display:flex;align-items:center;gap:.6rem;flex:0 0 auto}
+#zoom svg{color:var(--smoke);flex:0 0 auto}
+.step{background:none;border:0;color:var(--smoke);font-size:1rem;line-height:1;cursor:pointer;
+  padding:.3rem .45rem;font-family:inherit}
+.step:hover{color:var(--bone)}
+.step:focus-visible{outline:1px solid var(--gild);outline-offset:2px}
+#zoom input[type=range]{-webkit-appearance:none;appearance:none;width:clamp(70px,9vw,130px);
+  height:1px;background:var(--hair-cool);cursor:pointer}
+#zoom input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:11px;height:11px;
+  border-radius:50%;background:var(--bone);border:0;cursor:pointer}
+#zoom input[type=range]::-moz-range-thumb{width:11px;height:11px;border-radius:50%;
+  background:var(--bone);border:0;cursor:pointer}
+#zoom input[type=range]:focus-visible{outline:1px solid var(--gild);outline-offset:6px}
+
+#dock-mark{flex:0 0 auto;text-align:right}
+#dock-mark b{display:block;font-size:.56rem;font-weight:400;letter-spacing:.3em;color:var(--eye);text-transform:uppercase}
+#dock-mark span{display:block;font-size:.5rem;letter-spacing:.26em;color:var(--dust);
+  text-transform:uppercase;line-height:1.9;margin-top:.2rem}
+
+/* ── Load / error veil ─────────────────────────────────────────────── */
+#veil{position:fixed;inset:0;z-index:20;background:var(--void);
+  display:grid;place-items:center;text-align:center;padding:2rem;
+  transition:opacity .8s var(--ease);gap:0}
+#veil.gone{opacity:0;pointer-events:none}
+#veil .mono{font-size:.58rem;letter-spacing:.34em;color:var(--smoke);text-transform:uppercase}
+#veil h2{font-family:'Cormorant Garamond',Georgia,serif;font-weight:300;font-size:2rem;
+  letter-spacing:.2em;margin:1.1rem 0 1.6rem;text-transform:uppercase}
+#bar{width:min(280px,60vw);height:1px;background:rgba(232,225,212,.14);margin:0 auto;overflow:hidden}
+#bar i{display:block;height:100%;width:0;background:var(--gild);transition:width .25s linear}
+#bar.indeterminate i{width:34%;animation:drift 1.5s var(--ease) infinite}
+@keyframes drift{0%{transform:translateX(-110%)}100%{transform:translateX(320%)}}
+#pct{margin-top:1rem;font-size:.58rem;letter-spacing:.3em;color:var(--dust)}
+#veil.failed #bar{display:none}
+#veil .fail{display:none;max-width:46ch;margin-top:.4rem;font-size:.8rem;line-height:1.9;color:var(--smoke)}
+#veil.failed .fail{display:block}
+#veil .fail code{font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:.76rem;color:var(--gild)}
+
+/* ── Responsive: panel becomes a sheet ─────────────────────────────── */
+@media (max-width:900px){
+  #stage{grid-template-columns:1fr;grid-template-rows:1fr auto auto;
+    grid-template-areas:"view" "dock" "panel"}
+  #panel{border-left:0;border-top:1px solid var(--hair-cool);
+    max-height:46vh;padding-top:1rem}
+  #panel.collapsed{max-height:0;padding-top:0;padding-bottom:0;overflow:hidden;border-top-width:0}
+  #rail,#whisper{display:none}
+  #dock{flex-wrap:wrap;justify-content:center;row-gap:.7rem;padding-bottom:.85rem}
+  #dock-mark{display:none}
+  #turn{order:-1;flex-basis:100%}
+  .sep{display:none}
+  #sheet-toggle{display:flex}
+  #iris{top:38%;width:min(56vh,86vw)}
+}
+#sheet-toggle{display:none;align-items:center;gap:.5rem;background:none;border:0;
+  color:var(--smoke);font-family:inherit;font-size:.56rem;letter-spacing:.3em;
+  text-transform:uppercase;cursor:pointer;padding:.4rem 0;flex:0 0 auto}
+#sheet-toggle:focus-visible{outline:1px solid var(--gild);outline-offset:3px}
+
+@media (max-width:520px){
+  #wordmark h1{letter-spacing:.3em}
+  .view-btn{width:42px;height:54px}
+  #hint{letter-spacing:.24em;font-size:.52rem}
+}
+
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms!important;animation-iteration-count:1!important;
+    transition-duration:.01ms!important}
+}
+</style>
+</head>
+<body>
+
+<div id="sky" aria-hidden="true">
+  <div class="shaft"></div>
+  <div class="shaft b"></div>
+  <div id="iris"></div>
+  <div id="floor"></div>
+</div>
+<div id="vignette" aria-hidden="true"></div>
+<div id="grain" aria-hidden="true"></div>
+
+<main id="stage">
+
+  <section id="view">
+    <canvas id="gl" tabindex="0" aria-describedby="hint"
+      aria-label="Interactive three-dimensional view of the relic. Use arrow keys to turn it, plus and minus to move closer."></canvas>
+
+    <header id="wordmark">
+      <h1 class="serif" id="house">Stick Nation</h1>
+      <p id="house-sub">Natural · Remarkable · Forever</p>
+    </header>
+
+    <div id="rail" aria-hidden="true">
+      <div>
+        <div class="rule"></div>
+        <p class="mark" id="rail-1">More<br>than<br>sticks<br>a brighter<br>world</p>
+        <p class="mark eye" style="margin-top:2.2rem">Red Eye
+          <span class="sub">Ordinary places<br>extraordinary things</span></p>
+      </div>
+      <p class="mark" id="rail-3">Nature<br>remembers<br>so do we</p>
+    </div>
+
+    <div id="whisper" aria-hidden="true">
+      <p id="whisper-text">Some things still grow in dark places.</p>
+      <span class="tick"></span>
+    </div>
+  </section>
+
+  <aside id="panel" aria-label="Relic record">
+    <div class="panel-top">
+      <div>
+        <p class="entry" id="entry-no">Red Eye Relic Entry 001</p>
+        <h2 class="serif" id="title">The Original</h2>
+        <p id="rarity">Legendary</p>
+      </div>
+      <div class="badge" aria-hidden="true">
+        <span>Red Eye</span>
+        <svg viewBox="0 0 48 48" fill="none">
+          <circle cx="24" cy="24" r="22" stroke="rgba(232,225,212,.22)"/>
+          <path d="M4 24c6-8 13-12 20-12s14 4 20 12c-6 8-13 12-20 12S10 32 4 24Z" fill="#0d0b0a" stroke="rgba(232,225,212,.3)"/>
+          <circle cx="24" cy="24" r="9" fill="#38B2F6"/>
+          <path d="M15 24a9 9 0 0 0 18 0Z" fill="#ff2d2d"/>
+          <rect x="2" y="22.4" width="44" height="3.2" fill="#0d0b0a"/>
+        </svg>
+        <span>Relic</span>
+      </div>
+    </div>
+
+    <hr class="gild">
+
+    <p class="body" id="desc"></p>
+    <hr class="thin">
+    <p class="body" id="desc2"></p>
+
+    <div id="unlock">
+      <span class="dot" aria-hidden="true"></span>
+      <span>
+        <b id="unlock-title">Unlockable in Red Eye</b>
+        <span id="unlock-sub">Some things find you</span>
+      </span>
+    </div>
+
+    <div>
+      <div class="details" id="details"></div>
+      <p class="caption" style="margin-top:.5rem">Details</p>
+    </div>
+
+    <dl id="specs"></dl>
+
+    <div class="panel-foot">
+      <p class="flavor" id="flavor"></p>
+    </div>
+  </aside>
+
+  <nav id="dock" aria-label="Relic controls">
+    <div id="views" role="group" aria-label="Preset views"></div>
+    <span class="sep" aria-hidden="true"></span>
+
+    <div id="turn">
+      <button class="nudge" id="prev" aria-label="Turn left">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
+          <path d="M8 2 3.5 6.5 8 11" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <span id="hint">Drag to turn · Scroll to examine</span>
+      <button class="nudge" id="next" aria-label="Turn right">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
+          <path d="M5 2 9.5 6.5 5 11" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <div id="zoom">
+      <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+        <circle cx="6.5" cy="6.5" r="4.6" stroke="currentColor" stroke-width="1.1"/>
+        <path d="M10 10l3.4 3.4M4.6 6.5h3.8M6.5 4.6v3.8" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>
+      </svg>
+      <button class="step" id="out" aria-label="Move away">−</button>
+      <input type="range" id="dolly" min="0" max="100" value="50" aria-label="Distance from relic">
+      <button class="step" id="in" aria-label="Move closer">+</button>
+    </div>
+
+    <button id="sheet-toggle" aria-expanded="true" aria-controls="panel">
+      <span id="sheet-label">Hide record</span>
+    </button>
+
+    <div id="dock-mark" aria-hidden="true">
+      <b>Red Eye</b>
+      <span>Ordinary places<br>extraordinary things</span>
+    </div>
+  </nav>
+
+</main>
+
+<div id="veil" role="status" aria-live="polite">
+  <div>
+    <p class="mono" id="veil-entry">Red Eye Relic Entry 001</p>
+    <h2 id="veil-title">The Original</h2>
+    <div id="bar" class="indeterminate"><i></i></div>
+    <p id="pct">Opening the case</p>
+    <p class="fail" id="fail"></p>
+  </div>
+</div>
+
+<script>/*__THREE_BUNDLE__*/</script>
+<script>/*__APP__*/</script>
+</body>
+</html>
