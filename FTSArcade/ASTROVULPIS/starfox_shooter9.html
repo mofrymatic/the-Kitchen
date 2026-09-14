@@ -597,29 +597,24 @@
         renderer.shadowMap.enabled = true;
         renderer.outputEncoding = THREE.sRGBEncoding;
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.45;
+        renderer.toneMappingExposure = 1.1;
         
         // Lighting
-        const ambientLight = new THREE.AmbientLight(0xffffff, 1.15);
+        const ambientLight = new THREE.AmbientLight(0x4400ff, 0.3);
         scene.add(ambientLight);
         
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 2.2);
-        directionalLight.position.set(-4, 10, 8);
+        const directionalLight = new THREE.DirectionalLight(0x00ffff, 0.8);
+        directionalLight.position.set(5, 10, 5);
         directionalLight.castShadow = true;
         scene.add(directionalLight);
         
-        const pointLight1 = new THREE.PointLight(0xff44ff, 1.6, 70);
+        const pointLight1 = new THREE.PointLight(0xff00ff, 1, 50);
         pointLight1.position.set(-10, 5, -10);
         scene.add(pointLight1);
         
-        const pointLight2 = new THREE.PointLight(0x33ddff, 1.8, 70);
+        const pointLight2 = new THREE.PointLight(0x00ffff, 1, 50);
         pointLight2.position.set(10, 5, -10);
         scene.add(pointLight2);
-
-        // Camera-side fill so the player craft remains readable from the chase view.
-        const playerFillLight = new THREE.DirectionalLight(0xbfd7ff, 1.35);
-        playerFillLight.position.set(0, 3, 10);
-        scene.add(playerFillLight);
         
         // Player Ship - GLB-backed 3rd person craft
         let player = null;
@@ -628,9 +623,8 @@
         const shipConfig = {
             url: './dopeship.glb',
             targetSize: 4.6,       // Normalize the longest model dimension to this many world units
-            // The GLB is authored with its nose along +X. Rotate -90deg so the nose points into game-space -Z.
-            yaw: -Math.PI / 2,
-            engineZ: 2.55,        // Engine plume sits behind the craft (+Z) after orientation correction
+            yaw: Math.PI,         // Astro Vulpis flies toward -Z; flip the authored craft to match
+            engineZ: 2.55,        // Engine plume sits behind the craft (+Z)
             engineY: -0.05
         };
 
@@ -673,15 +667,13 @@
                     // Preserve the GLB's authored PBR, normal and emissive textures.
                     // Only tune presentation properties that do not destroy texture data.
                     if ('emissiveIntensity' in material) {
-                        material.emissiveIntensity = Math.max(material.emissiveIntensity || 1, 1.35);
+                        material.emissiveIntensity = Math.max(material.emissiveIntensity || 1, 1.15);
                     }
-                    // Preserve authored PBR balance. The old pass forced extra metalness,
-                    // which made the hull read almost black against the space background.
+                    if ('metalness' in material) {
+                        material.metalness = Math.max(material.metalness ?? 0, 0.35);
+                    }
                     if ('roughness' in material) {
-                        material.roughness = Math.max(0.28, Math.min(material.roughness ?? 0.5, 0.62));
-                    }
-                    if ('envMapIntensity' in material) {
-                        material.envMapIntensity = Math.max(material.envMapIntensity || 1, 1.2);
+                        material.roughness = Math.min(material.roughness ?? 1, 0.7);
                     }
                     material.needsUpdate = true;
                 });
