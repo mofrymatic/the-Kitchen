@@ -254,13 +254,13 @@
   </div>
   <div class="setting-row">
     <label>Camera Distance</label>
-    <input type="range" id="s-camdist" min="5" max="25" step="1" value="12">
-    <span class="setting-val" id="sv-camdist">12</span>
+    <input type="range" id="s-camdist" min="5" max="25" step="1" value="10">
+    <span class="setting-val" id="sv-camdist">10</span>
   </div>
   <div class="setting-row">
     <label>Camera Height</label>
-    <input type="range" id="s-camheight" min="2" max="15" step="1" value="7">
-    <span class="setting-val" id="sv-camheight">7</span>
+    <input type="range" id="s-camheight" min="2" max="15" step="1" value="6">
+    <span class="setting-val" id="sv-camheight">6</span>
   </div>
   <div class="setting-row">
     <label>Invert Y</label>
@@ -506,7 +506,7 @@ scene.add(rimLight);
 
 // Camera
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 200);
-camera.position.set(0, 12, 14);
+camera.position.set(0, 8, 11);
 camera.lookAt(0, 0, 0);
 
 window.addEventListener('resize', () => {
@@ -595,6 +595,78 @@ function makeOrb(x, z) {
 for (let i = 0; i < 8; i++) {
   makeOrb(Math.cos(i / 8 * Math.PI * 2) * 6, Math.sin(i / 8 * Math.PI * 2) * 6);
 }
+
+// ------------------------------------------------------------
+// Authored bridge environment
+// ------------------------------------------------------------
+// bridge.glb is expected beside this HTML file. The bridge is normalized
+// by its measured horizontal footprint so authored Blender/export units do
+// not dictate gameplay scale. Its top surface is placed exactly at world y=0,
+// which matches the controller's ground plane.
+const BRIDGE_URL = './bridge.glb';
+const BRIDGE_TARGET_DIAMETER = 64;
+const bridgeMount = new THREE.Group();
+bridgeMount.name = 'BridgeMount';
+scene.add(bridgeMount);
+
+const prototypeEnvironment = [ground, gridHelper, ramp, ...platforms, ...rings];
+for (const orb of orbs) prototypeEnvironment.push(orb.mesh);
+
+function setPrototypeEnvironmentVisible(visible) {
+  prototypeEnvironment.forEach(o => { if (o) o.visible = visible; });
+}
+
+function fitBridgeToArena(model) {
+  model.updateMatrixWorld(true);
+  let box = new THREE.Box3().setFromObject(model);
+  const size = new THREE.Vector3();
+  box.getSize(size);
+  const horizontal = Math.max(size.x, size.z);
+  if (horizontal > 0.0001) {
+    const scale = BRIDGE_TARGET_DIAMETER / horizontal;
+    model.scale.multiplyScalar(scale);
+    model.updateMatrixWorld(true);
+    box = new THREE.Box3().setFromObject(model);
+  }
+
+  // Center X/Z and make the bridge deck's highest point the gameplay floor.
+  const center = new THREE.Vector3();
+  box.getCenter(center);
+  model.position.x -= center.x;
+  model.position.z -= center.z;
+  model.position.y -= box.max.y;
+  model.updateMatrixWorld(true);
+}
+
+const environmentLoader = new THREE.GLTFLoader();
+environmentLoader.load(
+  BRIDGE_URL,
+  gltf => {
+    const bridge = gltf.scene;
+    bridge.name = 'BridgeGLB';
+    bridge.traverse(o => {
+      if (o.isMesh) {
+        o.castShadow = true;
+        o.receiveShadow = true;
+        o.frustumCulled = false;
+        const mats = Array.isArray(o.material) ? o.material : [o.material];
+        mats.filter(Boolean).forEach(m => {
+          if ('envMapIntensity' in m) m.envMapIntensity = 1.0;
+          m.needsUpdate = true;
+        });
+      }
+    });
+    bridgeMount.add(bridge);
+    fitBridgeToArena(bridge);
+    setPrototypeEnvironmentVisible(false);
+    console.info(`[RED EYE] Loaded ${BRIDGE_URL}; fitted to ${BRIDGE_TARGET_DIAMETER} world units.`);
+  },
+  undefined,
+  err => {
+    console.error(`[RED EYE] Could not load ${BRIDGE_URL}; keeping prototype environment.`, err);
+    setPrototypeEnvironmentVisible(true);
+  }
+);
 
 // Pivot debug helpers (hidden by default)
 const pivotHelpers = [];
@@ -926,7 +998,7 @@ modelMount.name = 'MechaSonicMount';
 characterRoot.add(modelMount);
 
 const MODEL_URL = './mechasonic.glb';
-const MODEL_TARGET_HEIGHT = 2.3;
+const MODEL_TARGET_HEIGHT = 0.23; // exported skin evaluates ~10x larger once animation bones are active
 const MODEL_YAW_OFFSET = 0; // rig's headfront bone indicates +Z forward, matching this controller
 
 const ModelAnim = {
@@ -977,8 +1049,12 @@ const ModelAnim = {
 
     modelMount.add(this.model);
 
-    // Auto-fit the authored rig to the old gameplay silhouette and put its feet on y=-1.3
-    // because controller.position.y=1.3 represents the old character's body root.
+    // Auto-fit the authored rig. This export's bind-pose scene bounds are about
+    // 10x smaller than the evaluated animated skin, so MODEL_TARGET_HEIGHT is
+    // deliberately calibrated to 0.23 here; visually that resolves to roughly
+    // a 2.3-world-unit character once the mixer evaluates the skeleton.
+    // Feet are anchored at y=-1.3 because controller.position.y=1.3 is the
+    // controller body's standing root, leaving the rendered soles at world y=0.
     this.model.updateMatrixWorld(true);
     let box = new THREE.Box3().setFromObject(this.model);
     const size = new THREE.Vector3();
@@ -1105,8 +1181,8 @@ const camState = {
   modeNames: CAMERA_MODES,
   theta: Math.PI / 6,
   phi: Math.PI * 0.28,
-  distance: 12,
-  targetDist: 12,
+  distance: 10,
+  targetDist: 10,
   targetPhi: Math.PI * 0.28,
   sensitivity: 1.0,
   invertY: false,
@@ -1116,8 +1192,8 @@ const camState = {
 
 let settings = {
   sensitivity: 1.0,
-  camDist: 12,
-  camHeight: 7,
+  camDist: 10,
+  camHeight: 6,
   invertY: false,
   showGrid: true,
   showPivots: false,
@@ -1785,7 +1861,7 @@ function animate() {
     }
 
     // Clamp world bounds
-    const BOUND = 38;
+    const BOUND = 28;
     controller.position.x = Math.max(-BOUND, Math.min(BOUND, controller.position.x));
     controller.position.z = Math.max(-BOUND, Math.min(BOUND, controller.position.z));
 
