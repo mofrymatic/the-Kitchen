@@ -25,11 +25,11 @@
     <!-- ── Open Graph (Facebook, Discord, iMessage, etc.) ────────────────────── -->
     <meta property="og:title" content="FishTacoStand Arcade">
     <meta property="og:description" content="Astro Vulpis — 3rd person space shooter.">
-    <meta property="og:url" content="https://frymatic.us/FTSArcade/ARCADE/starfox_shooter.html">
+    <meta property="og:url" content="https://frymatic.us/FTSArcade/ASTROVULPIS/starfox_shooter.html">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Astro Vulpis">
 
-    <meta property="og:image" content="https://frymatic.us/FTSArcade/ARCADE/starfox_preview.png">
+    <meta property="og:image" content="https://frymatic.us/FTSArcade/ASTROVULPIS/starfox_preview.png">
     <meta property="og:image:alt" content="3D 3rd Person Spacefighter.">
     <meta property="og:image:type" content="image/png">
 
@@ -37,7 +37,7 @@
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Astro Vulpis">
     <meta name="twitter:description" content="3rd person space shooter.">
-    <meta name="twitter:image" content="https://frymatic.us/FTSArcade/ARCADE/starfox_preview.png">
+    <meta name="twitter:image" content="https://frymatic.us/FTSArcade/ASTROVULPIS/starfox_preview.png">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght:400;700;900&family=Rajdhani:wght@300;500;700&display=swap');
         
@@ -313,7 +313,7 @@
             opacity: 0.3;
         }
         
-        /* Aim reticle — desktop follows pointer; mobile follows the right thumbstick. */
+        /* Center reticle */
         #centerReticle {
             position: fixed;
             width: 40px;
@@ -324,8 +324,7 @@
             pointer-events: none;
             z-index: 60;
             display: none;
-            opacity: 0.72;
-            will-change: left, top;
+            opacity: 0.4;
         }
         
         body.playing #centerReticle {
@@ -448,64 +447,6 @@
             width: 50px;
             height: 50px;
         }
-
-        /* Mobile right-side aim thumbstick. Left-side touch remains ship positioning. */
-        #mobileControls {
-            position: fixed;
-            inset: 0;
-            z-index: 80;
-            pointer-events: none;
-            display: none;
-        }
-
-        body.mobile.playing #mobileControls { display: block; }
-
-        #aimStick {
-            position: absolute;
-            right: max(22px, env(safe-area-inset-right));
-            bottom: max(30px, calc(env(safe-area-inset-bottom) + 18px));
-            width: 132px;
-            height: 132px;
-            border-radius: 50%;
-            border: 1px solid rgba(0, 255, 255, 0.58);
-            background: radial-gradient(circle, rgba(0,255,255,0.06) 0 42%, rgba(0,0,0,0.22) 43% 100%);
-            box-shadow: inset 0 0 26px rgba(0,255,255,0.10), 0 0 18px rgba(0,255,255,0.08);
-            pointer-events: auto;
-            touch-action: none;
-        }
-
-        #aimStick::after {
-            content: 'AIM';
-            position: absolute;
-            left: 50%;
-            top: -22px;
-            transform: translateX(-50%);
-            font-family: 'Orbitron', monospace;
-            font-size: 10px;
-            letter-spacing: 2px;
-            color: rgba(0,255,255,0.72);
-        }
-
-        #aimKnob {
-            position: absolute;
-            left: 50%;
-            top: 50%;
-            width: 54px;
-            height: 54px;
-            margin-left: -27px;
-            margin-top: -27px;
-            border-radius: 50%;
-            border: 2px solid var(--neon-yellow);
-            background: rgba(255,255,0,0.08);
-            box-shadow: 0 0 16px rgba(255,255,0,0.28);
-            transform: translate(0px, 0px);
-            will-change: transform;
-        }
-
-        body.mobile.portrait #aimStick {
-            width: 116px;
-            height: 116px;
-        }
     </style>
 </head>
 <body>
@@ -515,12 +456,6 @@
     
     <div id="centerReticle">
         <div class="reticle-ring"></div>
-    </div>
-
-    <div id="mobileControls" aria-hidden="true">
-        <div id="aimStick">
-            <div id="aimKnob"></div>
-        </div>
     </div>
     
     <div id="hud">
@@ -590,7 +525,7 @@
         if (isMobile) {
             document.body.classList.add('mobile');
             detectOrientation();
-            document.getElementById('controlsText').textContent = 'LEFT DRAG: POSITION • RIGHT STICK: AIM / FIRE';
+            document.getElementById('controlsText').textContent = 'TOUCH TO POSITION • HOLD TO FIRE';
         }
         
         window.addEventListener('resize', detectOrientation);
@@ -626,23 +561,12 @@
         
         // Input State
         const input = {
-            // Ship attractor / movement target
-            moveScreenX: window.innerWidth / 2,
-            moveScreenY: window.innerHeight / 2,
-            moveNormalizedX: 0,
-            moveNormalizedY: 0,
-            moveActive: false,
-
-            // Weapon aim target. Desktop = pointer position. Mobile = right thumbstick.
-            aimScreenX: window.innerWidth / 2,
-            aimScreenY: window.innerHeight / 2,
-            aimNormalizedX: 0,
-            aimNormalizedY: 0,
-            aimActive: false,
-            firing: false,
-
-            moveTouchId: null,
-            aimPointerId: null
+            screenX: window.innerWidth / 2,
+            screenY: window.innerHeight / 2,
+            normalizedX: 0,
+            normalizedY: 0,
+            active: false,
+            firing: false
         };
         
         // Game State
@@ -931,62 +855,34 @@
             return particles;
         }
         
-        // Layered Star Field — sparse depth cues instead of one flat wallpaper.
-        function createStarLayer(count, spread, zOffset, size, opacity) {
-            const geometry = new THREE.BufferGeometry();
-            const positions = new Float32Array(count * 3);
-            for (let i = 0; i < count; i++) {
-                const j = i * 3;
-                positions[j] = (Math.random() - 0.5) * spread;
-                positions[j + 1] = (Math.random() - 0.5) * spread;
-                positions[j + 2] = (Math.random() - 0.5) * spread - zOffset;
+        // Star Field
+        function createStarField() {
+            const starGeometry = new THREE.BufferGeometry();
+            const starCount = 1000;
+            const positions = new Float32Array(starCount * 3);
+            
+            for (let i = 0; i < starCount * 3; i += 3) {
+                positions[i] = (Math.random() - 0.5) * 200;
+                positions[i + 1] = (Math.random() - 0.5) * 200;
+                positions[i + 2] = (Math.random() - 0.5) * 200 - 50;
             }
-            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-            const material = new THREE.PointsMaterial({
+            
+            starGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            
+            const starMaterial = new THREE.PointsMaterial({ 
                 color: 0xffffff,
-                size,
+                size: 0.3,
                 transparent: true,
-                opacity,
-                depthWrite: false
+                opacity: 0.8
             });
-            const points = new THREE.Points(geometry, material);
-            scene.add(points);
-            return points;
+            
+            const stars = new THREE.Points(starGeometry, starMaterial);
+            scene.add(stars);
+            return stars;
         }
-
-        const starLayers = [
-            { points: createStarLayer(650, 360, 170, 0.20, 0.45), speed: 0.06, wrapNear: 70, wrapFar: -290 },
-            { points: createStarLayer(450, 240, 115, 0.30, 0.68), speed: 0.18, wrapNear: 65, wrapFar: -190 },
-            { points: createStarLayer(220, 150, 75, 0.42, 0.82), speed: 0.38, wrapNear: 55, wrapFar: -120 }
-        ];
-
-        // Sparse foreground motes that become visible with velocity/boost.
-        function createVelocityDust() {
-            const count = 90;
-            const geometry = new THREE.BufferGeometry();
-            const positions = new Float32Array(count * 3);
-            for (let i = 0; i < count; i++) {
-                const j = i * 3;
-                positions[j] = (Math.random() - 0.5) * 38;
-                positions[j + 1] = (Math.random() - 0.5) * 26 + 6;
-                positions[j + 2] = -Math.random() * 95;
-            }
-            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-            const material = new THREE.PointsMaterial({
-                color: 0x9fe9ff,
-                size: 0.16,
-                transparent: true,
-                opacity: 0.0,
-                depthWrite: false,
-                blending: THREE.AdditiveBlending
-            });
-            const dust = new THREE.Points(geometry, material);
-            scene.add(dust);
-            return dust;
-        }
-
-        const velocityDust = createVelocityDust();
-
+        
+        const starField = createStarField();
+        
         // Game Arrays
         const enemies = [];
         const projectiles = [];
@@ -1010,28 +906,20 @@
             enemies.push(enemy);
         }
         
-        // Shoot through the on-screen reticle, not through a fixed centerline.
+        // Shoot Projectile
         let shootCooldown = 0;
-        const aimNdc = new THREE.Vector2();
-        const aimWorld = new THREE.Vector3();
-        function getAimDirection() {
-            aimNdc.set(input.aimNormalizedX, input.aimNormalizedY);
-            aimWorld.set(aimNdc.x, aimNdc.y, 0.5).unproject(camera);
-            return aimWorld.sub(camera.position).normalize();
-        }
-
         function shoot() {
             if (shootCooldown > 0) return;
-
+            
             const projectile = createProjectile(0xffff00);
-            const direction = getAimDirection();
-            projectile.position.copy(player.position).addScaledVector(direction, 1.5);
-            projectile.velocity = direction.multiplyScalar(2.4);
+            projectile.position.copy(player.position);
+            projectile.position.z -= 1;
+            projectile.velocity = new THREE.Vector3(0, 0, -1);
             scene.add(projectile);
             projectiles.push(projectile);
-
-            shootCooldown = 8;
-
+            
+            shootCooldown = 10;
+            
             if (isMobile && window.vibrate) {
                 window.vibrate(10);
             }
@@ -1066,139 +954,51 @@
         }
         
         // Input Handlers
-        const reticleEl = document.getElementById('centerReticle');
-        const aimStickEl = document.getElementById('aimStick');
-        const aimKnobEl = document.getElementById('aimKnob');
-
-        function setMoveInput(clientX, clientY) {
-            input.moveScreenX = clientX;
-            input.moveScreenY = clientY;
-            input.moveNormalizedX = (clientX / window.innerWidth) * 2 - 1;
-            input.moveNormalizedY = -((clientY / window.innerHeight) * 2 - 1);
-            input.moveActive = true;
+        function updateInput(clientX, clientY) {
+            input.screenX = clientX;
+            input.screenY = clientY;
+            input.normalizedX = (clientX / window.innerWidth) * 2 - 1;
+            input.normalizedY = -((clientY / window.innerHeight) * 2 - 1);
         }
-
-        function setAimFromScreen(clientX, clientY) {
-            input.aimScreenX = Math.max(0, Math.min(window.innerWidth, clientX));
-            input.aimScreenY = Math.max(0, Math.min(window.innerHeight, clientY));
-            input.aimNormalizedX = (input.aimScreenX / window.innerWidth) * 2 - 1;
-            input.aimNormalizedY = -((input.aimScreenY / window.innerHeight) * 2 - 1);
-            input.aimActive = true;
-            updateReticlePosition();
-        }
-
-        function setAimFromStick(nx, ny) {
-            input.aimNormalizedX = Math.max(-1, Math.min(1, nx));
-            input.aimNormalizedY = Math.max(-1, Math.min(1, ny));
-            // Keep a little safe margin so the reticle remains visible on phones.
-            input.aimScreenX = window.innerWidth * (0.5 + input.aimNormalizedX * 0.42);
-            input.aimScreenY = window.innerHeight * (0.5 - input.aimNormalizedY * 0.38);
-            input.aimActive = true;
-            updateReticlePosition();
-        }
-
-        function updateReticlePosition() {
-            reticleEl.style.left = input.aimScreenX + 'px';
-            reticleEl.style.top = input.aimScreenY + 'px';
-        }
-
-        function centerAim() {
-            input.aimScreenX = window.innerWidth / 2;
-            input.aimScreenY = window.innerHeight / 2;
-            input.aimNormalizedX = 0;
-            input.aimNormalizedY = 0;
-            input.aimActive = false;
-            updateReticlePosition();
-        }
-
+        
         document.addEventListener('mousemove', (e) => {
-            if (!gameState.playing || isMobile) return;
-            setMoveInput(e.clientX, e.clientY);
-            setAimFromScreen(e.clientX, e.clientY);
+            if (!gameState.playing) return;
+            input.active = true;
+            updateInput(e.clientX, e.clientY);
         });
-
-        document.addEventListener('mousedown', () => {
-            if (!gameState.playing || isMobile) return;
+        
+        document.addEventListener('mousedown', (e) => {
+            if (!gameState.playing) return;
             input.firing = true;
         });
-
-        document.addEventListener('mouseup', () => {
-            if (!isMobile) input.firing = false;
-        });
-
-        // Mobile: left half drags ship position. Right thumbstick aims and fires.
-        document.addEventListener('touchstart', (e) => {
-            if (!gameState.playing || !isMobile) return;
-            for (const touch of e.changedTouches) {
-                if (touch.clientX < window.innerWidth * 0.58 && input.moveTouchId === null) {
-                    input.moveTouchId = touch.identifier;
-                    setMoveInput(touch.clientX, touch.clientY);
-                }
-            }
-        }, { passive: false });
-
-        document.addEventListener('touchmove', (e) => {
-            if (!gameState.playing || !isMobile) return;
-            for (const touch of e.changedTouches) {
-                if (touch.identifier === input.moveTouchId) {
-                    e.preventDefault();
-                    setMoveInput(touch.clientX, touch.clientY);
-                }
-            }
-        }, { passive: false });
-
-        document.addEventListener('touchend', (e) => {
-            if (!isMobile) return;
-            for (const touch of e.changedTouches) {
-                if (touch.identifier === input.moveTouchId) {
-                    input.moveTouchId = null;
-                    input.moveActive = false;
-                }
-            }
-        }, { passive: false });
-
-        function updateAimStickFromPointer(e) {
-            const rect = aimStickEl.getBoundingClientRect();
-            const cx = rect.left + rect.width / 2;
-            const cy = rect.top + rect.height / 2;
-            const radius = rect.width * 0.34;
-            let dx = e.clientX - cx;
-            let dy = e.clientY - cy;
-            const len = Math.hypot(dx, dy) || 1;
-            if (len > radius) {
-                dx = dx / len * radius;
-                dy = dy / len * radius;
-            }
-            aimKnobEl.style.transform = `translate(${dx}px, ${dy}px)`;
-            setAimFromStick(dx / radius, -dy / radius);
-        }
-
-        aimStickEl.addEventListener('pointerdown', (e) => {
-            if (!gameState.playing || !isMobile) return;
-            e.preventDefault();
-            input.aimPointerId = e.pointerId;
-            aimStickEl.setPointerCapture(e.pointerId);
-            input.firing = true;
-            updateAimStickFromPointer(e);
-        });
-
-        aimStickEl.addEventListener('pointermove', (e) => {
-            if (e.pointerId !== input.aimPointerId) return;
-            e.preventDefault();
-            updateAimStickFromPointer(e);
-        });
-
-        function releaseAimStick(e) {
-            if (input.aimPointerId !== null && e.pointerId !== input.aimPointerId) return;
-            input.aimPointerId = null;
+        
+        document.addEventListener('mouseup', (e) => {
             input.firing = false;
-            aimKnobEl.style.transform = 'translate(0px, 0px)';
-            centerAim();
-        }
-
-        aimStickEl.addEventListener('pointerup', releaseAimStick);
-        aimStickEl.addEventListener('pointercancel', releaseAimStick);
-
+        });
+        
+        document.addEventListener('touchstart', (e) => {
+            if (!gameState.playing) return;
+            e.preventDefault();
+            input.active = true;
+            input.firing = true;
+            const touch = e.touches[0];
+            updateInput(touch.clientX, touch.clientY);
+        }, { passive: false });
+        
+        document.addEventListener('touchmove', (e) => {
+            if (!gameState.playing) return;
+            e.preventDefault();
+            const touch = e.touches[0];
+            updateInput(touch.clientX, touch.clientY);
+        }, { passive: false });
+        
+        document.addEventListener('touchend', (e) => {
+            if (e.touches.length === 0) {
+                input.firing = false;
+                input.active = false;
+            }
+        }, { passive: false });
+        
         // Game Loop
         let enemySpawnTimer = 0;
         const enemySpawnInterval = 60;
@@ -1211,8 +1011,8 @@
             // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
             
             // 1. Calculate Cursor Attractor Force (Spring Physics)
-            const targetX = input.moveActive ? input.moveNormalizedX * 12 : 0;
-            const targetY = input.moveActive ? (input.moveNormalizedY * 6 + 6.5) : 6.5;
+            const targetX = input.active ? input.normalizedX * 12 : 0;
+            const targetY = input.active ? (input.normalizedY * 6 + 6.5) : 6.5;
             
             const distX = targetX - player.position.x;
             const distY = targetY - player.position.y;
@@ -1407,26 +1207,17 @@
                 }
             }
             
-            // Layered parallax: distant stars barely move; near stars reveal speed.
-            for (const layer of starLayers) {
-                const pos = layer.points.geometry.attributes.position.array;
-                const dz = layer.speed * flightPhysics.boostFactor;
-                for (let i = 2; i < pos.length; i += 3) {
-                    pos[i] += dz;
-                    if (pos[i] > layer.wrapNear) pos[i] = layer.wrapFar;
+            // Star Field Parallax - Scaled by Flight Momentum
+            const starPositions = starField.geometry.attributes.position.array;
+            const currentWarpSpeed = 0.5 * flightPhysics.boostFactor;
+            
+            for (let i = 2; i < starPositions.length; i += 3) {
+                starPositions[i] += currentWarpSpeed;
+                if (starPositions[i] > 50) {
+                    starPositions[i] = -100;
                 }
-                layer.points.geometry.attributes.position.needsUpdate = true;
             }
-
-            const dustPositions = velocityDust.geometry.attributes.position.array;
-            const dustSpeed = 0.65 + flightPhysics.boostFactor * 1.2;
-            for (let i = 2; i < dustPositions.length; i += 3) {
-                dustPositions[i] += dustSpeed;
-                if (dustPositions[i] > 18) dustPositions[i] = -95 - Math.random() * 20;
-            }
-            velocityDust.geometry.attributes.position.needsUpdate = true;
-            velocityDust.material.opacity = Math.max(0, Math.min(0.48, (flightPhysics.boostFactor - 0.75) * 0.32));
-            velocityDust.material.size = 0.12 + flightPhysics.boostFactor * 0.07;
+            starField.geometry.attributes.position.needsUpdate = true;
             
             // Camera Follow with Shake - 3RD PERSON VIEW
             const targetCamX = player.position.x * 0.3;
@@ -1485,16 +1276,11 @@
             camera.fov = flightPhysics.baseFov;
             camera.updateProjectionMatrix();
             
-            input.moveScreenX = window.innerWidth / 2;
-            input.moveScreenY = window.innerHeight / 2;
-            input.moveNormalizedX = 0;
-            input.moveNormalizedY = 0;
-            input.moveActive = !isMobile;
-            input.moveTouchId = null;
-            input.firing = false;
-            input.aimPointerId = null;
-            aimKnobEl.style.transform = 'translate(0px, 0px)';
-            centerAim();
+            input.screenX = window.innerWidth / 2;
+            input.screenY = window.innerHeight / 2;
+            input.normalizedX = 0;
+            input.normalizedY = 0;
+            input.active = !isMobile;
             
             document.getElementById('title').style.display = 'none';
             document.getElementById('gameOver').style.display = 'none';
@@ -1525,7 +1311,6 @@
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
-            if (!input.aimActive) centerAim();
         });
         
         renderer.render(scene, camera);
