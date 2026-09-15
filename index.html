@@ -26,14 +26,13 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Aldrich&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 
 <style>
   /* ============================================================
      FTS FUTURO — token system
      Sourced from Brazen Studios / FTS Futuro Style Guide v1.0
-     Display: Aldrich (stand-in for FTS Futuro)
-     Interface: Inter (stand-in for FTS Interface)
+     Display / interface: Futura family
      Mono: JetBrains Mono (stand-in for FTS Mono)
      Artist handle: supplied by the frymatic-title.png logographic.
      ============================================================ */
@@ -42,7 +41,8 @@
     --fts-black:#0A0A0A;
     --fts-white:#FAFAF8;
     --graphite:#3A3F45;
-    --graphite-tint:#8B93A0;   /* graphite lightened for legibility on dark ground */
+    --graphite-tint:#AAB1BC;   /* graphite lightened for legibility on dark ground */
+    --soft-high:#D7DBE2;
     --navy:#0D162A;
     --navy-deep:#070B14;
     --cyan:#00E5FF;
@@ -66,7 +66,10 @@
     --ease-standard:cubic-bezier(.2,.7,.2,1);
     --dur-fast:120ms; --dur-med:240ms; --dur-slow:360ms;
 
-    font-family:'Inter',sans-serif;
+    --font-futura:'Futura','Futura PT','Futura Std','Avenir Next','Century Gothic',Arial,sans-serif;
+    --font-mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+
+    font-family:var(--font-futura);
   }
 
   *{box-sizing:border-box}
@@ -84,7 +87,7 @@
     height:100%;
     min-height:0;
     color:var(--paper);
-    font-family:'Inter',sans-serif;
+    font-family:var(--font-futura);
     background:var(--ink);
     -webkit-font-smoothing:antialiased;
     overflow:hidden;
@@ -94,8 +97,8 @@
   button,a{font:inherit}
   ::selection{background:var(--cyan);color:var(--ink)}
 
-  .font-display{font-family:'Aldrich','Inter',sans-serif}
-  .font-mono{font-family:'JetBrains Mono',ui-monospace,monospace}
+  .font-display{font-family:var(--font-futura)}
+  .font-mono{font-family:var(--font-mono)}
 
   .stage{
     position:relative;
@@ -136,11 +139,13 @@
     z-index:6;
     width:48px; height:48px;
     color:var(--paper);
-    background:linear-gradient(135deg,rgba(13,22,42,.98),rgba(7,11,20,.9));
+    background:
+      radial-gradient(circle at 50% 50%,transparent 0 13px,rgba(0,229,255,.14) 13.5px,transparent 14.5px),
+      linear-gradient(135deg,rgba(13,22,42,.99),rgba(7,11,20,.93));
     border-right:1px solid var(--hairline-strong);
     border-bottom:1px solid var(--hairline-strong);
     clip-path:polygon(14px 0,100% 0,100% 100%,0 100%,0 14px);
-    font:600 11px/1 'Inter',sans-serif;
+    font:600 11px/1 var(--font-futura);
     letter-spacing:.08em;
     text-transform:uppercase;
     box-shadow:0 10px 30px rgba(0,0,0,.24);
@@ -160,7 +165,10 @@
     content:"";
     position:absolute;
     inset:5px;
-    border:1px solid rgba(250,250,248,.08);
+    border:1px solid rgba(250,250,248,.13);
+    background:
+      linear-gradient(90deg,transparent 48%,rgba(250,250,248,.10) 49%,rgba(250,250,248,.10) 51%,transparent 52%),
+      linear-gradient(0deg,transparent 48%,rgba(250,250,248,.10) 49%,rgba(250,250,248,.10) 51%,transparent 52%);
     clip-path:polygon(9px 0,100% 0,100% 100%,0 100%,0 9px);
   }
   .monogram span{position:absolute;z-index:1}
@@ -178,7 +186,7 @@
     align-items:flex-end;
     justify-content:flex-end;
     padding:0 var(--u1) 7px 0;
-    font-family:'JetBrains Mono',monospace;
+    font-family:var(--font-mono);
     font-weight:600;
     font-size:11px;
     letter-spacing:.06em;
@@ -197,7 +205,10 @@
     border:1px solid var(--hairline);
     clip-path:polygon(var(--cut) 0,100% 0,100% calc(100% - var(--cut)),calc(100% - var(--cut)) 100%,0 100%,0 var(--cut));
     background:linear-gradient(180deg,rgba(13,22,42,.18),rgba(13,22,42,.06));
-    box-shadow:inset 0 0 0 1px rgba(0,0,0,.3);
+    box-shadow:
+      inset 0 0 0 1px rgba(0,0,0,.36),
+      inset 0 0 0 4px rgba(250,250,248,.035),
+      0 0 0 1px rgba(0,229,255,.025);
     position:relative;
   }
   .chrome::before,
@@ -237,6 +248,8 @@
   @keyframes cbr-in{from{opacity:0} to{opacity:1}}
 
   header{
+    position:relative;
+    z-index:2;
     display:flex;
     align-items:center;
     justify-content:space-between;
@@ -250,15 +263,15 @@
   .brandlock{ min-width:0; }
   .brandlock b{
     display:block;
-    font:600 12px/1 'Inter',sans-serif;
+    font:600 12px/1 var(--font-futura);
     letter-spacing:.16em;
     text-transform:uppercase;
   }
   .brandlock span{
     display:block;
     margin-top:4px;
-    color:var(--soft);
-    font:500 10px/1.1 'JetBrains Mono',monospace;
+    color:var(--soft-high);
+    font:500 10px/1.1 var(--font-mono);
     letter-spacing:.06em;
     text-transform:uppercase;
     white-space:nowrap;
@@ -270,7 +283,7 @@
     align-items:center;
     gap:var(--u1);
     color:var(--soft);
-    font:500 10px/1 'JetBrains Mono',monospace;
+    font:500 10px/1 var(--font-mono);
     letter-spacing:.08em;
     text-transform:uppercase;
   }
@@ -289,6 +302,8 @@
   }
 
   main{
+    position:relative;
+    z-index:2;
     min-width:0;
     min-height:0;
     display:grid;
@@ -313,7 +328,7 @@
     gap:var(--u1);
     margin:0 0 var(--u2);
     color:var(--cyan);
-    font:600 11px/1 'JetBrains Mono',monospace;
+    font:600 11px/1 var(--font-mono);
     letter-spacing:.14em;
     text-transform:uppercase;
   }
@@ -350,31 +365,66 @@
     box-shadow:0 0 10px rgba(0,229,255,.6);
   }
 
+  .copy-plate{
+    position:relative;
+    width:min(100%,680px);
+    margin-top:var(--u3);
+    padding:18px 28px 20px 24px;
+    background:
+      linear-gradient(90deg,rgba(4,8,16,.91) 0%,rgba(5,10,19,.80) 72%,rgba(5,10,19,.28) 100%);
+    border-left:1px solid rgba(0,229,255,.72);
+    border-top:1px solid rgba(250,250,248,.11);
+    border-bottom:1px solid rgba(250,250,248,.10);
+    clip-path:polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,0 100%);
+    backdrop-filter:blur(8px) saturate(.88);
+    box-shadow:0 16px 44px rgba(0,0,0,.20);
+  }
+  .copy-plate::before{
+    content:"";
+    position:absolute;
+    left:7px; top:9px; bottom:9px;
+    width:1px;
+    background:linear-gradient(180deg,transparent,rgba(250,250,248,.22) 18%,rgba(250,250,248,.22) 82%,transparent);
+  }
+  .copy-plate::after{
+    content:"";
+    position:absolute;
+    top:8px; right:10px;
+    width:12px; height:12px;
+    opacity:.72;
+    background:
+      linear-gradient(var(--cyan),var(--cyan)) 50% 0/1px 12px no-repeat,
+      linear-gradient(var(--cyan),var(--cyan)) 0 50%/12px 1px no-repeat;
+  }
   .declaration{
-    max-width:38ch;
-    margin:var(--u3) 0 0;
-    font-family:'Inter',sans-serif;
+    max-width:34ch;
+    margin:0;
+    font-family:var(--font-futura);
     font-weight:500;
-    font-size:clamp(19px,1.9vw,25px);
-    line-height:1.32;
-    color:var(--paper);
+    font-size:clamp(22px,2.15vw,30px);
+    line-height:1.22;
+    letter-spacing:.005em;
+    color:#FFFDF8;
+    text-wrap:balance;
+    text-shadow:0 2px 16px rgba(0,0,0,.45);
   }
   .declaration strong{ font-weight:700; color:var(--cyan); }
 
   .divider{
     display:block;
-    width:64px;height:9px;
-    margin:var(--u3) 0 0;
-    color:var(--hairline-strong);
+    width:72px;height:9px;
+    margin:16px 0 0;
+    color:rgba(215,219,226,.72);
     overflow:visible;
   }
 
   .smallprint{
-    max-width:58ch;
-    margin:var(--u2) 0 0;
-    color:var(--soft);
-    font:400 13px/1.6 'Inter',sans-serif;
-    letter-spacing:.01em;
+    max-width:50ch;
+    margin:13px 0 0;
+    color:var(--soft-high);
+    font:400 clamp(14px,1.1vw,16px)/1.48 var(--font-futura);
+    letter-spacing:.012em;
+    text-shadow:0 2px 12px rgba(0,0,0,.56);
   }
 
   /* ---- Console: property/link index, styled as an arcade cabinet select panel ---- */
@@ -387,7 +437,30 @@
     box-shadow:var(--shadow);
     clip-path:polygon(14px 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,0 100%,0 14px);
     position:relative;
+    overflow:hidden;
   }
+  .console::before{
+    content:"";
+    position:absolute;
+    width:190px; height:190px;
+    right:-82px; top:-96px;
+    border:1px solid rgba(0,229,255,.11);
+    border-left-color:transparent;
+    border-radius:50%;
+    box-shadow:0 0 0 22px rgba(250,250,248,.018),0 0 0 42px rgba(250,250,248,.012);
+    pointer-events:none;
+  }
+  .console::after{
+    content:"";
+    position:absolute;
+    top:23px; right:21px;
+    width:28px; height:1px;
+    background:linear-gradient(90deg,transparent,rgba(250,250,248,.28),var(--cyan));
+    transform:rotate(-28deg);
+    transform-origin:right center;
+    pointer-events:none;
+  }
+  .console-head,.linkstack{position:relative;z-index:1}
   .console-head{
     display:flex;
     align-items:center;
@@ -395,7 +468,7 @@
     gap:var(--u2);
     padding:var(--u2) var(--u3);
     border-bottom:1px solid var(--hairline);
-    font:600 10px/1 'JetBrains Mono',monospace;
+    font:600 10px/1 var(--font-mono);
     letter-spacing:.1em;
     text-transform:uppercase;
   }
@@ -430,7 +503,7 @@
     width:32px;height:32px;
     display:grid;place-items:center;
     border:1px solid var(--hairline-strong);
-    font:600 10px/1 'JetBrains Mono',monospace;
+    font:600 10px/1 var(--font-mono);
     letter-spacing:.02em;
     background:rgba(0,0,0,.22);
     color:var(--paper);
@@ -440,8 +513,8 @@
   .link-copy .text{min-width:0}
   .link-copy b{
     display:block;
-    font-family:'Aldrich','Inter',sans-serif;
-    font-weight:400;
+    font-family:var(--font-futura);
+    font-weight:500;
     font-size:16px;
     line-height:1.15;
     letter-spacing:.01em;
@@ -452,13 +525,13 @@
   .link-copy span.meta{
     display:block;
     margin-top:3px;
-    color:var(--soft);
-    font:500 10px/1.2 'Inter',sans-serif;
+    color:#BBC2CC;
+    font:500 10px/1.2 var(--font-futura);
     letter-spacing:.04em;
     text-transform:uppercase;
   }
   .arrow{
-    font:600 13px/1 'JetBrains Mono',monospace;
+    font:600 13px/1 var(--font-mono);
     color:var(--soft);
     transition:transform var(--dur-fast) var(--ease-standard),color var(--dur-fast) var(--ease-standard);
   }
@@ -466,6 +539,8 @@
 
   /* ---- Footer: brand line + Status Rail telemetry (Chrome Primitive) ---- */
   footer{
+    position:relative;
+    z-index:2;
     display:flex;
     flex-direction:column;
     border-top:1px solid var(--hairline);
@@ -479,7 +554,7 @@
     padding:var(--u1) var(--u3);
     border-bottom:1px solid var(--hairline);
     color:var(--soft);
-    font:500 10px/1 'JetBrains Mono',monospace;
+    font:500 10px/1 var(--font-mono);
     letter-spacing:.06em;
     text-transform:uppercase;
   }
@@ -495,7 +570,7 @@
   }
   .footer-left{
     color:var(--soft);
-    font:400 10px/1.6 'Inter',sans-serif;
+    font:400 10px/1.6 var(--font-futura);
     text-transform:uppercase;
     letter-spacing:.08em;
   }
@@ -510,7 +585,7 @@
     padding:8px 14px;
     border:1px solid var(--hairline-strong);
     background:rgba(0,0,0,.22);
-    font:500 10px/1 'Inter',sans-serif;
+    font:500 10px/1 var(--font-futura);
     letter-spacing:.06em;
     text-transform:uppercase;
     transition:border-color var(--dur-fast) var(--ease-standard),background var(--dur-fast) var(--ease-standard);
@@ -533,7 +608,7 @@
     writing-mode:vertical-rl;
     transform:rotate(180deg);
     white-space:nowrap;
-    font:500 9px/1 'JetBrains Mono',monospace;
+    font:500 9px/1 var(--font-mono);
     letter-spacing:.16em;
     text-transform:uppercase;
     pointer-events:none;
@@ -547,6 +622,76 @@
     margin:12px 0;
     opacity:.85;
   }
+
+
+  /* Intaglio Galactica: etched astronomical construction lines, kept subordinate
+     to Manhattan Pro's legibility and modular structure. */
+  .orbit-etch{
+    position:absolute;
+    z-index:0;
+    left:34%; right:54px; top:72px; bottom:112px;
+    pointer-events:none;
+    overflow:hidden;
+    opacity:.62;
+  }
+  .orbit-etch .orbit{
+    position:absolute;
+    border:1px solid rgba(250,250,248,.10);
+    border-radius:50%;
+  }
+  .orbit-etch .orbit-a{
+    width:520px;height:520px;right:-104px;top:-152px;
+    border-left-color:transparent;
+    border-bottom-color:rgba(0,229,255,.13);
+    transform:rotate(14deg);
+  }
+  .orbit-etch .orbit-b{
+    width:336px;height:336px;right:62px;top:2px;
+    border-top-color:transparent;
+    border-right-color:rgba(0,229,255,.12);
+    transform:rotate(-19deg);
+  }
+  .orbit-etch .tangent{
+    position:absolute;
+    width:280px;height:1px;
+    right:22px;top:116px;
+    background:linear-gradient(90deg,transparent,rgba(250,250,248,.12) 28%,rgba(0,229,255,.18),transparent);
+    transform:rotate(-24deg);
+    transform-origin:right center;
+  }
+  .orbit-etch .node{
+    position:absolute;
+    width:5px;height:5px;
+    border:1px solid rgba(0,229,255,.54);
+    border-radius:50%;
+    box-shadow:0 0 0 3px rgba(0,229,255,.035);
+  }
+  .orbit-etch .node-a{right:179px;top:89px}
+  .orbit-etch .node-b{right:90px;top:225px}
+  .orbit-etch .reg{
+    position:absolute;
+    width:18px;height:18px;
+    right:8px;bottom:14px;
+    opacity:.44;
+    background:
+      linear-gradient(rgba(250,250,248,.42),rgba(250,250,248,.42)) 50% 0/1px 18px no-repeat,
+      linear-gradient(rgba(250,250,248,.42),rgba(250,250,248,.42)) 0 50%/18px 1px no-repeat,
+      radial-gradient(circle,transparent 0 4px,rgba(0,229,255,.34) 4.5px,transparent 5.5px);
+  }
+
+  /* Purpose-built registration marks: similar grammar, different function. */
+  .chrome > .cbr-tr{width:15px;height:15px;top:7px;right:7px}
+  .chrome > .cbr-tr::before{height:1px;width:15px}
+  .chrome > .cbr-tr::after{width:1px;height:15px}
+  .chrome > .cbr-bl{width:12px;height:12px;bottom:7px;left:7px}
+  .chrome > .cbr-bl::before{height:2px;width:12px}
+  .chrome > .cbr-bl::after{width:2px;height:12px}
+  .console > .cbr-tr{width:8px;height:14px;top:6px;right:6px}
+  .console > .cbr-tr::before{height:1px;width:8px}
+  .console > .cbr-tr::after{width:1px;height:14px}
+  .console > .cbr-bl{width:14px;height:8px;bottom:6px;left:6px}
+  .console > .cbr-bl::before{height:1px;width:14px}
+  .console > .cbr-bl::after{width:1px;height:8px}
 
   @media(prefers-reduced-motion:reduce){
     html{scroll-behavior:auto}
@@ -565,6 +710,8 @@
     main{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr);align-items:end;padding:var(--u4) var(--u3) var(--u2);gap:var(--u2)}
     .console{justify-self:stretch;width:100%;max-width:none;align-self:end}
     .ticker{display:none}
+    .orbit-etch{left:28%;right:10px;opacity:.34}
+    .copy-plate{width:min(100%,620px)}
     .title-logo{width:clamp(220px,46vw,390px)}
     .footer-main{align-items:flex-start;flex-direction:column}
     .network{justify-content:flex-start}
@@ -591,9 +738,19 @@
     .eyebrow::before{width:20px}
     .title-logo{width:min(72vw,270px)}
     .h1-underline{width:24px;height:2px;margin-top:3px}
-    .declaration{max-width:34ch;margin:9px 0 0;font-size:15px;line-height:1.22}
-    .divider{width:48px;margin-top:9px}
-    .smallprint{max-width:46ch;margin-top:7px;font-size:10px;line-height:1.34}
+    .orbit-etch{display:none}
+    .copy-plate{
+      width:100%;
+      margin-top:8px;
+      padding:9px 13px 10px 14px;
+      background:linear-gradient(90deg,rgba(4,8,16,.92),rgba(5,10,19,.76) 82%,rgba(5,10,19,.40));
+      clip-path:polygon(0 0,calc(100% - 11px) 0,100% 11px,100% 100%,0 100%);
+    }
+    .copy-plate::before{left:5px;top:6px;bottom:6px}
+    .copy-plate::after{width:8px;height:8px;top:5px;right:6px;background:linear-gradient(var(--cyan),var(--cyan)) 50% 0/1px 8px no-repeat,linear-gradient(var(--cyan),var(--cyan)) 0 50%/8px 1px no-repeat}
+    .declaration{max-width:34ch;margin:0;font-size:15.5px;line-height:1.2}
+    .divider{width:48px;margin-top:7px}
+    .smallprint{max-width:46ch;margin-top:6px;font-size:10.5px;line-height:1.32}
 
     .console{align-self:end}
     .console-head{padding:7px 9px;font-size:8px;letter-spacing:.07em}
@@ -635,7 +792,8 @@
   @media(max-width:560px) and (max-height:720px){
     main{padding-top:8px;gap:7px}
     .title-logo{width:min(64vw,235px)}
-    .declaration{margin-top:6px;font-size:13.5px;line-height:1.18}
+    .copy-plate{margin-top:5px;padding:6px 10px 7px 11px}
+    .declaration{margin:0;font-size:13.5px;line-height:1.16}
     .divider,.smallprint{display:none}
     .console-head{padding:5px 8px}
     .linkrow{min-height:38px;padding-top:4px;padding-bottom:4px}
@@ -660,7 +818,8 @@
     .eyebrow{margin-bottom:4px;font-size:7.5px}
     .title-logo{width:min(30vw,220px)}
     .h1-underline{margin-top:2px}
-    .declaration{margin-top:6px;font-size:12px;line-height:1.18}
+    .copy-plate{margin-top:5px;padding:5px 9px 6px 10px}
+    .declaration{margin:0;font-size:12px;line-height:1.16}
     .divider,.smallprint{display:none}
     .console{align-self:end}
     .console-head{padding:5px 8px;font-size:7.5px}
@@ -688,6 +847,10 @@
   <div class="chrome">
     <i class="cbr cbr-tr" aria-hidden="true"></i>
     <i class="cbr cbr-bl" aria-hidden="true"></i>
+    <div class="orbit-etch" aria-hidden="true">
+      <i class="orbit orbit-a"></i><i class="orbit orbit-b"></i>
+      <i class="tangent"></i><i class="node node-a"></i><i class="node node-b"></i><i class="reg"></i>
+    </div>
     <div class="ticker" aria-hidden="true">BRAZEN STUDIOS / FRYMATIC / NODE FTS-A7C9-01 / LIVERMORE → ELSEWHERE</div>
     <header>
       <div class="brandlock">
@@ -705,9 +868,11 @@
         </p>
         <h1 id="title" class="title-logo"><img src="frymatic-title.png" alt="frymatic"></h1>
         <span class="h1-underline" aria-hidden="true"></span>
-        <p class="declaration">Games, systems, sound, publishing, and <strong>strange machinery that insists on becoming real.</strong></p>
-        <svg class="divider" viewBox="0 0 64 9" aria-hidden="true"><path d="M0 4.5H24L29 1L34 8L39 4.5H64" stroke="currentColor" stroke-width="1" fill="none"/></svg>
-        <p class="smallprint">A live index of current work, experiments, playable properties, recordings, and transmissions from the Brazen Studios network.</p>
+        <div class="copy-plate">
+          <p class="declaration">Games, systems, sound, publishing, and <strong>strange machinery that insists on becoming real.</strong></p>
+          <svg class="divider" viewBox="0 0 72 9" aria-hidden="true"><path d="M0 4.5H27L32 1L37 8L42 4.5H72" stroke="currentColor" stroke-width="1" fill="none"/></svg>
+          <p class="smallprint">A live index of current work, experiments, playable properties, recordings, and transmissions from the Brazen Studios network.</p>
+        </div>
       </section>
 
       <aside class="console" aria-label="Current properties and channels">
@@ -740,7 +905,7 @@
             <span class="link-copy"><span class="led led-off-node" aria-hidden="true"></span><span class="text"><b>SoundCloud</b><span class="meta">music + audio experiments</span></span></span>
             <span class="arrow">↗</span>
           </a>
-          <a class="linkrow" href="https://open.spotify.com/episode/2eqoxhbQeGRqBv6AeEtAYS" target="_blank" rel="noopener">
+          <a class="linkrow" href="https://open.spotify.com/episode/2CsPBWyQutYgrA9nvq1hKe?si=lgDb4dr3Q2qL9r3gy7U17Q" target="_blank" rel="noopener">
             <span class="link-icon">SP</span>
             <span class="link-copy"><span class="led led-off-node" aria-hidden="true"></span><span class="text"><b>Spotify</b><span class="meta">featured transmission</span></span></span>
             <span class="arrow">↗</span>
