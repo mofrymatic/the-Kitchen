@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Water Report — Field Capture</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap');
+
+  :root {
+    --bg: #0a0e14;
+    --surface: #121820;
+    --surface2: #1a2330;
+    --border: #1e2d3d;
+    --accent: #00c2ff;
+    --accent2: #00ff9d;
+    --warn: #ff6b35;
+    --text: #d4e8f0;
+    --muted: #4a6478;
+    --tag-active: #00c2ff22;
+    --tag-border-active: #00c2ff;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 0 60px;
+    overflow-x: hidden;
+  }
+
+  /* Scanline overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,194,255,0.015) 2px,
+      rgba(0,194,255,0.015) 4px
+    );
+    pointer-events: none;
+    z-index: 100;
+  }
+
+  /* Header */
+  header {
+    width: 100%;
+    max-width: 480px;
+    padding: 24px 20px 0;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .logo-block {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .logo-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    color: var(--accent);
+    text-transform: uppercase;
+    opacity: 0.8;
+  }
+
+  .logo-title {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    color: #fff;
+  }
+
+  .status-dot {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    color: var(--accent2);
+    letter-spacing: 0.12em;
+    padding-top: 4px;
+  }
+
+  .status-dot::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent2);
+    animation: pulse 2s ease-in-out infinite;
+    flex-shrink: 0;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0,255,157,0.4); }
+    50% { opacity: 0.6; box-shadow: 0 0 0 5px rgba(0,255,157,0); }
+  }
+
+  /* Main container */
+  main {
+    width: 100%;
+    max-width: 480px;
+    padding: 20px 16px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* Section card */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    position: relative;
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .step-num {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--accent);
+    background: rgba(0,194,255,0.1);
+    border: 1px solid rgba(0,194,255,0.3);
+    border-radius: 4px;
+    padding: 2px 6px;
+    letter-spacing: 0.08em;
+  }
+
+  .card-title {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #fff;
+  }
+
+  /* Image capture zone */
+  .capture-zone {
+    position: relative;
+    margin: 16px;
+    border: 2px dashed var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface2);
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    min-height: 220px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .capture-zone.has-image {
+    border-style: solid;
+    border-color: var(--accent);
+  }
+
+  .capture-zone:active { background: #1e2d3d; }
+
+  .capture-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 32px 20px;
+    text-align: center;
+    pointer-events: none;
+  }
+
+  .capture-icon {
+    width: 56px; height: 56px;
+    border: 2px solid var(--muted);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    color: var(--muted);
+    transition: border-color 0.2s, color 0.2s;
+  }
+
+  .capture-zone:hover .capture-icon,
+  .capture-zone:focus .capture-icon {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .capture-main-text {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .capture-sub-text {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+
+  #preview-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    position: absolute;
+    inset: 0;
+    display: none;
+    border-radius: calc(var(--radius-sm) - 2px);
+  }
+
+  #preview-img.visible { display: block; }
+
+  .img-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(10,14,20,0.85) 0%, transparent 50%);
+    display: none;
+    align-items: flex-end;
+    padding: 12px;
+    pointer-events: none;
+  }
+
+  .img-overlay.visible { display: flex; }
+
+  .img-overlay-badge {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    color: var(--accent2);
+    background: rgba(0,0,0,0.6);
+    border: 1px solid var(--accent2);
+    border-radius: 4px;
+    padding: 3px 8px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  /* Camera buttons row */
+  .capture-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding: 0 16px 16px;
+  }
+
+  .btn-capture {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px;
+    border-radius: var(--radius-sm);
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid;
+    transition: all 0.15s;
+    letter-spacing: 0.04em;
+  }
+
+  .btn-camera {
+    background: rgba(0,194,255,0.08);
+    border-color: rgba(0,194,255,0.4);
+    color: var(--accent);
+  }
+
+  .btn-camera:active {
+    background: rgba(0,194,255,0.18);
+    transform: scale(0.97);
+  }
+
+  .btn-album {
+    background: rgba(255,255,255,0.04);
+    border-color: var(--border);
+    color: var(--text);
+  }
+
+  .btn-album:active {
+    background: rgba(255,255,255,0.08);
+    transform: scale(0.97);
+  }
+
+  /* Hidden inputs */
+  #input-camera, #input-album { display: none; }
+
+  /* Tag grid */
+  .tag-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding: 16px;
+  }
+
+  .tag-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 18px 12px;
+    border-radius: var(--radius-sm);
+    background: var(--surface2);
+    border: 2px solid var(--border);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: 'Syne', sans-serif;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .tag-btn::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    border-radius: inherit;
+    transition: opacity 0.15s;
+  }
+
+  .tag-emoji { font-size: 28px; line-height: 1; pointer-events: none; }
+  .tag-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    pointer-events: none;
+    transition: color 0.15s;
+  }
+
+  .tag-btn.selected {
+    border-color: var(--accent);
+    background: var(--tag-active);
+  }
+
+  .tag-btn.selected .tag-label { color: var(--accent); }
+
+  .tag-btn.selected::after {
+    background: radial-gradient(circle at center, rgba(0,194,255,0.1), transparent 70%);
+    opacity: 1;
+  }
+
+  .tag-btn:active { transform: scale(0.95); }
+
+  .check-mark {
+    position: absolute;
+    top: 8px; right: 8px;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    color: #000;
+    font-weight: 700;
+  }
+
+  .tag-btn.selected .check-mark { display: flex; }
+
+  /* Note field */
+  .note-wrap { padding: 16px; }
+
+  textarea#note-field {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    resize: none;
+    min-height: 90px;
+    transition: border-color 0.2s;
+    outline: none;
+    letter-spacing: 0.02em;
+  }
+
+  textarea#note-field::placeholder { color: var(--muted); }
+  textarea#note-field:focus { border-color: rgba(0,194,255,0.5); }
+
+  /* Location fields */
+  .location-fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding: 0 16px 16px;
+  }
+
+  .field-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .field-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding-left: 2px;
+  }
+
+  input.field-input {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+  }
+
+  input.field-input::placeholder { color: var(--muted); }
+  input.field-input:focus { border-color: rgba(0,194,255,0.5); }
+
+  /* Submit */
+  .submit-wrap {
+    padding: 0 16px;
+  }
+
+  .btn-submit {
+    width: 100%;
+    padding: 16px;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-submit::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 60%);
+  }
+
+  .btn-submit:active { transform: scale(0.98); background: #009fd4; }
+
+  .btn-submit:disabled {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .btn-submit:disabled::before { display: none; }
+
+  /* Validation hints */
+  .hint-row {
+    display: flex;
+    gap: 10px;
+    padding: 10px 16px 0;
+    flex-wrap: wrap;
+  }
+
+  .hint-chip {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.2s;
+  }
+
+  .hint-chip.done {
+    border-color: var(--accent2);
+    color: var(--accent2);
+    background: rgba(0,255,157,0.06);
+  }
+
+  .hint-chip .chip-dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius-sm);
+    padding: 12px 20px;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    white-space: nowrap;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 200;
+    letter-spacing: 0.08em;
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* Divider */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 0 16px;
+  }
+
+  /* GPS strip */
+  .gps-strip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: rgba(0,194,255,0.04);
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .gps-strip:active { background: rgba(0,194,255,0.1); }
+
+  .gps-icon { font-size: 13px; }
+
+  .gps-text {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    flex: 1;
+  }
+
+  .gps-text span { color: var(--accent); }
+
+  .gps-btn-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-block">
+    <span class="logo-label">Somalia Water Triage</span>
+    <span class="logo-title">💧 Field Report</span>
+  </div>
+  <div class="status-dot">LIVE</div>
+</header>
+
+<main>
+
+  <!-- IMAGE CAPTURE -->
+  <div class="card">
+    <div class="card-header">
+      <span class="step-num">01</span>
+      <span class="card-title">Capture Image</span>
+    </div>
+
+    <div class="capture-zone" id="capture-zone" tabindex="0" role="button" aria-label="Tap to open camera">
+      <img id="preview-img" alt="Captured field image" />
+      <div class="img-overlay" id="img-overlay">
+        <span class="img-overlay-badge">✓ Image Ready</span>
+      </div>
+      <div class="capture-placeholder" id="capture-placeholder">
+        <div class="capture-icon">📷</div>
+        <span class="capture-main-text">Tap to take a photo</span>
+        <span class="capture-sub-text">Or use buttons below</span>
+      </div>
+    </div>
+
+    <div class="capture-actions">
+      <button class="btn-capture btn-camera" onclick="document.getElementById('input-camera').click()">
+        📷 Camera
+      </button>
+      <button class="btn-capture btn-album" onclick="document.getElementById('input-album').click()">
+        🖼 Album
+      </button>
+    </div>
+
+    <!-- Hidden file inputs -->
+    <input type="file" id="input-camera" accept="image/*" capture="environment">
+    <input type="file" id="input-album" accept="image/*">
+  </div>
+
+  <!-- ISSUE TAG -->
+  <div class="card">
+    <div class="card-header">
+      <span class="step-num">02</span>
+      <span class="card-title">Tag Issue Type</span>
+    </div>
+
+    <div class="tag-grid">
+      <button class="tag-btn" data-value="water_quality" onclick="selectTag(this)" aria-pressed="false">
+        <span class="check-mark">✓</span>
+        <span class="tag-emoji">💧</span>
+        <span class="tag-label">Water Quality</span>
+      </button>
+      <button class="tag-btn" data-value="sanitation" onclick="selectTag(this)" aria-pressed="false">
+        <span class="check-mark">✓</span>
+        <span class="tag-emoji">💩</span>
+        <span class="tag-label">Sanitation</span>
+      </button>
+      <button class="tag-btn" data-value="infrastructure" onclick="selectTag(this)" aria-pressed="false">
+        <span class="check-mark">✓</span>
+        <span class="tag-emoji">💥</span>
+        <span class="tag-label">Infrastructure</span>
+      </button>
+      <button class="tag-btn" data-value="health_risk" onclick="selectTag(this)" aria-pressed="false">
+        <span class="check-mark">✓</span>
+        <span class="tag-emoji">🩸</span>
+        <span class="tag-label">Health Risk</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- LOCATION + NOTE -->
+  <div class="card">
+    <div class="card-header">
+      <span class="step-num">03</span>
+      <span class="card-title">Location & Note</span>
+    </div>
+
+    <!-- GPS auto-fill -->
+    <div class="gps-strip" id="gps-strip" onclick="getGPS()">
+      <span class="gps-icon">📍</span>
+      <span class="gps-text" id="gps-text">Tap to auto-fill GPS coordinates</span>
+      <span class="gps-btn-label">Detect</span>
+    </div>
+
+    <div class="location-fields">
+      <div class="field-wrap">
+        <label class="field-label" for="field-district">District</label>
+        <input class="field-input" type="text" id="field-district" name="entry.DISTRICT" placeholder="e.g. Hodan">
+      </div>
+      <div class="field-wrap">
+        <label class="field-label" for="field-city">City</label>
+        <input class="field-input" type="text" id="field-city" name="entry.CITY" placeholder="e.g. Mogadishu">
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="note-wrap">
+      <textarea id="note-field" name="entry.NOTE" placeholder="Short field note — describe what you see. Long queue, damaged pipe, discoloured water…" maxlength="280"></textarea>
+    </div>
+  </div>
+
+  <!-- SUBMIT -->
+  <div class="card" style="background: transparent; border: none;">
+
+    <!-- Validation chips -->
+    <div class="hint-row">
+      <div class="hint-chip" id="chip-img"><span class="chip-dot"></span>Image</div>
+      <div class="hint-chip" id="chip-tag"><span class="chip-dot"></span>Tag</div>
+      <div class="hint-chip" id="chip-location"><span class="chip-dot"></span>Location</div>
+    </div>
+
+    <div style="height:12px"></div>
+
+    <div class="submit-wrap">
+      <button class="btn-submit" id="btn-submit" onclick="handleSubmit()">
+        <span>Submit Report</span>
+        <span>→</span>
+      </button>
+    </div>
+  </div>
+
+</main>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+
+<script>
+  // ---- State ----
+  let selectedTag = null;
+  let capturedFile = null;
+  let capturedDataURL = null;
+  let gpsCoords = null;
+
+  // ---- Google Form config (update these) ----
+  const FORM_ACTION = 'https://docs.google.com/forms/d/e/YOUR_FORM_ID/formResponse';
+  // Field names will look like: entry.123456789
+  // Add your entry IDs here once you have them:
+  const FIELDS = {
+    district:  'entry.DISTRICT_ID',
+    city:      'entry.CITY_ID',
+    note:      'entry.NOTE_ID',
+    tag:       'entry.TAG_ID',
+    lat:       'entry.LAT_ID',
+    lon:       'entry.LON_ID',
+  };
+
+  // ---- Image Capture ----
+  function handleImageFile(file) {
+    if (!file || !file.type.startsWith('image/')) return;
+    capturedFile = file;
+    const reader = new FileReader();
+    reader.onload = e => {
+      capturedDataURL = e.target.result;
+      const img = document.getElementById('preview-img');
+      img.src = capturedDataURL;
+      img.classList.add('visible');
+      document.getElementById('img-overlay').classList.add('visible');
+      document.getElementById('capture-placeholder').style.display = 'none';
+      document.getElementById('capture-zone').classList.add('has-image');
+      validate();
+    };
+    reader.readAsDataURL(file);
+  }
+
+  document.getElementById('input-camera').addEventListener('change', e => handleImageFile(e.target.files[0]));
+  document.getElementById('input-album').addEventListener('change',  e => handleImageFile(e.target.files[0]));
+
+  // Tap the preview image to re-open camera
+  document.getElementById('capture-zone').addEventListener('click', function(e) {
+    if (capturedFile) {
+      document.getElementById('input-camera').click();
+    } else {
+      document.getElementById('input-camera').click();
+    }
+  });
+
+  // ---- Tag selection ----
+  function selectTag(btn) {
+    document.querySelectorAll('.tag-btn').forEach(b => {
+      b.classList.remove('selected');
+      b.setAttribute('aria-pressed', 'false');
+    });
+    btn.classList.add('selected');
+    btn.setAttribute('aria-pressed', 'true');
+    selectedTag = btn.dataset.value;
+    validate();
+  }
+
+  // ---- GPS ----
+  function getGPS() {
+    const strip = document.getElementById('gps-strip');
+    const text = document.getElementById('gps-text');
+    text.innerHTML = 'Detecting location…';
+    if (!navigator.geolocation) {
+      text.innerHTML = 'GPS not available on this device';
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        gpsCoords = { lat: pos.coords.latitude.toFixed(4), lon: pos.coords.longitude.toFixed(4) };
+        text.innerHTML = `<span>${gpsCoords.lat}, ${gpsCoords.lon}</span>`;
+        validate();
+        showToast('📍 Location captured');
+      },
+      err => {
+        text.innerHTML = 'Could not get location — enter manually';
+      },
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  }
+
+  // Location fields auto-validate
+  document.getElementById('field-district').addEventListener('input', validate);
+  document.getElementById('field-city').addEventListener('input', validate);
+
+  // ---- Validation ----
+  function validate() {
+    const hasImg = !!capturedFile;
+    const hasTag = !!selectedTag;
+    const hasLocation = document.getElementById('field-district').value.trim() ||
+                        document.getElementById('field-city').value.trim() ||
+                        gpsCoords;
+
+    setChip('chip-img', hasImg);
+    setChip('chip-tag', hasTag);
+    setChip('chip-location', !!hasLocation);
+
+    const ready = hasImg && hasTag && hasLocation;
+    document.getElementById('btn-submit').disabled = !ready;
+    return ready;
+  }
+
+  function setChip(id, done) {
+    const el = document.getElementById(id);
+    el.classList.toggle('done', done);
+  }
+
+  // initial state
+  validate();
+
+  // ---- Submit ----
+  function handleSubmit() {
+    if (!validate()) return;
+
+    const district = document.getElementById('field-district').value.trim();
+    const city = document.getElementById('field-city').value.trim();
+    const note = document.getElementById('note-field').value.trim();
+
+    // Build hidden form and submit to Google Forms
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = FORM_ACTION;
+    form.target = '_blank'; // opens confirmation in new tab; change to hidden iframe if you prefer silent submit
+
+    const fields = {
+      [FIELDS.tag]:      selectedTag,
+      [FIELDS.district]: district,
+      [FIELDS.city]:     city,
+      [FIELDS.note]:     note,
+      [FIELDS.lat]:      gpsCoords ? gpsCoords.lat : '',
+      [FIELDS.lon]:      gpsCoords ? gpsCoords.lon : '',
+    };
+
+    for (const [name, value] of Object.entries(fields)) {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = name;
+      input.value = value;
+      form.appendChild(input);
+    }
+
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+
+    showToast('✅ Report submitted');
+    // Optionally reset after a delay:
+    // setTimeout(resetForm, 2000);
+  }
+
+  function resetForm() {
+    capturedFile = null;
+    capturedDataURL = null;
+    selectedTag = null;
+    gpsCoords = null;
+
+    const img = document.getElementById('preview-img');
+    img.src = '';
+    img.classList.remove('visible');
+    document.getElementById('img-overlay').classList.remove('visible');
+    document.getElementById('capture-placeholder').style.display = 'flex';
+    document.getElementById('capture-zone').classList.remove('has-image');
+    document.querySelectorAll('.tag-btn').forEach(b => b.classList.remove('selected'));
+    document.getElementById('field-district').value = '';
+    document.getElementById('field-city').value = '';
+    document.getElementById('note-field').value = '';
+    document.getElementById('gps-text').innerHTML = 'Tap to auto-fill GPS coordinates';
+    document.getElementById('input-camera').value = '';
+    document.getElementById('input-album').value = '';
+    validate();
+  }
+
+  // ---- Toast ----
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+</script>
+</body>
+</html>
