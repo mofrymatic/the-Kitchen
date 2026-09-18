@@ -23,13 +23,11 @@
 <link rel="preload" as="image" href="fts-arcade-fixture-atlas.png">
 <link rel="preload" as="image" href="the-Cabinet.png">
 <link rel="preload" as="audio" href="crowd.mp3" type="audio/mpeg">
-<title>FTS Arcade Floor 0.9.2 Flush Koi</title>
+<title>FTS Arcade Floor 0.9.0 Spatial Crowd</title>
 <!-- 0.5.2 art fit: external world/fixture/screen atlases + Cabinets01-Cabinets04, exact per-CRT crops. -->
 <!-- 0.7.0 feel pass: outer ring 430->510, ceiling 132->192, jump 132->156. Sprint stays 22 mph. Cabinet layout frozen. -->
 <!-- 0.8.1 movement pass: threshold-based Apex-inspired slide, landing-slide buffer, momentum-preserving slide jumps and air steering. -->
 <!-- 0.9.0 soundscape pass: four cardinal crowd zones, HRTF panning, opposite-quadrant muting, random-offset adjacent-zone handoffs. -->
-<!-- 0.9.1 roof pass: procedural celestial-koi point schools orbit just beneath the ceiling annulus; depth-tested, no sprite assets. -->
-<!-- 0.9.2 flush-koi pass: schools now lie ON the ceiling plane and span the whole annulus (square core hole respected). No more centroid-frame collapse. -->
 
 <!-- ── FA3D Meta ─────────────────────────────────────────── -->
 <meta name="description" content="FTS Arcade - a first-person 2.5D cabinet portal hub.">
@@ -104,7 +102,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;image-renderi
 <div id="brand"><b>FTS ARCADE</b>CIRCULAR FLOOR / A-Z CABINET PORTAL HUB</div>
 <div id="prompt"></div>
 <div id="toolbar"><button id="mapBtn">MAP: OFF</button><button id="audioBtn">AUDIO: OFF</button></div>
-<div id="lock"><div><b>FTS ARCADE</b><br><span class="pink">THE RING</span><br><br>WASD MOVE / MOUSE LOOK / SHIFT RUN<br>SPACE JUMP / CTRL OR C CROUCH + SLIDE<br>E OR CLICK INTERACT / M MAP / N SPATIAL AUDIO<br><span style="opacity:.55">DEV: K KALEIDO / P PLANE BACKEND / O KOI</span><br><br>CLICK TO WALK IN</div></div>
+<div id="lock"><div><b>FTS ARCADE</b><br><span class="pink">THE RING</span><br><br>WASD MOVE / MOUSE LOOK / SHIFT RUN<br>SPACE JUMP / CTRL OR C CROUCH + SLIDE<br>E OR CLICK INTERACT / M MAP / N SPATIAL AUDIO<br><span style="opacity:.55">DEV: K KALEIDO / P PLANE BACKEND</span><br><br>CLICK TO WALK IN</div></div>
 <div id="modal"><div id="modalCard"><div id="modalEyebrow">LEAVE FTS ARCADE?</div><div id="modalTitle"></div><div id="modalCopy"></div><div id="modalActions"><button id="cancelBtn">STAY HERE</button><button id="confirmBtn">LEAVE ARCADE</button></div></div></div>
 <div id="touchMove"><div id="touchKnob"></div></div><button id="touchCrouch">SLIDE</button><button id="touchAct">ENTER</button>
 <script>
@@ -114,7 +112,7 @@ const RUNTIME_ERRORS=[];
 addEventListener('error',e=>{if(e.error||e.message)RUNTIME_ERRORS.push(String(e.error&&e.error.stack||e.message||e.error));});
 addEventListener('unhandledrejection',e=>RUNTIME_ERRORS.push(String(e.reason&&e.reason.stack||e.reason||'unhandled rejection')));
 
-const VERSION='fts-arcade-floor-0.9.2-flush-koi';
+const VERSION='fts-arcade-floor-0.9.0-spatial-crowd';
 const TAU=Math.PI*2, DEG=Math.PI/180;
 // Dimensional contract: 1 engine unit = 1 inch.
 // =============================================================================
@@ -225,106 +223,6 @@ function crowdQuadrantAt(x,y){
 }
 function crowdDesiredFor(q){return CROWD_QUADRANTS.filter(k=>k!==CROWD_OPPOSITE[q]);}
 
-// 0.9.2 FLUSH KOI ROOF -------------------------------------------------------
-// 0.9.1 re-expressed every point in its school's centroid frame and then scaled
-// the radial deviation by 0.08 into a 16in vertical slab. That crushed a ring-wide
-// swirl into a thin filament hanging under the ceiling.
-//
-// MEASURED, not assumed: the source equation is already a donut. Over 600 s of
-// sketch time hypot(x,y) spans 57.4..139.6 (median 99), and each school is a ~105
-// degree arc; the two schools sit on opposite sides. So 0.9.2 keeps the sketch's
-// polar ANGLE untouched and maps its RADIUS linearly onto the real ceiling annulus.
-//
-// THE ANNULUS IS NOT ROUND: the outer edge is a 32-gon (r=RING.outer) but the inner
-// edge is a SQUARE of half-side RING.inner (see innerSquarePoint). Its radius runs
-// 118 on the axes to ~167 on the diagonals, so the inner limit is angle-dependent.
-//
-// Points sit ON the ceiling plane (CELESTIAL_KOI.flush inches below it). Tunables
-// are N=1 first-pass hypotheses: judge them by walking under the roof.
-const CELESTIAL_KOI={
- enabled:true,
- sourceCount:10000,
- sampleCount:Math.max(200,Math.min(10000,(+new URLSearchParams(location.search).get('koiN'))||4000)), // 960 -> 4000; ?koiN=NNNN overrides (200..10000). ~0.25 ms per 1000 pts measured, headless
- sketchRLo:62,         // sketch radius that lands on the inner limit (envelope 57.4..139.6; <0.5% clip)
- sketchRHi:136,        // sketch radius that lands on the outer limit (p5..p95 = 73..125 -> ~70% of width)
- marginIn:22,          // in, measured along the ray, kept clear of the core walls
- marginOut:20,         // in, kept clear of the outer wall
- flush:1.2,            // in below the ceiling plane
- timeScale:.18,
- pointAlpha:.34,
- streakAlpha:.085,
- pointWorld:2.1,       // world-space dot radius (in)
- minPointPx:.55,
- maxPointPx:1.7,
- streakWorld:9,        // in of trail behind each streaked point
- maxStreakPx:7,
- slackAbs:8,           // depth-test tolerance: abs (in) + rel * depth
- slackRel:.06
-};
-const CELESTIAL_KOI_MAP={outerR:RING.outer*Math.cos(Math.PI/RING.sides)-CELESTIAL_KOI.marginOut};
-function buildCelestialKoiSamples(){
- const out=[],n=CELESTIAL_KOI.sampleCount,max=CELESTIAL_KOI.sourceCount-1;
- for(let j=0;j<n;j++){
-  const i=Math.round((j/(n-1))*max),y=i/299,k=(4+Math.cos(y))*Math.cos(i/7),e=y/5-11,d=Math.hypot(k,e)-6;
-  out.push({
-   index:j,i,y,k,e,d,school:i&1,
-   baseQ:99+3*Math.sin(k*2)+(y/23)*k*(e+Math.sin(-d*4)),
-   d2:d*d,
-   cBase:d/4+(i&1)*9,
-   shimmer:.72+.28*Math.sin(i*12.9898)
-  });
- }
- return out;
-}
-const CELESTIAL_KOI_SAMPLES=buildCelestialKoiSamples();
-const CELESTIAL_KOI_FRAME={time:NaN,x:new Float32Array(CELESTIAL_KOI.sampleCount),y:new Float32Array(CELESTIAL_KOI.sampleCount)};
-const CELESTIAL_KOI_STATS={visible:0,streaks:0};
-function setCelestialKoi(v){CELESTIAL_KOI.enabled=!!v;return CELESTIAL_KOI.enabled;}
-function toggleCelestialKoi(){return setCelestialKoi(!CELESTIAL_KOI.enabled);}
-// Sketch-space positions for one instant. Cached per time so tests and paint agree.
-function updateCelestialKoiFrame(time){
- const F=CELESTIAL_KOI_FRAME;if(F.time===time)return F;F.time=time;
- for(const s of CELESTIAL_KOI_SAMPLES){
-  const q=s.baseQ+s.d2*Math.sin(time*2-s.d),c=s.cBase-time/4+Math.sin(time*3+s.e)/9;
-  F.x[s.index]=q*Math.sin(c);F.y[s.index]=q*Math.cos(c);
- }
- return F;
-}
-// Inner limit along the unit ray (ux,uy): the square core wall plus margin.
-function celestialKoiInnerR(ux,uy){return RING.inner/Math.max(Math.abs(ux),Math.abs(uy),1e-6)+CELESTIAL_KOI.marginIn;}
-function celestialKoiPoint(sample,time,frame){
- const K=CELESTIAL_KOI,F=frame||updateCelestialKoiFrame(time),sx=F.x[sample.index],sy=F.y[sample.index],r0=Math.hypot(sx,sy)||1,ux=sx/r0,uy=sy/r0;
- const t=Math.max(0,Math.min(1,(r0-K.sketchRLo)/(K.sketchRHi-K.sketchRLo))),rIn=celestialKoiInnerR(ux,uy),rw=rIn+t*(CELESTIAL_KOI_MAP.outerR-rIn);
- // tx,ty = counter-clockwise tangent: the direction the school travels.
- return{x:ux*rw,y:uy*rw,z:RING.ceil-K.flush,r:rw,tx:-uy,ty:ux,t};
-}
-function projectWorldPoint(sim,d,p){
- const v=d.view,dx=p.x-sim.x,dy=p.y-sim.y,tx=dx*v.sinA-dy*v.cosA,tz=dx*v.cosA+dy*v.sinA;
- if(tz<=NEAR+1)return null;
- const x=v.halfW+(tx/tz)*v.projDist,y=v.horizon-((p.z-v.pz)*v.projDist)/tz;
- if(x<-3||x>v.w+3||y<-3||y>v.h+3)return null;
- const ix=Math.max(0,Math.min(v.w-1,x|0)),iy=Math.max(0,Math.min(v.h-1,y|0)),occ=d.pixelDepth[iy*v.w+ix];
- // Depth buffer holds forward depth (tz) for flats AND walls, so this is a real
- // test: a point is hidden only if geometry sits meaningfully in front of it.
- if(Number.isFinite(occ)&&tz>occ+CELESTIAL_KOI.slackAbs+CELESTIAL_KOI.slackRel*tz)return null;
- return{x,y,z:tz};
-}
-function paintCelestialKoi(sim,d){
- CELESTIAL_KOI_STATS.visible=0;CELESTIAL_KOI_STATS.streaks=0;if(!CELESTIAL_KOI.enabled)return;
- const K=CELESTIAL_KOI,time=sim.t*K.timeScale,F=updateCelestialKoiFrame(time),v=d.view,lookUp=Math.max(.42,Math.min(1,.58+sim.pitch/360));
- ctx.save();ctx.globalCompositeOperation='lighter';ctx.lineCap='round';ctx.fillStyle='#c7e7f8';ctx.strokeStyle='#9bc8e5';
- for(let j=0;j<CELESTIAL_KOI_SAMPLES.length;j++){
-  const s=CELESTIAL_KOI_SAMPLES[j],p=celestialKoiPoint(s,time,F),sp=projectWorldPoint(sim,d,p);if(!sp)continue;
-  const depthFade=Math.max(.28,Math.min(1,1-sp.z/(RING.outer*1.55))),tw=.76+.24*Math.sin(sim.t*.29+s.i*.043),a=K.pointAlpha*depthFade*tw*s.shimmer*lookUp;if(a<.012)continue;
-  const size=Math.max(K.minPointPx,Math.min(K.maxPointPx,v.projDist*K.pointWorld/sp.z));
-  ctx.globalAlpha=a*.22;ctx.fillRect(sp.x-size,sp.y-size,size*2,size*2);ctx.globalAlpha=a;ctx.fillRect(sp.x-size*.42,sp.y-size*.42,size*.84,size*.84);CELESTIAL_KOI_STATS.visible++;
-  if((j%6)===0){
-   const trail={x:p.x-p.tx*K.streakWorld,y:p.y-p.ty*K.streakWorld,z:p.z},tp=projectWorldPoint(sim,d,trail);
-   if(tp){const dx=tp.x-sp.x,dy=tp.y-sp.y,L=Math.hypot(dx,dy);if(L>.18&&L<K.maxStreakPx){ctx.globalAlpha=K.streakAlpha*depthFade*lookUp;ctx.lineWidth=.55;ctx.beginPath();ctx.moveTo(sp.x,sp.y);ctx.lineTo(tp.x,tp.y);ctx.stroke();CELESTIAL_KOI_STATS.streaks++;}}
-  }
- }
- ctx.restore();
-}
 
 const ASSET_NAMES={
  world:'fts-arcade-world-atlas.png',
@@ -559,7 +457,7 @@ const AUTHORING={
  ],
  wallPortals:[
   {id:'STAGE_SIGN',x:0,y:387,deg:-90,w:92,z0:78,z1:106,mat:'FIX_STAGE_SIGN',label:'PERFORMANCE ZONE',url:'../tournament.html',cta:'VIEW EVENTS'},
-  {id:'DJ_SIGN',x:104,y:320,deg:-90,w:54,z0:48,z1:68,mat:'FIX_DJ_SIGN',label:'DJ / PERFORMANCE',url:'https://frymatic.us',cta:'OPEN ARCADE HUB'}
+  {id:'DJ_SIGN',x:104,y:320,deg:-90,w:54,z0:48,z1:68,mat:'FIX_DJ_SIGN',label:'DJ / PERFORMANCE',url:'https://frymatic.us/FTSArcade/',cta:'OPEN ARCADE HUB'}
  ],
  posters:[
   {deg:8,label:'POSTER 1',url:'../BRAZENTOWER',cta:'CLIMB THE TOWER'},
@@ -960,9 +858,6 @@ function paint(sim,d){const v=d.view,w=v.w,h=v.h;ctx.fillStyle='#03050a';ctx.fil
  }else{
   PAINT_ORDER.length=d.sN+d.wN+d.hFaces.length;let on=0;for(let i=0;i<d.sN;i++)PAINT_ORDER[on++]=i;for(let i=0;i<d.wN;i++)PAINT_ORDER[on++]=0x1000000|i;for(let i=0;i<d.hFaces.length;i++)PAINT_ORDER[on++]=0x2000000|i;PAINT_ORDER.sort((a,b)=>{const ak=a>>>24,bk=b>>>24,ai=a&0xffffff,bi=b&0xffffff,ad=ak===0?d.sDist[ai]:(ak===1?d.wDist[ai]:d.hFaces[ai].dist),bd=bk===0?d.sDist[bi]:(bk===1?d.wDist[bi]:d.hFaces[bi].dist);return bd-ad||ak-bk;});for(const code of PAINT_ORDER){const k=code>>>24,i=code&0xffffff;if(k===0)planePattern(i);else if(k===1)wall(i);else paintHorizontalFace(d.hFaces[i],shadeOf);}
  }
- // Roof choreography is painted after opaque world geometry so its points can
- // consult the completed depth buffer, then the CRT treatment sits on top.
- paintCelestialKoi(sim,d);
  // subtle CRT vignette and crosshair
  if(VIGNETTE){ctx.fillStyle=VIGNETTE;ctx.fillRect(0,0,w,h);}ctx.fillStyle='rgba(220,238,255,.62)';ctx.fillRect(w/2-5,h/2,3,1);ctx.fillRect(w/2+3,h/2,3,1);ctx.fillRect(w/2,h/2-5,1,3);ctx.fillRect(w/2,h/2+3,1,3);
 }
@@ -982,7 +877,7 @@ confirmBtn.addEventListener('click',leaveArcade);cancelBtn.addEventListener('cli
 
 function resize(){const vv=window.visualViewport,w=Math.round(vv&&vv.width||innerWidth||960),h=Math.round(vv&&vv.height||innerHeight||600),low=coarse()||PLATFORM.ios||((navigator.hardwareConcurrency||8)<=4);RSCALE=low?(h>900?PERF.coarseTallScale:PERF.coarseScale):(h>900?1.9:1.55);RW=Math.max(180,Math.round(w/RSCALE));RH=Math.max(120,Math.round(h/RSCALE));canvas.width=RW;canvas.height=RH;canvas.style.width=w+'px';canvas.style.height=h+'px';dl=new DrawLists(RW,RH);PLANE_SOFT.canvas=PLANE_SOFT.ctx=PLANE_SOFT.image=PLANE_SOFT.u32=null;PLANE_SOFT.width=PLANE_SOFT.height=0;ensureSoftwareFrame(RW,RH);VIGNETTE=ctx.createRadialGradient(RW/2,RH/2,Math.min(RW,RH)*.2,RW/2,RH/2,Math.max(RW,RH)*.72);VIGNETTE.addColorStop(0,'rgba(0,0,0,0)');VIGNETTE.addColorStop(1,'rgba(0,0,0,.34)');ctx.imageSmoothingEnabled=false;}
 const KEY={KeyW:'fwd',ArrowUp:'fwd',KeyS:'back',ArrowDown:'back',KeyA:'left',KeyD:'right'};
-addEventListener('keydown',e=>{if(modal.classList.contains('show')){if(e.code==='Enter'||e.code==='KeyY')leaveArcade();if(e.code==='Escape'||e.code==='KeyN')closeConfirm(true);return;}if(KEY[e.code]){input[KEY[e.code]]=1;e.preventDefault();}if(e.code==='ShiftLeft'||e.code==='ShiftRight')input.run=1;if(e.code==='ControlLeft'||e.code==='ControlRight'||e.code==='KeyC'){input.crouch=1;if(!e.repeat)sim.beginSlide();e.preventDefault();}if(e.code==='Space'){input.jump=1;if(!e.repeat)sim.jump();e.preventDefault();}if(e.code==='KeyE')openConfirm(activeTarget);if(e.code==='KeyM'){showMap=!showMap;mapBtn.textContent='MAP: '+(showMap?'ON':'OFF');mapBtn.classList.toggle('on',showMap);}if(e.code==='KeyN')toggleAudio();if(e.code==='KeyK'){togglePlaneMapping();e.preventDefault();}if(e.code==='KeyP'){togglePlaneBackend();e.preventDefault();}if(e.code==='KeyO'){toggleCelestialKoi();e.preventDefault();}});
+addEventListener('keydown',e=>{if(modal.classList.contains('show')){if(e.code==='Enter'||e.code==='KeyY')leaveArcade();if(e.code==='Escape'||e.code==='KeyN')closeConfirm(true);return;}if(KEY[e.code]){input[KEY[e.code]]=1;e.preventDefault();}if(e.code==='ShiftLeft'||e.code==='ShiftRight')input.run=1;if(e.code==='ControlLeft'||e.code==='ControlRight'||e.code==='KeyC'){input.crouch=1;if(!e.repeat)sim.beginSlide();e.preventDefault();}if(e.code==='Space'){input.jump=1;if(!e.repeat)sim.jump();e.preventDefault();}if(e.code==='KeyE')openConfirm(activeTarget);if(e.code==='KeyM'){showMap=!showMap;mapBtn.textContent='MAP: '+(showMap?'ON':'OFF');mapBtn.classList.toggle('on',showMap);}if(e.code==='KeyN')toggleAudio();if(e.code==='KeyK'){togglePlaneMapping();e.preventDefault();}if(e.code==='KeyP'){togglePlaneBackend();e.preventDefault();}});
 addEventListener('keyup',e=>{if(KEY[e.code])input[KEY[e.code]]=0;if(e.code==='ShiftLeft'||e.code==='ShiftRight')input.run=0;if(e.code==='ControlLeft'||e.code==='ControlRight'||e.code==='KeyC')input.crouch=0;if(e.code==='Space')input.jump=0;});
 addEventListener('mousemove',e=>{if(document.pointerLockElement===canvas&&!modal.classList.contains('show'))sim.look(e.movementX||0,e.movementY||0,MOUSE_LOOK_SENS);});
 canvas.addEventListener('mousedown',e=>{if(e.button!==0)return;if(coarse())return;if(document.pointerLockElement!==canvas){canvas.requestPointerLock&&canvas.requestPointerLock();return;}if(activeTarget)openConfirm(activeTarget);});
@@ -1062,7 +957,7 @@ touchCrouch.addEventListener('pointerdown',e=>{input.crouch=1;sim.beginSlide();t
 touchCrouch.addEventListener('pointerup',e=>{input.crouch=0;e.preventDefault();});touchCrouch.addEventListener('pointercancel',()=>{input.crouch=0;});
 
 let last=0,fpsAcc=0,fpsN=0,fps=0,frames=0,simAcc=0;
-function loop(ts){const frameDt=Math.min((ts-last)/1000||.016,.12);last=ts;simAcc=Math.min(.20,simAcc+frameDt);const fixedDt=1/KINETIC.simHz;let simSteps=0;while(simAcc>=fixedDt&&simSteps<KINETIC.maxCatchupSteps){sim.step(fixedDt,input);simAcc-=fixedDt;simSteps++;}SpatialCrowd.update(sim);RenderCore.solve(sim,dl,RW,RH);paint(sim,dl);if(showMap)drawMap(sim,RW,RH);updatePrompt();fpsAcc+=frameDt;fpsN++;if(fpsAcc>.45){fps=fpsN/fpsAcc;fpsAcc=0;fpsN=0;}if((frames++&7)===0){const moveState=sim.slideT>0?'SLIDE':input.crouch?'CROUCH':input.run?'RUN':'WALK';telemetry.textContent=VERSION+' | '+RW+'x'+RH+' | '+fps.toFixed(0)+' fps | '+moveState+' | Z '+sim.jumpZ.toFixed(0)+' | SEC '+(sim.sector+1)+'/'+map.sectors.length+' | CAB '+map.cabinets.length+' A-Z | FIX '+map.fixtures.length+' | ADS '+map.ads.length+' | VIS '+dl.stats.sectors+'s '+dl.stats.solidFaces+'g/'+dl.stats.culledSolids+'c/'+dl.stats.lodParts+'l'+(dl.stats.grows?' GROW '+dl.stats.grows:'')+(dl.stats.dropped?' DROP '+dl.stats.dropped:'')+' | PLN '+PLANE_BACKEND.active.toUpperCase()+'/'+PLANE_MAPPING.mode.toUpperCase()+' | KOI '+(CELESTIAL_KOI.enabled?CELESTIAL_KOI_STATS.visible:'OFF')+' | AUD '+(SpatialCrowd.on?(SpatialCrowd.quadrant||crowdQuadrantAt(sim.x,sim.y))+'>'+SpatialCrowd.activeZones().join(''):'OFF')+' | ART '+(IMG.ready?'ATLAS':'FALLBACK')+(MAP_ERRORS.length?' | MAP ERR '+MAP_ERRORS.length:'');}requestAnimationFrame(loop);}
+function loop(ts){const frameDt=Math.min((ts-last)/1000||.016,.12);last=ts;simAcc=Math.min(.20,simAcc+frameDt);const fixedDt=1/KINETIC.simHz;let simSteps=0;while(simAcc>=fixedDt&&simSteps<KINETIC.maxCatchupSteps){sim.step(fixedDt,input);simAcc-=fixedDt;simSteps++;}SpatialCrowd.update(sim);RenderCore.solve(sim,dl,RW,RH);paint(sim,dl);if(showMap)drawMap(sim,RW,RH);updatePrompt();fpsAcc+=frameDt;fpsN++;if(fpsAcc>.45){fps=fpsN/fpsAcc;fpsAcc=0;fpsN=0;}if((frames++&7)===0){const moveState=sim.slideT>0?'SLIDE':input.crouch?'CROUCH':input.run?'RUN':'WALK';telemetry.textContent=VERSION+' | '+RW+'x'+RH+' | '+fps.toFixed(0)+' fps | '+moveState+' | Z '+sim.jumpZ.toFixed(0)+' | SEC '+(sim.sector+1)+'/'+map.sectors.length+' | CAB '+map.cabinets.length+' A-Z | FIX '+map.fixtures.length+' | ADS '+map.ads.length+' | VIS '+dl.stats.sectors+'s '+dl.stats.solidFaces+'g/'+dl.stats.culledSolids+'c/'+dl.stats.lodParts+'l'+(dl.stats.grows?' GROW '+dl.stats.grows:'')+(dl.stats.dropped?' DROP '+dl.stats.dropped:'')+' | PLN '+PLANE_BACKEND.active.toUpperCase()+'/'+PLANE_MAPPING.mode.toUpperCase()+' | AUD '+(SpatialCrowd.on?(SpatialCrowd.quadrant||crowdQuadrantAt(sim.x,sim.y))+'>'+SpatialCrowd.activeZones().join(''):'OFF')+' | ART '+(IMG.ready?'ATLAS':'FALLBACK')+(MAP_ERRORS.length?' | MAP ERR '+MAP_ERRORS.length:'');}requestAnimationFrame(loop);}
 addEventListener('resize',resize);if(window.visualViewport)visualViewport.addEventListener('resize',resize);
 Promise.all([
  loadImage(ASSET_FILES.world,'world'),loadImage(ASSET_FILES.cab1,'Cabinets01'),loadImage(ASSET_FILES.cab2,'Cabinets02'),loadImage(ASSET_FILES.cab3,'Cabinets03'),loadImage(ASSET_FILES.cab4,'Cabinets04'),loadImage(ASSET_FILES.screen,'screen'),loadImage(ASSET_FILES.fixture,'fixture'),loadImage(ASSET_FILES.cabinetRef,'the-Cabinet')
@@ -1135,25 +1030,6 @@ const REF_TESTS={
  kaleidoActuallyCouplesYaw:()=>{const s=map.sectors[0],a=Geom.planeUV(s.planeOx+20,s.planeOy+7,s,'kaleido',0),b=Geom.planeUV(s.planeOx+20,s.planeOy+7,s,'kaleido',.6);return Math.hypot(a.u-b.u,a.v-b.v)>.1;},
  softwareFrameAllocated:()=>!!PLANE_SOFT.canvas&&!!PLANE_SOFT.ctx&&!!PLANE_SOFT.image&&!!PLANE_SOFT.u32&&PLANE_SOFT.width===RW&&PLANE_SOFT.height===RH,
  touchLookParity:()=>TOUCH_LOOK_SENS/MOUSE_LOOK_SENS<=1.2,
- celestialKoiSampleCount:()=>CELESTIAL_KOI_SAMPLES.length===CELESTIAL_KOI.sampleCount&&CELESTIAL_KOI.sampleCount>=500,
- celestialKoiTwoSchools:()=>new Set(CELESTIAL_KOI_SAMPLES.map(s=>s.school)).size===2,
- celestialKoiFlushToCeiling:()=>CELESTIAL_KOI.flush<=3&&[0,7.3,41,133].every(t=>CELESTIAL_KOI_SAMPLES.every(s=>{const p=celestialKoiPoint(s,t);return p.z<RING.ceil&&p.z>=RING.ceil-CELESTIAL_KOI.flush-1e-6;})),
- // Inside the real annulus at many times: outside the SQUARE core (half-side RING.inner)
- // and inside the 32-gon apothem. A round inner limit would fail on the diagonals.
- celestialKoiInsideAnnulus:()=>[0,7.3,41,133,377,911].every(t=>CELESTIAL_KOI_SAMPLES.every(s=>{const p=celestialKoiPoint(s,t);return Math.max(Math.abs(p.x),Math.abs(p.y))>=RING.inner+10&&p.r<=RING.outer*Math.cos(Math.PI/RING.sides)-10+1e-6;})),
- // The whole point of 0.9.2: the schools are annulus-scale, not a filament.
- celestialKoiFillsDonut:()=>[0,7.3,41,133].every(t=>{
-  // Measured in WORLD inches against RING (not against our own map), so a return
-  // to the 0.9.1 filament, or a collapse onto one rim, fails it.
-  const F=updateCelestialKoiFrame(t),rs=[],bins=new Array(36).fill(0);
-  for(const s of CELESTIAL_KOI_SAMPLES){const p=celestialKoiPoint(s,t,F);rs.push(p.r);bins[Math.min(35,((Math.atan2(p.y,p.x)+TAU)%TAU)/TAU*36|0)]++;}
-  rs.sort((a,b)=>a-b);const span=rs[(rs.length*.95)|0]-rs[(rs.length*.05)|0],occ=bins.filter(n=>n>=6).length/36;
-  return span>=.35*(RING.outer-RING.inner)&&occ>=.42;
- }),
- // Mapping must not distort the choreography: angle preserved, radius monotone.
- celestialKoiAngleFidelity:()=>{const F=updateCelestialKoiFrame(5.5);return CELESTIAL_KOI_SAMPLES.every(s=>{const p=celestialKoiPoint(s,5.5,F),a0=Math.atan2(F.y[s.index],F.x[s.index]),a1=Math.atan2(p.y,p.x);return Math.abs(Math.atan2(Math.sin(a0-a1),Math.cos(a0-a1)))<1e-4;});},
- celestialKoiRadialMonotone:()=>{const ux=1,uy=0,lo=[],hi=[];const rIn=celestialKoiInnerR(ux,uy),mk=r0=>{const t=Math.max(0,Math.min(1,(r0-CELESTIAL_KOI.sketchRLo)/(CELESTIAL_KOI.sketchRHi-CELESTIAL_KOI.sketchRLo)));return rIn+t*(CELESTIAL_KOI_MAP.outerR-rIn);};return mk(70)<mk(99)&&mk(99)<mk(130)&&Math.abs(mk(CELESTIAL_KOI.sketchRLo)-rIn)<1e-9&&Math.abs(mk(CELESTIAL_KOI.sketchRHi)-CELESTIAL_KOI_MAP.outerR)<1e-9;},
- celestialKoiNoAssetDependency:()=>!Object.values(ASSET_FILES).flat().some(v=>/koi|fish/i.test(String(v))),
  ringSectors:()=>map.sectors.length===RING.sides,
  spatialAudioQuadrants:()=>crowdQuadrantAt(0,300)==='I'&&crowdQuadrantAt(300,0)==='II'&&crowdQuadrantAt(0,-300)==='III'&&crowdQuadrantAt(-300,0)==='IV',
  spatialAudioOpposites:()=>CROWD_QUADRANTS.every(q=>CROWD_OPPOSITE[CROWD_OPPOSITE[q]]===q&&crowdDesiredFor(q).length===3&&!crowdDesiredFor(q).includes(CROWD_OPPOSITE[q])),
@@ -1182,12 +1058,10 @@ function runRefTests(){
  }
  return{version:VERSION,pass:failures.length===0,passed:Object.values(results).filter(v=>v===true).length,total:Object.keys(REF_TESTS).length,failures,results,mapErrors:MAP_ERRORS.slice(),assetErrors:IMG.errors.slice(),runtimeErrors:RUNTIME_ERRORS.slice(),screenAtlas:SCREEN_ATLAS_META};
 }
-window.__FTS_ARCADE__={VERSION,map,sim,MapBuilder,Geom,RenderCore,DrawLists,MATERIALS,MAP_ERRORS,CABINET_ROSTER,CABINET_DIM,AISLE,PORTALS,ASSET_NAMES,CABINET_PART_RECTS,CABINET_REF_RECTS,SCREEN_ATLAS_META,SCREEN_RECTS,screenRect,AUTHORING,KINETIC,JUMP,RENDER,PERF,RING,CABINET_LAYOUT_SNAPSHOT,cabinetLayoutSignature:()=>cabinetLayoutSignature(map),PLATFORM,PLANE_BACKEND,PLANE_STATS,setPlaneBackend,togglePlaneBackend,PLANE_MAPPING,setPlaneMappingMode,togglePlaneMapping,MOUSE_LOOK_SENS,TOUCH_LOOK_SENS,SpatialCrowd,CROWD_AUDIO_URL,CROWD_QUADRANTS,CROWD_OPPOSITE,CROWD_ZONE_POSES,crowdQuadrantAt,crowdDesiredFor,CELESTIAL_KOI,CELESTIAL_KOI_MAP,CELESTIAL_KOI_SAMPLES,CELESTIAL_KOI_STATS,celestialKoiPoint,projectWorldPoint,getDrawList:()=>dl,setCelestialKoi,toggleCelestialKoi,paintCelestialKoi,solidAabb,cabinetClearOfOffice,exportAuthoring:()=>JSON.stringify(AUTHORING,null,2),tests:REF_TESTS,runTests:runRefTests};
+window.__FTS_ARCADE__={VERSION,map,sim,MapBuilder,Geom,RenderCore,DrawLists,MATERIALS,MAP_ERRORS,CABINET_ROSTER,CABINET_DIM,AISLE,PORTALS,ASSET_NAMES,CABINET_PART_RECTS,CABINET_REF_RECTS,SCREEN_ATLAS_META,SCREEN_RECTS,screenRect,AUTHORING,KINETIC,JUMP,RENDER,PERF,RING,CABINET_LAYOUT_SNAPSHOT,cabinetLayoutSignature:()=>cabinetLayoutSignature(map),PLATFORM,PLANE_BACKEND,PLANE_STATS,setPlaneBackend,togglePlaneBackend,PLANE_MAPPING,setPlaneMappingMode,togglePlaneMapping,MOUSE_LOOK_SENS,TOUCH_LOOK_SENS,SpatialCrowd,CROWD_AUDIO_URL,CROWD_QUADRANTS,CROWD_OPPOSITE,CROWD_ZONE_POSES,crowdQuadrantAt,crowdDesiredFor,solidAabb,cabinetClearOfOffice,exportAuthoring:()=>JSON.stringify(AUTHORING,null,2),tests:REF_TESTS,runTests:runRefTests};
 const qs=new URLSearchParams(location.search);
 setPlaneBackend(qs.get('planeBackend')||qs.get('backend')||'auto');
 setPlaneMappingMode(qs.get('planes')||qs.get('plane')||'world');
-if(qs.get('koi')==='0'||qs.get('koi')==='off')setCelestialKoi(false);
-if(qs.get('koi')==='1'||qs.get('koi')==='on')setCelestialKoi(true);
 if(qs.get('preview')==='1')lockEl.classList.add('hidden');
 if(qs.get('map')==='1'){showMap=true;mapBtn.textContent='MAP: ON';mapBtn.classList.add('on');}
 if(qs.get('audio')==='1'){const armAudio=e=>{removeEventListener('pointerdown',armAudio,true);removeEventListener('keydown',armAudio,true);if(e&&e.target===audioBtn)return;if(!SpatialCrowd.on)toggleAudio();};addEventListener('pointerdown',armAudio,true);addEventListener('keydown',armAudio,true);}
