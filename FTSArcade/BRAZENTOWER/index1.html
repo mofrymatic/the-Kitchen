@@ -1,19 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- Analytics only on hosted HTTP(S); local/offline builds stay clean. -->
+  <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-1WWRJJN05N"></script>
 <script>
-if (/^https?:$/.test(location.protocol)) {
   window.dataLayer = window.dataLayer || [];
-  window.gtag = function(){ dataLayer.push(arguments); };
-  gtag('js', new Date()); gtag('config', 'G-1WWRJJN05N');
-  const ga = document.createElement('script'); ga.async = true;
-  ga.src = 'https://www.googletagmanager.com/gtag/js?id=G-1WWRJJN05N';
-  document.head.appendChild(ga);
-}
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-1WWRJJN05N');
 </script>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>BRAZEN TOWER · Lobby Explorer · FTS Arcade</title>
 
  <!-- ── Primary Meta ─────────────────────────────────────────────────────── -->
@@ -46,31 +44,19 @@ if (/^https?:$/.test(location.protocol)) {
 
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-html,body{width:100%;height:100%;background:#05070a;overflow:hidden;overscroll-behavior:none;user-select:none;touch-action:none;-webkit-user-select:none}
-canvas{display:block;position:fixed;inset:0;width:100%;height:100%;cursor:crosshair;image-rendering:pixelated;-webkit-touch-callout:none}
+html,body{width:100%;height:100%;background:#05070a;overflow:hidden;user-select:none;touch-action:none}
+canvas{display:block;position:fixed;inset:0;width:100%;height:100%;cursor:crosshair;image-rendering:pixelated}
 #ui{position:fixed;top:10px;left:12px;z-index:5;font:10px/1.6 'Courier New',monospace;
   color:rgba(255,60,40,.75);letter-spacing:.12em;pointer-events:none;text-shadow:0 0 6px rgba(255,0,0,.4)}
-#bar{position:fixed;bottom:max(10px,env(safe-area-inset-bottom));right:max(12px,env(safe-area-inset-right));z-index:5;display:flex;gap:6px}
+#bar{position:fixed;bottom:10px;right:12px;z-index:5;display:flex;gap:6px}
 #bar button{font:10px 'Courier New',monospace;letter-spacing:.1em;color:rgba(255,90,60,.8);
   background:rgba(14,8,8,.75);border:1px solid rgba(255,60,40,.35);padding:6px 10px;cursor:pointer;border-radius:2px}
 #bar button:hover{border-color:rgba(255,120,80,.8);color:#ffb08a}
 #bar button.on{color:#ffd24a;border-color:rgba(255,200,60,.6)}
-#lock{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;
+#lock{position:fixed;inset:0;z-index:6;display:flex;align-items:center;justify-content:center;
   background:rgba(4,6,10,.82);font:14px 'Courier New',monospace;letter-spacing:.22em;color:#ff6a3d;cursor:pointer;
   text-align:center;line-height:2.2;text-shadow:0 0 10px rgba(255,40,0,.5)}
 #lock.hidden{display:none}
-#touchMove,#touchFire,#touchJump,#touchRun{display:none;position:fixed;z-index:15;touch-action:none;-webkit-touch-callout:none}
-#touchMove{left:max(18px,env(safe-area-inset-left));bottom:max(24px,env(safe-area-inset-bottom));width:116px;height:116px;border:1px solid rgba(255,90,60,.26);border-radius:50%;background:rgba(18,7,7,.20)}
-#touchKnob{position:absolute;left:36px;top:36px;width:44px;height:44px;border:1px solid rgba(255,210,160,.4);border-radius:50%;background:rgba(255,90,60,.14);transform:translate(0,0)}
-#touchFire,#touchJump,#touchRun{border-radius:50%;font:bold 10px 'Courier New',monospace;letter-spacing:.08em;color:#fff;background:rgba(18,7,7,.30)}
-#touchFire{right:max(18px,env(safe-area-inset-right));bottom:max(28px,env(safe-area-inset-bottom));width:84px;height:84px;border:1px solid rgba(255,76,48,.52)}
-#touchJump{right:max(112px,calc(env(safe-area-inset-right) + 94px));bottom:max(34px,calc(env(safe-area-inset-bottom) + 6px));width:68px;height:68px;border:1px solid rgba(255,190,90,.40)}
-#touchRun{right:max(30px,calc(env(safe-area-inset-right) + 12px));bottom:max(124px,calc(env(safe-area-inset-bottom) + 104px));width:62px;height:62px;border:1px solid rgba(255,190,90,.32);color:#ffd28a}
-body.touch-ui #touchMove,body.touch-ui #touchFire,body.touch-ui #touchJump,body.touch-ui #touchRun{display:block}
-body.touch-ui #bar{bottom:calc(120px + env(safe-area-inset-bottom))}
-body.touch-ui #ui{top:max(8px,env(safe-area-inset-top));left:max(9px,env(safe-area-inset-left));font-size:8px;max-width:74vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-body.touch-ui #lock{font-size:11px;line-height:1.9;padding:24px}
-@media(pointer:coarse){#bar{bottom:calc(120px + env(safe-area-inset-bottom))}}
 </style>
 </head>
 <body>
@@ -81,16 +67,9 @@ body.touch-ui #lock{font-size:11px;line-height:1.9;padding:24px}
   <button id="mapBtn">MAP: OFF</button>
 </div>
 <div id="lock">ENTER BRAZEN TOWER · LOBBY 01<br>WASD MOVE · MOUSE LOOK · SPACE JUMP · SHIFT RUN · CLICK FIRE · M MAP · N AUDIO · ESC RELEASE</div>
-<div id="touchMove"><div id="touchKnob"></div></div>
-<button id="touchRun">RUN</button><button id="touchJump">JUMP</button><button id="touchFire">FIRE</button>
 
 <script>
 'use strict';
-
-const RUNTIME_ERRORS = [];
-addEventListener('error', e => { if (e.error || e.message) RUNTIME_ERRORS.push(String((e.error && e.error.stack) || e.message || e.error)); });
-addEventListener('unhandledrejection', e => RUNTIME_ERRORS.push(String((e.reason && e.reason.stack) || e.reason || 'unhandled rejection')));
-
 /* ═══════════════════════════════════════════════════════════════════════════
    BRAZEN — FTS ARCADE cabinet
    True sector/portal renderer (not a grid raycaster).
@@ -113,11 +92,6 @@ addEventListener('unhandledrejection', e => RUNTIME_ERRORS.push(String((e.reason
    A6. Headless-tolerant boot: if getContext('2d') returns null the cabinet
        boots into headless mode and the sim still runs. This is what lets
        the jsdom gate exercise the REAL file rather than a stubbed twin.
-   A7. Simulation advances at a fixed 60 Hz with bounded catch-up. Rendering
-       cadence may vary; movement/jump integration does not.
-   A8. Horizontal plane UVs are WORLD-LOCKED. iOS and browsers without safe
-       CanvasPattern transforms use the software plane sampler, never a
-       viewport-relative fallback. This is the anti-kaleidoscope contract.
 
    TEXTURE ATLAS CONTRACT (authored Brazen art, external sprite-sheet resources):
        TEX[] index order is frozen. Each entry is 64x64 RGBA.
@@ -126,29 +100,7 @@ addEventListener('unhandledrejection', e => RUNTIME_ERRORS.push(String((e.reason
        Source crops are deliberately padded to avoid edge clipping.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-const VERSION = 'brazen-0.6.0-mobile';
-
-
-/* Mobile/runtime contract carried forward from the newer FTS Arcade floor.
-   WebKit's mutable CanvasPattern transform path can rotate/swim horizontal
-   textures on iOS. Tower therefore defaults to an explicit software plane
-   sampler on iOS or when pattern transforms are unavailable. World UVs are
-   always derived from world coordinates, never camera orientation. */
-const PLATFORM = {
-  ua: (navigator && navigator.userAgent) || '',
-  touch: ((navigator && navigator.maxTouchPoints) || 0) > 0 || (typeof matchMedia === 'function' && matchMedia('(pointer:coarse)').matches),
-  ios: /iP(?:hone|ad|od)/.test((navigator && navigator.userAgent) || '') || (/Macintosh/.test((navigator && navigator.userAgent) || '') && ((navigator && navigator.maxTouchPoints) || 0) > 1)
-};
-const PATTERN_TRANSFORMS = typeof CanvasPattern !== 'undefined' && CanvasPattern.prototype && typeof CanvasPattern.prototype.setTransform === 'function';
-const PLANE_BACKEND = { requested:'auto', active:(PLATFORM.ios || !PATTERN_TRANSFORMS) ? 'software' : 'pattern' };
-function setPlaneBackend(mode) {
-  const m = String(mode || 'auto').toLowerCase();
-  PLANE_BACKEND.requested = (m === 'software' || m === 'pattern') ? m : 'auto';
-  PLANE_BACKEND.active = PLANE_BACKEND.requested === 'auto' ? ((PLATFORM.ios || !PATTERN_TRANSFORMS) ? 'software' : 'pattern') : PLANE_BACKEND.requested;
-  return PLANE_BACKEND.active;
-}
-function togglePlaneBackend() { return setPlaneBackend(PLANE_BACKEND.active === 'software' ? 'pattern' : 'software'); }
-const PLANE_MAPPING = { mode:'world' };
+const VERSION = 'brazen-0.5.1';
 
 /* ── Cabinet contract shims ─────────────────────────────────────────────── */
 const LS = {
@@ -215,13 +167,6 @@ const Geom = {
       x: px + cosA * depth + sinA * lateral,
       y: py + sinA * depth - cosA * lateral
     };
-  },
-
-  /* Explicit world-locked flat UVs. `worldScale` is world-units per source
-     texel, so MEDALLION uses 3 and the 64px crop occupies 192 world units. */
-  planeUV(wx, wy, worldScale) {
-    const s = worldScale || 1;
-    return { u: wx / s, v: wy / s };
   },
 
   /* CanvasPattern transform from 64px texture/world coordinates to screen
@@ -583,15 +528,13 @@ function buildLevel() {
 /* ══ Sim — pure, zero DOM ══════════════════════════════════════════════ */
 const PLAYER_R = 16, PLAYER_H = 56, EYE = 41, STEP_UP = 24, STEP_DOWN = 32;
 const SPEED_WALK = 190, SPEED_RUN = 330, ACCEL = 12;
-const MOVE = { strafeFactor:.92, reverseFactor:.78, accelLambda:12, brakeLambda:18, reverseLambda:10 };
-const BASE_FOV = 74 * Math.PI / 180, SPRINT_FOV = 80 * Math.PI / 180, FOV_LAMBDA = 8;
 const JUMP_VELOCITY = 250, GRAVITY = 720;
 
 class Sim {
   constructor(map, seed) {
     this.map = map; this.rng = mulberry32(seed >>> 0); this.seed = seed >>> 0;
     this.x = map.spawn.x; this.y = map.spawn.y; this.ang = map.spawn.ang;
-    this.pitch = 0; this.vx = 0; this.vy = 0; this.currentFov = BASE_FOV;
+    this.pitch = 0; this.vx = 0; this.vy = 0;
     this.sector = this.sectorAt(this.x, this.y);
     this.baseZ = map.sectors[this.sector].floor + EYE;
     this.baseZSmooth = this.baseZ;
@@ -662,48 +605,38 @@ class Sim {
   }
   step(dt, input) {
     this.t += dt;
-    const cs = Math.cos(this.ang), sn = Math.sin(this.ang);
-    let f = (input.fwd ? 1 : 0) - (input.back ? 1 : 0);
-    let r = (input.right ? 1 : 0) - (input.left ? 1 : 0);
-    const mag0 = Math.hypot(f, r);
-    if (mag0 > 1) { f /= mag0; r /= mag0; }
     const spd = input.run ? SPEED_RUN : SPEED_WALK;
-    const forward = f * spd * (f < 0 ? MOVE.reverseFactor : 1);
-    const strafe = r * spd * MOVE.strafeFactor;
-    const tx = cs * forward + sn * strafe;
-    const ty = sn * forward - cs * strafe;
-    const dot = this.vx * tx + this.vy * ty;
-    const lambda = mag0 <= .001 ? MOVE.brakeLambda : (dot < 0 ? MOVE.reverseLambda : MOVE.accelLambda);
-    const k = 1 - Math.exp(-lambda * dt);
-    this.vx += (tx - this.vx) * k; this.vy += (ty - this.vy) * k;
-
-    const ox = this.x, oy = this.y;
-    if (Math.hypot(this.vx, this.vy) * dt > 0.001) {
-      if (!this.tryMove(this.x + this.vx * dt, this.y + this.vy * dt)) {
-        const sx = this.tryMove(this.x + this.vx * dt, this.y);
-        const sy = this.tryMove(this.x, this.y + this.vy * dt);
-        if (!sx) this.vx *= .2;
-        if (!sy) this.vy *= .2;
-      }
-    }
-    const moved = Math.hypot(this.x - ox, this.y - oy);
+    const cs = Math.cos(this.ang), sn = Math.sin(this.ang);
+    let wx = 0, wy = 0;
+    if (input.fwd) { wx += cs; wy += sn; }
+    if (input.back) { wx -= cs; wy -= sn; }
+    if (input.right) { wx += sn; wy -= cs; }
+    if (input.left) { wx -= sn; wy += cs; }
+    const L = Math.hypot(wx, wy);
+    if (L > 0) { wx = wx / L * spd; wy = wy / L * spd; }
+    const k = Math.min(1, ACCEL * dt);
+    this.vx += (wx - this.vx) * k; this.vy += (wy - this.vy) * k;
+    const moved = Math.hypot(this.vx, this.vy) * dt;
     if (moved > 0.001) {
+      if (!this.tryMove(this.x + this.vx * dt, this.y + this.vy * dt)) {
+        if (!this.tryMove(this.x + this.vx * dt, this.y)) {
+          if (!this.tryMove(this.x, this.y + this.vy * dt)) { this.vx *= .2; this.vy *= .2; }
+        }
+      }
       this.bob += moved * 0.055;
       const prev = this.steps; this.steps = Math.floor(this.bob / Math.PI);
       if (this.steps !== prev) this.events.push({ t: this.t, k: 'step' });
-    } else {
-      this.bob += (Math.round(this.bob / Math.PI) * Math.PI - this.bob) * (1 - Math.exp(-8 * dt));
-    }
-
-    const fovTarget = input.run && mag0 > .15 ? SPRINT_FOV : BASE_FOV;
-    this.currentFov += (fovTarget - this.currentFov) * (1 - Math.exp(-FOV_LAMBDA * dt));
-
+    } else { this.bob += (Math.round(this.bob / Math.PI) * Math.PI - this.bob) * Math.min(1, dt * 8); }
     const secNow = this.map.sectors[this.sector];
     this.baseZ = secNow.floor + EYE;
-    this.baseZSmooth += (this.baseZ - this.baseZSmooth) * (1 - Math.exp(-12 * dt));
+    this.baseZSmooth += (this.baseZ - this.baseZSmooth) * Math.min(1, dt * 12);
 
+    // Jump is an actual vertical state layered over the sector floor. It is
+    // deliberately independent of stair smoothing: stairs move baseZ, jumping
+    // moves airZ. This keeps the mezzanine topology intact while giving Space
+    // a predictable ballistic arc.
     if (input.jump) {
-      input.jump = 0;
+      input.jump = 0; // edge-triggered even if Space is held
       if (this.grounded) {
         this.grounded = false; this.vz = JUMP_VELOCITY;
         this.events.push({ t: this.t, k: 'jump' });
@@ -835,14 +768,14 @@ class DrawLists {
 }
 
 const RenderCore = {
-  FOV: BASE_FOV,
+  FOV: 74 * Math.PI / 180,
 
   /* solve(sim, out, w, h) — portal flood. Convex sectors (A1) let us draw
      all solids first (establishing occlusion) then recurse portals. */
   solve(sim, out, w, h) {
     out.reset();
     const M = sim.map, S = M.sectors, V = M.verts;
-    const projDist = Geom.projDist(w, sim.currentFov || this.FOV);
+    const projDist = Geom.projDist(w, this.FOV);
     const halfW = w / 2;
     const pz = sim.eyeZ();
     const horizon = Math.round(h / 2 + sim.pitch);
@@ -1146,18 +1079,11 @@ const uiEl = document.getElementById('ui');
 const audioBtn = document.getElementById('audioBtn');
 const mapBtn = document.getElementById('mapBtn');
 const lockEl = document.getElementById('lock');
-const touchMoveEl = document.getElementById('touchMove');
-const touchKnobEl = document.getElementById('touchKnob');
-const touchFireEl = document.getElementById('touchFire');
-const touchJumpEl = document.getElementById('touchJump');
-const touchRunEl = document.getElementById('touchRun');
-if (PLATFORM.touch && document.body) document.body.classList.add('touch-ui');
-if (PLATFORM.touch && lockEl) lockEl.innerHTML = 'ENTER BRAZEN TOWER · MOBILE<br>LEFT PAD MOVE · DRAG WORLD LOOK<br>FIRE · JUMP · HOLD RUN<br><span style="opacity:.6">WORLD-LOCKED PLANES · MOBILE SAFE</span>';
 
 const SHADES = 12;
 const TILE_H = 256;   // strip height in world units == px (4 x 64 tiles)
 const TEX_SRC = [];        // atlas override hook (DR-DOOM-2)
-let texBank = [], flatBank = [], flatTileBank = [], flatPixelBank = [], sprBank = [];
+let texBank = [], flatBank = [], sprBank = [];
 
 function px(c, x, y, w, h, col) { c.fillStyle = col; c.fillRect(x, y, w, h); }
 function makeTexCanvas(id, rnd) {
@@ -1248,26 +1174,9 @@ function atlasCanvas(img, rect, w, h) {
   g.drawImage(img, rect[0], rect[1], rect[2], rect[3], 0, 0, cv.width, cv.height);
   return cv;
 }
-function solidFlatCanvas(name) {
-  const cv = document.createElement('canvas'); cv.width = cv.height = 64;
-  const g = cv.getContext('2d'); if (!g) return null;
-  const c0 = FLAT[name] || [64,64,64];
-  g.fillStyle = `rgb(${c0[0]},${c0[1]},${c0[2]})`; g.fillRect(0,0,64,64);
-  return cv;
-}
-function tilePixels(tile, name, shade) {
-  try {
-    const g = tile && tile.getContext && tile.getContext('2d');
-    if (g) return g.getImageData(0,0,64,64).data;
-  } catch (e) { /* same-origin deploys are readable; fallback below */ }
-  const c0 = FLAT[name] || [64,64,64], k = 1 - (shade / (SHADES - 1)) * 0.94;
-  const d = new Uint8ClampedArray(64*64*4), rr=c0[0]*k|0, gg=c0[1]*k|0, bb=c0[2]*k|0;
-  for (let i=0;i<d.length;i+=4) { d[i]=rr; d[i+1]=gg; d[i+2]=bb; d[i+3]=255; }
-  return d;
-}
 function buildTextures(seed) {
   if (HEADLESS) return;
-  texBank = []; flatBank = []; flatTileBank = []; flatPixelBank = [];
+  texBank = []; flatBank = [];
   for (let i = 0; i < TEX_NAMES.length; i++) {
     const name = TEX_NAMES[i];
     const atlasBase = ART.world ? atlasCanvas(ART.world, WORLD_ATLAS.materials[name], 64, 64) : null;
@@ -1276,15 +1185,18 @@ function buildTextures(seed) {
     texBank.push(row);
   }
   for (const name of FLAT_NAMES) {
-    const patterns = [], tiles = [], pixels = [];
+    const row = [];
     const atlasBase = ART.world ? atlasCanvas(ART.world, WORLD_ATLAS.flats[name], 64, 64) : null;
-    const base = atlasBase || solidFlatCanvas(name);
-    for (let sh = 0; sh < SHADES; sh++) {
-      const tile = shadeTile(base, sh);
-      tiles.push(tile); pixels.push(tilePixels(tile, name, sh));
-      patterns.push(tile && ctx.createPattern ? (ctx.createPattern(tile, 'repeat') || '#202024') : '#202024');
+    if (atlasBase) {
+      for (let sh = 0; sh < SHADES; sh++) row.push(ctx.createPattern(shadeTile(atlasBase, sh), 'repeat'));
+    } else {
+      const c0 = FLAT[name];
+      for (let sh = 0; sh < SHADES; sh++) {
+        const k = 1 - (sh / (SHADES - 1)) * 0.94;
+        row.push(`rgb(${c0[0] * k | 0},${c0[1] * k | 0},${c0[2] * k | 0})`);
+      }
     }
-    flatBank.push(patterns); flatTileBank.push(tiles); flatPixelBank.push(pixels);
+    flatBank.push(row);
   }
   sprBank = buildSprites(seed);
 }
@@ -1311,42 +1223,6 @@ function buildSprites(seed) {
 }
 
 
-/* ── mobile-safe horizontal plane raster ─────────────────────────────
-   The whole floor/ceiling image is sampled once into an offscreen layer using
-   world coordinates. Individual spans are then composited in the existing
-   far->near opaque order, preserving Tower's raised-floor/stair behavior while
-   avoiding CanvasPattern.setTransform entirely on the affected browsers. */
-const SOFT_PLANE = { canvas:null, ctx:null, image:null, w:0, h:0 };
-function ensureSoftPlane(w,h) {
-  if (SOFT_PLANE.canvas && SOFT_PLANE.w === w && SOFT_PLANE.h === h) return;
-  const cv = document.createElement('canvas'); cv.width=w; cv.height=h;
-  const g = cv.getContext('2d', { alpha:true });
-  SOFT_PLANE.canvas=cv; SOFT_PLANE.ctx=g; SOFT_PLANE.w=w; SOFT_PLANE.h=h;
-  SOFT_PLANE.image=g ? g.createImageData(w,h) : null;
-}
-function wrap64(n) { n = Math.floor(n) % 64; return n < 0 ? n + 64 : n; }
-function prepareSoftwarePlanes(sim, dl, shadeOf) {
-  const v=dl.view,w=v.w,h=v.h; ensureSoftPlane(w,h);
-  if (!SOFT_PLANE.ctx || !SOFT_PLANE.image) return false;
-  const dst=SOFT_PLANE.image.data;
-  for (let i=0;i<dl.sN;i++) {
-    const y=dl.sY[i],x0=Math.max(0,dl.sX0[i]),x1=Math.min(w-1,dl.sX1[i]);
-    if (x1<x0 || y<0 || y>=h) continue;
-    const flat=dl.sFlat[i], sh=shadeOf(dl.sDist[i],dl.sLight[i]);
-    const tile=flatPixelBank[flat] && flatPixelBank[flat][sh]; if (!tile) continue;
-    const scale=FLAT_SCALE[flat] || 1, depth=dl.sDist[i], step=depth/v.projDist;
-    const p=Geom.planePoint(sim.x,sim.y,v.cosA,v.sinA,v.halfW,v.projDist,x0,depth);
-    let wx=p.x, wy=p.y; const dwx=v.sinA*step, dwy=-v.cosA*step;
-    let di=(y*w+x0)*4;
-    for (let x=x0;x<=x1;x++,wx+=dwx,wy+=dwy,di+=4) {
-      const uv=Geom.planeUV(wx,wy,scale), u=wrap64(uv.u), vv=wrap64(uv.v), si=(vv*64+u)*4;
-      dst[di]=tile[si]; dst[di+1]=tile[si+1]; dst[di+2]=tile[si+2]; dst[di+3]=255;
-    }
-  }
-  SOFT_PLANE.ctx.putImageData(SOFT_PLANE.image,0,0);
-  return true;
-}
-
 /* ── paint ── */
 function paint(sim, dl) {
   const v = dl.view, w = v.w, h = v.h;
@@ -1366,34 +1242,24 @@ function paint(sim, dl) {
      remained locked to the display while the player moved. Each scanline now
      receives a world-anchored affine pattern transform derived from the same
      tz projection as the portal solver. */
-  const softwareReady = PLANE_BACKEND.active === 'software' ? prepareSoftwarePlanes(sim, dl, shadeOf) : false;
   const drawPlane = (i) => {
     const y = dl.sY[i], x0 = dl.sX0[i], x1 = dl.sX1[i], dist = dl.sDist[i];
     if (x1 < x0 || y < 0 || y >= h) return;
-    if (PLANE_BACKEND.active === 'software' && softwareReady && SOFT_PLANE.canvas) {
-      ctx.drawImage(SOFT_PLANE.canvas, x0, y, x1-x0+1, 1, x0, y, x1-x0+1, 1);
+    const bank = flatBank[dl.sFlat[i]] || flatBank[0];
+    const fill = bank && bank[shadeOf(dist, dl.sLight[i])];
+    if (!fill) return;
+    if (typeof fill === 'string' || !fill.setTransform) {
+      ctx.fillStyle = fill; ctx.fillRect(x0, y, x1 - x0 + 1, 1);
     } else {
-      const bank = flatBank[dl.sFlat[i]] || flatBank[0];
-      const fill = bank && bank[shadeOf(dist, dl.sLight[i])];
-      if (!fill) return;
-      if (typeof fill === 'string' || !fill.setTransform) {
-        ctx.fillStyle = fill; ctx.fillRect(x0, y, x1 - x0 + 1, 1);
-      } else {
-        const m = Geom.planePatternTransform(sim.x, sim.y, v.cosA, v.sinA, v.halfW, v.projDist, y, dist);
-        if (m) {
-          const fs = FLAT_SCALE[dl.sFlat[i]] || 1;
-          const mm = { a:m.a*fs, b:m.b*fs, c:m.c*fs, d:m.d*fs, e:m.e, f:m.f };
-          try {
-            const pm = (typeof DOMMatrix === 'function') ? new DOMMatrix([mm.a,mm.b,mm.c,mm.d,mm.e,mm.f]) : mm;
-            fill.setTransform(pm);
-          } catch (e) {
-            setPlaneBackend('software');
-            const c0=FLAT[FLAT_NAMES[dl.sFlat[i]]]||[32,32,36];
-            ctx.fillStyle=`rgb(${c0[0]},${c0[1]},${c0[2]})`; ctx.fillRect(x0,y,x1-x0+1,1); return;
-          }
-        }
-        ctx.fillStyle = fill; ctx.fillRect(x0, y, x1 - x0 + 1, 1);
+      const m = Geom.planePatternTransform(sim.x, sim.y, v.cosA, v.sinA,
+        v.halfW, v.projDist, y, dist);
+      if (m) {
+        const fs = FLAT_SCALE[dl.sFlat[i]] || 1;
+        const mm = { a:m.a*fs, b:m.b*fs, c:m.c*fs, d:m.d*fs, e:m.e, f:m.f };
+        const pm = (typeof DOMMatrix === 'function') ? new DOMMatrix([mm.a,mm.b,mm.c,mm.d,mm.e,mm.f]) : mm;
+        fill.setTransform(pm);
       }
+      ctx.fillStyle = fill; ctx.fillRect(x0, y, x1 - x0 + 1, 1);
     }
     const off = y * w;
     for (let x = Math.max(0,x0); x <= Math.min(w-1,x1); x++) if (dist < zbuf[off+x]) zbuf[off+x] = dist;
@@ -1613,27 +1479,24 @@ let RW = 0, RH = 0, RSCALE = 1, dl = null;
 const input = { fwd: 0, back: 0, left: 0, right: 0, run: 0, jump: 0 };
 let showMap = LS.get('brazen.map', '0') === '1';
 let frameMs = 0, fps = 0, fpsAcc = 0, fpsN = 0;
-const SIM_HZ = 60, SIM_DT = 1 / SIM_HZ, MAX_CATCHUP_STEPS = 8;
 
-function viewportSize() {
-  const vv = window.visualViewport;
-  return { w: Math.max(1, Math.round((vv && vv.width) || window.innerWidth || 960)), h: Math.max(1, Math.round((vv && vv.height) || window.innerHeight || 600)) };
-}
 function resize() {
   if (HEADLESS) { RW = 320; RH = 200; dl = dl || new DrawLists(RW, RH); return; }
-  const vp = viewportSize(), w = vp.w, h = vp.h;
-  // Coarse-pointer devices deliberately render fewer internal pixels. Tower's
-  // pixel-art presentation gains battery/thermal headroom instead of fake DPI.
-  RSCALE = PLATFORM.touch ? 2 : (h > 900 ? 2 : 1.5);
+  const w = window.innerWidth || 960, h = window.innerHeight || 600;
+  RSCALE = h > 900 ? 2 : 1.5;
   RW = Math.max(160, Math.round(w / RSCALE));
   RH = Math.max(120, Math.round(h / RSCALE));
   canvas.width = RW; canvas.height = RH;
   canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
   if (ctx) ctx.imageSmoothingEnabled = false;
   dl = new DrawLists(RW, RH);
-  if (PLANE_BACKEND.active === 'software') ensureSoftPlane(RW,RH);
 }
-function drainSimEvents() {
+
+let last = 0, rafId = null, frames = 0;
+function loop(ts) {
+  const dt = Math.min((ts - last) / 1000 || 0.016, 0.05); last = ts;
+  const t0 = (performance && performance.now) ? performance.now() : 0;
+  sim.step(dt, input);
   for (const e of sim.events) {
     if (e.k === 'step') Audio4.sfx('step');
     else if (e.k === 'fire') Audio4.sfx('fire');
@@ -1642,18 +1505,6 @@ function drainSimEvents() {
     else if (e.k === 'land') Audio4.sfx('land');
   }
   sim.events.length = 0;
-}
-
-let last = 0, accumulator = 0, rafId = null, frames = 0;
-function loop(ts) {
-  const frameDt = Math.min((ts - last) / 1000 || SIM_DT, 0.10); last = ts;
-  accumulator += frameDt;
-  const t0 = (performance && performance.now) ? performance.now() : 0;
-  let steps = 0;
-  while (accumulator >= SIM_DT && steps < MAX_CATCHUP_STEPS) {
-    sim.step(SIM_DT, input); drainSimEvents(); accumulator -= SIM_DT; steps++;
-  }
-  if (steps === MAX_CATCHUP_STEPS && accumulator >= SIM_DT) accumulator = 0;
   Audio4.tick();
   if (!HEADLESS) {
     RenderCore.solve(sim, dl, RW, RH);
@@ -1664,13 +1515,12 @@ function loop(ts) {
     if (showMap) drawAutomap(sim, RW, RH);
   }
   frameMs = ((performance && performance.now) ? performance.now() : 0) - t0;
-  fpsAcc += frameDt; fpsN++;
+  fpsAcc += dt; fpsN++;
   if (fpsAcc > .4) { fps = fpsN / fpsAcc; fpsAcc = 0; fpsN = 0; }
   if (uiEl && (frames & 7) === 0) {
-    const sec = map.sectors[sim.sector];
-    uiEl.textContent = `${VERSION} · ${RW}x${RH} · ${frameMs.toFixed(1)}ms · ${fps.toFixed(0)}fps · ${PLANE_BACKEND.active.toUpperCase()} · SEC ${sec ? sec.id : '?'} · vis ${dl.stats.sectors}/${dl.stats.portals}p · Z ${sim.z.toFixed ? sim.z.toFixed(0) : sim.z}`
+    uiEl.textContent = `${VERSION} · ${RW}x${RH} · ${frameMs.toFixed(1)}ms · ${fps.toFixed(0)}fps · SEC ${map.sectors[sim.sector].id} · vis ${dl.stats.sectors}/${dl.stats.portals}p · Z ${sim.z}`
       + ` · J ${sim.grounded ? 'GND' : sim.airZ.toFixed(0)} · ART ${ART.ready ? 'ATLAS' : (ART.errors.length ? 'FALLBACK' : 'LOADING')}`
-      + (RUNTIME_ERRORS.length ? ` · ERR ${RUNTIME_ERRORS.length}` : '') + (MAP_ERRORS.length ? ` · MAP ERRORS ${MAP_ERRORS.length}` : '');
+      + (MAP_ERRORS.length ? ` · MAP ERRORS ${MAP_ERRORS.length}` : '');
   }
   frames++;
   rafId = requestAnimationFrame(loop);
@@ -1684,7 +1534,6 @@ window.addEventListener('keydown', e => {
   if (e.code === 'Space') { if (!e.repeat) input.jump = 1; e.preventDefault(); }
   if (e.code === 'KeyM') toggleMap();
   if (e.code === 'KeyN') toggleAudio();
-  if (e.code === 'KeyP') togglePlaneBackend();
   if (e.code === 'KeyC') sim.clearImpacts();
 });
 window.addEventListener('keyup', e => {
@@ -1692,81 +1541,20 @@ window.addEventListener('keyup', e => {
   if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') input.run = 0;
   if (e.code === 'Space') input.jump = 0;
 });
-const MOUSE_SENS = 0.0022, TOUCH_LOOK_SENS = 0.00255;
+const MOUSE_SENS = 0.0022;
 window.addEventListener('mousemove', e => {
-  if (!PLATFORM.touch && document.pointerLockElement === canvas) sim.look(e.movementX || 0, e.movementY || 0, MOUSE_SENS, false);
+  if (document.pointerLockElement === canvas) sim.look(e.movementX || 0, e.movementY || 0, MOUSE_SENS, false);
 });
-function fireOnce() { if (!sim.fire()) Audio4.sfx('dry'); }
 canvas.addEventListener('mousedown', () => {
-  if (PLATFORM.touch) return;
   if (document.pointerLockElement !== canvas) { canvas.requestPointerLock && canvas.requestPointerLock(); return; }
-  fireOnce();
+  if (!sim.fire()) Audio4.sfx('dry');
 });
-function enterGame() {
-  if (PLATFORM.touch) {
-    if (lockEl) lockEl.classList.add('hidden');
-    reportToShell('node_entry', { node:'brazen.play', seed:SEED, mobile:1 });
-    return;
-  }
-  canvas.requestPointerLock && canvas.requestPointerLock();
-}
-if (lockEl) lockEl.addEventListener('click', enterGame);
+if (lockEl) lockEl.addEventListener('click', () => { canvas.requestPointerLock && canvas.requestPointerLock(); });
 document.addEventListener('pointerlockchange', () => {
-  if (PLATFORM.touch) return;
   const on = document.pointerLockElement === canvas;
   if (lockEl) lockEl.classList.toggle('hidden', on);
   reportToShell(on ? 'node_entry' : 'node_exit', { node: 'brazen.play', seed: SEED });
 });
-
-// Left virtual stick: deliberately digital at the Sim boundary. The fixed-step
-// controller still owns acceleration, so touch and keyboard share one movement law.
-let movePointer = -1;
-function setTouchMove(e) {
-  if (!touchMoveEl) return;
-  const r=touchMoveEl.getBoundingClientRect(), cx=r.left+r.width/2, cy=r.top+r.height/2;
-  let dx=e.clientX-cx, dy=e.clientY-cy, L=Math.hypot(dx,dy), lim=r.width*.34;
-  if (L>lim) { dx*=lim/L; dy*=lim/L; L=lim; }
-  if (touchKnobEl) touchKnobEl.style.transform=`translate(${dx}px,${dy}px)`;
-  const nx=dx/lim, ny=dy/lim, dead=.18;
-  input.left=nx < -dead ? 1:0; input.right=nx > dead ? 1:0;
-  input.fwd=ny < -dead ? 1:0; input.back=ny > dead ? 1:0;
-}
-function clearTouchMove() {
-  input.left=input.right=input.fwd=input.back=0; movePointer=-1;
-  if (touchKnobEl) touchKnobEl.style.transform='translate(0,0)';
-}
-if (touchMoveEl) {
-  touchMoveEl.addEventListener('pointerdown',e=>{movePointer=e.pointerId;touchMoveEl.setPointerCapture&&touchMoveEl.setPointerCapture(e.pointerId);setTouchMove(e);e.preventDefault();},{passive:false});
-  touchMoveEl.addEventListener('pointermove',e=>{if(e.pointerId===movePointer){setTouchMove(e);e.preventDefault();}},{passive:false});
-  touchMoveEl.addEventListener('pointerup',e=>{if(e.pointerId===movePointer)clearTouchMove();});
-  touchMoveEl.addEventListener('pointercancel',e=>{if(e.pointerId===movePointer)clearTouchMove();});
-}
-
-// Right-side drag look. UI buttons consume their own pointers, so the canvas
-// receives only intentional look gestures.
-let lookPointer=-1,lastLookX=0,lastLookY=0;
-canvas.addEventListener('pointerdown',e=>{
-  if (!PLATFORM.touch || e.pointerType==='mouse') return;
-  if (e.clientX < (window.innerWidth||1)*.34) return;
-  lookPointer=e.pointerId; lastLookX=e.clientX; lastLookY=e.clientY;
-  canvas.setPointerCapture&&canvas.setPointerCapture(e.pointerId); e.preventDefault();
-},{passive:false});
-canvas.addEventListener('pointermove',e=>{
-  if (e.pointerId!==lookPointer) return;
-  const dx=e.clientX-lastLookX,dy=e.clientY-lastLookY;lastLookX=e.clientX;lastLookY=e.clientY;
-  sim.look(dx,dy,TOUCH_LOOK_SENS,false);e.preventDefault();
-},{passive:false});
-function endTouchLook(e){if(e.pointerId===lookPointer)lookPointer=-1;}
-canvas.addEventListener('pointerup',endTouchLook); canvas.addEventListener('pointercancel',endTouchLook);
-
-if (touchFireEl) touchFireEl.addEventListener('pointerdown',e=>{fireOnce();e.preventDefault();},{passive:false});
-if (touchJumpEl) touchJumpEl.addEventListener('pointerdown',e=>{input.jump=1;e.preventDefault();},{passive:false});
-if (touchRunEl) {
-  touchRunEl.addEventListener('pointerdown',e=>{input.run=1;touchRunEl.classList.add('on');touchRunEl.setPointerCapture&&touchRunEl.setPointerCapture(e.pointerId);e.preventDefault();},{passive:false});
-  const stopRun=e=>{input.run=0;touchRunEl.classList.remove('on');e.preventDefault&&e.preventDefault();};
-  touchRunEl.addEventListener('pointerup',stopRun,{passive:false}); touchRunEl.addEventListener('pointercancel',stopRun,{passive:false});
-}
-
 function toggleAudio() {
   Audio4.init(SEED); Audio4.setOn(!Audio4.on);
   audioBtn.textContent = 'AUDIO: ' + (Audio4.on ? 'ON' : 'OFF');
@@ -1781,7 +1569,6 @@ function toggleMap() {
 if (audioBtn) audioBtn.addEventListener('click', toggleAudio);
 if (mapBtn) mapBtn.addEventListener('click', toggleMap);
 window.addEventListener('resize', resize);
-if (window.visualViewport) window.visualViewport.addEventListener('resize', resize);
 window.addEventListener('message', e => {
   const d = e.data; if (!d || d.fts !== 1) return;
   if (d.type === 'volume' && d.bus) Audio4.setBus(d.bus, d.value);
@@ -1825,12 +1612,6 @@ window.__BRAZEN_TESTS__ = {
     const m = Geom.planePatternTransform(0,0,1,0,160,160,150,64);
     return !!m && Object.values(m).every(Number.isFinite);
   },
-  floorUvWorldLocked() {
-    const a=Geom.planeUV(192,96,3),b=Geom.planeUV(192,96,3);
-    return a.u===64 && a.v===32 && a.u===b.u && a.v===b.v;
-  },
-  fixedStepConfig() { return SIM_HZ===60 && Math.abs(SIM_DT-1/60)<1e-12 && MAX_CATCHUP_STEPS===8; },
-  mobilePlaneSafe() { return !PLATFORM.ios || PLANE_BACKEND.active==='software' || PLANE_BACKEND.requested==='pattern'; },
   jumpArc() {
     const m = buildLevel(), s = new Sim(m, 123), inp = {fwd:0,back:0,left:0,right:0,run:0,jump:1};
     s.step(1/60, inp);
@@ -1852,8 +1633,6 @@ window.__BRAZEN__ = {
   Sim: Sim, RenderCore: RenderCore, DrawLists: DrawLists, mulberry32: mulberry32,
   TEX: TEX, FLAT_NAMES: FLAT_NAMES, DIGIT: DIGIT, TILE_H: TILE_H, RECTS: RECTS, GA_LOG: GA_LOG,
   Audio4: Audio4, ART: ART, ART_FILES: ART_FILES, WORLD_ATLAS: WORLD_ATLAS, HUD_ATLAS: HUD_ATLAS, headless: HEADLESS,
-  PLATFORM: PLATFORM, PLANE_BACKEND: PLANE_BACKEND, setPlaneBackend: setPlaneBackend, togglePlaneBackend: togglePlaneBackend,
-  RUNTIME_ERRORS: RUNTIME_ERRORS, SIM_HZ: SIM_HZ, SIM_DT: SIM_DT, MAX_CATCHUP_STEPS: MAX_CATCHUP_STEPS,
   get sim() { return sim; }, get map() { return map; },
   get mapErrors() { return MAP_ERRORS; }, get frames() { return frames; },
   get dl() { return dl; },
@@ -1863,7 +1642,6 @@ window.__BRAZEN__ = {
 // Development-only URL helpers: ?preview=1 hides the pointer-lock curtain;
 // ?test=1 publishes a tiny machine-readable smoke report into the DOM.
 const DEV_Q = new URLSearchParams(location.search);
-if (DEV_Q.get('planes')) setPlaneBackend(DEV_Q.get('planes'));
 if (DEV_Q.get('preview') === '1' && lockEl) lockEl.classList.add('hidden');
 if (DEV_Q.get('test') === '1') {
   setTimeout(() => {
@@ -1878,17 +1656,11 @@ if (DEV_Q.get('test') === '1') {
       assetsLoaded: T.assetsLoaded(),
       floorWorldMapping: T.floorWorldMapping(),
       floorTransformFinite: T.floorTransformFinite(),
-      floorUvWorldLocked: T.floorUvWorldLocked(),
-      fixedStepConfig: T.fixedStepConfig(),
-      mobilePlaneSafe: T.mobilePlaneSafe(),
       jumpArc: T.jumpArc(),
       jumpCeilingClamp: T.jumpCeilingClamp(),
       weaponAtlas: T.weaponAtlas(),
       mapErrors: MAP_ERRORS.slice(),
-      artErrors: ART.errors.slice(),
-      runtimeErrors: RUNTIME_ERRORS.slice(),
-      planeBackend: PLANE_BACKEND.active,
-      platform: {ios:PLATFORM.ios,touch:PLATFORM.touch}
+      artErrors: ART.errors.slice()
     };
     const pre = document.createElement('pre'); pre.id = 'brazen-tests'; pre.textContent = JSON.stringify(results);
     document.body.appendChild(pre);
