@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-1PR18Y2CDD"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-1PR18Y2CDD');
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>MINESWEEPER — STOCKPILE STEWARD</title>
+
+<!-- ── Primary Meta ─────────────────────────────────────────────────── -->
+<meta name="description" content="FishTacoStand Arcade — Minesweeper Stockpile Steward. Neon logic. Detonation optional." />
+
+<!-- ── Favicons ─────────────────────────────────────────────────────── -->
+<link rel="icon" type="image/png" href="fts-favicon.png">
+<link rel="shortcut icon" type="image/png" href="fts-favicon.png">
+<link rel="apple-touch-icon" href="fts-favicon.png">
+
+<!-- ── Open Graph ────────────────────────────────────────────────────── -->
+<meta property="og:title" content="Minesweeper · Stockpile Steward">
+<meta property="og:description" content="FishTacoStand Arcade — Neon logic. Detonation optional.">
+<meta property="og:url" content="https://frymatic.us/FTSArcade/minesweeper.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="FishTacoStand Arcade">
+<meta property="og:image" content="https://frymatic.us/FTSArcade/minesweeper_preview.png">
+<meta property="og:image:alt" content="Minesweeper Arcade cabinet.">
+<meta property="og:image:type" content="image/png">
+
+<!-- ── Twitter / X Card ─────────────────────────────────────────────── -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Minesweeper · Stockpile Steward">
+<meta name="twitter:description" content="Neon logic. Detonation optional.">
+<meta name="twitter:image" content="https://frymatic.us/FTSArcade/minesweeper_preview.png">
+
+<style>
+:root{
+  color-scheme:dark;
+  --ink:#05080b;
+  --steel:#101a20;
+  --steel2:#182831;
+  --amber:#ffb000;
+  --amber2:#ffd45a;
+  --phosphor:#8dffb5;
+  --cyan:#67d9e8;
+  --danger:#ff3c34;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html,body{
+  width:100%;height:100%;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;
+  background:
+    radial-gradient(circle at 50% 18%,rgba(45,92,101,.16),transparent 42%),
+    linear-gradient(135deg,rgba(255,176,0,.025),transparent 28%,rgba(82,210,225,.025) 74%,transparent),
+    #05080b;
+}
+canvas{display:block;position:fixed;inset:0;touch-action:none;cursor:crosshair}
+#glass,#crt{position:fixed;inset:0;pointer-events:none}
+#glass{
+  z-index:4;
+  background:
+    linear-gradient(115deg,rgba(255,255,255,.045),transparent 18%,transparent 72%,rgba(255,255,255,.018)),
+    radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.62) 100%);
+}
+#crt{
+  z-index:5;
+  opacity:.48;
+  background:
+    repeating-linear-gradient(rgba(255,255,255,.012) 0,rgba(255,255,255,.012) 1px,rgba(0,0,0,.18) 1px,rgba(0,0,0,.18) 3px),
+    repeating-linear-gradient(90deg,rgba(255,176,0,.008) 0,rgba(255,176,0,.008) 1px,transparent 1px,transparent 4px);
+  mix-blend-mode:multiply;
+}
+
+/* Touch flag selector: compact industrial toggle, not a floating neon toy. */
+#nui{
+  display:none;position:fixed;right:clamp(12px,3vw,26px);bottom:clamp(12px,3vh,24px);z-index:50;
+  flex-direction:column;align-items:flex-end;gap:8px;pointer-events:none;
+}
+@media(pointer:coarse){#nui{display:flex}}
+.nb{
+  --nb-sz:clamp(64px,14vw,88px);
+  pointer-events:all;touch-action:none;-webkit-tap-highlight-color:transparent;
+  appearance:none;outline:none;cursor:pointer;width:var(--nb-sz);height:var(--nb-sz);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:8px;
+  background:linear-gradient(180deg,rgba(27,42,49,.95),rgba(8,14,18,.96));
+  border:1px solid rgba(103,217,232,.35);
+  box-shadow:0 8px 28px rgba(0,0,0,.5),inset 0 1px rgba(255,255,255,.06),inset 0 -10px 18px rgba(0,0,0,.28);
+  color:rgba(141,255,181,.82);font-family:ui-monospace,'SFMono-Regular',Menlo,Consolas,monospace;
+  font-weight:900;font-size:clamp(22px,5vw,30px);letter-spacing:.06em;
+  transition:transform .06s,border-color .06s,color .06s,box-shadow .06s,background .06s;
+}
+.nb::before{content:'';position:absolute;width:8px;height:8px;border-radius:50%;margin-top:-48px;margin-left:48px;background:#27333a;box-shadow:inset 0 1px 2px #000}
+.nb-lbl{font-size:clamp(7px,1.5vw,10px);letter-spacing:.16em;margin-top:4px;color:rgba(210,232,237,.55)}
+.nb.active{
+  color:#101607;background:linear-gradient(180deg,#ffc43e,#d98d00);border-color:#ffe18d;
+  box-shadow:0 0 0 2px rgba(255,176,0,.15),0 8px 28px rgba(0,0,0,.5),0 0 24px rgba(255,176,0,.28),inset 0 1px rgba(255,255,255,.4);
+}
+.nb.active .nb-lbl{color:rgba(25,20,8,.72)}
+.nb:active,.nb.hit{transform:translateY(2px) scale(.96);border-color:#fff0b5;box-shadow:0 2px 10px rgba(0,0,0,.55),0 0 22px rgba(255,176,0,.36),inset 0 2px 8px rgba(0,0,0,.2)}
+@media(pointer:coarse) and (orientation:landscape){.nb{--nb-sz:clamp(54px,11vw,72px)}}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="glass"></div>
+<div id="crt"></div>
+
+<div id="nui" role="group" aria-label="Game controls">
+  <button class="nb" id="nb-flag" aria-label="Toggle flag mode" aria-pressed="false">
+    <span style="line-height:1;font-size:1.1em">⚑</span>
+    <span class="nb-lbl" id="nb-flag-lbl">FLAG</span>
+  </button>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════
+//  M I N E S W E E P E R  ·  S T O C K P I L E  S T E W A R D
+//  Depot terminal · Ordnance manifest · Adaptive NUI
+//  FishTacoStand Arcade — frymatic.us/FTSArcade/
+// ═══════════════════════════════════════════════════════════════════════
+
+// ── Canvas setup ──────────────────────────────────────────────────────
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d');
+let W, H;
+function resize() {
+  W = canvas.width  = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  grid.init();
+  calcLayout();
+}
+window.addEventListener('resize', resize);
+
+// ── Palette ───────────────────────────────────────────────────────────
+const C = {
+  bg:      '#05080b',
+  covCell: '#14232a',
+  hovCell: '#203944',
+  revCell: '#080d10',
+  brd:     'rgba(103,217,232,0.16)',
+  brdHi:   'rgba(255,196,62,0.88)',
+  mine:    '#ff3c34',
+  explBg:  '#2a0907',
+  flag:    '#ffb000',
+  wrongX:  '#ff3c34',
+  nums:    ['','#8dffb5','#67d9e8','#ffb000','#ff7a45','#ef6dff','#ff4f76','#f6f08b','#d7f5ff'],
+  ui:      '#67d9e8',
+  uiD:     'rgba(150,211,220,0.48)',
+  red:     '#ff3c34',
+  yel:     '#ffb000',
+  grn:     '#8dffb5',
+  steel:   '#14232a',
+  steelHi: '#28424d',
+  paper:   '#dbe9eb',
+};
+
+const FONT_DISPLAY = '"Arial Black","Helvetica Neue",Arial,sans-serif';
+const FONT_DATA = 'ui-monospace,"SFMono-Regular",Menlo,Consolas,"Liberation Mono",monospace';
+
+const glow   = (c, b) => { ctx.shadowColor = c; ctx.shadowBlur = b; };
+const noGlow = ()     => { ctx.shadowBlur  = 0; };
+
+// ── Audio ─────────────────────────────────────────────────────────────
+let _ac = null;
+const AC = () => _ac || (_ac = new (window.AudioContext || window.webkitAudioContext)());
+
+function tone(freq, type, dur, vol = 0.18, startF = null) {
+  try {
+    const ac = AC(), o = ac.createOscillator(), g = ac.createGain();
+    o.connect(g); g.connect(ac.destination);
+    o.type = type;
+    o.frequency.setValueAtTime(startF || freq, ac.currentTime);
+    if (startF) o.frequency.exponentialRampToValueAtTime(freq, ac.currentTime + dur);
+    g.gain.setValueAtTime(vol, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + dur);
+    o.start(); o.stop(ac.currentTime + dur);
+  } catch (e) {}
+}
+
+function noise(dur, bandFreq = 150, vol = 0.2) {
+  try {
+    const ac = AC();
+    const buf = ac.createBuffer(1, Math.ceil(ac.sampleRate * dur), ac.sampleRate);
+    const d   = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    const src = ac.createBufferSource(); src.buffer = buf;
+    const flt = ac.createBiquadFilter(); flt.type = 'bandpass';
+    flt.frequency.value = bandFreq; flt.Q.value = 0.6;
+    const g = ac.createGain();
+    g.gain.setValueAtTime(vol, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + dur);
+    src.connect(flt); flt.connect(g); g.connect(ac.destination);
+    src.start(); src.stop(ac.currentTime + dur);
+  } catch (e) {}
+}
+
+const SFX = {
+  tick:    () => tone(900, 'square', 0.04, 0.04),
+  reveal:  () => tone(580, 'sine', 0.08, 0.07, 940),
+  flag:    () => { tone(660, 'square', 0.06, 0.05); tone(900, 'square', 0.06, 0.03); },
+  unflag:  () => tone(440, 'square', 0.07, 0.05),
+  chord:   () => { tone(880, 'sine', 0.07, 0.08); tone(1100, 'sine', 0.07, 0.05); },
+  sel:     () => tone(520, 'sine', 0.07, 0.06, 420),
+  explode: () => { noise(0.5, 58, 0.52); tone(52, 'sawtooth', 0.42, 0.24, 120); },
+  win:     () => [523,659,784,1047,1568].forEach((f,i) =>
+                    setTimeout(() => tone(f,'sine',0.3,0.18), i*108)),
+};
+
+// ── Grid background — ported verbatim from tetris.html ─────────────────
+// Static dots + wave-driven brightness, not the older spring-mesh lattice
+// (that version lives on in Asteroids/dotgrid-v1 for now). Matching
+// tetris.html's specific implementation is the point of this pass — zero
+// spring physics, zero per-frame allocation, same visual signature.
+const TAU = Math.PI * 2;
+const grid = {
+  spacing: 38,
+  cols: 0, rows: 0,
+  waves: [],   // [{x,y,r,maxR,alpha}]
+  bg: null,
+
+  init() {
+    this.cols = Math.ceil(W / this.spacing) + 2;
+    this.rows = Math.ceil(H / this.spacing) + 2;
+
+    // Static depot-floor plate: rebuilt only on resize.
+    this.bg = document.createElement('canvas');
+    this.bg.width = W; this.bg.height = H;
+    const g = this.bg.getContext('2d');
+    const horizon = HUD_H + Math.max(36, H * 0.12);
+    const floorGrad = g.createLinearGradient(0, horizon, 0, H);
+    floorGrad.addColorStop(0, 'rgba(21,39,45,0.02)');
+    floorGrad.addColorStop(1, 'rgba(21,39,45,0.28)');
+    g.fillStyle = floorGrad; g.fillRect(0, horizon, W, H-horizon);
+    g.lineWidth = 1;
+    for (let i = -8; i <= 8; i++) {
+      const bx = W/2 + i * W * 0.11;
+      g.strokeStyle = i % 2 ? 'rgba(103,217,232,.045)' : 'rgba(255,176,0,.035)';
+      g.beginPath(); g.moveTo(W/2 + i*10, horizon); g.lineTo(bx, H+24); g.stroke();
+    }
+    for (let j = 0; j < 11; j++) {
+      const q = j/10, y = horizon + Math.pow(q,2.05)*(H-horizon);
+      g.strokeStyle = `rgba(103,217,232,${0.025 + q*0.055})`;
+      g.beginPath(); g.moveTo(0,y); g.lineTo(W,y); g.stroke();
+    }
+    const rg = g.createRadialGradient(W*.5,H*.52,0,W*.5,H*.52,Math.max(W,H)*.66);
+    rg.addColorStop(0,'rgba(141,255,181,.05)');
+    rg.addColorStop(.55,'rgba(141,255,181,.015)');
+    rg.addColorStop(1,'rgba(0,0,0,0)');
+    g.fillStyle=rg; g.fillRect(0,0,W,H);
+  },
+
+  // Called on mine detonation — pushes a ring outward from impact point
+  ripple(wx, wy, mag, radius) {
+    this.waves.push({ x: wx, y: wy, r: 0, maxR: radius, alpha: Math.min(1, mag / 600) });
+  },
+
+  update(dt) {
+    const speed = 320;
+    for (let i = this.waves.length - 1; i >= 0; i--) {
+      const w = this.waves[i];
+      w.r += speed * dt;
+      w.alpha -= dt * 1.1;
+      if (w.alpha <= 0 || w.r > w.maxR * 1.4) this.waves.splice(i, 1);
+    }
+  },
+
+  draw() {
+    const t = Date.now() * 0.00018;
+    ctx.save();
+    if (this.bg) ctx.drawImage(this.bg, 0, 0);
+
+    // Slow radar sweep: one translucent wedge, no full-screen redraw work.
+    ctx.save();
+    ctx.translate(W*.5,H*.52); ctx.rotate(t);
+    const sweep = ctx.createLinearGradient(0,0,Math.max(W,H)*.58,0);
+    sweep.addColorStop(0,'rgba(141,255,181,.085)');
+    sweep.addColorStop(1,'rgba(141,255,181,0)');
+    ctx.fillStyle=sweep;
+    ctx.beginPath(); ctx.moveTo(0,0); ctx.arc(0,0,Math.max(W,H)*.58,-.06,.34); ctx.closePath(); ctx.fill();
+    ctx.restore();
+
+    // Only visit the dot lattice while an impact ring actually exists.
+    if (this.waves.length) {
+      for (let r = 0; r < this.rows; r++) {
+        for (let c = 0; c < this.cols; c++) {
+          const px = c*this.spacing-this.spacing, py = r*this.spacing-this.spacing;
+          let bright = 0;
+          for (const w of this.waves) {
+            const ring = Math.abs(Math.hypot(px-w.x,py-w.y)-w.r);
+            if (ring < 28) bright += (1-ring/28)*w.alpha*.72;
+          }
+          if (bright > .025) {
+            ctx.fillStyle=`rgba(255,176,0,${Math.min(.78,bright)})`;
+            ctx.fillRect(px-1,py-1,2,2);
+          }
+        }
+      }
+    }
+    ctx.restore();
+  },
+};
+
+// ── Spark particle ─────────────────────────────────────────────────────
+class Spark {
+  constructor(x, y, vx, vy, col, life, r) {
+    Object.assign(this, { x, y, vx, vy, col, life, maxLife: life, r, dead: false });
+  }
+  update(dt) {
+    this.x  += this.vx * dt;
+    this.y  += this.vy * dt;
+    this.vy += 260 * dt;   // gravity pull
+    this.vx *= 0.985;
+    this.life -= dt;
+    if (this.life <= 0) this.dead = true;
+  }
+  draw() {
+    const a = Math.max(0, this.life / this.maxLife);
+    ctx.save();
+    ctx.globalAlpha = a * a;
+    glow(this.col, 7); ctx.fillStyle = this.col;
+    ctx.beginPath(); ctx.arc(this.x, this.y, this.r * a + 0.4, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+}
+
+// ── Difficulty configs ─────────────────────────────────────────────────
+const DIFFS = {
+  beginner:     { label: 'BEGINNER',     cols:  9, rows:  9, mines:  10 },
+  intermediate: { label: 'INTERMEDIATE', cols: 16, rows: 16, mines:  40 },
+  expert:       { label: 'EXPERT',       cols: 30, rows: 16, mines:  99 },
+};
+
+// ── Layout ─────────────────────────────────────────────────────────────
+const HUD_H  = 86;
+const MARGIN = 8;
+let cellSz, boardX, boardY;
+let curDiff = 'beginner', diff = DIFFS[curDiff];
+
+function calcLayout() {
+  const avW = W - MARGIN * 2;
+  const avH = H - HUD_H - MARGIN * 2;
+  const szW = Math.floor(avW / diff.cols);
+  const szH = Math.floor(avH / diff.rows);
+  cellSz = Math.max(10, Math.min(szW, szH, 56));
+  boardX = Math.floor((W - diff.cols * cellSz) / 2);
+  boardY = HUD_H + MARGIN + Math.floor((avH - diff.rows * cellSz) / 2);
+}
+
+// ── Game state ─────────────────────────────────────────────────────────
+const ST = { TITLE: 'title', PLAY: 'play', OVER: 'over', WIN: 'win' };
+
+let gs = freshGS();
+function freshGS() {
+  return {
+    state:     ST.TITLE,
+    board:     [],
+    rows: 0,  cols: 0,  totalMines: 0,
+    revealed:  0,  flagCount: 0,
+    startTime: 0,  elapsed: 0,
+    first:     true,
+    xplR: -1, xplC: -1,       // explode cell coords
+    hover:     { r: -1, c: -1 },
+    flagMode:  false,
+    mDown:     false,
+    sparks:    [],
+    shakeT:    0,  shakeMag: 0,
+    faceBtn:   null,
+    startBtn:  null,
+    diffBtns:  {},
+  };
+}
+
+// ── Board construction ─────────────────────────────────────────────────
+function makeBoard(rows, cols) {
+  return Array.from({ length: rows }, () =>
+    Array.from({ length: cols }, () =>
+      ({ mine: false, revealed: false, flagged: false, count: 0 })));
+}
+
+function placeMines(board, rows, cols, count, safeR, safeC) {
+  // Safe zone: clicked cell + its 8 neighbors (first click always safe)
+  const safe = new Set();
+  for (let dr = -1; dr <= 1; dr++)
+    for (let dc = -1; dc <= 1; dc++) {
+      const nr = safeR + dr, nc = safeC + dc;
+      if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) safe.add(nr * cols + nc);
+    }
+
+  let placed = 0;
+  while (placed < count) {
+    const r = (Math.random() * rows) | 0;
+    const c = (Math.random() * cols) | 0;
+    if (!board[r][c].mine && !safe.has(r * cols + c)) {
+      board[r][c].mine = true;
+      placed++;
+    }
+  }
+
+  // Adjacency counts
+  for (let r = 0; r < rows; r++)
+    for (let c = 0; c < cols; c++) {
+      if (board[r][c].mine) continue;
+      let n = 0;
+      for (let dr = -1; dr <= 1; dr++)
+        for (let dc = -1; dc <= 1; dc++) {
+          if (!dr && !dc) continue;
+          const nr = r + dr, nc = c + dc;
+          if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && board[nr][nc].mine) n++;
+        }
+      board[r][c].count = n;
+    }
+}
+
+// BFS flood-fill reveal — iterative, safe for 30×16 expert boards
+function revealFrom(startR, startC) {
+  const { board, rows, cols } = gs;
+  const cell = board[startR][startC];
+  if (cell.revealed || cell.flagged) return;
+
+  if (cell.mine) {
+    cell.revealed = true;
+    gs.revealed++;
+    gs.xplR = startR;
+    gs.xplC = startC;
+    endGame(false);
+    return;
+  }
+
+  const queue = [[startR, startC]];
+  const seen  = new Set([startR * cols + startC]);
+
+  while (queue.length) {
+    const [r, c] = queue.shift();
+    const cur = board[r][c];
+    if (cur.revealed || cur.flagged) continue;
+    cur.revealed = true;
+    gs.revealed++;
+
+    if (cur.count === 0) {
+      for (let dr = -1; dr <= 1; dr++)
+        for (let dc = -1; dc <= 1; dc++) {
+          if (!dr && !dc) continue;
+          const nr = r + dr, nc = c + dc;
+          if (nr < 0 || nr >= rows || nc < 0 || nc >= cols) continue;
+          const key = nr * cols + nc;
+          if (!seen.has(key) && !board[nr][nc].revealed && !board[nr][nc].flagged) {
+            seen.add(key);
+            queue.push([nr, nc]);
+          }
+        }
+    }
+  }
+  SFX.reveal();
+}
+
+function toggleFlag(r, c) {
+  const cell = gs.board[r][c];
+  if (cell.revealed) return;
+  if (!cell.flagged) { cell.flagged = true;  gs.flagCount++; SFX.flag();   }
+  else               { cell.flagged = false; gs.flagCount--; SFX.unflag(); }
+}
+
+// Chord: click a revealed number with matching adjacent flag count
+function chordCell(r, c) {
+  const { board, rows, cols } = gs;
+  const cell = board[r][c];
+  if (!cell.revealed || !cell.count) return;
+
+  let flags = 0;
+  const toReveal = [];
+  for (let dr = -1; dr <= 1; dr++)
+    for (let dc = -1; dc <= 1; dc++) {
+      if (!dr && !dc) continue;
+      const nr = r + dr, nc = c + dc;
+      if (nr < 0 || nr >= rows || nc < 0 || nc >= cols) continue;
+      if (board[nr][nc].flagged) flags++;
+      else if (!board[nr][nc].revealed) toReveal.push([nr, nc]);
+    }
+  if (flags !== cell.count) return;
+  SFX.chord();
+  toReveal.forEach(([nr, nc]) => revealFrom(nr, nc));
+}
+
+function checkWin() {
+  if (gs.state !== ST.PLAY) return;
+  if (gs.revealed >= gs.rows * gs.cols - gs.totalMines) endGame(true);
+}
+
+// ── Game flow ──────────────────────────────────────────────────────────
+function startGame() {
+  diff = DIFFS[curDiff];
+  calcLayout();
+  const flagMode = gs.flagMode; // preserve user preference across restarts
+  gs = {
+    ...freshGS(),
+    state:      ST.PLAY,
+    board:      makeBoard(diff.rows, diff.cols),
+    rows:       diff.rows,
+    cols:       diff.cols,
+    totalMines: diff.mines,
+    flagMode,
+    faceBtn:    gs.faceBtn,  // keep last known position until HUD redraws it
+  };
+}
+
+function endGame(won) {
+  gs.state   = won ? ST.WIN : ST.OVER;
+  gs.elapsed = gs.startTime
+    ? Math.min(999, Math.floor((Date.now() - gs.startTime) / 1000))
+    : 0;
+
+  if (won) {
+    SFX.win();
+    // Auto-flag remaining un-flagged mines
+    for (let r = 0; r < gs.rows; r++)
+      for (let c = 0; c < gs.cols; c++)
+        if (gs.board[r][c].mine && !gs.board[r][c].flagged) {
+          gs.board[r][c].flagged = true;
+          gs.flagCount++;
+        }
+    // Cascade celebration sparks across the board
+    for (let i = 0; i < 60; i++)
+      setTimeout(() => {
+        if (gs.state !== ST.WIN) return;
+        const bw = diff.cols * cellSz, bh = diff.rows * cellSz;
+        spawnBurst(
+          boardX + Math.random() * bw,
+          boardY + Math.random() * bh,
+          7, [C.grn, C.ui, C.yel, '#ff44ff']);
+      }, i * 44);
+
+  } else {
+    SFX.explode();
+    doShake(13, 0.52);
+
+    // Reveal all un-flagged mines
+    for (let r = 0; r < gs.rows; r++)
+      for (let c = 0; c < gs.cols; c++)
+        if (gs.board[r][c].mine && !gs.board[r][c].flagged)
+          gs.board[r][c].revealed = true;
+
+    // Grid ripple + burst at impact cell
+    if (gs.xplR >= 0) {
+      const ex = boardX + gs.xplC * cellSz + cellSz / 2;
+      const ey = boardY + gs.xplR * cellSz + cellSz / 2;
+      grid.ripple(ex, ey, 72, 230);
+      spawnBurst(ex, ey, 55, [C.mine, '#ff6600', '#ff9900', C.yel]);
+    }
+  }
+}
+
+function doShake(mag, dur) { gs.shakeMag = mag; gs.shakeT = dur; }
+
+function spawnBurst(x, y, n, cols) {
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const s = 80 + Math.random() * 340;
+    const c = cols[(Math.random() * cols.length) | 0];
+    gs.sparks.push(
+      new Spark(x, y, Math.cos(a)*s, Math.sin(a)*s - 65,
+                c, 0.38 + Math.random() * 0.9, 2 + Math.random() * 3.5));
+  }
+}
+
+function goTitle() {
+  const flagMode = gs.flagMode;
+  const faceBtn  = gs.faceBtn;
+  gs = { ...freshGS(), flagMode, faceBtn };
+}
+
+// ── Input ─────────────────────────────────────────────────────────────
+function getCellAt(px, py) {
+  const c = Math.floor((px - boardX) / cellSz);
+  const r = Math.floor((py - boardY) / cellSz);
+  if (r >= 0 && r < gs.rows && c >= 0 && c < gs.cols) return { r, c };
+  return null;
+}
+
+function handleReveal(r, c) {
+  if (gs.state !== ST.PLAY) return;
+  if (gs.board[r][c].flagged) return;
+
+  if (gs.first) {
+    gs.first     = false;
+    gs.startTime = Date.now();
+    placeMines(gs.board, gs.rows, gs.cols, gs.totalMines, r, c);
+  }
+
+  const cell = gs.board[r][c];
+  if (cell.revealed) chordCell(r, c);
+  else               revealFrom(r, c);
+  checkWin();
+}
+
+function handleFlag(r, c) {
+  if (gs.state !== ST.PLAY) return;
+  toggleFlag(r, c);
+}
+
+// Unified primary tap/click (reveal path)
+function onPrimary(x, y) {
+  // Face button hit test
+  if (gs.faceBtn) {
+    const f   = gs.faceBtn;
+    const tap = Math.max(f.r, 30); // generous touch target
+    if (Math.hypot(x - f.cx, y - f.cy) <= tap) { SFX.sel(); goTitle(); return; }
+  }
+
+  if (gs.state === ST.TITLE) {
+    for (const [key, b] of Object.entries(gs.diffBtns)) {
+      if (b && x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) {
+        if (curDiff !== key) { curDiff = key; diff = DIFFS[key]; SFX.sel(); calcLayout(); }
+        return;
+      }
+    }
+    if (gs.startBtn) {
+      const b = gs.startBtn;
+      if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) { startGame(); return; }
+    }
+    return;
+  }
+
+  if (gs.state !== ST.PLAY) return;
+  const cell = getCellAt(x, y);
+  if (cell) handleReveal(cell.r, cell.c);
+}
+
+// Unified secondary tap/click (flag path)
+function onSecondary(x, y) {
+  if (gs.state !== ST.PLAY) return;
+  const cell = getCellAt(x, y);
+  if (cell) handleFlag(cell.r, cell.c);
+}
+
+// ── Audio context unlock ───────────────────────────────────────────────
+let _acReady = false;
+function acUnlock() {
+  if (_acReady) return;
+  try { AC().resume(); _acReady = true; } catch (e) {}
+}
+
+// ── Mouse events ───────────────────────────────────────────────────────
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+canvas.addEventListener('mousemove', e => {
+  gs.hover = (gs.state === ST.PLAY)
+    ? (getCellAt(e.clientX, e.clientY) || { r: -1, c: -1 })
+    : { r: -1, c: -1 };
+});
+canvas.addEventListener('mouseleave', () => { gs.hover = { r: -1, c: -1 }; });
+canvas.addEventListener('mousedown',  e  => { gs.mDown = true; acUnlock(); SFX.tick(); });
+canvas.addEventListener('mouseup',    e  => {
+  gs.mDown = false;
+  if (e.button === 2) onSecondary(e.clientX, e.clientY);
+  else               onPrimary(e.clientX, e.clientY);
+});
+
+// ── Touch events ───────────────────────────────────────────────────────
+let _tStart = 0, _tX = 0, _tY = 0, _tMoved = false;
+
+canvas.addEventListener('touchstart', e => {
+  e.preventDefault();
+  acUnlock();
+  const t = e.touches[0];
+  _tStart = Date.now(); _tX = t.clientX; _tY = t.clientY; _tMoved = false;
+  gs.mDown = true;
+  SFX.tick();
+}, { passive: false });
+
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  const t = e.touches[0];
+  if (Math.hypot(t.clientX - _tX, t.clientY - _tY) > 9) _tMoved = true;
+}, { passive: false });
+
+canvas.addEventListener('touchend', e => {
+  e.preventDefault();
+  gs.mDown = false;
+  if (_tMoved) return;
+  const dur = Date.now() - _tStart;
+  // Long-press (>340ms) or flag mode = flag action
+  if (dur > 340 || gs.flagMode) onSecondary(_tX, _tY);
+  else                          onPrimary(_tX, _tY);
+}, { passive: false });
+
+// ── Keyboard events ────────────────────────────────────────────────────
+window.addEventListener('keydown', e => {
+  acUnlock();
+  if (e.code === 'Space' || e.code === 'Enter') {
+    if (gs.state === ST.TITLE)     { startGame(); }
+    else if (gs.state !== ST.PLAY) { goTitle();   }
+  }
+  if (e.code === 'Escape') goTitle();
+  if (e.code === 'KeyF')  { gs.flagMode = !gs.flagMode; updateFlagBtn(); }
+});
+
+// ── NUI flag toggle button ─────────────────────────────────────────────
+const nbFlag = document.getElementById('nb-flag');
+nbFlag.addEventListener('pointerdown', e => {
+  e.preventDefault();
+  nbFlag.setPointerCapture(e.pointerId);
+  gs.flagMode = !gs.flagMode;
+  updateFlagBtn();
+  SFX.sel();
+  nbFlag.classList.add('hit');
+}, { passive: false });
+nbFlag.addEventListener('pointerup',     e => { e.preventDefault(); nbFlag.classList.remove('hit'); }, { passive: false });
+nbFlag.addEventListener('pointercancel', ()  => nbFlag.classList.remove('hit'));
+
+function updateFlagBtn() {
+  nbFlag.classList.toggle('active', gs.flagMode);
+  nbFlag.setAttribute('aria-pressed', gs.flagMode ? 'true' : 'false');
+  document.getElementById('nb-flag-lbl').textContent = gs.flagMode ? 'FLAGGING' : 'FLAG';
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  DRAW LAYER
+// ═══════════════════════════════════════════════════════════════════════
+
+// ── Covered cell: sealed stockpile crate ─────────────────────────────
+function drawCoveredCell(x, y, S, hover) {
+  const gap = Math.max(1, Math.floor(S * 0.055));
+  const inner = S - gap*2;
+  ctx.save();
+
+  const g = ctx.createLinearGradient(x, y, x, y+S);
+  g.addColorStop(0, hover ? '#294653' : '#1d3038');
+  g.addColorStop(.48, hover ? '#1d3540' : '#14242b');
+  g.addColorStop(1, '#0b1216');
+  ctx.fillStyle = g;
+  ctx.fillRect(x+gap,y+gap,inner,inner);
+
+  ctx.strokeStyle = hover ? C.brdHi : 'rgba(103,217,232,.22)';
+  ctx.lineWidth = hover ? 1.7 : 1;
+  if (hover) glow(C.yel, 10);
+  ctx.strokeRect(x+gap+.5,y+gap+.5,inner-1,inner-1);
+  noGlow();
+
+  // Welded lip and pressure seam.
+  if (S >= 20) {
+    ctx.strokeStyle='rgba(255,255,255,.08)'; ctx.lineWidth=1;
+    ctx.beginPath();
+    ctx.moveTo(x+gap+3,y+gap+3);ctx.lineTo(x+S-gap-4,y+gap+3);
+    ctx.moveTo(x+gap+3,y+gap+3);ctx.lineTo(x+gap+3,y+S-gap-4);
+    ctx.stroke();
+    ctx.strokeStyle='rgba(0,0,0,.48)';
+    ctx.beginPath();ctx.moveTo(x+gap+3,y+S-gap-3);ctx.lineTo(x+S-gap-3,y+S-gap-3);ctx.stroke();
+
+    // Corner fasteners.
+    ctx.fillStyle=hover?'rgba(255,196,62,.78)':'rgba(126,171,180,.38)';
+    const b=Math.max(1,S*.035), o=gap+4;
+    for(const [dx,dy] of [[o,o],[S-o,o],[o,S-o],[S-o,S-o]]){
+      ctx.beginPath();ctx.arc(x+dx,y+dy,b,0,TAU);ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+
+// ── Mine symbol: ordnance puck ───────────────────────────────────────
+function drawMine(cx, cy, r, color, blur) {
+  ctx.save();
+  glow(color, blur);
+  ctx.fillStyle = '#180604';
+  ctx.strokeStyle = color;
+  ctx.lineWidth = Math.max(1.4,r*.18);
+  ctx.beginPath();ctx.arc(cx,cy,r,0,TAU);ctx.fill();ctx.stroke();
+  for(let i=0;i<8;i++){
+    const a=i/8*TAU;
+    ctx.beginPath();
+    ctx.moveTo(cx+Math.cos(a)*r*.88,cy+Math.sin(a)*r*.88);
+    ctx.lineTo(cx+Math.cos(a)*r*1.46,cy+Math.sin(a)*r*1.46);
+    ctx.stroke();
+  }
+  noGlow();
+  ctx.fillStyle=color;ctx.beginPath();ctx.arc(cx,cy,r*.37,0,TAU);ctx.fill();
+  ctx.fillStyle='rgba(255,232,190,.8)';ctx.beginPath();ctx.arc(cx-r*.15,cy-r*.15,r*.11,0,TAU);ctx.fill();
+  ctx.restore();
+}
+
+// ── Flag symbol: inspection pennant ─────────────────────────────────
+function drawFlag(cx, cy, r) {
+  ctx.save(); glow(C.flag, 9);
+  ctx.strokeStyle=C.flag;ctx.fillStyle=C.flag;ctx.lineWidth=Math.max(1.6,r*.18);
+  ctx.beginPath();ctx.moveTo(cx-r*.42,cy+r*1.14);ctx.lineTo(cx-r*.42,cy-r*1.12);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(cx-r*.42,cy-r*1.08);ctx.lineTo(cx+r*1.02,cy-r*.52);ctx.lineTo(cx-r*.42,cy+.04);ctx.closePath();ctx.fill();
+  ctx.lineWidth=Math.max(2,r*.2);ctx.beginPath();ctx.moveTo(cx-r*.95,cy+r*1.15);ctx.lineTo(cx+r*.55,cy+r*1.15);ctx.stroke();
+  noGlow();ctx.restore();
+}
+
+function drawWrongFlag(cx, cy, r) {
+  drawFlag(cx,cy,r*.72);
+  ctx.save();glow(C.wrongX,7);ctx.strokeStyle=C.wrongX;ctx.lineWidth=Math.max(2,r*.28);
+  const d=r*.92;ctx.beginPath();ctx.moveTo(cx-d,cy-d);ctx.lineTo(cx+d,cy+d);ctx.moveTo(cx+d,cy-d);ctx.lineTo(cx-d,cy+d);ctx.stroke();noGlow();ctx.restore();
+}
+
+// ── Steward badge / restart control ─────────────────────────────────
+function drawFace(cx, cy, r, state) {
+  const col = state===ST.OVER?C.red:state===ST.WIN?C.grn:state==='click'?C.yel:C.ui;
+  ctx.save();ctx.translate(cx,cy);
+  const pts=[];for(let i=0;i<8;i++){const a=-Math.PI/8+i*TAU/8;pts.push([Math.cos(a)*r,Math.sin(a)*r])}
+  ctx.beginPath();pts.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.closePath();
+  ctx.fillStyle='#0b1418';ctx.fill();glow(col,10);ctx.strokeStyle=col;ctx.lineWidth=1.4;ctx.stroke();noGlow();
+  ctx.strokeStyle='rgba(255,255,255,.11)';ctx.lineWidth=1;ctx.beginPath();pts.forEach(([x,y],i)=>{x*=.77;y*=.77;i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.closePath();ctx.stroke();
+
+  glow(col,7);ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=Math.max(1.5,r*.08);
+  if(state===ST.OVER){
+    ctx.beginPath();ctx.moveTo(-r*.38,-r*.35);ctx.lineTo(r*.38,r*.35);ctx.moveTo(r*.38,-r*.35);ctx.lineTo(-r*.38,r*.35);ctx.stroke();
+  }else if(state===ST.WIN){
+    ctx.beginPath();ctx.moveTo(-r*.45,0);ctx.lineTo(-r*.08,r*.32);ctx.lineTo(r*.48,-r*.36);ctx.stroke();
+  }else if(state==='click'){
+    ctx.beginPath();ctx.arc(0,0,r*.28,0,TAU);ctx.stroke();ctx.beginPath();ctx.arc(0,0,r*.07,0,TAU);ctx.fill();
+  }else{
+    ctx.beginPath();ctx.arc(0,0,r*.34,0,TAU);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(-r*.55,0);ctx.lineTo(r*.55,0);ctx.moveTo(0,-r*.55);ctx.lineTo(0,r*.55);ctx.stroke();
+    ctx.beginPath();ctx.arc(0,0,r*.07,0,TAU);ctx.fill();
+  }
+  noGlow();ctx.restore();
+}
+
+function drawSegDisp(val, x, y, h, col, label, align='left') {
+  const s=String(Math.max(0,Math.min(999,Math.abs(val)))).padStart(3,'0');
+  const bw=h*2.45, bx=align==='right'?x-bw:x;
+  ctx.save();
+  ctx.fillStyle='rgba(4,9,11,.92)';ctx.fillRect(bx,y-h*.56,bw,h*1.12);
+  ctx.strokeStyle='rgba(103,217,232,.18)';ctx.lineWidth=1;ctx.strokeRect(bx+.5,y-h*.56+.5,bw-1,h*1.12-1);
+  ctx.font=`800 ${Math.max(7,h*.24)}px ${FONT_DATA}`;ctx.textAlign=align==='right'?'right':'left';ctx.textBaseline='bottom';ctx.fillStyle='rgba(171,204,209,.58)';
+  ctx.fillText(label,align==='right'?x-6:x+6,y-h*.58);
+  glow(col,6);ctx.fillStyle=col;ctx.font=`900 ${h}px ${FONT_DATA}`;ctx.textBaseline='middle';ctx.textAlign='center';ctx.fillText(s,bx+bw/2,y+1);noGlow();ctx.restore();
+}
+
+function drawHUD() {
+  ctx.save();
+  const g=ctx.createLinearGradient(0,0,0,HUD_H);
+  g.addColorStop(0,'rgba(24,39,46,.98)');g.addColorStop(.72,'rgba(10,18,22,.98)');g.addColorStop(1,'rgba(4,8,10,.98)');
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,HUD_H);
+  ctx.fillStyle='rgba(255,176,0,.75)';ctx.fillRect(0,HUD_H-4,W,2);
+  ctx.fillStyle='rgba(103,217,232,.2)';ctx.fillRect(0,HUD_H-1,W,1);
+
+  // Hazard ticks.
+  ctx.fillStyle='rgba(255,176,0,.16)';
+  for(let x=0;x<W;x+=28){ctx.beginPath();ctx.moveTo(x,HUD_H-12);ctx.lineTo(x+12,HUD_H-12);ctx.lineTo(x+20,HUD_H-4);ctx.lineTo(x+8,HUD_H-4);ctx.closePath();ctx.fill()}
+
+  const cy=HUD_H*.49, dh=Math.min(30,HUD_H*.34);
+  const mLeft=gs.state===ST.TITLE?diff.mines:Math.max(0,gs.totalMines-gs.flagCount);
+  const elapsed=(gs.state===ST.PLAY&&gs.startTime)?Math.min(999,Math.floor((Date.now()-gs.startTime)/1000)):gs.elapsed;
+  drawSegDisp(mLeft,14,cy+5,dh,C.yel,'UNMARKED');
+  drawSegDisp(elapsed,W-14,cy+5,dh,C.grn,'MISSION TIME','right');
+
+  const fr=Math.floor(HUD_H*.28);
+  const fState=gs.state===ST.OVER?ST.OVER:gs.state===ST.WIN?ST.WIN:(gs.mDown&&gs.state===ST.PLAY)?'click':'normal';
+  drawFace(W/2,cy+3,fr,fState);gs.faceBtn={cx:W/2,cy:cy+3,r:fr};
+
+  ctx.textAlign='center';ctx.textBaseline='top';ctx.font=`900 ${Math.max(10,Math.min(14,W*.014))}px ${FONT_DISPLAY}`;ctx.fillStyle=C.paper;
+  ctx.fillText('STOCKPILE STEWARD',W/2,6);
+  ctx.font=`700 7px ${FONT_DATA}`;ctx.fillStyle='rgba(103,217,232,.58)';ctx.letterSpacing='1px';
+  ctx.fillText('FTS DEPOT CONTROL  //  LIVE ORDNANCE MANIFEST',W/2,22);
+  ctx.restore();
+}
+
+function drawCell(r,c){
+  const cell=gs.board[r][c],x=boardX+c*cellSz,y=boardY+r*cellSz,S=cellSz,cx=x+S/2,cy=y+S/2;
+  const over=gs.state===ST.OVER||gs.state===ST.WIN;
+  const hover=gs.hover.r===r&&gs.hover.c===c&&gs.state===ST.PLAY;
+  ctx.save();
+  if(!cell.revealed&&cell.flagged){
+    drawCoveredCell(x,y,S,false);const fr=S*.25;over&&!cell.mine?drawWrongFlag(cx,cy,fr):drawFlag(cx,cy,fr);
+  }else if(!cell.revealed){drawCoveredCell(x,y,S,hover);
+  }else{
+    const isXpl=gs.xplR===r&&gs.xplC===c;
+    ctx.fillStyle=isXpl?C.explBg:C.revCell;ctx.fillRect(x+1,y+1,S-2,S-2);
+    ctx.strokeStyle='rgba(103,217,232,.075)';ctx.lineWidth=1;ctx.strokeRect(x+1.5,y+1.5,S-3,S-3);
+    if(cell.mine)drawMine(cx,cy,S*(isXpl?.34:.23),C.mine,isXpl?24:8);
+    else if(cell.count>0){
+      const fs=Math.max(10,Math.floor(S*.52));ctx.font=`900 ${fs}px ${FONT_DATA}`;ctx.textAlign='center';ctx.textBaseline='middle';
+      glow(C.nums[cell.count],Math.min(7,S*.18));ctx.fillStyle=C.nums[cell.count];ctx.fillText(cell.count,cx,cy+1);noGlow();
+    }else if(S>22){ctx.fillStyle='rgba(141,255,181,.16)';ctx.fillRect(cx-1,cy-1,2,2)}
+  }
+  ctx.restore();
+}
+
+function drawBoard() {
+  if(!gs.board.length)return;
+  const bw=diff.cols*cellSz,bh=diff.rows*cellSz;
+  ctx.save();
+  ctx.shadowColor='rgba(0,0,0,.75)';ctx.shadowBlur=28;ctx.fillStyle='rgba(3,7,9,.9)';ctx.fillRect(boardX-10,boardY-10,bw+20,bh+20);ctx.shadowBlur=0;
+  ctx.strokeStyle='rgba(103,217,232,.23)';ctx.lineWidth=1;ctx.strokeRect(boardX-9.5,boardY-9.5,bw+19,bh+19);
+  ctx.strokeStyle='rgba(255,176,0,.62)';ctx.lineWidth=2;
+  const k=Math.min(18,Math.max(8,cellSz*.45));
+  for(const [sx,sy,dx,dy] of [[boardX-10,boardY-10,1,1],[boardX+bw+10,boardY-10,-1,1],[boardX-10,boardY+bh+10,1,-1],[boardX+bw+10,boardY+bh+10,-1,-1]]){
+    ctx.beginPath();ctx.moveTo(sx+dx*k,sy);ctx.lineTo(sx,sy);ctx.lineTo(sx,sy+dy*k);ctx.stroke();
+  }
+  ctx.restore();
+  for(let r=0;r<gs.rows;r++)for(let c=0;c<gs.cols;c++)drawCell(r,c);
+}
+
+function drawStatus(){
+  const won=gs.state===ST.WIN,col=won?C.grn:C.red;
+  const msg=won?'STOCKPILE SECURED':'CHAIN REACTION';
+  const sub=won?'ALL ORDNANCE ACCOUNTED FOR':'CONTAINMENT FAILURE';
+  const cy=Math.max(HUD_H+54,boardY-32);
+  ctx.save();ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillStyle='rgba(3,7,9,.88)';ctx.fillRect(W/2-Math.min(260,W*.42),cy-29,Math.min(520,W*.84),58);
+  ctx.strokeStyle=col;ctx.lineWidth=1;ctx.strokeRect(W/2-Math.min(260,W*.42)+.5,cy-28.5,Math.min(520,W*.84)-1,57);
+  ctx.font=`900 ${Math.min(26,Math.max(18,W*.033))}px ${FONT_DISPLAY}`;glow(col,10);ctx.fillStyle=col;ctx.fillText(msg,W/2,cy-6);noGlow();
+  ctx.font=`700 8px ${FONT_DATA}`;ctx.fillStyle='rgba(220,236,239,.68)';ctx.fillText(`${sub}  //  ${gs.elapsed}s  //  SELECT CENTER BADGE`,W/2,cy+16);ctx.restore();
+}
+
+function drawTitle(){
+  const t=Date.now()/1000,avH=H-HUD_H;
+  const panelW=Math.min(620,W*.9),panelH=Math.min(avH*.86,520),px=W/2-panelW/2,py=HUD_H+(avH-panelH)/2;
+  ctx.save();
+  ctx.fillStyle='rgba(8,14,17,.93)';ctx.fillRect(px,py,panelW,panelH);
+  ctx.strokeStyle='rgba(103,217,232,.28)';ctx.lineWidth=1;ctx.strokeRect(px+.5,py+.5,panelW-1,panelH-1);
+  ctx.fillStyle='rgba(255,176,0,.72)';ctx.fillRect(px,py,6,panelH);
+  ctx.fillStyle='rgba(255,176,0,.12)';for(let y=py+8;y<py+panelH;y+=24){ctx.beginPath();ctx.moveTo(px+6,y);ctx.lineTo(px+18,y);ctx.lineTo(px+6,y+12);ctx.closePath();ctx.fill()}
+
+  const titleFs=Math.min(54,Math.max(27,panelW*.085));
+  ctx.textAlign='left';ctx.textBaseline='top';
+  ctx.font=`900 ${titleFs}px ${FONT_DISPLAY}`;ctx.fillStyle=C.paper;ctx.fillText('MINESWEEPER',px+34,py+25);
+  ctx.font=`900 ${Math.max(12,titleFs*.26)}px ${FONT_DATA}`;ctx.fillStyle=C.yel;ctx.fillText('STOCKPILE STEWARD / OBLITERATUS',px+37,py+31+titleFs);
+  ctx.font=`700 ${Math.max(8,titleFs*.18)}px ${FONT_DATA}`;ctx.fillStyle='rgba(149,207,216,.7)';ctx.fillText('FTS ARCADE DEPOT CONTROL  //  FREE FOREVER',px+37,py+54+titleFs);
+
+  const dividerY=py+82+titleFs;ctx.strokeStyle='rgba(103,217,232,.18)';ctx.beginPath();ctx.moveTo(px+34,dividerY);ctx.lineTo(px+panelW-26,dividerY);ctx.stroke();
+
+  const keys=Object.keys(DIFFS),gap=10,btnH=Math.max(48,Math.min(66,(panelH-(dividerY-py)-112-keys.length*gap)/keys.length));
+  const startY=dividerY+18,btnX=px+34,btnW=panelW-68;gs.diffBtns={};
+  keys.forEach((key,i)=>{
+    const d=DIFFS[key],sel=curDiff===key,by=startY+i*(btnH+gap);gs.diffBtns[key]={x:btnX,y:by,w:btnW,h:btnH};
+    const fill=sel?'rgba(255,176,0,.12)':'rgba(20,34,40,.74)';ctx.fillStyle=fill;ctx.fillRect(btnX,by,btnW,btnH);
+    ctx.strokeStyle=sel?C.yel:'rgba(103,217,232,.18)';ctx.lineWidth=sel?2:1;if(sel)glow(C.yel,8);ctx.strokeRect(btnX+.5,by+.5,btnW-1,btnH-1);noGlow();
+    ctx.font=`900 ${Math.max(12,Math.min(17,btnH*.29))}px ${FONT_DISPLAY}`;ctx.fillStyle=sel?C.paper:'rgba(214,231,235,.72)';ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText(d.label,btnX+16,by+btnH*.4);
+    ctx.font=`700 ${Math.max(8,Math.min(11,btnH*.18))}px ${FONT_DATA}`;ctx.fillStyle=sel?C.yel:'rgba(139,190,198,.55)';ctx.fillText(`${d.cols} x ${d.rows} FIELD  /  ${d.mines} LIVE UNITS`,btnX+16,by+btnH*.72);
+    ctx.textAlign='right';ctx.font=`900 ${Math.max(10,Math.min(14,btnH*.23))}px ${FONT_DATA}`;ctx.fillStyle=sel?C.grn:'rgba(141,255,181,.32)';ctx.fillText(sel?'AUTHORIZED':'STANDBY',btnX+btnW-16,by+btnH*.5);
+  });
+
+  const sbW=Math.min(240,btnW*.62),sbH=48,sbX=px+panelW-sbW-34,sbY=py+panelH-sbH-22;gs.startBtn={x:sbX,y:sbY,w:sbW,h:sbH};
+  const pulse=.62+.38*Math.sin(t*3.1);ctx.fillStyle=`rgba(255,176,0,${.12+pulse*.05})`;ctx.fillRect(sbX,sbY,sbW,sbH);glow(C.yel,6+pulse*7);ctx.strokeStyle=C.yel;ctx.lineWidth=2;ctx.strokeRect(sbX+.5,sbY+.5,sbW-1,sbH-1);noGlow();
+  ctx.textAlign='center';ctx.textBaseline='middle';ctx.font=`900 16px ${FONT_DISPLAY}`;ctx.fillStyle=C.paper;ctx.fillText('OPEN MANIFEST',sbX+sbW/2,sbY+sbH/2);
+
+  ctx.textAlign='left';ctx.textBaseline='middle';ctx.font=`700 8px ${FONT_DATA}`;ctx.fillStyle='rgba(167,204,210,.52)';
+  const mob=window.matchMedia('(pointer:coarse)').matches;
+  ctx.fillText(mob?'TAP REVEALS  /  HOLD OR TOGGLE FLAGS':'LEFT REVEALS  /  RIGHT FLAGS  /  NUMBER CHORDS',px+34,sbY+12);
+  ctx.fillText('FIRST OPENING IS ALWAYS CONTAINED',px+34,sbY+29);
+  ctx.restore();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  MAIN LOOP
+// ═══════════════════════════════════════════════════════════════════════
+let _last = 0;
+
+function loop(ts) {
+  const dt = Math.min((ts - _last) / 1000, 0.05);
+  _last = ts;
+
+  // Update
+  grid.update(dt);
+  if (gs.shakeT > 0) gs.shakeT -= dt;
+  gs.sparks = gs.sparks.filter(s => { s.update(dt); return !s.dead; });
+
+  // ── Render ────────────────────────────────────────────────────
+  ctx.save();
+
+  // Screen shake
+  if (gs.shakeT > 0) {
+    const m = gs.shakeMag * (gs.shakeT / 0.52);
+    ctx.translate((Math.random()-0.5)*m, (Math.random()-0.5)*m);
+  }
+
+  // Background
+  ctx.fillStyle = C.bg;
+  ctx.fillRect(-20, -20, W+40, H+40);
+
+  // Depot floor / radar atmosphere
+  grid.draw();
+
+  // HUD (always)
+  drawHUD();
+
+  if (gs.state === ST.TITLE) {
+    drawTitle();
+  } else {
+    drawBoard();
+    for (const s of gs.sparks) s.draw();
+    if (gs.state === ST.OVER || gs.state === ST.WIN) drawStatus();
+  }
+
+  ctx.restore();
+  requestAnimationFrame(loop);
+}
+
+// ── Boot ───────────────────────────────────────────────────────────────
+resize();
+requestAnimationFrame(ts => { _last = ts; requestAnimationFrame(loop); });
+</script>
+</body>
+</html>
