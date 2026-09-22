@@ -38,17 +38,6 @@ body{font-family:'Courier New',monospace}
 .hud-item b{color:#00e5ff; font-size:1.15em; margin-left:4px}
 .hud-hp b{color:#ff5577}
 .hud-gold b{color:#ffd633}
-.hud-tag{color:rgba(255,255,255,.4); letter-spacing:.18em; font-size:10px; align-self:center}
-
-/* ── Atmosphere overlays — stage tint, vignette, CRT scan + pixel grain ── */
-#stagetint{position:fixed;inset:0;z-index:4;pointer-events:none;opacity:0;
-  transition:opacity .6s ease, background .6s ease;}
-#vignette{position:fixed;inset:0;z-index:5;pointer-events:none;
-  background:radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(0,4,10,.55) 100%);}
-#scanlines{position:fixed;inset:0;z-index:5;pointer-events:none;opacity:.5;mix-blend-mode:overlay;
-  background:repeating-linear-gradient(to bottom, rgba(255,255,255,.035) 0px, rgba(255,255,255,.035) 1px, rgba(0,0,0,0) 2px, rgba(0,0,0,0) 3px);}
-#grain{position:fixed;inset:0;z-index:5;pointer-events:none;opacity:.05;mix-blend-mode:overlay;
-  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");}
 
 /* ── Build bar (bottom, adaptive) ───────────────────────────────── */
 #build-bar{
@@ -98,8 +87,7 @@ body{font-family:'Courier New',monospace}
 /* ── Hint (map screen) ───────────────────────────────────────────── */
 #hint{
   display:none; position:fixed; bottom:22px; left:0; width:100%; text-align:center; z-index:10;
-  font-size:11px; letter-spacing:.1em; line-height:1.6; color:rgba(0,210,255,.5); pointer-events:none;
-  padding:0 clamp(16px,8vw,140px);
+  font-size:11px; letter-spacing:.14em; color:rgba(0,210,255,.5); pointer-events:none;
 }
 
 /* ── Results panel ───────────────────────────────────────────────── */
@@ -130,10 +118,6 @@ body{font-family:'Courier New',monospace}
 </head>
 <body>
 <canvas id="c"></canvas>
-<div id="stagetint"></div>
-<div id="vignette"></div>
-<div id="scanlines"></div>
-<div id="grain"></div>
 
 <div id="hud-top"></div>
 <button id="pause-btn" data-state="playing">II</button>
@@ -383,64 +367,6 @@ const PATH_FRAC = [
   {x:0.52, y:0.56}, {x:0.52, y:0.20}, {x:0.80, y:0.20},
   {x:0.80, y:0.84}, {x:1.06, y:0.84},
 ];
-const PATH_FRAC_CHANNEL_A = [
-  {x:-0.06,y:0.34}, {x:0.16,y:0.34}, {x:0.16,y:0.10}, {x:0.44,y:0.10},
-  {x:0.44,y:0.34}, {x:0.66,y:0.34}, {x:0.66,y:0.50}, {x:0.90,y:0.50}, {x:1.06,y:0.50},
-];
-const PATH_FRAC_CHANNEL_B = [
-  {x:-0.06,y:0.34}, {x:0.16,y:0.34}, {x:0.16,y:0.62}, {x:0.44,y:0.62},
-  {x:0.44,y:0.86}, {x:0.66,y:0.86}, {x:0.66,y:0.50}, {x:0.90,y:0.50}, {x:1.06,y:0.50},
-];
-
-// ═══════════════════════════════════════════════════════════════════════
-//  STAGE MODS — one distinct tower-defense concept layered onto the
-//  baseline loop per stage, keyed to LEVELS[i].id. Every field is
-//  optional; an id missing from this table plays the baseline (INGRESS)
-//  loop. Timers below run off TICK_DT inside stageTick(), never
-//  performance.now() or Math.random() — same determinism contract as
-//  the rest of the sim (see engineering-principles: sim RNG in tick
-//  order only).
-// ═══════════════════════════════════════════════════════════════════════
-const STAGE_MODS = {
-  0: {
-    tag:'CALIBRATION',
-    concept:'Baseline loop, no modifier. Learn the three towers before the field starts fighting back.',
-  },
-  1: {
-    tag:'DUAL LANE',
-    concept:'The channel forks around a static hazard and rejoins before the core. Spawns route toward whichever lane is currently less defended — cover one lane and the other floods.',
-    lanes: [PATH_FRAC_CHANNEL_A, PATH_FRAC_CHANNEL_B],
-  },
-  2: {
-    tag:'CAPACITORS',
-    concept:'Three fixed relay nodes sit on the field. ARC towers built in their radius gain an extra chain jump and harder falloff — the field rewards building around its own geometry, not just the path.',
-    nodes: [{x:0.30,y:0.28},{x:0.63,y:0.62},{x:0.86,y:0.30}], nodeRadius:78,
-  },
-  3: {
-    tag:'CRYO FRONT',
-    concept:'A frost front sweeps the field on a fixed clock, chilling every enemy in play for free — but SLOW auras run hotter while it passes, rewarding towers already leaning into the weather.',
-    frontPeriod: 8.5, frontDur: 2.0,
-  },
-  4: {
-    tag:'FAULT LINES',
-    concept:'Two rupture points along the path erupt on a fixed cadence — free area damage the player doesn\u2019t pay range or gold for, but the timing belongs to the field, not the player.',
-    faults: [{t:0.30},{t:0.68}], faultRadius:54, faultDmg:9, faultPeriod:6.0,
-  },
-  5: {
-    tag:'OVERLOAD',
-    concept:'Every third wave the core overloads: a telegraphed pulse shields every enemy in play for three seconds. The boss carries its own duty-cycle shield on top of that — burst before the window, not during it.',
-    overloadEvery:3, overloadWarn:2.0, overloadDur:3.0, overloadMul:0.5,
-    bossShieldOn:1.0, bossShieldOff:3.0, bossShieldMul:0.3,
-  },
-};
-const STAGE_TINT = {
-  0: 'radial-gradient(circle at 50% 28%, rgba(0,180,255,.05), transparent 65%)',
-  1: 'radial-gradient(circle at 50% 28%, rgba(0,255,200,.06), transparent 65%)',
-  2: 'radial-gradient(circle at 50% 28%, rgba(255,60,255,.07), transparent 65%)',
-  3: 'radial-gradient(circle at 50% 28%, rgba(120,220,255,.07), transparent 65%)',
-  4: 'radial-gradient(circle at 50% 28%, rgba(255,150,40,.07), transparent 65%)',
-  5: 'radial-gradient(circle at 50% 28%, rgba(255,220,0,.08), transparent 65%)',
-};
 
 function distToSeg(px,py,ax,ay,bx,by){
   const dx=bx-ax, dy=by-ay, l2=dx*dx+dy*dy;
@@ -452,59 +378,40 @@ function distToSeg(px,py,ax,ay,bx,by){
 
 const Field = {
   x0:0, y0:0, w:0, h:0,
-  lanes: [],              // [{ pathPx, segLen, cumLen, totalLen }] — one entry per active lane
-  nodesPx: [], faultsPx: [],
+  pathPx: [], segLen: [], cumLen: [], totalLen: 0,
   pathClearance: 34, minSpacing: 30,
 
-  // laneFracs: array of point-arrays (fractions of the field box). Single
-  // entry = the baseline single-lane stage; DEEP CHANNEL passes two.
-  layout(x0,y0,w,h,laneFracs){
+  layout(x0,y0,w,h){
     this.x0=x0; this.y0=y0; this.w=w; this.h=h;
-    const fracs = (laneFracs && laneFracs.length) ? laneFracs : [PATH_FRAC];
-    this.lanes = fracs.map(frac => {
-      const pathPx = frac.map(p => ({ x:x0+p.x*w, y:y0+p.y*h }));
-      const segLen=[], cumLen=[0];
-      for (let i=0;i<pathPx.length-1;i++){
-        const a=pathPx[i], b=pathPx[i+1];
-        const l = Math.hypot(b.x-a.x,b.y-a.y);
-        segLen.push(l);
-        cumLen.push(cumLen[i]+l);
-      }
-      return { pathPx, segLen, cumLen, totalLen: cumLen[cumLen.length-1] };
-    });
+    this.pathPx = PATH_FRAC.map(p => ({ x:x0+p.x*w, y:y0+p.y*h }));
+    this.segLen = []; this.cumLen=[0];
+    for (let i=0;i<this.pathPx.length-1;i++){
+      const a=this.pathPx[i], b=this.pathPx[i+1];
+      const l = Math.hypot(b.x-a.x,b.y-a.y);
+      this.segLen.push(l);
+      this.cumLen.push(this.cumLen[i]+l);
+    }
+    this.totalLen = this.cumLen[this.cumLen.length-1];
     const m = Math.min(w,h);
     this.pathClearance = Math.max(30, m*0.075);
     this.minSpacing = Math.max(28, m*0.050);
   },
 
-  // Legacy single-lane accessors — most callers (drawing the map line,
-  // level-agnostic code) only ever want "the" path, which is lane 0.
-  get pathPx(){ return this.lanes[0].pathPx; },
-  get totalLen(){ return this.lanes[0].totalLen; },
-
-  posAtDistance(d, lane=0){
-    const L = this.lanes[lane];
-    d = clamp(d, 0, L.totalLen);
-    let i=0; while (i<L.segLen.length-1 && L.cumLen[i+1]<d) i++;
-    const a=L.pathPx[i], b=L.pathPx[i+1];
-    const segStart=L.cumLen[i], segL=L.segLen[i]||1;
+  posAtDistance(d){
+    d = clamp(d, 0, this.totalLen);
+    let i=0; while (i<this.segLen.length-1 && this.cumLen[i+1]<d) i++;
+    const a=this.pathPx[i], b=this.pathPx[i+1];
+    const segStart=this.cumLen[i], segL=this.segLen[i]||1;
     const t = clamp((d-segStart)/segL, 0, 1);
     return { x:lerp(a.x,b.x,t), y:lerp(a.y,b.y,t) };
   },
 
-  distToLane(lane, px, py){
-    const L = this.lanes[lane];
-    let minD = Infinity;
-    for (let i=0;i<L.pathPx.length-1;i++){
-      const a=L.pathPx[i], b=L.pathPx[i+1];
-      minD = Math.min(minD, distToSeg(px,py,a.x,a.y,b.x,b.y));
-    }
-    return minD;
-  },
-
   distToPath(px,py){
     let minD = Infinity;
-    for (let l=0; l<this.lanes.length; l++) minD = Math.min(minD, this.distToLane(l,px,py));
+    for (let i=0;i<this.pathPx.length-1;i++){
+      const a=this.pathPx[i], b=this.pathPx[i+1];
+      minD = Math.min(minD, distToSeg(px,py,a.x,a.y,b.x,b.y));
+    }
     return minD;
   },
 
@@ -528,22 +435,18 @@ const Field = {
 let entityId = 0;
 
 class Enemy {
-  constructor(type, hp, boss=false, lane=0){
+  constructor(type, hp, boss=false){
     this.id = entityId++;
     this.type = type;
     this.def = ENEMY_DEFS[type];
     this.hp = hp; this.maxHp = hp;
     this.progress = 0;
-    this.lane = lane;
     this.speed = this.def.speed;
     this.slowT = 0;
-    // Sim-affecting RNG must come from the seeded stream, never Math.random —
-    // this drives when a SURGE enemy starts its speed-burst phase.
-    this.surgeT = boss ? 0 : S.rng()*3;
+    this.surgeT = boss ? 0 : Math.random()*3;
     this.boss = boss;
-    this.shieldT = 0; this.shieldMul = 1;
     this.dead = false; this.leaked = false;
-    const p = Field.posAtDistance(0, lane);
+    const p = Field.posAtDistance(0);
     this.x = p.x; this.y = p.y;
   }
   effSpeed(){
@@ -561,17 +464,11 @@ class Enemy {
     const s = this.effSpeed();
     this.progress += s*dt;
     if (this.slowT>0) this.slowT -= dt;
-    if (this.shieldT>0) this.shieldT -= dt;
-    if (this.progress >= Field.lanes[this.lane].totalLen){ this.leaked = true; this.dead = true; return; }
-    const p = Field.posAtDistance(this.progress, this.lane);
+    if (this.progress >= Field.totalLen){ this.leaked = true; this.dead = true; return; }
+    const p = Field.posAtDistance(this.progress);
     this.x=p.x; this.y=p.y;
   }
-  hit(dmg){
-    if (this.shieldT>0) dmg *= this.shieldMul;
-    this.hp -= dmg;
-    if (this.hp<=0 && !this.dead){ this.dead=true; return true; }
-    return false;
-  }
+  hit(dmg){ this.hp -= dmg; if (this.hp<=0 && !this.dead){ this.dead=true; return true; } return false; }
   draw(){
     const d = this.def;
     ctx.save();
@@ -597,12 +494,6 @@ class Enemy {
       ctx.strokeStyle='rgba(255,238,0,.6)'; ctx.lineWidth=2;
       ctx.beginPath(); ctx.arc(this.x,this.y,rad+4,0,TAU); ctx.stroke();
     }
-    if (this.shieldT>0){
-      glow('#aeefff', 10);
-      ctx.strokeStyle='rgba(180,225,255,.8)'; ctx.lineWidth=2.4;
-      ctx.beginPath(); ctx.arc(this.x,this.y,rad+7,0,TAU); ctx.stroke();
-      noGlow();
-    }
     ctx.restore();
   }
 }
@@ -620,13 +511,11 @@ class Tower {
     const d = this.def;
     if (this.fx>0) this.fx -= dt;
     if (this.type==='slow'){
-      const mod = S.stageMod || {};
-      // COLD RELAY: while the cryo front is passing, SLOW auras run hotter.
-      const effMul = (mod.frontPeriod && S.frontActive) ? clamp(d.slowMul-0.15, 0.2, 1) : d.slowMul;
+      let hitAny=false;
       for (const e of enemies){
         if (e.dead) continue;
         if (Math.hypot(e.x-this.x, e.y-this.y) <= d.range){
-          e.slowT = Math.max(e.slowT, 2.0); e.slowMul = effMul;
+          e.slowT = Math.max(e.slowT, 2.0); e.slowMul = d.slowMul; hitAny=true;
         }
       }
       return null;
@@ -644,23 +533,13 @@ class Tower {
     this.cd = 1/d.rate;
     this.fx = 0.12;
     const hits = [best];
-    let nodeBoosted = false;
     if (this.type==='arc'){
-      // ARC FIELD: an extra chain jump and harder falloff inside a capacitor's radius.
-      const mod = S.stageMod || {};
-      if (mod.nodes && mod.nodes.length && Field.nodesPx.length){
-        nodeBoosted = Field.nodesPx.some(n=>Math.hypot(n.x-this.x,n.y-this.y) <= (mod.nodeRadius||0));
-      }
       const others = enemies.filter(e=>!e.dead && e!==best && Math.hypot(e.x-best.x,e.y-best.y)<80)
-        .sort((a,b)=>Math.hypot(a.x-best.x,a.y-best.y)-Math.hypot(b.x-best.x,b.y-best.y)).slice(0, nodeBoosted?3:2);
+        .sort((a,b)=>Math.hypot(a.x-best.x,a.y-best.y)-Math.hypot(b.x-best.x,b.y-best.y)).slice(0,2);
       hits.push(...others);
     }
     const results = hits.map((e,i)=>{
-      let mult = 1;
-      if (this.type==='arc'){
-        mult = d.chain[i] !== undefined ? d.chain[i] : d.chain[d.chain.length-1]*0.7;
-        if (nodeBoosted) mult *= 1.15;
-      }
+      const mult = this.type==='arc' ? d.chain[i] : 1;
       const killed = e.hit(d.dmg*mult);
       return { e, killed };
     });
@@ -705,7 +584,7 @@ class Spark {
   }
 }
 
-const FX = { sparks:[], beams:[], chains:[], rings:[], flares:[] };
+const FX = { sparks:[], beams:[], chains:[], rings:[] };
 
 function spawnSparks(x,y,col,n,spd,size=3){
   for (let i=0;i<n;i++){
@@ -734,13 +613,6 @@ function spawnChain(pts,col,life=0.16){
 function spawnRing(x,y,col,maxR=34,life=0.5){
   FX.rings.push({x,y,col,life,maxLife:life,maxR});
 }
-// A soft horizontal light band — the punctuation for stage-hazard cues
-// (cryo front, overload pulse, boss entrance) without needing per-pixel
-// bloom math (see dotgrid_v1's sprite-bake note: bake the visual, don't
-// pay a shader cost for it every frame).
-function spawnFlare(x,y,w,col,life=0.6){
-  FX.flares.push({x,y,w,col,life,maxLife:life});
-}
 
 function updateFX(dt){
   for (const s of FX.sparks) s.update(dt);
@@ -751,8 +623,6 @@ function updateFX(dt){
   FX.chains = FX.chains.filter(c=>c.life>0);
   for (const r of FX.rings) r.life -= dt;
   FX.rings = FX.rings.filter(r=>r.life>0);
-  for (const f of FX.flares) f.life -= dt;
-  FX.flares = FX.flares.filter(f=>f.life>0);
 
   if (!S.paused && S.screen==='level'){
     for (const t of S.towers){
@@ -769,14 +639,6 @@ function updateFX(dt){
 
 function drawFX(){
   ctx.save();
-  for (const f of FX.flares){
-    const a = clamp(f.life/f.maxLife,0,1);
-    ctx.globalAlpha = a*0.20; ctx.fillStyle = f.col;
-    ctx.fillRect(f.x, f.y-16, f.w, 32);
-    ctx.globalAlpha = a*0.45;
-    ctx.fillRect(f.x, f.y-2, f.w, 3);
-  }
-  ctx.globalAlpha = 1;
   for (const b of FX.beams){
     const a = clamp(b.life/b.maxLife,0,1);
     ctx.globalAlpha = a; ctx.strokeStyle = b.col; ctx.lineWidth = 2.2;
@@ -844,7 +706,7 @@ const S = {
   screen: 'map',
   seed: 0, rng: null, tick: 0,
   eventLog: [],
-  levelId: 0, stageMod: STAGE_MODS[0],
+  levelId: 0,
   hp: 20, gold: 200, wave: 0, totalWaves: 10,
   killScore: 0, earlyBonus: 0,
   enemies: [], towers: [],
@@ -855,10 +717,6 @@ const S = {
   waveMsg: '', waveMsgT: 0,
   result: null,
   paused: false,
-  // — stage-mod runtime state (see STAGE_MODS / stageTick) —
-  frontT: 0, frontActive: false, frontDurLeft: 0,
-  faultT: 0,
-  overloadState: 'idle', overloadTimer: 0, overloadWaveFired: 0,
 };
 
 function logEvent(type, args){ S.eventLog.push({ t:S.tick, type, ...args }); }
@@ -866,130 +724,15 @@ function shake(mag, dur){ S.shakeMag=mag; S.shakeT=dur; }
 
 function startLevel(levelId, seed){
   S.screen='level'; S.levelId=levelId; S.seed=seed>>>0; S.rng=mulberry32(S.seed);
-  S.stageMod = STAGE_MODS[levelId] || {};
   S.tick=0; S.eventLog=[];
   S.hp=20; S.gold=200; S.wave=0; S.killScore=0; S.earlyBonus=0;
   S.enemies=[]; S.towers=[]; S.spawnQueue=[];
   S.towerCounts = { pulse:0, arc:0, slow:0 };
   S.waveActive=false; S.intermission=4.0;
   S.selectedTower=null; S.selectedPlaced=null;
-  S.frontT=0; S.frontActive=false; S.frontDurLeft=0;
-  S.faultT=0;
-  S.overloadState='idle'; S.overloadTimer=0; S.overloadWaveFired=0;
-  FX.sparks=[]; FX.beams=[]; FX.chains=[]; FX.rings=[]; FX.flares=[];
+  FX.sparks=[]; FX.beams=[]; FX.chains=[]; FX.rings=[];
   S.result=null; S.paused=false;
-  layoutField();
   setWaveMsg('SIGNAL DETECTED', 2);
-}
-
-// Lays out Field (lanes + hazard positions) for the current stage mod.
-// Called on boot/resize and whenever a level starts, since each stage can
-// carry its own lane geometry.
-function layoutField(){
-  const isMobile = W < 640;
-  const topMargin = isMobile ? 56 : 68;
-  const bottomMargin = isMobile ? 96 : 84;
-  const mod = STAGE_MODS[S.levelId] || {};
-  const laneFracs = mod.lanes || [PATH_FRAC];
-  Field.layout(24, topMargin, W-48, H-topMargin-bottomMargin, laneFracs);
-  Field.nodesPx = (mod.nodes||[]).map(n => ({ x:Field.x0+n.x*Field.w, y:Field.y0+n.y*Field.h }));
-  Field.faultsPx = (mod.faults||[]).map(f => Field.posAtDistance(f.t*Field.lanes[0].totalLen, 0));
-}
-
-// Per-tick stage-modifier logic. Runs off TICK_DT so behavior stays
-// deterministic and replay-safe — same contract as the rest of the sim.
-function stageTick(dt){
-  const mod = S.stageMod;
-  if (!mod) return;
-
-  // COLD RELAY — cryo front sweeps the field on a fixed clock.
-  if (mod.frontPeriod){
-    S.frontT += dt;
-    if (!S.frontActive && S.frontT >= mod.frontPeriod){
-      S.frontT = 0; S.frontActive = true; S.frontDurLeft = mod.frontDur;
-      for (const e of S.enemies) if (!e.dead){ e.slowT = Math.max(e.slowT, mod.frontDur); e.slowMul = 0.55; }
-      mesh.sweep(Field.y0+10, Field.w);
-      spawnFlare(Field.x0, Field.y0+Field.h*0.5, Field.w, C.slow.core, 0.7);
-    }
-    if (S.frontActive){
-      S.frontDurLeft -= dt;
-      if (S.frontDurLeft <= 0) S.frontActive = false;
-    }
-  }
-
-  // FRACTURE LINE — rupture points erupt on a fixed cadence.
-  if (mod.faults && mod.faults.length){
-    S.faultT += dt;
-    if (S.faultT >= mod.faultPeriod){
-      S.faultT = 0;
-      for (const fp of Field.faultsPx){
-        spawnRing(fp.x, fp.y, C.eCascade.core, mod.faultRadius, 0.5);
-        for (const e of S.enemies){
-          if (e.dead) continue;
-          if (Math.hypot(e.x-fp.x, e.y-fp.y) <= mod.faultRadius){
-            spawnSparks(e.x, e.y, C.eCascade.core, 5, 120, 2.6);
-            if (e.hit(mod.faultDmg)) onKill(e);
-          }
-        }
-      }
-      shake(4, 0.2);
-    }
-  }
-
-  // CORE BREACH — overload pulse shields every Nth wave; boss runs its own duty cycle.
-  if (mod.overloadEvery){
-    if (S.overloadState==='idle'){
-      if (S.waveActive && S.wave>0 && S.wave % mod.overloadEvery === 0 && S.overloadWaveFired !== S.wave){
-        S.overloadState = 'warn'; S.overloadTimer = mod.overloadWarn;
-        setWaveMsg('OVERLOAD IMMINENT', mod.overloadWarn);
-      }
-    } else if (S.overloadState==='warn'){
-      S.overloadTimer -= dt;
-      if (S.overloadTimer <= 0){
-        S.overloadState = 'active'; S.overloadTimer = mod.overloadDur; S.overloadWaveFired = S.wave;
-        setWaveMsg('OVERLOAD', 1.4);
-        shake(6, 0.3);
-        spawnFlare(Field.x0, Field.y0, Field.w, '#ffee00', 0.7);
-      }
-    } else if (S.overloadState==='active'){
-      for (const e of S.enemies) if (!e.dead){ e.shieldT = 0.05; e.shieldMul = mod.overloadMul; }
-      S.overloadTimer -= dt;
-      if (S.overloadTimer <= 0) S.overloadState = 'idle';
-    }
-    for (const e of S.enemies){
-      if (!e.boss) continue;
-      e.bossCycleT = (e.bossCycleT||0) + dt;
-      const cyc = mod.bossShieldOn + mod.bossShieldOff;
-      if ((e.bossCycleT % cyc) < mod.bossShieldOn){ e.shieldT = 0.05; e.shieldMul = mod.bossShieldMul; }
-    }
-  }
-}
-
-// DEEP CHANNEL lane routing — a lane's "danger" is the DPS of every tower
-// whose range currently covers it. Spawns pick the lower-danger lane
-// (Realm Rush-style avoidance), tie-broken with the seeded RNG so the
-// choice stays deterministic and replay-safe.
-function laneDanger(laneIdx){
-  const L = Field.lanes[laneIdx];
-  let danger = 0;
-  for (const t of S.towers){
-    if (t.type==='slow') continue;
-    let minD = Infinity;
-    for (let i=0;i<L.pathPx.length-1;i++){
-      minD = Math.min(minD, distToSeg(t.x,t.y,L.pathPx[i].x,L.pathPx[i].y,L.pathPx[i+1].x,L.pathPx[i+1].y));
-    }
-    if (minD <= t.def.range) danger += t.def.dmg * t.def.rate;
-  }
-  return danger;
-}
-function chooseLane(){
-  if (Field.lanes.length <= 1) return 0;
-  let best = 0, bestDanger = Infinity;
-  for (let i=0;i<Field.lanes.length;i++){
-    const dgr = laneDanger(i) + S.rng()*0.01; // deterministic tie-break
-    if (dgr < bestDanger){ bestDanger = dgr; best = i; }
-  }
-  return best;
 }
 
 function setWaveMsg(msg, dur){ S.waveMsg=msg; S.waveMsgT=dur; }
@@ -1038,23 +781,19 @@ function sellTower(tower){
 
 function spawnEnemy(type){
   const mul = waveHpMul(S.wave);
-  const lane = chooseLane();
   if (type==='boss'){
     const hp = Math.round(ENEMY_DEFS.cascade.hp*mul*6);
-    S.enemies.push(new Enemy('cascade', hp, true, lane));
-    spawnFlare(Field.x0, Field.y0, Field.w, '#ff5555', 0.8);
-    shake(8, 0.4);
+    S.enemies.push(new Enemy('cascade', hp, true));
     return;
   }
   const base = ENEMY_DEFS[type].hp;
-  S.enemies.push(new Enemy(type, Math.round(base*mul), false, lane));
+  S.enemies.push(new Enemy(type, Math.round(base*mul)));
 }
 
 function onLeak(e){
   const dmg = e.boss ? 6 : (e.type==='cascade' ? 3 : 1);
   S.hp -= dmg;
-  const exitPt = Field.lanes[e.lane].pathPx[Field.lanes[e.lane].pathPx.length-1];
-  mesh.ripple(exitPt.x, e.y, 70, 220);
+  mesh.ripple(Field.pathPx[Field.pathPx.length-1].x, e.y, 70, 220);
   shake(10, 0.35);
   SFX.leak();
   if (S.hp <= 0){ S.hp = 0; endLevel('lose'); }
@@ -1071,9 +810,9 @@ function onKill(e){
     const n = e.boss ? 5 : e.def.children;
     for (let i=0;i<n;i++){
       const mul = waveHpMul(S.wave);
-      const child = new Enemy('pulse', Math.round(ENEMY_DEFS.pulse.hp*mul*0.5), false, e.lane);
+      const child = new Enemy('pulse', Math.round(ENEMY_DEFS.pulse.hp*mul*0.5));
       child.progress = Math.max(0, e.progress - 10 - i*8);
-      const p = Field.posAtDistance(child.progress, e.lane);
+      const p = Field.posAtDistance(child.progress);
       child.x=p.x; child.y=p.y;
       S.enemies.push(child);
     }
@@ -1093,7 +832,6 @@ function endLevel(result){
     saveProgress(S.levelId, stars, score);
     setWaveMsg('SECTOR CLEARED', 2.5);
     SFX.victory();
-    for (let i=0;i<6;i++) spawnRing(W*0.5, H*0.4, i%2 ? '#00e5ff':'#ffee00', 60+i*30, 1.0+i*0.15);
   } else {
     setWaveMsg('SIGNAL LOST', 2.5);
     SFX.gameOver();
@@ -1106,8 +844,6 @@ function simTick(){
   if (S.screen!=='level' || S.result) return;
   if (S.waveMsgT>0) S.waveMsgT -= TICK_DT;
   if (S.shakeT>0) S.shakeT -= TICK_DT;
-
-  stageTick(TICK_DT);
 
   if (!S.waveActive){
     S.intermission -= TICK_DT;
@@ -1157,7 +893,6 @@ function simTick(){
       S.intermission = 3.0;
       setWaveMsg(`WAVE CLEAR · +${bonus}g`, 2);
       SFX.waveClear();
-      spawnFlare(Field.x0, Field.y0+Field.h*0.5, Field.w, '#ffee00', 0.5);
     }
   }
 }
@@ -1181,7 +916,7 @@ function saveProgress(levelId, stars, score){
   const p = loadProgress();
   const cur = p[levelId] || { stars:0, bestScore:0 };
   p[levelId] = { stars: Math.max(cur.stars, stars), bestScore: Math.max(cur.bestScore, score) };
-  try { localStorage.setItem('gw_progress_v1', JSON.stringify(p)); } catch(e){ /* sandboxed/opaque origin — progress just won't persist */ }
+  localStorage.setItem('gw_progress_v1', JSON.stringify(p));
 }
 
 let mapNodes = [];
@@ -1229,14 +964,9 @@ function drawMap(){
     ctx.textAlign='center';
     ctx.fillStyle = unlocked ? 'rgba(200,240,255,.85)' : 'rgba(120,170,200,.4)';
     ctx.fillText(unlocked ? lvl.name : 'SIGNAL LOST', nd.x, nd.y+34);
-    const tag = STAGE_MODS[lvl.id] && STAGE_MODS[lvl.id].tag;
-    if (unlocked && tag){
-      ctx.font = '9px "Courier New",monospace'; ctx.fillStyle = 'rgba(0,210,255,.5)';
-      ctx.fillText(tag, nd.x, nd.y+46);
-    }
     if (unlocked && stars>0){
       ctx.fillStyle = '#ffee00'; ctx.font = '12px "Courier New",monospace';
-      ctx.fillText('★'.repeat(stars) + '☆'.repeat(3-stars), nd.x, nd.y+62);
+      ctx.fillText('★'.repeat(stars) + '☆'.repeat(3-stars), nd.x, nd.y+50);
     }
     ctx.restore();
   });
@@ -1275,20 +1005,15 @@ const buildBar = document.getElementById('build-bar');
 const pauseBtn = document.getElementById('pause-btn');
 const resultsPanel = document.getElementById('results-panel');
 const hintEl = document.getElementById('hint');
-const stageTintEl = document.getElementById('stagetint');
 
 function showLevelUI(){
   hudTop.style.display='flex'; buildBar.style.display='flex'; pauseBtn.style.display='flex';
   resultsPanel.style.display='none'; hintEl.style.display='none';
-  stageTintEl.style.background = STAGE_TINT[S.levelId] || STAGE_TINT[0];
-  stageTintEl.style.opacity = '1';
   renderBuildBar();
 }
 function showMapUI(){
   hudTop.style.display='none'; buildBar.style.display='none'; pauseBtn.style.display='none';
   resultsPanel.style.display='none'; hintEl.style.display='block';
-  hintEl.textContent = 'TAP A NODE TO DEPLOY';
-  stageTintEl.style.opacity = '0';
 }
 function showResultsUI(){
   hudTop.style.display='flex'; buildBar.style.display='none'; pauseBtn.style.display='none';
@@ -1339,12 +1064,10 @@ function renderBuildBar(){
 
 function updateHUD(){
   if (S.screen!=='level') return;
-  const tag = S.stageMod && S.stageMod.tag;
   hudTop.innerHTML = `
     <div class="hud-item">WAVE <b>${S.wave}/${S.totalWaves}</b></div>
     <div class="hud-item hud-hp">HP <b>${S.hp}</b></div>
-    <div class="hud-item hud-gold">GOLD <b>${S.gold}</b></div>
-    ${tag ? `<div class="hud-item hud-tag">${tag}</div>` : ''}`;
+    <div class="hud-item hud-gold">GOLD <b>${S.gold}</b></div>`;
 }
 
 pauseBtn.addEventListener('click', ()=>{
@@ -1396,8 +1119,6 @@ canvas.addEventListener('pointermove', e=>{
   if (S.screen==='map'){
     hoveredMapNode = null;
     for (const nd of mapNodes) if (Math.hypot(e.clientX-nd.x,e.clientY-nd.y)<26) hoveredMapNode=nd;
-    const mod = hoveredMapNode && STAGE_MODS[hoveredMapNode.level.id];
-    hintEl.textContent = mod ? mod.concept : 'TAP A NODE TO DEPLOY';
   }
 });
 canvas.addEventListener('touchstart', e=>{
@@ -1415,46 +1136,10 @@ function drawPath(){
   ctx.save();
   ctx.strokeStyle='rgba(0,190,255,.18)'; ctx.lineWidth=Math.max(18, W*0.018);
   ctx.lineCap='round'; ctx.lineJoin='round';
-  for (const lane of Field.lanes){
-    ctx.beginPath();
-    lane.pathPx.forEach((p,i)=>{ if(i===0) ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y); });
-    ctx.stroke();
-  }
+  ctx.beginPath();
+  Field.pathPx.forEach((p,i)=>{ if(i===0) ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y); });
+  ctx.stroke();
   ctx.restore();
-}
-
-// Static per-stage hazard markers — capacitor nodes (ARC FIELD) and
-// rupture points (FRACTURE LINE). Idle-pulsed with performance.now(); this
-// is presentation only and never feeds the sim, so it's exempt from the
-// determinism contract that governs stageTick().
-function drawStageHazards(){
-  const mod = S.stageMod || {};
-  if (mod.nodes && mod.nodes.length){
-    const t = performance.now()/600;
-    Field.nodesPx.forEach((n,i)=>{
-      const pr = 9 + Math.sin(t+i*1.7)*2;
-      ctx.save();
-      ctx.strokeStyle='rgba(255,68,255,.26)'; ctx.lineWidth=1.5;
-      ctx.beginPath(); ctx.arc(n.x,n.y,mod.nodeRadius,0,TAU); ctx.stroke();
-      glow(C.arc.glow, 20); ctx.fillStyle=C.arc.core;
-      ctx.beginPath(); ctx.arc(n.x,n.y,pr,0,TAU); ctx.fill();
-      noGlow();
-      ctx.restore();
-    });
-  }
-  if (mod.faults && mod.faults.length){
-    const t = performance.now()/500;
-    Field.faultsPx.forEach((f,i)=>{
-      const pr = 6 + Math.sin(t+i*2.1)*1.6;
-      ctx.save();
-      ctx.strokeStyle='rgba(255,153,51,.28)'; ctx.lineWidth=1.5;
-      ctx.beginPath(); ctx.arc(f.x,f.y,mod.faultRadius,0,TAU); ctx.stroke();
-      glow(C.eCascade.glow, 18); ctx.fillStyle=C.eCascade.core;
-      ctx.beginPath(); ctx.arc(f.x,f.y,pr,0,TAU); ctx.fill();
-      noGlow();
-      ctx.restore();
-    });
-  }
 }
 
 function drawGhost(){
@@ -1506,7 +1191,10 @@ function resize(){
 
   if (!mesh.sprites.length) mesh.init(W,H,dpr); else mesh.resize(W,H);
 
-  layoutField();
+  const isMobile = W < 640;
+  const topMargin = isMobile ? 56 : 68;
+  const bottomMargin = isMobile ? 96 : 84;
+  Field.layout(24, topMargin, W-48, H-topMargin-bottomMargin);
   layoutMap();
 }
 window.addEventListener('resize', resize);
@@ -1533,7 +1221,6 @@ function loop(ts){
     drawMap();
   } else if (S.screen==='level' || S.screen==='results'){
     drawPath();
-    drawStageHazards();
     for (const t of S.towers) t.draw();
     for (const e of S.enemies) e.draw();
     drawFX();
