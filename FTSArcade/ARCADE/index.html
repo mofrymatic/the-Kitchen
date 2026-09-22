@@ -15,7 +15,7 @@
     <title>FishTacoStand Arcade</title>
 
     <!-- ── Primary Meta ─────────────────────────────────────────── -->
-    <meta name="description" content="FishTacoStand Arcade — 15 free-play cabinets, fresh drops, and nine workbench builds coming soon." />
+    <meta name="description" content="FishTacoStand Arcade — 15 free-play cabinets, fresh drops, and eight workbench builds coming soon." />
 
     <!-- ── Favicons ─────────────────────────────────────────────── -->
     <link rel="icon" type="image/png" href="fts-favicon.png">
@@ -24,7 +24,7 @@
 
     <!-- ── Open Graph ───────────────────────────────────────────── -->
     <meta property="og:title"       content="FishTacoStand Arcade">
-    <meta property="og:description" content="Step up to FishTacoStand Arcade: 15 free-play cabinets, fresh drops, and nine workbench builds coming soon.">
+    <meta property="og:description" content="Step up to FishTacoStand Arcade: 15 free-play cabinets, fresh drops, and eight workbench builds coming soon.">
     <meta property="og:url"         content="https://frymatic.us/FTSArcade/">
     <meta property="og:type"        content="website">
     <meta property="og:site_name"   content="FishTacoStand Arcade">
@@ -35,7 +35,7 @@
     <!-- ── Twitter / X ──────────────────────────────────────────── -->
     <meta name="twitter:card"        content="summary_large_image">
     <meta name="twitter:title"       content="FishTacoStand Arcade">
-    <meta name="twitter:description" content="15 free-play cabinets, fresh drops, and nine workbench builds coming soon at FishTacoStand Arcade.">
+    <meta name="twitter:description" content="15 free-play cabinets, fresh drops, and eight workbench builds coming soon at FishTacoStand Arcade.">
     <meta name="twitter:image"       content="https://frymatic.us/FTSArcade/ARCADE/FishTacoStand.png">
 
     <link rel="preload" as="image" href="ARCADE/fts_sprites.png">
@@ -108,21 +108,6 @@
             50%       { opacity: 0.99; }
         }
 
-        /* Boot veil — solid curtain over first paint; JS lifts it once
-           the floor backdrop + cabinet body have resolved (or a safety
-           timeout fires). See "BOOT VEIL & ASSET FADE-IN" in the script. */
-        #bootVeil {
-            position: fixed; inset: 0;
-            background: var(--dark-bg);
-            z-index: 950;
-            opacity: 1;
-            transition: opacity 0.62s ease;
-        }
-        #bootVeil.veil-hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-
 
         /* ═══════════════════════════════════════════════════════════
    CABINET SCENE
@@ -155,10 +140,7 @@
         position: relative; z-index: 5;
         pointer-events: none;
         user-select: none;
-        opacity: 0;
-        transition: opacity 0.6s ease;
     }
-    .cabinet-base.art-loaded { opacity: 1; }
 
 
         /* ── TRIPTYCH FLANKING CABINETS ─────────────────────────── */
@@ -188,7 +170,7 @@
             /* Flip the mask so it is solid near the center cabinet and fades out at the screen edge */
             }
 
-        @media (min-aspect-ratio: 4/3) { .cabinet-flank.art-loaded { opacity: 1; } }
+        @media (min-aspect-ratio: 4/3) { .cabinet-flank { opacity: 1; } }
         @media (orientation: portrait) {
             .cabinet-wrapper { padding: clamp(0.5rem, 2vw, 1.5rem); }
             .cabinet-flank { display: none; }
@@ -1370,10 +1352,7 @@
             object-fit: cover; object-position: center;
             display: block;
             user-select: none; pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.6s ease;
         }
-        #closeup-bg-img.art-loaded { opacity: 1; }
 
         /* CRT-region viewport — JS sets left/top/width/height */
         #closeup-screen {
@@ -2051,7 +2030,6 @@
 </style>
 </head>
 <body>
-    <div id="bootVeil" aria-hidden="true"></div>
 
     <div class="cabinet-wrapper">
         <div class="arcade-container">
@@ -2077,7 +2055,7 @@
                 <div class="screen-menu" id="screenMenu">
 
                     <div class="menu-header">
-                        <span class="menu-title">── SELECT GAME · CABINET ART · 24 CABINETS ──</span>
+                        <span class="menu-title">── SELECT GAME · CABINET ART · 23 CABINETS ──</span>
                         <div class="menu-legend">
                             <span class="legend-live"><i></i>FREE PLAY</span>
                             <span class="legend-new"><i></i>NEW · JUST WIRED</span>
@@ -2326,21 +2304,6 @@
                             <span class="tile-sub">WRITE · ARRANGE · MIX · EXPORT</span>
                             <div class="tile-badge badge-soon">COMING SOON</div>
                         </a>
-
-                        <!-- N=1 placeholder tile: no real art/accent pass has been done for
-                             this cabinet yet — --sprite-col/--sprite-row point at one of the
-                             two unused 5x5 atlas cells (the sheet holds 25, 23 were spoken for
-                             before this one), and the icon/colors below are stand-ins, not a
-                             verified design decision. Flag for a real pass before Gold. -->
-                        <a class="game-tile coming-soon" style="--i:23; --accent:#4dd67a; --accent2:#ffe066; --accent3:#0aa3a3; --sprite-col:0; --sprite-row:1;" href="https://frymatic.us/FTSArcade/BOGFROG" data-game="bogfrog">
-                            <div class="tile-preview-frame has-sprite" aria-hidden="true"><img class="tile-sprite" src="ARCADE/fts_sprites.png" alt="" aria-hidden="true" draggable="false" decoding="async"><span class="tile-preview-status">WIP BUILD</span></div>
-                            <span class="workbench-glyph">◇</span>
-                            <svg class="tile-icon" viewBox="0 0 32 32"><ellipse cx="16" cy="20" rx="11" ry="8" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="10" cy="10" r="3" fill="none" stroke="currentColor" stroke-width="1.2"/><circle cx="22" cy="10" r="3" fill="none" stroke="currentColor" stroke-width="1.2"/><circle cx="10" cy="10" r="1" fill="currentColor"/><circle cx="22" cy="10" r="1" fill="currentColor"/><path d="M6 24l-4 5M26 24l4 5M9 27l-2 4M23 27l2 4" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>
-                            <span class="tile-name">BOG FROG</span>
-                            <span class="tile-mode">PLACEHOLDER · UNSTYLED</span>
-                            <span class="tile-sub">N=1 TILE — AWAITING ART &amp; ACCENT PASS</span>
-                            <div class="tile-badge badge-soon">COMING SOON</div>
-                        </a>
                     </div><!-- /.game-grid -->
                     </div><!-- /.game-grid-wrap -->
 
@@ -2372,7 +2335,7 @@
 
     <!-- ── CLOSE-UP TRANSITION LAYER ──────────────────────────────── -->
     <!-- cabinet-closeup.png = the Gemini cabinet screenshot           -->
-    <div id="closeup-layer">
+    <div id="closeup-layer"
         <img id="closeup-bg-img" src="ARCADE/cabinet-closeup.png" alt="FTS Arcade Close-Up">
         <div id="closeup-screen"></div>
     </div>
@@ -2742,8 +2705,6 @@
     const gameGrid       = document.getElementById('gameGrid');
     const tiles          = gameGrid.querySelectorAll('.game-tile');
     const cabinetWrapper = document.querySelector('.cabinet-wrapper');
-    const arcadeContainer= document.querySelector('.arcade-container');
-    const bootVeil       = document.getElementById('bootVeil');
     const closeupLayer   = document.getElementById('closeup-layer');
     const closeupScreen  = document.getElementById('closeup-screen');
     const closeupBgImg   = document.getElementById('closeup-bg-img');
@@ -2754,101 +2715,12 @@
     const wipCopy        = document.getElementById('wip-copy');
     let pendingWipHref   = null;
 
-    /* ── DOM integrity gate ──────────────────────────────────────────
-       A single malformed tag anywhere above (a start tag missing its
-       closing '>') doesn't raise a parse error — the HTML tokenizer
-       just keeps consuming subsequent markup as bogus attributes of
-       the open tag until it finds the next literal '>'. That silently
-       swallows an entire sibling element (it's never instantiated as
-       a node), so its getElementById() lookup comes back null with
-       no signal at parse time. That's exactly how #closeup-bg-img
-       went missing and surfaced downstream as a cryptic
-       "can't access property naturalWidth of null" inside
-       positionCloseupScreen() instead of a diagnosable markup error.
-       Fail loud, once, at boot — for this bug class specifically —
-       rather than letting each consumer throw its own opaque trace. */
-    (function assertDomIntegrity() {
-        const required = {
-            arcadeScreen: screen, screenIdle: idle, screenMenu: menu, menuBack: back,
-            gameGrid, 'cabinet-wrapper': cabinetWrapper, 'arcade-container': arcadeContainer,
-            'closeup-layer': closeupLayer, 'closeup-screen': closeupScreen,
-            'closeup-bg-img': closeupBgImg, 'wip-gate': wipGate, 'wip-stay': wipStay,
-            'wip-continue': wipContinue,
-        };
-        const missing = Object.entries(required).filter(([, el]) => !el).map(([id]) => id);
-        if (missing.length) {
-            console.error(
-                `[FTS Arcade] Missing required DOM node(s) at boot: ${missing.join(', ')}. ` +
-                `Likely cause: an unclosed start tag upstream of one of these ids — a missing ` +
-                `'>' swallows the next element as attributes instead of creating it.`
-            );
-        }
-    })();
 
-    /* ══════════════════════════════════════════════════════════════
-       BOOT VEIL & ASSET FADE-IN
-       ══════════════════════════════════════════════════════════════
-       Two independent covers for slow-loading art, layered together:
 
-       1. #bootVeil — a solid curtain over the whole scene at first
-          paint. The floor backdrop (a CSS background-image, so it
-          has no load event of its own) and the cabinet body are the
-          two heaviest first-paint assets; we preload both with a
-          throwaway Image() and only lift the curtain once both have
-          resolved (loaded OR errored — a missing asset shouldn't
-          hold the page hostage) or a hard safety timeout fires,
-          whichever comes first. This turns "assets snap together
-          mid-paint on a slow connection" into one clean fade-in.
-
-       2. .art-loaded — a per-<img> opacity fade for the cabinet body,
-          the two flanking cabinets, and the closeup photo. These
-          materialize independently of the veil, which matters most
-          for #closeup-bg-img: it isn't requested until the player
-          opens the menu, so on a slow connection it can still lag
-          behind the veil's own timing — this keeps it from popping
-          in wholesale over the CRT close-up transition. */
-    (function liftBootVeil() {
-        if (!bootVeil) return;
-        const criticalAssets = ['ARCADE/the-Floor.png', 'ARCADE/the-Cabinet.png'];
-        let remaining = criticalAssets.length, settled = false;
-        function reveal() {
-            if (settled) return;
-            settled = true;
-            bootVeil.classList.add('veil-hidden');
-        }
-        function assetSettled() { if (--remaining <= 0) reveal(); }
-        criticalAssets.forEach(src => {
-            const img = new Image();
-            img.onload = assetSettled;
-            img.onerror = assetSettled;
-            img.src = src;
-        });
-        setTimeout(reveal, 3200); // never hold the curtain forever on a stalled asset
-    })();
-
-    (function fadeInArt() {
-        const candidates = [
-            document.querySelector('.cabinet-base'),
-            ...document.querySelectorAll('.cabinet-flank'),
-            closeupBgImg,
-        ];
-        candidates.forEach(img => {
-            if (!img) return;
-            const mark = () => img.classList.add('art-loaded');
-            // .complete is true after EITHER a load or an error — checking
-            // naturalWidth here to gate the immediate path would strand an
-            // already-failed image with no future event left to fire.
-            if (img.complete) mark();
-            else {
-                img.addEventListener('load', mark, { once: true });
-                img.addEventListener('error', mark, { once: true }); // show it even broken, don't hide it forever
-            }
-        });
-    })();
 
     const menuTitle = document.querySelector('.menu-title');
     if (menuTitle) {
-        menuTitle.textContent = '── SELECT GAME · CABINET ART · 24 CABINETS ──';
+        menuTitle.textContent = '── SELECT GAME · CABINET ART · 23 CABINETS ──';
     }
 
     function lineArtMotif(game) {
@@ -3129,10 +3001,6 @@
     const CRT = { left: 0.123325, top: 0.201325, right: 0.907675, bottom: 0.817675 };
 
     function positionCloseupScreen() {
-        // Bail safely rather than throw if boot-time integrity checks (above)
-        // already flagged a missing node — keeps a markup regression from
-        // taking the whole menu-open state machine down with it.
-        if (!closeupBgImg || !closeupScreen || !closeupLayer) return;
         const natW = closeupBgImg.naturalWidth  || 1088;
         const natH = closeupBgImg.naturalHeight || 976;
 
@@ -3386,24 +3254,6 @@
             setTimeout(() => impact.remove(), 420);
         }, 300);
         setTimeout(() => { sfx.start(); openMenu(); }, 335);
-    });
-
-    // ── Click outside the cabinet → leave to the floor scene ───────
-    // .cabinet-wrapper spans the full viewport and .arcade-container
-    // exactly matches the cabinet art's bounding box (both keep the
-    // default pointer-events:auto); everything painted inside that
-    // box either sets pointer-events:none (the base art, the two
-    // flanking cabinets) or is its own hit-tested element (the CRT
-    // screen region, tile links). So a click whose target resolves to
-    // one of these two wrapper elements is, by construction, a click
-    // that landed on visible floor rather than the cabinet itself.
-    // The menu closeup, settings panel, and WIP gate are all fixed
-    // full-viewport overlays with a higher z-index, so they intercept
-    // their own clicks first — this never misfires while one is open.
-    cabinetWrapper.addEventListener('click', (e) => {
-        if (e.target !== cabinetWrapper && e.target !== arcadeContainer) return;
-        wake(); sfx.exit();
-        window.location.href = 'https://frymatic.us/FTSArcade/FLOOR';
     });
 
     // ── Back / exit ──────────────────────────────────────────────
