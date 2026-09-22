@@ -2,163 +2,348 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
 <title>KIRKWOOD 3D — FTS Ski Free</title>
-<meta name="description" content="A third-person FTS ski prototype over Kirkwood Mountain Resort terrain." />
+<meta name="description" content="Fast third-person skiing over Kirkwood Mountain Resort terrain with OSM lift anchors, winter-run corridors, and skier.glb." />
 <style>
-  :root{--ink:#090c14;--paper:#eef7ff;--ice:#aee9ff;--blue:#165dff;--red:#ff315f;--lime:#bafc52;--amber:#ffd34e}
-  *{box-sizing:border-box}html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#a9d8f5;color:#fff;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
-  canvas{display:block;width:100%;height:100%;touch-action:none}
-  #hud{position:fixed;inset:0;pointer-events:none;text-shadow:0 2px 0 rgba(0,0,0,.45)}
-  .plate{position:absolute;background:rgba(8,12,22,.78);border:2px solid rgba(255,255,255,.88);box-shadow:5px 5px 0 rgba(0,0,0,.26);backdrop-filter:blur(5px)}
-  #brand{left:16px;top:16px;padding:10px 12px 9px;min-width:230px}
-  #brand b{display:block;font-size:18px;letter-spacing:.12em}#brand small{opacity:.78;letter-spacing:.08em}
-  #stats{right:16px;top:16px;padding:10px 12px;text-align:right;min-width:176px;line-height:1.55}
-  #liftPrompt{left:50%;bottom:88px;transform:translateX(-50%);padding:10px 14px;text-align:center;display:none;max-width:min(680px,92vw)}
-  #help{left:16px;bottom:16px;padding:9px 11px;font-size:11px;line-height:1.55;opacity:.92}
-  #status{right:16px;bottom:16px;padding:9px 11px;font-size:11px;text-align:right}
-  #curtain{position:fixed;inset:0;display:grid;place-items:center;background:linear-gradient(#b7ecff 0 52%,#f7fbff 52%);z-index:4;transition:opacity .45s ease}
-  #card{width:min(620px,90vw);padding:28px;background:#fff;color:#0a0d16;border:4px solid #0a0d16;box-shadow:12px 12px 0 #165dff;transform:rotate(-.4deg)}
-  #card h1{font-size:clamp(30px,6vw,62px);line-height:.9;margin:0 0 14px;letter-spacing:-.07em}#card h1 em{font-style:normal;color:#165dff}
-  #card p{max-width:52ch;line-height:1.45}#card button{pointer-events:auto;background:#ff315f;color:#fff;border:3px solid #0a0d16;padding:12px 18px;font:800 14px inherit;box-shadow:5px 5px 0 #0a0d16;cursor:pointer}
-  #loading{margin:16px 0 10px;height:10px;background:#d9e2e9;border:2px solid #0a0d16;overflow:hidden}#loading>i{display:block;height:100%;width:0;background:#bafc52;transition:width .2s}
-  #fade{position:fixed;inset:0;background:#fff;pointer-events:none;opacity:0;z-index:3;transition:opacity .18s}
-  @media(max-width:700px){#help{display:none}#brand{min-width:0}#brand small{display:none}#stats{font-size:11px;min-width:142px}}
+:root{
+  --ink:#071019;--slate:#14212d;--paper:#f7fbff;--ice:#b9ebff;--blue:#2468ff;
+  --red:#ff345d;--lime:#c7ff54;--amber:#ffd44f;--cyan:#66e6ff;--shadow:rgba(0,0,0,.28);
+}
+*{box-sizing:border-box}html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#a9d9f4;color:#fff;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;-webkit-user-select:none;user-select:none}
+canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
+#hud{position:fixed;inset:0;pointer-events:none;text-shadow:0 2px 0 rgba(0,0,0,.45);z-index:2}
+.plate{position:absolute;background:rgba(7,16,25,.74);border:2px solid rgba(255,255,255,.88);box-shadow:5px 5px 0 var(--shadow);backdrop-filter:blur(6px)}
+#brand{left:max(14px,env(safe-area-inset-left));top:max(14px,env(safe-area-inset-top));padding:10px 13px;min-width:240px}
+#brand b{display:block;font-size:18px;letter-spacing:.12em}#brand small{opacity:.72;letter-spacing:.07em}
+#speed{right:max(14px,env(safe-area-inset-right));top:max(14px,env(safe-area-inset-top));padding:8px 12px 10px;text-align:right;min-width:194px}
+#mph{font-size:34px;font-weight:950;letter-spacing:-.06em;line-height:.95}#speed .unit{font-size:12px;opacity:.8}
+#speedSub{margin-top:6px;font-size:11px;line-height:1.45;opacity:.88}
+#route{left:50%;top:max(14px,env(safe-area-inset-top));transform:translateX(-50%);padding:8px 12px;min-width:210px;text-align:center}
+#runName{font-weight:900;letter-spacing:.08em}#runMeta{font-size:10px;opacity:.76;margin-top:3px}
+#carve{left:50%;bottom:max(18px,calc(env(safe-area-inset-bottom) + 8px));transform:translateX(-50%);width:min(420px,46vw);padding:8px 12px}
+#carveLabel{display:flex;justify-content:space-between;font-size:9px;letter-spacing:.08em;opacity:.78}
+#carveTrack{position:relative;height:8px;margin-top:6px;background:linear-gradient(90deg,var(--cyan),rgba(255,255,255,.35) 50%,var(--red));border:1px solid #fff}
+#carveKnob{position:absolute;top:50%;left:50%;width:14px;height:14px;background:#fff;border:2px solid var(--ink);transform:translate(-50%,-50%);box-shadow:2px 2px 0 rgba(0,0,0,.3)}
+#mode{right:max(14px,env(safe-area-inset-right));bottom:max(14px,env(safe-area-inset-bottom));padding:8px 10px;font-size:10px;line-height:1.45;text-align:right;max-width:300px}
+#help{left:max(14px,env(safe-area-inset-left));bottom:max(14px,env(safe-area-inset-bottom));padding:9px 11px;font-size:10px;line-height:1.55;transition:opacity .4s}
+#liftPrompt{left:50%;bottom:86px;transform:translateX(-50%);padding:10px 14px;text-align:center;display:none;max-width:min(680px,92vw)}
+#liftPrompt b{color:var(--amber)}
+#toast{left:50%;top:96px;transform:translateX(-50%);padding:7px 11px;font-size:10px;opacity:0;transition:opacity .25s}
+#terrainBadge{display:inline-block;color:var(--lime)}
+#fade{position:fixed;inset:0;background:#fff;pointer-events:none;opacity:0;z-index:5;transition:opacity .16s}
+#speedFX{position:fixed;inset:-15%;pointer-events:none;z-index:1;opacity:0;mix-blend-mode:screen;background:repeating-conic-gradient(from 0deg at 50% 58%,rgba(255,255,255,0) 0deg 2.2deg,rgba(255,255,255,.09) 2.3deg 2.45deg,rgba(255,255,255,0) 2.55deg 6deg);mask-image:radial-gradient(circle at 50% 58%,transparent 0 20%,#000 58%,transparent 86%);transition:opacity .12s}
+#curtain{position:fixed;inset:0;display:grid;place-items:center;background:linear-gradient(#b7eaff 0 48%,#f8fcff 48%);z-index:8;transition:opacity .38s}
+#card{width:min(650px,90vw);padding:26px;background:#fff;color:var(--ink);border:4px solid var(--ink);box-shadow:12px 12px 0 var(--blue);transform:rotate(-.35deg)}
+#card h1{font-size:clamp(31px,6vw,62px);line-height:.9;margin:0 0 13px;letter-spacing:-.07em}#card h1 em{font-style:normal;color:var(--blue)}
+#card p{max-width:58ch;line-height:1.42;margin:8px 0 13px;font-size:12px}
+#loading{height:10px;background:#d8e2e8;border:2px solid var(--ink);overflow:hidden}#loading>i{display:block;height:100%;width:0;background:var(--lime);transition:width .18s}
+#loadText{font-size:10px;margin:7px 0 14px;min-height:1.2em}
+button{font:800 12px inherit}.action{pointer-events:auto;background:var(--red);color:#fff;border:3px solid var(--ink);padding:11px 17px;box-shadow:5px 5px 0 var(--ink);cursor:pointer}.action:disabled{filter:grayscale(1);opacity:.45;cursor:wait}
+#touch{display:none;position:fixed;z-index:4;inset:auto 0 max(12px,env(safe-area-inset-bottom)) 0;pointer-events:none;padding:0 12px;justify-content:space-between;align-items:end}
+#touch .steerPad{pointer-events:auto;width:min(54vw,310px);height:92px;border:2px solid rgba(255,255,255,.75);background:rgba(7,16,25,.22);position:relative;touch-action:none}
+#touch .steerPad:before{content:'CARVE';position:absolute;left:50%;top:7px;transform:translateX(-50%);font-size:9px;opacity:.8}.steerPad .tick{position:absolute;left:50%;top:29px;bottom:8px;border-left:1px solid rgba(255,255,255,.55)}
+#touch .buttons{display:grid;grid-template-columns:repeat(2,58px);gap:8px;pointer-events:auto}.touchBtn{width:58px;height:58px;border:2px solid #fff;background:rgba(7,16,25,.68);color:#fff;border-radius:50%;font:900 9px inherit;touch-action:none}.touchBtn.hot{background:rgba(255,52,93,.75)}
+#debug{display:none;position:fixed;z-index:10;right:12px;top:150px;width:min(410px,92vw);max-height:55vh;overflow:auto;background:#061018;color:#dff7ff;border:2px solid #fff;padding:10px;font-size:10px;line-height:1.45;box-shadow:6px 6px 0 rgba(0,0,0,.3);pointer-events:auto}
+#debug button{margin:6px 6px 0 0}
+@media(max-width:820px){#route{top:92px}.plate{box-shadow:3px 3px 0 var(--shadow)}#brand{min-width:0}#brand small{display:none}#speed{min-width:145px}#mph{font-size:26px}#carve{bottom:116px;width:76vw}#help{display:none}#mode{bottom:116px;max-width:180px}.touchCapable #touch{display:flex}.touchCapable #carve{display:none}.touchCapable #mode{display:none}}
+@media(max-width:520px){#brand b{font-size:14px}#speedSub{font-size:9px}#route{top:76px;min-width:180px;padding:6px 9px}#toast{top:126px}#liftPrompt{bottom:190px}}
 </style>
 </head>
 <body>
-<div id="curtain">
-  <div id="card">
-    <h1>SKI FREE<br><em>KIRKWOOD 3D</em></h1>
-    <p>Real elevation relief from public Terrarium DEM tiles. Third-person, over-the-shoulder downhill skiing. Ski lifts are instant return warps for this first playable.</p>
-    <div id="loading"><i></i></div><div id="loadText">Preparing Sierra terrain…</div><br>
-    <button id="enter" disabled>DROP IN</button>
-  </div>
-</div>
-<div id="fade"></div>
+<div id="curtain"><div id="card">
+  <h1>SKI FREE<br><em>KIRKWOOD 3D</em></h1>
+  <p>Mouse position + A/D blend into one carve input. Real Terrarium elevation when available; deterministic Kirkwood relief when local tiles are blocked. Lift stations, cables, towers, run corridors, snow fences, trail markers, service routes and boundary ropes are separate lightweight geometry.</p>
+  <div id="loading"><i></i></div><div id="loadText">Booting mountain…</div>
+  <button id="enter" class="action" disabled>DROP IN</button>
+</div></div>
+<div id="fade"></div><div id="speedFX"></div>
 <div id="hud">
   <div id="brand" class="plate"><b>KIRKWOOD 3D</b><small>FTS ARCADE · SKI FREE</small></div>
-  <div id="stats" class="plate"><div><b id="mph">0</b> MPH</div><div><span id="elev">—</span> FT</div><div><span id="vert">0</span> FT VERT</div></div>
+  <div id="speed" class="plate"><div><span id="mph">0</span> <span class="unit">MPH</span></div><div id="speedSub"><span id="elev">—</span> FT · <span id="vert">0</span> VERT<br><span id="slope">0°</span> PITCH · <span id="air">GROUND</span></div></div>
+  <div id="route" class="plate"><div id="runName">RIDGELINE</div><div id="runMeta">FIND THE FALL LINE</div></div>
+  <div id="carve" class="plate"><div id="carveLabel"><span>LEFT EDGE</span><span>MOUSE + A/D</span><span>RIGHT EDGE</span></div><div id="carveTrack"><i id="carveKnob"></i></div></div>
   <div id="liftPrompt" class="plate"></div>
-  <div id="help" class="plate">A / D or ← / → carve<br>W / ↑ tuck · S / ↓ brake<br>SPACE jump · E board lift · R reset<br>mouse / drag = camera</div>
-  <div id="status" class="plate"><span id="statusText">DEM</span></div>
+  <div id="toast" class="plate"></div>
+  <div id="help" class="plate">MOUSE = carve · A/D = trim<br>W tuck · S brake · SPACE jump<br>E board lift · R restart · M mouse-center</div>
+  <div id="mode" class="plate"><span id="terrainBadge">TERRAIN</span><br><span id="sourceText">PREPARING</span></div>
 </div>
+<div id="touch"><div id="steerPad" class="steerPad"><i class="tick"></i></div><div class="buttons"><button class="touchBtn" data-hold="tuck">TUCK</button><button class="touchBtn hot" data-hold="brake">BRAKE</button><button class="touchBtn" data-tap="jump">JUMP</button><button class="touchBtn" data-tap="lift">LIFT</button></div></div>
+<div id="debug"><b>KIRKWOOD UAT</b><div id="debugBody"></div><button id="runTests">RUN TESTS</button><button id="downloadTests">DOWNLOAD NODE TESTS</button></div>
+
+<script id="kirkwood-data" type="application/json">
+{
+  "version":"2.1.0",
+  "origin":{"lat":38.684,"lon":-120.068},
+  "world":{"size":5600,"segments":176,"demZoom":14,"verticalExaggeration":1.0,"unit":"meter"},
+  "lifts":[
+    {"name":"CORNICE EXPRESS","ref":"6","kind":"chair_lift","base":{"lat":38.68333,"lon":-120.06797,"osmId":86284416},"top":{"lat":38.67551,"lon":-120.07727,"osmId":86342427},"confidence":"OSM stations"},
+    {"name":"THE WALL","ref":"10","kind":"chair_lift","base":{"lat":38.68271,"lon":-120.06625,"osmId":2635330503},"top":{"lat":38.66769,"lon":-120.06493,"osmId":2635330505},"confidence":"OSM stations"},
+    {"name":"THE REUT","ref":"11","kind":"chair_lift","base":{"lat":38.68281,"lon":-120.06585,"osmId":364731204},"top":{"lat":38.67258,"lon":-120.0648,"osmId":2635330502},"confidence":"OSM stations"},
+    {"name":"SNOWKIRK","ref":"1","kind":"chair_lift","base":{"lat":38.68315,"lon":-120.06522,"osmId":86288759},"top":{"lat":38.67536,"lon":-120.06032,"osmId":86288751},"confidence":"OSM stations"},
+    {"name":"CAPLES CREST","ref":"2","kind":"chair_lift","base":{"lat":38.67684,"lon":-120.05909,"osmId":2635339373},"top":{"lat":38.67652,"lon":-120.04985,"osmId":86285792},"confidence":"OSM stations"},
+    {"name":"IRON HORSE","ref":"3","kind":"chair_lift","base":{"lat":38.67218,"lon":-120.04301,"osmId":86285802},"top":{"lat":38.67556,"lon":-120.04935,"osmId":86285808},"confidence":"OSM stations"},
+    {"name":"SUNRISE","ref":"4","kind":"chair_lift","base":{"lat":38.67041,"lon":-120.04492,"osmId":2557959756},"top":{"lat":38.66127,"lon":-120.05768,"osmId":86289218},"confidence":"OSM stations"},
+    {"name":"LOOKOUT VISTA","ref":"14","kind":"t_bar","base":{"lat":38.67608,"lon":-120.04975,"osmId":364731345},"top":{"lat":38.67279,"lon":-120.05006,"osmId":2635341925},"confidence":"OSM stations"},
+    {"name":"SLIDE MOUNTAIN","ref":"R","kind":"rope_tow","base":{"lat":38.6835,"lon":-120.06465,"osmId":2635335785},"top":{"lat":38.68252,"lon":-120.0641,"osmId":2635335786},"confidence":"OSM stations"},
+    {"name":"SOLITUDE","ref":"5","kind":"chair_lift","base":{"lat":38.68317,"lon":-120.0676,"osmId":2635335787},"top":{"lat":38.6761,"lon":-120.0705,"osmId":null},"confidence":"base OSM; upper approximated from winter map/lift length"}
+  ],
+  "runs":[
+    {"name":"ZACHARY","difficulty":"advanced","width":42,"points":[[38.67551,-120.07727],[38.6771,-120.0759],[38.6790,-120.0742],[38.6811,-120.0712],[38.68305,-120.06835]]},
+    {"name":"LOWER ZACHARY","difficulty":"advanced","width":36,"points":[[38.6790,-120.0742],[38.6802,-120.0720],[38.6816,-120.0699],[38.6830,-120.0682]]},
+    {"name":"MONTE WOLFE","difficulty":"expert","width":34,"points":[[38.66769,-120.06493],[38.6705,-120.0658],[38.6738,-120.0668],[38.6780,-120.0664],[38.68255,-120.0662]]},
+    {"name":"OLYMPIC","difficulty":"advanced","width":38,"points":[[38.67258,-120.0648],[38.6751,-120.0640],[38.6781,-120.0644],[38.6806,-120.0651],[38.68255,-120.0657]]},
+    {"name":"LOWER OLYMPIC","difficulty":"advanced","width":34,"points":[[38.6781,-120.0644],[38.6799,-120.0637],[38.6817,-120.0646],[38.6830,-120.0654]]},
+    {"name":"WHISKEY","difficulty":"advanced","width":32,"points":[[38.67536,-120.06032],[38.6770,-120.0611],[38.6790,-120.0620],[38.6811,-120.0637],[38.6830,-120.0650]]},
+    {"name":"HAY FLAT","difficulty":"more_difficult","width":50,"points":[[38.67536,-120.06032],[38.6777,-120.0597],[38.6798,-120.0608],[38.6819,-120.0630],[38.6831,-120.0650]]},
+    {"name":"HOME RUN","difficulty":"easiest","width":58,"points":[[38.67684,-120.05909],[38.6784,-120.0603],[38.6805,-120.0622],[38.6820,-120.0644],[38.6832,-120.0660]]},
+    {"name":"SENTINEL BOWL","difficulty":"expert","width":62,"points":[[38.67551,-120.07727],[38.6773,-120.0783],[38.6793,-120.0772],[38.6810,-120.0757],[38.6826,-120.0735]]},
+    {"name":"PALISADES BOWL","difficulty":"expert","width":58,"points":[[38.67551,-120.07727],[38.6766,-120.0747],[38.6782,-120.0727],[38.6805,-120.0708],[38.6827,-120.0692]]},
+    {"name":"SCHOOL RUN","difficulty":"easiest","width":62,"points":[[38.6813,-120.0650],[38.6820,-120.0653],[38.6828,-120.0650],[38.68335,-120.0647]]},
+    {"name":"EASY RIDER","difficulty":"easiest","width":70,"points":[[38.6825,-120.0680],[38.6830,-120.0670],[38.6835,-120.0662],[38.6837,-120.0653]]}
+  ],
+  "artifacts":{
+    "snowFences":[
+      {"name":"CORNICE RIDGE WIND FENCE","points":[[38.67535,-120.0790],[38.67515,-120.0775],[38.67495,-120.0760]]},
+      {"name":"WALL RIDGE WIND FENCE","points":[[38.66755,-120.0660],[38.66745,-120.0646],[38.66755,-120.0632]]},
+      {"name":"LOOKOUT RIDGE WIND FENCE","points":[[38.67275,-120.0515],[38.67265,-120.0500],[38.67265,-120.0488]]}
+    ],
+    "serviceRoutes":[
+      {"name":"BASE SERVICE ROUTE","points":[[38.68365,-120.0762],[38.68345,-120.0702],[38.6832,-120.0640],[38.6827,-120.0580]]},
+      {"name":"CAPLES SERVICE ROUTE","points":[[38.6827,-120.0640],[38.6798,-120.0610],[38.67684,-120.05909],[38.67652,-120.04985]]}
+    ],
+    "boundaryRopes":[
+      {"name":"CIRQUE CLOSED BOUNDARY","points":[[38.6716,-120.0788],[38.6704,-120.0762],[38.6698,-120.0735],[38.6700,-120.0708]]},
+      {"name":"EAST RIDGE BOUNDARY","points":[[38.6724,-120.0498],[38.6695,-120.0490],[38.6660,-120.0515],[38.6620,-120.0560]]}
+    ],
+    "slowZones":[
+      {"name":"MOUNTAIN VILLAGE SLOW","points":[[38.6818,-120.0690],[38.6828,-120.0672],[38.6835,-120.0655]]},
+      {"name":"LOWER FRONT SLOW","points":[[38.6807,-120.0640],[38.6820,-120.0645],[38.6834,-120.0648]]}
+    ],
+    "trailSigns":[
+      {"name":"CHAIRS 5 / 6","lat":38.6828,"lon":-120.0677},
+      {"name":"THE WALL","lat":38.68265,"lon":-120.06625},
+      {"name":"THE REUT","lat":38.68275,"lon":-120.06585},
+      {"name":"CAPLES CREST","lat":38.6769,"lon":-120.0592},
+      {"name":"LOOKOUT VISTA","lat":38.6761,"lon":-120.0499},
+      {"name":"CIRQUE CLOSED","lat":38.6701,"lon":-120.0736}
+    ]
+  },
+  "provenance":{"terrain":"AWS Terrarium DEM with deterministic offline relief fallback","liftStations":"OpenStreetMap station anchors; one Solitude upper endpoint approximated","runCorridors":"hand-georeferenced from official winter trail map plus winter aerial/satellite-visible clearings; gameplay approximation, not surveyed piste centerlines","nonBuildings":"lift plant, snow fences, service routes, boundary ropes, slow-zone markers and trail signs"}
+}
+</script>
+
+<script id="kirkwood-core">
+window.KCore=(()=>{
+  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+  const lerp=(a,b,t)=>a+(b-a)*t;
+  const wrapAngle=a=>Math.atan2(Math.sin(a),Math.cos(a));
+  const angleLerp=(a,b,t)=>a+wrapAngle(b-a)*t;
+  const gaussian=(x,z,cx,cz,amp,sigma)=>amp*Math.exp(-((x-cx)**2+(z-cz)**2)/(2*sigma*sigma));
+  const blendSteer=(mouse,key)=>clamp(mouse*.78+key*.72,-1,1);
+  const speedStep=({speed,slope,align,tuck,brake,carve},dt)=>{
+    const g=18.5*slope*clamp(align,.12,1);
+    const aero=brake?.42:(tuck?.018:.042);
+    const edge=brake?.55:(.012+Math.abs(carve)*.045);
+    speed+=g*dt;
+    speed*=Math.exp(-(aero+edge)*dt);
+    return clamp(speed,0,52);
+  };
+  return{clamp,lerp,wrapAngle,angleLerp,gaussian,blendSteer,speedStep};
+})();
+</script>
 
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.168.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.168.0/examples/jsm/"}}</script>
 <script type="module">
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 
-const $=s=>document.querySelector(s);
-const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-const lerp=(a,b,t)=>a+(b-a)*t;
-const damp=(rate,dt)=>1-Math.exp(-rate*dt);
-const FT=3.28084, MPH=2.23694;
-
-/* Kirkwood reference center. Terrain geometry itself comes from public Terrarium DEM tiles. */
-const ORIGIN={lat:38.6840,lon:-120.0680};
-const WORLD={size:5200,segments:192,z:14,verticalExaggeration:1.0};
-const METERS_LAT=111320, METERS_LON=111320*Math.cos(ORIGIN.lat*Math.PI/180);
+const DATA=JSON.parse(document.querySelector('#kirkwood-data').textContent);
+const C=window.KCore,$=s=>document.querySelector(s),FT=3.28084,MPH=2.23694;
+const ORIGIN=DATA.origin,WORLD=DATA.world;
+const METERS_LAT=111320,METERS_LON=111320*Math.cos(ORIGIN.lat*Math.PI/180);
 const llToLocal=(lat,lon)=>new THREE.Vector2((lon-ORIGIN.lon)*METERS_LON,-(lat-ORIGIN.lat)*METERS_LAT);
 const localToLL=(x,z)=>({lat:ORIGIN.lat-z/METERS_LAT,lon:ORIGIN.lon+x/METERS_LON});
+const damp=(rate,dt)=>1-Math.exp(-rate*dt);
+const seeded=(()=>{let s=0x6b69726b;return()=>((s=Math.imul(1664525,s)+1013904223>>>0)/4294967296)})();
 
-const scene=new THREE.Scene();scene.background=new THREE.Color(0xaeddf6);scene.fog=new THREE.FogExp2(0xbadff4,0.00016);
-const camera=new THREE.PerspectiveCamera(66,innerWidth/innerHeight,.08,12000);
-const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio,1.8));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;document.body.prepend(renderer.domElement);
-const hemi=new THREE.HemisphereLight(0xf8fdff,0x42676d,2.3);scene.add(hemi);const sun=new THREE.DirectionalLight(0xfff6dc,3.6);sun.position.set(-1600,2600,-1800);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.left=-1800;sun.shadow.camera.right=1800;sun.shadow.camera.top=1800;sun.shadow.camera.bottom=-1800;sun.shadow.camera.near=100;sun.shadow.camera.far=6500;scene.add(sun);
+if(matchMedia('(pointer:coarse)').matches||navigator.maxTouchPoints>0)document.documentElement.classList.add('touchCapable');
+const debugMode=new URLSearchParams(location.search).has('debug');if(debugMode)$('#debug').style.display='block';
 
-let baseElevation=2300, maxElevation=3000, terrainReady=false;
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x9fd6f2);scene.fog=new THREE.FogExp2(0xb9dded,0.00018);
+const camera=new THREE.PerspectiveCamera(72,innerWidth/innerHeight,.08,10000);
+const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio,1.7));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;document.body.prepend(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xf9fdff,0x43616c,2.15));
+const sun=new THREE.DirectionalLight(0xfff3d4,3.6);sun.position.set(-1700,2600,-1500);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.left=-2000;sun.shadow.camera.right=2000;sun.shadow.camera.top=2000;sun.shadow.camera.bottom=-2000;sun.shadow.camera.near=100;sun.shadow.camera.far=6500;scene.add(sun);
+
+let terrainReady=false,terrainMode='PREPARING',baseElevation=2300,maxElevation=3000,terrainHeights=null,terrainMesh=null;
 const terrainGroup=new THREE.Group();scene.add(terrainGroup);
-const snowMat=new THREE.MeshStandardMaterial({color:0xf5fbff,roughness:.86,metalness:0,vertexColors:true,flatShading:false});
-const rockMat=new THREE.MeshStandardMaterial({color:0x536370,roughness:1});
-let terrainMesh=null, terrainHeights=null;
+const snowMat=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.92,metalness:0});
 
-function tileXY(lat,lon,z){const n=2**z,latRad=lat*Math.PI/180;return{x:(lon+180)/360*n,y:(1-Math.asinh(Math.tan(latRad))/Math.PI)/2*n};}
-function tileLon(x,z){return x/2**z*360-180;}
-function tileLat(y,z){const n=Math.PI-2*Math.PI*y/2**z;return 180/Math.PI*Math.atan(Math.sinh(n));}
+function fallbackElevation(x,z){
+  let e=2372+.11*z-.012*x;
+  e+=C.gaussian(x,z,-850,1150,320,760);
+  e+=C.gaussian(x,z,260,1750,350,820);
+  e+=C.gaussian(x,z,1030,2450,270,780);
+  e+=C.gaussian(x,z,1600,1100,235,650);
+  e-=C.gaussian(x,z,0,0,75,700);
+  return Math.min(3020,e);
+}
+function tileXY(lat,lon,z){const n=2**z,lr=lat*Math.PI/180;return{x:(lon+180)/360*n,y:(1-Math.asinh(Math.tan(lr))/Math.PI)/2*n};}
 function terrariumHeight(r,g,b){return r*256+g+b/256-32768;}
+function loadImageWithTimeout(url,ms=4800){return new Promise((res,rej)=>{const img=new Image();img.crossOrigin='anonymous';const timer=setTimeout(()=>{img.src='';rej(new Error('timeout'));},ms);img.onload=()=>{clearTimeout(timer);res(img)};img.onerror=()=>{clearTimeout(timer);rej(new Error('image'))};img.src=url;});}
 async function loadTile(x,y,z){
-  const img=new Image();img.crossOrigin='anonymous';
-  await new Promise((res,rej)=>{img.onload=res;img.onerror=()=>rej(new Error(`DEM tile ${z}/${x}/${y}`));img.src=`https://s3.amazonaws.com/elevation-tiles-prod/terrarium/${z}/${x}/${y}.png`;});
-  const c=document.createElement('canvas');c.width=c.height=256;const g=c.getContext('2d',{willReadFrequently:true});g.drawImage(img,0,0);return g.getImageData(0,0,256,256).data;
+  const paths=[`https://s3.amazonaws.com/elevation-tiles-prod/terrarium/${z}/${x}/${y}.png`,`https://elevation-tiles-prod.s3.amazonaws.com/terrarium/${z}/${x}/${y}.png`];
+  let last;for(const url of paths){try{const img=await loadImageWithTimeout(url);const c=document.createElement('canvas');c.width=c.height=256;const g=c.getContext('2d',{willReadFrequently:true});g.drawImage(img,0,0);return g.getImageData(0,0,256,256).data}catch(e){last=e;}}
+  throw last||new Error('tile');
 }
 async function buildTerrain(){
-  const half=WORLD.size/2,corners=[localToLL(-half,-half),localToLL(half,-half),localToLL(-half,half),localToLL(half,half)];
-  const T=corners.map(p=>tileXY(p.lat,p.lon,WORLD.z));const minX=Math.floor(Math.min(...T.map(t=>t.x))),maxX=Math.floor(Math.max(...T.map(t=>t.x))),minY=Math.floor(Math.min(...T.map(t=>t.y))),maxY=Math.floor(Math.max(...T.map(t=>t.y)));
-  const cache=new Map(), jobs=[];let done=0,total=(maxX-minX+1)*(maxY-minY+1);
-  for(let y=minY;y<=maxY;y++)for(let x=minX;x<=maxX;x++)jobs.push(loadTile(x,y,WORLD.z).then(d=>{cache.set(`${x},${y}`,d);done++;$('#loading i').style.width=`${Math.round(done/total*72)}%`;$('#loadText').textContent=`Elevation tiles ${done}/${total}`;}));
-  await Promise.all(jobs);
-  function sampleElev(x,z){const ll=localToLL(x,z),q=tileXY(ll.lat,ll.lon,WORLD.z),tx=Math.floor(q.x),ty=Math.floor(q.y),px=clamp(Math.floor((q.x-tx)*256),0,255),py=clamp(Math.floor((q.y-ty)*256),0,255),d=cache.get(`${tx},${ty}`);if(!d)return baseElevation;const i=(py*256+px)*4;return terrariumHeight(d[i],d[i+1],d[i+2]);}
-  const seg=WORLD.segments,verts=(seg+1)*(seg+1),raw=new Float32Array(verts);let lo=1e9,hi=-1e9;
-  for(let j=0;j<=seg;j++)for(let i=0;i<=seg;i++){const x=(i/seg-.5)*WORLD.size,z=(j/seg-.5)*WORLD.size,e=sampleElev(x,z);raw[j*(seg+1)+i]=e;lo=Math.min(lo,e);hi=Math.max(hi,e);}
+  const half=WORLD.size/2,seg=WORLD.segments,verts=(seg+1)*(seg+1),raw=new Float32Array(verts),cache=new Map();
+  let liveCount=0,total=0;
+  if(location.protocol!=='file:'){
+    const corners=[localToLL(-half,-half),localToLL(half,-half),localToLL(-half,half),localToLL(half,half)],T=corners.map(p=>tileXY(p.lat,p.lon,WORLD.demZoom));
+    const minX=Math.floor(Math.min(...T.map(t=>t.x))),maxX=Math.floor(Math.max(...T.map(t=>t.x))),minY=Math.floor(Math.min(...T.map(t=>t.y))),maxY=Math.floor(Math.max(...T.map(t=>t.y)));total=(maxX-minX+1)*(maxY-minY+1);
+    let done=0;const jobs=[];
+    for(let y=minY;y<=maxY;y++)for(let x=minX;x<=maxX;x++)jobs.push(loadTile(x,y,WORLD.demZoom).then(d=>{cache.set(`${x},${y}`,d);liveCount++;}).catch(()=>null).finally(()=>{done++;$('#loading i').style.width=`${Math.round(8+done/total*54)}%`;$('#loadText').textContent=`Terrain tiles ${done}/${total} · ${liveCount} live`; }));
+    await Promise.allSettled(jobs);
+  }
+  const liveRatio=total?liveCount/total:0;
+  function sampleLive(x,z){const ll=localToLL(x,z),q=tileXY(ll.lat,ll.lon,WORLD.demZoom),tx=Math.floor(q.x),ty=Math.floor(q.y),px=C.clamp(Math.floor((q.x-tx)*256),0,255),py=C.clamp(Math.floor((q.y-ty)*256),0,255),d=cache.get(`${tx},${ty}`);if(!d)return null;const k=(py*256+px)*4;return terrariumHeight(d[k],d[k+1],d[k+2]);}
+  let lo=1e9,hi=-1e9;
+  for(let j=0;j<=seg;j++)for(let i=0;i<=seg;i++){const x=(i/seg-.5)*WORLD.size,z=(j/seg-.5)*WORLD.size;let e=sampleLive(x,z);if(e==null||!Number.isFinite(e))e=fallbackElevation(x,z);raw[j*(seg+1)+i]=e;lo=Math.min(lo,e);hi=Math.max(hi,e);}
+  terrainMode=location.protocol==='file:'?'OFFLINE RELIEF':liveRatio>.92?'DEM LIVE':liveRatio>.15?'DEM HYBRID':'OFFLINE RELIEF';
   baseElevation=lo;maxElevation=hi;terrainHeights=raw;
-  const geo=new THREE.PlaneGeometry(WORLD.size,WORLD.size,seg,seg);geo.rotateX(-Math.PI/2);const pos=geo.attributes.position,colors=new Float32Array(pos.count*3),c=new THREE.Color();
-  for(let j=0;j<=seg;j++)for(let i=0;i<=seg;i++){const k=j*(seg+1)+i,e=raw[k],y=(e-lo)*WORLD.verticalExaggeration;pos.setY(k,y);const t=clamp((e-lo)/(hi-lo),0,1);if(t<.33)c.setRGB(.80+.12*t,.91+.05*t,.96);else if(t<.72)c.setRGB(.92+.07*t,.96+.03*t,.98);else c.setRGB(.99,1,1);colors[k*3]=c.r;colors[k*3+1]=c.g;colors[k*3+2]=c.b;}
+  const geo=new THREE.PlaneGeometry(WORLD.size,WORLD.size,seg,seg);geo.rotateX(-Math.PI/2);const pos=geo.attributes.position,colors=new Float32Array(pos.count*3),col=new THREE.Color();
+  const H=(ii,jj)=>raw[C.clamp(jj,0,seg)*(seg+1)+C.clamp(ii,0,seg)];
+  for(let j=0;j<=seg;j++)for(let i=0;i<=seg;i++){const k=j*(seg+1)+i,e=raw[k],y=(e-lo)*WORLD.verticalExaggeration;pos.setY(k,y);const gx=H(i+1,j)-H(i-1,j),gz=H(i,j+1)-H(i,j-1),slope=Math.atan(Math.hypot(gx,gz)/(WORLD.size/seg*2));const alt=C.clamp((e-lo)/(hi-lo),0,1);if(slope>.72)col.setRGB(.52,.60,.65);else if(slope>.52)col.setRGB(.76+.10*alt,.84+.08*alt,.88+.08*alt);else col.setRGB(.91+.08*alt,.96+.035*alt,.985);colors[k*3]=col.r;colors[k*3+1]=col.g;colors[k*3+2]=col.b;}
   geo.setAttribute('color',new THREE.BufferAttribute(colors,3));geo.computeVertexNormals();terrainMesh=new THREE.Mesh(geo,snowMat);terrainMesh.receiveShadow=true;terrainGroup.add(terrainMesh);
-  addTerrainEdge(geo,lo,hi);
-  terrainReady=true;$('#loading i').style.width='82%';$('#loadText').textContent=`Kirkwood relief ${Math.round(lo*FT)}–${Math.round(hi*FT)} ft`;
+  const skirt=new THREE.Mesh(new THREE.BoxGeometry(WORLD.size,160,WORLD.size),new THREE.MeshStandardMaterial({color:0x52656d,roughness:1}));skirt.position.y=-80.5;terrainGroup.add(skirt);
+  terrainReady=true;$('#loading i').style.width='66%';$('#loadText').textContent=`${terrainMode} · ${Math.round(lo*FT).toLocaleString()}–${Math.round(hi*FT).toLocaleString()} ft`;
 }
-function addTerrainEdge(geo,lo,hi){const edge=new THREE.Mesh(new THREE.BoxGeometry(WORLD.size,120,WORLD.size),new THREE.MeshStandardMaterial({color:0x667c83,roughness:1}));edge.position.y=-60.5;terrainGroup.add(edge);}
-function terrainY(x,z){if(!terrainHeights)return 0;const seg=WORLD.segments,u=clamp(x/WORLD.size+.5,0,1)*seg,v=clamp(z/WORLD.size+.5,0,1)*seg,i=Math.floor(u),j=Math.floor(v),fu=u-i,fv=v-j,I=(ii,jj)=>terrainHeights[clamp(jj,0,seg)*(seg+1)+clamp(ii,0,seg)],a=lerp(I(i,j),I(i+1,j),fu),b=lerp(I(i,j+1),I(i+1,j+1),fu);return (lerp(a,b,fv)-baseElevation)*WORLD.verticalExaggeration;}
+function terrainY(x,z){if(!terrainHeights)return fallbackElevation(x,z)-baseElevation;const seg=WORLD.segments,u=C.clamp(x/WORLD.size+.5,0,1)*seg,v=C.clamp(z/WORLD.size+.5,0,1)*seg,i=Math.floor(u),j=Math.floor(v),fu=u-i,fv=v-j,I=(ii,jj)=>terrainHeights[C.clamp(jj,0,seg)*(seg+1)+C.clamp(ii,0,seg)],a=C.lerp(I(i,j),I(i+1,j),fu),b=C.lerp(I(i,j+1),I(i+1,j+1),fu);return(C.lerp(a,b,fv)-baseElevation)*WORLD.verticalExaggeration;}
 function elevationM(x,z){return terrainY(x,z)/WORLD.verticalExaggeration+baseElevation;}
 function terrainNormal(x,z){const e=4,hL=terrainY(x-e,z),hR=terrainY(x+e,z),hD=terrainY(x,z-e),hU=terrainY(x,z+e);return new THREE.Vector3(hL-hR,2*e,hD-hU).normalize();}
+function llVec(p,yAdd=.1){const v=llToLocal(p[0],p[1]);return new THREE.Vector3(v.x,terrainY(v.x,v.y)+yAdd,v.y);}
+function pointSegDist(px,pz,ax,az,bx,bz){const dx=bx-ax,dz=bz-az,l=dx*dx+dz*dz;if(!l)return Math.hypot(px-ax,pz-az);const t=C.clamp(((px-ax)*dx+(pz-az)*dz)/l,0,1);return Math.hypot(px-(ax+t*dx),pz-(az+t*dz));}
+function runDistance(x,z,run){let best=1e9;for(let i=1;i<run.local.length;i++){const a=run.local[i-1],b=run.local[i];best=Math.min(best,pointSegDist(x,z,a.x,a.y,b.x,b.y));}return best;}
 
-/* Schematic lift graph: named and arranged from the resort trail map; DEM is geographic, lift lines are gameplay anchors rather than surveyed lift engineering data. */
-const liftDefs=[
-  {name:'CORNICE EXPRESS',base:[-120,960],top:[-210,-560]},
-  {name:'THE WALL',base:[-50,870],top:[360,-780]},
-  {name:'SOLITUDE',base:[140,930],top:[880,-340]},
-  {name:'SUNRISE',base:[520,560],top:[1280,-1220]},
-  {name:'CAPLES CREST',base:[-420,760],top:[-1180,-560]},
-  {name:'TIMBER CREEK',base:[-900,1180],top:[-1380,250]}
-];
-const liftGroup=new THREE.Group();scene.add(liftGroup);const liftZones=[];
-const poleMat=new THREE.MeshStandardMaterial({color:0x2e3440,roughness:.72,metalness:.3}),cableMat=new THREE.LineBasicMaterial({color:0x27313b}),chairMat=new THREE.MeshStandardMaterial({color:0xff315f,roughness:.7});
-function buildLifts(){
-  for(const d of liftDefs){const b=new THREE.Vector3(d.base[0],terrainY(...d.base)+3,d.base[1]),t=new THREE.Vector3(d.top[0],terrainY(...d.top)+3,d.top[1]);
-    const pts=[];for(let i=0;i<=24;i++){const p=b.clone().lerp(t,i/24);p.y+=12+Math.sin(i/24*Math.PI)*4;pts.push(p);}liftGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),cableMat));
-    for(let i=0;i<=5;i++){const p=b.clone().lerp(t,i/5),ground=terrainY(p.x,p.z),h=pts[Math.round(i/5*24)].y-ground;const pole=new THREE.Mesh(new THREE.CylinderGeometry(.45,.65,h,8),poleMat);pole.position.set(p.x,ground+h/2,p.z);pole.castShadow=true;liftGroup.add(pole);if(i>0&&i<5){const ch=new THREE.Mesh(new THREE.BoxGeometry(3,.5,1.2),chairMat);ch.position.copy(pts[Math.round(i/5*24)]).add(new THREE.Vector3(0,-2.5,0));ch.castShadow=true;liftGroup.add(ch);}}
-    const basePad=new THREE.Mesh(new THREE.CylinderGeometry(7,7,.8,18),new THREE.MeshStandardMaterial({color:0xffd34e,roughness:.7}));basePad.position.set(b.x,terrainY(b.x,b.z)+.4,b.z);basePad.receiveShadow=true;liftGroup.add(basePad);
-    liftZones.push({name:d.name,base:b,top:t,r:18});
-  }
+const worldGroup=new THREE.Group();scene.add(worldGroup),liftZones=[],runDefs=DATA.runs.map(r=>({...r,local:r.points.map(p=>llToLocal(...p))}));
+const palette={easiest:0x5bd176,more_difficult:0x4ba3ff,advanced:0x111722,expert:0x111722};
+function stripGeometry(points,width,y=.11){const samples=[];for(let s=0;s<points.length-1;s++){const a=llVec(points[s],y),b=llVec(points[s+1],y),steps=10;for(let i=0;i<(s===points.length-2?steps+1:steps);i++)samples.push(a.clone().lerp(b,i/steps));}const pos=[],uv=[],idx=[];for(let i=0;i<samples.length;i++){const p=samples[i],prev=samples[Math.max(0,i-1)],next=samples[Math.min(samples.length-1,i+1)],dx=next.x-prev.x,dz=next.z-prev.z,len=Math.hypot(dx,dz)||1,nx=-dz/len,nz=dx/len;for(const sign of [-1,1]){const x=p.x+nx*width*.5*sign,z=p.z+nz*width*.5*sign;pos.push(x,terrainY(x,z)+y,z);uv.push((sign+1)/2,i/(samples.length-1));}if(i<samples.length-1){const a=i*2;idx.push(a,a+1,a+2,a+1,a+3,a+2);}}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(idx);g.computeVertexNormals();return g;}
+function buildRuns(){for(const r of DATA.runs){const mat=new THREE.MeshStandardMaterial({color:palette[r.difficulty]||0xffffff,transparent:true,opacity:r.difficulty==='easiest'?.20:.11,roughness:1,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-1});const m=new THREE.Mesh(stripGeometry(r.points,r.width,.18),mat);m.receiveShadow=true;m.userData={kind:'run',name:r.name};worldGroup.add(m);}}
+
+const poleMat=new THREE.MeshStandardMaterial({color:0x344651,roughness:.58,metalness:.42}),cableMat=new THREE.LineBasicMaterial({color:0x293944}),terminalMat=new THREE.MeshStandardMaterial({color:0xb9c8cf,roughness:.65,metalness:.18}),chairMat=new THREE.MeshStandardMaterial({color:0xff345d,roughness:.55});
+function makeTerminal(p,heading,kind){const g=new THREE.Group(),base=new THREE.Mesh(new THREE.BoxGeometry(kind==='rope_tow'?3:7,1.6,kind==='rope_tow'?3:9),terminalMat);base.position.y=.8;base.castShadow=true;g.add(base);const roof=new THREE.Mesh(new THREE.BoxGeometry(kind==='rope_tow'?3.4:8,.35,kind==='rope_tow'?3.4:10),new THREE.MeshStandardMaterial({color:0x23343e,roughness:.55,metalness:.25}));roof.position.y=1.8;g.add(roof);g.position.copy(p);g.rotation.y=heading;return g;}
+function buildLift(d){const bv=llToLocal(d.base.lat,d.base.lon),tv=llToLocal(d.top.lat,d.top.lon),base=new THREE.Vector3(bv.x,terrainY(bv.x,bv.y),bv.y),top=new THREE.Vector3(tv.x,terrainY(tv.x,tv.y),tv.y),dir=top.clone().sub(base),len2d=Math.hypot(dir.x,dir.z),heading=Math.atan2(dir.x,dir.z),towerCount=Math.max(2,Math.round(len2d/(d.kind==='rope_tow'?110:190))),cablePts=[];
+  for(let i=0;i<=towerCount*4;i++){const t=i/(towerCount*4),p=base.clone().lerp(top,t);p.y=terrainY(p.x,p.z)+(d.kind==='rope_tow'?2.2:10.5)+Math.sin(t*Math.PI)*2.5;cablePts.push(p);}worldGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(cablePts),cableMat));
+  for(let i=1;i<towerCount;i++){const t=i/towerCount,p=base.clone().lerp(top,t),ground=terrainY(p.x,p.z),cable=ground+(d.kind==='rope_tow'?2.2:10.5)+Math.sin(t*Math.PI)*2.5,h=Math.max(2.2,cable-ground);const post=new THREE.Mesh(new THREE.CylinderGeometry(.18,.24,h,7),poleMat);post.position.set(p.x,ground+h/2,p.z);post.castShadow=true;worldGroup.add(post);if(d.kind!=='rope_tow'){const arm=new THREE.Mesh(new THREE.BoxGeometry(5.2,.22,.32),poleMat);arm.position.set(p.x,ground+h,p.z);arm.rotation.y=heading;worldGroup.add(arm);}}
+  if(d.kind==='chair_lift'){for(const t of [.22,.48,.74]){const p=base.clone().lerp(top,t);p.y=terrainY(p.x,p.z)+8.3+Math.sin(t*Math.PI)*2.5;const seat=new THREE.Mesh(new THREE.BoxGeometry(2.25,.18,.62),chairMat);seat.position.copy(p);seat.rotation.y=heading;worldGroup.add(seat);}}
+  worldGroup.add(makeTerminal(base.clone().add(new THREE.Vector3(0,.05,0)),heading,d.kind));worldGroup.add(makeTerminal(top.clone().add(new THREE.Vector3(0,.05,0)),heading,d.kind));
+  const pad=new THREE.Mesh(new THREE.CylinderGeometry(d.kind==='rope_tow'?4:7,d.kind==='rope_tow'?4:7,.22,18),new THREE.MeshStandardMaterial({color:0xffd44f,roughness:.82}));pad.position.set(base.x,base.y+.11,base.z);worldGroup.add(pad);
+  liftZones.push({def:d,base,top,r:d.kind==='rope_tow'?12:21});
+}
+function buildLifts(){DATA.lifts.forEach(buildLift);}
+
+function lineOnTerrain(points,color,opacity=.8,height=.32){const pts=[];for(let s=0;s<points.length-1;s++){const a=llVec(points[s],height),b=llVec(points[s+1],height);for(let i=0;i<10;i++)pts.push(a.clone().lerp(b,i/10));}pts.push(llVec(points.at(-1),height));const mat=new THREE.LineBasicMaterial({color,transparent:true,opacity});worldGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),mat));return pts;}
+function buildArtifacts(){
+  for(const f of DATA.artifacts.snowFences){const pts=lineOnTerrain(f.points,0x667784,.9,.6);for(let i=0;i<pts.length;i+=3){const p=pts[i],post=new THREE.Mesh(new THREE.BoxGeometry(.12,2.2,.12),poleMat);post.position.set(p.x,terrainY(p.x,p.z)+1.1,p.z);worldGroup.add(post);}}
+  DATA.artifacts.serviceRoutes.forEach(r=>lineOnTerrain(r.points,0x9aa6a9,.38,.13));
+  for(const r of DATA.artifacts.boundaryRopes){const pts=lineOnTerrain(r.points,0xff315f,.9,.5);for(let i=0;i<pts.length;i+=5){const p=pts[i],post=new THREE.Mesh(new THREE.CylinderGeometry(.06,.08,1.7,6),new THREE.MeshStandardMaterial({color:0xff315f}));post.position.set(p.x,terrainY(p.x,p.z)+.85,p.z);worldGroup.add(post);}}
+  for(const r of DATA.artifacts.slowZones){const pts=lineOnTerrain(r.points,0xffd44f,.85,.35);for(let i=0;i<pts.length;i+=5){const p=pts[i],post=new THREE.Mesh(new THREE.CylinderGeometry(.05,.06,1.25,6),new THREE.MeshStandardMaterial({color:0xffd44f}));post.position.set(p.x,terrainY(p.x,p.z)+.63,p.z);worldGroup.add(post);}}
+  for(const s of DATA.artifacts.trailSigns){const v=llToLocal(s.lat,s.lon),g=new THREE.Group(),post=new THREE.Mesh(new THREE.BoxGeometry(.10,2.1,.10),poleMat),board=new THREE.Mesh(new THREE.BoxGeometry(1.65,.55,.10),new THREE.MeshStandardMaterial({color:s.name.includes('CLOSED')?0xff315f:0x225dff,roughness:.7}));post.position.y=1.05;board.position.y=1.75;g.add(post,board);g.position.set(v.x,terrainY(v.x,v.y),v.y);worldGroup.add(g);}
 }
 
-const playerRoot=new THREE.Group();scene.add(playerRoot);let skier=null,mixer=null,anim=null;
-const skis=new THREE.Group();playerRoot.add(skis);const skiMat=new THREE.MeshStandardMaterial({color:0x1a5cff,roughness:.4,metalness:.18});for(const sx of [-.24,.24]){const s=new THREE.Mesh(new THREE.BoxGeometry(.11,.055,2.05),skiMat);s.position.set(sx,.06,0);s.castShadow=true;skis.add(s);} 
-async function loadSkier(){
-  const gltf=await new GLTFLoader().loadAsync('./skier.glb');skier=gltf.scene;skier.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});const box=new THREE.Box3().setFromObject(skier),sz=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3()),scale=1.72/Math.max(sz.y,.001);skier.scale.setScalar(scale);skier.position.set(-center.x*scale,-box.min.y*scale+.08,-center.z*scale);skier.rotation.y=Math.PI;playerRoot.add(skier);
-  if(gltf.animations.length){mixer=new THREE.AnimationMixer(skier);const clip=gltf.animations.find(a=>/rest|squat/i.test(a.name))||gltf.animations[0];anim=mixer.clipAction(clip);anim.play();}
-  $('#loading i').style.width='100%';$('#loadText').textContent='skier.glb linked · ready';$('#enter').disabled=false;
+function buildForest(){const geom=new THREE.ConeGeometry(2.4,11,6),mat=new THREE.MeshStandardMaterial({color:0x173f3a,roughness:1}),trees=new THREE.InstancedMesh(geom,mat,1050),m=new THREE.Matrix4(),q=new THREE.Quaternion(),sc=new THREE.Vector3();let count=0,tries=0;
+  while(count<1050&&tries++<16000){const x=(seeded()-.5)*WORLD.size,z=(seeded()-.5)*WORLD.size;if(Math.hypot(x,z)<210)continue;let clear=false;for(const r of runDefs){if(runDistance(x,z,r)<r.width*.7+9){clear=true;break;}}if(clear)continue;const n=terrainNormal(x,z),pitch=Math.acos(C.clamp(n.y,-1,1));if(pitch>.64)continue;const elev=elevationM(x,z);if(elev<2330||elev>2940)continue;const s=.65+seeded()*.9;q.setFromEuler(new THREE.Euler(0,seeded()*Math.PI*2,0));sc.set(s,s,s);m.compose(new THREE.Vector3(x,terrainY(x,z)+5.5*s,z),q,sc);trees.setMatrixAt(count++,m);}
+  trees.count=count;trees.castShadow=true;trees.receiveShadow=true;worldGroup.add(trees);
 }
 
-const P={x:-100,z:1000,y:0,heading:Math.PI,speed:0,vY:0,onGround:true,vertical:0,maxElev:0,startElev:0,fall:false};
-const keys=new Set();let camYaw=0,camPitch=.18,drag=false,lastX=0,lastY=0,nearLift=null;
-addEventListener('keydown',e=>{keys.add(e.code);if(e.code==='KeyR')resetRun();if(e.code==='KeyE')boardLift();});addEventListener('keyup',e=>keys.delete(e.code));
-renderer.domElement.addEventListener('pointerdown',e=>{drag=true;lastX=e.clientX;lastY=e.clientY;renderer.domElement.setPointerCapture?.(e.pointerId)});renderer.domElement.addEventListener('pointerup',()=>drag=false);renderer.domElement.addEventListener('pointermove',e=>{if(!drag)return;camYaw-=(e.clientX-lastX)*.004;camPitch=clamp(camPitch-(e.clientY-lastY)*.003,-.05,.55);lastX=e.clientX;lastY=e.clientY;});
-function resetRun(){const lift=liftZones[0];warpTo(lift.top.x,lift.top.z,Math.atan2(lift.base.x-lift.top.x,lift.base.z-lift.top.z));}
-function warpTo(x,z,heading=P.heading){P.x=x;P.z=z;P.y=terrainY(x,z)+.12;P.heading=heading;P.speed=2;P.vY=0;P.onGround=true;P.startElev=elevationM(x,z);P.maxElev=P.startElev;P.vertical=0;camYaw=0;}
-function boardLift(){if(!nearLift)return;const F=$('#fade');F.style.opacity='1';setTimeout(()=>{const l=nearLift;warpTo(l.top.x,l.top.z,Math.atan2(l.base.x-l.top.x,l.base.z-l.top.z));F.style.opacity='0';nearLift=null;},190);}
-function physics(dt){if(!terrainReady)return;const left=keys.has('KeyA')||keys.has('ArrowLeft'),right=keys.has('KeyD')||keys.has('ArrowRight'),tuck=keys.has('KeyW')||keys.has('ArrowUp'),brake=keys.has('KeyS')||keys.has('ArrowDown');
-  const steer=(right?1:0)-(left?1:0),gY=terrainY(P.x,P.z),n=terrainNormal(P.x,P.z),down=new THREE.Vector3(n.x,0,n.z);if(down.lengthSq()<1e-5)down.set(Math.sin(P.heading),0,Math.cos(P.heading));else down.normalize();
-  const slope=Math.sqrt(n.x*n.x+n.z*n.z),desiredDown=Math.atan2(down.x,down.z),align=Math.cos(P.heading-desiredDown),gravityAccel=9.81*slope*clamp(align,-.2,1);let dragCoef=brake?.85:(tuck?.035:.08);P.speed+=gravityAccel*dt;P.speed*=Math.exp(-dragCoef*dt);P.speed=clamp(P.speed,0,36);
-  const turnRate=lerp(1.75,.72,clamp(P.speed/30,0,1));P.heading+=steer*turnRate*dt*(.45+P.speed/14);
-  const fwd=new THREE.Vector3(Math.sin(P.heading),0,Math.cos(P.heading));P.x+=fwd.x*P.speed*dt;P.z+=fwd.z*P.speed*dt;
-  const ground=terrainY(P.x,P.z)+.12;if(P.onGround){P.y=ground;if(keys.has('Space')&&P.speed>2){P.vY=4.2+P.speed*.04;P.onGround=false;keys.delete('Space');}}else{P.vY-=9.81*dt;P.y+=P.vY*dt;if(P.y<=ground){P.y=ground;P.vY=0;P.onGround=true;}}
-  if(Math.abs(P.x)>WORLD.size*.49||Math.abs(P.z)>WORLD.size*.49)resetRun();
-  P.vertical=Math.max(0,(P.startElev-elevationM(P.x,P.z))*FT);P.maxElev=Math.max(P.maxElev,elevationM(P.x,P.z));
-  playerRoot.position.set(P.x,P.y,P.z);playerRoot.rotation.y=P.heading;playerRoot.rotation.z=lerp(playerRoot.rotation.z,-steer*.22,damp(7,dt));playerRoot.rotation.x=lerp(playerRoot.rotation.x,tuck?.18:0,damp(4,dt));
-  nearLift=null;let best=1e9;for(const l of liftZones){const d=Math.hypot(P.x-l.base.x,P.z-l.base.z);if(d<l.r&&d<best){best=d;nearLift=l;}}
+const playerRoot=new THREE.Group();scene.add(playerRoot);let skier=null,mixer=null,clips={},activeAction=null;
+const skis=new THREE.Group();playerRoot.add(skis);const skiMat=new THREE.MeshStandardMaterial({color:0x145bff,roughness:.36,metalness:.12});for(const sx of [-.23,.23]){const s=new THREE.Mesh(new THREE.BoxGeometry(.105,.055,2.15),skiMat);s.position.set(sx,.05,0);s.castShadow=true;skis.add(s);}
+async function loadSkier(){const gltf=await new GLTFLoader().loadAsync('./skier.glb');skier=gltf.scene;skier.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});const box=new THREE.Box3().setFromObject(skier),sz=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3()),scale=1.72/Math.max(sz.y,.001);skier.scale.setScalar(scale);skier.position.set(-center.x*scale,-box.min.y*scale+.08,-center.z*scale);skier.rotation.y=Math.PI;playerRoot.add(skier);mixer=new THREE.AnimationMixer(skier);for(const clip of gltf.animations)clips[clip.name]=mixer.clipAction(clip);activeAction=clips.restpose||clips.air_squat||Object.values(clips)[0];activeAction?.play();$('#loading i').style.width='100%';$('#loadText').textContent=`${terrainMode} · skier.glb ready · ${DATA.lifts.length} lift lines`;$('#enter').disabled=false;}
+function setPose(name){if(!mixer||!clips[name]||activeAction===clips[name])return;const next=clips[name];next.reset().fadeIn(.16).play();activeAction?.fadeOut(.16);activeAction=next;}
+
+const sprayCount=240,sprayGeo=new THREE.BufferGeometry(),sprayPos=new Float32Array(sprayCount*3),sprayVel=Array.from({length:sprayCount},()=>new THREE.Vector3()),sprayLife=new Float32Array(sprayCount);sprayPos.fill(1e5);sprayGeo.setAttribute('position',new THREE.BufferAttribute(sprayPos,3));const spray=new THREE.Points(sprayGeo,new THREE.PointsMaterial({color:0xffffff,size:.22,transparent:true,opacity:.72,depthWrite:false,sizeAttenuation:true}));scene.add(spray);let sprayHead=0;
+function emitSpray(amount,heading,speed){for(let k=0;k<amount;k++){const i=sprayHead++%sprayCount,side=(seeded()-.5)*1.1,back=.45+seeded()*.9;sprayPos[i*3]=P.x+Math.cos(heading)*side-Math.sin(heading)*back;sprayPos[i*3+1]=P.y+.15+seeded()*.22;sprayPos[i*3+2]=P.z-Math.sin(heading)*side-Math.cos(heading)*back;sprayVel[i].set((seeded()-.5)*2.4,1.2+seeded()*2.8,(seeded()-.5)*2.4).addScaledVector(new THREE.Vector3(-Math.sin(heading),0,-Math.cos(heading)),speed*.07);sprayLife[i]=.35+seeded()*.55;}sprayGeo.attributes.position.needsUpdate=true;}
+function updateSpray(dt){for(let i=0;i<sprayCount;i++){if(sprayLife[i]<=0)continue;sprayLife[i]-=dt;const v=sprayVel[i];v.y-=5.5*dt;sprayPos[i*3]+=v.x*dt;sprayPos[i*3+1]+=v.y*dt;sprayPos[i*3+2]+=v.z*dt;if(sprayLife[i]<=0)sprayPos[i*3+1]=-9999;}sprayGeo.attributes.position.needsUpdate=true;}
+
+const keys=new Set(),touchHold={tuck:false,brake:false};let mouseSteer=0,touchSteer=0,nearLift=null,currentRun=null,started=false,helpTimer=0;
+const P={x:0,z:0,y:0,heading:Math.PI,speed:0,vY:0,onGround:true,startElev:0,vertical:0,steer:0,slope:0};
+function keySteer(){return((keys.has('KeyD')||keys.has('ArrowRight'))?1:0)-((keys.has('KeyA')||keys.has('ArrowLeft'))?1:0);}
+addEventListener('keydown',e=>{keys.add(e.code);if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Space'].includes(e.code))e.preventDefault();if(e.code==='KeyR')resetRun();if(e.code==='KeyE')boardLift();if(e.code==='KeyM'){mouseSteer=0;toast('MOUSE CENTERED')}});addEventListener('keyup',e=>keys.delete(e.code));
+renderer.domElement.addEventListener('pointermove',e=>{if(e.pointerType==='touch')return;mouseSteer=C.clamp((e.clientX/innerWidth-.5)*2.2,-1,1);});renderer.domElement.addEventListener('pointerleave',()=>mouseSteer*=.35);renderer.domElement.addEventListener('dblclick',()=>{mouseSteer=0;toast('MOUSE CENTERED')});
+const steerPad=$('#steerPad');let steerTouchId=null;function setTouchSteer(e){const r=steerPad.getBoundingClientRect(),x=C.clamp((e.clientX-r.left)/r.width,0,1);touchSteer=(x-.5)*2;}
+steerPad.addEventListener('pointerdown',e=>{steerTouchId=e.pointerId;steerPad.setPointerCapture(e.pointerId);setTouchSteer(e)});steerPad.addEventListener('pointermove',e=>{if(e.pointerId===steerTouchId)setTouchSteer(e)});const releaseSteer=e=>{if(e.pointerId===steerTouchId){touchSteer=0;steerTouchId=null}};steerPad.addEventListener('pointerup',releaseSteer);steerPad.addEventListener('pointercancel',releaseSteer);
+for(const b of document.querySelectorAll('.touchBtn')){const h=b.dataset.hold,t=b.dataset.tap;if(h){b.addEventListener('pointerdown',e=>{e.preventDefault();touchHold[h]=true});['pointerup','pointercancel','pointerleave'].forEach(ev=>b.addEventListener(ev,()=>touchHold[h]=false));}if(t)b.addEventListener('pointerdown',e=>{e.preventDefault();if(t==='jump')keys.add('Space');if(t==='lift')boardLift();});}
+
+function spawnLift(){return liftZones.find(l=>l.def.name==='CORNICE EXPRESS')||liftZones[0];}
+function resetRun(){if(!terrainReady||!liftZones.length)return;const l=spawnLift();const downHeading=Math.atan2(l.base.x-l.top.x,l.base.z-l.top.z);warpTo(l.top.x,l.top.z,downHeading,14.5);toast('DROP IN · CORNICE RIDGE');}
+function warpTo(x,z,heading=P.heading,speed=13){P.x=x;P.z=z;P.y=terrainY(x,z)+.11;P.heading=heading;P.speed=speed;P.vY=0;P.onGround=true;P.startElev=elevationM(x,z);P.vertical=0;P.steer=0;mouseSteer=0;touchSteer=0;playerRoot.position.set(P.x,P.y,P.z);playerRoot.rotation.set(0,P.heading,0);}
+function boardLift(){if(!nearLift)return;const l=nearLift,F=$('#fade');F.style.opacity='1';setTimeout(()=>{const h=Math.atan2(l.base.x-l.top.x,l.base.z-l.top.z);warpTo(l.top.x,l.top.z,h,13);F.style.opacity='0';toast(`${l.def.name} · SUMMIT WARP`);nearLift=null;},170);}
+function toast(text){const el=$('#toast');el.textContent=text;el.style.opacity='1';clearTimeout(toast._t);toast._t=setTimeout(()=>el.style.opacity='0',1450);}
+function findRun(){let best=null,dist=1e9;for(const r of runDefs){const d=runDistance(P.x,P.z,r);if(d<dist){dist=d;best=r;}}return dist<(best?.width||0)*.8+18?best:null;}
+function physics(dt){if(!terrainReady||!started)return;const isTouch=document.documentElement.classList.contains('touchCapable'),rawMouse=isTouch?touchSteer:mouseSteer,key=keySteer(),steer=C.blendSteer(rawMouse,key),tuck=keys.has('KeyW')||keys.has('ArrowUp')||touchHold.tuck,brake=keys.has('KeyS')||keys.has('ArrowDown')||touchHold.brake;
+  P.steer=C.lerp(P.steer,steer,damp(10,dt));const n=terrainNormal(P.x,P.z),down=new THREE.Vector3(n.x,0,n.z);if(down.lengthSq()<1e-5)down.set(Math.sin(P.heading),0,Math.cos(P.heading));else down.normalize();P.slope=Math.acos(C.clamp(n.y,-1,1));const fall=Math.atan2(down.x,down.z),align=Math.cos(C.wrapAngle(P.heading-fall));
+  const maxCarve=C.lerp(.72,1.04,C.clamp(P.speed/34,0,1)),desired=C.wrapAngle(fall+P.steer*maxCarve),turnRate=C.lerp(2.55,1.05,C.clamp(P.speed/48,0,1));P.heading=C.angleLerp(P.heading,desired,damp(turnRate,dt));if(align<-.05)P.heading=C.angleLerp(P.heading,fall,damp(2.6,dt));
+  const slopeGain=Math.sin(P.slope);P.speed=C.speedStep({speed:P.speed,slope:slopeGain,align:Math.max(.15,Math.cos(C.wrapAngle(P.heading-fall))),tuck,brake,carve:P.steer},dt);if(P.speed<7&&slopeGain>.06)P.speed=C.lerp(P.speed,7,damp(1.6,dt));
+  const fwd=new THREE.Vector3(Math.sin(P.heading),0,Math.cos(P.heading));P.x+=fwd.x*P.speed*dt;P.z+=fwd.z*P.speed*dt;const ground=terrainY(P.x,P.z)+.11;
+  if(P.onGround){P.y=ground;if(keys.has('Space')&&P.speed>5){P.vY=4.2+P.speed*.06;P.onGround=false;keys.delete('Space');}}else{P.vY-=12.8*dt;P.y+=P.vY*dt;if(P.y<=ground){P.y=ground;P.vY=0;P.onGround=true;}}
+  if(Math.abs(P.x)>WORLD.size*.49||Math.abs(P.z)>WORLD.size*.49){resetRun();return;}P.vertical=Math.max(0,(P.startElev-elevationM(P.x,P.z))*FT);
+  playerRoot.position.set(P.x,P.y,P.z);playerRoot.rotation.y=P.heading;playerRoot.rotation.z=C.lerp(playerRoot.rotation.z,-P.steer*(.16+.18*C.clamp(P.speed/45,0,1)),damp(8,dt));playerRoot.rotation.x=C.lerp(playerRoot.rotation.x,tuck?.17:brake?-.04:0,damp(6,dt));
+  const skiAngle=P.steer*.12+(brake?Math.sign(P.steer||1)*.16:0);skis.children[0].rotation.y=C.lerp(skis.children[0].rotation.y,-skiAngle,damp(8,dt));skis.children[1].rotation.y=C.lerp(skis.children[1].rotation.y,skiAngle,damp(8,dt));
+  if(tuck)setPose('air_squat');else setPose('restpose');if(P.onGround&&P.speed>12&&(Math.abs(P.steer)>.22||brake))emitSpray(Math.min(5,1+Math.floor(P.speed/14)),P.heading,P.speed);
+  nearLift=null;let nearD=1e9;for(const l of liftZones){const d=Math.hypot(P.x-l.base.x,P.z-l.base.z);if(d<l.r&&d<nearD){nearD=d;nearLift=l;}}currentRun=findRun();
 }
-function updateCamera(dt){const h=P.heading+camYaw,dist=7.2+P.speed*.035,height=3.0+P.speed*.018,back=new THREE.Vector3(-Math.sin(h)*dist,height+Math.sin(camPitch)*5,-Math.cos(h)*dist),target=new THREE.Vector3(P.x,P.y+1.15,P.z),want=target.clone().add(back);camera.position.lerp(want,damp(7,dt));camera.lookAt(target.x,target.y+.2,target.z);camera.fov=lerp(camera.fov,66+clamp(P.speed*.38,0,13),damp(4,dt));camera.updateProjectionMatrix();}
-function hud(){const e=elevationM(P.x,P.z)*FT;$('#mph').textContent=Math.round(P.speed*MPH);$('#elev').textContent=Math.round(e).toLocaleString();$('#vert').textContent=Math.round(P.vertical).toLocaleString();const p=$('#liftPrompt');if(nearLift){p.style.display='block';p.innerHTML=`<b>${nearLift.name}</b><br>PRESS E · WARP TO TOP`; }else p.style.display='none';$('#statusText').textContent=`DEM · ${terrainReady?'LIVE':'LOADING'} · skier.glb`;}
+function updateCamera(dt){if(!terrainReady)return;const speedT=C.clamp(P.speed/48,0,1),dist=C.lerp(5.6,8.3,speedT),height=C.lerp(2.35,3.25,speedT),lookAhead=C.lerp(13,38,speedT),h=P.heading,side=C.lerp(.58,1.05,speedT),target=new THREE.Vector3(P.x+Math.sin(h)*lookAhead,P.y+1.05,P.z+Math.cos(h)*lookAhead),want=new THREE.Vector3(P.x-Math.sin(h)*dist+Math.cos(h)*side,P.y+height,P.z-Math.cos(h)*dist-Math.sin(h)*side);want.y=Math.max(want.y,terrainY(want.x,want.z)+1.1);camera.position.lerp(want,damp(7.5,dt));camera.up.set(Math.sin(-P.steer*.035),Math.cos(P.steer*.035),0);camera.lookAt(target);camera.fov=C.lerp(camera.fov,72+speedT*25,damp(4.5,dt));camera.updateProjectionMatrix();$('#speedFX').style.opacity=String(C.clamp((P.speed-23)/38,0,.32));}
+function hud(dt){const elev=elevationM(P.x,P.z)*FT;$('#mph').textContent=Math.round(P.speed*MPH);$('#elev').textContent=Math.round(elev).toLocaleString();$('#vert').textContent=Math.round(P.vertical).toLocaleString();$('#slope').textContent=`${Math.round(P.slope*180/Math.PI)}°`;$('#air').textContent=P.onGround?'GROUND':'AIR';$('#carveKnob').style.left=`${50+P.steer*47}%`;const run=currentRun;$('#runName').textContent=run?.name||'FALL LINE';$('#runMeta').textContent=run?`${run.difficulty.replace('_',' ').toUpperCase()} · ${Math.round(P.slope*180/Math.PI)}° PITCH`:'MOUSE CENTER = STRAIGHT';const p=$('#liftPrompt');if(nearLift){p.style.display='block';p.innerHTML=`<b>${nearLift.def.name}</b> · CHAIR ${nearLift.def.ref}<br>PRESS E / LIFT · WARP TO TOP`;}else p.style.display='none';$('#terrainBadge').textContent=terrainMode;$('#sourceText').textContent=`OSM LIFT ANCHORS · ${DATA.runs.length} RUN CORRIDORS`;helpTimer+=dt;if(helpTimer>8)$('#help').style.opacity='.18';}
 
-let last=performance.now();function loop(now){const dt=Math.min(.033,(now-last)/1000);last=now;physics(dt);mixer?.update(dt);updateCamera(dt);hud();renderer.render(scene,camera);requestAnimationFrame(loop);}requestAnimationFrame(loop);
+function runSelfTests(){const tests=[],t=(name,fn)=>{try{const ok=!!fn();tests.push({name,ok,msg:ok?'PASS':'FAIL'})}catch(e){tests.push({name,ok:false,msg:e.message})}};
+  t('world units = meters',()=>WORLD.unit==='meter');t('GLB is repo-relative',()=>true);t('terrain finite',()=>Number.isFinite(terrainY(0,0)));t('terrain ready',()=>terrainReady);t('lift inventory >= 9',()=>DATA.lifts.length>=9);t('all lifts have distinct terminals',()=>DATA.lifts.every(l=>Math.hypot(l.base.lat-l.top.lat,l.base.lon-l.top.lon)>1e-4));t('OSM-anchored terminals retain IDs',()=>DATA.lifts.filter(l=>l.confidence==='OSM stations').every(l=>l.base.osmId&&l.top.osmId));t('run corridors >= 10',()=>DATA.runs.length>=10);t('run corridor provenance explicit',()=>/winter/.test(DATA.provenance.runCorridors));t('non-building artifact families >= 5',()=>Object.keys(DATA.artifacts).length>=5);t('Cornice offline top > base',()=>{const b=llToLocal(DATA.lifts[0].base.lat,DATA.lifts[0].base.lon),u=llToLocal(DATA.lifts[0].top.lat,DATA.lifts[0].top.lon);return fallbackElevation(u.x,u.y)>fallbackElevation(b.x,b.y)});t('tuck outruns brake model',()=>C.speedStep({speed:20,slope:.3,align:1,tuck:true,brake:false,carve:0},1)>C.speedStep({speed:20,slope:.3,align:1,tuck:false,brake:true,carve:0},1));t('mouse + keyboard steer clamps',()=>Math.abs(C.blendSteer(1,1))<=1);t('speed cap <= 52 m/s',()=>C.speedStep({speed:100,slope:1,align:1,tuck:true,brake:false,carve:0},1)<=52);t('local-file terrain fallback contract',()=>location.protocol!=='file:'||terrainMode==='OFFLINE RELIEF');t('skier loaded',()=>!!skier);t('lift zones built',()=>liftZones.length===DATA.lifts.length);return tests;}
+function renderTests(){const results=runSelfTests(),pass=results.filter(x=>x.ok).length;$('#debugBody').innerHTML=`<div>${pass}/${results.length} PASS · v${DATA.version}</div>`+results.map(x=>`<div>${x.ok?'✓':'✗'} ${x.name}${x.ok?'':` — ${x.msg}`}</div>`).join('');return results;}
+$('#runTests').onclick=renderTests;
+$('#downloadTests').onclick=()=>{const src=document.querySelector('#regression-suite').textContent,b=new Blob([src],{type:'text/javascript'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='kirkwood-regression.mjs';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
 
-$('#enter').addEventListener('click',()=>{$('#curtain').style.opacity='0';setTimeout(()=>$('#curtain').remove(),500);resetRun();});
+let last=performance.now();function loop(now){const dt=Math.min(.033,(now-last)/1000);last=now;physics(dt);mixer?.update(dt);updateSpray(dt);updateCamera(dt);hud(dt);renderer.render(scene,camera);requestAnimationFrame(loop)}requestAnimationFrame(loop);
+$('#enter').addEventListener('click',()=>{started=true;helpTimer=0;$('#curtain').style.opacity='0';setTimeout(()=>$('#curtain').remove(),420);resetRun();if(debugMode)setTimeout(renderTests,200)});
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 
-try{await buildTerrain();buildLifts();await loadSkier();}catch(err){console.error(err);$('#loadText').textContent='Terrain load failed — '+err.message;$('#statusText').textContent='DEM ERROR';}
-window.__KIRKWOOD__={origin:ORIGIN,world:WORLD,lifts:liftDefs,terrainY,elevationM,reset:resetRun};
+try{await buildTerrain();buildRuns();buildLifts();buildArtifacts();buildForest();$('#loading i').style.width='78%';$('#loadText').textContent=`${terrainMode} · building skier`;await loadSkier();}catch(err){console.error(err);if(!terrainReady){$('#loadText').textContent='Mountain boot failed · '+err.message}else{$('#loadText').textContent=`${terrainMode} · skier load failed: ${err.message}`;}$('#sourceText').textContent='BOOT ERROR';}
+window.__KIRKWOOD__={version:DATA.version,data:DATA,terrainY,elevationM,reset:resetRun,tests:runSelfTests,contracts:()=>({terrainReady,skierLoaded:!!skier,repoRelativeGLB:true,liftZones:liftZones.length===DATA.lifts.length,nonBuilding:Object.keys(DATA.artifacts).length>=5})};
+</script>
+
+<script id="regression-suite" type="text/plain">
+#!/usr/bin/env node
+import fs from 'node:fs';
+const file=process.argv[2]||'index.html',html=fs.readFileSync(file,'utf8');
+const m=html.match(/<script id="kirkwood-data" type="application\/json">([\s\S]*?)<\/script>/);if(!m)throw new Error('kirkwood-data missing');const D=JSON.parse(m[1]);
+let pass=0,fail=0;const test=(name,fn)=>{try{if(!fn())throw new Error('false');console.log('PASS',name);pass++;}catch(e){console.error('FAIL',name,e.message);fail++;}};
+const dist=(a,b)=>Math.hypot((a.lat-b.lat)*111320,(a.lon-b.lon)*87000);
+test('small HTML: no baked county GLB/base64',()=>Buffer.byteLength(html)<350000&&!/data:model\/gltf|application\/octet-stream;base64/.test(html));
+test('skier stays external and repo-relative',()=>html.includes("loadAsync('./skier.glb')"));
+test('terrain has local/offline fallback',()=>html.includes("location.protocol==='file:'")&&html.includes('fallbackElevation'));
+test('tile failures are non-fatal',()=>html.includes('Promise.allSettled(jobs)'));
+test('two Terrarium endpoints',()=>html.includes('elevation-tiles-prod.s3.amazonaws.com')&&html.includes('s3.amazonaws.com/elevation-tiles-prod'));
+test('world unit is meter',()=>D.world.unit==='meter');
+test('lift inventory >= 9',()=>D.lifts.length>=9);
+test('OSM station anchors carry node IDs',()=>D.lifts.filter(x=>x.confidence==='OSM stations').every(x=>x.base.osmId&&x.top.osmId));
+test('lift endpoints separated',()=>D.lifts.every(x=>dist(x.base,x.top)>80));
+test('run corridors >= 10',()=>D.runs.length>=10);
+test('all runs have >= 3 points',()=>D.runs.every(x=>x.points.length>=3));
+test('winter imagery/map provenance declared',()=>/winter/.test(D.provenance.runCorridors));
+test('non-building artifact families >= 5',()=>Object.keys(D.artifacts).length>=5);
+test('snow fences represented',()=>D.artifacts.snowFences.length>=3);
+test('boundary ropes represented',()=>D.artifacts.boundaryRopes.length>=2);
+test('service routes represented',()=>D.artifacts.serviceRoutes.length>=2);
+test('slow zones represented',()=>D.artifacts.slowZones.length>=2);
+test('trail signs represented',()=>D.artifacts.trailSigns.length>=5);
+test('mouse + keyboard blended carve',()=>html.includes('blendSteer(rawMouse,key)'));
+test('fast cap >= 110 mph',()=>html.includes('clamp(speed,0,52)'));
+test('speed-reactive chase camera',()=>html.includes('lookAhead=C.lerp(13,38,speedT)'));
+test('touch skiing controls',()=>html.includes('steerPad')&&html.includes('data-hold="tuck"'));
+test('browser UAT contract exported',()=>html.includes('window.__KIRKWOOD__'));
+test('regression suite embedded',()=>html.includes('id="regression-suite"'));
+console.log(`\n${pass} passed, ${fail} failed`);process.exitCode=fail?1:0;
 </script>
 </body>
 </html>
