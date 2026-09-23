@@ -20,16 +20,10 @@
 <link rel="preload" as="image" href="Cabinets03.png">
 <link rel="preload" as="image" href="Cabinets04.png">
 <link rel="preload" as="image" href="fts_sprites.png">
-<link rel="preload" as="image" href="art/cabinets/cave-defender/package.png">
-<link rel="preload" as="image" href="art/cabinets/nightfall/package.png">
-<link rel="preload" as="image" href="art/cabinets/bogfrog/package.png">
-<link rel="preload" as="image" href="art/cabinets/mocha-bistro/package.png">
-<link rel="preload" as="image" href="art/cabinets/virtine/package.png">
-<link rel="preload" as="image" href="art/cabinets/your-game-here/package.png">
 <link rel="preload" as="image" href="fts-arcade-fixture-atlas.png">
 <link rel="preload" as="image" href="the-Cabinet.png">
 <link rel="preload" as="audio" href="crowd.mp3" type="audio/mpeg">
-<title>FTS Arcade Floor 1.0.0 Extended Cabinets</title>
+<title>FTS Arcade Floor 0.9.2 Flush Koi</title>
 <!-- 0.5.2 art fit: external world/fixture/screen atlases + Cabinets01-Cabinets04, exact per-CRT crops. -->
 <!-- 0.7.0 feel pass: outer ring 430->510, ceiling 132->192, jump 132->156. Sprint stays 22 mph. Cabinet layout frozen. -->
 <!-- 0.8.1 movement pass: threshold-based Apex-inspired slide, landing-slide buffer, momentum-preserving slide jumps and air steering. -->
@@ -107,7 +101,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;image-renderi
 <body>
 <canvas id="c"></canvas>
 <div id="telemetry">BOOTING...</div>
-<div id="brand"><b>FTS ARCADE</b>CIRCULAR FLOOR / A-AE CABINET PORTAL HUB</div>
+<div id="brand"><b>FTS ARCADE</b>CIRCULAR FLOOR / A-Z CABINET PORTAL HUB</div>
 <div id="prompt"></div>
 <div id="toolbar"><button id="mapBtn">MAP: OFF</button><button id="audioBtn">AUDIO: OFF</button></div>
 <div id="lock"><div><b>FTS ARCADE</b><br><span class="pink">THE RING</span><br><br>WASD MOVE / MOUSE LOOK / SHIFT RUN<br>SPACE JUMP / CTRL OR C CROUCH + SLIDE<br>E OR CLICK INTERACT / M MAP / N SPATIAL AUDIO<br><span style="opacity:.55">DEV: K KALEIDO / P PLANE BACKEND / O KOI</span><br><br>CLICK TO WALK IN</div></div>
@@ -120,7 +114,7 @@ const RUNTIME_ERRORS=[];
 addEventListener('error',e=>{if(e.error||e.message)RUNTIME_ERRORS.push(String(e.error&&e.error.stack||e.message||e.error));});
 addEventListener('unhandledrejection',e=>RUNTIME_ERRORS.push(String(e.reason&&e.reason.stack||e.reason||'unhandled rejection')));
 
-const VERSION='fts-arcade-floor-1.0.0-extended-cabinets';
+const VERSION='fts-arcade-floor-0.9.2-flush-koi';
 const TAU=Math.PI*2, DEG=Math.PI/180;
 // Dimensional contract: 1 engine unit = 1 inch.
 // =============================================================================
@@ -340,13 +334,7 @@ const ASSET_NAMES={
  cab4:['Cabinets04.png','cabinets04.png'],
  screen:'fts_sprites.png',
  fixture:'fts-arcade-fixture-atlas.png',
- cabinetRef:['the-Cabinet.png','the-cabinet.png','./the-Cabinet.png','./the-cabinet.png'],
- pkgD:'art/cabinets/cave-defender/package.png',
- pkgAA:'art/cabinets/nightfall/package.png',
- pkgAB:'art/cabinets/bogfrog/package.png',
- pkgAC:'art/cabinets/mocha-bistro/package.png',
- pkgAD:'art/cabinets/virtine/package.png',
- pkgAE:'art/cabinets/your-game-here/package.png'
+ cabinetRef:['the-Cabinet.png','the-cabinet.png','./the-Cabinet.png','./the-cabinet.png']
 };
 const ASSET_FILES=ASSET_NAMES;
 const WORLD_RECTS={
@@ -357,21 +345,6 @@ const WORLD_RECTS={
 };
 const FIXTURE_RECTS={VEND_DRINK:[16,16,64,64],VEND_SNACK:[96,16,64,64],JUKEBOX:[176,16,64,64],WHITEBOARD:[256,16,64,64],BULLETIN:[336,16,64,64],TOKEN:[416,16,64,64],POSTER_1:[496,16,64,64],POSTER_2:[576,16,64,64],POSTER_3:[656,16,64,64],AD_SPACE:[736,16,64,64],AD_DEAL:[816,16,64,64],WAYFIND:[896,16,64,64],OFFICE_DOOR:[16,96,64,64],STAGE_SIGN:[96,96,64,64],DJ_SIGN:[176,96,64,64],POSTER_4:[256,96,64,64]};
 const SKIN_PARTS=['MARQUEE','LEFT','RIGHT','CONTROL','FRONT'];
-const PACKAGE_SKIN_PARTS=['MARQUEE','LEFT','RIGHT','SCREEN','CONTROL','FRONT'];
-const PACKAGE_ATLAS_META={width:1024,height:1024};
-const PACKAGE_ATLAS_RECTS={
- MARQUEE:[287,16,450,120],LEFT:[8,160,270,690],RIGHT:[746,160,270,690],
- SCREEN:[287,160,450,263],CONTROL:[287,450,450,200],FRONT:[287,680,450,210]
-};
-const PACKAGE_CABINETS={
- D:{sheet:'pkgD',id:'cave-defender',title:'CAVE DEFENDER',url:'../CAVERACER'},
- AA:{sheet:'pkgAA',id:'nightfall',title:'NIGHTFALL',url:'https://appliedai.solutions/hq/?arrival=1'},
- AB:{sheet:'pkgAB',id:'bogfrog',title:'BOGFROG',url:'https://frymatic.us/FTSArcade/BOGFROG'},
- AC:{sheet:'pkgAC',id:'mocha-bistro',title:'MOCHA BISTRO',url:'https://frymatic.us/FTSArcade/MOCHABISTRO'},
- AD:{sheet:'pkgAD',id:'virtine',title:'VITRINE',url:'https://frymatic.us/FTSArcade/VITRINE'},
- AE:{sheet:'pkgAE',id:'your-game-here',title:'YOUR GAME HERE',url:'https://frymatic.us/FTSArcade/SUBMISSION'}
-};
-const PACKAGE_ASSET_KEYS=[...new Set(Object.values(PACKAGE_CABINETS).map(p=>p.sheet))];
 
 // the-Cabinet.png is now a surgical hardware/detail source only.
 // Never use it on the control deck or as a full-width lower-front skin: that
@@ -433,9 +406,6 @@ Object.keys(FIXTURE_RECTS).forEach(k=>mat('FIX_'+k,'fixture',FIXTURE_RECTS[k]));
 for(let cc=65;cc<=90;cc++){
  const L=String.fromCharCode(cc);
  for(const p of SKIN_PARTS){const a=cabinetArt(L,p);mat('SKIN_'+L+'_'+p,a.sheet,a.rect,{stretch:true});}
-}
-for(const [L,pkg] of Object.entries(PACKAGE_CABINETS)){
- for(const part of PACKAGE_SKIN_PARTS)mat('PKG_'+L+'_'+part,pkg.sheet,PACKAGE_ATLAS_RECTS[part],{stretch:true});
 }
 mat('CAB_BLACK','solid',null,{stretch:true});
 Object.keys(CABINET_REF_RECTS).forEach(k=>mat('CAB_REF_'+k,'cabinetRef',CABINET_REF_RECTS[k],{stretch:true}));
@@ -518,13 +488,13 @@ function ringDefs(){
  return defs;
 }
 
-// Cabinet identities. Legacy A-Z remains fixed; AA-AE extends the content roster.
+// 26 cabinet identities, A-Z. Artwork and resting-screen pairings are centralized here.
 // screen is the 1-based tile index in the supplied fts_sprites landscape CRT atlas.
 const CABINET_ROSTER=[
- ['A','ASTROIDS OBLITERATUS','../ASTROIDS',1, '_blank'],
+ ['A','ASTROIDS OBLITERATUS','../astroids.html',1, '_blank'],
  ['B','BRAZEN TOWER','../BRAZENTOWER',17, '_blank'],
  ['C','CAMELOT','../CAMELOT',18, '_blank'],
- ['D','CAVE DEFENDER','../CAVERACER',28, '_blank'],
+ ['D','CAVE RACER','../CAVERACER',3, '_blank'],
  ['E','COVEN BLITZ','../COVENBLITZ',4, '_blank'],
  ['F','CRAWFORD COUNTY','../CRAWFORDCOUNTY',5, '_blank'],
  ['G','GRACE BLAND','../GRACE',7, '_blank'],
@@ -545,13 +515,8 @@ const CABINET_ROSTER=[
  ['V','TOURNAMENT CONDUCTOR','../TOURNAMENT',22, '_blank'],
  ['W','FREE PLAY','https://frymatic.us/FTSArcade/',6, '_blank'],
  ['X','COMING SOON','https://frymatic.us/FTSArcade/',17, '_blank'],
- ['Y','EVENT SERIES','../TOURNAMENT',22, '_blank'],
- ['Z','BRAZEN INDEX','https://frymatic.us/',6, '_blank'],
- ['AA','NIGHTFALL','https://appliedai.solutions/hq/?arrival=1',26,'_blank'],
- ['AB','BOGFROG','https://frymatic.us/FTSArcade/BOGFROG',27,'_blank'],
- ['AC','MOCHA BISTRO','',29,'_blank'],
- ['AD','VITRINE','https://frymatic.us/FTSArcade/VITRINE',30,'_blank'],
- ['AE','YOUR GAME HERE','https://frymatic.us/FTSArcade/SUBMISSION',31,'_blank']
+ ['Y','EVENT SERIES','../adapter-test.html',22, '_blank'],
+ ['Z','BRAZEN INDEX','https://frymatic.us/',6, '_blank']
 ];
 
 // -----------------------------------------------------------------------------
@@ -587,21 +552,13 @@ const AUTHORING={
   {letter:'K',x:-148.5,y:40.25,deg:90},
   {letter:'L',x:-148.5,y:-40.25,deg:-90}
  ],
- // New content rides the open outer ring. Existing A-Z positions remain frozen.
- cabinetAdditions:[
-  {letter:'AA',deg:0,r:400},
-  {letter:'AB',deg:70,r:400},
-  {letter:'AC',deg:180,r:400},
-  {letter:'AD',deg:270,r:400},
-  {letter:'AE',deg:290,r:400}
- ],
  officeEntry:[
   {id:'WHITEBOARD',x:-53,y:-119,deg:-90,w:48,z0:36,z1:80,mat:'FIX_WHITEBOARD',label:'WHITEBOARD',url:'https://frymatic.us/FTSArcade/',cta:'VIEW ARCADE NOTES'},
-  {id:'OFFICE_DOOR',x:0,y:-119,deg:-90,w:50,z0:0,z1:82,mat:'FIX_OFFICE_DOOR',label:'OFFICE',url:'https://frymatic.us',cta:''},
-  {id:'BULLETIN',x:53,y:-119,deg:-90,w:48,z0:36,z1:80,mat:'FIX_BULLETIN',label:'BULLETIN BOARD',url:'https://frymatic.us/FTSArcade//SUBMISSION',cta:'VIEW EVENTS'}
+  {id:'OFFICE_DOOR',x:0,y:-119,deg:-90,w:50,z0:0,z1:82,mat:'FIX_OFFICE_DOOR',label:'OFFICE',url:'',cta:''},
+  {id:'BULLETIN',x:53,y:-119,deg:-90,w:48,z0:36,z1:80,mat:'FIX_BULLETIN',label:'BULLETIN BOARD',url:'../SUBMISSION',cta:'VIEW EVENTS'}
  ],
  wallPortals:[
-  {id:'STAGE_SIGN',x:0,y:387,deg:-90,w:92,z0:78,z1:106,mat:'FIX_STAGE_SIGN',label:'PERFORMANCE ZONE',url:'https://frymatic.us/FTSArcade/TOURNAMENT',cta:'VIEW EVENTS'},
+  {id:'STAGE_SIGN',x:0,y:387,deg:-90,w:92,z0:78,z1:106,mat:'FIX_STAGE_SIGN',label:'PERFORMANCE ZONE',url:'../tournament.html',cta:'VIEW EVENTS'},
   {id:'DJ_SIGN',x:104,y:320,deg:-90,w:54,z0:48,z1:68,mat:'FIX_DJ_SIGN',label:'DJ / PERFORMANCE',url:'https://frymatic.us',cta:'OPEN ARCADE HUB'}
  ],
  posters:[
@@ -619,13 +576,14 @@ const AUTHORING={
 };
 
 function cabinetSolid(letter,slot,x,y,faceAng,title,url,screenIndex,target='_blank'){
- const hasPkg=!!PACKAGE_CABINETS[letter];
- const K=p=>hasPkg?MAT['PKG_'+letter+'_'+p]:MAT['SKIN_'+letter+'_'+p], black=MAT.CAB_BLACK;
+ const K=p=>MAT['SKIN_'+letter+'_'+p], black=MAT.CAB_BLACK;
  const coin=MAT.CAB_REF_COIN_DOOR;
  const kick=MAT.CAB_REF_KICK_PLATE;
- const screen=hasPkg?MAT['PKG_'+letter+'_SCREEN']:MAT['SCREEN_'+String(screenIndex||17).padStart(2,'0')];
- // Existing cabinet dimensions stay fixed. Screen height follows its source art aspect.
- const sr=hasPkg?PACKAGE_ATLAS_RECTS.SCREEN:screenRect(screenIndex||17),screenH=CABINET_DIM.screenW*(sr[3]/sr[2]);
+ const screen=MAT['SCREEN_'+String(screenIndex||17).padStart(2,'0')];
+ // "42-inch equivalent" is interpreted against each supplied landscape CRT crop.
+ // At the atlas' ~1.45-1.55 aspect ratios, a 35-inch physical width lands near a
+ // 42-inch diagonal while preserving the artwork without distortion.
+ const sr=screenRect(screenIndex||17),screenH=CABINET_DIM.screenW*(sr[3]/sr[2]);
  const screenZ0=CABINET_DIM.screenCenter-screenH/2,screenZ1=CABINET_DIM.screenCenter+screenH/2;
  const controlTop=CABINET_DIM.control, controlBase=controlTop-.012;
  const screenInset=5.8, hoodDepth=18.5;
@@ -675,13 +633,12 @@ function buildLevel(){
  // that line - each group is a single independent edit.
  const wallShift=RING.outer-AUTHORING.perimeter.authoredOuter;
  const wallR=r=>r+wallShift;
- const addCab=(letter,x,y,ang)=>{const row=CABINET_ROSTER.find(r=>r[0]===letter),slot=CABINET_ROSTER.findIndex(r=>r[0]===letter)+1,c=cabinetSolid(letter,slot,x,y,ang,row[1],row[2],row[3],row[4]);map.solids.push(c);map.cabinets.push(c);if(c.url)map.targets.push(c);};
+ const addCab=(letter,x,y,ang)=>{const row=CABINET_ROSTER.find(r=>r[0]===letter),slot=letter.charCodeAt(0)-64,c=cabinetSolid(letter,slot,x,y,ang,row[1],row[2],row[3],row[4]);map.solids.push(c);map.cabinets.push(c);map.targets.push(c);};
  const sideSep=(CABINET_DIM.w+AUTHORING.packing.sideGap)/2;
  const backSep=(CABINET_DIM.d+AUTHORING.packing.backGap)/2;
  const pod4=(def)=>{const ang=def.deg*DEG,f={x:Math.cos(ang),y:Math.sin(ang)},r={x:Math.sin(ang),y:-Math.cos(ang)};def.front.forEach((L,i)=>{const rs=i?sideSep:-sideSep;addCab(L,def.cx+f.x*backSep+r.x*rs,def.cy+f.y*backSep+r.y*rs,ang);});def.back.forEach((L,i)=>{const rs=i?sideSep:-sideSep;addCab(L,def.cx-f.x*backSep+r.x*rs,def.cy-f.y*backSep+r.y*rs,ang+Math.PI);});};
  AUTHORING.cabinetPods.forEach(pod4);
  AUTHORING.cabinetSingles.forEach(c=>addCab(c.letter,c.x,c.y,c.deg*DEG));
- AUTHORING.cabinetAdditions.forEach(c=>{const a=c.deg*DEG;addCab(c.letter,Math.cos(a)*c.r,Math.sin(a)*c.r,a+Math.PI);});
 
  // Counter-clockwise stage sweep: rotate the performance zone along the perimeter
  // to clear more north-floor dance space while preserving the ensemble.
@@ -957,7 +914,7 @@ const RenderCore={
 };
 
 const canvas=document.getElementById('c'),ctx=canvas.getContext('2d'),telemetry=document.getElementById('telemetry'),promptEl=document.getElementById('prompt'),lockEl=document.getElementById('lock'),modal=document.getElementById('modal'),modalEyebrow=document.getElementById('modalEyebrow'),modalTitle=document.getElementById('modalTitle'),modalCopy=document.getElementById('modalCopy'),confirmBtn=document.getElementById('confirmBtn'),cancelBtn=document.getElementById('cancelBtn'),mapBtn=document.getElementById('mapBtn'),audioBtn=document.getElementById('audioBtn');
-const IMG={world:null,cab1:null,cab2:null,cab3:null,cab4:null,screen:null,fixture:null,cabinetRef:null,ready:false,artBaked:false,sourcesReleased:false,meta:{},errors:[]};for(const k of PACKAGE_ASSET_KEYS)IMG[k]=null;let baseBank=[],texBank=[],flatBank=[],shadeTileBank=[],planePixelBank=[],RW=0,RH=0,RSCALE=1,dl=null,showMap=false,activeTarget=null,modalTarget=null,VIGNETTE=null;const PAINT_ORDER=[];const PLANE_SOFT={canvas:null,ctx:null,image:null,u32:null,width:0,height:0};const PLANE_STATS={patternTransforms:0,softwareSpans:0,softwarePixels:0};
+const IMG={world:null,cab1:null,cab2:null,cab3:null,cab4:null,screen:null,fixture:null,cabinetRef:null,ready:false,artBaked:false,sourcesReleased:false,meta:{},errors:[]};let baseBank=[],texBank=[],flatBank=[],shadeTileBank=[],planePixelBank=[],RW=0,RH=0,RSCALE=1,dl=null,showMap=false,activeTarget=null,modalTarget=null,VIGNETTE=null;const PAINT_ORDER=[];const PLANE_SOFT={canvas:null,ctx:null,image:null,u32:null,width:0,height:0};const PLANE_STATS={patternTransforms:0,softwareSpans:0,softwarePixels:0};
 
 function loadImage(src,label){
  const candidates=Array.isArray(src)?src:[src];
@@ -966,7 +923,7 @@ function loadImage(src,label){
 function cropCanvas(im,r,sheet){const cv=document.createElement('canvas');cv.width=cv.height=64;const g=cv.getContext('2d');g.imageSmoothingEnabled=false;if(sheet==='solid'){g.fillStyle='#03050a';g.fillRect(0,0,64,64);}else if(im&&r)g.drawImage(im,r[0],r[1],r[2],r[3],0,0,64,64);else{g.fillStyle='#222833';g.fillRect(0,0,64,64);g.strokeStyle='#ff4a98';g.strokeRect(2,2,60,60);}return cv;}
 function shadeStrip(src,level){const cv=document.createElement('canvas');cv.width=64;cv.height=TILE_H;const g=cv.getContext('2d');g.imageSmoothingEnabled=false;for(let y=0;y<TILE_H;y+=64)g.drawImage(src,0,y,64,64);const k=level/(SHADES-1);g.globalCompositeOperation='source-atop';g.fillStyle='rgba(2,4,8,'+(k*.9)+')';g.fillRect(0,0,64,TILE_H);return cv;}
 function shadeTile(src,level){const cv=document.createElement('canvas');cv.width=cv.height=64;const g=cv.getContext('2d');g.imageSmoothingEnabled=false;g.drawImage(src,0,0);const k=level/(SHADES-1);g.globalCompositeOperation='source-atop';g.fillStyle='rgba(2,4,8,'+(k*.9)+')';g.fillRect(0,0,64,64);return cv;}
-function buildTextures(){baseBank=new Array(MATERIALS.length);texBank=new Array(MATERIALS.length);flatBank=new Array(MATERIALS.length);shadeTileBank=new Array(MATERIALS.length);planePixelBank=new Array(MATERIALS.length);IMG.ready=IMG.errors.length===0&&!!(IMG.world&&IMG.cab1&&IMG.cab2&&IMG.cab3&&IMG.cab4&&IMG.screen&&IMG.fixture&&IMG.cabinetRef)&&PACKAGE_ASSET_KEYS.every(k=>!!IMG[k]);}
+function buildTextures(){baseBank=new Array(MATERIALS.length);texBank=new Array(MATERIALS.length);flatBank=new Array(MATERIALS.length);shadeTileBank=new Array(MATERIALS.length);planePixelBank=new Array(MATERIALS.length);IMG.ready=IMG.errors.length===0&&!!(IMG.world&&IMG.cab1&&IMG.cab2&&IMG.cab3&&IMG.cab4&&IMG.screen&&IMG.fixture&&IMG.cabinetRef);}
 function baseTile(i){
  if(baseBank[i])return baseBank[i];const m=MATERIALS[i];return baseBank[i]=cropCanvas(IMG[m.sheet],m.rect,m.sheet);
 }
@@ -976,7 +933,7 @@ function flatPattern(i,level){let row=flatBank[i];if(!row)row=flatBank[i]=new Ar
 function planePixels(i,level){let row=planePixelBank[i];if(!row)row=planePixelBank[i]=new Array(SHADES);if(row[level])return row[level];const tile=shadedTile(i,level),g=tile.getContext('2d',{willReadFrequently:true}),img=g.getImageData(0,0,64,64);return row[level]=new Uint32Array(img.data.buffer.slice(0));}
 function bakeBaseTilesAndRelease(){
  for(let i=0;i<MATERIALS.length;i++)baseTile(i);IMG.artBaked=true;
- for(const k of['world','cab1','cab2','cab3','cab4','screen','fixture','cabinetRef',...PACKAGE_ASSET_KEYS])IMG[k]=null;
+ for(const k of['world','cab1','cab2','cab3','cab4','screen','fixture','cabinetRef'])IMG[k]=null;
  IMG.sourcesReleased=true;
 }
 function ensureSoftwareFrame(w,h){if(PLANE_SOFT.width===w&&PLANE_SOFT.height===h&&PLANE_SOFT.image)return;const cv=document.createElement('canvas');cv.width=w;cv.height=h;const g=cv.getContext('2d',{alpha:true});PLANE_SOFT.canvas=cv;PLANE_SOFT.ctx=g;PLANE_SOFT.width=w;PLANE_SOFT.height=h;PLANE_SOFT.image=g.createImageData(w,h);PLANE_SOFT.u32=new Uint32Array(PLANE_SOFT.image.data.buffer);}
@@ -1105,40 +1062,35 @@ touchCrouch.addEventListener('pointerdown',e=>{input.crouch=1;sim.beginSlide();t
 touchCrouch.addEventListener('pointerup',e=>{input.crouch=0;e.preventDefault();});touchCrouch.addEventListener('pointercancel',()=>{input.crouch=0;});
 
 let last=0,fpsAcc=0,fpsN=0,fps=0,frames=0,simAcc=0;
-function loop(ts){const frameDt=Math.min((ts-last)/1000||.016,.12);last=ts;simAcc=Math.min(.20,simAcc+frameDt);const fixedDt=1/KINETIC.simHz;let simSteps=0;while(simAcc>=fixedDt&&simSteps<KINETIC.maxCatchupSteps){sim.step(fixedDt,input);simAcc-=fixedDt;simSteps++;}SpatialCrowd.update(sim);RenderCore.solve(sim,dl,RW,RH);paint(sim,dl);if(showMap)drawMap(sim,RW,RH);updatePrompt();fpsAcc+=frameDt;fpsN++;if(fpsAcc>.45){fps=fpsN/fpsAcc;fpsAcc=0;fpsN=0;}if((frames++&7)===0){const moveState=sim.slideT>0?'SLIDE':input.crouch?'CROUCH':input.run?'RUN':'WALK';telemetry.textContent=VERSION+' | '+RW+'x'+RH+' | '+fps.toFixed(0)+' fps | '+moveState+' | Z '+sim.jumpZ.toFixed(0)+' | SEC '+(sim.sector+1)+'/'+map.sectors.length+' | CAB '+map.cabinets.length+' A-AE | FIX '+map.fixtures.length+' | ADS '+map.ads.length+' | VIS '+dl.stats.sectors+'s '+dl.stats.solidFaces+'g/'+dl.stats.culledSolids+'c/'+dl.stats.lodParts+'l'+(dl.stats.grows?' GROW '+dl.stats.grows:'')+(dl.stats.dropped?' DROP '+dl.stats.dropped:'')+' | PLN '+PLANE_BACKEND.active.toUpperCase()+'/'+PLANE_MAPPING.mode.toUpperCase()+' | KOI '+(CELESTIAL_KOI.enabled?CELESTIAL_KOI_STATS.visible:'OFF')+' | AUD '+(SpatialCrowd.on?(SpatialCrowd.quadrant||crowdQuadrantAt(sim.x,sim.y))+'>'+SpatialCrowd.activeZones().join(''):'OFF')+' | ART '+(IMG.ready?'ATLAS':'FALLBACK')+(MAP_ERRORS.length?' | MAP ERR '+MAP_ERRORS.length:'');}requestAnimationFrame(loop);}
+function loop(ts){const frameDt=Math.min((ts-last)/1000||.016,.12);last=ts;simAcc=Math.min(.20,simAcc+frameDt);const fixedDt=1/KINETIC.simHz;let simSteps=0;while(simAcc>=fixedDt&&simSteps<KINETIC.maxCatchupSteps){sim.step(fixedDt,input);simAcc-=fixedDt;simSteps++;}SpatialCrowd.update(sim);RenderCore.solve(sim,dl,RW,RH);paint(sim,dl);if(showMap)drawMap(sim,RW,RH);updatePrompt();fpsAcc+=frameDt;fpsN++;if(fpsAcc>.45){fps=fpsN/fpsAcc;fpsAcc=0;fpsN=0;}if((frames++&7)===0){const moveState=sim.slideT>0?'SLIDE':input.crouch?'CROUCH':input.run?'RUN':'WALK';telemetry.textContent=VERSION+' | '+RW+'x'+RH+' | '+fps.toFixed(0)+' fps | '+moveState+' | Z '+sim.jumpZ.toFixed(0)+' | SEC '+(sim.sector+1)+'/'+map.sectors.length+' | CAB '+map.cabinets.length+' A-Z | FIX '+map.fixtures.length+' | ADS '+map.ads.length+' | VIS '+dl.stats.sectors+'s '+dl.stats.solidFaces+'g/'+dl.stats.culledSolids+'c/'+dl.stats.lodParts+'l'+(dl.stats.grows?' GROW '+dl.stats.grows:'')+(dl.stats.dropped?' DROP '+dl.stats.dropped:'')+' | PLN '+PLANE_BACKEND.active.toUpperCase()+'/'+PLANE_MAPPING.mode.toUpperCase()+' | KOI '+(CELESTIAL_KOI.enabled?CELESTIAL_KOI_STATS.visible:'OFF')+' | AUD '+(SpatialCrowd.on?(SpatialCrowd.quadrant||crowdQuadrantAt(sim.x,sim.y))+'>'+SpatialCrowd.activeZones().join(''):'OFF')+' | ART '+(IMG.ready?'ATLAS':'FALLBACK')+(MAP_ERRORS.length?' | MAP ERR '+MAP_ERRORS.length:'');}requestAnimationFrame(loop);}
 addEventListener('resize',resize);if(window.visualViewport)visualViewport.addEventListener('resize',resize);
-const IMAGE_LOADS=[
- ['world',ASSET_FILES.world,'world'],['cab1',ASSET_FILES.cab1,'Cabinets01'],['cab2',ASSET_FILES.cab2,'Cabinets02'],['cab3',ASSET_FILES.cab3,'Cabinets03'],['cab4',ASSET_FILES.cab4,'Cabinets04'],['screen',ASSET_FILES.screen,'screen'],['fixture',ASSET_FILES.fixture,'fixture'],['cabinetRef',ASSET_FILES.cabinetRef,'the-Cabinet'],
- ...PACKAGE_ASSET_KEYS.map(k=>[k,ASSET_FILES[k],k])
-];
-Promise.all(IMAGE_LOADS.map(([,src,label])=>loadImage(src,label))).then(images=>{
- IMAGE_LOADS.forEach(([k],i)=>{const im=images[i];IMG[k]=im;IMG.meta[k]=im?[im.naturalWidth,im.naturalHeight]:null;});
- buildTextures();bakeBaseTilesAndRelease();if(IMG.errors.length){telemetry.textContent=VERSION+' | ASSET ERROR: '+IMG.errors.join(', ');console.error('[FTS ARCADE] atlas load failure',IMG.errors,ASSET_FILES);}
-});
+Promise.all([
+ loadImage(ASSET_FILES.world,'world'),loadImage(ASSET_FILES.cab1,'Cabinets01'),loadImage(ASSET_FILES.cab2,'Cabinets02'),loadImage(ASSET_FILES.cab3,'Cabinets03'),loadImage(ASSET_FILES.cab4,'Cabinets04'),loadImage(ASSET_FILES.screen,'screen'),loadImage(ASSET_FILES.fixture,'fixture'),loadImage(ASSET_FILES.cabinetRef,'the-Cabinet')
+]).then(([w,c1,c2,c3,c4,sc,f,cr])=>{IMG.world=w;IMG.cab1=c1;IMG.cab2=c2;IMG.cab3=c3;IMG.cab4=c4;IMG.screen=sc;IMG.fixture=f;IMG.cabinetRef=cr;for(const [k,im] of Object.entries({world:w,cab1:c1,cab2:c2,cab3:c3,cab4:c4,screen:sc,fixture:f,cabinetRef:cr}))IMG.meta[k]=im?[im.naturalWidth,im.naturalHeight]:null;buildTextures();bakeBaseTilesAndRelease();if(IMG.errors.length){telemetry.textContent=VERSION+' | ASSET ERROR: '+IMG.errors.join(', ');console.error('[FTS ARCADE] atlas load failure',IMG.errors,ASSET_FILES);}});
 resize();buildTextures();
 if(MAP_ERRORS.length)console.error('[FTS ARCADE] map validation',MAP_ERRORS);
 function screenPart(c){return c.parts.find(p=>p.role==='screen');}
 const REF_TESTS={
  mapValid:()=>MAP_ERRORS.length===0,
- cabinetCount:()=>map.cabinets.length===31,
- cabinetAlphabet:()=>map.cabinets.slice(0,26).map(c=>c.letter).sort().join('')==='ABCDEFGHIJKLMNOPQRSTUVWXYZ'&&['AA','AB','AC','AD','AE'].every(L=>map.cabinets.some(c=>c.letter===L)),
+ cabinetCount:()=>map.cabinets.length===26,
+ cabinetAlphabet:()=>map.cabinets.map(c=>c.letter).sort().join('')==='ABCDEFGHIJKLMNOPQRSTUVWXYZ',
  exitCount:()=>map.exits.length===3,
  geometryCabinets:()=>map.cabinets.every(c=>c.parts&&c.parts.length>=16),
  cabinetCoinDoors:()=>map.cabinets.every(c=>{const p=c.parts.find(x=>x.role==='coin-door');return p&&p.front===MAT.CAB_REF_COIN_DOOR&&p.z0>=12&&p.z1<=34;}),
  cabinetClassicDetails:()=>map.cabinets.every(c=>['kick-plate','coin-door','bezel-left','bezel-right','bezel-top'].every(r=>c.parts.some(p=>p.role===r))),
  concaveCabinets:()=>map.cabinets.every(c=>c.parts.some(p=>p.role==='backdrop')&&c.parts.some(p=>p.role==='screen')&&c.parts.some(p=>p.role==='jamb-left')&&c.parts.some(p=>p.role==='jamb-right')),
- screenPairings:()=>map.cabinets.every(c=>PACKAGE_CABINETS[c.letter]|| (c.screenIndex>=1&&c.screenIndex<=25)),
+ screenPairings:()=>map.cabinets.every(c=>c.screenIndex>=1&&c.screenIndex<=25),
  screenAtlasGrid:()=>SCREEN_ATLAS_META.count===25&&SCREEN_RECTS.length===25,
  screenRectsInBounds:()=>Array.from({length:25},(_,i)=>screenRect(i+1)).every(r=>r[0]>=0&&r[1]>=0&&r[0]+r[2]<=SCREEN_ATLAS_META.width&&r[1]+r[3]<=SCREEN_ATLAS_META.height),
  screenSpritesLandscape:()=>Array.from({length:25},(_,i)=>screenRect(i+1)).every(r=>r[2]/r[3]>1.35),
  cabinetScreensLandscape:()=>map.cabinets.every(c=>{const p=screenPart(c);return p&&p.w/(p.z1-p.z0)>1.35;}),
- screenAspectPreserved:()=>map.cabinets.every(c=>{const p=screenPart(c),r=PACKAGE_CABINETS[c.letter]?PACKAGE_ATLAS_RECTS.SCREEN:screenRect(c.screenIndex);return p&&Math.abs(p.w/(p.z1-p.z0)-r[2]/r[3])<1e-6;}),
- screenMaterialPairings:()=>map.cabinets.every(c=>{const p=screenPart(c),want=PACKAGE_CABINETS[c.letter]?('PKG_'+c.letter+'_SCREEN'):('SCREEN_'+String(c.screenIndex).padStart(2,'0'));return p&&MATERIALS[p.front]&&MATERIALS[p.front].name===want;}),
+ screenAspectPreserved:()=>map.cabinets.every(c=>{const p=screenPart(c),r=screenRect(c.screenIndex);return p&&Math.abs(p.w/(p.z1-p.z0)-r[2]/r[3])<1e-6;}),
+ screenMaterialPairings:()=>map.cabinets.every(c=>{const p=screenPart(c);return p&&MATERIALS[p.front]&&MATERIALS[p.front].name==='SCREEN_'+String(c.screenIndex).padStart(2,'0');}),
  cabinetProportions:()=>CABINET_DIM.control===40&&CABINET_DIM.screenBayTop===68.5&&CABINET_DIM.h===78&&CABINET_DIM.screenW===35,
  cabinetRefMinimal:()=>Object.keys(CABINET_REF_RECTS).join(',')==='COIN_DOOR,KICK_PLATE',
  cabinetRefDeclared:()=>!!ASSET_NAMES.cabinetRef&&Array.isArray(ASSET_NAMES.cabinetRef)&&ASSET_NAMES.cabinetRef.some(x=>/the-Cabinet\.png$/i.test(x)),
  cabinetControlsHorizontal:()=>map.cabinets.every(c=>{const p=c.parts.find(x=>x.role==='control');return p&&p.top!=null&&(p.z1-p.z0)<=1.01;}),
- cabinetControlDeckClean:()=>map.cabinets.every(c=>!c.parts.some(p=>p.role==='control-pedestal')&&(()=>{const p=c.parts.find(x=>x.role==='control'),want=PACKAGE_CABINETS[c.letter]?MAT['PKG_'+c.letter+'_CONTROL']:MAT['SKIN_'+c.letter+'_CONTROL'];return p&&(p.z1-p.z0)<=.03&&p.top===want;})()),
+ cabinetControlDeckClean:()=>map.cabinets.every(c=>!c.parts.some(p=>p.role==='control-pedestal')&&(()=>{const p=c.parts.find(x=>x.role==='control');return p&&(p.z1-p.z0)<=.03&&p.top===MAT['SKIN_'+c.letter+'_CONTROL'];})()),
  cabinetNoFrontCrossbar:()=>map.cabinets.every(c=>!c.parts.some(p=>p.role==='bezel-bottom'||p.role==='lower-front'||p.role==='control-pedestal')),
  cabinetRefSurgical:()=>map.cabinets.every(c=>{const refs=c.parts.filter(p=>p.front===MAT.CAB_REF_COIN_DOOR||p.front===MAT.CAB_REF_KICK_PLATE);return refs.length===2&&refs.some(p=>p.role==='coin-door')&&refs.some(p=>p.role==='kick-plate')&&!c.parts.some(p=>p.role==='control'&&(p.front===MAT.CAB_REF_COIN_DOOR||p.front===MAT.CAB_REF_KICK_PLATE||p.top===MAT.CAB_REF_COIN_DOOR||p.top===MAT.CAB_REF_KICK_PLATE));}),
  cabinetOfficeClearance:()=>AUTHORING.officeClearance>=8&&map.cabinets.every(c=>cabinetClearOfOffice(c,AUTHORING.officeClearance)),
@@ -1158,7 +1110,7 @@ const REF_TESTS={
  jumpClearsCeiling:()=>JUMP.apex+PLAYER_H<RING.ceil-6,
  jumpDerivations:()=>Math.abs(JUMP.apex-31.52)<.05&&Math.abs(JUMP.hang-.808)<.005,
  // "Don't rearrange the cabinets tonight" as an executable assertion.
- cabinetLayoutFrozen:()=>cabinetLayoutSignature({cabinets:map.cabinets.filter(c=>c.letter.length===1)})===CABINET_LAYOUT_SNAPSHOT,
+ cabinetLayoutFrozen:()=>cabinetLayoutSignature(map)===CABINET_LAYOUT_SNAPSHOT,
  // Wall dressing must still touch the wall after the ring grew.
  perimeterRidesWall:()=>{const inset=s=>RING.outer-Math.hypot(s.x,s.y);return map.ads.every(a=>inset(a)>=0&&inset(a)<24)&&map.exits.every(e=>inset(e)>=0&&inset(e)<24)&&map.fixtures.filter(f=>/^POSTER_/.test(f.id)).every(p=>inset(p)>=0&&inset(p)<24);},
  stageRidesWall:()=>{const sb=map.solids.find(s=>s.id==='STAGE_BACK');return !!sb&&RING.outer-Math.hypot(sb.x,sb.y)<90;},
@@ -1212,9 +1164,7 @@ const REF_TESTS={
  adInventory:()=>map.ads.length===8&&map.ads.every(a=>a.url.includes('inventory=')),
  offsiteExits:()=>map.exits.every(e=>/^https:\/\//.test(e.url)),
  sameDirectoryAssets:()=>Object.values(ASSET_FILES).every(v=>(Array.isArray(v)?v:[v]).every(s=>!/^https?:/i.test(s))),
- packageAssets:()=>PACKAGE_ASSET_KEYS.every(k=>ASSET_FILES[k]&&/package\.png$/.test(ASSET_FILES[k])),
- packageAtlasContract:()=>Object.values(PACKAGE_ATLAS_RECTS).every(r=>r[0]>=0&&r[1]>=0&&r[0]+r[2]<=1024&&r[1]+r[3]<=1024),
- assetDimensions:()=>{const m=IMG.meta;return m.world&&m.world[0]===1024&&m.world[1]===1024&&['cab1','cab2','cab3','cab4'].every(k=>m[k]&&m[k][0]===1254&&m[k][1]===1254)&&m.screen&&m.screen[0]===2048&&m.screen[1]===1433&&m.fixture&&m.fixture[0]===1024&&m.fixture[1]===256&&m.cabinetRef&&m.cabinetRef[0]===767&&m.cabinetRef[1]===1432&&PACKAGE_ASSET_KEYS.every(k=>m[k]&&m[k][0]===1024&&m[k][1]===1024);},
+ assetDimensions:()=>{const m=IMG.meta;return m.world&&m.world[0]===1024&&m.world[1]===1024&&['cab1','cab2','cab3','cab4'].every(k=>m[k]&&m[k][0]===1254&&m[k][1]===1254)&&m.screen&&m.screen[0]===2048&&m.screen[1]===1433&&m.fixture&&m.fixture[0]===1024&&m.fixture[1]===256&&m.cabinetRef&&m.cabinetRef[0]===767&&m.cabinetRef[1]===1432;},
  assetsReady:()=>IMG.ready&&IMG.errors.length===0,
  sourceAtlasesReleased:()=>!IMG.artBaked||IMG.sourcesReleased,
  staticRenderGeometry:()=>map.solids.every(s=>s._render&&s._render.faces.length>0&&Number.isFinite(s._render.radius)),
@@ -1232,7 +1182,7 @@ function runRefTests(){
  }
  return{version:VERSION,pass:failures.length===0,passed:Object.values(results).filter(v=>v===true).length,total:Object.keys(REF_TESTS).length,failures,results,mapErrors:MAP_ERRORS.slice(),assetErrors:IMG.errors.slice(),runtimeErrors:RUNTIME_ERRORS.slice(),screenAtlas:SCREEN_ATLAS_META};
 }
-window.__FTS_ARCADE__={VERSION,map,sim,MapBuilder,Geom,RenderCore,DrawLists,MATERIALS,MAP_ERRORS,CABINET_ROSTER,CABINET_DIM,AISLE,PORTALS,ASSET_NAMES,CABINET_PART_RECTS,CABINET_REF_RECTS,PACKAGE_CABINETS,PACKAGE_ATLAS_META,PACKAGE_ATLAS_RECTS,PACKAGE_ASSET_KEYS,SCREEN_ATLAS_META,SCREEN_RECTS,screenRect,AUTHORING,KINETIC,JUMP,RENDER,PERF,RING,CABINET_LAYOUT_SNAPSHOT,cabinetLayoutSignature:()=>cabinetLayoutSignature(map),PLATFORM,PLANE_BACKEND,PLANE_STATS,setPlaneBackend,togglePlaneBackend,PLANE_MAPPING,setPlaneMappingMode,togglePlaneMapping,MOUSE_LOOK_SENS,TOUCH_LOOK_SENS,SpatialCrowd,CROWD_AUDIO_URL,CROWD_QUADRANTS,CROWD_OPPOSITE,CROWD_ZONE_POSES,crowdQuadrantAt,crowdDesiredFor,CELESTIAL_KOI,CELESTIAL_KOI_MAP,CELESTIAL_KOI_SAMPLES,CELESTIAL_KOI_STATS,celestialKoiPoint,projectWorldPoint,getDrawList:()=>dl,setCelestialKoi,toggleCelestialKoi,paintCelestialKoi,solidAabb,cabinetClearOfOffice,exportAuthoring:()=>JSON.stringify(AUTHORING,null,2),tests:REF_TESTS,runTests:runRefTests};
+window.__FTS_ARCADE__={VERSION,map,sim,MapBuilder,Geom,RenderCore,DrawLists,MATERIALS,MAP_ERRORS,CABINET_ROSTER,CABINET_DIM,AISLE,PORTALS,ASSET_NAMES,CABINET_PART_RECTS,CABINET_REF_RECTS,SCREEN_ATLAS_META,SCREEN_RECTS,screenRect,AUTHORING,KINETIC,JUMP,RENDER,PERF,RING,CABINET_LAYOUT_SNAPSHOT,cabinetLayoutSignature:()=>cabinetLayoutSignature(map),PLATFORM,PLANE_BACKEND,PLANE_STATS,setPlaneBackend,togglePlaneBackend,PLANE_MAPPING,setPlaneMappingMode,togglePlaneMapping,MOUSE_LOOK_SENS,TOUCH_LOOK_SENS,SpatialCrowd,CROWD_AUDIO_URL,CROWD_QUADRANTS,CROWD_OPPOSITE,CROWD_ZONE_POSES,crowdQuadrantAt,crowdDesiredFor,CELESTIAL_KOI,CELESTIAL_KOI_MAP,CELESTIAL_KOI_SAMPLES,CELESTIAL_KOI_STATS,celestialKoiPoint,projectWorldPoint,getDrawList:()=>dl,setCelestialKoi,toggleCelestialKoi,paintCelestialKoi,solidAabb,cabinetClearOfOffice,exportAuthoring:()=>JSON.stringify(AUTHORING,null,2),tests:REF_TESTS,runTests:runRefTests};
 const qs=new URLSearchParams(location.search);
 setPlaneBackend(qs.get('planeBackend')||qs.get('backend')||'auto');
 setPlaneMappingMode(qs.get('planes')||qs.get('plane')||'world');
