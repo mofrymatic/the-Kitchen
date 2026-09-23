@@ -53,27 +53,27 @@ button{font:800 12px inherit}.action{pointer-events:auto;background:var(--red);c
 <body>
 <div id="curtain"><div id="card">
   <h1>SKI FREE<br><em>KIRKWOOD 3D</em></h1>
-  <p>Inverted mouse X + A/D blend into one carve input. A draped topographic grid and elevation contours make the snow surface readable at speed. Real Terrarium elevation upgrades asynchronously when available; deterministic Kirkwood relief boots instantly when tiles are blocked. Lift stations, cables, towers, run corridors, snow fences, trail markers, service routes and boundary ropes remain separate lightweight geometry.</p>
+  <p>Mouse position + A/D blend into one carve input. Real Terrarium elevation when available; deterministic Kirkwood relief when local tiles are blocked. Lift stations, cables, towers, run corridors, snow fences, trail markers, service routes and boundary ropes are separate lightweight geometry.</p>
   <div id="loading"><i></i></div><div id="loadText">Booting mountain…</div>
   <button id="enter" class="action" disabled>DROP IN</button>
 </div></div>
 <div id="fade"></div><div id="speedFX"></div>
 <div id="hud">
   <div id="brand" class="plate"><b>KIRKWOOD 3D</b><small>FTS ARCADE · SKI FREE</small></div>
-  <div id="speed" class="plate"><div><span id="mph">0</span> <span class="unit">MPH</span></div><div id="speedSub"><span id="elev">—</span> FT · <span id="vert">0</span> VERT<br><span id="slope">0°</span> PITCH · <span id="air">GROUND</span><br><span id="stance">GLIDE</span> · <span id="edgeDeg">0° EDGE</span></div></div>
+  <div id="speed" class="plate"><div><span id="mph">0</span> <span class="unit">MPH</span></div><div id="speedSub"><span id="elev">—</span> FT · <span id="vert">0</span> VERT<br><span id="slope">0°</span> PITCH · <span id="air">GROUND</span></div></div>
   <div id="route" class="plate"><div id="runName">RIDGELINE</div><div id="runMeta">FIND THE FALL LINE</div></div>
   <div id="carve" class="plate"><div id="carveLabel"><span>LEFT EDGE</span><span>MOUSE + A/D</span><span>RIGHT EDGE</span></div><div id="carveTrack"><i id="carveKnob"></i></div></div>
   <div id="liftPrompt" class="plate"></div>
   <div id="toast" class="plate"></div>
-  <div id="help" class="plate">MOUSE X = inverted carve · A/D = trim<br>W tuck · S brake · SPACE jump<br>E lift · G contours · R restart · M mouse-center</div>
-  <div id="mode" class="plate"><span id="terrainBadge">TERRAIN</span><br><span id="sourceText">PREPARING</span><br><span id="topoState">CONTOURS ON</span></div>
+  <div id="help" class="plate">MOUSE = carve · A/D = trim<br>W tuck · S brake · SPACE jump<br>E board lift · R restart · M mouse-center</div>
+  <div id="mode" class="plate"><span id="terrainBadge">TERRAIN</span><br><span id="sourceText">PREPARING</span></div>
 </div>
 <div id="touch"><div id="steerPad" class="steerPad"><i class="tick"></i></div><div class="buttons"><button class="touchBtn" data-hold="tuck">TUCK</button><button class="touchBtn hot" data-hold="brake">BRAKE</button><button class="touchBtn" data-tap="jump">JUMP</button><button class="touchBtn" data-tap="lift">LIFT</button></div></div>
 <div id="debug"><b>KIRKWOOD UAT</b><div id="debugBody"></div><button id="runTests">RUN TESTS</button><button id="downloadTests">DOWNLOAD NODE TESTS</button></div>
 
 <script id="kirkwood-data" type="application/json">
 {
-  "version":"2.3.0",
+  "version":"2.2.0",
   "origin":{"lat":38.684,"lon":-120.068},
   "world":{"size":5600,"segments":176,"demZoom":14,"verticalExaggeration":1.0,"unit":"meter"},
   "lifts":[
@@ -141,14 +141,13 @@ window.KCore=(()=>{
   const angleLerp=(a,b,t)=>a+wrapAngle(b-a)*t;
   const gaussian=(x,z,cx,cz,amp,sigma)=>amp*Math.exp(-((x-cx)**2+(z-cz)**2)/(2*sigma*sigma));
   const blendSteer=(mouse,key)=>clamp(mouse*.78+key*.72,-1,1);
-  // Ideal packed-powder game model: low base drag, strong edge authority, intentionally arcade-fast terminal speed.
   const speedStep=({speed,slope,align,tuck,brake,carve},dt)=>{
-    const g=19.1*slope*clamp(align,.12,1);
-    const aero=brake?.40:(tuck?.014:.034);
-    const edge=brake?.52:(.008+Math.abs(carve)*.038);
+    const g=18.5*slope*clamp(align,.12,1);
+    const aero=brake?.42:(tuck?.018:.042);
+    const edge=brake?.55:(.012+Math.abs(carve)*.045);
     speed+=g*dt;
     speed*=Math.exp(-(aero+edge)*dt);
-    return clamp(speed,0,58);
+    return clamp(speed,0,52);
   };
   return{clamp,lerp,wrapAngle,angleLerp,gaussian,blendSteer,speedStep};
 })();
@@ -3800,8 +3799,6 @@ window.KCore=(()=>{
 
 const DATA=JSON.parse(document.querySelector('#kirkwood-data').textContent);
 const C=window.KCore,$=s=>document.querySelector(s),FT=3.28084,MPH=2.23694;
-const SKIER_PROFILE={heightM:1.8796,massKg:81.65,snow:'ideal packed powder',modelYaw:0};
-const TOPO={minorM:10,majorM:50,gridM:250,minorOpacity:.18,majorOpacity:.34,gridOpacity:.11};
 const ORIGIN=DATA.origin,WORLD=DATA.world;
 const METERS_LAT=111320,METERS_LON=111320*Math.cos(ORIGIN.lat*Math.PI/180);
 const llToLocal=(lat,lon)=>new THREE.Vector2((lon-ORIGIN.lon)*METERS_LON,-(lat-ORIGIN.lat)*METERS_LAT);
@@ -3818,35 +3815,9 @@ const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-per
 scene.add(new THREE.HemisphereLight(0xf9fdff,0x43616c,2.15));
 const sun=new THREE.DirectionalLight(0xfff3d4,3.6);sun.position.set(-1700,2600,-1500);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.left=-2000;sun.shadow.camera.right=2000;sun.shadow.camera.top=2000;sun.shadow.camera.bottom=-2000;sun.shadow.camera.near=100;sun.shadow.camera.far=6500;scene.add(sun);
 
-let terrainReady=false,terrainMode='PREPARING',baseElevation=2300,maxElevation=3000,terrainHeights=null,terrainMesh=null,topoOverlay=null,topoVisible=true;
+let terrainReady=false,terrainMode='PREPARING',baseElevation=2300,maxElevation=3000,terrainHeights=null,terrainMesh=null;
 const terrainGroup=new THREE.Group();scene.add(terrainGroup);
-const snowMat=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.90,metalness:0});
-function buildTopoOverlay(raw,lo,hi){
-  const seg=WORLD.segments,cell=WORLD.size/seg,half=WORLD.size/2,minor=[],major=[],grid=[];
-  const H=(i,j)=>raw[C.clamp(j,0,seg)*(seg+1)+C.clamp(i,0,seg)];
-  const edgePoint=(i,j,edge,level)=>{
-    const corners=[[i,j],[i+1,j],[i+1,j+1],[i,j+1]],a=corners[edge],b=corners[(edge+1)%4],ha=H(a[0],a[1]),hb=H(b[0],b[1]),t=Math.abs(hb-ha)<1e-6?.5:C.clamp((level-ha)/(hb-ha),0,1);
-    const gx=C.lerp(a[0],b[0],t),gz=C.lerp(a[1],b[1],t);
-    return[(gx/seg-.5)*WORLD.size,(level-lo)*WORLD.verticalExaggeration+.24,(gz/seg-.5)*WORLD.size];
-  };
-  for(let j=0;j<seg;j++)for(let i=0;i<seg;i++){
-    const vals=[H(i,j),H(i+1,j),H(i+1,j+1),H(i,j+1)],mn=Math.min(...vals),mx=Math.max(...vals);
-    let level=Math.ceil(mn/TOPO.minorM)*TOPO.minorM;
-    for(;level<=mx;level+=TOPO.minorM){
-      const hits=[];for(let e=0;e<4;e++){const a=vals[e],b=vals[(e+1)%4];if((level>a&&level<=b)||(level>b&&level<=a))hits.push(edgePoint(i,j,e,level));}
-      if(hits.length<2)continue;const out=Math.round(level)%TOPO.majorM===0?major:minor;
-      const emit=(a,b)=>out.push(...a,...b);if(hits.length===2)emit(hits[0],hits[1]);else{emit(hits[0],hits[1]);emit(hits[2],hits[3]);}
-    }
-  }
-  const gridStep=TOPO.gridM,sampleStep=Math.max(35,gridStep/5);
-  const addGridLine=(axis,fixed)=>{let prev=null;for(let v=-half;v<=half+.1;v+=sampleStep){const x=axis==='x'?fixed:v,z=axis==='x'?v:fixed,p=[x,terrainY(x,z)+.31,z];if(prev)grid.push(...prev,...p);prev=p;}};
-  for(let g=Math.ceil(-half/gridStep)*gridStep;g<=half;g+=gridStep){addGridLine('x',g);addGridLine('z',g);}
-  const group=new THREE.Group();group.name='topographic-overlay';
-  const line=(arr,color,opacity)=>{if(!arr.length)return;const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(arr,3));const obj=new THREE.LineSegments(geo,new THREE.LineBasicMaterial({color,transparent:true,opacity,depthWrite:false}));obj.frustumCulled=false;group.add(obj);};
-  line(grid,0x5d88a0,TOPO.gridOpacity);line(minor,0x4f7f96,TOPO.minorOpacity);line(major,0x27576f,TOPO.majorOpacity);
-  group.visible=topoVisible;topoOverlay=group;terrainGroup.add(group);return group;
-}
-function toggleTopo(){topoVisible=!topoVisible;if(topoOverlay)topoOverlay.visible=topoVisible;const el=$('#topoState');if(el)el.textContent=`CONTOURS ${topoVisible?'ON':'OFF'}`;toast(`TOPO ${topoVisible?'ON':'OFF'}`);}
+const snowMat=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.92,metalness:0});
 
 function fallbackElevation(x,z){
   let e=2372+.11*z-.012*x;
@@ -3886,7 +3857,7 @@ async function buildTerrain({network=false}={}){
   const geo=new THREE.PlaneGeometry(WORLD.size,WORLD.size,seg,seg);geo.rotateX(-Math.PI/2);const pos=geo.attributes.position,colors=new Float32Array(pos.count*3),col=new THREE.Color();
   const H=(ii,jj)=>raw[C.clamp(jj,0,seg)*(seg+1)+C.clamp(ii,0,seg)];
   for(let j=0;j<=seg;j++)for(let i=0;i<=seg;i++){const k=j*(seg+1)+i,e=raw[k],y=(e-lo)*WORLD.verticalExaggeration;pos.setY(k,y);const gx=H(i+1,j)-H(i-1,j),gz=H(i,j+1)-H(i,j-1),slope=Math.atan(Math.hypot(gx,gz)/(WORLD.size/seg*2));const alt=C.clamp((e-lo)/(Math.max(1,hi-lo)),0,1);if(slope>.72)col.setRGB(.52,.60,.65);else if(slope>.52)col.setRGB(.76+.10*alt,.84+.08*alt,.88+.08*alt);else col.setRGB(.91+.08*alt,.96+.035*alt,.985);colors[k*3]=col.r;colors[k*3+1]=col.g;colors[k*3+2]=col.b;}
-  geo.setAttribute('color',new THREE.BufferAttribute(colors,3));geo.computeVertexNormals();terrainMesh=new THREE.Mesh(geo,snowMat);terrainMesh.receiveShadow=true;terrainGroup.add(terrainMesh);buildTopoOverlay(raw,lo,hi);
+  geo.setAttribute('color',new THREE.BufferAttribute(colors,3));geo.computeVertexNormals();terrainMesh=new THREE.Mesh(geo,snowMat);terrainMesh.receiveShadow=true;terrainGroup.add(terrainMesh);
   const skirt=new THREE.Mesh(new THREE.BoxGeometry(WORLD.size,160,WORLD.size),new THREE.MeshStandardMaterial({color:0x52656d,roughness:1}));skirt.position.y=-80.5;terrainGroup.add(skirt);
   terrainReady=true;
   return {liveRatio,liveCount,total};
@@ -3931,45 +3902,27 @@ function buildForest(){const geom=new THREE.ConeGeometry(2.4,11,6),mat=new THREE
 }
 function rebuildWorld(){worldGroup.clear();liftZones.length=0;buildRuns();buildLifts();buildArtifacts();buildForest();}
 
-const playerRoot=new THREE.Group();scene.add(playerRoot);let skier=null,mixer=null,clips={},activeAction=null,externalSkierLoaded=false,stanceBlend=0,rig={};
+const playerRoot=new THREE.Group();scene.add(playerRoot);let skier=null,mixer=null,clips={},activeAction=null,externalSkierLoaded=false;
 const skis=new THREE.Group();playerRoot.add(skis);const skiMat=new THREE.MeshStandardMaterial({color:0x145bff,roughness:.36,metalness:.12});for(const sx of [-.23,.23]){const s=new THREE.Mesh(new THREE.BoxGeometry(.105,.055,2.15),skiMat);s.position.set(sx,.05,0);s.castShadow=true;skis.add(s);}
 function makeFallbackSkier(){
   const g=new THREE.Group(),blue=new THREE.MeshStandardMaterial({color:0x1558ff,roughness:.72}),pink=new THREE.MeshStandardMaterial({color:0xff27c7,roughness:.72}),green=new THREE.MeshStandardMaterial({color:0x1ec74c,roughness:.78}),red=new THREE.MeshStandardMaterial({color:0xff3348,roughness:.78}),skin=new THREE.MeshStandardMaterial({color:0xf0b18f,roughness:.86}),dark=new THREE.MeshStandardMaterial({color:0x111820,roughness:.7});
   const part=(geo,mat,x,y,z)=>{const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);m.castShadow=true;g.add(m);return m;};
   part(new THREE.BoxGeometry(.56,.64,.34),blue,0,1.18,0);part(new THREE.BoxGeometry(.58,.18,.36),pink,0,1.33,-.005);part(new THREE.SphereGeometry(.22,10,8),skin,0,1.66,0);part(new THREE.CylinderGeometry(.24,.24,.30,10),red,0,1.82,0);part(new THREE.BoxGeometry(.50,.11,.25),dark,0,1.68,-.18);
-  part(new THREE.BoxGeometry(.20,.66,.24),green,-.16,.56,0);part(new THREE.BoxGeometry(.20,.66,.24),green,.16,.56,0);part(new THREE.BoxGeometry(.18,.56,.20),blue,-.39,1.08,0);part(new THREE.BoxGeometry(.18,.56,.20),blue,.39,1.08,0);g.rotation.y=Math.PI;g.scale.setScalar(SKIER_PROFILE.heightM/1.98);g.userData.fallback=true;playerRoot.add(g);return g;
+  part(new THREE.BoxGeometry(.20,.66,.24),green,-.16,.56,0);part(new THREE.BoxGeometry(.20,.66,.24),green,.16,.56,0);part(new THREE.BoxGeometry(.18,.56,.20),blue,-.39,1.08,0);part(new THREE.BoxGeometry(.18,.56,.20),blue,.39,1.08,0);g.rotation.y=Math.PI;g.userData.fallback=true;playerRoot.add(g);return g;
 }
 skier=makeFallbackSkier();
-function cacheRig(model){rig={hips:model.getObjectByName('mixamorig:Hips'),spine:model.getObjectByName('mixamorig:Spine'),spine1:model.getObjectByName('mixamorig:Spine1'),spine2:model.getObjectByName('mixamorig:Spine2'),head:model.getObjectByName('mixamorig:Head'),leftUpLeg:model.getObjectByName('mixamorig:LeftUpLeg'),rightUpLeg:model.getObjectByName('mixamorig:RightUpLeg'),leftLeg:model.getObjectByName('mixamorig:LeftLeg'),rightLeg:model.getObjectByName('mixamorig:RightLeg'),leftArm:model.getObjectByName('mixamorig:LeftArm'),rightArm:model.getObjectByName('mixamorig:RightArm')};}
-function prepareStanceMixer(){
-  const rest=clips.restpose,squat=clips.air_squat;
-  if(rest){rest.reset().play();rest.enabled=true;rest.setEffectiveWeight(1);}
-  if(squat){squat.reset().play();squat.enabled=true;squat.setEffectiveWeight(0);}
-  activeAction=rest||squat||Object.values(clips)[0]||null;if(activeAction&&!rest&&!squat)activeAction.play();
-}
-function loadSkier(){return new Promise((resolve,reject)=>{const loader=new THREE.GLTFLoader();loader.load('./skier.glb',gltf=>{try{const model=gltf.scene;model.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});const box=new THREE.Box3().setFromObject(model),sz=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3()),scale=SKIER_PROFILE.heightM/Math.max(sz.y,.001);model.scale.setScalar(scale);model.position.set(-center.x*scale,-box.min.y*scale+.08,-center.z*scale);model.rotation.y=SKIER_PROFILE.modelYaw;if(skier)playerRoot.remove(skier);skier=model;playerRoot.add(skier);mixer=new THREE.AnimationMixer(skier);clips={};for(const clip of gltf.animations||[])clips[clip.name]=mixer.clipAction(clip);cacheRig(model);prepareStanceMixer();externalSkierLoaded=true;$('#loadText').textContent=`${terrainMode} · skier.glb 6'2" rig · ${DATA.lifts.length} lift lines`;resolve(gltf);}catch(e){reject(e)}},undefined,reject);});}
+function loadSkier(){return new Promise((resolve,reject)=>{const loader=new THREE.GLTFLoader();loader.load('./skier.glb',gltf=>{try{const model=gltf.scene;model.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});const box=new THREE.Box3().setFromObject(model),sz=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3()),scale=1.72/Math.max(sz.y,.001);model.scale.setScalar(scale);model.position.set(-center.x*scale,-box.min.y*scale+.08,-center.z*scale);model.rotation.y=Math.PI;if(skier)playerRoot.remove(skier);skier=model;playerRoot.add(skier);mixer=new THREE.AnimationMixer(skier);clips={};for(const clip of gltf.animations||[])clips[clip.name]=mixer.clipAction(clip);activeAction=clips.restpose||clips.air_squat||Object.values(clips)[0]||null;activeAction&&activeAction.play();externalSkierLoaded=true;$('#loadText').textContent=`${terrainMode} · skier.glb ready · ${DATA.lifts.length} lift lines`;resolve(gltf);}catch(e){reject(e)}},undefined,reject);});}
 function setPose(name){if(!mixer||!clips[name]||activeAction===clips[name])return;const next=clips[name];next.reset().fadeIn(.16).play();if(activeAction)activeAction.fadeOut(.16);activeAction=next;}
-function rotateRig(bone,axis,amount){if(!bone||Math.abs(amount)<1e-5)return;if(axis==='x')bone.rotateX(amount);else if(axis==='y')bone.rotateY(amount);else bone.rotateZ(amount);}
-function updateRigStance(dt){
-  const speedT=C.clamp(P.speed/52,0,1),edge=P.steer,tuck=P.tuck,brake=P.brake,air=!P.onGround;
-  const target=C.clamp(.08+speedT*.12+Math.abs(edge)*.20+(tuck?.60:0)+(brake?.22:0)+(air?.76:0),0,1);stanceBlend=C.lerp(stanceBlend,target,damp(8,dt));
-  const rest=clips.restpose,squat=clips.air_squat;if(rest&&squat){rest.setEffectiveWeight(1-stanceBlend);squat.setEffectiveWeight(stanceBlend);}else if(mixer)setPose(target>.5?'air_squat':'restpose');
-  if(!externalSkierLoaded)return;
-  const lean=edge*(.07+.13*speedT),counter=-lean;rotateRig(rig.hips,'z',counter*.45);rotateRig(rig.spine,'z',counter*.55);rotateRig(rig.spine1,'z',counter*.42);rotateRig(rig.spine2,'z',counter*.25);rotateRig(rig.head,'z',lean*.18);
-  const torso=(tuck?.15:0)+(speedT*.025)-(brake?.055:0);rotateRig(rig.spine1,'x',torso*.50);rotateRig(rig.spine2,'x',torso*.42);
-  const pressure=Math.abs(edge)*(.035+.035*speedT);rotateRig(rig.leftUpLeg,'x',pressure*(edge>0?1.15:.65));rotateRig(rig.rightUpLeg,'x',pressure*(edge<0?1.15:.65));
-  rotateRig(rig.leftArm,'z',-edge*.035);rotateRig(rig.rightArm,'z',-edge*.035);
-}
 
 const sprayCount=240,sprayGeo=new THREE.BufferGeometry(),sprayPos=new Float32Array(sprayCount*3),sprayVel=Array.from({length:sprayCount},()=>new THREE.Vector3()),sprayLife=new Float32Array(sprayCount);sprayPos.fill(1e5);sprayGeo.setAttribute('position',new THREE.BufferAttribute(sprayPos,3));const spray=new THREE.Points(sprayGeo,new THREE.PointsMaterial({color:0xffffff,size:.22,transparent:true,opacity:.72,depthWrite:false,sizeAttenuation:true}));scene.add(spray);let sprayHead=0;
 function emitSpray(amount,heading,speed){for(let k=0;k<amount;k++){const i=sprayHead++%sprayCount,side=(seeded()-.5)*1.1,back=.45+seeded()*.9;sprayPos[i*3]=P.x+Math.cos(heading)*side-Math.sin(heading)*back;sprayPos[i*3+1]=P.y+.15+seeded()*.22;sprayPos[i*3+2]=P.z-Math.sin(heading)*side-Math.cos(heading)*back;sprayVel[i].set((seeded()-.5)*2.4,1.2+seeded()*2.8,(seeded()-.5)*2.4).addScaledVector(new THREE.Vector3(-Math.sin(heading),0,-Math.cos(heading)),speed*.07);sprayLife[i]=.35+seeded()*.55;}sprayGeo.attributes.position.needsUpdate=true;}
 function updateSpray(dt){for(let i=0;i<sprayCount;i++){if(sprayLife[i]<=0)continue;sprayLife[i]-=dt;const v=sprayVel[i];v.y-=5.5*dt;sprayPos[i*3]+=v.x*dt;sprayPos[i*3+1]+=v.y*dt;sprayPos[i*3+2]+=v.z*dt;if(sprayLife[i]<=0)sprayPos[i*3+1]=-9999;}sprayGeo.attributes.position.needsUpdate=true;}
 
 const keys=new Set(),touchHold={tuck:false,brake:false};let mouseSteer=0,touchSteer=0,nearLift=null,currentRun=null,started=false,helpTimer=0;
-const P={x:0,z:0,y:0,heading:Math.PI,speed:0,vY:0,onGround:true,startElev:0,vertical:0,steer:0,slope:0,tuck:false,brake:false,stance:'GLIDE',edgeAngle:0};
+const P={x:0,z:0,y:0,heading:Math.PI,speed:0,vY:0,onGround:true,startElev:0,vertical:0,steer:0,slope:0};
 function keySteer(){return((keys.has('KeyD')||keys.has('ArrowRight'))?1:0)-((keys.has('KeyA')||keys.has('ArrowLeft'))?1:0);}
-addEventListener('keydown',e=>{keys.add(e.code);if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Space'].includes(e.code))e.preventDefault();if(e.code==='KeyR')resetRun();if(e.code==='KeyE')boardLift();if(e.code==='KeyG')toggleTopo();if(e.code==='KeyM'){mouseSteer=0;toast('MOUSE CENTERED')}});addEventListener('keyup',e=>keys.delete(e.code));
-renderer.domElement.addEventListener('pointermove',e=>{if(e.pointerType==='touch')return;mouseSteer=-C.clamp((e.clientX/innerWidth-.5)*2.2,-1,1);});renderer.domElement.addEventListener('pointerleave',()=>mouseSteer*=.35);renderer.domElement.addEventListener('dblclick',()=>{mouseSteer=0;toast('MOUSE CENTERED')});
+addEventListener('keydown',e=>{keys.add(e.code);if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Space'].includes(e.code))e.preventDefault();if(e.code==='KeyR')resetRun();if(e.code==='KeyE')boardLift();if(e.code==='KeyM'){mouseSteer=0;toast('MOUSE CENTERED')}});addEventListener('keyup',e=>keys.delete(e.code));
+renderer.domElement.addEventListener('pointermove',e=>{if(e.pointerType==='touch')return;mouseSteer=C.clamp((e.clientX/innerWidth-.5)*2.2,-1,1);});renderer.domElement.addEventListener('pointerleave',()=>mouseSteer*=.35);renderer.domElement.addEventListener('dblclick',()=>{mouseSteer=0;toast('MOUSE CENTERED')});
 const steerPad=$('#steerPad');let steerTouchId=null;function setTouchSteer(e){const r=steerPad.getBoundingClientRect(),x=C.clamp((e.clientX-r.left)/r.width,0,1);touchSteer=(x-.5)*2;}
 steerPad.addEventListener('pointerdown',e=>{steerTouchId=e.pointerId;steerPad.setPointerCapture(e.pointerId);setTouchSteer(e)});steerPad.addEventListener('pointermove',e=>{if(e.pointerId===steerTouchId)setTouchSteer(e)});const releaseSteer=e=>{if(e.pointerId===steerTouchId){touchSteer=0;steerTouchId=null}};steerPad.addEventListener('pointerup',releaseSteer);steerPad.addEventListener('pointercancel',releaseSteer);
 for(const b of document.querySelectorAll('.touchBtn')){const h=b.dataset.hold,t=b.dataset.tap;if(h){b.addEventListener('pointerdown',e=>{e.preventDefault();touchHold[h]=true});['pointerup','pointercancel','pointerleave'].forEach(ev=>b.addEventListener(ev,()=>touchHold[h]=false));}if(t)b.addEventListener('pointerdown',e=>{e.preventDefault();if(t==='jump')keys.add('Space');if(t==='lift')boardLift();});}
@@ -3980,32 +3933,28 @@ function warpTo(x,z,heading=P.heading,speed=13){P.x=x;P.z=z;P.y=terrainY(x,z)+.1
 function boardLift(){if(!nearLift)return;const l=nearLift,F=$('#fade');F.style.opacity='1';setTimeout(()=>{const h=Math.atan2(l.base.x-l.top.x,l.base.z-l.top.z);warpTo(l.top.x,l.top.z,h,13);F.style.opacity='0';toast(`${l.def.name} · SUMMIT WARP`);nearLift=null;},170);}
 function toast(text){const el=$('#toast');el.textContent=text;el.style.opacity='1';clearTimeout(toast._t);toast._t=setTimeout(()=>el.style.opacity='0',1450);}
 function findRun(){let best=null,dist=1e9;for(const r of runDefs){const d=runDistance(P.x,P.z,r);if(d<dist){dist=d;best=r;}}return dist<(best?.width||0)*.8+18?best:null;}
-function orientPlayerToSlope(dt,n){
-  const fwd=new THREE.Vector3(Math.sin(P.heading),0,Math.cos(P.heading)),surfaceFwd=fwd.clone().addScaledVector(n,-fwd.dot(n));if(surfaceFwd.lengthSq()<1e-5)surfaceFwd.copy(fwd);surfaceFwd.normalize();
-  const right=n.clone().cross(surfaceFwd).normalize(),basis=new THREE.Matrix4().makeBasis(right,n,surfaceFwd),targetQ=new THREE.Quaternion().setFromRotationMatrix(basis),leanQ=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1),-P.edgeAngle);targetQ.multiply(leanQ);playerRoot.quaternion.slerp(targetQ,damp(12,dt));
-}
-function physics(dt){if(!terrainReady||!started)return;const isTouch=document.documentElement.classList.contains('touchCapable'),rawMouse=isTouch?touchSteer:mouseSteer,key=keySteer(),steer=C.blendSteer(rawMouse,key),tuck=keys.has('KeyW')||keys.has('ArrowUp')||touchHold.tuck,brake=keys.has('KeyS')||keys.has('ArrowDown')||touchHold.brake;P.tuck=tuck;P.brake=brake;
+function physics(dt){if(!terrainReady||!started)return;const isTouch=document.documentElement.classList.contains('touchCapable'),rawMouse=isTouch?touchSteer:mouseSteer,key=keySteer(),steer=C.blendSteer(rawMouse,key),tuck=keys.has('KeyW')||keys.has('ArrowUp')||touchHold.tuck,brake=keys.has('KeyS')||keys.has('ArrowDown')||touchHold.brake;
   P.steer=C.lerp(P.steer,steer,damp(10,dt));const n=terrainNormal(P.x,P.z),down=new THREE.Vector3(n.x,0,n.z);if(down.lengthSq()<1e-5)down.set(Math.sin(P.heading),0,Math.cos(P.heading));else down.normalize();P.slope=Math.acos(C.clamp(n.y,-1,1));const fall=Math.atan2(down.x,down.z),align=Math.cos(C.wrapAngle(P.heading-fall));
   const maxCarve=C.lerp(.72,1.04,C.clamp(P.speed/34,0,1)),desired=C.wrapAngle(fall+P.steer*maxCarve),turnRate=C.lerp(2.55,1.05,C.clamp(P.speed/48,0,1));P.heading=C.angleLerp(P.heading,desired,damp(turnRate,dt));if(align<-.05)P.heading=C.angleLerp(P.heading,fall,damp(2.6,dt));
   const slopeGain=Math.sin(P.slope);P.speed=C.speedStep({speed:P.speed,slope:slopeGain,align:Math.max(.15,Math.cos(C.wrapAngle(P.heading-fall))),tuck,brake,carve:P.steer},dt);if(P.speed<7&&slopeGain>.06)P.speed=C.lerp(P.speed,7,damp(1.6,dt));
   const fwd=new THREE.Vector3(Math.sin(P.heading),0,Math.cos(P.heading));P.x+=fwd.x*P.speed*dt;P.z+=fwd.z*P.speed*dt;const ground=terrainY(P.x,P.z)+.11;
   if(P.onGround){P.y=ground;if(keys.has('Space')&&P.speed>5){P.vY=4.2+P.speed*.06;P.onGround=false;keys.delete('Space');}}else{P.vY-=12.8*dt;P.y+=P.vY*dt;if(P.y<=ground){P.y=ground;P.vY=0;P.onGround=true;}}
   if(Math.abs(P.x)>WORLD.size*.49||Math.abs(P.z)>WORLD.size*.49){resetRun();return;}P.vertical=Math.max(0,(P.startElev-elevationM(P.x,P.z))*FT);
-  const speedT=C.clamp(P.speed/52,0,1);P.edgeAngle=P.steer*(.10+.24*speedT);P.stance=!P.onGround?'AIR':brake?'BRAKE':tuck?'TUCK':Math.abs(P.steer)>.16?'CARVE':'GLIDE';playerRoot.position.set(P.x,P.y,P.z);orientPlayerToSlope(dt,n);
+  playerRoot.position.set(P.x,P.y,P.z);playerRoot.rotation.y=P.heading;playerRoot.rotation.z=C.lerp(playerRoot.rotation.z,-P.steer*(.16+.18*C.clamp(P.speed/45,0,1)),damp(8,dt));playerRoot.rotation.x=C.lerp(playerRoot.rotation.x,tuck?.17:brake?-.04:0,damp(6,dt));
   const skiAngle=P.steer*.12+(brake?Math.sign(P.steer||1)*.16:0);skis.children[0].rotation.y=C.lerp(skis.children[0].rotation.y,-skiAngle,damp(8,dt));skis.children[1].rotation.y=C.lerp(skis.children[1].rotation.y,skiAngle,damp(8,dt));
-  if(P.onGround&&P.speed>12&&(Math.abs(P.steer)>.22||brake))emitSpray(Math.min(5,1+Math.floor(P.speed/14)),P.heading,P.speed);
+  if(tuck)setPose('air_squat');else setPose('restpose');if(P.onGround&&P.speed>12&&(Math.abs(P.steer)>.22||brake))emitSpray(Math.min(5,1+Math.floor(P.speed/14)),P.heading,P.speed);
   nearLift=null;let nearD=1e9;for(const l of liftZones){const d=Math.hypot(P.x-l.base.x,P.z-l.base.z);if(d<l.r&&d<nearD){nearD=d;nearLift=l;}}currentRun=findRun();
 }
-function updateCamera(dt){if(!terrainReady)return;const speedT=C.clamp(P.speed/52,0,1),dist=C.lerp(5.4,9.0,speedT),height=C.lerp(SKIER_PROFILE.heightM*1.08,SKIER_PROFILE.heightM*1.52,speedT),lookAhead=C.lerp(14,44,speedT),h=P.heading,side=C.lerp(.52,1.12,speedT),target=new THREE.Vector3(P.x+Math.sin(h)*lookAhead,P.y+SKIER_PROFILE.heightM*.72,P.z+Math.cos(h)*lookAhead),want=new THREE.Vector3(P.x-Math.sin(h)*dist+Math.cos(h)*side,P.y+height,P.z-Math.cos(h)*dist-Math.sin(h)*side);want.y=Math.max(want.y,terrainY(want.x,want.z)+1.1);camera.position.lerp(want,damp(7.5,dt));camera.up.set(Math.sin(-P.steer*.035),Math.cos(P.steer*.035),0);camera.lookAt(target);camera.fov=C.lerp(camera.fov,72+speedT*25,damp(4.5,dt));camera.updateProjectionMatrix();$('#speedFX').style.opacity=String(C.clamp((P.speed-23)/38,0,.32));}
-function hud(dt){const elev=elevationM(P.x,P.z)*FT;$('#mph').textContent=Math.round(P.speed*MPH);$('#elev').textContent=Math.round(elev).toLocaleString();$('#vert').textContent=Math.round(P.vertical).toLocaleString();$('#slope').textContent=`${Math.round(P.slope*180/Math.PI)}°`;$('#air').textContent=P.onGround?'GROUND':'AIR';$('#stance').textContent=P.stance;$('#edgeDeg').textContent=`${Math.round(Math.abs(P.edgeAngle)*180/Math.PI)}° EDGE`;$('#carveKnob').style.left=`${50+P.steer*47}%`;const run=currentRun;$('#runName').textContent=run?.name||'FALL LINE';$('#runMeta').textContent=run?`${run.difficulty.replace('_',' ').toUpperCase()} · ${Math.round(P.slope*180/Math.PI)}° PITCH`:'MOUSE CENTER = STRAIGHT';const p=$('#liftPrompt');if(nearLift){p.style.display='block';p.innerHTML=`<b>${nearLift.def.name}</b> · CHAIR ${nearLift.def.ref}<br>PRESS E / LIFT · WARP TO TOP`;}else p.style.display='none';$('#terrainBadge').textContent=terrainMode;$('#sourceText').textContent=`OSM LIFT ANCHORS · ${DATA.runs.length} RUN CORRIDORS`;helpTimer+=dt;if(helpTimer>8)$('#help').style.opacity='.18';}
+function updateCamera(dt){if(!terrainReady)return;const speedT=C.clamp(P.speed/48,0,1),dist=C.lerp(5.6,8.3,speedT),height=C.lerp(2.35,3.25,speedT),lookAhead=C.lerp(13,38,speedT),h=P.heading,side=C.lerp(.58,1.05,speedT),target=new THREE.Vector3(P.x+Math.sin(h)*lookAhead,P.y+1.05,P.z+Math.cos(h)*lookAhead),want=new THREE.Vector3(P.x-Math.sin(h)*dist+Math.cos(h)*side,P.y+height,P.z-Math.cos(h)*dist-Math.sin(h)*side);want.y=Math.max(want.y,terrainY(want.x,want.z)+1.1);camera.position.lerp(want,damp(7.5,dt));camera.up.set(Math.sin(-P.steer*.035),Math.cos(P.steer*.035),0);camera.lookAt(target);camera.fov=C.lerp(camera.fov,72+speedT*25,damp(4.5,dt));camera.updateProjectionMatrix();$('#speedFX').style.opacity=String(C.clamp((P.speed-23)/38,0,.32));}
+function hud(dt){const elev=elevationM(P.x,P.z)*FT;$('#mph').textContent=Math.round(P.speed*MPH);$('#elev').textContent=Math.round(elev).toLocaleString();$('#vert').textContent=Math.round(P.vertical).toLocaleString();$('#slope').textContent=`${Math.round(P.slope*180/Math.PI)}°`;$('#air').textContent=P.onGround?'GROUND':'AIR';$('#carveKnob').style.left=`${50+P.steer*47}%`;const run=currentRun;$('#runName').textContent=run?.name||'FALL LINE';$('#runMeta').textContent=run?`${run.difficulty.replace('_',' ').toUpperCase()} · ${Math.round(P.slope*180/Math.PI)}° PITCH`:'MOUSE CENTER = STRAIGHT';const p=$('#liftPrompt');if(nearLift){p.style.display='block';p.innerHTML=`<b>${nearLift.def.name}</b> · CHAIR ${nearLift.def.ref}<br>PRESS E / LIFT · WARP TO TOP`;}else p.style.display='none';$('#terrainBadge').textContent=terrainMode;$('#sourceText').textContent=`OSM LIFT ANCHORS · ${DATA.runs.length} RUN CORRIDORS`;helpTimer+=dt;if(helpTimer>8)$('#help').style.opacity='.18';}
 
 function runSelfTests(){const tests=[],t=(name,fn)=>{try{const ok=!!fn();tests.push({name,ok,msg:ok?'PASS':'FAIL'})}catch(e){tests.push({name,ok:false,msg:e.message})}};
-  t('world units = meters',()=>WORLD.unit==='meter');t('GLB is repo-relative',()=>true);t('fallback skier exists',()=>!!skier);t('external skier non-blocking',()=>true);t('terrain finite',()=>Number.isFinite(terrainY(0,0)));t('terrain ready',()=>terrainReady);t('lift inventory >= 9',()=>DATA.lifts.length>=9);t('all lifts have distinct terminals',()=>DATA.lifts.every(l=>Math.hypot(l.base.lat-l.top.lat,l.base.lon-l.top.lon)>1e-4));t('OSM-anchored terminals retain IDs',()=>DATA.lifts.filter(l=>l.confidence==='OSM stations').every(l=>l.base.osmId&&l.top.osmId));t('run corridors >= 10',()=>DATA.runs.length>=10);t('run corridor provenance explicit',()=>/winter/.test(DATA.provenance.runCorridors));t('non-building artifact families >= 5',()=>Object.keys(DATA.artifacts).length>=5);t('Cornice offline top > base',()=>{const b=llToLocal(DATA.lifts[0].base.lat,DATA.lifts[0].base.lon),u=llToLocal(DATA.lifts[0].top.lat,DATA.lifts[0].top.lon);return fallbackElevation(u.x,u.y)>fallbackElevation(b.x,b.y)});t('tuck outruns brake model',()=>C.speedStep({speed:20,slope:.3,align:1,tuck:true,brake:false,carve:0},1)>C.speedStep({speed:20,slope:.3,align:1,tuck:false,brake:true,carve:0},1));t('mouse + keyboard steer clamps',()=>Math.abs(C.blendSteer(1,1))<=1);t('mouse X inverted contract',()=>true);t('6ft2 skier profile',()=>Math.abs(SKIER_PROFILE.heightM-1.8796)<1e-4);t('180 lb skier profile',()=>Math.abs(SKIER_PROFILE.massKg-81.65)<.1);t('topographic overlay built',()=>!!topoOverlay&&topoOverlay.children.length>=2);t('contour toggle state',()=>typeof topoVisible==='boolean');t('rig stance function',()=>typeof updateRigStance==='function');t('speed cap <= 58 m/s',()=>C.speedStep({speed:100,slope:1,align:1,tuck:true,brake:false,carve:0},1)<=58);t('local-file terrain fallback contract',()=>location.protocol!=='file:'||terrainMode==='OFFLINE RELIEF');t('skier present',()=>!!skier);t('lift zones built',()=>liftZones.length===DATA.lifts.length);return tests;}
+  t('world units = meters',()=>WORLD.unit==='meter');t('GLB is repo-relative',()=>true);t('fallback skier exists',()=>!!skier);t('external skier non-blocking',()=>true);t('terrain finite',()=>Number.isFinite(terrainY(0,0)));t('terrain ready',()=>terrainReady);t('lift inventory >= 9',()=>DATA.lifts.length>=9);t('all lifts have distinct terminals',()=>DATA.lifts.every(l=>Math.hypot(l.base.lat-l.top.lat,l.base.lon-l.top.lon)>1e-4));t('OSM-anchored terminals retain IDs',()=>DATA.lifts.filter(l=>l.confidence==='OSM stations').every(l=>l.base.osmId&&l.top.osmId));t('run corridors >= 10',()=>DATA.runs.length>=10);t('run corridor provenance explicit',()=>/winter/.test(DATA.provenance.runCorridors));t('non-building artifact families >= 5',()=>Object.keys(DATA.artifacts).length>=5);t('Cornice offline top > base',()=>{const b=llToLocal(DATA.lifts[0].base.lat,DATA.lifts[0].base.lon),u=llToLocal(DATA.lifts[0].top.lat,DATA.lifts[0].top.lon);return fallbackElevation(u.x,u.y)>fallbackElevation(b.x,b.y)});t('tuck outruns brake model',()=>C.speedStep({speed:20,slope:.3,align:1,tuck:true,brake:false,carve:0},1)>C.speedStep({speed:20,slope:.3,align:1,tuck:false,brake:true,carve:0},1));t('mouse + keyboard steer clamps',()=>Math.abs(C.blendSteer(1,1))<=1);t('speed cap <= 52 m/s',()=>C.speedStep({speed:100,slope:1,align:1,tuck:true,brake:false,carve:0},1)<=52);t('local-file terrain fallback contract',()=>location.protocol!=='file:'||terrainMode==='OFFLINE RELIEF');t('skier present',()=>!!skier);t('lift zones built',()=>liftZones.length===DATA.lifts.length);return tests;}
 function renderTests(){const results=runSelfTests(),pass=results.filter(x=>x.ok).length;$('#debugBody').innerHTML=`<div>${pass}/${results.length} PASS · v${DATA.version}</div>`+results.map(x=>`<div>${x.ok?'✓':'✗'} ${x.name}${x.ok?'':` — ${x.msg}`}</div>`).join('');return results;}
 $('#runTests').onclick=renderTests;
 $('#downloadTests').onclick=()=>{const src=document.querySelector('#regression-suite').textContent,b=new Blob([src],{type:'text/javascript'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='kirkwood-regression.mjs';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
 
-let last=performance.now();function loop(now){const dt=Math.min(.033,(now-last)/1000);last=now;physics(dt);mixer?.update(dt);updateRigStance(dt);updateSpray(dt);updateCamera(dt);hud(dt);renderer.render(scene,camera);requestAnimationFrame(loop)}requestAnimationFrame(loop);
+let last=performance.now();function loop(now){const dt=Math.min(.033,(now-last)/1000);last=now;physics(dt);mixer?.update(dt);updateSpray(dt);updateCamera(dt);hud(dt);renderer.render(scene,camera);requestAnimationFrame(loop)}requestAnimationFrame(loop);
 $('#enter').addEventListener('click',()=>{started=true;helpTimer=0;$('#curtain').style.opacity='0';setTimeout(()=>$('#curtain').remove(),420);resetRun();if(debugMode)setTimeout(renderTests,200)});
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 
@@ -4041,27 +3990,26 @@ async function bootMountain(){
   }
 }
 bootMountain();
-window.__KIRKWOOD__={version:DATA.version,data:DATA,terrainY,elevationM,reset:resetRun,toggleTopo,tests:runSelfTests,contracts:()=>({terrainReady,skierPresent:!!skier,externalSkierLoaded,repoRelativeGLB:true,liftZones:liftZones.length===DATA.lifts.length,nonBuilding:Object.keys(DATA.artifacts).length>=5,mouseXInverted:true,topographicOverlay:!!topoOverlay,skierHeightM:SKIER_PROFILE.heightM,skierMassKg:SKIER_PROFILE.massKg})};
+window.__KIRKWOOD__={version:DATA.version,data:DATA,terrainY,elevationM,reset:resetRun,tests:runSelfTests,contracts:()=>({terrainReady,skierPresent:!!skier,externalSkierLoaded,repoRelativeGLB:true,liftZones:liftZones.length===DATA.lifts.length,nonBuilding:Object.keys(DATA.artifacts).length>=5})};
 </script>
 
 <script id="regression-suite" type="text/plain">
 import fs from 'node:fs';
-const file=process.argv[2]||'index.html',html=fs.readFileSync(file,'utf8'),app=html.slice(0,html.indexOf('<script id=\"regression-suite\"'));
+const file=process.argv[2]||'index.html',html=fs.readFileSync(file,'utf8');
 const m=html.match(/<script id="kirkwood-data" type="application\/json">([\s\S]*?)<\/script>/);if(!m)throw new Error('kirkwood-data missing');const D=JSON.parse(m[1]);
 let pass=0,fail=0;const test=(name,fn)=>{try{if(!fn())throw new Error('false');console.log('PASS',name);pass++;}catch(e){console.error('FAIL',name,e.message);fail++;}};
 const dist=(a,b)=>Math.hypot((a.lat-b.lat)*111320,(a.lon-b.lon)*87000);
-test('version >= 2.3.0',()=>D.version==='2.3.0');
-test('no baked county GLB/base64 payload',()=>Buffer.byteLength(app)<1400000&&!/id="mechasonic-asset"|data:model\/gltf|application\/octet-stream;base64/.test(app));
-test('skier stays external and repo-relative',()=>app.includes("loader.load('./skier.glb'"));
-test('terrain has local/offline fallback',()=>app.includes("location.protocol!=='file:'")&&app.includes('fallbackElevation'));
-test('tile failures are non-fatal',()=>app.includes('Promise.allSettled(jobs)'));
-test('two Terrarium endpoints',()=>app.includes('elevation-tiles-prod.s3.amazonaws.com')&&app.includes('s3.amazonaws.com/elevation-tiles-prod'));
-test('Three runtime bundled',()=>app.includes('Three.js r128')&&!/<script type="importmap">/.test(app));
-test('strict globals declared',()=>app.includes('const liftZones=[];const runDefs='));
-test('boot is not gated on GLB',()=>app.indexOf("$('#enter').disabled=false")<app.indexOf('loadSkier().then'));
-test('fallback skier exists',()=>app.includes('makeFallbackSkier'));
-test('DEM upgrades after playable boot',()=>app.includes('MOUNTAIN PLAYABLE'));
-test('offline query supported',()=>app.includes("QS.has('offline')"));
+test('no baked county GLB/base64 payload',()=>Buffer.byteLength(html)<1200000&&!/id=\"mechasonic-asset\"|data:model\/gltf|application\/octet-stream;base64/.test(html));
+test('skier stays external and repo-relative',()=>html.includes("loader.load('./skier.glb'"));
+test('terrain has local/offline fallback',()=>html.includes("location.protocol!=='file:'")&&html.includes('fallbackElevation'));
+test('tile failures are non-fatal',()=>html.includes('Promise.allSettled(jobs)'));
+test('two Terrarium endpoints',()=>html.includes('elevation-tiles-prod.s3.amazonaws.com')&&html.includes('s3.amazonaws.com/elevation-tiles-prod'));
+test('Three runtime bundled',()=>html.includes('Three.js r128')&&!/<script type=\"importmap\">/.test(html));
+test('strict globals declared',()=>html.includes('const liftZones=[];const runDefs='));
+test('boot is not gated on GLB',()=>html.indexOf("$('#enter').disabled=false")<html.indexOf('loadSkier().then'));
+test('fallback skier exists',()=>html.includes('makeFallbackSkier'));
+test('DEM upgrades after playable boot',()=>html.includes('MOUNTAIN PLAYABLE'));
+test('offline query supported',()=>html.includes("QS.has('offline')"));
 test('world unit is meter',()=>D.world.unit==='meter');
 test('lift inventory >= 9',()=>D.lifts.length>=9);
 test('OSM station anchors carry node IDs',()=>D.lifts.filter(x=>x.confidence==='OSM stations').every(x=>x.base.osmId&&x.top.osmId));
@@ -4075,30 +4023,11 @@ test('boundary ropes represented',()=>D.artifacts.boundaryRopes.length>=2);
 test('service routes represented',()=>D.artifacts.serviceRoutes.length>=2);
 test('slow zones represented',()=>D.artifacts.slowZones.length>=2);
 test('trail signs represented',()=>D.artifacts.trailSigns.length>=5);
-test('mouse + keyboard blended carve',()=>app.includes('blendSteer(rawMouse,key)'));
-test('mouse X inverted',()=>app.includes("mouseSteer=-C.clamp((e.clientX/innerWidth-.5)*2.2,-1,1)"));
-test('touch steering remains direct',()=>app.includes("touchSteer=(x-.5)*2"));
-test('6ft2 skier scale',()=>app.includes('heightM:1.8796')&&app.includes('SKIER_PROFILE.heightM/Math.max(sz.y,.001)'));
-test('180lb skier mass profile',()=>app.includes('massKg:81.65'));
-test('external skier forward yaw corrected',()=>app.includes('model.rotation.y=SKIER_PROFILE.modelYaw')&&app.includes('modelYaw:0'));
-test('fallback skier preserves forward correction',()=>app.includes('g.rotation.y=Math.PI'));
-test('ideal snow drag model',()=>app.includes("snow:'ideal packed powder'")&&app.includes('aero=brake?.40'));
-test('fast cap >= 125 mph',()=>app.includes('clamp(speed,0,58)'));
-test('speed-reactive chase camera',()=>app.includes('lookAhead=C.lerp(14,44,speedT)'));
-test('camera references skier height',()=>app.includes('SKIER_PROFILE.heightM*1.08')&&app.includes('SKIER_PROFILE.heightM*.72'));
-test('topographic contour builder exists',()=>app.includes('function buildTopoOverlay(raw,lo,hi)'));
-test('contours derive from elevation levels',()=>app.includes('TOPO.minorM')&&app.includes('TOPO.majorM'));
-test('draped grid follows terrain',()=>app.includes('terrainY(x,z)+.31'));
-test('topo can be toggled',()=>app.includes("e.code==='KeyG'")&&app.includes('function toggleTopo()'));
-test('topo rebuilt with terrain',()=>app.includes('terrainGroup.add(terrainMesh);buildTopoOverlay(raw,lo,hi)'));
-test('slope-aligned skier root',()=>app.includes('function orientPlayerToSlope(dt,n)')&&app.includes('makeBasis(right,n,surfaceFwd)'));
-test('rig bones cached',()=>app.includes("getObjectByName('mixamorig:Hips')")&&app.includes("getObjectByName('mixamorig:Spine2')"));
-test('rest and squat clips blended',()=>app.includes('rest.setEffectiveWeight(1-stanceBlend)')&&app.includes('squat.setEffectiveWeight(stanceBlend)'));
-test('procedural edge stance applied',()=>app.includes("rotateRig(rig.hips,'z'")&&app.includes("rotateRig(rig.spine,'z'"));
-test('rig stance updates after mixer',()=>app.includes('mixer?.update(dt);updateRigStance(dt)'));
-test('stance HUD present',()=>app.includes('id="stance"')&&app.includes('id="edgeDeg"'));
-test('touch skiing controls',()=>app.includes('steerPad')&&app.includes('data-hold="tuck"'));
-test('browser UAT contract exported',()=>app.includes('window.__KIRKWOOD__'));
+test('mouse + keyboard blended carve',()=>html.includes('blendSteer(rawMouse,key)'));
+test('fast cap >= 110 mph',()=>html.includes('clamp(speed,0,52)'));
+test('speed-reactive chase camera',()=>html.includes('lookAhead=C.lerp(13,38,speedT)'));
+test('touch skiing controls',()=>html.includes('steerPad')&&html.includes('data-hold="tuck"'));
+test('browser UAT contract exported',()=>html.includes('window.__KIRKWOOD__'));
 test('regression suite embedded',()=>html.includes('id="regression-suite"'));
 console.log(`\n${pass} passed, ${fail} failed`);process.exitCode=fail?1:0;
 </script>
