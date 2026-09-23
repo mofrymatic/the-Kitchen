@@ -3843,7 +3843,7 @@ if (location.protocol === 'https:' || location.protocol === 'http:') {
   <div class="chip" id="found">LANDMARKS <b>0</b> / 9</div>
   <div class="chip" id="r66chip">ROUTE 66 STAMPS <b>0</b> / 7</div>
 </div>
-<div class="hud" id="hint">wasd move · shift / toggle sprint · 3 s → super sprint<br>hold space for moon jump · tap again to double jump · cape: forward dives / back converts speed to lift<br>sprint off + hold space = glide · c / ctrl cape-spin in flight · slide on ground · m map · h field manual</div>
+<div class="hud" id="hint">wasd move · shift / toggle sprint · 3 s → super sprint<br>hold space for moon jump · tap again to double jump · cape: forward dive / back pull up<br>hold space at a wall to run · tap again to kick · c / ctrl slide · m map · h field manual</div>
 <div class="hud" id="toast"><div class="t1"></div><div class="t2"></div></div>
 
 <div id="bigmapWrap"><canvas id="bigmap"></canvas><div id="mapCaption">CRAWFORD COUNTY, MISSOURI · click the map to deploy the explorer · Route 66 in red.<br>Roads, rivers, buildings and infrastructure © OpenStreetMap contributors (ODbL). Teal: water towers; ochre: other structures.<br>2,753 mapped footprints in the 19 Sep 2026 snapshot · not a building census or navigation map.</div></div>
@@ -3854,10 +3854,9 @@ if (location.protocol === 'https:' || location.protocol === 'http:') {
     <tr><td>SHIFT</td><td>sprint · sustain 3 seconds for secondary sprint</td></tr>
     <tr><td>SPACE</td><td>leap · hold to prolong ascent · hold near walls to run</td></tr>
     <tr><td>SPACE again</td><td>double jump · wall kick when riding a wall</td></tr>
-    <tr><td>SUPER + SPACE</td><td>cape takeoff · forward dives to bank energy · back converts that energy into altitude</td></tr>
-    <tr><td>release SHIFT + hold SPACE</td><td>leave powered flight and glide down slowly</td></tr>
+    <tr><td>SUPER + SPACE</td><td>cape flight · forward dives for speed · back pulls up · left/right bank</td></tr>
     <tr><td>SPACE at ledge</td><td>hold to mantle a reachable roof</td></tr>
-    <tr><td>C / CTRL</td><td>slide on ground · cape-spin / reverse heading while flying</td></tr>
+    <tr><td>C / CTRL</td><td>slide while carrying sprint momentum</td></tr>
     <tr><td>MOUSE</td><td>move to orbit · scroll to zoom</td></tr>
     <tr><td>ESC</td><td>free the cursor · click to recapture</td></tr>
     <tr><td>M</td><td>county map · click anywhere to deploy there</td></tr>
@@ -3870,8 +3869,7 @@ if (location.protocol === 'https:' || location.protocol === 'http:') {
     <tr><td>P</td><td>performance readout</td></tr>
   </table>
   <p>Mapped OSM roofs and broad building faces are traversable. Rivers slow your pace. Hold a direction and sprint for county travel; slow down to explore. Wall runs have a finite lift budget and expire after 1.6 seconds. Land or leave the wall to recharge.</p>
-  <p>The county is drawn at true scale: 1 unit is 1 metre, 38.6 × 57.2 km. Buildings, roads, rivers and the Route 66 alignment come from an offline OpenStreetMap snapshot; terrain height and trees are procedural. The 2,753-footprint count measures mapped OSM data, not every real building. Only the explorer is out of scale: the original 26 m/s run and 68 m/s sprint remain intact; sustaining sprint for three seconds unlocks a 92 m/s secondary sprint and cape flight. Jump height is pressure-sensitive, with one aerial double jump. Cape flight uses a momentum-exchange model: diving gains speed/flight energy, pulling back spends it for altitude, and releasing sprint while holding leap commits to a slow glide. Warp with 1–6 or click the map for county-scale travel. Comfort mode disables camera roll and speed-FOV effects.</p>
-  <p class="attribution">Cape-flight control logic is adapted from the <a href="https://www.mariowiki.com/Cape_Mario" target="_blank" rel="noopener">Super Mario Wiki — Cape Mario</a> description supplied for this build.</p>
+  <p>The county is drawn at true scale: 1 unit is 1 metre, 38.6 × 57.2 km. Buildings, roads, rivers and the Route 66 alignment come from an offline OpenStreetMap snapshot; terrain height and trees are procedural. The 2,753-footprint count measures mapped OSM data, not every real building. Only the explorer is out of scale: the original 26 m/s run and 68 m/s sprint remain intact; sustaining sprint for three seconds unlocks a 92 m/s secondary sprint and cape flight. Jump height is now pressure-sensitive, with one aerial double jump. Warp with 1–6 or click the map for county-scale travel. Comfort mode disables camera roll and speed-FOV effects.</p>
 </div></div>
 <div id="goods"><div class="card chip"></div></div>
 <button id="jumpBtn" aria-label="Jump or wall kick">LEAP</button>
@@ -3940,7 +3938,7 @@ test('point and polygon duplicate suppression is conservative',()=>assert(run('[
 test('no duplicate generic extrusion for specialized features',()=>assert(run('SOLIDS.filter(s=>s.osm).every(s=>!Infrastructure.specialized.has(s.sourceId))')));
 // Isolate controller tests from county relief and OSM obstacles.
 run(`const originalGround=groundHeight,originalWater=waterAt;groundHeight=()=>0;waterAt=()=>null;SOLIDS.length=0;SOLID_GRID.clear();
-function testReset(){resetInput();Object.assign(P,{x:500,z:500,y:0,vx:0,vz:0,vy:0,onGround:true,inWater:false,coyote:0,buffer:0,ride:null,rideLock:null,reattach:0,mantle:null,slideT:0,slideBuf:0,slideX:0,slideZ:1,speed:0,distance:0,jumpsUsed:0,jumpHold:0,sprintCharge:0,superSprint:false,capeFlight:false,capeGlide:false,capeStored:false,capeEnergy:0,capeMode:'NONE',capeSpin:0,capeSpinDir:1,capePitch:0,capeBank:0});CAM.yaw=Math.PI;started=true;}
+function testReset(){resetInput();Object.assign(P,{x:500,z:500,y:0,vx:0,vz:0,vy:0,onGround:true,inWater:false,coyote:0,buffer:0,ride:null,rideLock:null,reattach:0,mantle:null,slideT:0,slideBuf:0,slideX:0,slideZ:1,speed:0,distance:0,jumpsUsed:0,jumpHold:0,sprintCharge:0,superSprint:false,capeFlight:false,capePitch:0,capeBank:0});CAM.yaw=Math.PI;started=true;}
 function ticks(n){for(let i=0;i<n;i++)physics(1/60);}
 function jumpApex(holdTicks){testReset();pressJump();let apex=P.y;for(let i=0;i<120;i++){if(i===holdTicks)releaseJump();physics(1/60);apex=Math.max(apex,P.y);}releaseJump();return apex;}`);
 test('sprint physical key mapping',()=>{run("testReset();moveHeld.set('KeyW','up');keys.shift=true;ticks(120)");assert(run('P.speed')>50);});
@@ -3952,11 +3950,7 @@ test('held jump prolongs the elevation window',()=>assert(run('jumpApex(18)')>ru
 test('double jump grants exactly one aerial re-jump',()=>{run('testReset();pressJump();ticks(1);releaseJump();ticks(10);pressJump();ticks(1)');assert.equal(run('P.jumpsUsed'),2);assert(run('P.vy>0'));});
 test('mobile sprint control is a toggle',()=>{run('testReset()');events.get('sprintBtn:click')();assert.equal(run('input.sprint'),true);events.get('sprintBtn:click')();assert.equal(run('input.sprint'),false);});
 test('secondary sprint requires three sustained seconds',()=>{run("testReset();moveHeld.set('KeyW','up');keys.shift=true;ticks(170)");assert.equal(run('P.superSprint'),false);run('ticks(16)');assert.equal(run('P.superSprint'),true);assert(run('P.speed>CONFIG.SPRINT'));});
-test('secondary sprint jump arms cape flight',()=>{run("testReset();moveHeld.set('KeyW','up');keys.shift=true;ticks(210);pressJump();ticks(1);releaseJump()");assert.equal(run('P.capeFlight'),true);assert.equal(run('P.state'),'CAPE FLIGHT');});
-test('locomotion phase ladder is walk run1 run2 run3 fast',()=>{assert.equal(run("WPModel.phaseForSpeed(4).slot"),'walk');assert.equal(run("WPModel.phaseForSpeed(26).slot"),'run1');assert.equal(run("WPModel.phaseForSpeed(44).slot"),'run2');assert.equal(run("WPModel.phaseForSpeed(68).slot"),'run3');assert.equal(run("WPModel.phaseForSpeed(92).slot"),'fast');});
-test('Meshy locomotion aliases resolve numbered phases',()=>{const m=run("WPModel.resolveAnimationNames(['Idle','Walk','Run','Run 2','Run 3','Fast Run'])");assert.equal(m.walk,'Walk');assert.equal(m.run1,'Run');assert.equal(m.run2,'Run 2');assert.equal(m.run3,'Run 3');assert.equal(m.fast,'Fast Run');});
-test('cape dive banks energy then pull spends it for lift',()=>{run("testReset();P.onGround=false;P.y=20;P.vx=0;P.vz=80;P.speed=80;P.capeFlight=true;P.capeEnergy=.2;input.z=-1;for(let i=0;i<30;i++){P.vy-=KIN.gravity/60;capeStep(1/60,0,-1,true)}");const banked=run('P.capeEnergy'),down=run('P.vy');assert(banked>.2);run("input.z=1;for(let i=0;i<24;i++){P.vy-=KIN.gravity/60;capeStep(1/60,0,1,true)}");assert(run('P.capeEnergy')<banked);assert(run('P.vy')>down);});
-test('releasing sprint while holding jump commits cape glide',()=>{run("testReset();P.onGround=false;P.y=20;P.vz=80;P.capeFlight=true;input.jump=true;capeStep(1/60,0,0,false)");assert.equal(run('P.capeGlide'),true);assert.equal(run('P.capeMode'),'GLIDE');});
+test('secondary sprint jump arms cape flight',()=>{run("testReset();moveHeld.set('KeyW','up');keys.shift=true;ticks(186);pressJump();ticks(1);releaseJump()");assert.equal(run('P.capeFlight'),true);assert.equal(run('P.state'),'CAPE FLIGHT');});
 test('desktop hover orbit remains no-button',()=>{run('testReset()');const before=run('CAM.yaw');run("orbitFromPointer({pointerType:'mouse',movementX:20,movementY:0})");assert.notEqual(run('CAM.yaw'),before);});
 test('touch does not invoke mouse hover',()=>{const before=run('CAM.yaw');run("orbitFromPointer({pointerType:'touch',movementX:20,movementY:0})");assert.equal(run('CAM.yaw'),before);});
 console.log(JSON.stringify({passed:count,mobile,inventory:run('Infrastructure.records.length'),duplicates:run('[...Infrastructure.duplicates]'),chunks:run('Infrastructure.chunks.length'),counts:run('Infrastructure.counts')},null,2));
@@ -4197,9 +4191,8 @@ const KIN = Object.freeze({hz:60, radius:.58, height:2.75, step:.65,
   rideMin:12, rideCap:80, kickUp:20, kickOut:15, rearm:2.8,
   slideMin:24, slideTime:.9, slideDrag:15, slideExit:10, slideSteer:2.8,
   jumpHold:.38, jumpHoldGravity:.34, doubleJump:20, superCharge:3,
-  capeTakeoff:72, capeMin:46, capeMax:112, capeLift:31, capeDive:31, capeDiveSink:36, capePull:46,
-  capeTurn:2.45, capeDrag:10, capeFall:16, capeGlideFall:6, capeGlideLift:32, capeGlideDrag:7,
-  capeEnergyGain:.52, capeEnergyFall:.015, capeEnergySpend:.68, capeSmashVy:22, capeSpinTime:.42});
+  capeMin:46, capeMax:112, capeLift:30, capeDive:22, capePull:34,
+  capeTurn:2.45, capeDrag:10, capeFlare:8, capeFall:13});
 const SOLIDS = [], SOLID_GRID = new Map(), CELL = 64;
 function addSolid(cx,cy,cz,sx,sy,sz,yaw=0,kind='box'){
   const s={id:SOLIDS.length,cx,cz,bottom:cy-sy/2,top:cy+sy/2,hx:sx/2,hz:sz/2,
@@ -5150,69 +5143,28 @@ scene.add(PLAYER);
 /* WP visual adapter. Physics remains the sole authority for position.
    The character GLB is intentionally external: deploy wp.glb beside this HTML. */
 const WPModel=(()=>{
-  const info={ready:false,height:0,clip:'loading',slot:'idle',error:null,triangles:0,url:'wp.glb',animations:[],clipMap:{},missing:[]};
+  const info={ready:false,height:0,clip:'loading',error:null,triangles:0,url:'wp.glb',animations:[]};
   const pivot=new THREE.Group(),modelRoot=new THREE.Group();pivot.add(modelRoot);PLAYER.add(pivot);
-  let mixer,actions={},active,activeSlot='idle',model;
-  const SLOT_ALIASES={
-    idle:['restpose','idle','wpidle','standingidle','standidle'],
-    walk:['walking','walk','wpwalk'],
-    run1:['run1','running1','wprun1','run','running','wprun','jog','jogging'],
-    run2:['run2','running2','wprun2','fastrun1','fastrunning1','fast1'],
-    run3:['run3','running3','wprun3','fastrun2','fastrunning2','fast2'],
-    fast:['fastrun','fastrunning','wpfastrun','sprint','supersprint','run4','running4','wprun4']
-  };
-  const PHASES=Object.freeze([
-    {slot:'idle',max:.5,nominal:0},
-    {slot:'walk',max:5.5,nominal:4},
-    {slot:'run1',max:34,nominal:24},
-    {slot:'run2',max:52,nominal:43},
-    {slot:'run3',max:78,nominal:66},
-    {slot:'fast',max:Infinity,nominal:92}
-  ]);
-  const norm=n=>String(n||'').toLowerCase().replace(/[^a-z0-9]+/g,'');
-  function resolveAnimationNames(names){
-    const rows=names.map(name=>({name,n:norm(name)})),map={};
-    const pick=aliases=>{for(const alias of aliases){const hit=rows.find(r=>r.n===alias);if(hit)return hit.name;}return null;};
-    for(const [slot,aliases] of Object.entries(SLOT_ALIASES))map[slot]=pick(aliases);
-    // Meshy sometimes decorates take names. Only use fuzzy matching when the numbered intent is unambiguous.
-    if(!map.walk){const r=rows.find(r=>/walk/.test(r.n));if(r)map.walk=r.name;}
-    if(!map.run2){const r=rows.find(r=>/(?:run|running).*2|2.*(?:run|running)/.test(r.n));if(r)map.run2=r.name;}
-    if(!map.run3){const r=rows.find(r=>/(?:run|running).*3|3.*(?:run|running)/.test(r.n));if(r)map.run3=r.name;}
-    if(!map.fast){const r=rows.find(r=>/fast.*(?:run|running)|(?:run|running).*fast|sprint/.test(r.n));if(r)map.fast=r.name;}
-    if(!map.run1){const r=rows.find(r=>/^(?:wp)?(?:run|running|jog|jogging)$/.test(r.n));if(r)map.run1=r.name;}
-    if(!map.idle){const r=rows.find(r=>/idle|restpose/.test(r.n));if(r)map.idle=r.name;}
-    return map;
-  }
-  const phaseForSpeed=speed=>PHASES.find(p=>speed<p.max)||PHASES[PHASES.length-1];
-  function slotFor(state,speed){
-    if(state==='WALL RUN')return speed>=52?'run3':speed>=34?'run2':'run1';
-    if(state==='RUN'||state==='SPRINT'||state==='SUPER SPRINT')return phaseForSpeed(speed).slot;
-    return speed>.5&&state==='GROUND'?'walk':'idle';
-  }
-  function actionFor(slot){
-    const name=info.clipMap[slot];
-    if(name&&actions[name])return actions[name];
-    // Missing high-speed phases degrade toward the closest authored lower phase.
-    const order=['fast','run3','run2','run1','walk','idle'],idx=order.indexOf(slot);
-    for(let i=idx;i<order.length;i++){const n=info.clipMap[order[i]];if(n&&actions[n])return actions[n];}
-    for(let i=idx-1;i>=0;i--){const n=info.clipMap[order[i]];if(n&&actions[n])return actions[n];}
-    return null;
+  let mixer,actions={},active,model;
+  function choose(state,speed){
+    if(state==='WALL RUN'||state==='SPRINT'||state==='SUPER SPRINT')return 'Running';
+    if(state==='RUN'&&speed>.5)return speed>8?'Running':'Walking';
+    return 'restpose';
   }
   function update(dt,state,speed,wallSide,landing,capePitch=0,capeBank=0){
     if(!info.ready)return;
-    const slot=slotFor(state,speed),next=actionFor(slot);
+    const name=choose(state,speed),next=actions[name]||actions.Running||actions.Walking||actions.restpose;
     if(next&&next!==active){
       next.reset().setEffectiveTimeScale(1).setEffectiveWeight(1).play();
-      next.fadeIn(.14);if(active)active.fadeOut(.14);active=next;activeSlot=slot;info.slot=slot;
-      info.clip=Object.keys(actions).find(k=>actions[k]===next)||info.clip;
+      if(active)next.fadeIn(.14);
+      if(active)active.fadeOut(.14);active=next;info.clip=name;
     }
     if(active){
-      const phase=PHASES.find(p=>p.slot===activeSlot)||PHASES[0];
-      active.timeScale=phase.nominal?clamp(speed/phase.nominal,.68,1.65):0;
+      active.timeScale=name==='restpose'?0:name==='Running'?clamp(speed/18,.72,2.7):clamp(speed/4,.55,1.7);
       mixer.update(dt);
       for(const a of Object.values(actions))if(a!==active&&a.isRunning()&&a.getEffectiveWeight()<.001)a.stop();
     }
-    const pitch=state==='SWIM'?.9:state==='SLIDE'?.45:state==='CAPE FLIGHT'?(-.42-capePitch*.38):state==='SUPER SPRINT'?.14:state==='SPRINT'?.07:0;
+    const pitch=state==='SWIM'?.9:state==='SLIDE'?.45:state==='CAPE FLIGHT'?(-.42-capePitch*.38):state==='SUPER SPRINT'?.1:0;
     const bank=state==='WALL RUN'?wallSide*.18:state==='CAPE FLIGHT'?capeBank*.28:0;
     pivot.rotation.x=lerp(pivot.rotation.x,pitch,damp(10,dt));
     pivot.rotation.z=lerp(pivot.rotation.z,bank,damp(10,dt));
@@ -5223,11 +5175,10 @@ const WPModel=(()=>{
   function fail(e){info.error=String(e);status.textContent='wp.glb unavailable · geometric runner active';console.error('WP model:',e);}
   new THREE.GLTFLoader().load('wp.glb',gltf=>{
     try{
-      model=gltf.scene;info.animations=gltf.animations.map(a=>a.name);info.clipMap=resolveAnimationNames(info.animations);
-      info.missing=['walk','run1','run2','run3','fast'].filter(k=>!info.clipMap[k]);model.updateMatrixWorld(true);
+      model=gltf.scene;info.animations=gltf.animations.map(a=>a.name);model.updateMatrixWorld(true);
       // r128 Box3 ignores skin deformation. Measure a neutral skinned frame so
       // visual height continues to equal the established 2.75 m collision body.
-      const neutral=gltf.animations.find(a=>a.name===info.clipMap.idle)||gltf.animations.find(a=>a.name===info.clipMap.walk)||gltf.animations[0];
+      const neutral=gltf.animations.find(a=>a.name==='restpose')||gltf.animations.find(a=>a.name==='Walking')||gltf.animations[0];
       const measureMixer=new THREE.AnimationMixer(model);
       if(neutral){measureMixer.clipAction(neutral).play();measureMixer.update(0);}
       model.updateMatrixWorld(true);
@@ -5255,12 +5206,12 @@ const WPModel=(()=>{
         for(const track of clip.tracks)if(track.name.endsWith('Hips.position'))for(let i=0;i<track.values.length;i+=3){track.values[i]=anchor.x;track.values[i+2]=anchor.z;}
         actions[clip.name]=mixer.clipAction(clip);
       }
+      if(!actions.restpose&&gltf.animations.length){const idle=gltf.animations[0].clone();idle.name='restpose';actions.restpose=mixer.clipAction(idle);}
       info.ready=true;Hero.rig.visible=false;status.remove();update(0,'GROUND',0,1,0,0,0);
-      if(info.missing.length)console.warn('WP locomotion clip fallbacks active:',info.missing,'resolved:',info.clipMap);
     }catch(e){fail(e);}
   },undefined,fail);
-  return {info,update,resolveAnimationNames,phaseForSpeed};
-})()
+  return {info,update};
+})();
 
 /* Bourbon water-tower research (2026-09-22): no verified SketchUp asset acquired.
    Two distinct towers documented; do not substitute a generic Warehouse model.
@@ -5747,7 +5698,7 @@ buildBeacons();
 updateFound();
 Object.assign(P,{vx:0,vz:0,coyote:0,buffer:0,ride:null,rideLock:null,rideTime:0,
   rideLift:0,reattach:0,mantle:null,slideT:0,slideBuf:0,slideWhy:'',slideX:0,slideZ:1,state:'READY',distance:0,peak:0,landPulse:0,
-  jumpsUsed:0,jumpHold:0,sprintCharge:0,superSprint:false,capeFlight:false,capeGlide:false,capeStored:false,capeEnergy:0,capeMode:'NONE',capeSpin:0,capeSpinDir:1,capePitch:0,capeBank:0});
+  jumpsUsed:0,jumpHold:0,sprintCharge:0,superSprint:false,capeFlight:false,capePitch:0,capeBank:0});
 const input={x:0,z:0,jump:false,edge:false,sprint:false,slideEdge:false};
 const keys=Object.create(null);
 /* ── layout-independent movement ─────────────────────────────────────────────
@@ -5771,23 +5722,20 @@ const stick=document.getElementById('stick'),knob=document.getElementById('stick
 function syncSprintButton(){
   sprintBtn.setAttribute('aria-pressed',String(!!input.sprint));
   sprintBtn.dataset.super=String(!!P.superSprint);
-  sprintBtn.textContent=P.capeFlight?(P.capeGlide?'GLIDE':'CAPE'):P.superSprint?'SUPER':'SPRINT';
-  sprintBtn.setAttribute('aria-label',P.capeFlight?(P.capeGlide?'Cape glide · sprint released':'Cape flight · sprint engaged'):P.superSprint?'Sprint toggle · secondary sprint armed':'Sprint toggle');
+  sprintBtn.textContent=P.superSprint?'SUPER':'SPRINT';
+  sprintBtn.setAttribute('aria-label',P.superSprint?'Sprint toggle · secondary sprint armed':'Sprint toggle');
 }
 function resetInput(){
   for(const k of Object.keys(keys))delete keys[k];
   moveHeld.clear();
   Object.assign(input,{x:0,z:0,jump:false,edge:false,sprint:false,slideEdge:false});
   movePointer=null;lookPointer=null;lookLast=null;knob.style.transform='';
-  P.buffer=0;P.slideT=0;P.slideBuf=0;P.jumpHold=0;P.sprintCharge=0;P.superSprint=false;P.capeFlight=false;P.capeGlide=false;P.capeStored=false;P.capeEnergy=0;P.capeMode='NONE';P.capeSpin=0;P.capeSpinDir=1;P.capePitch=0;P.capeBank=0;
+  P.buffer=0;P.slideT=0;P.slideBuf=0;P.jumpHold=0;P.sprintCharge=0;P.superSprint=false;P.capeFlight=false;P.capePitch=0;P.capeBank=0;
   syncSprintButton();
 }
 function pressJump(){if(!input.jump)input.edge=true;input.jump=true;}
 function releaseJump(){input.jump=false;P.jumpHold=0;}
-function pressSlide(){
-  if(P.capeFlight&&!P.capeGlide){P.capeSpin=KIN.capeSpinTime;P.capeSpinDir=input.x<-.15?-1:1;P.capeMode='SPIN';return;}
-  input.slideEdge=true;
-}
+function pressSlide(){input.slideEdge=true;}
 /* Slide gate. Every refusal names its reason so a failed press is never silent:
    'busy' (water / wall-run / mantle / already sliding), 'air' (buffered until landing), 'pace' (too slow). */
 function startSlide(){
@@ -5809,19 +5757,18 @@ function warpTo(x,z,label,sub){
   }
   Object.assign(P,{x:px,z:pz,y:py,vy:0,vx:0,vz:0,speed:0,onGround:true,inWater:false,
     ride:null,rideLock:null,rideTime:0,rideLift:0,reattach:0,mantle:null,slideT:0,slideX:0,slideZ:1,coyote:KIN.coyote,buffer:0,state:'GROUND',
-    jumpsUsed:0,jumpHold:0,sprintCharge:0,superSprint:false,capeFlight:false,capeGlide:false,capeStored:false,capeEnergy:0,capeMode:'NONE',capeSpin:0,capeSpinDir:1,capePitch:0,capeBank:0});
+    jumpsUsed:0,jumpHold:0,sprintCharge:0,superSprint:false,capeFlight:false,capePitch:0,capeBank:0});
   Object.assign(CAM,{smoothX:px,smoothY:py+1.7,smoothZ:pz,targetX:px,targetY:py+1.7,targetZ:pz});
   toast(label||'BOURBON',sub||'back to the starting waypoint');
 }
 function endRide(kick=false){
   const r=P.ride;if(!r)return;
-  const resumeCape=!!P.capeStored&&!P.onGround;
-  P.rideLock=r.s;P.reattach=.24;P.ride=null;P.capeStored=false;
+  P.rideLock=r.s;P.reattach=.24;P.ride=null;
   if(kick){
     P.vy=KIN.kickUp;P.vx+=r.nx*KIN.kickOut;P.vz+=r.nz*KIN.kickOut;
     const sp=Math.hypot(P.vx,P.vz);if(sp>KIN.rideCap){P.vx*=KIN.rideCap/sp;P.vz*=KIN.rideCap/sp;}
-    P.buffer=0;P.jumpHold=0;P.jumpsUsed=Math.max(1,P.jumpsUsed);P.capeFlight=resumeCape;P.capeMode=resumeCape?'FLIGHT':'NONE';P.capePitch=P.capeBank=0;P.state=resumeCape?'CAPE FLIGHT':'WALL KICK';
-  }else if(resumeCape){P.capeFlight=true;P.capeMode='FLIGHT';P.state='CAPE FLIGHT';}
+    P.buffer=0;P.jumpHold=0;P.jumpsUsed=Math.max(1,P.jumpsUsed);P.capeFlight=false;P.capePitch=P.capeBank=0;P.state='WALL KICK';
+  }
 }
 function wallCandidate(){
   const speed=Math.hypot(P.vx,P.vz);if(speed<KIN.rideMin)return null;
@@ -5843,7 +5790,7 @@ function tryMantle(c){
   const x=P.x-c.nx*inset,z=P.z-c.nz*inset;
   if(!inFootprint(s,x,z)||!bodyClear(x,top+.03,z))return false;
   P.mantle={x0:P.x,y0:P.y,z0:P.z,x,y:top+.03,z,t:0};
-  endRide(false);P.onGround=false;P.vy=0;P.buffer=0;P.jumpHold=0;P.capeFlight=false;P.capeGlide=false;P.capeStored=false;P.capeEnergy=0;P.capeMode='NONE';P.capePitch=P.capeBank=0;P.state='MANTLE';return true;
+  endRide(false);P.onGround=false;P.vy=0;P.buffer=0;P.jumpHold=0;P.capeFlight=false;P.capePitch=P.capeBank=0;P.state='MANTLE';return true;
 }
 function moveBody(dt){
   const length=Math.hypot(P.vx,P.vz,P.vy)*dt;
@@ -5888,57 +5835,24 @@ function moveBody(dt){
   }
 }
 function beginJump(power,state){
-  const capeTakeoff=state==='LEAP'&&P.superSprint&&P.speed>=KIN.capeTakeoff;
   endSlide();P.vy=power;P.onGround=false;P.coyote=0;P.buffer=0;P.jumpHold=KIN.jumpHold;P.jumpsUsed=Math.min(2,P.jumpsUsed+1);
-  if(capeTakeoff){
-    P.capeFlight=true;P.capeGlide=false;P.capeStored=false;P.capeMode='FLIGHT';P.capeSpin=0;
-    P.capeEnergy=clamp((P.speed-KIN.capeTakeoff)/(KIN.capeMax-KIN.capeTakeoff)*.55+.18,.18,.72);
-  }
+  if(P.superSprint&&P.speed>=CONFIG.SPRINT*.75)P.capeFlight=true;
   P.state=P.capeFlight?'CAPE FLIGHT':state;
 }
-function capeStep(dt,ix,iz,sprintHeld){
+function capeStep(dt,ix,iz){
   let speed=Math.max(KIN.capeMin,Math.hypot(P.vx,P.vz)),heading=Math.atan2(P.vx,P.vz);
-  const dive=clamp(-iz,0,1),pull=clamp(iz,0,1);
-  // SMW-style flight exit: release run, then hold jump to commit to a slow glide.
-  if(!sprintHeld&&input.jump)P.capeGlide=true;
-  if(P.capeGlide){
-    P.capeMode='GLIDE';
-    speed=Math.max(KIN.capeMin*.82,speed-KIN.capeGlideDrag*dt);
-    P.vy+=KIN.capeGlideLift*dt;                 // gravity is applied immediately before this step
-    P.vy=Math.max(P.vy,-KIN.capeGlideFall);
-    P.capeEnergy=Math.max(0,P.capeEnergy-.18*dt);
-  }else{
-    // Neutral cape lift almost cancels gravity; deliberate dive/pull is the altitude engine.
-    P.vy+=KIN.capeLift*dt;
-    if(dive>.02){
-      P.capeMode='DIVE';
-      speed+=KIN.capeDive*dive*dt;
-      P.vy-=KIN.capeDiveSink*dive*dt;
-      // A deeper/faster descent stores more energy for the next pull-up.
-      P.capeEnergy=clamp(P.capeEnergy+(KIN.capeEnergyGain*dive+Math.max(0,-P.vy)*KIN.capeEnergyFall)*dt,0,1);
-    }else if(pull>.02){
-      P.capeMode='PULL';
-      const lift=KIN.capePull*(.22+1.05*P.capeEnergy)*pull;
-      P.vy+=lift*dt;
-      speed-=KIN.capeDrag*(.3+.7*pull)*dt;
-      P.capeEnergy=Math.max(0,P.capeEnergy-KIN.capeEnergySpend*pull*dt);
-    }else{
-      P.capeMode='FLIGHT';
-      speed-=KIN.capeDrag*.06*dt;
-      P.capeEnergy=Math.max(0,P.capeEnergy-.035*dt);
-    }
-  }
-  if(P.capeSpin>0){
-    P.capeMode='SPIN';
-    heading+=P.capeSpinDir*Math.PI/KIN.capeSpinTime*dt;
-    P.capeSpin=Math.max(0,P.capeSpin-dt);
-  }
+  const dive=clamp(-iz,0,1),pull=clamp(iz,0,1),energy=clamp((speed-KIN.capeMin)/(KIN.capeMax-KIN.capeMin),0,1);
   heading+=ix*KIN.capeTurn*dt;
-  speed=clamp(speed,KIN.capeMin*.82,KIN.capeMax);
-  P.vy=clamp(P.vy,-KIN.capeFall,KIN.capePull*1.2);
+  speed+=dive*KIN.capeDive*dt-pull*KIN.capeDrag*dt;
+  if(!dive&&!pull)speed-=KIN.capeDrag*.08*dt;
+  speed=clamp(speed,KIN.capeMin,KIN.capeMax);
+  P.vy+=KIN.capeLift*(.55+.45*energy)*dt;
+  if(dive)P.vy-=KIN.capeDive*1.15*dive*dt;
+  if(pull)P.vy+=KIN.capePull*(.35+.65*energy)*pull*dt;
+  if(input.jump)P.vy+=KIN.capeFlare*dt;
+  P.vy=Math.max(P.vy,-KIN.capeFall);
   P.vx=Math.sin(heading)*speed;P.vz=Math.cos(heading)*speed;
-  P.capePitch=lerp(P.capePitch,P.capeGlide?-.15:pull-dive,damp(5,dt));
-  P.capeBank=lerp(P.capeBank,P.capeSpin>0?P.capeSpinDir:ix,damp(7,dt));
+  P.capePitch=lerp(P.capePitch,pull-dive,damp(5,dt));P.capeBank=lerp(P.capeBank,ix,damp(7,dt));
 }
 function physics(dt){
   const ox=P.x,oz=P.z;
@@ -5967,7 +5881,7 @@ function physics(dt){
   let wallKicked=false,jumped=false;
   if(P.ride&&input.edge){endRide(true);wallKicked=true;}
   if(P.ride){
-    const r=P.ride;P.rideTime+=dt;P.capeStored=P.capeStored||P.capeFlight;P.capeFlight=false;P.jumpHold=0;
+    const r=P.ride;P.rideTime+=dt;P.capeFlight=false;P.jumpHold=0;
     const near=wallContact(r.s,P.x,P.z,KIN.radius+1.5);
     if(!near||P.rideTime>=KIN.rideTime||P.y>=r.s.top-.05||P.y+KIN.height<r.s.bottom){endRide(false);}
     else{
@@ -6010,29 +5924,23 @@ function physics(dt){
     if(P.vy>0&&input.jump&&P.jumpHold>0){P.vy+=KIN.gravity*(1-KIN.jumpHoldGravity)*dt;P.jumpHold=Math.max(0,P.jumpHold-dt);}
     else if(!input.jump||P.vy<=0)P.jumpHold=0;
     if(!wallKicked&&P.buffer>0&&(P.onGround||P.coyote>0)&&!P.inWater){beginJump(KIN.jump,'LEAP');jumped=true;}
-    else if(!wallKicked&&input.edge&&!P.onGround&&!P.inWater&&P.coyote<=0&&P.jumpsUsed<2&&!P.capeFlight){beginJump(KIN.doubleJump,'DOUBLE JUMP');jumped=true;}
-    if(P.capeFlight&&!P.onGround&&!P.inWater)capeStep(dt,ix,iz,sprint);
+    else if(!wallKicked&&input.edge&&!P.onGround&&!P.inWater&&P.coyote<=0&&P.jumpsUsed<2){beginJump(KIN.doubleJump,'DOUBLE JUMP');jumped=true;}
+    if(P.capeFlight&&!P.onGround&&!P.inWater)capeStep(dt,ix,iz);
     if(!wallKicked&&!jumped&&!P.onGround&&!P.inWater&&input.jump&&P.reattach===0){
-      const c=wallCandidate();if(c){P.capeStored=P.capeStored||P.capeFlight;P.ride=c;P.rideTime=0;P.rideLift=0;P.capeFlight=false;P.jumpHold=0;P.state='WALL RUN';}
+      const c=wallCandidate();if(c){P.ride=c;P.rideTime=0;P.rideLift=0;P.capeFlight=false;P.jumpHold=0;P.state='WALL RUN';}
     }
   }
-  const capeWasFlying=P.capeFlight,capeImpactVy=P.vy,capeImpactSpeed=Math.hypot(P.vx,P.vz),capeImpactMode=P.capeMode;
   moveBody(dt);
-  if(capeWasFlying&&P.onGround){
-    if(capeImpactMode==='DIVE'&&capeImpactVy<-KIN.capeSmashVy){P.landPulse=.55;toast('CAPE GROUND SMASH','dive energy discharged');}
-    else if(capeImpactSpeed>=KIN.slideMin&&capeImpactVy<0){const sp=Math.max(.001,capeImpactSpeed);P.slideT=Math.min(.68,KIN.slideTime);P.slideX=P.vx/sp;P.slideZ=P.vz/sp;toast('BODY PRESS','cape glide carried into a slide');}
-    P.capeFlight=false;P.capeGlide=false;P.capeStored=false;P.capeEnergy=0;P.capeMode='NONE';P.capeSpin=0;
-  }
   if(P.inWater){
     const w=waterAt(P.x,P.z);
     if(w){const h=surfaceAt(P.x,P.z,P.y+KIN.step);P.y=Math.max(h,lerp(P.y,w.surf-.6,damp(12,dt)));P.vy=0;P.onGround=false;}
-    endSlide();P.capeFlight=false;P.capeGlide=false;P.capeStored=false;P.capeEnergy=0;P.capeMode='NONE';P.jumpHold=0;P.state='SWIM';endRide(false);
+    endSlide();P.capeFlight=false;P.jumpHold=0;P.state='SWIM';endRide(false);
   }else if(!P.ride&&!P.mantle){
     if(P.slideT>0&&!P.onGround)endSlide();
     P.state=P.slideT>0?'SLIDE':P.onGround?(P.superSprint?'SUPER SPRINT':sprint?'SPRINT':'RUN'):P.capeFlight?'CAPE FLIGHT':P.vy>0?(P.jumpsUsed>1?'DOUBLE JUMP':'LEAP'):'AIRBORNE';
   }
   P.coyote=P.onGround?KIN.coyote:Math.max(0,P.coyote-dt);
-  if(P.onGround){P.jumpsUsed=0;P.jumpHold=0;P.capeFlight=false;P.capeGlide=false;P.capeStored=false;P.capeEnergy=0;P.capeMode='NONE';P.capeSpin=0;P.capePitch=lerp(P.capePitch,0,damp(10,dt));P.capeBank=lerp(P.capeBank,0,damp(10,dt));}
+  if(P.onGround){P.jumpsUsed=0;P.jumpHold=0;P.capeFlight=false;P.capePitch=lerp(P.capePitch,0,damp(10,dt));P.capeBank=lerp(P.capeBank,0,damp(10,dt));}
   else if(P.coyote===0&&P.jumpsUsed===0)P.jumpsUsed=1;
   P.speed=Math.hypot(P.vx,P.vz);P.peak=Math.max(P.peak,P.speed);
   if(P.speed<.5&&P.onGround)P.state='GROUND';
@@ -6224,8 +6132,7 @@ function updateHUD(){
   compass.textContent=['N','NE','E','SE','S','SW','W','NW'][Math.round(deg/45)%8]+' · '+Math.round(deg)+'°';
   document.getElementById('pace').innerHTML=Math.round(P.speed)+'<small>PACE · M/S · '+Math.round(P.speed*2.23694)+' MPH</small>';
   const superCharge=(!P.superSprint&&(keys.shift||input.sprint)&&P.onGround)?' · SUPER '+Math.round(P.sprintCharge/KIN.superCharge*100)+'%':'';
-  const capeStatus=P.capeFlight?' · '+P.capeMode+' '+Math.round(P.capeEnergy*100)+'%':'';
-  document.getElementById('motionState').textContent=blocked()?'PAUSED':P.state+capeStatus+superCharge+(P.ride?' · '+Math.max(0,KIN.rideTime-P.rideTime).toFixed(1)+' s':'')+(P.onGround&&!P.inWater&&!P.ride&&P.slideT<=0&&P.speed>=KIN.slideMin?' · SLIDE READY':'');
+  document.getElementById('motionState').textContent=blocked()?'PAUSED':P.state+superCharge+(P.ride?' · '+Math.max(0,KIN.rideTime-P.rideTime).toFixed(1)+' s':'')+(P.onGround&&!P.inWater&&!P.ride&&P.slideT<=0&&P.speed>=KIN.slideMin?' · SLIDE READY':'');
   document.querySelector('#momentum i').style.width=clamp(P.speed/Math.max(KIN.rideCap,CONFIG.SUPER_SPRINT)*100,0,100)+'%';
   let next=null,d=Infinity;
   for(const l of LANDMARKS)if(!l.found){const dist=Math.hypot(P.x-l.x,P.z-l.z);if(dist<d){d=dist;next=l;}}
@@ -6300,10 +6207,10 @@ document.getElementById('downloadRegression').addEventListener('click',()=>{
   a.href=url;a.download='test-infrastructure.cjs';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
 });
 
-window.__CRAWFORD__={version:'3.4.0',infrastructure:{meta:Infrastructure.data.meta,counts:Infrastructure.counts,tests:Infrastructure.tests},character:WPModel.info,config:CONFIG,kinetics:KIN,osm:OSM.meta,
+window.__CRAWFORD__={version:'3.3.0',infrastructure:{meta:Infrastructure.data.meta,counts:Infrastructure.counts,tests:Infrastructure.tests},character:WPModel.info,config:CONFIG,kinetics:KIN,osm:OSM.meta,
   snapshot:()=>({x:P.x,y:P.y,z:P.z,speed:P.speed,state:P.state,solids:SOLIDS.length,landmarks:LANDMARKS.length,
     infrastructure:Infrastructure.records.length,infrastructureChunks:Infrastructure.chunks.length,buildings:Buildings.count,buildingChunks:Buildings.chunks.length,roads:ROADS.length,joints:Object.keys(Hero.joints).length,
-    beacons:beacons.children.length,quality,fps,bodyHeight:KIN.height,jumpApex:KIN.jump**2/(2*KIN.gravity),jumpsUsed:P.jumpsUsed,sprintCharge:P.sprintCharge,superSprint:P.superSprint,capeFlight:P.capeFlight,capeMode:P.capeMode,capeEnergy:P.capeEnergy,animationSlot:WPModel.info.slot,animationClip:WPModel.info.clip}),
+    beacons:beacons.children.length,quality,fps,bodyHeight:KIN.height,jumpApex:KIN.jump**2/(2*KIN.gravity),jumpsUsed:P.jumpsUsed,sprintCharge:P.sprintCharge,superSprint:P.superSprint,capeFlight:P.capeFlight}),
   contracts:()=>({infrastructure:Object.values(Infrastructure.tests()).every(Boolean),landmarks:LANDMARKS.length===9,beacons:beacons.children.length===9,
     terrain:Streamer.has(P.x,P.z)&&Streamer.stats().resident>=9,colliders:SOLIDS.length>=OSM.buildings.length,
     osmCounty:OSM.meta.boundaryRelation===1180505&&OSM.meta.fips==='29055',
@@ -6311,7 +6218,7 @@ window.__CRAWFORD__={version:'3.4.0',infrastructure:{meta:Infrastructure.data.me
     articulation:Object.keys(Hero.joints).length===19,roads:ROADS.length===OSM.roads.length,
     externalCharacter:WPModel.info.url==='wp.glb',fixedStep:KIN.hz===60,runSpeed:CONFIG.RUN===26,sprintSpeed:CONFIG.SPRINT===68,
     collider:KIN.radius===.58&&KIN.height===2.75&&KIN.step===.65,variableJump:KIN.jumpHold>0&&KIN.jumpHoldGravity<1,doubleJump:KIN.doubleJump>0,
-    superSprint:KIN.superCharge===3&&CONFIG.SUPER_SPRINT>CONFIG.SPRINT,cape:KIN.capeMax>CONFIG.SUPER_SPRINT&&KIN.capeTakeoff>CONFIG.SPRINT,runPhases:WPModel.phaseForSpeed(26).slot==='run1'&&WPModel.phaseForSpeed(68).slot==='run3'&&WPModel.phaseForSpeed(92).slot==='fast',offlineEngine:typeof THREE!=='undefined'})
+    superSprint:KIN.superCharge===3&&CONFIG.SUPER_SPRINT>CONFIG.SPRINT,cape:KIN.capeMax>CONFIG.SUPER_SPRINT,offlineEngine:typeof THREE!=='undefined'})
 };
 console.log('CRAWFORD FREE RUNNER',window.__CRAWFORD__.contracts());
 requestAnimationFrame(loop);
