@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1b2730">
+<meta name="description" content="Prototype civic portal for the City of Bourbon, Missouri: services, government, procurement, forms, events, and staff workflow tools.">
+<title>City of Bourbon, Missouri | Civic Portal Prototype</title>
+<style>
+:root{
+  --paper:#f4f0e8;
+  --sheet:#fffdf8;
+  --ink:#182127;
+  --muted:#667078;
+  --line:#b8b1a5;
+  --navy:#1b2730;
+  --navy-2:#263944;
+  --cream:#f5ead3;
+  --gold:#c88c32;
+  --gold-2:#e5bd75;
+  --route:#a43b2e;
+  --route-dark:#7b2c24;
+  --green:#486c58;
+  --sky:#dce9ec;
+  --white:#ffffff;
+  --shadow:0 18px 55px rgba(18,31,38,.14);
+  --mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;
+  --sans:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+  --serif:Georgia,"Times New Roman",serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;
+  color:var(--ink);
+  background:
+    linear-gradient(90deg,rgba(27,39,48,.04) 1px,transparent 1px) 0 0/42px 42px,
+    linear-gradient(rgba(27,39,48,.04) 1px,transparent 1px) 0 0/42px 42px,
+    var(--paper);
+  font-family:var(--sans);
+  line-height:1.45;
+}
+a{color:inherit}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+.wrap{width:min(1200px,calc(100% - 32px));margin:0 auto}
+.utilitybar{background:#111a20;color:#e8ecee;font:700 11px var(--mono);letter-spacing:.055em}
+.utilitybar .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:8px 0}
+.utilitybar .meta{display:flex;gap:18px;flex-wrap:wrap}
+.utilitybar a{text-decoration:none;color:#fff}
+.topbar{position:sticky;top:0;z-index:40;background:rgba(244,240,232,.94);backdrop-filter:blur(14px);border-bottom:1px solid rgba(27,39,48,.18)}
+.nav{min-height:74px;display:flex;align-items:center;justify-content:space-between;gap:20px}
+.brand{display:flex;align-items:center;gap:12px;text-decoration:none}
+.route-shield{width:48px;height:48px;display:grid;place-items:center;position:relative;font:900 15px/1 var(--sans);letter-spacing:-.04em;color:#fff}
+.route-shield:before{content:"";position:absolute;inset:2px;background:var(--route);clip-path:polygon(18% 5%,82% 5%,91% 26%,84% 91%,50% 100%,16% 91%,9% 26%)}
+.route-shield span{position:relative;z-index:1;text-align:center}.route-shield small{display:block;font:700 7px var(--mono);letter-spacing:.08em}
+.brand-text strong{display:block;text-transform:uppercase;letter-spacing:.02em;font-size:18px}.brand-text small{display:block;color:var(--muted);font:700 10px var(--mono);letter-spacing:.09em;text-transform:uppercase}
+.navlinks{display:flex;gap:4px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.navlinks a{padding:9px 10px;text-decoration:none;border-radius:6px;font-weight:800;font-size:12px}.navlinks a:hover{background:#fff}
+.btn{border:1px solid var(--line);background:#fff;color:var(--ink);padding:11px 14px;border-radius:7px;font-weight:900;font-size:12px;letter-spacing:.025em;text-transform:uppercase;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none}
+.btn:hover{filter:brightness(.98)}
+.btn.primary{background:var(--route);border-color:var(--route);color:#fff}
+.btn.dark{background:var(--navy);border-color:var(--navy);color:#fff}
+.btn.gold{background:var(--gold);border-color:var(--gold);color:#1a1a18}
+.btn.small{padding:8px 10px;font-size:10px}
+.hero{position:relative;overflow:hidden;background:var(--navy);color:#fff;border-bottom:5px solid var(--route)}
+.hero:before{content:"";position:absolute;inset:0;background:linear-gradient(115deg,rgba(255,255,255,.07),transparent 28%),repeating-linear-gradient(155deg,transparent 0 38px,rgba(255,255,255,.025) 38px 39px)}
+.hero:after{content:"";position:absolute;right:-90px;bottom:-105px;width:470px;height:470px;border:55px solid rgba(200,140,50,.14);border-radius:50%}
+.hero-grid{position:relative;z-index:1;display:grid;grid-template-columns:1.35fr .65fr;gap:32px;padding:76px 0 62px}
+.kicker{font:900 11px var(--mono);text-transform:uppercase;letter-spacing:.13em;color:var(--gold-2)}
+.hero h1{font-size:clamp(62px,10vw,132px);line-height:.74;letter-spacing:-.075em;margin:18px 0 24px;text-transform:uppercase}
+.hero h1 span{display:block;color:var(--gold-2);font-family:var(--serif);font-style:italic;font-weight:400;letter-spacing:-.055em;font-size:.45em;line-height:1.05;margin-left:6px}
+.hero-copy{max-width:760px;font-size:18px;color:#d8e0e4}.hero-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:25px}
+.hero-card{align-self:end;background:#fff;color:var(--ink);border-radius:14px;overflow:hidden;box-shadow:0 22px 60px rgba(0,0,0,.28)}
+.hero-card-head{padding:17px 18px;background:var(--cream);border-bottom:1px solid #b9ad9b;display:flex;justify-content:space-between;gap:12px;align-items:center}
+.hero-card-head strong{text-transform:uppercase;font-size:13px}.status{font:900 9px var(--mono);letter-spacing:.08em;text-transform:uppercase;padding:5px 7px;background:#fff;border:1px solid #b9ad9b;border-radius:100px}
+.quickrow{display:grid;grid-template-columns:repeat(2,1fr)}
+.quick{padding:18px;border-right:1px solid #d4cdc2;border-bottom:1px solid #d4cdc2;text-decoration:none;min-height:108px}.quick:nth-child(2n){border-right:0}.quick:nth-last-child(-n+2){border-bottom:0}.quick small{display:block;font:800 9px var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px}.quick b{display:block;font-size:18px;line-height:1.05}.quick span{display:block;margin-top:8px;color:var(--route);font:800 10px var(--mono)}
+.section{padding:72px 0;border-bottom:1px solid rgba(27,39,48,.16)}
+.section-head{display:grid;grid-template-columns:170px 1fr;gap:28px;margin-bottom:30px;align-items:start}.section-no{font:900 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--route);border-top:2px solid var(--route);padding-top:9px}.section-head h2{font-size:clamp(36px,6vw,72px);line-height:.9;letter-spacing:-.055em;margin:0}.section-head p{color:var(--muted);font-size:16px;max-width:760px;margin:14px 0 0}
+.noticeband{background:var(--gold-2);border-top:1px solid #87652d;border-bottom:1px solid #87652d}.noticeband .wrap{display:grid;grid-template-columns:180px 1fr;gap:24px;padding:13px 0}.noticeband strong{font:900 10px var(--mono);letter-spacing:.09em;text-transform:uppercase}.noticeband span{font-size:13px}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--sheet);box-shadow:var(--shadow)}
+.card{padding:23px;min-height:230px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);display:flex;flex-direction:column}.card:nth-child(3n){border-right:0}.card:nth-last-child(-n+3){border-bottom:0}.card .eyebrow{font:900 9px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--route)}.card h3{font-size:24px;letter-spacing:-.035em;line-height:1;margin:13px 0 10px}.card p{font-size:13px;color:var(--muted);margin:0 0 16px}.card .card-foot{margin-top:auto;padding-top:12px;border-top:1px solid #ddd5ca;display:flex;justify-content:space-between;gap:10px;align-items:center}.card .card-foot a{font-weight:900;font-size:11px;text-decoration:none;color:var(--route)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);margin-top:24px;border:1px solid var(--line);background:#fff;border-radius:12px;overflow:hidden}.stat{padding:18px;border-right:1px solid var(--line)}.stat:last-child{border-right:0}.stat small{display:block;font:800 9px var(--mono);text-transform:uppercase;letter-spacing:.09em;color:var(--muted)}.stat strong{display:block;margin-top:5px;font-size:22px}
+.split{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff;box-shadow:var(--shadow)}.pane{padding:26px}.pane:first-child{border-right:1px solid var(--line)}.pane h3{font-size:31px;letter-spacing:-.04em;margin:0 0 8px}.pane p{font-size:14px;color:var(--muted)}
+.directory{display:grid;grid-template-columns:1fr 1fr;margin-top:20px;border-top:1px solid var(--line);border-left:1px solid var(--line)}.person{padding:13px;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}.person small{display:block;font:800 9px var(--mono);text-transform:uppercase;color:var(--muted);letter-spacing:.075em}.person strong{display:block;margin-top:4px;font-size:14px}
+.timeline{display:grid;gap:10px;margin-top:18px}.timeline-row{display:grid;grid-template-columns:110px 1fr;gap:14px;padding:12px 0;border-top:1px solid #ddd5ca}.timeline-row time{font:900 11px var(--mono);color:var(--route)}.timeline-row b{display:block}.timeline-row span{display:block;color:var(--muted);font-size:12px;margin-top:3px}
+.rfp-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.rfp{background:#fff;border:1px solid var(--line);border-radius:10px;padding:18px;display:grid;grid-template-columns:76px 1fr auto;gap:16px;align-items:start}.rfp-code{width:62px;height:62px;border:1px solid var(--navy);display:grid;place-items:center;font:900 11px var(--mono);background:var(--cream);border-radius:8px;text-align:center}.rfp h3{margin:2px 0 6px;font-size:20px;line-height:1.05;letter-spacing:-.025em}.rfp p{margin:0;color:var(--muted);font-size:12px}.rfp .tag{font:900 8px var(--mono);letter-spacing:.07em;text-transform:uppercase;padding:5px 6px;border:1px solid var(--line);border-radius:99px;background:var(--sheet);white-space:nowrap}.rfp .tag.priority{background:#f6ded9;border-color:#bf766a;color:#7b2c24}.rfp button{grid-column:2/4;justify-self:start;margin-top:4px}
+.source-note{font:10px var(--mono);color:var(--muted);margin-top:18px}
+.workspace{background:linear-gradient(180deg,#dfe5e5,#ece6dc)}
+.workspace-shell{background:var(--sheet);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}
+.workspace-head{background:var(--navy);color:#fff;padding:19px 22px;display:flex;justify-content:space-between;gap:20px;align-items:center}.workspace-head strong{font-size:17px}.workspace-head span{font:800 9px var(--mono);text-transform:uppercase;letter-spacing:.09em;color:#d3dde1}
+.tabs{display:flex;gap:0;overflow:auto;border-bottom:1px solid var(--line);background:#eee7dc}.tabbtn{border:0;border-right:1px solid var(--line);background:transparent;padding:13px 16px;font-weight:900;font-size:11px;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap}.tabbtn.active{background:#fff;color:var(--route)}
+.tab{display:none}.tab.active{display:block}
+.form-grid{display:grid;grid-template-columns:repeat(2,1fr)}.field{padding:15px;border-right:1px solid #d8d0c4;border-bottom:1px solid #d8d0c4}.field:nth-child(2n){border-right:0}.field.full{grid-column:1/-1;border-right:0}.field label{display:block;font:900 9px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}.field input,.field select,.field textarea{width:100%;border:1px solid #bbb2a5;background:#fff;padding:10px;border-radius:6px;color:var(--ink)}.field textarea{min-height:110px;resize:vertical}.hint{font:10px var(--mono);color:var(--muted);margin-top:6px}
+.actions{display:flex;gap:9px;flex-wrap:wrap;padding:16px;background:#efe8dc;border-top:1px solid var(--line)}
+.preview-stage{padding:18px;background:#d5d7d5;border-top:1px solid var(--line)}.preview-stage.hidden{display:none}.paper{width:min(100%,8.5in);min-height:10.5in;margin:0 auto;background:#fff;border:1px solid #bbb;box-shadow:0 12px 34px rgba(0,0,0,.14);padding:.45in;font-family:Arial,Helvetica,sans-serif;color:#111}.paper-head{display:grid;grid-template-columns:1fr auto;gap:20px;border-bottom:3px solid var(--navy);padding-bottom:14px;margin-bottom:18px}.paper-head h2{margin:0;text-transform:uppercase;font-size:24px}.paper-head .docid{text-align:right;font:700 10px var(--mono)}.paper h3{font-size:11px;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid #222;padding-bottom:4px;margin:20px 0 7px}.paper p,.paper li{font-size:11px;line-height:1.45}.paper table{width:100%;border-collapse:collapse;font-size:10px}.paper th,.paper td{border:1px solid #222;padding:6px;text-align:left;vertical-align:top}.paper th{background:#eee}.sig-row{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-top:36px}.sig-line{border-top:1px solid #111;padding-top:5px;font-size:9px}.captured-signature{max-width:260px;max-height:68px;display:block;margin-bottom:4px}
+.signbox{padding:18px}.signbox.hidden{display:none}.sign-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}.sign-grid label{display:block;font:900 9px var(--mono);text-transform:uppercase;color:var(--muted);margin-bottom:5px}.sign-grid input{width:100%;border:1px solid var(--line);padding:10px;border-radius:6px}.sigwrap{border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}.sigwrap canvas{display:block;width:100%;height:180px;background:repeating-linear-gradient(transparent,transparent 44px,#e5ddd1 45px);touch-action:none}
+.event-grid{display:grid;grid-template-columns:1fr 1fr}.event-card{padding:20px;border-right:1px solid var(--line)}.event-card:last-child{border-right:0}.event-card h3{margin:0 0 8px;font-size:26px}.event-card p{font-size:13px;color:var(--muted)}
+.footer{background:#111a20;color:#cbd4d8;padding:38px 0}.footer-grid{display:grid;grid-template-columns:1.1fr .9fr .9fr;gap:30px}.footer h4{margin:0 0 10px;color:#fff}.footer p,.footer a{font-size:12px;color:#cbd4d8}.footer a{display:block;margin:6px 0}.legal{border-top:1px solid #3d4b53;margin-top:28px;padding-top:17px;font:10px var(--mono);color:#9daab0}
+.mobile-toggle{display:none}
+.toast{position:fixed;right:18px;bottom:18px;z-index:100;background:#111a20;color:#fff;padding:12px 14px;border-radius:8px;box-shadow:var(--shadow);font:800 11px var(--mono);opacity:0;transform:translateY(10px);pointer-events:none;transition:.18s}.toast.show{opacity:1;transform:translateY(0)}
+@media(max-width:920px){
+ .hero-grid{grid-template-columns:1fr}.hero-card{max-width:620px}.cards{grid-template-columns:1fr 1fr}.card:nth-child(3n){border-right:1px solid var(--line)}.card:nth-child(2n){border-right:0}.card:nth-last-child(-n+3){border-bottom:1px solid var(--line)}.card:nth-last-child(-n+2){border-bottom:0}.stats{grid-template-columns:1fr 1fr}.stat:nth-child(2){border-right:0}.stat:nth-child(-n+2){border-bottom:1px solid var(--line)}.rfp-grid{grid-template-columns:1fr}.footer-grid{grid-template-columns:1fr 1fr}.footer-grid>div:first-child{grid-column:1/-1}
+}
+@media(max-width:720px){
+ .wrap{width:min(100% - 20px,1200px)}.utilitybar .wrap{align-items:flex-start}.utilitybar .meta span:nth-child(n+2){display:none}.nav{min-height:64px}.mobile-toggle{display:inline-flex}.navlinks{display:none;position:absolute;top:64px;left:0;right:0;background:var(--paper);border-bottom:1px solid var(--line);padding:10px;box-shadow:0 12px 24px rgba(0,0,0,.12)}.navlinks.open{display:grid}.hero-grid{padding:55px 0 44px}.hero h1{font-size:clamp(56px,21vw,92px)}.section{padding:52px 0}.section-head{grid-template-columns:1fr;gap:12px}.noticeband .wrap{grid-template-columns:1fr;gap:3px}.cards{grid-template-columns:1fr}.card,.card:nth-child(2n),.card:nth-child(3n){border-right:0;border-bottom:1px solid var(--line)}.card:last-child{border-bottom:0}.split{grid-template-columns:1fr}.pane:first-child{border-right:0;border-bottom:1px solid var(--line)}.directory{grid-template-columns:1fr}.stats{grid-template-columns:1fr}.stat,.stat:nth-child(2){border-right:0;border-bottom:1px solid var(--line)}.stat:last-child{border-bottom:0}.rfp{grid-template-columns:58px 1fr}.rfp-code{width:52px;height:52px}.rfp .tag{grid-column:2;justify-self:start}.rfp button{grid-column:2}.form-grid,.event-grid,.sign-grid{grid-template-columns:1fr}.field,.field:nth-child(2n){border-right:0}.event-card{border-right:0;border-bottom:1px solid var(--line)}.event-card:last-child{border-bottom:0}.footer-grid{grid-template-columns:1fr}.footer-grid>div:first-child{grid-column:auto}.paper{width:8.5in;transform-origin:top left}.preview-stage{overflow:auto}
+}
+@media print{
+ body{background:#fff}.utilitybar,.topbar,.hero,.noticeband,.section:not(.workspace),.workspace-head,.tabs,.form-grid,.actions,.signbox,.event-grid,.footer,.toast{display:none!important}.workspace{padding:0;border:0}.workspace-shell{border:0;box-shadow:none}.preview-stage{padding:0;background:#fff;border:0}.preview-stage.hidden{display:block}.paper{width:100%;min-height:auto;border:0;box-shadow:none;padding:0}@page{size:Letter;margin:.45in}
+}
+</style>
+</head>
+<body>
+<div class="utilitybar">
+  <div class="wrap">
+    <div class="meta"><span>City Hall: 423 N Old Highway 66, Bourbon, MO 65441</span><span>Mon-Fri 8:00 AM-4:30 PM</span></div>
+    <div class="meta"><a href="tel:+15737325550">573-732-5550</a><a href="mailto:response@bourbonmo.com">response@bourbonmo.com</a></div>
+  </div>
+</div>
+<header class="topbar">
+  <div class="wrap nav">
+    <a class="brand" href="#home" aria-label="City of Bourbon home">
+      <div class="route-shield" aria-hidden="true"><span><small>ROUTE</small>66</span></div>
+      <div class="brand-text"><strong>City of Bourbon</strong><small>Missouri / Crawford County</small></div>
+    </a>
+    <button class="btn small mobile-toggle" id="menuBtn" aria-expanded="false" aria-controls="navlinks">Menu</button>
+    <nav class="navlinks" id="navlinks" aria-label="Primary navigation">
+      <a href="#services">Services</a><a href="#government">Government</a><a href="#procurement">Procurement</a><a href="#calendar">Calendar</a><a href="#workspace">Staff tools</a>
+    </nav>
+  </div>
+</header>
+<main id="home">
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <div class="kicker">Municipal services / Route 66 / Crawford County</div>
+      <h1>Bourbon<span>Missouri</span></h1>
+      <p class="hero-copy">A practical front door for residents, businesses, visitors, vendors, and City Hall staff. Pay a bill, find a form, see public information, review procurement topics, or prepare the next piece of city business.</p>
+      <div class="hero-actions">
+        <a class="btn gold" href="https://www.doxo.com/bill-pay/city-bourbon-mo" target="_blank" rel="noopener">Pay utility bill</a>
+        <a class="btn" href="#procurement">View procurement</a>
+        <a class="btn" href="mailto:response@bourbonmo.com">Email City Hall</a>
+      </div>
+    </div>
+    <aside class="hero-card" aria-label="Quick city services">
+      <div class="hero-card-head"><strong>Start here</strong><span class="status">City Hall portal</span></div>
+      <div class="quickrow">
+        <a class="quick" href="https://www.doxo.com/bill-pay/city-bourbon-mo" target="_blank" rel="noopener"><small>Utilities</small><b>Pay a bill</b><span>External payment portal &rarr;</span></a>
+        <a class="quick" href="https://bourbonmo.org/resources/" target="_blank" rel="noopener"><small>Forms</small><b>Permits & licenses</b><span>Open resources &rarr;</span></a>
+        <a class="quick" href="https://ecode360.com/BO3246" target="_blank" rel="noopener"><small>City code</small><b>Ordinances</b><span>Open eCode360 &rarr;</span></a>
+        <a class="quick" href="#calendar"><small>Public meetings</small><b>Calendar</b><span>Add an event &rarr;</span></a>
+      </div>
+    </aside>
+  </div>
+</section>
+<div class="noticeband"><div class="wrap"><strong>Prototype note</strong><span>This standalone demonstration uses current public contact information and marks proposed procurement topics as drafts. Verify dates, office holders, links, and legal text before production launch.</span></div></div>
+
+<section class="section" id="services">
+  <div class="wrap">
+    <div class="section-head"><div class="section-no">01 / Resident services</div><div><h2>The things people actually came here to do.</h2><p>The current City site is primarily a utility portal. This version preserves that essential path, then adds a proper service directory around it.</p></div></div>
+    <div class="cards">
+      <article class="card"><div class="eyebrow">Water / sewer / trash</div><h3>Utility services</h3><p>City-provided water, sewer, and trash service. The existing public site states a $100 meter deposit is required to open an account.</p><div class="card-foot"><span>Account support</span><a href="tel:+15737325550">573-732-5550</a></div></article>
+      <article class="card"><div class="eyebrow">Payments</div><h3>Pay your city bill</h3><p>Continue to the current external payment service for credit card, debit card, or bank-account payment options.</p><div class="card-foot"><span>External portal</span><a href="https://www.doxo.com/bill-pay/city-bourbon-mo" target="_blank" rel="noopener">Pay now &rarr;</a></div></article>
+      <article class="card"><div class="eyebrow">Permits</div><h3>Building permits</h3><p>Find building permit information and supporting city-resource links. Planning and Zoning review information can be kept alongside the form.</p><div class="card-foot"><span>Forms</span><a href="https://bourbonmo.org/resources/" target="_blank" rel="noopener">Open resources &rarr;</a></div></article>
+      <article class="card"><div class="eyebrow">Business</div><h3>Licenses</h3><p>Business and liquor-license resources belong in one predictable place with submission instructions and contact information.</p><div class="card-foot"><span>Business forms</span><a href="https://bourbonmo.org/resources/" target="_blank" rel="noopener">Open resources &rarr;</a></div></article>
+      <article class="card"><div class="eyebrow">Public information</div><h3>City code</h3><p>Search municipal ordinances, land-use rules, utility provisions, purchasing policy, and other codified city law.</p><div class="card-foot"><span>Official code host</span><a href="https://ecode360.com/BO3246" target="_blank" rel="noopener">eCode360 &rarr;</a></div></article>
+      <article class="card"><div class="eyebrow">Help</div><h3>Contact City Hall</h3><p>Use one public contact point for service questions, document requests, routing, and general municipal business.</p><div class="card-foot"><span>response@bourbonmo.com</span><a href="mailto:response@bourbonmo.com">Email &rarr;</a></div></article>
+    </div>
+    <div class="stats">
+      <div class="stat"><small>City Hall</small><strong>423 N Old Hwy 66</strong></div>
+      <div class="stat"><small>Main line</small><strong>573-732-5550</strong></div>
+      <div class="stat"><small>Regular hours</small><strong>8:00-4:30</strong></div>
+      <div class="stat"><small>Regular board meeting</small><strong>3rd Tuesday / 7 PM</strong></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="government">
+  <div class="wrap">
+    <div class="section-head"><div class="section-no">02 / Government</div><div><h2>Clear lines to the people and records behind the city.</h2><p>Simple contact information, public meetings, and direct links to municipal code reduce the amount of navigation residents need to do.</p></div></div>
+    <div class="split">
+      <div class="pane">
+        <div class="kicker" style="color:var(--route)">Current public directory</div>
+        <h3>City leadership</h3>
+        <p>Presented as a launch-ready directory block. Verify against City Hall records immediately before publishing.</p>
+        <div class="directory">
+          <div class="person"><small>Mayor</small><strong>Sky Huddleston</strong></div>
+          <div class="person"><small>Clerk / Treasurer</small><strong>Cathy Bremer</strong></div>
+          <div class="person"><small>Deputy Clerk / Billing</small><strong>Darci Satterfield</strong></div>
+          <div class="person"><small>Water / Sewer / Streets</small><strong>Mark McEuen</strong></div>
+          <div class="person"><small>Police</small><strong>Chief Scott Zwetow</strong></div>
+          <div class="person"><small>Board of Aldermen</small><strong>Brine / Heywood / Davis / Naquin</strong></div>
+        </div>
+      </div>
+      <div class="pane">
+        <div class="kicker" style="color:var(--route)">Regular public business</div>
+        <h3>Meetings & records</h3>
+        <p>The municipal code states the Board of Aldermen regularly meets at City Hall at 7:00 PM on the third Tuesday of each month.</p>
+        <div class="timeline">
+          <div class="timeline-row"><time>3RD TUE</time><div><b>Board of Aldermen</b><span>7:00 PM / Bourbon City Hall</span></div></div>
+          <div class="timeline-row"><time>2ND TUE</time><div><b>Planning & Zoning</b><span>Resource directory identifies this as the regular permit-review meeting cadence.</span></div></div>
+          <div class="timeline-row"><time>ANYTIME</time><div><b>Municipal code</b><span>Current codified ordinances are available through eCode360.</span></div></div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:18px"><a class="btn dark" href="https://ecode360.com/BO3246" target="_blank" rel="noopener">Open city code</a><a class="btn" href="#calendar">Create calendar event</a></div>
+      </div>
+    </div>
+    <p class="source-note">Prototype data snapshot: City of Bourbon public site, Bourbon Economic Development Group resources, and City of Bourbon municipal code. This page intentionally avoids presenting draft procurement items as formally issued solicitations.</p>
+  </div>
+</section>
+
+<section class="section" id="procurement">
+  <div class="wrap">
+    <div class="section-head"><div class="section-no">03 / Procurement</div><div><h2>Requests for Proposal, before they become scavenger hunts.</h2><p>A single public index can show active solicitations later. For this prototype, the entries below are explicitly labeled as draft topics under consideration and can feed the built-in RFP drafting tool.</p></div></div>
+    <div class="rfp-grid" id="rfpGrid">
+      <article class="rfp" data-rfp="Municipal Accounting and Fund Accounting System"><div class="rfp-code">RFP<br>01</div><div><h3>Municipal accounting & fund accounting system</h3><p>Replacement of end-of-life accounting software, migration, chart-of-accounts mapping, reporting, implementation, support, and training.</p></div><span class="tag priority">High priority</span><button class="btn small rfpUse">Use in RFP studio</button></article>
+      <article class="rfp" data-rfp="City Website, Accessibility, CMS and Hosting"><div class="rfp-code">RFP<br>02</div><div><h3>City website, accessibility, CMS & hosting</h3><p>Domain consolidation, modern responsive design, accessible documents, service pages, meeting information, procurement, analytics, and staff publishing workflow.</p></div><span class="tag">Draft topic</span><button class="btn small rfpUse">Use in RFP studio</button></article>
+      <article class="rfp" data-rfp="Records Digitization, Retention and Physical File Disposition"><div class="rfp-code">RFP<br>03</div><div><h3>Records digitization & physical file disposition</h3><p>Inventory, scan/index, retention classification, secure storage, defensible destruction workflow, search, and public-record retrieval.</p></div><span class="tag">Draft topic</span><button class="btn small rfpUse">Use in RFP studio</button></article>
+      <article class="rfp" data-rfp="Utility Billing and Online Payment Modernization"><div class="rfp-code">RFP<br>04</div><div><h3>Utility billing & online payments</h3><p>Customer accounts, meter/billing integration, online payments, notifications, reconciliation, audit trail, and resident self-service.</p></div><span class="tag">Draft topic</span><button class="btn small rfpUse">Use in RFP studio</button></article>
+      <article class="rfp" data-rfp="Cybersecurity, Backup and Continuity Services"><div class="rfp-code">RFP<br>05</div><div><h3>Cybersecurity, backup & continuity</h3><p>Endpoint security, identity controls, backups, recovery testing, phishing resistance, incident response, and minimum municipal continuity plan.</p></div><span class="tag">Draft topic</span><button class="btn small rfpUse">Use in RFP studio</button></article>
+      <article class="rfp" data-rfp="Infrastructure Asset Inventory and GIS"><div class="rfp-code">RFP<br>06</div><div><h3>Infrastructure asset inventory & GIS</h3><p>Water, sewer, streets, signs, sidewalks, facilities, condition data, map layers, work history, and capital-planning support.</p></div><span class="tag">Draft topic</span><button class="btn small rfpUse">Use in RFP studio</button></article>
+      <article class="rfp" data-rfp="Active Transportation and Route 66 Sidewalk Improvements"><div class="rfp-code">RFP<br>07</div><div><h3>Active transportation & Route 66 improvements</h3><p>Planning, design, grant support, engineering, and implementation support for sidewalk and active-transportation priorities identified in regional planning.</p></div><span class="tag">Planning-linked</span><button class="btn small rfpUse">Use in RFP studio</button></article>
+      <article class="rfp" data-rfp="Grant Administration and Capital Project Support"><div class="rfp-code">RFP<br>08</div><div><h3>Grant administration & capital project support</h3><p>Funding research, application development, compliance, reimbursement documentation, procurement coordination, and reporting.</p></div><span class="tag">Draft topic</span><button class="btn small rfpUse">Use in RFP studio</button></article>
+    </div>
+  </div>
+</section>
+
+<section class="section workspace" id="workspace">
+  <div class="wrap">
+    <div class="section-head"><div class="section-no">04 / City Hall workspace</div><div><h2>Public website on the outside. Operating instrument on the inside.</h2><p>The mechanics from the Gas Works prototype are repurposed here into a municipal drafting flow: RFP generation, agreement generation, local signature capture, and event creation.</p></div></div>
+    <div class="workspace-shell">
+      <div class="workspace-head"><div><strong>Bourbon Municipal Workflow Console</strong><br><span>Standalone prototype / no server persistence</span></div><span id="draftState">DRAFT NOT SAVED</span></div>
+      <div class="tabs" role="tablist"><button class="tabbtn active" data-tab="draftTab">RFP / Agreement</button><button class="tabbtn" data-tab="signTab">Signature</button><button class="tabbtn" data-tab="eventTab">Event Creator</button></div>
+      <section class="tab active" id="draftTab">
+        <div class="form-grid">
+          <div class="field"><label for="procTopic">Procurement topic</label><select id="procTopic">
+            <option>Municipal Accounting and Fund Accounting System</option><option>City Website, Accessibility, CMS and Hosting</option><option>Records Digitization, Retention and Physical File Disposition</option><option>Utility Billing and Online Payment Modernization</option><option>Cybersecurity, Backup and Continuity Services</option><option>Infrastructure Asset Inventory and GIS</option><option>Active Transportation and Route 66 Sidewalk Improvements</option><option>Grant Administration and Capital Project Support</option><option>Custom / Other</option>
+          </select></div>
+          <div class="field"><label for="projectCode">Working project code</label><input id="projectCode" value="BOU-2026-01" placeholder="BOU-2026-01"></div>
+          <div class="field"><label for="issueDate">Draft issue date</label><input id="issueDate" type="date"></div>
+          <div class="field"><label for="dueDate">Response due date</label><input id="dueDate" type="datetime-local"></div>
+          <div class="field"><label for="contactName">City contact</label><input id="contactName" value="City Clerk / Treasurer" placeholder="Name or role"></div>
+          <div class="field"><label for="contactEmail">Procurement email</label><input id="contactEmail" type="email" value="response@bourbonmo.com"></div>
+          <div class="field full"><label for="scope">Draft scope of work</label><textarea id="scope">Provide implementation planning, configuration, data migration, training, documentation, transition support, and post-launch support appropriate to the selected municipal project. Vendor response should identify assumptions, dependencies, exclusions, timeline, team, pricing, security practices, accessibility where applicable, and references for comparable public-sector work.</textarea><div class="hint">Edit this for the selected topic before generating a draft solicitation.</div></div>
+          <div class="field"><label for="vendorName">Selected / prospective vendor</label><input id="vendorName" placeholder="Vendor name"></div>
+          <div class="field"><label for="vendorEmail">Vendor contact email</label><input id="vendorEmail" type="email" placeholder="name@vendor.com"></div>
+          <div class="field"><label for="amount">Agreement not-to-exceed amount</label><input id="amount" type="number" min="0" step="1" placeholder="25000"></div>
+          <div class="field"><label for="term">Agreement term</label><input id="term" placeholder="Example: Nov 1, 2026 - Jun 30, 2027"></div>
+          <div class="field full"><label for="evaluation">Evaluation / award notes</label><textarea id="evaluation" placeholder="Qualifications, implementation approach, cost, references, schedule, local support, etc."></textarea></div>
+        </div>
+        <div class="actions"><button class="btn primary" id="generateRfp">Generate draft RFP</button><button class="btn dark" id="generateAgreement">Generate draft agreement</button><button class="btn" id="saveDraft">Save local draft</button><button class="btn" id="clearDraft">Clear</button></div>
+        <div class="preview-stage hidden" id="previewStage"><div class="paper" id="paper"></div><div class="actions"><button class="btn dark" id="printDoc">Print / Save PDF</button><button class="btn" id="copyDoc">Copy document text</button><button class="btn primary" id="goSign">Open signature</button></div></div>
+      </section>
+      <section class="tab" id="signTab">
+        <div class="signbox" id="signBox">
+          <div class="sign-grid"><label>Signer name<input id="signerName" placeholder="Full name"></label><label>Signer title / capacity<input id="signerTitle" placeholder="Mayor, City Clerk, Vendor Representative, etc."></label></div>
+          <div class="sigwrap"><canvas id="sigCanvas" width="1000" height="180" aria-label="Signature pad"></canvas></div>
+          <div class="hint">This prototype stores the signature image only in the browser session. Production e-signing should use authenticated identity, tamper-evident records, server-side audit logs, and City legal review.</div>
+          <div class="actions" style="padding-left:0;background:transparent;border:0"><button class="btn" id="clearSig">Clear signature</button><button class="btn primary" id="applySig">Apply to current agreement</button></div>
+        </div>
+      </section>
+      <section class="tab" id="eventTab">
+        <div class="event-grid">
+          <div class="event-card">
+            <h3>Create a public event</h3><p>Build a portable .ics calendar file or a Google Calendar link without a backend.</p>
+            <div class="form-grid" style="border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-top:14px">
+              <div class="field full"><label for="eventTitle">Event title</label><input id="eventTitle" value="City of Bourbon Board of Aldermen Meeting"></div>
+              <div class="field"><label for="eventStart">Start</label><input id="eventStart" type="datetime-local"></div>
+              <div class="field"><label for="eventMinutes">Duration (minutes)</label><input id="eventMinutes" type="number" value="90" min="15" step="15"></div>
+              <div class="field full"><label for="eventLocation">Location</label><input id="eventLocation" value="Bourbon City Hall, 423 N Old Highway 66, Bourbon, MO 65441"></div>
+              <div class="field full"><label for="eventDescription">Description</label><textarea id="eventDescription">Public meeting of the City of Bourbon Board of Aldermen. Check official City notices for agenda, changes, cancellations, or special-meeting information.</textarea></div>
+            </div>
+            <div class="actions" style="padding-left:0;background:transparent;border:0"><button class="btn" id="presetBoard">Next 3rd Tuesday</button><button class="btn" id="presetRfp">Use RFP deadline</button><button class="btn dark" id="downloadIcs">Download .ics</button><a class="btn primary" id="googleCal" href="#" target="_blank" rel="noopener">Google Calendar</a></div>
+          </div>
+          <div class="event-card">
+            <div class="kicker" style="color:var(--route)">Publishing workflow</div><h3>Event record preview</h3><div id="eventPreview" class="paper" style="width:100%;min-height:auto;padding:24px;box-shadow:none"><p>Select a date and this panel will produce the event summary that can be copied into an agenda, notice, website card, or social post.</p></div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="calendar">
+  <div class="wrap">
+    <div class="section-head"><div class="section-no">05 / Calendar</div><div><h2>Meetings should be easy to find and easy to add.</h2><p>The public calendar area can later be backed by a shared City calendar, but this prototype already generates standards-based events locally.</p></div></div>
+    <div class="split">
+      <div class="pane"><div class="kicker" style="color:var(--route)">Regular meeting</div><h3>Board of Aldermen</h3><p>Third Tuesday of each month at 7:00 PM at Bourbon City Hall, according to the municipal code.</p><button class="btn dark" id="calendarBoardBtn">Create next meeting event</button></div>
+      <div class="pane"><div class="kicker" style="color:var(--route)">City event workflow</div><h3>Publish once, distribute everywhere.</h3><p>A production build can write one event to the website, shared calendar, notification system, meeting archive, and social channels. The standalone prototype demonstrates the portable calendar payload now.</p><a class="btn" href="#workspace" id="openEventStudio">Open event creator</a></div>
+    </div>
+  </div>
+</section>
+</main>
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div><h4>City of Bourbon, Missouri</h4><p>423 N Old Highway 66<br>Bourbon, MO 65441<br>573-732-5550<br>response@bourbonmo.com</p></div>
+      <div><h4>Resident shortcuts</h4><a href="https://www.doxo.com/bill-pay/city-bourbon-mo" target="_blank" rel="noopener">Pay utility bill</a><a href="https://bourbonmo.org/resources/" target="_blank" rel="noopener">Forms and documents</a><a href="https://ecode360.com/BO3246" target="_blank" rel="noopener">City code</a></div>
+      <div><h4>Prototype sections</h4><a href="#procurement">Procurement topics</a><a href="#workspace">Staff workflow</a><a href="#calendar">Calendar</a></div>
+    </div>
+    <div class="legal">Prototype municipal web application. Draft RFPs and agreements generated here are working documents only and are not City solicitations, contracts, public notices, or legal records until formally reviewed, authorized, issued, and retained through the City's official process.</div>
+  </div>
+</footer>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+const $=id=>document.getElementById(id);
+const qs=s=>document.querySelector(s);
+const qsa=s=>Array.from(document.querySelectorAll(s));
+const esc=s=>String(s??'').replace(/[&<>\"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[ch]));
+const val=id=>($(id)?.value||'').trim();
+const todayISO=()=>{const d=new Date();const o=d.getTimezoneOffset();return new Date(d.getTime()-o*60000).toISOString().slice(0,10)};
+const localDateTimeValue=d=>{const x=new Date(d);const o=x.getTimezoneOffset();return new Date(x.getTime()-o*60000).toISOString().slice(0,16)};
+const fmtDate=d=>new Intl.DateTimeFormat('en-US',{year:'numeric',month:'long',day:'numeric'}).format(new Date(d));
+const fmtDateTime=d=>new Intl.DateTimeFormat('en-US',{year:'numeric',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}).format(new Date(d));
+const money=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(Number(n)||0);
+function toast(msg){$('toast').textContent=msg;$('toast').classList.add('show');setTimeout(()=>$('toast').classList.remove('show'),1500)}
+
+$('menuBtn').addEventListener('click',()=>{const open=$('navlinks').classList.toggle('open');$('menuBtn').setAttribute('aria-expanded',String(open))});
+qsa('#navlinks a').forEach(a=>a.addEventListener('click',()=>{$('navlinks').classList.remove('open');$('menuBtn').setAttribute('aria-expanded','false')}));
+
+function activateTab(id){qsa('.tabbtn').forEach(b=>b.classList.toggle('active',b.dataset.tab===id));qsa('.tab').forEach(t=>t.classList.toggle('active',t.id===id));}
+qsa('.tabbtn').forEach(b=>b.addEventListener('click',()=>activateTab(b.dataset.tab)));
+
+$('issueDate').value=todayISO();
+function addDays(days,hour=16,minute=30){const d=new Date();d.setDate(d.getDate()+days);d.setHours(hour,minute,0,0);return d}
+$('dueDate').value=localDateTimeValue(addDays(30));
+
+const topicScopes={
+ 'Municipal Accounting and Fund Accounting System':'Provide municipal fund-accounting software and implementation services, including general ledger, accounts payable, accounts receivable, budgeting, bank reconciliation, reporting, audit support, user roles, historical-data migration, chart-of-accounts mapping, training, support, integrations, implementation schedule, data ownership, export capability, security, and transition from the City\'s current end-of-life system.',
+ 'City Website, Accessibility, CMS and Hosting':'Design, implement, host, and support a modern City website with responsive navigation, WCAG-oriented accessibility practices, resident services, utility links, forms and documents, agendas and notices, procurement, calendar, staff publishing tools, analytics, search, domain and redirect planning, backups, security, and content migration.',
+ 'Records Digitization, Retention and Physical File Disposition':'Inventory physical records; recommend digitization priorities; scan, index, and quality-check documents; support retention classification; provide secure storage and retrieval; identify records eligible for authorized destruction; document chain of custody; and deliver searchable exports in non-proprietary formats.',
+ 'Utility Billing and Online Payment Modernization':'Provide an integrated utility billing and resident self-service solution supporting water, sewer, and trash accounts, billing, payment processing, account history, notifications, reconciliation, reporting, staff administration, data migration, audit controls, and export capability.',
+ 'Cybersecurity, Backup and Continuity Services':'Assess and improve City cybersecurity and continuity, including identity and access controls, endpoint protection, email security, backups, recovery testing, logging, patching, phishing resilience, incident response, vendor access controls, and minimum continuity documentation.',
+ 'Infrastructure Asset Inventory and GIS':'Create or improve a GIS-backed municipal asset inventory covering water, sewer, streets, signs, sidewalks, facilities, and other City assets with location, condition, maintenance history, photos where appropriate, field update workflow, map layers, export capability, and capital-planning support.',
+ 'Active Transportation and Route 66 Sidewalk Improvements':'Provide planning, survey, engineering, grant support, cost estimating, public coordination, design, permitting, bidding support, and implementation assistance for sidewalk and active-transportation priorities, including Route 66 corridor improvements where authorized by the City.',
+ 'Grant Administration and Capital Project Support':'Provide grant research, eligibility screening, application development, compliance, procurement coordination, reimbursement documentation, reporting, closeout, and project-administration support for City capital and modernization projects.'
+};
+$('procTopic').addEventListener('change',()=>{if(topicScopes[$('procTopic').value])$('scope').value=topicScopes[$('procTopic').value]});
+qsa('.rfpUse').forEach(btn=>btn.addEventListener('click',e=>{const title=e.currentTarget.closest('.rfp').dataset.rfp;$('procTopic').value=title;if(topicScopes[title])$('scope').value=topicScopes[title];activateTab('draftTab');$('workspace').scrollIntoView({behavior:'smooth'});toast('Loaded into RFP studio')}));
+
+function docNumber(prefix){const d=new Date();const z=n=>String(n).padStart(2,'0');return `${prefix}-${d.getFullYear()}${z(d.getMonth()+1)}${z(d.getDate())}-${z(d.getHours())}${z(d.getMinutes())}`}
+let currentDocType='RFP';
+let signatureData='';let signatureName='';let signatureTitle='';
+function commonMeta(){return {topic:val('procTopic'),code:val('projectCode')||'BOU-DRAFT',issue:val('issueDate')||todayISO(),due:val('dueDate'),contact:val('contactName')||'City Hall',email:val('contactEmail')||'response@bourbonmo.com',scope:val('scope'),vendor:val('vendorName'),vendorEmail:val('vendorEmail'),amount:val('amount'),term:val('term'),evaluation:val('evaluation')}}
+function rfpHTML(){const m=commonMeta();const due=m.due?fmtDateTime(m.due):'[to be determined]';return `<div class="paper-head"><div><div style="font:700 9px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:#7b2c24">City of Bourbon, Missouri</div><h2>Draft Request for Proposals</h2><div style="font-size:12px;margin-top:5px"><b>${esc(m.topic)}</b></div></div><div class="docid">${esc(m.code)}<br>${esc(docNumber('RFP'))}<br>DRAFT / NOT ISSUED</div></div>
+<h3>1. Notice</h3><p>The City of Bourbon, Missouri is preparing a potential solicitation for professional products and/or services related to <b>${esc(m.topic)}</b>. This generated document is a staff drafting aid only. It is not an issued solicitation until the City completes its official review, authorization, publication, and procurement process.</p>
+<table><tr><th>Draft issue date</th><td>${esc(fmtDate(m.issue))}</td><th>Draft response deadline</th><td>${esc(due)}</td></tr><tr><th>City contact</th><td>${esc(m.contact)}</td><th>Email</th><td>${esc(m.email)}</td></tr><tr><th>City Hall</th><td colspan="3">423 N Old Highway 66, Bourbon, MO 65441</td></tr></table>
+<h3>2. Project objective</h3><p>The City seeks a practical, supportable solution that can be implemented with clear ownership, documented deliverables, predictable operating cost, and an orderly transition into City operations.</p>
+<h3>3. Draft scope of work</h3><p>${esc(m.scope||'[scope to be developed]')}</p>
+<h3>4. Requested vendor response</h3><ol><li>Executive summary and understanding of the City's need.</li><li>Proposed approach, implementation plan, milestones, and dependencies.</li><li>Project team, roles, experience, and comparable public-sector references.</li><li>Detailed pricing, recurring costs, optional costs, and assumptions.</li><li>Security, accessibility, data ownership, export, continuity, and support practices where applicable.</li><li>Exceptions, exclusions, required City resources, and proposed contract terms.</li></ol>
+<h3>5. Draft evaluation framework</h3><p>${esc(m.evaluation||'Qualifications and experience; quality and practicality of approach; implementation schedule; total cost and ongoing operating cost; support model; references; security, accessibility, data portability, and other factors relevant to the final approved solicitation.')}</p>
+<h3>6. Reservation of rights</h3><p>The final issued solicitation, if any, should state the City's official procurement conditions, submission method, deadline, legal requirements, public-record treatment, evaluation process, and rights to reject or negotiate proposals. Staff should reconcile this draft with the City's purchasing policy, funding requirements, grant conditions, and legal review before publication.</p>
+<h3>7. Draft response checklist</h3><table><tr><th style="width:40px">No.</th><th>Item</th><th style="width:100px">Included</th></tr><tr><td>1</td><td>Signed cover letter / authorized representative</td><td></td></tr><tr><td>2</td><td>Technical response and implementation plan</td><td></td></tr><tr><td>3</td><td>Pricing and recurring-cost schedule</td><td></td></tr><tr><td>4</td><td>References</td><td></td></tr><tr><td>5</td><td>Exceptions / assumptions / required City resources</td><td></td></tr></table>`}
+function agreementHTML(){const m=commonMeta();const sig=signatureData?`<img class="captured-signature" src="${signatureData}" alt="Captured signature"><b>${esc(signatureName)}</b><br>${esc(signatureTitle)}`:'<br><br>City authorized representative';return `<div class="paper-head"><div><div style="font:700 9px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:#7b2c24">City of Bourbon, Missouri</div><h2>Draft Professional Services Agreement</h2><div style="font-size:12px;margin-top:5px"><b>${esc(m.topic)}</b></div></div><div class="docid">${esc(m.code)}<br>${esc(docNumber('AGR'))}<br>DRAFT / FOR REVIEW</div></div>
+<p>This draft agreement is prepared as a staff workflow aid between the <b>City of Bourbon, Missouri</b> ("City") and <b>${esc(m.vendor||'[Vendor]')}</b> ("Contractor"). It does not become an official City contract solely through use of this browser prototype.</p>
+<h3>1. Scope</h3><p>${esc(m.scope||'[scope to be attached or developed]')}</p>
+<h3>2. Term</h3><p>${esc(m.term||'[term to be established]')}</p>
+<h3>3. Compensation</h3><p>Compensation shall not exceed <b>${m.amount?esc(money(m.amount)):'[amount to be established]'}</b> unless modified through a formally authorized written amendment. Final payment terms, invoicing requirements, reimbursable expenses, and funding conditions must be completed before execution.</p>
+<h3>4. Deliverables and acceptance</h3><p>Contractor shall provide the deliverables, documentation, training, data exports, transition materials, and other work described in the final approved scope. The final agreement should identify acceptance criteria, responsible City staff, milestones, and any required cure period.</p>
+<h3>5. Records, data, security, and continuity</h3><p>The final agreement should define City ownership and access rights for City data and records, export formats, confidentiality obligations, cybersecurity expectations, backup and recovery duties, incident notification, subcontractor controls, and transition assistance as applicable to the project.</p>
+<h3>6. Public-sector terms</h3><p>Before execution, City staff and counsel should add all provisions required by applicable law, the City's purchasing policy, insurance requirements, funding conditions, records obligations, nondiscrimination provisions, authorization procedures, and any project-specific compliance requirements.</p>
+<h3>7. Entire agreement / changes</h3><p>The final executed agreement should identify incorporated exhibits and require written authorization for amendments. No browser-generated signature or draft language substitutes for formal City approval.</p>
+<div class="sig-row"><div><div style="min-height:74px">${sig}</div><div class="sig-line">CITY OF BOURBON, MISSOURI / Authorized signature</div></div><div><div style="min-height:74px"><br><br>${esc(m.vendor||'[Vendor]')}<br>${esc(m.vendorEmail||'')}</div><div class="sig-line">CONTRACTOR / Authorized signature</div></div></div>`}
+function render(kind){currentDocType=kind;$('paper').innerHTML=kind==='RFP'?rfpHTML():agreementHTML();$('previewStage').classList.remove('hidden');$('previewStage').scrollIntoView({behavior:'smooth',block:'start'});}
+$('generateRfp').addEventListener('click',()=>render('RFP'));
+$('generateAgreement').addEventListener('click',()=>render('AGREEMENT'));
+$('printDoc').addEventListener('click',()=>window.print());
+$('copyDoc').addEventListener('click',async()=>{const text=$('paper').innerText;try{await navigator.clipboard.writeText(text);toast('Document copied')}catch(e){window.prompt('Copy document text:',text)}});
+$('goSign').addEventListener('click',()=>{activateTab('signTab');$('signerName').focus()});
+
+const draftFields=['procTopic','projectCode','issueDate','dueDate','contactName','contactEmail','scope','vendorName','vendorEmail','amount','term','evaluation'];
+$('saveDraft').addEventListener('click',()=>{const d={};draftFields.forEach(id=>d[id]=$(id).value);localStorage.setItem('bourbonMunicipalDraft',JSON.stringify(d));$('draftState').textContent='LOCAL DRAFT SAVED';toast('Draft saved in this browser')});
+$('clearDraft').addEventListener('click',()=>{if(!confirm('Clear the local municipal draft?'))return;localStorage.removeItem('bourbonMunicipalDraft');location.reload()});
+(function loadDraft(){try{const raw=localStorage.getItem('bourbonMunicipalDraft');if(!raw)return;const d=JSON.parse(raw);draftFields.forEach(id=>{if(d[id]!=null)$(id).value=d[id]});$('draftState').textContent='LOCAL DRAFT LOADED'}catch(e){}})();
+
+const canvas=$('sigCanvas'),ctx=canvas.getContext('2d');ctx.lineWidth=2.4;ctx.lineCap='round';ctx.strokeStyle='#182127';let drawing=false,hasSig=false;
+function pos(e){const r=canvas.getBoundingClientRect();const p=e.touches?e.touches[0]:e;return {x:(p.clientX-r.left)*(canvas.width/r.width),y:(p.clientY-r.top)*(canvas.height/r.height)}}
+function start(e){drawing=true;hasSig=true;const p=pos(e);ctx.beginPath();ctx.moveTo(p.x,p.y);e.preventDefault()}
+function move(e){if(!drawing)return;const p=pos(e);ctx.lineTo(p.x,p.y);ctx.stroke();e.preventDefault()}
+function stop(){drawing=false}
+canvas.addEventListener('mousedown',start);canvas.addEventListener('mousemove',move);window.addEventListener('mouseup',stop);canvas.addEventListener('touchstart',start,{passive:false});canvas.addEventListener('touchmove',move,{passive:false});canvas.addEventListener('touchend',stop);
+$('clearSig').addEventListener('click',()=>{ctx.clearRect(0,0,canvas.width,canvas.height);hasSig=false});
+$('applySig').addEventListener('click',()=>{if(!val('signerName')){alert('Enter the signer name.');return}if(!hasSig){alert('Draw a signature first.');return}signatureData=canvas.toDataURL('image/png');signatureName=val('signerName');signatureTitle=val('signerTitle');render('AGREEMENT');activateTab('draftTab');toast('Signature applied to draft agreement')});
+
+function nextThirdTuesday(base=new Date()){const d=new Date(base);d.setHours(19,0,0,0);let month=d.getMonth(),year=d.getFullYear();while(true){const first=new Date(year,month,1,19,0,0);const offset=(2-first.getDay()+7)%7;const third=new Date(year,month,1+offset+14,19,0,0);if(third>base)return third;month++;if(month>11){month=0;year++}}}
+function syncEventPreview(){const start=val('eventStart');const title=val('eventTitle')||'Untitled event';const loc=val('eventLocation');const desc=val('eventDescription');$('eventPreview').innerHTML=`<div class="paper-head" style="margin-bottom:14px"><div><div style="font:700 9px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:#7b2c24">City of Bourbon, Missouri</div><h2 style="font-size:22px">${esc(title)}</h2></div><div class="docid">PUBLIC EVENT<br>${start?esc(fmtDateTime(start)):'DATE TBD'}</div></div><p><b>When:</b> ${start?esc(fmtDateTime(start)):'[select date and time]'}</p><p><b>Where:</b> ${esc(loc||'[location]')}</p><p>${esc(desc||'')}</p><p style="font-size:9px;color:#666">Prototype event record. Check official City notices for final meeting details.</p>`;updateGoogleCal()}
+qsa('#eventTab input,#eventTab textarea').forEach(el=>el.addEventListener('input',syncEventPreview));
+$('presetBoard').addEventListener('click',()=>{$('eventTitle').value='City of Bourbon Board of Aldermen Meeting';$('eventStart').value=localDateTimeValue(nextThirdTuesday());$('eventMinutes').value='90';$('eventLocation').value='Bourbon City Hall, 423 N Old Highway 66, Bourbon, MO 65441';syncEventPreview();toast('Next regular meeting loaded')});
+$('presetRfp').addEventListener('click',()=>{if(!val('dueDate')){alert('Set an RFP response deadline first.');return}$('eventTitle').value=`RFP Deadline - ${val('procTopic')}`;$('eventStart').value=val('dueDate');$('eventMinutes').value='15';$('eventLocation').value='Bourbon City Hall, 423 N Old Highway 66, Bourbon, MO 65441';$('eventDescription').value=`Draft response deadline for ${val('procTopic')}. Confirm the official issued solicitation for final submission requirements.`;syncEventPreview();toast('RFP deadline loaded')});
+function eventDates(){const s=new Date(val('eventStart'));const mins=Number(val('eventMinutes')||60);return {s,e:new Date(s.getTime()+mins*60000)}}
+function icsDate(d){return new Date(d).toISOString().replace(/[-:]/g,'').replace(/\.\d{3}Z$/,'Z')}
+function icsEscape(s){return String(s||'').replace(/\\/g,'\\\\').replace(/\n/g,'\\n').replace(/,/g,'\\,').replace(/;/g,'\\;')}
+function buildIcs(){if(!val('eventStart'))return null;const {s,e}=eventDates();return ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//City of Bourbon Prototype//EN','CALSCALE:GREGORIAN','BEGIN:VEVENT',`UID:${Date.now()}@bourbonmo.com`,`DTSTAMP:${icsDate(new Date())}`,`DTSTART:${icsDate(s)}`,`DTEND:${icsDate(e)}`,`SUMMARY:${icsEscape(val('eventTitle'))}`,`LOCATION:${icsEscape(val('eventLocation'))}`,`DESCRIPTION:${icsEscape(val('eventDescription'))}`,'END:VEVENT','END:VCALENDAR'].join('\r\n')}
+$('downloadIcs').addEventListener('click',()=>{const ics=buildIcs();if(!ics){alert('Select an event start date and time first.');return}const blob=new Blob([ics],{type:'text/calendar;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=(val('eventTitle')||'bourbon-event').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')+'.ics';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);toast('Calendar file created')});
+function updateGoogleCal(){if(!val('eventStart')){$('googleCal').href='#';return}const {s,e}=eventDates();const compact=d=>icsDate(d);const p=new URLSearchParams({action:'TEMPLATE',text:val('eventTitle'),dates:`${compact(s)}/${compact(e)}`,details:val('eventDescription'),location:val('eventLocation')});$('googleCal').href='https://calendar.google.com/calendar/render?'+p.toString()}
+$('googleCal').addEventListener('click',e=>{if(!val('eventStart')){e.preventDefault();alert('Select an event start date and time first.')}});
+$('calendarBoardBtn').addEventListener('click',()=>{activateTab('eventTab');$('workspace').scrollIntoView({behavior:'smooth'});setTimeout(()=>$('presetBoard').click(),250)});
+$('openEventStudio').addEventListener('click',()=>activateTab('eventTab'));
+$('eventStart').value=localDateTimeValue(nextThirdTuesday());syncEventPreview();
+</script>
+</body>
+</html>
