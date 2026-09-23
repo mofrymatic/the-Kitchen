@@ -3955,6 +3955,9 @@ test('secondary sprint requires three sustained seconds',()=>{run("testReset();m
 test('secondary sprint jump arms cape flight',()=>{run("testReset();moveHeld.set('KeyW','up');keys.shift=true;ticks(210);pressJump();ticks(1);releaseJump()");assert.equal(run('P.capeFlight'),true);assert.equal(run('P.state'),'CAPE FLIGHT');});
 test('locomotion phase ladder is walk run1 run2 run3 fast',()=>{assert.equal(run("WPModel.phaseForSpeed(4).slot"),'walk');assert.equal(run("WPModel.phaseForSpeed(26).slot"),'run1');assert.equal(run("WPModel.phaseForSpeed(44).slot"),'run2');assert.equal(run("WPModel.phaseForSpeed(68).slot"),'run3');assert.equal(run("WPModel.phaseForSpeed(92).slot"),'fast');});
 test('Meshy locomotion aliases resolve numbered phases',()=>{const m=run("WPModel.resolveAnimationNames(['Idle','Walk','Run','Run 2','Run 3','Fast Run'])");assert.equal(m.walk,'Walk');assert.equal(m.run1,'Run');assert.equal(m.run2,'Run 2');assert.equal(m.run3,'Run 3');assert.equal(m.fast,'Fast Run');});
+test('expanded WP animation aliases resolve authored states',()=>{const m=run("WPModel.resolveAnimationNames(['Idle_11','Walking','Running','Run_02','Run_03','RunFast','Fall2','slide_light','slide_right','Dive_Down_and_Land','Dive_Down_and_Land_1','Dive_Down_and_Land_2'])");assert.equal(m.idle,'Idle_11');assert.equal(m.air,'Fall2');assert.equal(m.slide,'slide_light');assert.equal(m.slideRight,'slide_right');assert.equal(m.landQuick,'Dive_Down_and_Land_1');assert.equal(m.land,'Dive_Down_and_Land');assert.equal(m.landHard,'Dive_Down_and_Land_2');});
+test('airborne states use falling animation slot',()=>{assert.equal(run("WPModel.slotFor('AIRBORNE',20,0)"),'air');assert.equal(run("WPModel.slotFor('CAPE FLIGHT',80,0)"),'air');assert.equal(run("WPModel.slotFor('DOUBLE JUMP',20,0)"),'air');});
+test('slide steering can select authored right slide',()=>{assert.equal(run("WPModel.slotFor('SLIDE',40,0)"),'slide');assert.equal(run("WPModel.slotFor('SLIDE',40,.8)"),'slideRight');});
 test('cape dive banks energy then pull spends it for lift',()=>{run("testReset();P.onGround=false;P.y=20;P.vx=0;P.vz=80;P.speed=80;P.capeFlight=true;P.capeEnergy=.2;input.z=-1;for(let i=0;i<30;i++){P.vy-=KIN.gravity/60;capeStep(1/60,0,-1,true)}");const banked=run('P.capeEnergy'),down=run('P.vy');assert(banked>.2);run("input.z=1;for(let i=0;i<24;i++){P.vy-=KIN.gravity/60;capeStep(1/60,0,1,true)}");assert(run('P.capeEnergy')<banked);assert(run('P.vy')>down);});
 test('releasing sprint while holding jump commits cape glide',()=>{run("testReset();P.onGround=false;P.y=20;P.vz=80;P.capeFlight=true;input.jump=true;capeStep(1/60,0,0,false)");assert.equal(run('P.capeGlide'),true);assert.equal(run('P.capeMode'),'GLIDE');});
 test('desktop hover orbit remains no-button',()=>{run('testReset()');const before=run('CAM.yaw');run("orbitFromPointer({pointerType:'mouse',movementX:20,movementY:0})");assert.notEqual(run('CAM.yaw'),before);});
@@ -5152,14 +5155,20 @@ scene.add(PLAYER);
 const WPModel=(()=>{
   const info={ready:false,height:0,clip:'loading',slot:'idle',error:null,triangles:0,url:'wp.glb',animations:[],clipMap:{},missing:[]};
   const pivot=new THREE.Group(),modelRoot=new THREE.Group();pivot.add(modelRoot);PLAYER.add(pivot);
-  let mixer,actions={},active,activeSlot='idle',model;
+  let mixer,actions={},active,activeSlot='idle',model,landingLatch=null;
   const SLOT_ALIASES={
-    idle:['restpose','idle','wpidle','standingidle','standidle'],
+    idle:['idle11','idle','wpidle','standingidle','standidle','restpose'],
     walk:['walking','walk','wpwalk'],
     run1:['run1','running1','wprun1','run','running','wprun','jog','jogging'],
-    run2:['run2','running2','wprun2','fastrun1','fastrunning1','fast1'],
-    run3:['run3','running3','wprun3','fastrun2','fastrunning2','fast2'],
-    fast:['fastrun','fastrunning','wpfastrun','sprint','supersprint','run4','running4','wprun4']
+    run2:['run02','run2','running2','wprun2','fastrun1','fastrunning1','fast1'],
+    run3:['run03','run3','running3','wprun3','fastrun2','fastrunning2','fast2'],
+    fast:['runfast','fastrun','fastrunning','wpfastrun','sprint','supersprint','run4','running4','wprun4'],
+    air:['fall2','fall','falling','wpfall','airborne'],
+    slide:['slidelight','slide','wpslide','powerslide'],
+    slideRight:['slideright','wpslideright'],
+    landQuick:['divedownandland1','landquick','softland','landsoft'],
+    land:['divedownandland','land','wpland'],
+    landHard:['divedownandland2','landhard','hardland','groundsmash']
   };
   const PHASES=Object.freeze([
     {slot:'idle',max:.5,nominal:0},
@@ -5174,22 +5183,39 @@ const WPModel=(()=>{
     const rows=names.map(name=>({name,n:norm(name)})),map={};
     const pick=aliases=>{for(const alias of aliases){const hit=rows.find(r=>r.n===alias);if(hit)return hit.name;}return null;};
     for(const [slot,aliases] of Object.entries(SLOT_ALIASES))map[slot]=pick(aliases);
-    // Meshy sometimes decorates take names. Only use fuzzy matching when the numbered intent is unambiguous.
+    // Meshy frequently decorates take names. Fuzzy matching is only used where
+    // the semantic intent remains unambiguous.
     if(!map.walk){const r=rows.find(r=>/walk/.test(r.n));if(r)map.walk=r.name;}
-    if(!map.run2){const r=rows.find(r=>/(?:run|running).*2|2.*(?:run|running)/.test(r.n));if(r)map.run2=r.name;}
-    if(!map.run3){const r=rows.find(r=>/(?:run|running).*3|3.*(?:run|running)/.test(r.n));if(r)map.run3=r.name;}
+    if(!map.run2){const r=rows.find(r=>/(?:run|running).*0?2|0?2.*(?:run|running)/.test(r.n));if(r)map.run2=r.name;}
+    if(!map.run3){const r=rows.find(r=>/(?:run|running).*0?3|0?3.*(?:run|running)/.test(r.n));if(r)map.run3=r.name;}
     if(!map.fast){const r=rows.find(r=>/fast.*(?:run|running)|(?:run|running).*fast|sprint/.test(r.n));if(r)map.fast=r.name;}
     if(!map.run1){const r=rows.find(r=>/^(?:wp)?(?:run|running|jog|jogging)$/.test(r.n));if(r)map.run1=r.name;}
     if(!map.idle){const r=rows.find(r=>/idle|restpose/.test(r.n));if(r)map.idle=r.name;}
+    if(!map.air){const r=rows.find(r=>/fall|airborne/.test(r.n));if(r)map.air=r.name;}
+    if(!map.slide){const r=rows.find(r=>/slide/.test(r.n)&&!/right/.test(r.n));if(r)map.slide=r.name;}
+    if(!map.slideRight){const r=rows.find(r=>/slide.*right|right.*slide/.test(r.n));if(r)map.slideRight=r.name;}
+    const dives=rows.filter(r=>/dive.*down.*land|land/.test(r.n));
+    if(!map.land&&dives[0])map.land=dives[0].name;
     return map;
   }
   const phaseForSpeed=speed=>PHASES.find(p=>speed<p.max)||PHASES[PHASES.length-1];
-  function slotFor(state,speed){
+  function slotFor(state,speed,lateral=0){
+    if(state==='SLIDE')return lateral>.22?'slideRight':'slide';
+    if(state==='CAPE FLIGHT'||state==='AIRBORNE'||state==='LEAP'||state==='DOUBLE JUMP'||state==='WALL KICK'||state==='SWIM')return 'air';
     if(state==='WALL RUN')return speed>=52?'run3':speed>=34?'run2':'run1';
     if(state==='RUN'||state==='SPRINT'||state==='SUPER SPRINT')return phaseForSpeed(speed).slot;
     return speed>.5&&state==='GROUND'?'walk':'idle';
   }
   function actionFor(slot){
+    const paths={
+      air:['air','run1','walk','idle'],
+      slideRight:['slideRight','slide','run2','run1','idle'],
+      slide:['slide','run2','run1','idle'],
+      landQuick:['landQuick','land','idle'],
+      land:['land','landQuick','idle'],
+      landHard:['landHard','land','landQuick','idle']
+    };
+    if(paths[slot])for(const candidate of paths[slot]){const n=info.clipMap[candidate];if(n&&actions[n])return actions[n];}
     const name=info.clipMap[slot];
     if(name&&actions[name])return actions[name];
     // Missing high-speed phases degrade toward the closest authored lower phase.
@@ -5198,23 +5224,33 @@ const WPModel=(()=>{
     for(let i=idx-1;i>=0;i--){const n=info.clipMap[order[i]];if(n&&actions[n])return actions[n];}
     return null;
   }
-  function update(dt,state,speed,wallSide,landing,capePitch=0,capeBank=0){
+  function update(dt,state,speed,wallSide,landing,capePitch=0,capeBank=0,lateral=0){
     if(!info.ready)return;
-    const slot=slotFor(state,speed),next=actionFor(slot);
+    if(landing>0&&!landingLatch)landingLatch=landing>=.45?'landHard':landing>=.17?'land':'landQuick';
+    if(landing<=.001)landingLatch=null;
+    const slot=landingLatch||slotFor(state,speed,lateral),next=actionFor(slot);
     if(next&&next!==active){
-      next.reset().setEffectiveTimeScale(1).setEffectiveWeight(1).play();
-      next.fadeIn(.14);if(active)active.fadeOut(.14);active=next;activeSlot=slot;info.slot=slot;
+      next.reset().setEffectiveWeight(1).play();
+      next.fadeIn(.12);if(active)active.fadeOut(.12);active=next;activeSlot=slot;info.slot=slot;
       info.clip=Object.keys(actions).find(k=>actions[k]===next)||info.clip;
     }
     if(active){
-      const phase=PHASES.find(p=>p.slot===activeSlot)||PHASES[0];
-      active.timeScale=phase.nominal?clamp(speed/phase.nominal,.68,1.65):0;
+      const phase=PHASES.find(p=>p.slot===activeSlot);
+      if(phase&&phase.nominal)active.timeScale=clamp(speed/phase.nominal,.68,1.65);
+      else if(activeSlot==='slide'||activeSlot==='slideRight')active.timeScale=clamp(speed/42,.78,1.55);
+      else if(activeSlot==='landQuick')active.timeScale=3.5;
+      else if(activeSlot==='land')active.timeScale=5;
+      else if(activeSlot==='landHard')active.timeScale=5.5;
+      else active.timeScale=1;
       mixer.update(dt);
       for(const a of Object.values(actions))if(a!==active&&a.isRunning()&&a.getEffectiveWeight()<.001)a.stop();
     }
-    const pitch=state==='SWIM'?.9:state==='SLIDE'?.45:state==='CAPE FLIGHT'?(-.42-capePitch*.38):state==='SUPER SPRINT'?.14:state==='SPRINT'?.07:0;
-    const bank=state==='WALL RUN'?wallSide*.18:state==='CAPE FLIGHT'?capeBank*.28:0;
-    pivot.rotation.x=lerp(pivot.rotation.x,pitch,damp(10,dt));
+    // Fall2 is an excellent authored airborne silhouette. During cape flight the
+    // presentation layer rotates that upright falling pose ninety degrees so the
+    // body becomes a prone flyer; physics position and velocity remain untouched.
+    const pitch=state==='CAPE FLIGHT'?(-Math.PI/2+capePitch*.42):state==='SWIM'?.9:state==='SLIDE'?.45:state==='SUPER SPRINT'?.14:state==='SPRINT'?.07:0;
+    const bank=state==='WALL RUN'?wallSide*.18:state==='CAPE FLIGHT'?capeBank*.34:0;
+    pivot.rotation.x=lerp(pivot.rotation.x,pitch,damp(state==='CAPE FLIGHT'?7:10,dt));
     pivot.rotation.z=lerp(pivot.rotation.z,bank,damp(10,dt));
     pivot.position.y=lerp(pivot.position.y,-landing*.12+(state==='SLIDE'?-.18:0),damp(16,dt));
   }
@@ -5224,7 +5260,7 @@ const WPModel=(()=>{
   new THREE.GLTFLoader().load('wp.glb',gltf=>{
     try{
       model=gltf.scene;info.animations=gltf.animations.map(a=>a.name);info.clipMap=resolveAnimationNames(info.animations);
-      info.missing=['walk','run1','run2','run3','fast'].filter(k=>!info.clipMap[k]);model.updateMatrixWorld(true);
+      info.missing=['walk','run1','run2','run3','fast','air','slide','landQuick','land','landHard'].filter(k=>!info.clipMap[k]);model.updateMatrixWorld(true);
       // r128 Box3 ignores skin deformation. Measure a neutral skinned frame so
       // visual height continues to equal the established 2.75 m collision body.
       const neutral=gltf.animations.find(a=>a.name===info.clipMap.idle)||gltf.animations.find(a=>a.name===info.clipMap.walk)||gltf.animations[0];
@@ -5248,18 +5284,19 @@ const WPModel=(()=>{
       model.traverse(o=>{if(o.isMesh){o.frustumCulled=false;o.castShadow=SHADOWS;info.triangles+=(o.geometry.index?o.geometry.index.count:o.geometry.attributes.position.count)/3;}});
       mixer=new THREE.AnimationMixer(model);
       const hips=model.getObjectByName('mixamorig:Hips')||model.getObjectByName('Hips'),anchor=hips?hips.position.clone():new THREE.Vector3();
+      const oneShots=new Set([info.clipMap.landQuick,info.clipMap.land,info.clipMap.landHard].filter(Boolean));
       for(const original of gltf.animations){
         const clip=original.clone();
         // Strip horizontal root travel: animation may articulate the mesh but it
         // may never move the authoritative collision body.
         for(const track of clip.tracks)if(track.name.endsWith('Hips.position'))for(let i=0;i<track.values.length;i+=3){track.values[i]=anchor.x;track.values[i+2]=anchor.z;}
-        actions[clip.name]=mixer.clipAction(clip);
+        const action=mixer.clipAction(clip);if(oneShots.has(clip.name)){action.setLoop(THREE.LoopOnce,1);action.clampWhenFinished=true;}actions[clip.name]=action;
       }
-      info.ready=true;Hero.rig.visible=false;status.remove();update(0,'GROUND',0,1,0,0,0);
-      if(info.missing.length)console.warn('WP locomotion clip fallbacks active:',info.missing,'resolved:',info.clipMap);
+      info.ready=true;Hero.rig.visible=false;status.remove();update(0,'GROUND',0,1,0,0,0,0);
+      if(info.missing.length)console.warn('WP animation fallbacks active:',info.missing,'resolved:',info.clipMap);
     }catch(e){fail(e);}
   },undefined,fail);
-  return {info,update,resolveAnimationNames,phaseForSpeed};
+  return {info,update,resolveAnimationNames,phaseForSpeed,slotFor};
 })()
 
 /* Bourbon water-tower research (2026-09-22): no verified SketchUp asset acquired.
@@ -6189,7 +6226,7 @@ function presentation(dt){
   const lookDelta=Math.atan2(Math.sin(CAM.yaw+Math.PI-P.yaw),Math.cos(CAM.yaw+Math.PI-P.yaw));
   const wallSide=P.ride?(P.ride.nx*Math.cos(P.yaw)-P.ride.nz*Math.sin(P.yaw)>=0?1:-1):1;
   Hero.pose(dt,P.state,animTime,speed,lookDelta,wallSide,P.landPulse);
-  WPModel.update(blocked()?0:dt,P.state,speed,wallSide,P.landPulse,P.capePitch,P.capeBank);
+  WPModel.update(blocked()?0:dt,P.state,speed,wallSide,P.landPulse,P.capePitch,P.capeBank,input.x);
   CAM.smoothX=lerp(CAM.smoothX,P.x,damp(18,dt));CAM.smoothY=lerp(CAM.smoothY,P.y+(P.slideT>0?1.05:1.75),damp(14,dt));CAM.smoothZ=lerp(CAM.smoothZ,P.z,damp(18,dt));
   CAM.smoothYaw=lerpAngle(CAM.smoothYaw,CAM.yaw,damp(20,dt));CAM.smoothPitch=lerp(CAM.smoothPitch,CAM.pitch,damp(20,dt));
   const pitch=CAM.smoothPitch,yaw=CAM.smoothYaw,dx=Math.sin(yaw)*Math.cos(pitch),dz=Math.cos(yaw)*Math.cos(pitch),dy=Math.sin(pitch);
@@ -6300,7 +6337,7 @@ document.getElementById('downloadRegression').addEventListener('click',()=>{
   a.href=url;a.download='test-infrastructure.cjs';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
 });
 
-window.__CRAWFORD__={version:'3.4.0',infrastructure:{meta:Infrastructure.data.meta,counts:Infrastructure.counts,tests:Infrastructure.tests},character:WPModel.info,config:CONFIG,kinetics:KIN,osm:OSM.meta,
+window.__CRAWFORD__={version:'3.5.0',infrastructure:{meta:Infrastructure.data.meta,counts:Infrastructure.counts,tests:Infrastructure.tests},character:WPModel.info,config:CONFIG,kinetics:KIN,osm:OSM.meta,
   snapshot:()=>({x:P.x,y:P.y,z:P.z,speed:P.speed,state:P.state,solids:SOLIDS.length,landmarks:LANDMARKS.length,
     infrastructure:Infrastructure.records.length,infrastructureChunks:Infrastructure.chunks.length,buildings:Buildings.count,buildingChunks:Buildings.chunks.length,roads:ROADS.length,joints:Object.keys(Hero.joints).length,
     beacons:beacons.children.length,quality,fps,bodyHeight:KIN.height,jumpApex:KIN.jump**2/(2*KIN.gravity),jumpsUsed:P.jumpsUsed,sprintCharge:P.sprintCharge,superSprint:P.superSprint,capeFlight:P.capeFlight,capeMode:P.capeMode,capeEnergy:P.capeEnergy,animationSlot:WPModel.info.slot,animationClip:WPModel.info.clip}),
@@ -6311,7 +6348,7 @@ window.__CRAWFORD__={version:'3.4.0',infrastructure:{meta:Infrastructure.data.me
     articulation:Object.keys(Hero.joints).length===19,roads:ROADS.length===OSM.roads.length,
     externalCharacter:WPModel.info.url==='wp.glb',fixedStep:KIN.hz===60,runSpeed:CONFIG.RUN===26,sprintSpeed:CONFIG.SPRINT===68,
     collider:KIN.radius===.58&&KIN.height===2.75&&KIN.step===.65,variableJump:KIN.jumpHold>0&&KIN.jumpHoldGravity<1,doubleJump:KIN.doubleJump>0,
-    superSprint:KIN.superCharge===3&&CONFIG.SUPER_SPRINT>CONFIG.SPRINT,cape:KIN.capeMax>CONFIG.SUPER_SPRINT&&KIN.capeTakeoff>CONFIG.SPRINT,runPhases:WPModel.phaseForSpeed(26).slot==='run1'&&WPModel.phaseForSpeed(68).slot==='run3'&&WPModel.phaseForSpeed(92).slot==='fast',offlineEngine:typeof THREE!=='undefined'})
+    superSprint:KIN.superCharge===3&&CONFIG.SUPER_SPRINT>CONFIG.SPRINT,cape:KIN.capeMax>CONFIG.SUPER_SPRINT&&KIN.capeTakeoff>CONFIG.SPRINT,runPhases:WPModel.phaseForSpeed(26).slot==='run1'&&WPModel.phaseForSpeed(68).slot==='run3'&&WPModel.phaseForSpeed(92).slot==='fast',animationStates:(()=>{const m=WPModel.resolveAnimationNames(['Idle_11','Walking','Running','Run_02','Run_03','RunFast','Fall2','slide_light','slide_right','Dive_Down_and_Land','Dive_Down_and_Land_1','Dive_Down_and_Land_2']);return m.idle==='Idle_11'&&m.air==='Fall2'&&m.slide==='slide_light'&&m.slideRight==='slide_right'&&m.land==='Dive_Down_and_Land'&&m.landQuick==='Dive_Down_and_Land_1'&&m.landHard==='Dive_Down_and_Land_2';})(),offlineEngine:typeof THREE!=='undefined'})
 };
 console.log('CRAWFORD FREE RUNNER',window.__CRAWFORD__.contracts());
 requestAnimationFrame(loop);
