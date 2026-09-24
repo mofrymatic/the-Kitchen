@@ -58,14 +58,11 @@
 .graph-diagnostics{margin-top:14px;padding-top:10px;border-top:1px solid rgba(225,182,90,.2)}.graph-diagnostics b{font-size:11px}.diag{font-size:9px;line-height:1.4;padding:5px 0;border-bottom:1px dashed rgba(255,255,255,.06);color:#b9ad99}.diag.warn{color:#ffb1a8}
 @media(max-width:820px){.graph-body{grid-template-columns:1fr}.graph-side{display:none}.graph-head input{max-width:120px}}
 @media(max-width:1030px){.resources .res:nth-child(n+3){display:none}.brand{min-width:165px}.caption{max-width:72vw}}@media(max-width:720px){#app{min-height:540px}.top{left:7px;right:7px;top:7px;height:58px;padding:6px 7px}.brand{min-width:auto}.brand img{width:38px;height:38px}.brand b{font-size:19px}.brand small,.crumb{display:none}.resources{margin-left:auto}.resources .res:nth-child(n+2){display:none}.topbtns .topbtn:nth-child(2){display:none}.caption{left:12px;bottom:214px;max-width:92vw;padding:11px 12px}.caption h1{font-size:31px}.caption p{font-size:11px}.dock{left:7px;right:7px;bottom:7px;height:204px}.jobs{height:152px;grid-auto-columns:clamp(120px,34vw,160px)}.drawer{top:73px;bottom:218px}}
-.wipe{z-index:1;pointer-events:none;display:none}.wipe.on{display:block}
-.wipe-edge{position:absolute;top:0;bottom:0;left:100%;width:3px;z-index:2;pointer-events:none;display:none;background:linear-gradient(180deg,transparent,rgba(255,224,150,.95) 18%,rgba(255,224,150,.95) 82%,transparent);box-shadow:0 0 16px 3px rgba(207,31,44,.6),0 0 34px 8px rgba(225,182,90,.32);will-change:left}.wipe-edge.on{display:block}
-@media(prefers-reduced-motion:reduce){.wipe,.wipe-edge{display:none!important}}
 </style>
 </head>
 <body>
 <div id="app">
-<canvas id="bg" class="scene-bg"></canvas><canvas id="wipe" class="scene-bg wipe" aria-hidden="true"></canvas><div id="wipeEdge" class="wipe-edge" aria-hidden="true"></div><div class="vignette"></div>
+<canvas id="bg" class="scene-bg"></canvas><div class="vignette"></div>
 <header class="top glass">
   <div class="brand"><img src="assets/redeye-logo.png" alt="RED EYE"><div><b>RED EYE</b><small>Stage 0 · Brazen Theaters</small></div></div>
   <div class="crumb"><div class="r" id="crumbRegion"></div><div class="s" id="crumbScene"></div></div>
@@ -94,7 +91,6 @@
 <button class="dev wide" onclick="redeyeDev.secret('unlisted')">Open Unlisted Room</button>
 <button class="dev wide" onclick="redeyeDev.backroom(1,'linkServiceRoom')">Enter Backrooms</button>
 <button class="dev wide" onclick="openSceneGraph()">God\'s Eye Scene Graph</button>
-<button class="dev wide" onclick="redeyeRegression()">Run Regression</button>
 <button class="dev wide" onclick="resetGame()">Reset Stage 0</button></div><div id="log" class="log"></div></aside>
 <section id="sceneGraph" class="graph-overlay">
   <div class="graph-head">
@@ -123,10 +119,10 @@
 <script>
 const $=id=>document.getElementById(id);
 const SHEETS={
- s1:'assets/sheet01.png',s2:'assets/sheet02.png',s3:'assets/sheet03.png',s4:'assets/sheet04.png',s5:'assets/sheet05.png',s6:'assets/sheet06-expanded.png',s7:'assets/sheet07.png',s8:'assets/sheet08.png',s9:'assets/sheet09.png',s10:'assets/sheet10.png',s11:'assets/sheet11.png',s12:'assets/sheet12.png',fry:'assets/frymatic.png'
+ s1:'assets/sheet01.png',s2:'assets/sheet02.png',s3:'assets/sheet03.png',s4:'assets/sheet04.png',s5:'assets/sheet05.png',s6:'assets/sheet06-expanded.png',s7:'assets/sheet07.png',fry:'assets/frymatic.png'
 };
 const IMAGES={};
-function loadImages(){return Promise.all(Object.entries(SHEETS).map(([k,src])=>new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>{IMAGES[k]=im;resolve()};im.onerror=()=>reject(new Error('Missing '+src));im.src=src})));}
+function loadImages(){return Promise.all(Object.entries(SHEETS).map(([k,src])=>new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>{IMAGES[k]=im;resolve()};im.onerror=reject;im.src=src})));}
 const R=(sheet,x,y,w,h)=>({sheet,x,y,w,h});
 const X=[15,300,585,870,1155],Y=[86,412,738],W=269,H=268;
 const ART={
@@ -172,36 +168,6 @@ const ART={
  cellRepair:R('s7',482,821,462,220),
  hobbyShop:R('s7',958,821,453,220)
 };
-/* ═════════════════════════════════════════════════════════════════════
-   ATLAS V2 · TOWER SHEETS  (assets/sheet08.png … sheet12.png)
-   NOTE: the source sheets are *titled* "Spritesheet 11–15"; the files are
-   numbered 08–12. Legacy atlases s1–s7 are untouched (frozen, see R03).
-   Tiles were measured from the white gutters, then inset by V2_INSET px so
-   no gutter bleeds into a cover-crop. To fix a shuffled room, edit ONLY:
-     SCENE_ART_V2  → existing room  ⇒ tile key
-     NEW_ROOMS_V2  → new room       ⇒ tile key (4th arg of S)
-   ═════════════════════════════════════════════════════════════════════ */
-const V2_BASE={art:JSON.stringify(ART),artKeys:Object.keys(ART)};
-const V2_INSET=3;
-const ATLAS_V2={
- s8:{file:'assets/sheet08.png',title:'Lobby / Atrium / Wayfinding',
-  tiles:[[15,76,298,277],[322,76,254,277],[586,76,267,277],[862,76,288,277],[1160,76,274,277],[15,398,234,268],[260,398,303,268],[573,398,287,268],[870,398,283,268],[1164,398,269,268],[15,712,258,300],[283,712,344,300],[637,712,337,300],[985,712,448,300]],
-  keys:['lob_grand','lob_concierge','lob_atrium','lob_elevBank','lob_express','lob_directory','lob_stairs','lob_lounge','lob_coffee','lob_security','lob_totem','lob_balcony','lob_wayArcade','lob_wayTheaters']},
- s9:{file:'assets/sheet09.png',title:'Office / Cowork / Conference',
-  tiles:[[15,75,281,280],[303,75,273,280],[584,75,280,280],[872,75,282,280],[1161,75,272,280],[16,399,276,269],[300,399,274,269],[583,399,281,269],[873,399,276,269],[1158,399,274,269],[16,712,288,309],[312,712,299,309],[620,712,397,309],[1024,712,408,309]],
-  keys:['off_reception','off_hotdesk','off_commons','off_focus','off_meeting','off_boardroom','off_founder','off_podcast','off_edit','off_print','off_pantry','off_terrace','off_confFoyer','off_eventRoom']},
- s10:{file:'assets/sheet10.png',title:'Residences / Private Access / Penthouse',
-  tiles:[[13,67,282,268],[303,67,277,268],[588,67,270,268],[867,67,278,268],[1154,67,281,268],[14,377,281,255],[303,377,276,255],[588,377,270,255],[867,377,277,255],[1154,377,281,255],[14,677,377,339],[401,677,318,339],[728,677,312,339],[1050,677,385,339]],
-  keys:['res_lobby','res_elevHall','res_keycard','res_corridor','res_studio','res_living','res_kitchen','res_bedroom','res_bath','res_balcony','res_salon','res_dining','res_wine','res_stair']},
- s11:{file:'assets/sheet11.png',title:'Fitness / Spa / Sky Lounge / Rooftop',
-  tiles:[[14,71,278,275],[302,71,277,275],[589,71,266,275],[867,71,280,275],[1157,71,278,275],[14,390,265,282],[288,390,286,282],[584,390,276,282],[870,390,280,282],[1160,390,275,282],[14,715,305,301],[328,715,295,301],[633,715,347,301],[990,715,445,301]],
-  keys:['fit_lobby','fit_cardio','fit_weights','fit_stretch','fit_lockers','fit_sauna','fit_spa','fit_juice','sky_lounge','sky_bar','sky_terrace','sky_firepit','sky_lookout','sky_helipad']},
- s12:{file:'assets/sheet12.png',title:'Parking / Service / Loading / Operations',
-  tiles:[[12,69,348,280],[368,69,228,280],[603,69,242,280],[852,69,227,280],[1086,69,350,280],[13,390,275,288],[295,390,284,288],[586,390,276,288],[869,390,284,288],[1160,390,275,288],[13,722,434,299],[454,722,271,299],[732,722,360,299],[1099,722,336,299]],
-  keys:['ops_entryGate','ops_tenantLevel','ops_publicLevel','ops_securityBooth','ops_loadingDock','ops_deliveryBay','ops_freight','ops_serviceCorridor','ops_maintShop','ops_mechanical','ops_control','ops_janitor','ops_waste','ops_backStair']}
-};
-Object.entries(ATLAS_V2).forEach(([sk,a])=>a.tiles.forEach(([x,y,w,h],i)=>{ART[a.keys[i]]=R(sk,x+V2_INSET,y+V2_INSET,w-2*V2_INSET,h-2*V2_INSET)}));
-
 function drawCrop(canvas,key,cover=true){const a=ART[key]||ART.brazen,im=IMAGES[a.sheet];if(!im)return;const rect=canvas.getBoundingClientRect();const dpr=Math.min(devicePixelRatio||1,2);const cw=Math.max(1,Math.floor(rect.width*dpr)),ch=Math.max(1,Math.floor(rect.height*dpr));if(canvas.width!==cw||canvas.height!==ch){canvas.width=cw;canvas.height=ch}const ctx=canvas.getContext('2d');ctx.clearRect(0,0,cw,ch);if(!cover){ctx.drawImage(im,a.x,a.y,a.w,a.h,0,0,cw,ch);return}const srcRatio=a.w/a.h,dstRatio=cw/ch;let sx=a.x,sy=a.y,sw=a.w,sh=a.h;if(srcRatio>dstRatio){sw=a.h*dstRatio;sx=a.x+(a.w-sw)/2}else{sh=a.w/dstRatio;sy=a.y+(a.h-sh)/2}ctx.drawImage(im,sx,sy,sw,sh,0,0,cw,ch)}
 const S=(title,desc,region,art,actions,marquee=title)=>({title,desc,region,art,actions,marquee});
 const SCENES={
@@ -264,108 +230,6 @@ const SCENES={
  audEntry:S('Auditorium Entry','Double doors open onto the main aisle.','auditorium','audEntry',[['aisle','Main Aisle','Enter'],['lobby','Lobby','Back']]),aisle:S('Main Aisle','Rows of red seats lead toward the curtain.','auditorium','aisle',[['row','Find Row','Go to assigned row'],['balcony','Balcony Access','Head upstairs'],['audEntry','Back','Exit auditorium']]),row:S('Row Approach','Seat numbers glow faintly along the row.','auditorium','row',[['seat','Your Seat','Sit here'],['aisle','Aisle','Back']]),seat:S('Seat','Your anchor point in the auditorium.','auditorium','seat',[['seated','Sit Down','Take your seat'],['row','Stand / Back','Return to row']]),seated:S('Seated View','The stage, curtain, balcony, and projector booth are discoverable from here.','auditorium','seated',[['stage','Stage Overview','Look forward'],['lookback','Look Back','See balcony / booth'],['seat','Stand Up','Return to seat']]),lookback:S('Look Back','Balcony rail, projector aperture, rear doors, and the room behind you.','auditorium','lookback',[['balcony','Balcony Access','Explore upstairs'],['seated','Face Stage','Turn around']]),balcony:S('Balcony Access','Upper landing and technical spaces.','auditorium','balcony',[['balconyView','Balcony View','Look over rail'],['projector','Projector Booth','Technical door'],['aisle','Main Floor','Back downstairs']]),balconyView:S('Balcony View','The stage geometry reads differently from above.','auditorium','balconyView',[['stage','Stage','Focus on stage'],['balcony','Landing','Back']]),projector:S('Projector Booth / Controls','Lighting, audio, projection, and event controls.','auditorium','projector',[['balcony','Exit Booth','Back']]),
  stage:S('Stage Overview','The room’s ritual center.','stage','stage',[['curtainClosed','Curtain Closed','Inspect'],['stageAccess','Stage Access Gate','Approach'],['seated','Return to Seat','Back']]),curtainClosed:S('Curtain Closed','Heavy red curtain.','stage','curtainClosed',[['curtainOpen','Open Curtain','Trigger reveal'],['stage','Stage Overview','Back']]),curtainOpen:S('Curtain Open','The curtain parts and reveals the screen.','stage','curtainOpen',[['screen','Screen Revealed','Continue'],['curtainClosed','Close Curtain','Reset']]),screen:S('Screen Revealed','Cinema / game / announcement surface.','stage','screen',[['announcement','Announcement Mode','Show host setup'],['stage','Stage Overview','Back']],'THE OBSCURE CASE OF GRACE BLAND'),announcement:S('Announcement Stage','Podium, microphone, spotlight.','stage','announcement',[['screen','Screen','Back'],['centerStage','Center Stage','Step onto stage']]),stageAccess:S('Stage Access Gate','A restricted threshold near the apron.','stage','stageAccess',[['centerStage','Enter Stage','Prototype allows access'],['stage','Back','Return']]),centerStage:S('Center Stage','The rare reverse perspective: the player faces the audience.','stage','centerStage',[['audienceView','View to Audience','Turn outward'],['stage','Stage Overview','Back']]),audienceView:S('View From Stage to Audience','Rows, balcony, house lights, and the sense of being the one watched.','stage','audienceView',[['centerStage','Center Stage','Back']])
 };
-/* ═════════════════════════════════════════════════════════════════════
-   SCENES V2 · map the tower atlases onto rooms. Strictly additive:
-   no legacy scene id removed, no legacy action removed (see R09/R10).
-   ═════════════════════════════════════════════════════════════════════ */
-const V2_BASE_SCENES=JSON.parse(JSON.stringify(SCENES));
-
-/* Existing rooms → new art. Anything not listed keeps its legacy art
-   (restaurant, amenities, tower, windowRig, gymLounge, elevator landings). */
-const SCENE_ART_V2={
-  /* sheet08 · lobby */
-  towerLobby:'lob_grand', towerElevators:'lob_elevBank', elevatorRooftop:'lob_express',
-  /* sheet09 · office / cowork */
-  corporateOffice:'off_reception', coworkReception:'off_commons', openFloor:'off_hotdesk',
-  focusRooms:'off_focus', meeting:'off_meeting', terrace:'off_terrace',
-  /* sheet10 · residences */
-  resLobby:'res_lobby', elevatorResidence:'res_elevHall', residenceElevators:'res_keycard',
-  units:'res_corridor', penthouses:'res_salon',
-  /* sheet11 · fitness / sky */
-  gymLobby:'fit_lobby', gymCardio:'fit_cardio', gymWeights:'fit_weights', gymStudios:'fit_stretch',
-  gymLockers:'fit_lockers', gymSpa:'fit_spa', rooftop:'sky_terrace', helipad:'sky_helipad',
-  /* sheet12 · garage / service */
-  parking:'ops_entryGate'
-};
-Object.entries(SCENE_ART_V2).forEach(([id,key])=>{if(SCENES[id])SCENES[id].art=key});
-
-/* Tiles with no existing room become new rooms. */
-const NEW_ROOMS_V2={
-  /* — lobby cluster · sheet08 — */
-  towerConcierge:S('Brazen Tower · Concierge','A brass-and-black-marble desk under the tower crest. The concierge knows which floors exist and, discreetly, which ones do not.','tower lobby','lob_concierge',[['towerLobby','Main Lobby','Back'],['towerDirectory','Directory','Read the floors'],['towerSecurity','Security Desk','Beside the desk']],'CONCIERGE'),
-  towerAtrium:S('Brazen Tower · Atrium','A tiered crystal chandelier hangs through the full height of the lobby, lit against the night skyline.','tower lobby','lob_atrium',[['towerLobby','Main Lobby','Back'],['towerStairHall','Twin Stair Hall','Toward the mezzanine'],['towerLounge','Lobby Lounge','Sit a moment']],'ATRIUM'),
-  towerDirectory:S('Brazen Tower · Directory','A brass directory lists Tower Elevators, Office Suites, Brazen Theaters, FTS Arcade, Dining & Retail, Fitness & Wellness, and the Sky Lounge.','tower lobby','lob_directory',[['towerLobby','Main Lobby','Back'],['towerConcierge','Concierge','Ask in person'],['towerTotem','Wayfinding Totem','Touch to explore']],'DIRECTORY'),
-  towerStairHall:S('Brazen Tower · Twin Stair Hall','Two red-carpeted stairs rise around a floral centerpiece toward a HIGHER TOGETHER banner.','tower lobby','lob_stairs',[['towerAtrium','Atrium','Back down'],['towerBalcony','Upper Balcony','Climb'],['towerLobby','Main Lobby','Return to the floor']],'HIGHER TOGETHER'),
-  towerBalcony:S('Brazen Tower · Upper Balcony','A brass rail at chandelier height: the whole lobby laid out below, small figures crossing the marble.','tower lobby','lob_balcony',[['towerStairHall','Twin Stair Hall','Back down'],['towerAtrium','Atrium','Lean over the rail']],'UPPER BALCONY'),
-  towerLounge:S('Brazen Tower · Lobby Lounge','Red velvet armchairs, palms in brass planters, and floor-to-ceiling glass on the city.','tower lobby','lob_lounge',[['towerLobby','Main Lobby','Back'],['towerCoffee','Brazen Brew','Coffee kiosk'],['towerAtrium','Atrium','Under the chandelier']],'LOBBY LOUNGE'),
-  towerCoffee:S('Brazen Brew · Lobby Kiosk','Higher ideas, better coffee. A gilded kiosk with pastries under glass and a menu board glowing over the espresso machine.','tower lobby','lob_coffee',[['towerLounge','Lobby Lounge','Back'],['towerLobby','Main Lobby','Walk out']],'BRAZEN BREW'),
-  towerSecurity:S('Brazen Tower · Security Desk','An officer in a peaked cap watches the lobby beneath a gold reticle. Nothing here goes unobserved.','tower lobby','lob_security',[['towerLobby','Main Lobby','Back'],['towerConcierge','Concierge','Next desk over']],'SECURITY'),
-  towerTotem:S('Brazen Tower · Wayfinding Totem','A lit touchscreen totem: EXPLORE. DISCOVER. CONNECT. Touch to explore.','tower lobby','lob_totem',[['towerLobby','Main Lobby','Back'],['towerWayArcade','FTS Arcade Signage','Follow the neon'],['towerWayTheaters','Brazen Theaters Signage','Follow the red carpet'],['towerDirectory','Directory','Read the brass']],'EXPLORE · DISCOVER · CONNECT'),
-  towerWayArcade:S('Wayfinding · FTS Arcade','A neon controller sign: GAMES. PEOPLE. HIGHER LEVELS. The arrow points outside and next door.','tower lobby','lob_wayArcade',[['towerTotem','Wayfinding Totem','Back'],['brazen','Brazen Theaters','Follow the arrow next door']],'FTS ARCADE →'),
-  towerWayTheaters:S('Wayfinding · Brazen Theaters','Gold masks on a red banner: BIGGER STORIES, A BRIGHTER TOMORROW. The carpet runs toward the marquee.','tower lobby','lob_wayTheaters',[['towerTotem','Wayfinding Totem','Back'],['brazen','Brazen Theaters','Follow the carpet next door']],'THEATERS →'),
-
-  /* — cowork / corporate / conference · sheet09 — */
-  coworkPantry:S('Cowork · Pantry / Coffee Bar','Brazen Brew’s upstairs sibling: espresso, pastries, and stools under an amber strip light.','cowork','off_pantry',[['coworkReception','Reception','Back'],['terrace','Terrace','Carry your cup outside']],'BRAZEN BREW'),
-  conferenceFoyer:S('Conference Center · Foyer','Signage for Main Hall, Breakout A and B, Event Lounge, and Registration under twin banners and a crystal chandelier.','cowork','off_confFoyer',[['coworkReception','Cowork Reception','Back'],['conferenceHall','Main Hall','Event presentation room'],['meeting','Meeting Rooms','Breakouts']],'CONFERENCE CENTER'),
-  conferenceHall:S('Conference Center · Main Hall','Red theater seating, a lit podium, and a BRAZEN STUDIOS, INC. title card on the big screen.','cowork','off_eventRoom',[['conferenceFoyer','Foyer','Back']],'IDEAS TODAY · A BRIGHTER TOMORROW'),
-  corporateBoardroom:S('Corporate · Glass Boardroom','HIGHER TOGETHER. A long lacquer table under a chandelier, the skyline as wallpaper.','corporate','off_boardroom',[['corporateOffice','Corporate Offices','Back'],['corporateFounder','Founder Office','Next door']],'HIGHER TOGETHER'),
-  corporateFounder:S('Corporate · Founder Office','Bookshelves, a gold reticle on the wall, two armchairs, and a desk that decides things. DISCIPLINE. CREATIVITY. CAPITAL. CULTURE.','corporate','off_founder',[['corporateOffice','Corporate Offices','Back'],['corporateBoardroom','Glass Boardroom','Next door']],'FOUNDER'),
-  corporatePodcast:S('Corporate · Podcast Studio','ON AIR. Brazen Podcast: two cameras, four microphones, red chairs, and acoustic slats behind the logo.','corporate','off_podcast',[['corporateOffice','Corporate Offices','Back'],['corporateEdit','Edit Suite','Next door']],'ON AIR'),
-  corporateEdit:S('Corporate · Edit Suite','Twin monitors and a timeline glowing over a night skyline. SHAPE THE NEXT.','corporate','off_edit',[['corporateOffice','Corporate Offices','Back'],['corporatePodcast','Podcast Studio','Next door']],'SHAPE THE NEXT'),
-  corporatePrint:S('Corporate · Print / Mail Room','Copiers, shelving, a parcel cart. PRINT. SHIP. SUPPORT. REPEAT. IDEAS MOVE PEOPLE.','corporate','off_print',[['corporateOffice','Corporate Offices','Back']],'PRINT · SHIP · REPEAT'),
-
-  /* — residences · sheet10 — */
-  unitStudio:S('Residence · Studio','An open-plan studio: sofa, bed, kitchenette, and a wall of lit skyline.','residence','res_studio',[['units','Residential Floors','Back to the corridor']],'STUDIO'),
-  unitLiving:S('Residence · One-Bedroom Living Room','Sofa, armchairs, a glass coffee table, and a skyline in every window.','residence','res_living',[['unitKitchen','Kitchen / Dining','Through the arch'],['unitBedroom','Bedroom Suite','Down the hall'],['unitBalcony','Balcony','Slide the glass'],['units','Residential Floors','Back to the corridor']],'ONE BEDROOM'),
-  unitKitchen:S('Residence · Kitchen / Dining','Black marble island, three red stools, and pendant lights over a spotless counter.','residence','res_kitchen',[['unitLiving','Living Room','Back']],'KITCHEN'),
-  unitBedroom:S('Residence · Bedroom Suite','A tufted headboard, a bench at the foot of the bed, and abstract art lit like a gallery piece.','residence','res_bedroom',[['unitBath','Bathroom Vanity','Through the door'],['unitLiving','Living Room','Back']],'BEDROOM SUITE'),
-  unitBath:S('Residence · Bathroom Vanity','A backlit mirror, folded towels, a robe on the hook, and a glass shower behind.','residence','res_bath',[['unitBedroom','Bedroom Suite','Back']],'VANITY'),
-  unitBalcony:S('Residence · Balcony View','Two chairs and a candle table facing a skyline. Across the way, the BRAZEN TOWER sign glows.','residence','res_balcony',[['unitLiving','Living Room','Back inside']],'BALCONY'),
-  pentDining:S('Penthouse · Private Dining Room','A long marble table set for a dozen, red velvet chairs, and a wine wall behind the glass.','residence','res_dining',[['penthouses','Penthouse Salon','Back'],['pentWine','Wine / Library Nook','Around the corner']],'PRIVATE DINING'),
-  pentWine:S('Penthouse · Wine / Library Nook','Floor-to-ceiling bottles and books, two red armchairs, a decanter on a brass table. GOOD PEOPLE. BETTER STORIES.','residence','res_wine',[['penthouses','Penthouse Salon','Back'],['pentDining','Private Dining Room','Next door']],'GOOD PEOPLE · BETTER STORIES'),
-  pentStair:S('Penthouse · Duplex Landing','A curved marble stair with a brass rail spirals past a sculpture toward HIGHER LIVING TOGETHER.','residence','res_stair',[['penthouses','Penthouse Salon','Back']],'DUPLEX'),
-
-  /* — gym / sky · sheet11 — */
-  gymSauna:S('Gym · Sauna','Warm cedar behind a brass-trimmed door. HEAT. RESTORE. RENEW.','gym','fit_sauna',[['gymLockers','Lockers','Back'],['gymSpa','Spa','Rest'],['gymLobby','Gym Lobby','Leave']],'SAUNA'),
-  gymJuice:S('Gym · Brazen Fuel Juice Bar','Smoothies, cold press, protein, wellness shots. CLEANER DAYS, BRIGHTER TOMORROWS.','gym','fit_juice',[['gymLobby','Gym Lobby','Back']],'BRAZEN FUEL'),
-  skyLounge:S('The Sky Lounge','Red velvet seating in floor-to-ceiling glass. HIGHER PEOPLE. BRIGHTER CONVERSATIONS.','tower','sky_lounge',[['skyBar','Cocktail Bar','Order'],['rooftop','Rooftop','Step outside']],'SKY LOUNGE'),
-  skyBar:S('The Sky Lounge · Cocktail Bar','GOOD COMPANY. HIGHER GROUND. A bartender in a white jacket under a chandelier of bottles.','tower','sky_bar',[['skyLounge','Lounge Seating','Back'],['rooftop','Rooftop','Step outside']],'GOOD COMPANY · HIGHER GROUND'),
-  rooftopFirepit:S('Rooftop · Firepit Corner','A sunken flame between sectional sofas with the skyline behind. BETTER NIGHTS. HIGHER TOMORROWS.','tower','sky_firepit',[['rooftop','Rooftop','Back'],['skylineLookout','Skyline Lookout','Along the rail']],'FIREPIT'),
-  skylineLookout:S('Rooftop · Skyline Lookout','A brass rail, a coin-op viewer, and every window in the city lit below. A BRIGHTER TOMORROW LIVES HERE.','tower','sky_lookout',[['rooftop','Rooftop','Back'],['rooftopFirepit','Firepit Corner','Along the rail']],'SKYLINE'),
-
-  /* — garage / service · sheet12 — */
-  garageTenantLevel:S('Garage · Tenant Level A1','Reserved bays under yellow-banded columns. EXCEPTIONAL PEOPLE PARK HERE.','garage','ops_tenantLevel',[['parking','Garage Interior','Back']],'TENANT PARKING'),
-  garagePublicLevel:S('Garage · Public Level B1','Visitors welcome. Arrows on the concrete point toward the exit ramp.','garage','ops_publicLevel',[['parking','Garage Interior','Back']],'PUBLIC PARKING'),
-  garageSecurity:S('Garage · Security Booth','A glass booth, a camera on each corner, and a sign: ALL VEHICLES SUBJECT TO INSPECTION.','garage','ops_securityBooth',[['parking','Garage Interior','Back'],['loadingDock','Loading Dock','Service entrance']],'SECURITY'),
-  loadingDock:S('Service · Loading Dock','Two roll-up bays, a BRAZEN TOWER truck backed in, pallets stacked inside the yellow safety lines.','service','ops_loadingDock',[['garageSecurity','Security Booth','Back'],['deliveryBay','Delivery Bay','Inside'],['parking','Garage Interior','Up the ramp']],'SERVICE A HIGHER STANDARD'),
-  deliveryBay:S('Service · Delivery Bay','Parcel carts, rolling bins, and a long hall of double doors. SUPPORTING A BRIGHTER TOMORROW.','service','ops_deliveryBay',[['loadingDock','Loading Dock','Back'],['freightElevator','Freight Elevator','Go up'],['serviceCorridor','Service Corridor','Deeper inside'],['wasteRoom','Waste / Recycling','Round the corner']],'DELIVERIES'),
-  freightElevator:S('Service · Freight Elevator','A wide steel car, a pallet jack, and cartons stacked against the wall.','service','ops_freight',[['deliveryBay','Delivery Bay','Back'],['serviceCorridor','Service Corridor','Step out']],'FREIGHT'),
-  serviceCorridor:S('Service · Back-of-House Corridor','Pipes overhead, doors either side, a yellow line down the floor. BUILDING TOMORROW BEHIND THE SCENES.','service','ops_serviceCorridor',[['deliveryBay','Delivery Bay','Back'],['freightElevator','Freight Elevator','Ride up'],['maintShop','Maintenance Shop','Maintenance FOB'],['mechRoom','Mechanical Room','Maintenance FOB'],['opsControl','Operations Control','Maintenance FOB'],['janitorial','Janitorial Closet','Supplies'],['wasteRoom','Waste / Recycling','Bins'],['backStair','Back Stair','Stair A']],'BACK OF HOUSE'),
-  maintShop:S('Service · Maintenance Shop','Pegboard tools, a red rolling chest, and a work bench under a bare bulb.','service','ops_maintShop',[['serviceCorridor','Service Corridor','Back']],'MAINTENANCE'),
-  mechRoom:S('Service · Mechanical Room','HVAC. PLUMBING. POWER. LIFE SAFETY. BMS. KEEP BRAZEN RUNNING.','service','ops_mechanical',[['serviceCorridor','Service Corridor','Back'],['opsControl','Operations Control','Next door']],'KEEP BRAZEN RUNNING'),
-  opsControl:S('Service · Operations Control Room','MONITOR. MAINTAIN. RESPOND. PROTECT. SUPPORT. A wall of camera feeds watches every floor.','service','ops_control',[['serviceCorridor','Service Corridor','Back'],['mechRoom','Mechanical Room','Next door']],'OPERATIONS'),
-  janitorial:S('Service · Janitorial Closet','Shelves of linens, a mop bucket, a yellow CAUTION sign. A CLEANER TOMORROW TOGETHER.','service','ops_janitor',[['serviceCorridor','Service Corridor','Back']],'JANITORIAL'),
-  wasteRoom:S('Service · Waste / Recycling','Waste, recycling, organics. REDUCE. REUSE. RECYCLE. A BRIGHTER TOMORROW.','service','ops_waste',[['deliveryBay','Delivery Bay','Back'],['serviceCorridor','Service Corridor','Inside']],'RECYCLING'),
-  backStair:S('Service · Back Stair','Stair A: floors 1–20 and roof access. An EXIT sign burns red over a steel door.','service','ops_backStair',[['serviceCorridor','Service Corridor','Back'],['rooftop','Roof Access','Stair A · Rooftop FOB']],'STAIR A')
-};
-Object.assign(SCENES,NEW_ROOMS_V2);
-
-/* New edges on existing rooms (appended; existing edges untouched). */
-const LINKS_V2={
-  towerLobby:[['towerConcierge','Concierge','Front desk'],['towerAtrium','Atrium','Look up'],['towerDirectory','Directory','Read the floors'],['towerStairHall','Twin Stair Hall','Mezzanine'],['towerLounge','Lobby Lounge','Velvet and coffee'],['towerSecurity','Security Desk','Officer on duty'],['towerTotem','Wayfinding Totem','Touch to explore']],
-  coworkReception:[['coworkPantry','Pantry / Coffee Bar','Espresso upstairs'],['conferenceFoyer','Conference Center','Events wing']],
-  meeting:[['conferenceFoyer','Conference Center','Main hall and breakouts']],
-  corporateOffice:[['corporateBoardroom','Glass Boardroom','Convene'],['corporateFounder','Founder Office','Corner suite'],['corporatePodcast','Podcast Studio','On air'],['corporateEdit','Edit Suite','Post-production'],['corporatePrint','Print / Mail Room','Ship it']],
-  units:[['unitStudio','Studio Residence','Open plan'],['unitLiving','One-Bedroom Residence','Full suite']],
-  penthouses:[['pentDining','Private Dining Room','Dinner for twelve'],['pentWine','Wine / Library Nook','Bottles and books'],['pentStair','Duplex Landing','Sweeping stair']],
-  gymLobby:[['gymSauna','Sauna','Heat'],['gymJuice','Juice Bar','Brazen Fuel']],
-  gymLockers:[['gymSauna','Sauna Entry','Heat']],
-  gymSpa:[['gymSauna','Sauna Entry','Heat']],
-  rooftop:[['skyLounge','Sky Lounge','Velvet and glass'],['rooftopFirepit','Firepit Corner','Warm up'],['skylineLookout','Skyline Lookout','Look out']],
-  parking:[['garageTenantLevel','Tenant Level A1','Tenant FOB'],['garagePublicLevel','Public Level B1','Visitors'],['garageSecurity','Security Booth','Check-in'],['loadingDock','Loading Dock','Service side']]
-};
-Object.entries(LINKS_V2).forEach(([id,acts])=>acts.forEach(a=>{if(SCENES[id]&&!SCENES[id].actions.some(x=>x[0]===a[0]))SCENES[id].actions.push(a)}));
-
 const ITEMS={frymatic:{name:'the frymatic',art:'frymatic',rarity:'LEGENDARY · ARTIFACT',description:'The canonical frymatic: an ornate mechanical clarinet/typewriter/sidearm hybrid attributed to the Blazin Kitchen system. Tunes probability, composition, and cuisine.',href:'https://www.x.com/mofrymatic'}};
 const OBJECTIVES=[['Find Brazen Theaters',s=>s.visited.includes('brazen')],['Buy General Admission',s=>s.entitlements.admission.purchased],['Enter the Lobby',s=>s.visited.includes('lobby')],['Take your seat',s=>s.visited.includes('seated')],['Open the curtain',s=>s.visited.includes('curtainOpen')],['Step onto Center Stage',s=>s.visited.includes('centerStage')],['Earn VIP Access',s=>s.entitlements.vip.purchased||s.entitlements.vip.invited],['Enter the VIP Lounge',s=>s.visited.includes('vipLounge')],['Reach the Gym Lounge',s=>s.visited.includes('gymLounge')],['Enter Brazen Tower Lobby',s=>s.visited.includes('towerLobby')],['Ride the Main Elevators',s=>s.visited.includes('towerElevators')],['Reach the Rooftop',s=>s.visited.includes('rooftop')]];
 const SAVE_KEY='redeye_stage0_v2';
@@ -478,8 +342,6 @@ const ACCESS_TARGETS={
   elevatorRooftop:'rooftop',rooftop:'rooftop',
   windowRig:'maintenance'
 };
-/* V2: only the new *entry points* are gated; sub-rooms inherit from their gated parent. */
-Object.assign(ACCESS_TARGETS,{garageTenantLevel:'tenantParking',maintShop:'maintenance',mechRoom:'maintenance',opsControl:'maintenance'});
 function hasTowerAccess(kind){
   if(kind==='gym'&&(state.entitlements.vip.redeemed||state.entitlements.vip.invited))return true;
   return !!state.access?.[kind];
@@ -509,7 +371,7 @@ function rewardExteriorWalk(from,target){
   }
 }
 function actionArt(target){return ({
-  buyTicket:'boxoffice',buyVip:'boxoffice',enterLobby:'lobby',externalFTS:'fts',
+  buyTicket:'boxoffice',buyVip:'boxoffice',enterLobby:'lobby',externalFTS:'fts',towerElevators:'corporate',
   joinTournamentSeries:'ftsTournamentKiosk',enterBackrooms:'backroomA',
   nextBackroom:backroomArt((state.backrooms?.depth||1)+1),backroomDoor:'secretDoor'
 }[target])||(SCENES[target]?.art)||(state.scene==='backroom'?backroomArt(state.backrooms?.depth):state.scene)}
@@ -588,7 +450,7 @@ function renderInventory(){
     d.appendChild(text);list.appendChild(d);requestAnimationFrame(()=>drawCrop(c,item.art,false));
   });
 }
-function render(){applyDevMode();const __wd=wipePrepare();const scene=state.scene==='backroom'?S('Backroom '+Math.max(1,state.backrooms.depth||1),'The architecture repeats without promising to repeat exactly. There is always another backroom, and always one ordinary-looking door. That door returns to the link-only room that first admitted you.','backrooms',backroomArt(state.backrooms.depth),[['nextBackroom','Another Backroom','Continue indefinitely'],['backroomDoor','The Door','Return to your originating secret room']],'NO DIRECTORY'):SCENES[state.scene]||SCENES.shoes;$('title').textContent=scene.title;$('desc').textContent=scene.desc;$('region').textContent=scene.region;$('marquee').textContent=scene.marquee;$('crumbRegion').textContent=scene.region+' · Stage 0';$('crumbScene').textContent=scene.title;$('seen').textContent=`${state.visited.length} / ${Object.keys(SCENES).length} mapped scenes seen`;requestAnimationFrame(()=>{drawCrop($('bg'),scene.art,true);if(__wd)wipeRun(__wd)});renderStats();renderJobs(scene);renderObjectives();renderInventory();renderInvBadge()}
+function render(){applyDevMode();const scene=state.scene==='backroom'?S('Backroom '+Math.max(1,state.backrooms.depth||1),'The architecture repeats without promising to repeat exactly. There is always another backroom, and always one ordinary-looking door. That door returns to the link-only room that first admitted you.','backrooms',backroomArt(state.backrooms.depth),[['nextBackroom','Another Backroom','Continue indefinitely'],['backroomDoor','The Door','Return to your originating secret room']],'NO DIRECTORY'):SCENES[state.scene]||SCENES.shoes;$('title').textContent=scene.title;$('desc').textContent=scene.desc;$('region').textContent=scene.region;$('marquee').textContent=scene.marquee;$('crumbRegion').textContent=scene.region+' · Stage 0';$('crumbScene').textContent=scene.title;$('seen').textContent=`${state.visited.length} / ${Object.keys(SCENES).length} mapped scenes seen`;requestAnimationFrame(()=>drawCrop($('bg'),scene.art,true));renderStats();renderJobs(scene);renderObjectives();renderInventory();renderInvBadge()}
 
 const GRAPH_SPECIAL_DEST={enterLobby:'lobby',enterBackrooms:'backroom',nextBackroom:'backroom'};
 const GRAPH_NONSPATIAL=new Set(['buyTicket','buyVip','joinTournamentSeries']);
@@ -721,185 +583,6 @@ function toggleDrawer(id){
     e.preventDefault();setDevMode(!devModeEnabled);
   }
 });
-/* ═════════════════════════════════════════════════════════════════════
-   WIPE TRANSITION
-   Convention: the map is read left→right as progression from the street
-   (BFS depth from 'shoes'). Move RIGHT (deeper/forward) ⇒ the wipe front
-   travels RIGHT→LEFT ("wipe left"). Move LEFT (back/out) ⇒ front travels
-   LEFT→RIGHT ("wipe right"). Block perimeter is clockwise = right.
-   Direction is antisymmetric by construction: dir(a→b) = −dir(b→a).
-   ═════════════════════════════════════════════════════════════════════ */
-const WIPE_MS=560,WIPE_FEATHER=9;
-let wipePrevKey=null,wipeRaf=0,_wipeDepth=null;
-const WIPE_HINTS=(()=>{const h={},ring=['blockWest','blockNorth','blockEast','blockSouth'];ring.forEach((a,i)=>{const b=ring[(i+1)%4];h[a+'>'+b]=1;h[b+'>'+a]=-1});return h})();
-function wipeSceneKey(){return state.scene==='backroom'?'backroom:'+Math.max(1,state.backrooms?.depth||1):state.scene}
-function wipeDepth(){
-  if(_wipeDepth)return _wipeDepth;
-  const d={shoes:0},q=['shoes'];
-  while(q.length){const a=q.shift();(SCENES[a]?.actions||[]).forEach(([t])=>{const to=t==='enterLobby'?'lobby':t;if(SCENES[to]&&!(to in d)){d[to]=d[a]+1;q.push(to)}})}
-  if(!('linkServiceRoom' in d)&&('lobby' in d))d.linkServiceRoom=d.lobby+1;
-  if(!('unlistedRoom' in d)&&('vipLounge' in d))d.unlistedRoom=d.vipLounge+1;
-  return _wipeDepth=d;
-}
-function wipeBackish(a,b){
-  const act=(SCENES[a]?.actions||[]).find(x=>x[0]===b||(x[0]==='enterLobby'&&b==='lobby'));
-  return act&&/\b(back|return|leave|descend|exit)\b/i.test(act[1]+' '+(act[2]||''))?1:0;
-}
-function wipeDirection(from,to){
-  const isB=k=>String(k).startsWith('backroom');
-  if(isB(from)&&isB(to))return Number(String(to).split(':')[1])>=Number(String(from).split(':')[1])?1:-1;
-  if(isB(to))return 1;if(isB(from))return -1;
-  const h=WIPE_HINTS[from+'>'+to];if(h)return h;
-  const D=wipeDepth();if(from in D&&to in D&&D[to]!==D[from])return D[to]>D[from]?1:-1;
-  const s=wipeBackish(to,from)-wipeBackish(from,to);if(s)return s>0?1:-1;
-  return from<to?1:-1;
-}
-/* Mask over the OLD frame. dir>0: old frame survives on the left, front sweeps right→left. */
-function wipeMask(dir,t){const f=WIPE_FEATHER,s=(1-t)*(100+f);return `linear-gradient(to ${dir>0?'right':'left'},#000 ${(s-f).toFixed(2)}%,transparent ${s.toFixed(2)}%)`}
-function wipeReduced(){try{return matchMedia('(prefers-reduced-motion: reduce)').matches}catch{return false}}
-function wipeStop(){
-  cancelAnimationFrame(wipeRaf);wipeRaf=0;
-  const w=$('wipe'),e=$('wipeEdge');
-  if(w){w.classList.remove('on');w.style.maskImage=w.style.webkitMaskImage='none'}
-  if(e)e.classList.remove('on');
-}
-/* Called at the top of render(): snapshots the outgoing frame when the scene changed. */
-function wipePrepare(){
-  const key=wipeSceneKey(),prev=wipePrevKey;wipePrevKey=key;
-  if(prev===null||prev===key||wipeReduced())return 0;
-  const b=$('bg'),w=$('wipe');
-  if(!b||!w||!b.width||!b.height)return 0;
-  const dir=wipeDirection(prev,key);
-  wipeStop();
-  w.width=b.width;w.height=b.height;
-  try{w.getContext('2d').drawImage(b,0,0)}catch{return 0}
-  w.style.maskImage=w.style.webkitMaskImage=wipeMask(dir,0);
-  w.classList.add('on');
-  return dir;
-}
-/* Called after the new frame is painted into #bg. */
-function wipeRun(dir){
-  const w=$('wipe'),e=$('wipeEdge'),t0=performance.now();
-  e.classList.add('on');
-  const ease=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
-  const step=now=>{
-    const raw=Math.min(1,(now-t0)/WIPE_MS),t=ease(raw),s=(1-t)*(100+WIPE_FEATHER);
-    w.style.maskImage=w.style.webkitMaskImage=wipeMask(dir,t);
-    const front=dir>0?s-WIPE_FEATHER/2:100-(s-WIPE_FEATHER/2);
-    e.style.left=`calc(${Math.max(0,Math.min(100,front)).toFixed(2)}% - 1.5px)`;
-    if(raw<1)wipeRaf=requestAnimationFrame(step);else wipeStop();
-  };
-  wipeRaf=requestAnimationFrame(step);
-}
-window.redeyeWipe={direction:wipeDirection,mask:wipeMask,depth:wipeDepth};
-
-/* ═════════════════════════════════════════════════════════════════════
-   REGRESSION SUITE · window.redeyeRegression()  (also: Dev → Run Regression)
-   Criteria, in the order they protect the game:
-   R01 tiles inside image bounds        R09 legacy edges preserved
-   R02 tile census (70, unique, no      R10 save-compat (ids, key, start)
-       collision with legacy keys)      R11 every new room reachable + escapable
-   R03 legacy art frozen                R12 gating: fresh player / full-FOB player
-   R04 tile pixels are art, not gutter  R13 wipe direction: antisymmetric + sane
-   R05 every scene resolves art         R14 wipe mask geometry
-   R06 remap targets valid              R15 DOM contract for the wipe layer
-   R07 one tile ⇒ one room (70/70)      R16 no new external deps (static; CI)
-   R08 no dangling actions
-   ═════════════════════════════════════════════════════════════════════ */
-function redeyeRegression(){
-  const out=[];
-  const T=(id,name,fn)=>{let r;try{r=fn()||{ok:true}}catch(e){r={ok:false,msg:'threw: '+e.message}}
-    out.push({id,name,status:r.skip?'SKIP':(r.ok?'PASS':'FAIL'),detail:r.msg||''})};
-  const V2KEYS=Object.values(ATLAS_V2).flatMap(a=>a.keys);
-  const SPECIAL=new Set(['buyTicket','buyVip','enterLobby','externalFTS','joinTournamentSeries','enterBackrooms','nextBackroom','backroomDoor']);
-  const NEWIDS=Object.keys(NEW_ROOMS_V2);
-  const nextOf=(id)=>(SCENES[id]?.actions||[]).map(a=>a[0]==='enterLobby'?'lobby':a[0]).filter(t=>SCENES[t]);
-  const reach=(start,ok=()=>true)=>{const seen=new Set([start]),q=[start];while(q.length){const a=q.shift();(SCENES[a]?.actions||[]).forEach(([t])=>{if(!ok(t))return;const to=t==='enterLobby'?'lobby':t;if(SCENES[to]&&!seen.has(to)){seen.add(to);q.push(to)}})}return seen};
-  const withState=(patch,fn)=>{const snap=JSON.stringify(state);try{Object.assign(state,patch);return fn()}finally{const o=JSON.parse(snap);Object.keys(state).forEach(k=>delete state[k]);Object.assign(state,o)}};
-  const fresh={access:Object.fromEntries(Object.keys(state.access).map(k=>[k,false])),entitlements:{admission:{purchased:false,redeemed:false},vip:{purchased:false,redeemed:false,invited:false}}};
-  const full={access:Object.fromEntries(Object.keys(state.access).map(k=>[k,true])),entitlements:{admission:{purchased:true,redeemed:false},vip:{purchased:true,redeemed:true,invited:true}}};
-
-  T('R01','tiles inside image bounds',()=>{
-    const bad=[];let n=0;
-    for(const [sk,a] of Object.entries(ATLAS_V2)){const im=IMAGES[sk];if(!im)return{skip:true,msg:'atlas images not loaded'};
-      a.keys.forEach(k=>{const r=ART[k];n++;if(r.x<0||r.y<0||r.x+r.w>im.naturalWidth||r.y+r.h>im.naturalHeight)bad.push(k)})}
-    return{ok:!bad.length,msg:bad.length?'out of bounds: '+bad.join(', '):n+' tiles in bounds'}});
-  T('R02','tile census: 5×14, unique, no legacy collision',()=>{
-    const legacy=new Set(V2_BASE.artKeys),dup=V2KEYS.filter((k,i)=>V2KEYS.indexOf(k)!==i),hit=V2KEYS.filter(k=>legacy.has(k));
-    const per=Object.values(ATLAS_V2).map(a=>a.tiles.length+'/'+a.keys.length).join(' ');
-    return{ok:V2KEYS.length===70&&!dup.length&&!hit.length&&Object.values(ATLAS_V2).every(a=>a.tiles.length===14&&a.keys.length===14),msg:`${V2KEYS.length} keys (${per}) dup:${dup.length} legacy-collisions:${hit.length}`}});
-  T('R03','legacy art frozen',()=>{
-    const base=JSON.parse(V2_BASE.art),drift=V2_BASE.artKeys.filter(k=>JSON.stringify(ART[k])!==JSON.stringify(base[k]));
-    return{ok:!drift.length,msg:drift.length?'drifted: '+drift.join(', '):V2_BASE.artKeys.length+' legacy keys unchanged'}});
-  T('R04','tile pixels are art (not gutter / misaligned)',()=>{
-    const bad=[];let n=0;
-    for(const [sk,a] of Object.entries(ATLAS_V2)){
-      const im=IMAGES[sk];if(!im)return{skip:true,msg:'atlas images not loaded'};
-      const c=document.createElement('canvas');c.width=c.height=24;const x=c.getContext('2d');if(!x||!x.getImageData)return{skip:true,msg:'no canvas pixel access'};
-      for(const k of a.keys){const r=ART[k];x.clearRect(0,0,24,24);x.drawImage(im,r.x,r.y,r.w,r.h,0,0,24,24);
-        let d;try{d=x.getImageData(0,0,24,24).data}catch{return{skip:true,msg:'canvas tainted (open via http, not file://)'}}
-        let white=0,lum=0;for(let i=0;i<d.length;i+=4){if(d[i]>235&&d[i+1]>235&&d[i+2]>235)white++;lum+=(d[i]+d[i+1]+d[i+2])/3}
-        white/=576;lum/=576;n++;if(white>.06||lum>170)bad.push(`${k}(w${white.toFixed(2)})`)}}
-    return{ok:!bad.length,msg:bad.length?'suspect: '+bad.join(', '):n+' tiles clean'}});
-  T('R05','every scene resolves art + has title/desc/region/actions',()=>{
-    const bad=Object.entries(SCENES).filter(([id,s])=>!ART[s.art]||!s.title||!s.desc||!s.region||!Array.isArray(s.actions)||!s.actions.length).map(([id])=>id);
-    return{ok:!bad.length,msg:bad.length?'broken: '+bad.join(', '):Object.keys(SCENES).length+' scenes ok'}});
-  T('R06','remap targets are real legacy rooms + real tiles',()=>{
-    const bad=Object.entries(SCENE_ART_V2).filter(([id,k])=>!V2_BASE_SCENES[id]||!V2KEYS.includes(k)).map(([id,k])=>id+'→'+k);
-    const clash=NEWIDS.filter(id=>V2_BASE_SCENES[id]);
-    return{ok:!bad.length&&!clash.length,msg:bad.concat(clash.map(x=>'id clash '+x)).join(', ')||Object.keys(SCENE_ART_V2).length+' remaps, '+NEWIDS.length+' new rooms'}});
-  T('R07','one tile ⇒ one room (70/70 coverage)',()=>{
-    const use={};V2KEYS.forEach(k=>use[k]=[]);Object.entries(SCENES).forEach(([id,s])=>{if(use[s.art])use[s.art].push(id)});
-    const orphan=V2KEYS.filter(k=>use[k].length===0),multi=V2KEYS.filter(k=>use[k].length>1);
-    return{ok:!orphan.length&&!multi.length,msg:orphan.length||multi.length?`orphan:[${orphan}] shared:[${multi.map(k=>k+'='+use[k])}]`:'70 tiles ↔ 70 rooms'}});
-  T('R08','no dangling action targets',()=>{
-    const bad=[];Object.entries(SCENES).forEach(([id,s])=>s.actions.forEach(([t])=>{if(!SCENES[t]&&!SPECIAL.has(t))bad.push(id+'→'+t)}));
-    return{ok:!bad.length,msg:bad.join(', ')||'0 dangling'}});
-  T('R09','legacy edges preserved (additive-only)',()=>{
-    const miss=[];Object.entries(V2_BASE_SCENES).forEach(([id,s])=>s.actions.forEach(a=>{if(!SCENES[id]||!SCENES[id].actions.some(b=>JSON.stringify(b)===JSON.stringify(a)))miss.push(id+'→'+a[0])}));
-    return{ok:!miss.length,msg:miss.join(', ')||'all legacy edges present'}});
-  T('R10','save-compat: legacy ids, save key, start scene',()=>{
-    const gone=Object.keys(V2_BASE_SCENES).filter(id=>!SCENES[id]);
-    return{ok:!gone.length&&SAVE_KEY==='redeye_stage0_v2'&&DEFAULT_STATE.scene==='shoes',msg:gone.length?'missing ids: '+gone:'ids/key/start intact'}});
-  T('R11','new rooms reachable from start and can return to the theater hub',()=>{
-    const fwd=reach('shoes');const back=new Set(['brazen']);let grew=true;
-    while(grew){grew=false;Object.keys(SCENES).forEach(id=>{if(!back.has(id)&&nextOf(id).some(t=>back.has(t))){back.add(id);grew=true}})}
-    const un=NEWIDS.filter(id=>!fwd.has(id)),trap=NEWIDS.filter(id=>!back.has(id));
-    return{ok:!un.length&&!trap.length,msg:un.length||trap.length?`unreachable:[${un}] trapped:[${trap}]`:NEWIDS.length+' new rooms reachable + escapable'}});
-  T('R12','gating: fresh player vs full-FOB player',()=>{
-    const OPEN=['towerConcierge','towerAtrium','towerDirectory','towerStairHall','towerBalcony','towerLounge','towerCoffee','towerSecurity','towerTotem','towerWayArcade','towerWayTheaters','garagePublicLevel','garageSecurity','loadingDock','deliveryBay','freightElevator','serviceCorridor','janitorial','wasteRoom','backStair'];
-    const GATED=NEWIDS.filter(id=>!OPEN.includes(id));
-    const f=withState(fresh,()=>reach('shoes',t=>t==='enterLobby'?canMove('enterLobby'):(!SCENES[t]||canMove(t))));
-    const leaked=GATED.filter(id=>f.has(id)),locked=OPEN.filter(id=>!f.has(id));
-    const a=withState(full,()=>reach('shoes',t=>t==='enterLobby'?canMove('enterLobby'):(!SCENES[t]||canMove(t))));
-    const stuck=NEWIDS.filter(id=>!a.has(id));
-    return{ok:!leaked.length&&!locked.length&&!stuck.length,msg:leaked.length||locked.length||stuck.length?`leaked:[${leaked}] wrongly-locked:[${locked}] unreachable-with-FOBs:[${stuck}]`:`fresh: ${OPEN.length} open / ${GATED.length} gated · full-FOB: all ${NEWIDS.length} reachable`}});
-  T('R13','wipe direction: antisymmetric + sane',()=>{
-    const pairs=[];Object.keys(SCENES).forEach(a=>nextOf(a).forEach(b=>{if(a!==b)pairs.push([a,b])}));
-    const asym=pairs.filter(([a,b])=>wipeDirection(a,b)!==-wipeDirection(b,a)).map(p=>p.join('↔'));
-    const D=wipeDepth(),ties=pairs.filter(([a,b])=>!WIPE_HINTS[a+'>'+b]&&a in D&&b in D&&D[a]===D[b]).length;
-    const sane=[['shoes','street',1],['street','shoes',-1],['lobby','audEntry',1],['audEntry','lobby',-1],['blockWest','blockNorth',1],['blockNorth','blockWest',-1],['blockSouth','blockWest',1],['towerLobby','towerElevators',1],['towerElevators','towerLobby',-1],['backroom:1','backroom:2',1],['backroom:2','backroom:1',-1],['linkServiceRoom','backroom:1',1],['backroom:3','linkServiceRoom',-1]];
-    const wrong=sane.filter(([a,b,d])=>wipeDirection(a,b)!==d).map(([a,b,d])=>`${a}→${b} want ${d}`);
-    return{ok:!asym.length&&!wrong.length,msg:asym.length||wrong.length?`asym:[${asym}] wrong:[${wrong}]`:`${pairs.length} edges antisymmetric · ${ties} depth-ties resolved by label/id`}});
-  T('R14','wipe mask geometry',()=>{
-    const m0=wipeMask(1,0),m1=wipeMask(1,1),mL=wipeMask(-1,.5),mR=wipeMask(1,.5);
-    const ok=/to right,#000 100\.00%,transparent 109\.00%/.test(m0)&&/#000 -9\.00%,transparent 0\.00%/.test(m1)&&/to left/.test(mL)&&/to right/.test(mR)&&/#000 45\.50%,transparent 54\.50%/.test(mR);
-    return{ok,msg:ok?'t=0 opaque · t=1 gone · dir±1 mirror':[m0,m1,mL,mR].join(' | ')}});
-  T('R15','DOM contract: #wipe follows #bg, #wipeEdge exists',()=>{
-    const b=$('bg'),w=$('wipe'),e=$('wipeEdge');
-    return{ok:!!(b&&w&&e&&b.nextElementSibling===w),msg:'#bg, #wipe, #wipeEdge '+(b&&w&&e?'present':'MISSING')}});
-  T('R16','no new external dependencies',()=>{
-    const bad=[...document.querySelectorAll('script[src],link[rel~="stylesheet"]')].map(n=>n.src||n.href).filter(u=>!/fonts\.(googleapis|gstatic)\.com|fts-favicon|^$/.test(u)&&/^https?:/.test(u)&&!u.startsWith(location.origin));
-    return{ok:!bad.length,msg:bad.join(', ')||'no third-party script/link tags'}});
-
-  const pass=out.filter(r=>r.status==='PASS').length,fail=out.filter(r=>r.status==='FAIL').length,skip=out.filter(r=>r.status==='SKIP').length;
-  try{console.table(out)}catch{}
-  try{addLog(`Regression · ${pass} pass · ${fail} fail · ${skip} skip`);out.filter(r=>r.status==='FAIL').forEach(r=>addLog(`  ✗ ${r.id} ${r.name}: ${r.detail}`))}catch{}
-  return{pass,fail,skip,results:out};
-}
-window.redeyeRegression=redeyeRegression;
-if(new URLSearchParams(location.search).get('test')==='1')addEventListener('load',()=>setTimeout(()=>{const r=redeyeRegression();window.__REGRESSION__=r;toast(`Regression ${r.pass}/${r.pass+r.fail} pass`+(r.skip?` · ${r.skip} skip`:''))},1200));
-
 /* Brazen URL Incantations -------------------------------------------------
    These are intentionally discoverable, composable conveniences for this
    static/open-source build. They are not cryptographic entitlements.
@@ -993,7 +676,7 @@ window.redEyeUrlIncantations=()=>({
 });
 
 applyUrlIncantations();
-applyDevMode();loadImages().then(()=>{addLog('Static atlas build loaded.');render()}).catch(err=>{$('title').textContent='Asset load error';$('desc').textContent=(err&&err.message?err.message+' · ':'')+'Check that the assets/ folder (sheet01–sheet12) is deployed beside index.html.';console.error(err)});
+applyDevMode();loadImages().then(()=>{addLog('Static atlas build loaded.');render()}).catch(err=>{$('title').textContent='Asset load error';$('desc').textContent='Check that the assets/ folder is deployed beside index.html.';console.error(err)});
 </script>
 </body>
 </html>
