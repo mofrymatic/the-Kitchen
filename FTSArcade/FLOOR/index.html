@@ -28,7 +28,7 @@
 <link rel="preload" as="image" href="fts-arcade-fixture-atlas.png">
 <link rel="preload" as="image" href="the-Cabinet.png">
 <link rel="preload" as="audio" href="crowd.mp3" type="audio/mpeg">
-<title>FTS Arcade Floor 1.2.0 Fixture Facelift</title>
+<title>FTS Arcade Floor 1.3.0 Nightlife Egress</title>
 <!-- 0.5.2 art fit: external world/fixture/screen atlases + Cabinets01-Cabinets04, exact per-CRT crops. -->
 <!-- 0.7.0 feel pass: outer ring 430->510, ceiling 132->192, jump 132->156. Sprint stays 22 mph. Cabinet layout frozen. -->
 <!-- 0.8.1 movement pass: threshold-based Apex-inspired slide, landing-slide buffer, momentum-preserving slide jumps and air steering. -->
@@ -122,7 +122,7 @@ const RUNTIME_ERRORS=[];
 addEventListener('error',e=>{if(e.error||e.message)RUNTIME_ERRORS.push(String(e.error&&e.error.stack||e.message||e.error));});
 addEventListener('unhandledrejection',e=>RUNTIME_ERRORS.push(String(e.reason&&e.reason.stack||e.reason||'unhandled rejection')));
 
-const VERSION='fts-arcade-floor-1.2.0-fixture-facelift';
+const VERSION='fts-arcade-floor-1.3.0-nightlife-egress';
 const TAU=Math.PI*2, DEG=Math.PI/180;
 // Dimensional contract: 1 engine unit = 1 inch.
 // =============================================================================
@@ -338,7 +338,7 @@ function paintCelestialKoi(sim,d){
 }
 
 const ASSET_NAMES={
- world:'fts-arcade-world-atlas.png',
+ world:new URLSearchParams(location.search).get('atlas')==='legacy'?'fts-arcade-world-atlas.png':['fts-arcade-world-atlas-01.png','fts-arcade-world-atlas.png'], // 1.3.0: v2 sheet first; a 404 falls through to the legacy sheet (same loader as the cabinet sheets)
  cab1:['Cabinets01.png','cabinets01.png'],
  cab2:['Cabinets02.png','cabinets02.png'],
  cab3:['Cabinets03.png','cabinets03.png'],
@@ -360,6 +360,89 @@ const WORLD_RECTS={
  STAGE_RED:[816,16,64,64] /* retired: stage removed in 1.1.0; tile kept so the world-atlas contract is untouched */,BRASS_PANEL:[896,16,64,64],CEILING_DARK:[16,96,64,64],EXIT:[96,96,64,64],OFFICE:[176,96,64,64],
  STAGE:[256,96,64,64],DJ:[336,96,64,64],FTS:[416,96,64,64],NEON_PINK:[496,96,64,64],NEON_BLUE:[576,96,64,64],NEON_GOLD:[656,96,64,64]
 };
+// 1.3.0 URL OPTIONS ---------------------------------------------------------------------------
+// ?atlas=legacy   force the 1.2.0 1024x1024 world sheet     ?layout=legacy   the 1.2.0 cabinet layout, no rugs (A/B baseline)
+// ?rugs=0         hide rugs/aprons only                       ?atlasdebug=1    overlay the v2 tile rects on the real sheet
+const OPTS=(()=>{const q=new URLSearchParams(location.search),pick=(k,ok,d)=>ok.includes(q.get(k))?q.get(k):d;
+ return{atlas:pick('atlas',['v2','legacy'],'auto'),layout:pick('layout',['legacy','nightlife'],'nightlife'),rugs:q.get('rugs')!=='0',atlasdebug:q.get('atlasdebug')==='1'};})();
+// 1.3.0 WORLD ATLAS 01 ("v2") -----------------------------------------------------------------------------
+// 9 columns x 5 rows of cells on a black ground, labelled above each cell. The sheet is authored at any
+// integer multiple of the 1536x1024 reference (rects below are in that reference space and are scaled by
+// naturalWidth/1536, naturalHeight/1024 at bake time, exactly like the fixture atlas).
+// The loader picks a layout by DIMENSIONS: exactly 1024x1024 is the legacy 64px-tile sheet, anything else is v2
+// (override: ?atlas=v2 | ?atlas=legacy). A missing v2 file falls back to the legacy sheet with no other change.
+// N=1 CALIBRATION: rects were read off the preview, not measured on the file. Open ?atlasdebug=1 to overlay every
+// rect on the real sheet and nudge WORLD_ATLAS_V2.tiles (x,y,w,h in reference px) until the boxes hug the cells.
+const WORLD_ATLAS_V2={
+ ref:[1536,1024],
+ inset:7,            // ref px trimmed off every side of every cell so eyeballed rect error never bleeds the black ground in
+ heal:5,             // texel band (of 64) cross-faded at wrap seams on seamless tiles, hides the inset's wrap discontinuity. 0 = off
+ tiles:{
+  WALL_MARBLE:[20,118,160,158],WALL_BLACK_GOLD:[195,118,153,158],WALL_RIB:[364,118,153,158],WALL_LIGHT:[533,118,150,158],WALL_GOLD:[697,118,146,158],
+  WALL_RED:[858,118,148,158],WALL_WOOD:[1019,118,156,158],WALL_ALT:[1189,118,150,158],OFFICE_DARK:[1354,118,163,158],
+  CEILING_DARK:[20,305,159,156],FLOOR_ALT:[195,305,153,156],FLOOR_BLACK:[364,305,153,156],FLOOR_RED:[533,305,150,156],FLOOR_BLACK_SMALL:[697,305,146,156],
+  FLOOR_CARPET_1:[858,305,148,156],FLOOR_CARPET_2:[1019,305,156,156],OFFICE_WOOD:[1189,305,150,156],BRASS_PANEL:[1354,305,163,156],
+  STAGE_RED:[20,491,133,122],NEON_PINK:[172,491,141,122],NEON_BLUE:[328,491,154,122],NEON_GOLD:[500,491,143,122],SIGN_FTS:[669,491,134,122],
+  SIGN_STAGE:[821,491,152,122],SIGN_REDEYE:[993,491,159,122],SIGN_THEATERS:[1175,491,162,122],METAL_GRID:[1357,491,153,122],
+  METAL_DIAMOND:[20,647,152,156],METAL_VENT:[188,647,147,156],CAUTION_STRIPE:[350,647,145,156],CONCRETE:[510,647,149,156],CHECKER:[674,647,145,156],
+  TILE_BLUE:[835,647,160,156],TILE_GRAY:[1010,647,158,156],TILE_BLACK:[1185,647,155,156],TILE_GOLD_LIGHT:[1355,647,161,156],
+  TILE_GOLD_DARK:[20,839,155,152],CARPET_SPECKLE:[193,839,145,152],ACOUSTIC_PANEL_1:[356,839,149,152],ACOUSTIC_PANEL_2:[521,839,143,152],
+  ACOUSTIC_PANEL_3:[682,839,148,152],ACOUSTIC_PANEL_4:[847,839,151,152],ACOUSTIC_PANEL_5:[1016,839,162,152],ACOUSTIC_PANEL_6:[1195,839,142,152],
+  TRIM_GOLD:[1356,839,160,152]
+ },
+ // tiles that repeat across the floor/walls (get seam healing). Signs, neon, trims, panels are one-shot art.
+ seamless:['WALL_MARBLE','WALL_BLACK_GOLD','WALL_RIB','WALL_LIGHT','WALL_GOLD','WALL_RED','WALL_WOOD','WALL_ALT','OFFICE_DARK','CEILING_DARK','FLOOR_ALT','FLOOR_BLACK','FLOOR_RED','FLOOR_BLACK_SMALL','FLOOR_CARPET_1','FLOOR_CARPET_2','OFFICE_WOOD','BRASS_PANEL','METAL_DIAMOND','METAL_GRID','CONCRETE','CHECKER','TILE_BLUE','TILE_GRAY','TILE_BLACK','TILE_GOLD_LIGHT','TILE_GOLD_DARK','CARPET_SPECKLE']
+};
+// Names that exist in only one sheet resolve to their nearest cousin in the other. Add rather than rename: 1.2.0 names stay valid.
+const LEGACY_TILE_ALIAS={
+ WALL_RED:'FLOOR_RED',WALL_WOOD:'OFFICE_WOOD',WALL_ALT:'WALL_GOLD',FLOOR_BLACK_SMALL:'FLOOR_BLACK',FLOOR_CARPET_1:'FLOOR_RED',FLOOR_CARPET_2:'FLOOR_ALT',
+ CARPET_SPECKLE:'FLOOR_BLACK',CHECKER:'FLOOR_BLACK',CONCRETE:'FLOOR_BLACK',TILE_BLUE:'FLOOR_ALT',TILE_GRAY:'FLOOR_BLACK',TILE_BLACK:'FLOOR_BLACK',
+ TILE_GOLD_LIGHT:'OFFICE_WOOD',TILE_GOLD_DARK:'OFFICE_WOOD',METAL_GRID:'BRASS_PANEL',METAL_DIAMOND:'BRASS_PANEL',METAL_VENT:'BRASS_PANEL',CAUTION_STRIPE:'NEON_GOLD',
+ SIGN_FTS:'FTS',SIGN_STAGE:'STAGE',SIGN_REDEYE:'EXIT',SIGN_THEATERS:'OFFICE',TRIM_GOLD:'BRASS_PANEL',
+ ACOUSTIC_PANEL_1:'CEILING_DARK',ACOUSTIC_PANEL_2:'CEILING_DARK',ACOUSTIC_PANEL_3:'CEILING_DARK',ACOUSTIC_PANEL_4:'CEILING_DARK',ACOUSTIC_PANEL_5:'CEILING_DARK',ACOUSTIC_PANEL_6:'CEILING_DARK'
+};
+const V2_TILE_ALIAS={EXIT:'SIGN_THEATERS',OFFICE:'SIGN_FTS',STAGE:'SIGN_STAGE',DJ:'SIGN_STAGE',FTS:'SIGN_FTS'};
+const WorldAtlas={
+ active:'legacy',requested:OPTS.atlas,
+ detect(im){
+  if(this.requested==='legacy'||!im)return this.active='legacy';
+  const w=im.naturalWidth||im.width,h=im.naturalHeight||im.height;
+  if(w===1024&&h===1024)return this.active='legacy';
+  const asp=w/h,want=WORLD_ATLAS_V2.ref[0]/WORLD_ATLAS_V2.ref[1];
+  if(Math.abs(asp-want)/want>.02){console.warn('[FTS ARCADE] world atlas '+w+'x'+h+' is neither the legacy 1024x1024 sheet nor a '+want.toFixed(2)+':1 v2 sheet; using legacy rects');return this.active='legacy';}
+  return this.active='v2';
+ },
+ // Where does material `m` come from in the ACTIVE sheet? -> {rect,meta,hq,seam}
+ source(m){
+  const name=m.name;
+  if(this.active==='v2'){
+   const key=WORLD_ATLAS_V2.tiles[name]?name:(V2_TILE_ALIAS[name]||name),t=WORLD_ATLAS_V2.tiles[key];if(!t)return{rect:null};
+   const i=WORLD_ATLAS_V2.inset;
+   return{rect:[t[0]+i,t[1]+i,t[2]-2*i,t[3]-2*i],meta:{width:WORLD_ATLAS_V2.ref[0],height:WORLD_ATLAS_V2.ref[1]},hq:true,seam:WORLD_ATLAS_V2.heal>0&&WORLD_ATLAS_V2.seamless.includes(key)?WORLD_ATLAS_V2.heal:0};
+  }
+  const legacy=m.legacyTile||(WORLD_RECTS[name]?name:LEGACY_TILE_ALIAS[name]||name);
+  return{rect:WORLD_RECTS[legacy]||WORLD_RECTS[LEGACY_TILE_ALIAS[legacy]]||null,meta:null,hq:false,seam:0};
+ }
+};
+// Make a tile wrap without a visible seam: mirror-cross-fade the outer `band` texels of each edge toward each other.
+// d=0 (the edge column) becomes the average of both edges, so columns w-1 and 0 are identical; the effect fades to nothing at d=band.
+function healSeams(cv,band){
+ let g,img;try{g=cv.getContext('2d',{willReadFrequently:true});img=g.getImageData(0,0,cv.width,cv.height);}catch(e){return false;} // tainted (file://): leave the tile as baked
+ const w=cv.width,h=cv.height,p=img.data,b=Math.min(band,(Math.min(w,h)>>1)-1);
+ for(let d=0;d<b;d++){const wt=.5*(1-d/b);
+  for(let y=0;y<h;y++){const L=(y*w+d)<<2,R=(y*w+w-1-d)<<2;for(let c=0;c<4;c++){const l=p[L+c],r=p[R+c];p[L+c]=l+(r-l)*wt;p[R+c]=r+(l-r)*wt;}}}
+ for(let d=0;d<b;d++){const wt=.5*(1-d/b);
+  for(let x=0;x<w;x++){const T=(d*w+x)<<2,B=((h-1-d)*w+x)<<2;for(let c=0;c<4;c++){const t=p[T+c],bo=p[B+c];p[T+c]=t+(bo-t)*wt;p[B+c]=bo+(t-bo)*wt;}}}
+ g.putImageData(img,0,0);return true;
+}
+// ?atlasdebug=1: paint every v2 rect (yellow = authored cell, green = what actually gets baked) over the real sheet. Click to dismiss.
+function atlasDebugOverlay(im){
+ if(!im||WorldAtlas.active!=='v2')return;
+ const W=im.naturalWidth,H=im.naturalHeight,sx=W/WORLD_ATLAS_V2.ref[0],sy=H/WORLD_ATLAS_V2.ref[1],cv=document.createElement('canvas');cv.width=W;cv.height=H;
+ const g=cv.getContext('2d'),i=WORLD_ATLAS_V2.inset;g.drawImage(im,0,0);g.lineWidth=Math.max(1,sx*1.5);g.font=Math.round(10*sx)+'px monospace';
+ for(const [k,t] of Object.entries(WORLD_ATLAS_V2.tiles)){g.strokeStyle='#ff0';g.strokeRect(t[0]*sx,t[1]*sy,t[2]*sx,t[3]*sy);g.strokeStyle='#0f8';g.strokeRect((t[0]+i)*sx,(t[1]+i)*sy,(t[2]-2*i)*sx,(t[3]-2*i)*sy);g.fillStyle='#fff';g.fillText(k,t[0]*sx+2,t[1]*sy+10*sx);}
+ cv.id='fts-atlasdebug';cv.style.cssText='position:fixed;z-index:200;left:0;top:0;width:100vw;height:auto;background:#000;cursor:pointer';cv.onclick=()=>cv.remove();document.body.appendChild(cv);
+}
 // 1.1.0 FIXTURE ATLAS -------------------------------------------------------------------------
 // fts-arcade-fixture-atlas.png is now a 4788x3812 cut-out sheet (was 1024x256 of 64px tiles).
 // Rects are MEASURED (alpha connected-components), never eyeballed. The atlas has label text baked
@@ -462,6 +545,7 @@ const MATERIALS=[];
 const MAT={};
 function mat(name,sheet,rect,opts){MAT[name]=MATERIALS.length;MATERIALS.push(Object.assign({name,sheet,rect,stretch:false},opts||{}));return MAT[name];}
 Object.keys(WORLD_RECTS).forEach(k=>mat(k,'world',WORLD_RECTS[k]));
+Object.keys(WORLD_ATLAS_V2.tiles).forEach(k=>{if(MAT[k]===undefined)mat(k,'world',null);}); // 1.3.0: names that exist only on the v2 sheet
 Object.keys(FIXTURE_ART).forEach(k=>{
  // Tile size follows the piece's WORLD size so texels stay square: ~5 texels/in, capped.
  const a=FIXTURE_ART[k],F=artSize(k),sc=Math.min(FIXTURE_TEX.texelsPerInch,FIXTURE_TEX.maxSide/Math.max(F.w,F.h));
@@ -498,6 +582,7 @@ const Geom={
   return{a,b,c,d,e:-(a*E+c*F),f:-(b*E+d*F)};
  },
  planeMaterialFrame(sec,mode,viewAng){
+  if(sec&&sec.decalFrame)return sec.decalFrame; // rugs and aprons carry their own frame in every mapping mode
   if(mode==='sector'&&sec)return{ang:sec.planeAng,ox:sec.planeOx,oy:sec.planeOy};
   if(mode==='kaleido'&&sec)return{ang:sec.planeAng+viewAng,ox:sec.planeOx,oy:sec.planeOy};
   return{ang:0,ox:0,oy:0};
@@ -511,11 +596,20 @@ const Geom={
  polar(r,a){return[Math.cos(a)*r,Math.sin(a)*r];}
 };
 
+// Distance along the ORIGINAL wedge edge to the start of a (possibly cut) sub-edge a->b. Wall textures are measured from
+// a line's first vertex, so without this every rug that touches a wall would restart the wall pattern at the cut.
+function edgeU0(origin,a,b){
+ if(!origin)return 0;const o=Geom.makeCW(origin);
+ for(let i=0;i<o.length;i++){const p=o[i],q=o[(i+1)%o.length],dx=q[0]-p[0],dy=q[1]-p[1],L=Math.hypot(dx,dy);if(L<1e-9)continue;
+  const ta=((a[0]-p[0])*dx+(a[1]-p[1])*dy)/L,tb=((b[0]-p[0])*dx+(b[1]-p[1])*dy)/L,da=Math.abs((a[0]-p[0])*dy-(a[1]-p[1])*dx)/L,db=Math.abs((b[0]-p[0])*dy-(b[1]-p[1])*dx)/L;
+  if(da<.02&&db<.02&&ta>=-.02&&tb<=L+.02&&tb>=ta-.02)return Math.max(0,ta);}
+ return 0;
+}
 const MapBuilder={
  build(defs){
   const verts=[],vmap=new Map(),lines=[],emap=new Map();
   const V=(x,y)=>{const qx=Math.round(x*1000)/1000,qy=Math.round(y*1000)/1000,k=qx+','+qy;if(vmap.has(k))return vmap.get(k);const i=verts.length;verts.push({x:qx,y:qy});vmap.set(k,i);return i;};
-  const sectors=defs.map((d,idx)=>{const poly=Geom.makeCW(d.poly);return{idx,id:d.id,poly,floor:d.floor||0,ceil:d.ceil||RING.ceil,light:d.light||.95,ftex:d.ftex,ctex:d.ctex,wtex:d.wtex,planeAng:Number.isFinite(d.planeAng)?d.planeAng:0,planeOx:Number.isFinite(d.planeOx)?d.planeOx:0,planeOy:Number.isFinite(d.planeOy)?d.planeOy:0,lines:[]};});
+  const sectors=defs.map((d,idx)=>{const poly=Geom.makeCW(d.poly);return{idx,id:d.id,poly,floor:d.floor||0,ceil:d.ceil||RING.ceil,light:d.light||.95,ftex:d.ftex,ctex:d.ctex,wtex:d.wtex,planeAng:Number.isFinite(d.planeAng)?d.planeAng:0,planeOx:Number.isFinite(d.planeOx)?d.planeOx:0,planeOy:Number.isFinite(d.planeOy)?d.planeOy:0,decalFrame:d.frame||null,decal:d.decal||null,parent:Number.isFinite(d.parent)?d.parent:idx,lines:[]};});
   const key=(a,b)=>a<b?a+':'+b:b+':'+a;
   sectors.forEach(s=>{
    for(let i=0;i<s.poly.length;i++){
@@ -525,7 +619,7 @@ const MapBuilder={
      if(ln.back>=0)throw new Error('non-manifold edge '+k);
      ln.back=s.idx;s.lines.push(li);
     }else{
-     const li=lines.length;lines.push({idx:li,v1,v2,front:s.idx,back:-1,upper:s.wtex,lower:s.wtex,mid:s.wtex,midTex:-1,midBot:0,midTop:0,blocking:false,tag:''});
+     const li=lines.length;lines.push({idx:li,v1,v2,front:s.idx,back:-1,upper:s.wtex,lower:s.wtex,mid:s.wtex,midTex:-1,midBot:0,midTop:0,blocking:false,tag:'',u0:edgeU0(defs[s.idx].origin,a,b)});
      emap.set(k,li);s.lines.push(li);
     }
    }
@@ -535,6 +629,210 @@ const MapBuilder={
  validate(map){const errs=[];for(const s of map.sectors){if(s.poly.length<3)errs.push(s.id+': too few vertices');if(Geom.area(s.poly)>=0)errs.push(s.id+': not clockwise');let sign=0;for(let i=0;i<s.poly.length;i++){const a=s.poly[i],b=s.poly[(i+1)%s.poly.length],c=s.poly[(i+2)%s.poly.length],z=(b[0]-a[0])*(c[1]-b[1])-(b[1]-a[1])*(c[0]-b[0]);if(Math.abs(z)<1e-6)continue;const q=Math.sign(z);if(sign&&q!==sign)errs.push(s.id+': non-convex');sign=q;}if(s.ceil-s.floor<PLAYER_H)errs.push(s.id+': headroom');}
   for(const ln of map.lines){const a=map.verts[ln.v1],b=map.verts[ln.v2],n=Geom.frontNormal(a.x,a.y,b.x,b.y),mx=(a.x+b.x)/2+n.nx*.5,my=(a.y+b.y)/2+n.ny*.5;if(!Geom.pointInPoly(mx,my,map.sectors[ln.front].poly))errs.push('line '+ln.idx+': front winding');}
   return errs;
+ }
+};
+
+// =============================================================================
+// FLOORING - rugs, tile aprons and any other floor decal (1.3.0)
+// -----------------------------------------------------------------------------
+// The renderer is a sector/portal engine: a floor material belongs to a SECTOR, so a rug has to be a sector.
+// Flooring.build() takes the 32 ring wedges and carves each decal out of them with half-plane cuts (BSP
+// style), so every output piece is convex, pieces never overlap, and the total area is conserved (tested).
+// New vertices land on neighbouring polygons' edges (T-junctions), which the map builder would read as
+// walls, so conform() inserts them into the neighbour too. Rug pieces carry a material FRAME (rotation +
+// origin) so the pattern is locked to the rug, not to the world: patterns start clean at the rug edge and run
+// along its long axis. Floors stay at z=0: no step, no camera pop, no collision change.
+// =============================================================================
+const Flooring={
+ MIN_AREA:.05,
+ rectPoly(d){const c=Math.cos(d.deg*DEG),s=Math.sin(d.deg*DEG),hl=d.len/2,hw=d.wid/2;return[[-hl,-hw],[hl,-hw],[hl,hw],[-hl,hw]].map(([u,v])=>[d.cx+c*u-s*v,d.cy+s*u+c*v]);},
+ // material frame: u runs along the rug's long axis, (0,0) is the rug's start-left corner
+ frameOf(d){const c=Math.cos(d.deg*DEG),s=Math.sin(d.deg*DEG);return{ang:d.deg*DEG,ox:d.cx-c*d.len/2+s*d.wid/2,oy:d.cy-s*d.len/2-c*d.wid/2};},
+ clean(poly){
+  const out=[];for(const p of poly){const q=out[out.length-1];if(!q||Math.hypot(p[0]-q[0],p[1]-q[1])>1e-4)out.push(p);}
+  while(out.length>2&&Math.hypot(out[0][0]-out[out.length-1][0],out[0][1]-out[out.length-1][1])<=1e-4)out.pop();
+  return out.length>=3&&Math.abs(Geom.area(out))>=this.MIN_AREA?out:null;
+ },
+ // Split convex `poly` by the line through p->q: returns [left(inside), right(outside)], either may be null.
+ split(poly,p,q){
+  const nx=-(q[1]-p[1]),ny=q[0]-p[0],L=Math.hypot(nx,ny)||1,side=v=>(nx*(v[0]-p[0])+ny*(v[1]-p[1]))/L,EPS=1e-7,ins=[],outs=[];
+  for(let i=0;i<poly.length;i++){
+   const a=poly[i],b=poly[(i+1)%poly.length],sa=side(a),sb=side(b);
+   if(sa>=-EPS)ins.push(a);if(sa<=EPS)outs.push(a);
+   if((sa>EPS&&sb<-EPS)||(sa<-EPS&&sb>EPS)){const t=sa/(sa-sb),x=[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t];ins.push(x);outs.push(x);}
+  }
+  return[this.clean(ins),this.clean(outs)];
+ },
+ bbox(poly){let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;for(const p of poly){if(p[0]<x0)x0=p[0];if(p[0]>x1)x1=p[0];if(p[1]<y0)y0=p[1];if(p[1]>y1)y1=p[1];}return{x0,y0,x1,y1};},
+ // Insert every foreign vertex that lies on an edge into that edge, so shared boundaries match vertex-for-vertex.
+ conform(polys){
+  const key=v=>Math.round(v[0]*1000)+','+Math.round(v[1]*1000),seen=new Map();
+  for(const P of polys)for(const v of P)if(!seen.has(key(v)))seen.set(key(v),v);
+  const all=[...seen.values()];
+  return polys.map(P=>{
+   const out=[];
+   for(let i=0;i<P.length;i++){
+    const a=P[i],b=P[(i+1)%P.length],dx=b[0]-a[0],dy=b[1]-a[1],L2=dx*dx+dy*dy,ins=[];out.push(a);
+    if(L2<1e-12)continue;
+    for(const v of all){const t=((v[0]-a[0])*dx+(v[1]-a[1])*dy)/L2;if(t<=1e-6||t>=1-1e-6)continue;if(Math.hypot(v[0]-(a[0]+dx*t),v[1]-(a[1]+dy*t))<2e-3)ins.push([t,v]);}
+    ins.sort((m,n)=>m[0]-n[0]);for(const e of ins)out.push(e[1]);
+   }
+   return out;
+  });
+ },
+ // defs: ring sector defs (poly,ftex,...). Returns {defs,report}. Decals apply in order; later ones win.
+ build(defs,cfg,enabled){
+  let pieces=defs.map((d,i)=>Object.assign({},d,{parent:i,decal:null,frame:null,origin:d.poly}));
+  const report={decals:0,ringSectors:defs.length,pieces:defs.length,cuts:0};
+  if(!enabled||!cfg||!cfg.decals||!cfg.decals.length)return{defs:pieces,report};
+  for(const dc of cfg.decals){
+   if(dc.enabled===false)continue;
+   const P=this.rectPoly(dc),box=this.bbox(P),tex=MAT[dc.tex],frame=this.frameOf(dc),next=[];report.decals++;
+   if(tex===undefined)throw new Error('flooring: unknown material '+dc.tex+' in decal '+dc.id);
+   for(const pc of pieces){
+    const b=this.bbox(pc.poly);
+    if(b.x1<=box.x0||b.x0>=box.x1||b.y1<=box.y0||b.y0>=box.y1){next.push(pc);continue;}
+    let rest=pc.poly;const outs=[];
+    for(let k=0;k<4&&rest;k++){const r=this.split(rest,P[k],P[(k+1)%4]);if(r[1])outs.push(r[1]);rest=r[0];}
+    if(!rest){next.push(pc);continue;}                         // decal misses this piece: leave it whole
+    report.cuts+=outs.length;
+    next.push(Object.assign({},pc,{poly:rest,ftex:tex,frame,decal:dc.id,id:pc.id+'~'+dc.id}));
+    outs.forEach((o,i)=>next.push(Object.assign({},pc,{poly:o,id:pc.id+'.'+(next.length+i)})));
+   }
+   pieces=next;
+  }
+  const conformed=this.conform(pieces.map(p=>p.poly));
+  pieces.forEach((p,i)=>{p.poly=conformed[i];});
+  report.pieces=pieces.length;
+  // thinnest altitude of any piece (2*area / longest edge). Anything under ~2 in is a sliver: it renders as a flickering hairline.
+  report.minAltitude=Math.min(...pieces.map(p=>{const P=p.poly;let L=0;for(let i=0;i<P.length;i++){const q=P[(i+1)%P.length];L=Math.max(L,Math.hypot(q[0]-P[i][0],q[1]-P[i][1]));}return 2*Math.abs(Geom.area(P))/L;}));
+  return{defs:pieces,report};
+ }
+};
+// =============================================================================
+// EGRESS - fire-code guardrails as executable analysis (1.3.0)
+// -----------------------------------------------------------------------------
+// Rasterises the floor plan (cell = 6 in), takes an exact Euclidean clearance field, and asks the questions a
+// plan checker asks: can every exit be reached along a route that is at least routeMin wide, is every place a
+// player can stand within maxTravel of an exit, and is anything stranded in a pocket off the route?
+// Numbers come from AUTHORING.fireCode (Swiss VKF/AEAI 16-15: 1.20 m route, 0.90 m exit, 35 m travel).
+// This is a design guardrail that runs on every layout edit - not a compliance certificate.
+// =============================================================================
+const Egress={
+ params:{cell:6},
+ _edt(mask,N){ // squared distance (cells^2) to nearest 1-cell of mask; Felzenszwalb two-pass
+  const INF=1e12,f=new Float64Array(N*N),d=new Float64Array(N*N),v=new Int32Array(N),z=new Float64Array(N+1),line=new Float64Array(N),out=new Float64Array(N);
+  for(let i=0;i<N*N;i++)f[i]=mask[i]?0:INF;
+  const pass=(get,set)=>{for(let a=0;a<N;a++){for(let i=0;i<N;i++)line[i]=get(a,i);let k=0;v[0]=0;z[0]=-INF;z[1]=INF;
+   for(let q=1;q<N;q++){let s;while(true){const p=v[k];s=((line[q]+q*q)-(line[p]+p*p))/(2*q-2*p);if(s<=z[k]&&k>0)k--;else break;}if(s<=z[k]){v[k]=q;z[k]=-INF;z[k+1]=INF;}else{k++;v[k]=q;z[k]=s;z[k+1]=INF;}}
+   k=0;for(let q=0;q<N;q++){while(z[k+1]<q)k++;const p=v[k];out[q]=(q-p)*(q-p)+line[p];}for(let i=0;i<N;i++)set(a,i,out[i]);}};
+  pass((y,x)=>f[y*N+x],(y,x,val)=>{d[y*N+x]=val;});
+  pass((x,y)=>d[y*N+x],(x,y,val)=>{f[y*N+x]=val;});
+  return f;
+ },
+ // The rectangle in front of an exit that must stay free of collision solids (Swiss: fixtures must not narrow a route).
+ approachBox(e,fc){const f={x:Math.cos(e.ang),y:Math.sin(e.ang)},depth=fc.exitApproach.depth,m=e.d/2+depth/2;return{x:e.x+f.x*m,y:e.y+f.y*m,ang:e.ang,w:fc.exitApproach.width,d:depth};},
+ blockers(map,fc){
+  const out=[];fc=fc||AUTHORING.fireCode;
+  for(const e of map.exits){const box=this.approachBox(e,fc);for(const s of map.solids){if(!s.collision||s===e)continue;if(solidsOverlap(box,s,.01))out.push({exit:e.id,by:s.id});}}
+  return out;
+ },
+ playSpot(c){return{x:c.x+Math.cos(c.ang)*(c.d/2+26),y:c.y+Math.sin(c.ang)*(c.d/2+26)};},
+ analyze(map,opts){
+  const fc=(opts&&opts.fireCode)||AUTHORING.fireCode,c=(opts&&opts.cell)||this.params.cell,R=Math.ceil(RING.outer/c)*c,N=2*R/c+1,ox=-R,oy=-R;
+  const step=TAU/RING.sides,apo=RING.outer*Math.cos(Math.PI/RING.sides),obst=new Uint8Array(N*N),floor=new Uint8Array(N*N);
+  for(let j=0;j<N;j++)for(let i=0;i<N;i++){
+   const x=ox+i*c,y=oy+j*c;let inside=Math.max(Math.abs(x),Math.abs(y))>RING.inner;
+   if(inside){let a=Math.atan2(y,x);if(a<0)a+=TAU;const am=(Math.floor(a/step)+.5)*step;inside=x*Math.cos(am)+y*Math.sin(am)<=apo;}
+   floor[j*N+i]=inside?1:0;obst[j*N+i]=inside?0:1;
+  }
+  for(const s of map.solids){
+   if(!s.collision)continue;const bb=solidAabb(s),b=basis(s.ang),i0=Math.max(0,Math.floor((bb.x1-ox)/c)),i1=Math.min(N-1,Math.ceil((bb.x2-ox)/c)),j0=Math.max(0,Math.floor((bb.y1-oy)/c)),j1=Math.min(N-1,Math.ceil((bb.y2-oy)/c));
+   for(let j=j0;j<=j1;j++)for(let i=i0;i<=i1;i++){const dx=ox+i*c-s.x,dy=oy+j*c-s.y,fr=dx*b.f.x+dy*b.f.y,rr=dx*b.r.x+dy*b.r.y;if(Math.abs(fr)<=s.d/2&&Math.abs(rr)<=s.w/2)obst[j*N+i]=1;}
+  }
+  const d2=this._edt(obst,N),clear=new Float32Array(N*N);
+  for(let i=0;i<N*N;i++)clear[i]=obst[i]?0:Math.max(0,Math.sqrt(d2[i])*c-c/2);
+  const routeR=fc.routeMin/2,stand=new Uint8Array(N*N),route=new Uint8Array(N*N);
+  for(let i=0;i<N*N;i++){if(floor[i]&&!obst[i]&&clear[i]>=PLAYER_R)stand[i]=1;if(stand[i]&&clear[i]>=routeR)route[i]=1;}
+  // Dijkstra: state 0 = on a route (>= routeMin wide). A route cell may step into a pocket (narrow but standable)
+  // and a pocket may only lead deeper into pockets, never back onto a route, up to pocketMax.
+  const INF=Infinity,travel=new Float64Array(N*N).fill(INF),pocket=new Float64Array(N*N),heap=[];
+  const push=(k,i)=>{heap.push([k,i]);let n=heap.length-1;while(n>0){const p=(n-1)>>1;if(heap[p][0]<=heap[n][0])break;[heap[p],heap[n]]=[heap[n],heap[p]];n=p;}};
+  const pop=()=>{const top=heap[0],last=heap.pop();if(heap.length){heap[0]=last;let n=0;for(;;){let l=2*n+1,r=l+1,m=n;if(l<heap.length&&heap[l][0]<heap[m][0])m=l;if(r<heap.length&&heap[r][0]<heap[m][0])m=r;if(m===n)break;[heap[m],heap[n]]=[heap[n],heap[m]];n=m;}}return top;};
+  const exits=map.exits.map(e=>{const f={x:Math.cos(e.ang),y:Math.sin(e.ang)},gx=e.x+f.x*(e.d/2+fc.goalReach*.5),gy=e.y+f.y*(e.d/2+fc.goalReach*.5);let n=0;
+   for(let j=0;j<N;j++)for(let i=0;i<N;i++){const k=j*N+i;if(!route[k])continue;if(Math.hypot(ox+i*c-gx,oy+j*c-gy)<=fc.goalReach){travel[k]=0;push(0,k);n++;}}
+   return{id:e.id,goalCells:n,reachable:false,gx,gy};});
+  const nb=[[1,0,1],[-1,0,1],[0,1,1],[0,-1,1],[1,1,Math.SQRT2],[1,-1,Math.SQRT2],[-1,1,Math.SQRT2],[-1,-1,Math.SQRT2]];
+  while(heap.length){
+   const [dist,k]=pop();if(dist>travel[k])continue;const i=k%N,j=(k/N)|0;
+   for(const [di,dj,w] of nb){const ni=i+di,nj=j+dj;if(ni<0||nj<0||ni>=N||nj>=N)continue;const q=nj*N+ni;if(!stand[q])continue;
+    if(di&&dj&&(!stand[j*N+ni]||!stand[nj*N+i]))continue;
+    const nd=dist+w*c;
+    if(route[k]){if(route[q]){if(nd<travel[q]){travel[q]=nd;pocket[q]=0;push(nd,q);}}
+     else{const p=w*c;if(p<=fc.pocketMax&&nd<travel[q]){travel[q]=nd;pocket[q]=p;push(nd,q);}}}
+    else if(!route[q]){const p=pocket[k]+w*c;if(p<=fc.pocketMax&&nd<travel[q]){travel[q]=nd;pocket[q]=p;push(nd,q);}}
+   }
+  }
+  for(const e of exits)e.reachable=e.goalCells>0;
+  // Only places a player can actually WALK to count. A sealed chase between cabinets and the core is not a stranded player.
+  const walk=new Uint8Array(N*N);{const sp=map.spawn||{x:0,y:0};let seed=-1,bd=Infinity;
+   for(let j=0;j<N;j++)for(let i=0;i<N;i++){const k=j*N+i;if(!stand[k])continue;const d=Math.hypot(ox+i*c-sp.x,oy+j*c-sp.y);if(d<bd){bd=d;seed=k;}}
+   if(seed>=0){const st=[seed];walk[seed]=1;while(st.length){const k=st.pop(),i=k%N,j=(k/N)|0;for(const [di,dj] of nb){const ni=i+di,nj=j+dj;if(ni<0||nj<0||ni>=N||nj>=N)continue;const q=nj*N+ni;if(!stand[q]||walk[q])continue;if(di&&dj&&(!stand[j*N+ni]||!stand[nj*N+i]))continue;walk[q]=1;st.push(q);}}}}
+  let standable=0,stranded=0,sealed=0,maxTravel=0,worst=null,routeCells=0;
+  for(let j=0;j<N;j++)for(let i=0;i<N;i++){const k=j*N+i;if(!stand[k])continue;standable++;if(!walk[k]){sealed++;continue;}if(route[k])routeCells++;
+   if(travel[k]===INF){stranded++;continue;}if(travel[k]>maxTravel){maxTravel=travel[k];worst={x:ox+i*c,y:oy+j*c};}}
+  // exits must connect to each other along routes (a ring road, not three islands)
+  const comp=new Int32Array(N*N).fill(-1);let nc=0;const comps=new Set();
+  for(const e of exits){let seed=-1;for(let j=0;j<N&&seed<0;j++)for(let i=0;i<N;i++){const k=j*N+i;if(route[k]&&Math.hypot(ox+i*c-e.gx,oy+j*c-e.gy)<=fc.goalReach){seed=k;break;}}
+   if(seed<0){comps.add('none:'+e.id);continue;}if(comp[seed]<0){const st=[seed];comp[seed]=nc;while(st.length){const q=st.pop(),qi=q%N,qj=(q/N)|0;for(const [di,dj] of nb){const ni=qi+di,nj=qj+dj;if(ni<0||nj<0||ni>=N||nj>=N)continue;const r=nj*N+ni;if(route[r]&&comp[r]<0){comp[r]=nc;st.push(r);}}}nc++;}comps.add(comp[seed]);}
+  return{cell:c,N,ox,oy,floor,stand,walk,route,clear,travel,pocket,exits,standable,routeCells,stranded,sealed,maxTravel,worst,connected:comps.size===1,fireCode:fc};
+ },
+ // Human-readable violations; [] means the layout passes every guardrail.
+ violations(map,res){
+  const fc=AUTHORING.fireCode,out=[];res=res||this.analyze(map);
+  for(const b of this.blockers(map,fc))out.push('exit '+b.exit+' approach blocked by '+b.by);
+  for(const e of res.exits)if(!e.reachable)out.push('exit '+e.id+' has no '+fc.routeMin+' in route to it');
+  if(!res.connected)out.push('exits are not connected by routes >= '+fc.routeMin+' in wide');
+  if(res.maxTravel>fc.maxTravel)out.push('travel '+res.maxTravel.toFixed(0)+' in > '+fc.maxTravel+' in');
+  if(res.stranded>0)out.push(res.stranded+' standable cells have no route to an exit');
+  return out;
+ },
+ // Paint travel distance onto a canvas (green near an exit -> red at the limit; violet = stranded; dim = off-route pocket)
+ toCanvas(res){
+  const cv=document.createElement('canvas');cv.width=cv.height=res.N;const g=cv.getContext('2d'),img=g.createImageData(res.N,res.N),u=new Uint32Array(img.data.buffer);
+  for(let j=0;j<res.N;j++)for(let i=0;i<res.N;i++){const k=j*res.N+i,o=(res.N-1-j)*res.N+i;if(!res.stand[k]){u[o]=0;continue;}
+   const t=res.travel[k];if(t===Infinity){u[o]=0xff9b3fd0;continue;}const q=Math.min(1,t/res.fireCode.maxTravel),r=(q*255)|0,gg=((1-q*.6)*200)|0,a=res.route[k]?150:80;u[o]=(a<<24)|(60<<16)|(gg<<8)|r;}
+  g.putImageData(img,0,0);return cv;
+ }
+};
+// =============================================================================
+// CLUSTERS - "hide the wire management, encourage game-hopping" as executable rules (1.3.0)
+// -----------------------------------------------------------------------------
+// concealed(cab): the floor 17 in behind the cabinet (centre and +-12 in either side) is not somewhere a player can stand and
+//   walk to - it is inside another cabinet, a chase against the core/wall, or a sealed pocket. That is where the cables run.
+// cluster: cabinets whose footprints are within `link` in of each other (touching backs and sides).
+// hop: other cabinets whose play spots are within `hop` in of this one's.
+// =============================================================================
+const Cluster={
+ link:12,hop:120,behind:17, // PLAYER_R+6: clearly standable if open, robust to the 6 in raster
+ dist(a,b){const ca=solidCorners(a),cb=solidCorners(b);
+  for(const A of[a,b]){const other=A===a?cb:ca,mine=A===a?ca:cb,bs=basis(A.ang);let inside=0;for(const p of other){const dx=p.x-A.x,dy=p.y-A.y;if(Math.abs(dx*bs.f.x+dy*bs.f.y)<A.d/2&&Math.abs(dx*bs.r.x+dy*bs.r.y)<A.w/2)inside++;}if(inside)return 0;}
+  const segs=P=>P.map((p,i)=>[p,P[(i+1)%P.length]]);let m=Infinity;
+  for(const p of ca)for(const [s,t] of segs(cb))m=Math.min(m,Math.sqrt(Geom.closestOnSeg(p.x,p.y,s.x,s.y,t.x,t.y).d2));
+  for(const p of cb)for(const [s,t] of segs(ca))m=Math.min(m,Math.sqrt(Geom.closestOnSeg(p.x,p.y,s.x,s.y,t.x,t.y).d2));
+  return m;
+ },
+ analyze(map,res){
+  res=res||Egress.analyze(map);const N=res.N,cell=(x,y)=>{const i=Math.round((x-res.ox)/res.cell),j=Math.round((y-res.oy)/res.cell);return i<0||j<0||i>=N||j>=N?-1:j*N+i;};
+  const cabs=map.cabinets,out=cabs.map(c=>({letter:c.letter,concealed:true,cluster:-1,hops:0}));
+  cabs.forEach((c,n)=>{const f={x:Math.cos(c.ang),y:Math.sin(c.ang)},r={x:Math.sin(c.ang),y:-Math.cos(c.ang)},bx=c.x-f.x*(c.d/2+this.behind),by=c.y-f.y*(c.d/2+this.behind);
+   for(const s of[-12,0,12]){const k=cell(bx+r.x*s,by+r.y*s);if(k>=0&&res.walk[k])out[n].concealed=false;}});
+  const parent=cabs.map((_,i)=>i),find=i=>parent[i]===i?i:(parent[i]=find(parent[i]));
+  for(let i=0;i<cabs.length;i++)for(let j=i+1;j<cabs.length;j++)if(this.dist(cabs[i],cabs[j])<=this.link)parent[find(i)]=find(j);
+  const roots=[...new Set(cabs.map((_,i)=>find(i)))],size={};cabs.forEach((_,i)=>{const r=find(i);size[r]=(size[r]||0)+1;out[i].cluster=roots.indexOf(r);out[i].size=0;});cabs.forEach((_,i)=>{out[i].size=size[find(i)];});
+  const spots=cabs.map(c=>Egress.playSpot(c));
+  for(let i=0;i<cabs.length;i++)for(let j=0;j<cabs.length;j++)if(i!==j&&Math.hypot(spots[i].x-spots[j].x,spots[i].y-spots[j].y)<=this.hop)out[i].hops++;
+  return{cabinets:out,clusters:roots.length,exposed:out.filter(o=>!o.concealed).map(o=>o.letter),small:out.filter(o=>o.size<3).map(o=>o.letter),lonely:out.filter(o=>o.hops<1).map(o=>o.letter)};
  }
 };
 
@@ -600,6 +898,10 @@ function wallArt(key,cz){const F=artSize(key),r=v=>Math.round(v*100)/100;return{
 const AUTHORING={
  schema:'fts-arcade-floor-authoring-1',
  officeClearance:10,
+ // 1.3.0 FIRE CODE, THE SWISS WAY. VKF/AEAI Brandschutzrichtlinie 16-15 (Flucht- und Rettungswege): route >= 1.20 m,
+ // exit door >= 0.90 m, travel to an exit <= 35 m. 1 world unit = 1 in. Egress (below) checks these on every build.
+ // This is a design guardrail for a video-game lobby, not a compliance certificate.
+ fireCode:{routeMin:47.25,exitMin:35.5,maxTravel:1378,exitApproach:{width:72,depth:120},goalReach:60,pocketMax:72},
  // Perimeter contract. The three world EXITS are still authored in absolute inches
  // against a 430 in outer wall and shifted radially by (RING.outer - authoredOuter).
  // Everything else on the wall (amenities, ad windows, posters) is mounted FLUSH from
@@ -628,6 +930,7 @@ const AUTHORING={
   {letter:'L',x:-148.5,y:-40.25,deg:-90}
  ],
  // New content rides the open outer ring. Existing A-Z positions remain frozen.
+ // 1.2.0 placement of AA-AE (polar, r=400): each one sat in front of an exit or floated alone. Kept for ?layout=legacy only.
  cabinetAdditions:[
   {letter:'AA',deg:0,r:400},
   {letter:'AB',deg:70,r:400},
@@ -635,6 +938,20 @@ const AUTHORING={
   {letter:'AD',deg:270,r:400},
   {letter:'AE',deg:290,r:400}
  ],
+ // 1.3.0 ISLANDS: n cabinets per side, back-to-back, centred on (cx,cy). deg = direction the FRONT row faces; the back row faces the opposite way.
+ // Wires run down the seam between the rows, so an island has no visible back. A cap is one cabinet across the END of the rows, back to the seam
+ // (side 'left'|'right' as seen from the front row), so every back in the island is against another cabinet. front[0] sits on the LEFT of the front row as seen from the front.
+ cabinetIslands:[
+  {id:'NORTH_ISLAND',front:['AA','AB'],back:['AC','AD'],caps:[{letter:'AE',side:'left'}],cx:0,cy:318.5,deg:-90}
+ ],
+ // 1.3.0 FLOORING: rugs and aprons are floor decals (see Flooring). All dimensions are multiples of the 64 in tile so patterns start and end clean.
+ // Later decals win. u runs along the long axis (deg); the pattern origin is the rug's start edge, which is the edge you walk up to.
+ flooring:{decals:[
+  {id:'APRON_EAST_LOBBY',tex:'TILE_BLUE',cx:424,cy:0,len:192,wid:128,deg:0},
+  {id:'APRON_WEST_THEATERS',tex:'TILE_GOLD_DARK',cx:-424,cy:0,len:192,wid:128,deg:180},
+  {id:'RUNNER_OFFICE',tex:'FLOOR_CARPET_1',cx:0,cy:-246,len:256,wid:128,deg:-90},
+  {id:'APRON_SOUTH_REDEYE',tex:'FLOOR_RED',cx:0,cy:-470,len:192,wid:128,deg:-90}
+ ]},
  // Office entry (core south face, faces the spawn). Sizes come from the art aspect (artSize).
  officeEntry:[
   Object.assign({id:'WHITEBOARD',x:-50,y:-119,deg:-90,mat:'FIX_WHITEBOARD',label:'WHITEBOARD',url:'https://frymatic.us/FTSArcade/',cta:'VIEW ARCADE NOTES'},wallArt('WHITEBOARD',58)),
@@ -720,12 +1037,12 @@ function orderUrl(unit){return PORTALS.order+'?window='+encodeURIComponent(unit)
 function dealUrl(unit){return PORTALS.adDeal+'?inventory='+encodeURIComponent(unit)+'&source=fts-arcade-floor';}
 
 function buildLevel(){
- const map=MapBuilder.build(ringDefs());
+ const FLOOR=Flooring.build(ringDefs(),AUTHORING.flooring,OPTS.layout==='nightlife'&&OPTS.rugs),map=MapBuilder.build(FLOOR.defs);map.flooring=FLOOR.report;
  for(const ln of map.lines){
   if(ln.back>=0){ln.blocking=false;ln.upper=MAT.WALL_GOLD;ln.lower=MAT.WALL_GOLD;continue;}
   const a=map.verts[ln.v1],b=map.verts[ln.v2],mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
   if(Math.max(Math.abs(mx),Math.abs(my))<RING.inner+14){ln.mid=MAT.OFFICE_DARK;ln.tag='OFFICE_CORE';}
-  else{const ang=Math.atan2(my,mx);ln.mid=Math.abs(Math.sin(ang*3))>.72?MAT.WALL_BLACK_GOLD:MAT.WALL_RIB;ln.tag='OUTER_WALL';}
+  else{const sf=map.sectors[ln.front],ang=Number.isFinite(sf.planeAng)?sf.planeAng:Math.atan2(my,mx);ln.mid=Math.abs(Math.sin(ang*3))>.72?MAT.WALL_BLACK_GOLD:MAT.WALL_RIB;ln.tag='OUTER_WALL';}
  }
  // Radial shift, now used ONLY by the three world exits (see AUTHORING.perimeter).
  // Amenities, ad windows and posters mount flush from facet geometry instead.
@@ -736,8 +1053,11 @@ function buildLevel(){
  const backSep=(CABINET_DIM.d+AUTHORING.packing.backGap)/2;
  const pod4=(def)=>{const ang=def.deg*DEG,f={x:Math.cos(ang),y:Math.sin(ang)},r={x:Math.sin(ang),y:-Math.cos(ang)};def.front.forEach((L,i)=>{const rs=i?sideSep:-sideSep;addCab(L,def.cx+f.x*backSep+r.x*rs,def.cy+f.y*backSep+r.y*rs,ang);});def.back.forEach((L,i)=>{const rs=i?sideSep:-sideSep;addCab(L,def.cx-f.x*backSep+r.x*rs,def.cy-f.y*backSep+r.y*rs,ang+Math.PI);});};
  AUTHORING.cabinetPods.forEach(pod4);
+ const islandN=(def)=>{const ang=def.deg*DEG,f={x:Math.cos(ang),y:Math.sin(ang)},r={x:Math.sin(ang),y:-Math.cos(ang)},pitch=CABINET_DIM.w+AUTHORING.packing.sideGap,put=(row,sgn)=>row.forEach((L,i)=>{const rs=(i-(row.length-1)/2)*pitch;addCab(L,def.cx+sgn*f.x*backSep+r.x*rs,def.cy+sgn*f.y*backSep+r.y*rs,ang+(sgn<0?Math.PI:0));});put(def.front,1);put(def.back,-1);
+  for(const cp of(def.caps||[])){const sg=cp.side==='left'?-1:1,W=Math.max(def.front.length,def.back.length)*pitch-AUTHORING.packing.sideGap,off=sg*(W/2+AUTHORING.packing.sideGap+CABINET_DIM.d/2);addCab(cp.letter,def.cx+r.x*off,def.cy+r.y*off,Math.atan2(r.y*sg,r.x*sg));}};
  AUTHORING.cabinetSingles.forEach(c=>addCab(c.letter,c.x,c.y,c.deg*DEG));
- AUTHORING.cabinetAdditions.forEach(c=>{const a=c.deg*DEG;addCab(c.letter,Math.cos(a)*c.r,Math.sin(a)*c.r,a+Math.PI);});
+ if(OPTS.layout==='nightlife')(AUTHORING.cabinetIslands||[]).forEach(islandN); // after A-Z so map.cabinets keeps its order
+ if(OPTS.layout==='legacy')AUTHORING.cabinetAdditions.forEach(c=>{const a=c.deg*DEG;addCab(c.letter,Math.cos(a)*c.r,Math.sin(a)*c.r,a+Math.PI);});
 
  // ---- 1.1.0 wall mounting -------------------------------------------------------------------
  // Outer wall = the 32 flat facets (facet i centred on (i+.5)*11.25 deg). Core = the four faces of the
@@ -772,6 +1092,7 @@ function buildLevel(){
  ];
  exitDefs.forEach(e=>{const r=wallR(418),x=Math.cos(e.a)*r,y=Math.sin(e.a)*r,face=e.a+Math.PI,s=boxSolid(e.id,x,y,face,72,8,84,MAT.EXIT,MAT.WALL_GOLD,{kind:'exit',label:e.label,url:e.url,target:e.target,cta:e.cta,collision:true});map.solids.push(s);map.exits.push(s);map.targets.push(s);});
  prepareStaticGeometry(map);
+ if(OPTS.layout==='nightlife')map.spawn=Object.assign({},map.spawn,{x:.25});
  return map;
 }
 
@@ -815,7 +1136,8 @@ class Sim{
   this.stance=0;this.eyeHeight=EYE;this.slideT=0;this.slideElapsed=0;this.slideRearm=0;
   this.slideDirX=0;this.slideDirY=0;this.slideBuffered=false;this.currentFov=FOV;
  }
- sectorAt(x,y){for(const s of this.map.sectors)if(Geom.pointInPoly(x,y,s.poly))return s.idx;return-1;}
+ sectorAt(x,y){for(const s of this.map.sectors)if(Geom.pointInPoly(x,y,s.poly))return s.idx;
+  for(const[dx,dy]of[[3e-4,1e-4],[-3e-4,-1e-4],[1e-4,-3e-4],[-1e-4,3e-4]])for(const s of this.map.sectors)if(Geom.pointInPoly(x+dx,y+dy,s.poly))return s.idx;return-1;}
  eyeZ(){const floor=this.sector>=0?this.map.sectors[this.sector].floor:0,bob=this.grounded&&this.slideT<=0?Math.sin(this.bob)*(1.2*(1-this.stance*.55)):0;return floor+this.eyeHeight+this.jumpZ+bob;}
  lineBlocks(ln){return ln.back<0||ln.blocking;}
  tryMove(nx,ny){const M=this.map;for(let pass=0;pass<3;pass++){let hit=false;for(const ln of M.lines){if(!this.lineBlocks(ln))continue;const a=M.verts[ln.v1],b=M.verts[ln.v2],c=Geom.closestOnSeg(nx,ny,a.x,a.y,b.x,b.y);if(c.d2>=PLAYER_R*PLAYER_R)continue;const d=Math.sqrt(c.d2)||.0001,p=(PLAYER_R-d)+.02;nx+=((nx-c.x)/d)*p;ny+=((ny-c.y)/d)*p;hit=true;}for(const s of M.solids){if(!s.collision)continue;const p=obbPush(nx,ny,s,PLAYER_R);if(p){nx=p.x;ny=p.y;hit=true;}}if(!hit)break;}
@@ -923,8 +1245,8 @@ class DrawLists{
  constructor(w,h){this.alloc(w,h);}
  alloc(w,h){this.w=w;this.h=h;
   const cap=Math.max(2048,w*PERF.wallSpanFactor|0);this.wN=0;
-  this.wX=new Int16Array(cap);this.wY0=new Float32Array(cap);this.wY1=new Float32Array(cap);this.wTex=new Uint8Array(cap);this.wU=new Float32Array(cap);this.wTop=new Float32Array(cap);this.wBot=new Float32Array(cap);this.wF0=new Float32Array(cap);this.wF1=new Float32Array(cap);this.wDist=new Float32Array(cap);this.wLight=new Float32Array(cap);this.wStretch=new Uint8Array(cap);
-  const scap=w*h/2|0;this.sN=0;this.sY=new Int16Array(scap);this.sX0=new Int16Array(scap);this.sX1=new Int16Array(scap);this.sFlat=new Uint8Array(scap);this.sDist=new Float32Array(scap);this.sLight=new Float32Array(scap);this.sSec=new Uint8Array(scap);
+  this.wX=new Int16Array(cap);this.wY0=new Float32Array(cap);this.wY1=new Float32Array(cap);this.wTex=new Uint16Array(cap);this.wU=new Float32Array(cap);this.wTop=new Float32Array(cap);this.wBot=new Float32Array(cap);this.wF0=new Float32Array(cap);this.wF1=new Float32Array(cap);this.wDist=new Float32Array(cap);this.wLight=new Float32Array(cap);this.wStretch=new Uint8Array(cap);
+  const scap=w*h/2|0;this.sN=0;this.sY=new Int16Array(scap);this.sX0=new Int16Array(scap);this.sX1=new Int16Array(scap);this.sFlat=new Uint16Array(scap);this.sDist=new Float32Array(scap);this.sLight=new Float32Array(scap);this.sSec=new Uint16Array(scap);
   this.pixelDepth=new Float32Array(w*h);this.hFaces=[];this.stats={sectors:0,portals:0,lines:0,solidFaces:0,culledSolids:0,lodParts:0,grows:0,dropped:0};
  }
  _growWalls(){
@@ -969,7 +1291,7 @@ const RenderCore={
   while(q.length&&jobs++<220){const job=q.shift();if(job.depth>28||seenJob(job))continue;const sec=S[job.sec],depth=job.depth,ytop=out._ytop[depth],ybot=out._ybot[depth],jx0=job.x0,jx1=job.x1;out.stats.sectors++;const ct=out._pt,cb=out._pb,ft=out._ft,fb=out._fb;for(let x=jx0;x<=jx1;x++){ct[x]=h;cb[x]=-1;ft[x]=h;fb[x]=-1;}
    const portals=[];
    for(const li of sec.lines){const ln=M.lines[li],flip=ln.back===sec.idx,other=flip?ln.front:ln.back,p=V[flip?ln.v2:ln.v1],qq=V[flip?ln.v1:ln.v2],a0=Geom.view(sim.x,sim.y,ca,sa,p.x,p.y),b0=Geom.view(sim.x,sim.y,ca,sa,qq.x,qq.y),cl=Geom.clipNear(a0,b0,NEAR);if(!cl)continue;const A=cl[0],B=cl[1];let xa=Geom.projX(A.tx,A.tz,hw,pd),xb=Geom.projX(B.tx,B.tz,hw,pd);if(xa>=xb)continue;const sx0=Math.max(jx0,Math.ceil(xa)),sx1=Math.min(jx1,Math.ceil(xb)-1);if(sx1<sx0)continue;out.stats.lines++;const len=Math.hypot(qq.x-p.x,qq.y-p.y),iza=1/A.tz,izb=1/B.tz,ua=A.t*iza,ub=B.t*izb,back=other>=0?S[other]:null,isPortal=!!back,nxt=isPortal?{x0:w,x1:-1}:null;
-    for(let x=sx0;x<=sx1;x++){const cTop=ytop[x],cBot=ybot[x];if(cTop>cBot)continue;const f=(x+.5-xa)/(xb-xa),iz=iza+(izb-iza)*f,z=1/iz,u=(ua+(ub-ua)*f)*z*len,dist=z,yC=Geom.projY(sec.ceil,pz,z,hor,pd),yF=Geom.projY(sec.floor,pz,z,hor,pd);let wt=Math.round(yC),wb=Math.round(yF)-1;wt=Math.max(cTop,Math.min(cBot+1,wt));wb=Math.min(cBot,Math.max(cTop-1,wb));if(cTop<=wt-1){ct[x]=cTop;cb[x]=wt-1;}if(wb+1<=cBot){ft[x]=wb+1;fb[x]=cBot;}
+    for(let x=sx0;x<=sx1;x++){const cTop=ytop[x],cBot=ybot[x];if(cTop>cBot)continue;const f=(x+.5-xa)/(xb-xa),iz=iza+(izb-iza)*f,z=1/iz,u=(ua+(ub-ua)*f)*z*len+(ln.u0||0),dist=z,yC=Geom.projY(sec.ceil,pz,z,hor,pd),yF=Geom.projY(sec.floor,pz,z,hor,pd);let wt=Math.round(yC),wb=Math.round(yF)-1;wt=Math.max(cTop,Math.min(cBot+1,wt));wb=Math.min(cBot,Math.max(cTop-1,wb));if(cTop<=wt-1){ct[x]=cTop;cb[x]=wt-1;}if(wb+1<=cBot){ft[x]=wb+1;fb[x]=cBot;}
      if(!isPortal){if(wt<=wb)out.wall(x,wt,wb+1,ln.mid,u/64,sec.ceil,sec.floor,dist,sec.light,yC,yF,false);ytop[x]=1;ybot[x]=0;}
      else{const yU=Geom.projY(back.ceil,pz,z,hor,pd),yL=Geom.projY(back.floor,pz,z,hor,pd);let ut=wt,ub=Math.min(wb,Math.round(yU)-1),lt=Math.max(wt,Math.round(yL)),lb=wb;if(back.ceil<sec.ceil&&ut<=ub)out.wall(x,ut,ub+1,ln.upper,u/64,sec.ceil,back.ceil,dist,sec.light,yC,yU,false);if(back.floor>sec.floor&&lt<=lb)out.wall(x,lt,lb+1,ln.lower,u/64,back.floor,sec.floor,dist,sec.light,yL,yF,false);const nt=Math.max(wt,back.ceil<sec.ceil?ub+1:wt),nb=Math.min(wb,back.floor>sec.floor?lt-1:wb);ytop[x]=1;ybot[x]=0;if(nt<=nb){nxt.x0=Math.min(nxt.x0,x);nxt.x1=Math.max(nxt.x1,x);out._nt[x]=nt;out._nb[x]=nb;}else{out._nt[x]=1;out._nb[x]=0;}}
     }
@@ -1036,19 +1358,21 @@ function matteEdgeWhite(cv,floor){
 // High-quality bake for atlas art: crop at native res (scaled to the actual atlas size), matte if asked,
 // then halve repeatedly (2x2 box) so the final resize is never an aliasing 4:1 nearest/bilinear jump.
 function resampleHQ(g,im,r,tw,th,m){
- const sx=(im.naturalWidth||im.width)/FIXTURE_ATLAS_META.width,sy=(im.naturalHeight||im.height)/FIXTURE_ATLAS_META.height;
+ const meta=m.atlasMeta||FIXTURE_ATLAS_META,sx=(im.naturalWidth||im.width)/meta.width,sy=(im.naturalHeight||im.height)/meta.height;
  let cur=document.createElement('canvas');cur.width=Math.max(1,Math.round(r[2]*sx));cur.height=Math.max(1,Math.round(r[3]*sy));
  const cg=cur.getContext('2d',{willReadFrequently:!!m.matte});cg.imageSmoothingEnabled=false;cg.drawImage(im,r[0]*sx,r[1]*sy,r[2]*sx,r[3]*sy,0,0,cur.width,cur.height);
  if(m.matte&&!matteEdgeWhite(cur,232))console.warn('[FTS ARCADE] matte skipped (tainted canvas / file://): '+m.name+' keeps its backdrop');
  while(cur.width>=tw*2&&cur.height>=th*2){const nx=document.createElement('canvas');nx.width=cur.width>>1;nx.height=cur.height>>1;const ng=nx.getContext('2d');ng.imageSmoothingEnabled=true;ng.imageSmoothingQuality='high';ng.drawImage(cur,0,0,nx.width,nx.height);cur=nx;}
  g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';g.drawImage(cur,0,0,cur.width,cur.height,0,0,tw,th);
 }
-function cropCanvas(im,r,sheet,m){const tw=(m&&m.tw)||64,th=(m&&m.th)||64,cv=document.createElement('canvas');cv.width=tw;cv.height=th;const g=cv.getContext('2d');g.imageSmoothingEnabled=false;if(sheet==='solid'){g.fillStyle=(m&&m.color)||'#03050a';g.fillRect(0,0,tw,th);}else if(im&&r&&m&&m.hq)resampleHQ(g,im,r,tw,th,m);else if(im&&r)g.drawImage(im,r[0],r[1],r[2],r[3],0,0,tw,th);else{g.fillStyle='#222833';g.fillRect(0,0,tw,th);g.strokeStyle='#ff4a98';g.strokeRect(2,2,tw-4,th-4);}return cv;}
+function cropCanvas(im,r,sheet,m){const tw=(m&&m.tw)||64,th=(m&&m.th)||64,cv=document.createElement('canvas');cv.width=tw;cv.height=th;const g=cv.getContext('2d');g.imageSmoothingEnabled=false;if(sheet==='solid'){g.fillStyle=(m&&m.color)||'#03050a';g.fillRect(0,0,tw,th);}else if(im&&r&&m&&m.hq){resampleHQ(g,im,r,tw,th,m);if(m.seam>0)healSeams(cv,m.seam);}else if(im&&r)g.drawImage(im,r[0],r[1],r[2],r[3],0,0,tw,th);else{g.fillStyle='#222833';g.fillRect(0,0,tw,th);g.strokeStyle='#ff4a98';g.strokeRect(2,2,tw-4,th-4);}return cv;}
 function shadeStrip(src,level){const cv=document.createElement('canvas');cv.width=64;cv.height=TILE_H;const g=cv.getContext('2d');g.imageSmoothingEnabled=false;for(let y=0;y<TILE_H;y+=64)g.drawImage(src,0,y,64,64);const k=level/(SHADES-1);g.globalCompositeOperation='source-atop';g.fillStyle='rgba(2,4,8,'+(k*.9)+')';g.fillRect(0,0,64,TILE_H);return cv;}
 function shadeTile(src,level){const cv=document.createElement('canvas');cv.width=src.width;cv.height=src.height;const g=cv.getContext('2d');g.imageSmoothingEnabled=false;g.drawImage(src,0,0);const k=level/(SHADES-1);g.globalCompositeOperation='source-atop';g.fillStyle='rgba(2,4,8,'+(k*.9)+')';g.fillRect(0,0,cv.width,cv.height);return cv;}
 function buildTextures(){baseBank=new Array(MATERIALS.length);texBank=new Array(MATERIALS.length);flatBank=new Array(MATERIALS.length);shadeTileBank=new Array(MATERIALS.length);planePixelBank=new Array(MATERIALS.length);mipBank=new Array(MATERIALS.length);mipSrcBank=new Array(MATERIALS.length);IMG.ready=IMG.errors.length===0&&!!(IMG.world&&IMG.cab1&&IMG.cab2&&IMG.cab3&&IMG.cab4&&IMG.screen&&IMG.fixture&&IMG.cabinetRef)&&PACKAGE_ASSET_KEYS.every(k=>!!IMG[k]);}
 function baseTile(i){
- if(baseBank[i])return baseBank[i];const m=MATERIALS[i];return baseBank[i]=cropCanvas(IMG[m.sheet],m.rect,m.sheet,m);
+ if(baseBank[i])return baseBank[i];const m=MATERIALS[i];
+ if(m.sheet==='world'){const s=WorldAtlas.source(m);return baseBank[i]=cropCanvas(IMG.world,s.rect,'world',Object.assign({},m,{hq:s.hq,atlasMeta:s.meta,seam:s.seam}));}
+ return baseBank[i]=cropCanvas(IMG[m.sheet],m.rect,m.sheet,m);
 }
 function shadedTile(i,level){let row=shadeTileBank[i];if(!row)row=shadeTileBank[i]=new Array(SHADES);return row[level]||(row[level]=shadeTile(baseTile(i),level));}
 // Mip chain for hi-res stretch art: level k is the base tile halved k times. wall() picks k from the
@@ -1197,12 +1521,63 @@ const IMAGE_LOADS=[
 ];
 Promise.all(IMAGE_LOADS.map(([,src,label])=>loadImage(src,label))).then(images=>{
  IMAGE_LOADS.forEach(([k],i)=>{const im=images[i];IMG[k]=im;IMG.meta[k]=im?[im.naturalWidth,im.naturalHeight]:null;});
+ WorldAtlas.detect(IMG.world);if(OPTS.atlasdebug)atlasDebugOverlay(IMG.world);
  buildTextures();bakeBaseTilesAndRelease();if(IMG.errors.length){telemetry.textContent=VERSION+' | ASSET ERROR: '+IMG.errors.join(', ');console.error('[FTS ARCADE] atlas load failure',IMG.errors,ASSET_FILES);}
 });
 resize();buildTextures();
 if(MAP_ERRORS.length)console.error('[FTS ARCADE] map validation',MAP_ERRORS);
 function screenPart(c){return c.parts.find(p=>p.role==='screen');}
 const REF_TESTS={
+ // ---- 1.3.0 fire code / egress ----
+ fireCodeMatchesSwissFigures:()=>{const f=AUTHORING.fireCode;return Math.abs(f.routeMin-120/2.54)<.1&&Math.abs(f.exitMin-90/2.54)<.1&&Math.abs(f.maxTravel-3500/2.54)<1&&map.exits.every(e=>e.w>=f.exitMin)&&f.exitApproach.width>=f.exitMin;},
+ egressNoViolations:()=>OPTS.layout!=='nightlife'||Egress.violations(map).length===0,
+ egressExitApproachesClear:()=>OPTS.layout!=='nightlife'||Egress.blockers(map).length===0,
+ egressTravelWithinLimit:()=>OPTS.layout!=='nightlife'||Egress.analyze(map).maxTravel<=AUTHORING.fireCode.maxTravel,
+ // the float32 regression: a stale-entry check against a rounded store skipped valid paths and stranded 73% of the floor
+ egressTravelIsLipschitz:()=>{const r=Egress.analyze(map),N=r.N,c=r.cell,tol=c*Math.SQRT2+1e-6;for(let j=1;j<N-1;j++)for(let i=1;i<N-1;i++){const k=j*N+i;if(!r.route[k]||!r.walk[k])continue;if(r.travel[k]===Infinity)return false;for(const q of[k+1,k+N,k+N+1,k-N+1]){if(!r.route[q]||!r.walk[q])continue;if(Math.abs(r.travel[k]-r.travel[q])>tol)return false;}}return true;},
+ // the detector must be able to say no: park a cabinet in front of an exit, wall off the ring, and it must complain
+ egressDetectsBlockedExit:()=>{const e=map.exits[0],b=Egress.approachBox(e,AUTHORING.fireCode),fake=Object.assign({},map,{solids:map.solids.concat([{id:'FAKE',kind:'box',x:b.x,y:b.y,ang:e.ang,w:40,d:40,collision:true}])});return Egress.blockers(fake).some(x=>x.by==='FAKE');},
+ egressDetectsNarrowRoute:()=>{const wall=[];for(let a=0;a<TAU;a+=.03)wall.push({id:'W'+a,kind:'box',x:Math.cos(a)*380,y:Math.sin(a)*380,ang:a,w:20,d:6,collision:true});const fake=Object.assign({},map,{solids:map.solids.concat(wall)});return Egress.violations(fake).length>0;},
+ // 240 in (20 ft) of clear view down each exit axis. The frozen east pod (Q-T) and J sit ~285/306 in in from the LOBBY/THEATERS exits: legal, but that is the limit.
+ exitsHaveClearSightline:()=>OPTS.layout!=='nightlife'||map.exits.every(e=>{const f={x:Math.cos(e.ang),y:Math.sin(e.ang)},len=240,box={x:e.x+f.x*(e.d/2+len/2),y:e.y+f.y*(e.d/2+len/2),ang:e.ang,w:e.w,d:len};return!map.cabinets.some(c=>solidsOverlap(box,c,.01));}),
+ spawnSeesOfficeDoor:()=>{const d=map.fixtures.find(f=>f.id==='OFFICE_DOOR'),s=map.spawn,box={x:(s.x+d.x)/2,y:(s.y+d.y)/2,ang:Math.PI/2,w:48,d:Math.abs(s.y-d.y)};return!map.solids.some(x=>x.collision&&solidsOverlap(box,x,.01));},
+ // ---- 1.3.0 clusters: hide wire management, encourage game-hopping ----
+ cabinetBacksConcealed:()=>OPTS.layout!=='nightlife'||Cluster.analyze(map).exposed.length===0,
+ cabinetsFormClusters:()=>OPTS.layout!=='nightlife'||Cluster.analyze(map).small.length===0,
+ cabinetsInHoppingRange:()=>OPTS.layout!=='nightlife'||Cluster.analyze(map).lonely.length===0,
+ legacyCabinetsUnchanged:()=>cabinetLayoutSignature({cabinets:map.cabinets.filter(c=>c.letter.length===1)})===CABINET_LAYOUT_SNAPSHOT&&map.cabinets.length===31,
+ // ---- 1.3.0 flooring ----
+ flooringLayoutGate:()=>OPTS.layout==='legacy'||!OPTS.rugs?map.sectors.length===RING.sides&&!map.sectors.some(s=>s.decal):AUTHORING.flooring.decals.every(d=>map.sectors.some(s=>s.decal===d.id)),
+ flooringAreaConserved:()=>{const wedges=ringDefs(),sum={};for(const s of map.sectors)sum[s.parent]=(sum[s.parent]||0)+Math.abs(Geom.area(s.poly));return wedges.every((w,i)=>Math.abs((sum[i]||0)-Math.abs(Geom.area(w.poly)))<.05);},
+ flooringNoOverlap:()=>{let bad=0;for(let x=-505.137;x<=505;x+=9.31)for(let y=-505.291;y<=505;y+=9.31){let n=0;for(const s of map.sectors)if(Geom.pointInPoly(x,y,s.poly))n++;const r=Math.hypot(x,y),inRing=Math.max(Math.abs(x),Math.abs(y))>RING.inner+.5&&r<RING.outer*Math.cos(Math.PI/RING.sides)-.5;if(inRing&&n!==1)bad++;if(!inRing&&n>1)bad++;}return bad===0;},
+ flooringStaysFlat:()=>map.sectors.every(s=>s.floor===0&&s.ceil===RING.ceil),
+ flooringTilesAlign:()=>AUTHORING.flooring.decals.every(d=>d.len%64===0&&d.wid%64===0),
+ flooringNoSlivers:()=>!(map.flooring&&map.flooring.minAltitude!==undefined)||map.flooring.minAltitude>=2,
+ flooringPiecesConvex:()=>MapBuilder.validate(map).length===0,
+ flooringLaterDecalWins:()=>{const ds=AUTHORING.flooring.decals;if(OPTS.layout!=='nightlife'||!OPTS.rugs)return true;return ds.every((d,i)=>{const P=Flooring.rectPoly(d);let cx=0,cy=0;for(const p of P){cx+=p[0]/4;cy+=p[1]/4;}const vis=Math.hypot(cx,cy)<RING.outer*.97&&Math.max(Math.abs(cx),Math.abs(cy))>RING.inner+2;if(!vis)return true;const later=ds.slice(i+1).some(o=>Geom.pointInPoly(cx+.137,cy+.291,Flooring.rectPoly(o)));const sec=map.sectors.find(s=>Geom.pointInPoly(cx+.137,cy+.291,s.poly));return!sec?false:(later||sec.decal===d.id);});},
+ rugsCoverExitApproaches:()=>OPTS.layout!=='nightlife'||!OPTS.rugs||map.exits.every(e=>{const b=Egress.approachBox(e,AUTHORING.fireCode),s=map.sectors.find(q=>Geom.pointInPoly(b.x+.13,b.y+.29,q.poly));return!!s&&!!s.decal;}),
+ rugLeadsToOfficeDoor:()=>OPTS.layout!=='nightlife'||!OPTS.rugs||['WHITEBOARD','OFFICE_DOOR','BULLETIN'].every(id=>{const f=map.fixtures.find(x=>x.id===id),q={x:f.x+Math.cos(f.ang)*30,y:f.y+Math.sin(f.ang)*30},s=map.sectors.find(z=>Geom.pointInPoly(q.x+.13,q.y+.29,z.poly));return!!s&&s.decal==='RUNNER_OFFICE';}),
+ rugFramesAreLocal:()=>map.sectors.filter(s=>s.decal).every(s=>s.decalFrame&&Geom.planeMaterialFrame(s,'world',1.1)===s.decalFrame),
+ // wall art must not restart where a rug cuts a wall: consecutive sub-segments of one wedge edge continue each other's u
+ wallPatternContinuity:()=>{const by={};for(const ln of map.lines){if(ln.back>=0)continue;const s=map.sectors[ln.front],a=map.verts[ln.v1],b=map.verts[ln.v2];(by[s.parent+'|'+ln.tag]=by[s.parent+'|'+ln.tag]||[]).push({u0:ln.u0||0,len:Math.hypot(b.x-a.x,b.y-a.y)});}
+  return Object.values(by).every(L=>{L.sort((p,q)=>p.u0-q.u0);return L.every((l,i)=>i===0||Math.abs(L[i-1].u0+L[i-1].len-l.u0)<.05);});},
+ spawnIsOffSectorSeams:()=>OPTS.layout!=='nightlife'||map.lines.every(ln=>{const a=map.verts[ln.v1],b=map.verts[ln.v2];return Math.sqrt(Geom.closestOnSeg(map.spawn.x,map.spawn.y,a.x,a.y,b.x,b.y).d2)>.1;}),
+ // ---- 1.3.0 render limits (Quake-era discipline: know your ceilings) ----
+ drawListIndicesAreWide:()=>MATERIALS.length<65536&&map.sectors.length<65536&&dl.wTex instanceof Uint16Array&&dl.sFlat instanceof Uint16Array&&dl.sSec instanceof Uint16Array,
+ sectorBudget:()=>map.sectors.length<=160,
+ // ---- 1.3.0 world atlas ----
+ atlasModeMatchesSheet:()=>{const m=IMG.meta.world;if(!m)return false;const want=(m[0]===1024&&m[1]===1024)||OPTS.atlas==='legacy'?'legacy':'v2';return WorldAtlas.active===want;},
+ atlasV2RectsSane:()=>{const T=WORLD_ATLAS_V2.tiles,i=WORLD_ATLAS_V2.inset,[W,H]=WORLD_ATLAS_V2.ref,ks=Object.keys(T);
+  const ok=ks.every(k=>{const t=T[k];return t[0]>=0&&t[1]>=0&&t[0]+t[2]<=W&&t[1]+t[3]<=H&&t[2]>2*i+16&&t[3]>2*i+16;});
+  for(let a=0;a<ks.length;a++)for(let b=a+1;b<ks.length;b++){const p=T[ks[a]],q=T[ks[b]];if(p[0]<q[0]+q[2]&&q[0]<p[0]+p[2]&&p[1]<q[1]+q[3]&&q[1]<p[1]+p[3])return false;}
+  return ok&&WORLD_ATLAS_V2.seamless.every(k=>T[k]);},
+ atlasAliasesResolve:()=>Object.values(LEGACY_TILE_ALIAS).every(n=>WORLD_RECTS[n])&&Object.values(V2_TILE_ALIAS).every(n=>WORLD_ATLAS_V2.tiles[n])&&Object.keys(WORLD_ATLAS_V2.tiles).every(n=>WORLD_RECTS[n]||LEGACY_TILE_ALIAS[n])&&Object.keys(WORLD_RECTS).every(n=>WORLD_ATLAS_V2.tiles[n]||V2_TILE_ALIAS[n]),
+ atlasEveryWorldMaterialResolves:()=>MATERIALS.filter(m=>m.sheet==='world').every(m=>!!WorldAtlas.source(m).rect),
+ atlasDecalMaterialsExist:()=>AUTHORING.flooring.decals.every(d=>MAT[d.tex]!==undefined&&MATERIALS[MAT[d.tex]].sheet==='world'),
+ healSeamsMakesTilesWrap:()=>{const cv=document.createElement('canvas');cv.width=cv.height=64;const g=cv.getContext('2d'),gr=g.createLinearGradient(0,0,64,0);gr.addColorStop(0,'#f00');gr.addColorStop(1,'#00f');g.fillStyle=gr;g.fillRect(0,0,64,64);
+  const gap=(c)=>{const d=c.getContext('2d').getImageData(0,0,64,64).data;let m=0;for(let y=0;y<64;y++){const L=(y*64)<<2,R=(y*64+63)<<2;for(let k=0;k<3;k++)m=Math.max(m,Math.abs(d[L+k]-d[R+k]));}return m;};
+  const before=gap(cv);healSeams(cv,5);const after=gap(cv),mid=cv.getContext('2d').getImageData(32,32,1,1).data;return before>200&&after<=4&&mid[0]>0&&mid[2]>0;},
+ floorHasNoHoles:()=>{const apo=RING.outer*Math.cos(Math.PI/RING.sides);for(let x=-507;x<=507;x+=3)for(let y=-507;y<=507;y+=3){if(Math.max(Math.abs(x),Math.abs(y))>RING.inner+.01&&Math.hypot(x,y)<apo-.5&&sim.sectorAt(x,y)<0)return false;}return true;},
  mapValid:()=>MAP_ERRORS.length===0,
  cabinetCount:()=>map.cabinets.length===31,
  cabinetAlphabet:()=>map.cabinets.slice(0,26).map(c=>c.letter).sort().join('')==='ABCDEFGHIJKLMNOPQRSTUVWXYZ'&&['AA','AB','AC','AD','AE'].every(L=>map.cabinets.some(c=>c.letter===L)),
@@ -1272,14 +1647,14 @@ const REF_TESTS={
  apexSlideModel:()=>KINETIC.slideMinSpeed>KINETIC.walkSpeed&&KINETIC.slideLandMinSpeed<KINETIC.slideMinSpeed&&KINETIC.slideBoostSpeed>0&&KINETIC.slideFastFriction<KINETIC.slideSlowFriction&&KINETIC.slideJumpCarry>.95&&KINETIC.slideJumpCarry<=1&&KINETIC.airAccelLambda<KINETIC.accelLambda,
  jumpSystem:()=>KINETIC.jumpVel>0&&KINETIC.gravity>0&&typeof sim.jump==='function'&&'jumpZ' in sim,
  fixedStepMovement:()=>KINETIC.simHz===60&&KINETIC.maxCatchupSteps>=6,
- planeSectorFrames:()=>map.sectors.length===RING.sides&&map.sectors.every(s=>Number.isFinite(s.planeAng)&&Number.isFinite(s.planeOx)&&Number.isFinite(s.planeOy)),
+ planeSectorFrames:()=>map.sectors.length>=RING.sides&&map.sectors.every(s=>Number.isFinite(s.planeAng)&&Number.isFinite(s.planeOx)&&Number.isFinite(s.planeOy)),
  planeMappingModes:()=>{const old=PLANE_MAPPING.mode;const ok=setPlaneMappingMode('world')==='world'&&setPlaneMappingMode('sector')==='sector'&&setPlaneMappingMode('kaleido')==='kaleido';setPlaneMappingMode(old);return ok;},
  planeBackendModes:()=>{const req=PLANE_BACKEND.requested,ok=setPlaneBackend('software')==='software'&&setPlaneBackend('pattern')==='pattern';setPlaneBackend(req);return ok;},
  iosDefaultsSoftware:()=>!PLATFORM.ios||PLANE_BACKEND.requested!=='auto'||PLANE_BACKEND.active==='software',
  planeTransformInvariant:()=>{const px=0,py=-300,yaw=.7,ca=Math.cos(yaw),sa=Math.sin(yaw),hw=320,pd=420,pz=69,hor=200,depth=180,tx=35,wx=px+ca*depth+sa*tx,wy=py+sa*depth-ca*tx,sy=hor+(pz*pd)/depth,row=sy-.5,ang=.9,ox=40,oy=-20,mc=Math.cos(ang),ms=Math.sin(ang),u=mc*(wx-ox)+ms*(wy-oy),vv=-ms*(wx-ox)+mc*(wy-oy),m=Geom.planePatternTransform(px,py,ca,sa,hw,pd,row,depth,ang,ox,oy),sx=hw+(tx/depth)*pd,qx=m.a*u+m.c*vv+m.e,qy=m.b*u+m.d*vv+m.f;return Math.hypot(qx-sx,qy-sy)<1e-6;},
  softwareWorldUVInvariant:()=>{const wx=123.25,wy=-77.5,a=Geom.planeUV(wx,wy,map.sectors[0],'world',0),b=Geom.planeUV(wx,wy,map.sectors[0],'world',1.7);return Math.abs(a.u-b.u)<1e-9&&Math.abs(a.v-b.v)<1e-9;},
  softwareProjectionInvariant:()=>{const px=12,py=-45,wx=155,wy=88,pd=420,hw=300,uv0=Geom.planeUV(wx,wy,map.sectors[0],'world',0);for(const yaw of[-.7,.1,.8]){const ca=Math.cos(yaw),sa=Math.sin(yaw),q=Geom.view(px,py,ca,sa,wx,wy);if(q.tz<=1)return false;const sx=hw+(q.tx/q.tz)*pd,tx=(sx-hw)*q.tz/pd,rx=px+ca*q.tz+sa*tx,ry=py+sa*q.tz-ca*tx,uv=Geom.planeUV(rx,ry,map.sectors[0],'world',yaw);if(Math.hypot(uv.u-uv0.u,uv.v-uv0.v)>1e-7)return false;}return true;},
- kaleidoActuallyCouplesYaw:()=>{const s=map.sectors[0],a=Geom.planeUV(s.planeOx+20,s.planeOy+7,s,'kaleido',0),b=Geom.planeUV(s.planeOx+20,s.planeOy+7,s,'kaleido',.6);return Math.hypot(a.u-b.u,a.v-b.v)>.1;},
+ kaleidoActuallyCouplesYaw:()=>{const s=map.sectors.find(q=>!q.decal),a=Geom.planeUV(s.planeOx+20,s.planeOy+7,s,'kaleido',0),b=Geom.planeUV(s.planeOx+20,s.planeOy+7,s,'kaleido',.6);return Math.hypot(a.u-b.u,a.v-b.v)>.1;},
  softwareFrameAllocated:()=>!!PLANE_SOFT.canvas&&!!PLANE_SOFT.ctx&&!!PLANE_SOFT.image&&!!PLANE_SOFT.u32&&PLANE_SOFT.width===RW&&PLANE_SOFT.height===RH,
  touchLookParity:()=>TOUCH_LOOK_SENS/MOUSE_LOOK_SENS<=1.2,
  celestialKoiSampleCount:()=>CELESTIAL_KOI_SAMPLES.length===CELESTIAL_KOI.sampleCount&&CELESTIAL_KOI.sampleCount>=500,
@@ -1301,7 +1676,7 @@ const REF_TESTS={
  celestialKoiAngleFidelity:()=>{const F=updateCelestialKoiFrame(5.5);return CELESTIAL_KOI_SAMPLES.every(s=>{const p=celestialKoiPoint(s,5.5,F),a0=Math.atan2(F.y[s.index],F.x[s.index]),a1=Math.atan2(p.y,p.x);return Math.abs(Math.atan2(Math.sin(a0-a1),Math.cos(a0-a1)))<1e-4;});},
  celestialKoiRadialMonotone:()=>{const ux=1,uy=0,lo=[],hi=[];const rIn=celestialKoiInnerR(ux,uy),mk=r0=>{const t=Math.max(0,Math.min(1,(r0-CELESTIAL_KOI.sketchRLo)/(CELESTIAL_KOI.sketchRHi-CELESTIAL_KOI.sketchRLo)));return rIn+t*(CELESTIAL_KOI_MAP.outerR-rIn);};return mk(70)<mk(99)&&mk(99)<mk(130)&&Math.abs(mk(CELESTIAL_KOI.sketchRLo)-rIn)<1e-9&&Math.abs(mk(CELESTIAL_KOI.sketchRHi)-CELESTIAL_KOI_MAP.outerR)<1e-9;},
  celestialKoiNoAssetDependency:()=>!Object.values(ASSET_FILES).flat().some(v=>/koi|fish/i.test(String(v))),
- ringSectors:()=>map.sectors.length===RING.sides,
+ ringSectors:()=>new Set(map.sectors.map(s=>s.parent)).size===RING.sides&&map.sectors.length>=RING.sides&&(map.sectors.length===RING.sides||map.sectors.some(s=>s.decal)),
  spatialAudioQuadrants:()=>crowdQuadrantAt(0,300)==='I'&&crowdQuadrantAt(300,0)==='II'&&crowdQuadrantAt(0,-300)==='III'&&crowdQuadrantAt(-300,0)==='IV',
  spatialAudioOpposites:()=>CROWD_QUADRANTS.every(q=>CROWD_OPPOSITE[CROWD_OPPOSITE[q]]===q&&crowdDesiredFor(q).length===3&&!crowdDesiredFor(q).includes(CROWD_OPPOSITE[q])),
  spatialAudioZonePoses:()=>CROWD_QUADRANTS.every(q=>CROWD_ZONE_POSES[q]&&Number.isFinite(CROWD_ZONE_POSES[q].x)&&Number.isFinite(CROWD_ZONE_POSES[q].y)),
@@ -1324,7 +1699,7 @@ const REF_TESTS={
  sameDirectoryAssets:()=>Object.values(ASSET_FILES).every(v=>(Array.isArray(v)?v:[v]).every(s=>!/^https?:/i.test(s))),
  packageAssets:()=>PACKAGE_ASSET_KEYS.every(k=>ASSET_FILES[k]&&/package\.png$/.test(ASSET_FILES[k])),
  packageAtlasContract:()=>Object.values(PACKAGE_ATLAS_RECTS).every(r=>r[0]>=0&&r[1]>=0&&r[0]+r[2]<=1024&&r[1]+r[3]<=1024),
- assetDimensions:()=>{const m=IMG.meta;return m.world&&m.world[0]===1024&&m.world[1]===1024&&['cab1','cab2','cab3','cab4'].every(k=>m[k]&&m[k][0]===1254&&m[k][1]===1254)&&m.screen&&m.screen[0]===2048&&m.screen[1]===1433&&m.fixture&&Math.abs(m.fixture[0]/m.fixture[1]-FIXTURE_ATLAS_META.width/FIXTURE_ATLAS_META.height)<.002&&m.fixture[0]>=1024&&m.cabinetRef&&m.cabinetRef[0]===767&&m.cabinetRef[1]===1432&&PACKAGE_ASSET_KEYS.every(k=>m[k]&&m[k][0]===1024&&m[k][1]===1024);},
+ assetDimensions:()=>{const m=IMG.meta;return m.world&&((m.world[0]===1024&&m.world[1]===1024)||Math.abs(m.world[0]/m.world[1]-WORLD_ATLAS_V2.ref[0]/WORLD_ATLAS_V2.ref[1])<.03)&&['cab1','cab2','cab3','cab4'].every(k=>m[k]&&m[k][0]===1254&&m[k][1]===1254)&&m.screen&&m.screen[0]===2048&&m.screen[1]===1433&&m.fixture&&Math.abs(m.fixture[0]/m.fixture[1]-FIXTURE_ATLAS_META.width/FIXTURE_ATLAS_META.height)<.002&&m.fixture[0]>=1024&&m.cabinetRef&&m.cabinetRef[0]===767&&m.cabinetRef[1]===1432&&PACKAGE_ASSET_KEYS.every(k=>m[k]&&m[k][0]===1024&&m[k][1]===1024);},
  assetsReady:()=>IMG.ready&&IMG.errors.length===0,
  sourceAtlasesReleased:()=>!IMG.artBaked||IMG.sourcesReleased,
  staticRenderGeometry:()=>map.solids.every(s=>s._render&&s._render.faces.length>0&&Number.isFinite(s._render.radius)),
@@ -1342,7 +1717,7 @@ function runRefTests(){
  }
  return{version:VERSION,pass:failures.length===0,passed:Object.values(results).filter(v=>v===true).length,total:Object.keys(REF_TESTS).length,failures,results,mapErrors:MAP_ERRORS.slice(),assetErrors:IMG.errors.slice(),runtimeErrors:RUNTIME_ERRORS.slice(),screenAtlas:SCREEN_ATLAS_META};
 }
-window.__FTS_ARCADE__={VERSION,map,sim,MapBuilder,Geom,RenderCore,DrawLists,MATERIALS,MAP_ERRORS,CABINET_ROSTER,CABINET_DIM,AISLE,PORTALS,ASSET_NAMES,CABINET_PART_RECTS,CABINET_REF_RECTS,PACKAGE_CABINETS,PACKAGE_ATLAS_META,PACKAGE_ATLAS_RECTS,PACKAGE_ASSET_KEYS,SCREEN_ATLAS_META,SCREEN_RECTS,screenRect,AUTHORING,FIXTURE_ART,FIXTURE_TEX,artSize,KINETIC,JUMP,RENDER,PERF,RING,CABINET_LAYOUT_SNAPSHOT,cabinetLayoutSignature:()=>cabinetLayoutSignature(map),PLATFORM,PLANE_BACKEND,PLANE_STATS,setPlaneBackend,togglePlaneBackend,PLANE_MAPPING,setPlaneMappingMode,togglePlaneMapping,MOUSE_LOOK_SENS,TOUCH_LOOK_SENS,SpatialCrowd,CROWD_AUDIO_URL,CROWD_QUADRANTS,CROWD_OPPOSITE,CROWD_ZONE_POSES,crowdQuadrantAt,crowdDesiredFor,CELESTIAL_KOI,CELESTIAL_KOI_MAP,CELESTIAL_KOI_SAMPLES,CELESTIAL_KOI_STATS,celestialKoiPoint,projectWorldPoint,getDrawList:()=>dl,setCelestialKoi,toggleCelestialKoi,paintCelestialKoi,solidAabb,cabinetClearOfOffice,exportAuthoring:()=>JSON.stringify(AUTHORING,null,2),tests:REF_TESTS,runTests:runRefTests};
+window.__FTS_ARCADE__={baseTile,IMG,input,Cluster,Egress,Flooring,WorldAtlas,OPTS,WORLD_ATLAS_V2,ready:()=>!!IMG.artBaked,VERSION,map,sim,MapBuilder,Geom,RenderCore,DrawLists,MATERIALS,MAP_ERRORS,CABINET_ROSTER,CABINET_DIM,AISLE,PORTALS,ASSET_NAMES,CABINET_PART_RECTS,CABINET_REF_RECTS,PACKAGE_CABINETS,PACKAGE_ATLAS_META,PACKAGE_ATLAS_RECTS,PACKAGE_ASSET_KEYS,SCREEN_ATLAS_META,SCREEN_RECTS,screenRect,AUTHORING,FIXTURE_ART,FIXTURE_TEX,artSize,KINETIC,JUMP,RENDER,PERF,RING,CABINET_LAYOUT_SNAPSHOT,cabinetLayoutSignature:()=>cabinetLayoutSignature(map),PLATFORM,PLANE_BACKEND,PLANE_STATS,setPlaneBackend,togglePlaneBackend,PLANE_MAPPING,setPlaneMappingMode,togglePlaneMapping,MOUSE_LOOK_SENS,TOUCH_LOOK_SENS,SpatialCrowd,CROWD_AUDIO_URL,CROWD_QUADRANTS,CROWD_OPPOSITE,CROWD_ZONE_POSES,crowdQuadrantAt,crowdDesiredFor,CELESTIAL_KOI,CELESTIAL_KOI_MAP,CELESTIAL_KOI_SAMPLES,CELESTIAL_KOI_STATS,celestialKoiPoint,projectWorldPoint,getDrawList:()=>dl,setCelestialKoi,toggleCelestialKoi,paintCelestialKoi,solidAabb,cabinetClearOfOffice,exportAuthoring:()=>JSON.stringify(AUTHORING,null,2),tests:REF_TESTS,runTests:runRefTests};
 const qs=new URLSearchParams(location.search);
 setPlaneBackend(qs.get('planeBackend')||qs.get('backend')||'auto');
 setPlaneMappingMode(qs.get('planes')||qs.get('plane')||'world');
