@@ -28,12 +28,13 @@
 <link rel="preload" as="image" href="fts-arcade-fixture-atlas.png">
 <link rel="preload" as="image" href="the-Cabinet.png">
 <link rel="preload" as="audio" href="crowd.mp3" type="audio/mpeg">
-<title>FTS Arcade Floor 1.1.1 Fixture Facelift</title>
+<title>FTS Arcade Floor 1.2.0 Fixture Facelift</title>
 <!-- 0.5.2 art fit: external world/fixture/screen atlases + Cabinets01-Cabinets04, exact per-CRT crops. -->
 <!-- 0.7.0 feel pass: outer ring 430->510, ceiling 132->192, jump 132->156. Sprint stays 22 mph. Cabinet layout frozen. -->
 <!-- 0.8.1 movement pass: threshold-based Apex-inspired slide, landing-slide buffer, momentum-preserving slide jumps and air steering. -->
 <!-- 0.9.0 soundscape pass: four cardinal crowd zones, HRTF panning, opposite-quadrant muting, random-offset adjacent-zone handoffs. -->
 <!-- 0.9.1 roof pass: procedural celestial-koi point schools orbit just beneath the ceiling annulus; depth-tested, no sprite assets. -->
+<!-- 1.2.0: every wall fixture now has a context menu (prompt + confirm). Food service windows -> ordering (PORTALS.order), tokens -> PORTALS.tokens (payment seam), vending + jukebox -> ad inventory (FTS-VEND-*, FTS-JUKEBOX), office door -> frymatic.us. FTS-RING-01..08 now identify order windows. -->
 <!-- 1.1.1: vending machines, jukebox and token machine are now flat wall panels (no carcass, no collision); the token link and all ids/kinds are unchanged. -->
 <!-- 1.1.0 fixture facelift: 4788x3812 cut-out fixture atlas (17 pieces), stage + DJ booth removed, teller/ad art -> food service window, 9 posters on outer AND core walls, flush wall mounting, per-material hi-res textures + mips. Cabinet layout, movement, ads, exits, links untouched. -->
 <!-- 0.9.2 flush-koi pass: schools now lie ON the ceiling plane and span the whole annulus (square core hole respected). No more centroid-frame collapse. -->
@@ -121,7 +122,7 @@ const RUNTIME_ERRORS=[];
 addEventListener('error',e=>{if(e.error||e.message)RUNTIME_ERRORS.push(String(e.error&&e.error.stack||e.message||e.error));});
 addEventListener('unhandledrejection',e=>RUNTIME_ERRORS.push(String(e.reason&&e.reason.stack||e.reason||'unhandled rejection')));
 
-const VERSION='fts-arcade-floor-1.1.1-fixture-facelift';
+const VERSION='fts-arcade-floor-1.2.0-fixture-facelift';
 const TAU=Math.PI*2, DEG=Math.PI/180;
 // Dimensional contract: 1 engine unit = 1 inch.
 // =============================================================================
@@ -209,7 +210,10 @@ const PORTALS={
  lobby:'https://frymatic.us/FTSArcade/REDEYE',
  theaters:'https://frymatic.us/FTSArcade/REDEYE',
  redeye:'https://frymatic.us/FTSArcade/REDEYE/',
+ // tokens: THE payment-flow seam. Swap this one URL when checkout exists; the floor needs no other change.
  tokens:'https://frymatic.us/FTSArcade/tokens/',
+ // order: food-service windows. PLACEHOLDER path (sits beside the deal form) - replace with the real ordering service.
+ order:'https://frymatic.us/menu/',
  adDeal:'https://frymatic.us/menu/gas-works.html'
 };
 
@@ -634,28 +638,30 @@ const AUTHORING={
  // Office entry (core south face, faces the spawn). Sizes come from the art aspect (artSize).
  officeEntry:[
   Object.assign({id:'WHITEBOARD',x:-50,y:-119,deg:-90,mat:'FIX_WHITEBOARD',label:'WHITEBOARD',url:'https://frymatic.us/FTSArcade/',cta:'VIEW ARCADE NOTES'},wallArt('WHITEBOARD',58)),
-  Object.assign({id:'OFFICE_DOOR',x:0,y:-119,deg:-90,mat:'FIX_OFFICE_DOOR',label:'OFFICE',url:'https://frymatic.us',cta:''},wallArt('OFFICE_DOOR',41)),
+  Object.assign({id:'OFFICE_DOOR',x:0,y:-119,deg:-90,mat:'FIX_OFFICE_DOOR',label:'OFFICE DOOR',url:'https://frymatic.us',cta:'OPEN OFFICE'},wallArt('OFFICE_DOOR',41)),
   Object.assign({id:'BULLETIN',x:50,y:-119,deg:-90,mat:'FIX_BULLETIN',label:'BULLETIN BOARD',url:'https://frymatic.us/FTSArcade/SUBMISSION',cta:'VIEW EVENTS'},wallArt('BULLETIN',58))
  ],
  wallPortals:[], // STAGE_SIGN / DJ_SIGN retired with the stage; the mechanism stays for future wall portals
  // Amenities are flat wall panels (art only, standing on the floor, no collision), flush to an outer-wall
  // facet. facet = 0..31 (facet i is centred on (i+.5)*11.25 deg and is 99.9 in long); off = inches along
- // the facet (+ = counter-clockwise). Width/height come from the art (artSize).
+ // the facet (+ = counter-clockwise). Width/height come from the art (artSize). Every amenity has a context
+ // menu: `unit` = sold as ad space (kind 'ad', deal form for that inventory unit); no unit = its own
+ // destination (`kind`/`url`/`cta`, e.g. the token machine).
  amenities:[
-  {id:'VEND_DRINK',label:'DRINK VENDING',art:'VEND_DRINK',facet:17,off:0},
-  {id:'VEND_SNACK',label:'SNACK VENDING',art:'VEND_SNACK',facet:30,off:0},
-  {id:'JUKEBOX',label:'JUKEBOX',art:'JUKEBOX',facet:8,off:0},
+  {id:'VEND_DRINK',label:'DRINK VENDING',art:'VEND_DRINK',facet:17,off:0,unit:'FTS-VEND-DRINK'},
+  {id:'VEND_SNACK',label:'SNACK VENDING',art:'VEND_SNACK',facet:30,off:0,unit:'FTS-VEND-SNACK'},
+  {id:'JUKEBOX',label:'JUKEBOX',art:'JUKEBOX',facet:8,off:0,unit:'FTS-JUKEBOX'},
   {id:'TOKEN_VEND',label:'FTS TOKEN VENDING',art:'TOKEN',facet:22,off:0,kind:'token',url:PORTALS.tokens,cta:'BUY TOKENS'}
  ],
- // Eight programmatic ad units (FTS-RING-01..08, ascending angle). Skinned as food service windows.
- adFacets:[1,5,10,14,18,21,25,29],
+ // Eight food service windows (FTS-RING-01..08, ascending angle): the ordering ring (1.2.0; was the 1.0.0 ad ring).
+ windowFacets:[1,5,10,14,18,21,25,29], // food service windows; unit ids FTS-RING-01..08 ride along in the order URL
  // Ten poster records = ten destinations (content inventory: art + link + CTA). Labels and URLs are
- // VERBATIM from 1.0.0, including two suspected typos left alone on purpose (REDEYE's label reads
- // 'POSTER 1' twice; PLINKO links '../PLINKo' - GitHub Pages is case-sensitive). `art` picks one of the nine posters (the taco appears twice: HUB and
+ // VERBATIM from 1.0.0 except one cosmetic fix (REDEYE's label read 'POSTER 1' twice, now 'POSTER 2'); the
+ // suspected typo PLINKO -> '../PLINKo' is left alone on purpose (GitHub Pages is case-sensitive; verify). `art` picks one of the nine posters (the taco appears twice: HUB and
  // PLINKO, far apart). wall:'outer' -> facet/off; wall:'core' -> face N|E|S|W / off (x for N,S; y for E,W).
  posters:[
   {art:'POSTER_1',wall:'outer',facet:12,off:0,label:'POSTER 1',url:'../BRAZENTOWER',cta:'CLIMB THE TOWER'},
-  {art:'POSTER_8',wall:'outer',facet:7,off:0,label:'POSTER 1',url:'../REDEYE/',cta:'ENTER RED EYE'},
+  {art:'POSTER_8',wall:'outer',facet:7,off:0,label:'POSTER 2',url:'../REDEYE/',cta:'ENTER RED EYE'},
   {art:'POSTER_2',wall:'outer',facet:3,off:0,label:'POSTER 3',url:'../TOURNAMENT',cta:'VIEW TOURNAMENTS'},
   {art:'POSTER_5',wall:'core',face:'S',off:96,label:'POSTER 4',url:'https://frymatic.us/FTSArcade/',cta:'OPEN ARCADE HUB'},
   {art:'POSTER_7',wall:'outer',facet:20,off:0,label:'POSTER 5',url:'../PINBALL',cta:'PLAY MOONSHOT'},
@@ -710,6 +716,7 @@ function cabinetSolid(letter,slot,x,y,faceAng,title,url,screenIndex,target='_bla
 function boxSolid(id,x,y,ang,w,d,h,front,side,opts){return Object.assign({id,kind:'box',x,y,ang,w,d,collision:true,light:.96,parts:[{w,d,of:0,z0:0,z1:h,front,side,back:side}]},opts||{});}
 // Panels carry cut-out art, so the front is STRETCHED to the panel face (art aspect == face aspect by construction).
 function panelSolid(id,x,y,ang,w,z0,z1,front,opts){return Object.assign({id,kind:'panel',x,y,ang,w,d:2,collision:false,light:1,parts:[{w,d:2,of:0,z0,z1,front,side:MAT.WALL_RIB,back:MAT.WALL_RIB,stretch:true}]},opts||{});}
+function orderUrl(unit){return PORTALS.order+'?window='+encodeURIComponent(unit)+'&source=fts-arcade-floor';}
 function dealUrl(unit){return PORTALS.adDeal+'?inventory='+encodeURIComponent(unit)+'&source=fts-arcade-floor';}
 
 function buildLevel(){
@@ -724,7 +731,7 @@ function buildLevel(){
  // Amenities, ad windows and posters mount flush from facet geometry instead.
  const wallShift=RING.outer-AUTHORING.perimeter.authoredOuter;
  const wallR=r=>r+wallShift;
- const addCab=(letter,x,y,ang)=>{const row=CABINET_ROSTER.find(r=>r[0]===letter),slot=CABINET_ROSTER.findIndex(r=>r[0]===letter)+1,c=cabinetSolid(letter,slot,x,y,ang,row[1],row[2],row[3],row[4]);map.solids.push(c);map.cabinets.push(c);if(c.url)map.targets.push(c);};
+ const addCab=(letter,x,y,ang)=>{const row=CABINET_ROSTER.find(r=>r[0]===letter),slot=CABINET_ROSTER.findIndex(r=>r[0]===letter)+1,c=cabinetSolid(letter,slot,x,y,ang,row[1],row[2],row[3],row[4]);map.solids.push(c);map.cabinets.push(c);if(!c.url)c.pending=true;map.targets.push(c);};
  const sideSep=(CABINET_DIM.w+AUTHORING.packing.sideGap)/2;
  const backSep=(CABINET_DIM.d+AUTHORING.packing.backGap)/2;
  const pod4=(def)=>{const ang=def.deg*DEG,f={x:Math.cos(ang),y:Math.sin(ang)},r={x:Math.sin(ang),y:-Math.cos(ang)};def.front.forEach((L,i)=>{const rs=i?sideSep:-sideSep;addCab(L,def.cx+f.x*backSep+r.x*rs,def.cy+f.y*backSep+r.y*rs,ang);});def.back.forEach((L,i)=>{const rs=i?sideSep:-sideSep;addCab(L,def.cx-f.x*backSep+r.x*rs,def.cy-f.y*backSep+r.y*rs,ang+Math.PI);});};
@@ -738,21 +745,24 @@ function buildLevel(){
  // tests can prove it. (The 1.0.0 polar placement left posters ~10 in and vending ~40 in off the wall.)
  const WALL_CLEAR=.25;
  const facetFrame=i=>{const am=(i+.5)*TAU/RING.sides;return{am,apo:RING.outer*Math.cos(Math.PI/RING.sides),nx:Math.cos(am),ny:Math.sin(am),tx:-Math.sin(am),ty:Math.cos(am)};};
- const outerPose=(facet,off,depth)=>{const f=facetFrame(facet),r=f.apo-WALL_CLEAR-depth/2;return{x:f.nx*r+f.tx*off,y:f.ny*r+f.ty*off,ang:f.am+Math.PI};};
+ const outerPose=(facet,off,depth)=>{const f=facetFrame(facet),r=f.apo-WALL_CLEAR-depth/2;let ang=(f.am+Math.PI)%TAU;if(ang>Math.PI)ang-=TAU;return{x:f.nx*r+f.tx*off,y:f.ny*r+f.ty*off,ang};};
  const corePose=(face,off,depth)=>{const c=RING.inner+depth/2;return face==='N'?{x:off,y:c,ang:Math.PI/2}:face==='S'?{x:off,y:-c,ang:-Math.PI/2}:face==='E'?{x:c,y:off,ang:0}:{x:-c,y:off,ang:Math.PI};};
 
  const addPortalPanel=(d)=>{const pose={x:d.x,y:d.y,ang:d.deg*DEG};const p=panelSolid(d.id,pose.x,pose.y,pose.ang,d.w,d.z0,d.z1,MAT[d.mat],{kind:'dressing',label:d.label,url:d.url||'',cta:d.cta||'OPEN',target:'_blank',mount:'core'});map.solids.push(p);map.fixtures.push(p);if(p.url)map.targets.push(p);return p;};
  AUTHORING.wallPortals.forEach(addPortalPanel);
- AUTHORING.officeEntry.forEach(d=>{if(d.id==='OFFICE_DOOR'){map.solids.push(panelSolid(d.id,d.x,d.y,d.deg*DEG,d.w,d.z0,d.z1,MAT[d.mat],{collision:false,label:d.label,mount:'core'}));}else addPortalPanel(d);});
+ AUTHORING.officeEntry.forEach(addPortalPanel);
 
- // Amenities: flat wall panels, floor to art height (ids, kinds and the token link are unchanged from 1.0.0).
- AUTHORING.amenities.forEach(a=>{const F=artSize(a.art),p=outerPose(a.facet,a.off||0,2),b=panelSolid(a.id,p.x,p.y,p.ang,F.w,0,F.h,MAT['FIX_'+a.art],{kind:a.kind||'fixture',label:a.label,url:a.url||'',target:'_blank',cta:a.cta||'OPEN',mount:'outer',art:a.art});map.solids.push(b);map.fixtures.push(b);if(b.url)map.targets.push(b);});
+ // Amenities: flat wall panels, floor to art height. Ids and the token link are unchanged from 1.0.0; a `unit`
+ // turns the panel into ad inventory (deal form), everything else keeps its own destination.
+ AUTHORING.amenities.forEach(a=>{const F=artSize(a.art),p=outerPose(a.facet,a.off||0,2),menu=a.unit?{kind:'ad',label:a.label+' \u00b7 AD SPACE',url:dealUrl(a.unit),inventory:a.unit,cta:'OPEN DEAL FORM'}:{kind:a.kind||'fixture',label:a.label,url:a.url||'',cta:a.cta||'OPEN'},b=panelSolid(a.id,p.x,p.y,p.ang,F.w,0,F.h,MAT['FIX_'+a.art],Object.assign({target:'_blank',mount:'outer',art:a.art},menu));map.solids.push(b);map.fixtures.push(b);if(a.unit)map.ads.push(b);if(b.url)map.targets.push(b);});
 
  // Every poster is content inventory: art + destination + CTA live in AUTHORING.posters.
  AUTHORING.posters.forEach((d,i)=>{const F=artSize(d.art),z0=AUTHORING.posterCenterZ-F.h/2,core=d.wall==='core',pose=core?corePose(d.face,d.off,2):outerPose(d.facet,d.off||0,2),p=panelSolid('POSTER_'+String(i+1).padStart(2,'0'),pose.x,pose.y,pose.ang,F.w,z0,z0+F.h,MAT['FIX_'+d.art],{kind:'dressing',label:d.label,url:d.url,cta:d.cta,target:'_blank',mount:core?'core':'outer',art:d.art});map.solids.push(p);map.fixtures.push(p);map.targets.push(p);});
 
- // Programmatic ad inventory. Every unit has a stable ID and its own deal-form URL. Skinned as food service windows.
- AUTHORING.adFacets.forEach((facet,i)=>{const unit='FTS-RING-'+String(i+1).padStart(2,'0'),F=artSize('SERVICE_WINDOW'),z0=AUTHORING.windowCenterZ-F.h/2,pose=outerPose(facet,0,2),p=panelSolid('AD_'+unit,pose.x,pose.y,pose.ang,F.w,z0,z0+F.h,MAT.FIX_SERVICE_WINDOW,{kind:'ad',label:'AD SPACE '+unit,url:dealUrl(unit),target:'_blank',inventory:unit,cta:'OPEN DEAL FORM',mount:'outer',art:'SERVICE_WINDOW'});map.solids.push(p);map.ads.push(p);map.targets.push(p);});
+ // Programmatic ad inventory now lives on the amenities (AUTHORING.amenities[].unit); see the builder above.
+ // Food service windows: the old 8-unit ad ring becomes the ordering ring. Same facets, art and unit ids; the
+ // deal form is replaced by PORTALS.order (unit id travels as ?window=).
+ AUTHORING.windowFacets.forEach((facet,i)=>{const unit='FTS-RING-'+String(i+1).padStart(2,'0'),F=artSize('SERVICE_WINDOW'),z0=AUTHORING.windowCenterZ-F.h/2,pose=outerPose(facet,0,2),p=panelSolid('ORDER_'+unit,pose.x,pose.y,pose.ang,F.w,z0,z0+F.h,MAT.FIX_SERVICE_WINDOW,{kind:'order',label:'WINDOW '+String(i+1).padStart(2,'0'),url:orderUrl(unit),target:'_blank',window:unit,cta:'ORDER FOOD',mount:'outer',art:'SERVICE_WINDOW'});map.solids.push(p);map.fixtures.push(p);map.targets.push(p);});
 
  // Three world exits: all use absolute URLs and always confirm before navigation.
  const exitDefs=[
@@ -1089,12 +1099,12 @@ function drawMap(sim,w,h){const sc=Math.min(w,h)*.34/RING.outer,ox=w-RING.outer*
 const map=buildLevel(),MAP_ERRORS=MapBuilder.validate(map),sim=new Sim(map);const input={fwd:0,back:0,left:0,right:0,run:0,crouch:0,jump:0};
 
 function findTarget(){const ca=Math.cos(sim.ang),sa=Math.sin(sim.ang),all=map.targets;let best=null,bscore=1e9;for(const t of all){const tc=Math.cos(t.ang),ts=Math.sin(t.ang),dd=(t.d||10)/2+24,px=t.x+tc*dd,py=t.y+ts*dd,dx=px-sim.x,dy=py-sim.y,d2=dx*dx+dy*dy;if(d2>6084)continue;const dist=Math.sqrt(d2),dot=(dx*ca+dy*sa)/(dist||1);if(dot<.28)continue;const score=dist-dot*16;if(score<bscore){bscore=score;best=t;}}return best;}
-function targetKind(t){return t.kind==='cabinet'?'CABINET '+t.letter:t.kind==='exit'?'EXIT':t.kind==='token'?'TOKEN VENDING':t.kind==='ad'?'AD INVENTORY':'WALL PORTAL';}
+function targetKind(t){return t.kind==='cabinet'?'CABINET '+t.letter:t.kind==='exit'?'EXIT':t.kind==='token'?'TOKEN VENDING':t.kind==='ad'?'AD INVENTORY':t.kind==='order'?'FOOD SERVICE':'WALL PORTAL';}
 let promptTargetKey='';
-function updatePrompt(){activeTarget=findTarget();const key=activeTarget?(activeTarget.id||activeTarget.letter||activeTarget.label):'';if(key===promptTargetKey)return;promptTargetKey=key;if(!activeTarget){promptEl.classList.remove('show');promptEl.textContent='';return;}const name=activeTarget.kind==='cabinet'?activeTarget.title:activeTarget.label,verb=activeTarget.cta||(activeTarget.kind==='cabinet'?'ENTER GAME':'OPEN');promptEl.innerHTML='<span class="kind">'+targetKind(activeTarget)+'</span> '+name+' &nbsp; <span class="key">[E / CLICK]</span> '+verb;promptEl.classList.add('show');}
-function openConfirm(t){if(!t||!t.url)return;modalTarget=t;if(document.pointerLockElement===canvas)document.exitPointerLock();const name=t.kind==='cabinet'?(t.letter+' / '+t.title):t.label;modalTitle.textContent=name;if(t.kind==='cabinet'){modalEyebrow.textContent='LEAVE FTS ARCADE?';modalCopy.textContent='Enter cabinet '+t.letter+' and navigate to '+t.title+'? Your browser will load '+t.url+'.';confirmBtn.textContent='ENTER CABINET';}else if(t.kind==='token'){modalEyebrow.textContent='TOKEN PURCHASE';modalCopy.textContent='Open the FTS token purchase portal? This leaves the arcade floor and loads '+t.url+'.';confirmBtn.textContent='BUY TOKENS';}else if(t.kind==='ad'){modalEyebrow.textContent='PROGRAMMATIC INVENTORY';modalCopy.textContent='Open the deal form for '+t.inventory+'? This leaves the arcade floor.';confirmBtn.textContent=t.cta||'OPEN DEAL FORM';}else if(t.kind==='dressing'){modalEyebrow.textContent='WALL PORTAL';modalCopy.textContent=(t.cta||'Open this link')+' — '+t.label+'.';confirmBtn.textContent=t.cta||'OPEN';}else{modalEyebrow.textContent='LEAVE FTS ARCADE?';modalCopy.textContent='Use this exit for '+name+'? This destination is off the arcade floor.';confirmBtn.textContent=t.cta||'LEAVE ARCADE';}modal.classList.add('show');}
-function closeConfirm(relock){modal.classList.remove('show');modalTarget=null;if(relock&&!coarse())setTimeout(()=>canvas.requestPointerLock&&canvas.requestPointerLock(),60);}
-function leaveArcade(){if(!modalTarget)return;const t=modalTarget;try{sessionStorage.setItem('fts.arcade.return',JSON.stringify({x:sim.x,y:sim.y,ang:sim.ang,t:Date.now()}));}catch(e){}window.open(t.url, t.target || '_blank');closeConfirm(true);}
+function updatePrompt(){activeTarget=findTarget();const key=activeTarget?(activeTarget.id||activeTarget.letter||activeTarget.label):'';if(key===promptTargetKey)return;promptTargetKey=key;if(!activeTarget){promptEl.classList.remove('show');promptEl.textContent='';return;}const name=activeTarget.kind==='cabinet'?activeTarget.title:activeTarget.label,verb=activeTarget.pending?'COMING SOON':activeTarget.cta||(activeTarget.kind==='cabinet'?'ENTER GAME':'OPEN');promptEl.innerHTML='<span class="kind">'+targetKind(activeTarget)+'</span> '+name+' &nbsp; <span class="key">[E / CLICK]</span> '+verb;promptEl.classList.add('show');}
+function openConfirm(t){if(!t||(!t.url&&!t.pending))return;modalTarget=t;if(document.pointerLockElement===canvas)document.exitPointerLock();const name=t.kind==='cabinet'?(t.letter+' / '+t.title):t.label;modalTitle.textContent=name;confirmBtn.style.display='';cancelBtn.textContent='STAY HERE';if(t.pending){modalEyebrow.textContent='COMING SOON';modalCopy.textContent='Cabinet '+t.letter+' ('+t.title+') has no destination yet. Check back soon.';confirmBtn.textContent='';confirmBtn.style.display='none';cancelBtn.textContent='BACK';}else if(t.kind==='cabinet'){modalEyebrow.textContent='LEAVE FTS ARCADE?';modalCopy.textContent='Enter cabinet '+t.letter+' and navigate to '+t.title+'? Your browser will load '+t.url+'.';confirmBtn.textContent='ENTER CABINET';}else if(t.kind==='token'){modalEyebrow.textContent='TOKEN PURCHASE';modalCopy.textContent='Open the FTS token purchase portal? This leaves the arcade floor and loads '+t.url+'.';confirmBtn.textContent='BUY TOKENS';}else if(t.kind==='ad'){modalEyebrow.textContent='PROGRAMMATIC INVENTORY';modalCopy.textContent='Open the deal form for '+t.inventory+'? This leaves the arcade floor.';confirmBtn.textContent=t.cta||'OPEN DEAL FORM';}else if(t.kind==='order'){modalEyebrow.textContent='FOOD SERVICE';modalCopy.textContent='Order from '+t.label+'? This opens the ordering service and leaves the arcade floor.';confirmBtn.textContent=t.cta||'ORDER FOOD';}else if(t.kind==='dressing'){modalEyebrow.textContent='WALL PORTAL';modalCopy.textContent=(t.cta||'Open this link')+' — '+t.label+'.';confirmBtn.textContent=t.cta||'OPEN';}else{modalEyebrow.textContent='LEAVE FTS ARCADE?';modalCopy.textContent='Use this exit for '+name+'? This destination is off the arcade floor.';confirmBtn.textContent=t.cta||'LEAVE ARCADE';}modal.classList.add('show');}
+function closeConfirm(relock){modal.classList.remove('show');modalTarget=null;confirmBtn.style.display='';cancelBtn.textContent='STAY HERE';if(relock&&!coarse())setTimeout(()=>canvas.requestPointerLock&&canvas.requestPointerLock(),60);}
+function leaveArcade(){if(!modalTarget||!modalTarget.url)return;const t=modalTarget;try{sessionStorage.setItem('fts.arcade.return',JSON.stringify({x:sim.x,y:sim.y,ang:sim.ang,t:Date.now()}));}catch(e){}window.open(t.url, t.target || '_blank');closeConfirm(true);}
 confirmBtn.addEventListener('click',leaveArcade);cancelBtn.addEventListener('click',()=>closeConfirm(true));
 
 function resize(){const vv=window.visualViewport,w=Math.round(vv&&vv.width||innerWidth||960),h=Math.round(vv&&vv.height||innerHeight||600),low=coarse()||PLATFORM.ios||((navigator.hardwareConcurrency||8)<=4);RSCALE=low?(h>900?PERF.coarseTallScale:PERF.coarseScale):(h>900?1.9:1.55);RW=Math.max(180,Math.round(w/RSCALE));RH=Math.max(120,Math.round(h/RSCALE));canvas.width=RW;canvas.height=RH;canvas.style.width=w+'px';canvas.style.height=h+'px';dl=new DrawLists(RW,RH);PLANE_SOFT.canvas=PLANE_SOFT.ctx=PLANE_SOFT.image=PLANE_SOFT.u32=null;PLANE_SOFT.width=PLANE_SOFT.height=0;ensureSoftwareFrame(RW,RH);VIGNETTE=ctx.createRadialGradient(RW/2,RH/2,Math.min(RW,RH)*.2,RW/2,RH/2,Math.max(RW,RH)*.72);VIGNETTE.addColorStop(0,'rgba(0,0,0,0)');VIGNETTE.addColorStop(1,'rgba(0,0,0,.34)');ctx.imageSmoothingEnabled=false;}
@@ -1219,7 +1229,7 @@ const REF_TESTS={
  westTrioNoOverlap:()=>{const j=map.cabinets.find(c=>c.letter==='J'),k=map.cabinets.find(c=>c.letter==='K'),l=map.cabinets.find(c=>c.letter==='L');return !!(j&&k&&l&&!solidsOverlap(j,k)&&!solidsOverlap(j,l)&&!solidsOverlap(k,l));},
  officeEntryFlanked:()=>{const d=AUTHORING.officeEntry.find(x=>x.id==='OFFICE_DOOR'),w=AUTHORING.officeEntry.find(x=>x.id==='WHITEBOARD'),b=AUTHORING.officeEntry.find(x=>x.id==='BULLETIN');return !!(d&&w&&b&&w.x<d.x&&b.x>d.x&&w.y===d.y&&b.y===d.y);},
  tightCabinetPacking:()=>AUTHORING.packing.sideGap<=.5&&AUTHORING.packing.backGap<=.5,
- wallDressingsInteractive:()=>map.fixtures.filter(f=>f.kind==='dressing').length>=AUTHORING.posters.length+AUTHORING.wallPortals.length+2&&map.fixtures.filter(f=>f.kind==='dressing').every(f=>f.url&&f.cta),
+ wallDressingsInteractive:()=>map.fixtures.filter(f=>f.kind==='dressing').length===AUTHORING.posters.length+AUTHORING.wallPortals.length+AUTHORING.officeEntry.length&&map.fixtures.filter(f=>f.kind==='dressing').every(f=>f.url&&f.cta),
  // --- 0.7.0 feel-pass locks -------------------------------------------------
  runSpeed22mph:()=>Math.abs(SPEED_RUN-387.2)<.001,
  sprintUntouched:()=>KINETIC.sprintSpeed===SPEED_RUN&&Math.abs(SPEED_RUN/17.6-22)<1e-9,
@@ -1243,15 +1253,15 @@ const REF_TESTS={
  // Stage, DJ booth, speakers and their two signs are gone; nothing else references them.
  stageRemoved:()=>!map.solids.some(s=>/^(STAGE_|DJ_|SPEAKER_)/.test(s.id))&&!map.fixtures.some(f=>/^(STAGE_SIGN|DJ_SIGN)$/.test(f.id))&&AUTHORING.stageRotateDeg===undefined&&!/addStageBox|rotatePose/.test(String(buildLevel)),
  // Wall dressing, amenities, exits and cabinets never occupy the same footprint.
- wallItemsDisjoint:()=>{const items=map.solids.filter(s=>s.mount||s.kind==='exit'||s.kind==='cabinet');for(let i=0;i<items.length;i++)for(let j=i+1;j<items.length;j++)if(solidsOverlap(items[i],items[j]))return false;return items.length===map.cabinets.length+map.ads.length+AUTHORING.posters.length+AUTHORING.officeEntry.length+AUTHORING.amenities.length+map.exits.length;},
+ wallItemsDisjoint:()=>{const items=map.solids.filter(s=>s.mount||s.kind==='exit'||s.kind==='cabinet');for(let i=0;i<items.length;i++)for(let j=i+1;j<items.length;j++)if(solidsOverlap(items[i],items[j]))return false;return items.length===map.cabinets.length+AUTHORING.windowFacets.length+AUTHORING.posters.length+AUTHORING.officeEntry.length+AUTHORING.amenities.length+map.exits.length;},
  // Every provided art piece is placed at least once, and no face is stretched off its source aspect.
  atlasFullyPlaced:()=>{const placed=new Set(map.solids.filter(s=>s.art).map(s=>s.art));AUTHORING.officeEntry.forEach(d=>placed.add(d.mat.replace(/^FIX_/,'')));return Object.keys(FIXTURE_ART).length===17&&Object.keys(FIXTURE_ART).every(k=>placed.has(k));},
- fixtureArtAspect:()=>{const a=map.solids.filter(s=>s.art);return a.length===AUTHORING.amenities.length+AUTHORING.posters.length+AUTHORING.adFacets.length&&a.every(s=>{const r=FIXTURE_ART[s.art].rect,p=s.parts[0];return Math.abs(s.w/(p.z1-p.z0)-r[2]/r[3])<.01;})&&AUTHORING.officeEntry.every(d=>{const r=FIXTURE_ART[d.mat.replace(/^FIX_/,'')].rect;return Math.abs(d.w/(d.z1-d.z0)-r[2]/r[3])<.01;});},
+ fixtureArtAspect:()=>{const a=map.solids.filter(s=>s.art);return a.length===AUTHORING.amenities.length+AUTHORING.posters.length+AUTHORING.windowFacets.length&&a.every(s=>{const r=FIXTURE_ART[s.art].rect,p=s.parts[0];return Math.abs(s.w/(p.z1-p.z0)-r[2]/r[3])<.01;})&&AUTHORING.officeEntry.every(d=>{const r=FIXTURE_ART[d.mat.replace(/^FIX_/,'')].rect;return Math.abs(d.w/(d.z1-d.z0)-r[2]/r[3])<.01;});},
  // Snack machine ships on a white backdrop: the edge-flood matte must have keyed the corners clear.
  snackMatteKeyed:()=>{try{const t=baseTile(MAT.FIX_VEND_SNACK),d=t.getContext('2d').getImageData(0,0,1,1).data;return d[3]===0&&t.width>=128;}catch(e){return false;}},
  // Amenity carcasses: still solid (collision), still tagged, token link untouched, capped so they don't read hollow.
  // Amenities are thin wall panels now: still fixtures, ids/kinds/token link intact, floor-to-art-height, non-colliding.
- amenitiesAreWallPanels:()=>AUTHORING.amenities.length===4&&AUTHORING.amenities.every(a=>{const f=map.fixtures.find(x=>x.id===a.id),p=f&&f.parts[0];return f&&f.collision===false&&f.d===2&&f.mount==='outer'&&f.parts.length===1&&p.z0===0&&Math.abs(p.z1-artSize(a.art).h)<.01&&f.kind===(a.kind||'fixture');})&&map.fixtures.find(x=>x.id==='TOKEN_VEND').kind==='token'&&map.fixtures.find(x=>x.id==='TOKEN_VEND').url===PORTALS.tokens&&map.targets.some(t=>t.id==='TOKEN_VEND'),
+ amenitiesAreWallPanels:()=>AUTHORING.amenities.length===4&&AUTHORING.amenities.every(a=>{const f=map.fixtures.find(x=>x.id===a.id),p=f&&f.parts[0];return f&&f.collision===false&&f.d===2&&f.mount==='outer'&&f.parts.length===1&&p.z0===0&&Math.abs(p.z1-artSize(a.art).h)<.01&&f.kind===(a.unit?'ad':(a.kind||'fixture'));})&&map.fixtures.find(x=>x.id==='TOKEN_VEND').kind==='token'&&map.fixtures.find(x=>x.id==='TOKEN_VEND').url===PORTALS.tokens&&map.targets.some(t=>t.id==='TOKEN_VEND'),
  // Nothing on the perimeter may have been pushed outside the wall.
  perimeterInsideRing:()=>map.solids.every(s=>Math.hypot(s.x,s.y)<=RING.outer+1),
  renderRangesTrackRing:()=>RENDER.solidCull>=2*RING.outer&&RENDER.fogFar>RING.outer&&!/\b860\b|\bdist\/780\b/.test(String(RenderCore._solids)),
@@ -1298,7 +1308,18 @@ const REF_TESTS={
  spatialAudioTrackLocal:()=>CROWD_AUDIO_URL==='crowd.mp3'&&!/^https?:/i.test(CROWD_AUDIO_URL),
  spawnInsideMap:()=>sim.sectorAt(map.spawn.x,map.spawn.y)>=0,
  fixturesPresent:()=>map.fixtures.some(f=>f.id==='TOKEN_VEND')&&map.fixtures.some(f=>f.id==='JUKEBOX')&&map.fixtures.some(f=>f.id==='WHITEBOARD')&&map.fixtures.some(f=>f.id==='BULLETIN'),
- adInventory:()=>map.ads.length===8&&map.ads.every(a=>a.url.includes('inventory=')),
+ // 1.2.0: ad inventory = every amenity with a `unit`; each has a unique unit, a deal-form URL and a context menu.
+ adInventory:()=>{const units=AUTHORING.amenities.filter(a=>a.unit).map(a=>a.unit);return units.length>=3&&map.ads.length===units.length&&new Set(units).size===units.length&&map.ads.every(a=>a.kind==='ad'&&a.url===dealUrl(a.inventory)&&a.url.includes('inventory=')&&map.targets.includes(a)&&map.fixtures.includes(a))&&units.every(u=>map.ads.some(a=>a.inventory===u));},
+ // The 8 ring windows are ordering windows: unique unit ids, order URL with ?window=, none left in the ad list.
+ orderWindows:()=>{const w=map.fixtures.filter(f=>f.kind==='order');return w.length===8&&w.length===AUTHORING.windowFacets.length&&new Set(w.map(x=>x.window)).size===8&&w.every(x=>x.url===orderUrl(x.window)&&x.url.startsWith(PORTALS.order)&&x.cta==='ORDER FOOD'&&map.targets.includes(x)&&!map.ads.includes(x)&&/^FTS-RING-0[1-8]$/.test(x.window));},
+ // EVERYTHING has a context menu: every solid on the floor is a target with a destination and a name.
+ everySolidHasContextMenu:()=>{const known=new Set(['cabinet','exit','token','ad','order','dressing']);return map.solids.length===map.cabinets.length+map.exits.length+AUTHORING.posters.length+AUTHORING.officeEntry.length+AUTHORING.wallPortals.length+AUTHORING.amenities.length+AUTHORING.windowFacets.length&&map.solids.every(s=>map.targets.includes(s)&&(!!s.url||s.pending===true)&&!!(s.label||s.title)&&known.has(s.kind));},
+ // ...and every menu resolves to its own confirm copy (no fixture falls through to the generic EXIT dialog).
+ contextMenusResolve:()=>{const eb={cabinet:'LEAVE FTS ARCADE?',exit:'LEAVE FTS ARCADE?',token:'TOKEN PURCHASE',ad:'PROGRAMMATIC INVENTORY',order:'FOOD SERVICE',dressing:'WALL PORTAL'};let ok=map.targets.length===map.solids.length,opens=0;const wo=window.open;window.open=()=>{opens++;return null;};try{for(const t of map.targets){openConfirm(t);const shown=modal.classList.contains('show')&&modalTarget===t&&modalTitle.textContent.length>1&&modalEyebrow.textContent===(t.pending?'COMING SOON':eb[t.kind])&&(t.pending?confirmBtn.style.display==='none':confirmBtn.textContent.length>1)&&(t.kind==='cabinet'||t.kind==='exit'||modalCopy.textContent.indexOf('Use this exit')<0);if(t.pending){const before=opens;leaveArcade();if(opens!==before)ok=false;}closeConfirm(false);if(!shown)ok=false;}}finally{window.open=wo;}return ok&&opens===0&&!modal.classList.contains('show')&&modalTarget===null&&confirmBtn.style.display==='';},
+ // A cabinet with no destination yet (AC) is menu-only: it must never navigate.
+ pendingCabinetsMenuOnly:()=>{const p=map.cabinets.filter(c=>!c.url);return p.length>=1&&p.every(c=>c.pending===true&&map.targets.includes(c))&&map.cabinets.filter(c=>c.url).every(c=>!c.pending);},
+ // Every wall fixture is selectable from a natural standing spot (29 in off the wall, looking straight at it) and wins its own prompt.
+ everyFixtureSelectable:()=>{const sv=[sim.x,sim.y,sim.ang];let ok=true;try{for(const t of map.targets){if(t.kind==='cabinet'||t.kind==='exit')continue;const r=(t.d||10)/2+27;sim.x=t.x+Math.cos(t.ang)*r;sim.y=t.y+Math.sin(t.ang)*r;sim.ang=t.ang+Math.PI;if(findTarget()!==t){ok=false;}}}finally{sim.x=sv[0];sim.y=sv[1];sim.ang=sv[2];}return ok&&map.targets.filter(t=>t.mount).length===AUTHORING.amenities.length+AUTHORING.posters.length+AUTHORING.windowFacets.length+AUTHORING.officeEntry.length;},
  offsiteExits:()=>map.exits.every(e=>/^https:\/\//.test(e.url)),
  sameDirectoryAssets:()=>Object.values(ASSET_FILES).every(v=>(Array.isArray(v)?v:[v]).every(s=>!/^https?:/i.test(s))),
  packageAssets:()=>PACKAGE_ASSET_KEYS.every(k=>ASSET_FILES[k]&&/package\.png$/.test(ASSET_FILES[k])),
