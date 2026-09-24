@@ -3716,6 +3716,16 @@ if (location.protocol === 'https:' || location.protocol === 'http:') {
   #toast{top:64px;left:50%;transform:translateX(-50%) translateY(-8px);font-size:11px;letter-spacing:.3em;
     text-transform:uppercase;opacity:0;transition:opacity .5s ease,transform .5s ease;text-align:center}
   #toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+  #aimRing,#pathMark{position:fixed;left:0;top:0;pointer-events:none;z-index:6;opacity:0;transition:opacity .25s}
+  #aimRing{width:34px;height:34px;margin:-17px 0 0 -17px;border:2px solid rgba(255,255,255,.85);border-radius:50%;box-shadow:0 0 0 1px rgba(0,0,0,.35)}
+  #pathMark{width:12px;height:12px;margin:-6px 0 0 -6px;border:2px solid #86e0cf;border-radius:50%}
+  #pathMark::before,#pathMark::after{content:"";position:absolute;top:3px;width:9px;height:2px;background:#86e0cf}
+  #pathMark::before{left:-11px}#pathMark::after{right:-11px}
+  body.flying #aimRing,body.flying #pathMark{opacity:1}
+  #flightReadout{left:50%;top:calc(50% + 34px);transform:translateX(-50%);font-size:10px;letter-spacing:.24em;color:#fff;text-shadow:0 1px 2px #000;opacity:0;white-space:nowrap}
+  body.flying #flightReadout{opacity:.9}
+  #flightReadout.warn{color:#ffb24a;font-weight:600}
+  @media (prefers-reduced-motion:reduce){#aimRing,#pathMark{transition:none}}
   #toast .t1{color:var(--gold);font-weight:600}
   #toast .t2{color:var(--ink-dim);font-size:9px;margin-top:4px;letter-spacing:.34em}
 
@@ -3871,7 +3881,7 @@ if (location.protocol === 'https:' || location.protocol === 'http:') {
   <div class="chip" id="found">LANDMARKS <b>0</b> / 9</div>
   <div class="chip" id="r66chip">ROUTE 66 STAMPS <b>0</b> / 7</div>
 </div>
-<div class="hud" id="hint">wasd move · shift / toggle sprint · 3 s → super sprint<br>cape: mouse pitch + roll · pull back to climb · w / ↑ thrust · s / ↓ brake · a/d or ←/→ yaw<br>sprint off + hold space = glide · c / ctrl cape-spin in flight · slide on ground · m map · h field manual</div>
+<div class="hud" id="hint">wasd move · shift / toggle sprint · 3 s → super sprint<br>cape: mouse aims · the flyer banks toward the ring · w / ↑ thrust · s / ↓ brake · a/d or ←/→ yaw<br>sprint off + hold space = glide · c / ctrl cape-spin in flight · slide on ground · m map · h field manual</div>
 <div class="hud" id="toast"><div class="t1"></div><div class="t2"></div></div>
 
 <div id="bigmapWrap"><canvas id="bigmap"></canvas><div id="mapCaption">CRAWFORD COUNTY, MISSOURI · click the map to deploy the explorer · Route 66 in red.<br>Roads, rivers, buildings and infrastructure © OpenStreetMap contributors (ODbL). Teal: water towers; ochre: other structures.<br>2,753 mapped footprints in the 19 Sep 2026 snapshot · not a building census or navigation map.</div></div>
@@ -3883,7 +3893,7 @@ if (location.protocol === 'https:' || location.protocol === 'http:') {
     <tr><td>SPACE</td><td>leap · hold to prolong ascent · hold near walls to run</td></tr>
     <tr><td>SPACE again</td><td>double jump · wall kick when riding a wall</td></tr>
     <tr><td>SUPER + SPACE</td><td>cape takeoff</td></tr>
-    <tr><td id="helpMouseFlight">MOUSE · FLIGHT</td><td>Y = pitch · X = roll · pull back / mouse down climbs by default</td></tr>
+    <tr><td id="helpMouseFlight">MOUSE · FLIGHT</td><td>aim mode: move the mouse where you want to go · stick mode: Y = pitch, X = roll</td></tr>
     <tr><td id="helpFlightThrust">W / ↑ · FLIGHT</td><td>thrust</td></tr>
     <tr><td id="helpFlightBrake">S / ↓ · FLIGHT</td><td>brake</td></tr>
     <tr><td id="helpFlightYaw">A D / ← → · FLIGHT</td><td>yaw left / right</td></tr>
@@ -3902,7 +3912,7 @@ if (location.protocol === 'https:' || location.protocol === 'http:') {
     <tr><td>P</td><td>performance readout</td></tr>
   </table>
   <p>Mapped OSM roofs and broad building faces are traversable. Rivers slow your pace. Hold a direction and sprint for county travel; slow down to explore. Wall runs have a finite lift budget and expire after 1.6 seconds. Land or leave the wall to recharge.</p>
-  <p>The county is drawn at true scale: 1 unit is 1 metre, 38.6 × 57.2 km. Buildings, roads, rivers and the Route 66 alignment come from an offline OpenStreetMap snapshot; terrain height and trees are procedural. The 2,753-footprint count measures mapped OSM data, not every real building. Only the explorer is out of scale: the original 26 m/s run and 68 m/s sprint remain intact; sustaining sprint for three seconds unlocks a 92 m/s secondary sprint and cape flight. Jump height is pressure-sensitive, with one aerial double jump. Cape flight uses a momentum-exchange model: mouse-down pulls up by default (joystick-style inverted pitch), mouse-up dives for speed/flight energy, W/↑ adds thrust, S/↓ brakes, A/D or ←/→ yaws, and releasing sprint while holding leap commits to a slow glide. Warp with 1–6 or click the map for county-scale travel. Comfort mode disables camera roll and speed-FOV effects.</p>
+  <p>The county is drawn at true scale: 1 unit is 1 metre, 38.6 × 57.2 km. Buildings, roads, rivers and the Route 66 alignment come from an offline OpenStreetMap snapshot; terrain height and trees are procedural. The 2,753-footprint count measures mapped OSM data, not every real building. Only the explorer is out of scale: the original 26 m/s run and 68 m/s sprint remain intact; sustaining sprint for three seconds unlocks a 92 m/s secondary sprint and cape flight. Jump height is pressure-sensitive, with one aerial double jump. Cape flight uses a momentum-exchange model steered by mouse aim: the ring is where you are pointing, the small circle is where you are actually going; diving banks energy, climbing spends it. Stick mode and pitch inversion live in Settings, W/↑ adds thrust, S/↓ brakes, A/D or ←/→ yaws, and releasing sprint while holding leap commits to a slow glide. Warp with 1–6 or click the map for county-scale travel. Comfort mode disables camera roll and speed-FOV effects.</p>
   <p class="attribution">Cape-flight control logic is adapted from the <a href="https://www.mariowiki.com/Cape_Mario" target="_blank" rel="noopener">Super Mario Wiki — Cape Mario</a> description supplied for this build.</p>
 </div></div>
 <div id="settings" role="dialog" aria-modal="true" aria-labelledby="settingsHeading"><div class="card chip">
@@ -3910,18 +3920,20 @@ if (location.protocol === 'https:' || location.protocol === 'http:') {
   <p>Ground controls remain camera-relative. Flight uses a chase camera and separates mouse attitude from keyboard or mouse-button propulsion.</p>
   <h3>FLIGHT DEFAULT</h3>
   <div class="controlMap">
-    <b id="mapPitch">MOUSE Y</b><span>pitch · pull back / mouse down climbs</span>
-    <b id="mapRoll">MOUSE X</b><span>roll</span>
+    <b id="mapPitch">MOUSE Y</b><span>pitch</span>
+    <b id="mapRoll">MOUSE X</b><span id="mapRollLabel">turn</span>
     <b id="mapThrust">W / ↑</b><span>thrust</span>
     <b id="mapBrake">S / ↓</b><span>brake</span>
     <b id="mapYaw">A D / ← →</b><span>yaw left / right</span>
   </div>
-  <h3>MOUSE ATTITUDE</h3>
+  <h3>MOUSE</h3>
+  <label class="setting"><span>Flight mouse <small>· aim steers toward the ring; stick sets attitude directly</small></span><select id="flightMode"><option value="aim">Aim</option><option value="stick">Stick</option></select></label>
+  <label class="setting"><span>Invert camera Y <small>· on foot</small></span><input id="invertLookY" type="checkbox"></label>
   <label class="setting"><span>Mouse sensitivity</span><span class="rangeWrap"><input id="flightSensitivity" type="range" min="0.5" max="2" step="0.05" value="1"><output id="flightSensitivityValue">1.00×</output></span></label>
   <label class="setting"><span>Pitch axis</span><select id="flightPitchAxis"><option value="MouseY">Mouse Y</option><option value="MouseX">Mouse X</option><option value="None">Unbound</option></select></label>
   <label class="setting"><span>Roll axis</span><select id="flightRollAxis"><option value="MouseX">Mouse X</option><option value="MouseY">Mouse Y</option><option value="None">Unbound</option></select></label>
-  <label class="setting"><span>Invert pitch <small>· default ON</small></span><input id="invertFlightPitch" type="checkbox"></label>
-  <label class="setting"><span>Invert roll</span><input id="invertFlightRoll" type="checkbox"></label>
+  <label class="setting"><span>Invert flight pitch <small>· mouse up dives</small></span><input id="invertFlightPitch" type="checkbox"></label>
+  <label class="setting"><span>Invert turn / roll</span><input id="invertFlightRoll" type="checkbox"></label>
   <label class="setting"><span>Invert yaw</span><input id="invertFlightYaw" type="checkbox"></label>
   <label class="setting"><span>Comfort camera</span><input id="comfortSetting" type="checkbox"></label>
   <h3>KEYBOARD / MOUSE BINDINGS</h3>
@@ -3948,6 +3960,7 @@ if (location.protocol === 'https:' || location.protocol === 'http:') {
 </section>
 <div id="toolbar"><button id="mapBtn">MAP</button><button id="helpBtn">HELP</button><button id="settingsBtn" aria-expanded="false" aria-controls="settings">SETTINGS</button><button id="structuresBtn" aria-expanded="false" aria-controls="structuresPanel">STRUCTURES</button><button id="comfortBtn" aria-pressed="false">COMFORT</button></div>
 <div id="telemetry"></div>
+<div id="aimRing" aria-hidden="true"></div><div id="pathMark" aria-hidden="true"></div><div id="flightReadout" class="hud" aria-live="off"></div>
 
 <script id="regression-suite" type="text/plain">const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 // Save beside the HTML. Run: node test-infrastructure.cjs [path.html] [--mobile]
@@ -4012,19 +4025,28 @@ test('secondary sprint requires three sustained seconds',()=>{run("testReset();m
 test('secondary sprint jump arms cape flight',()=>{run("testReset();moveHeld.set('KeyW','up');keys.shift=true;ticks(210);pressJump();ticks(1);releaseJump()");assert.equal(run('P.capeFlight'),true);assert.equal(run('P.state'),'CAPE FLIGHT');});
 test('locomotion phase ladder is walk run1 run2 run3 fast',()=>{assert.equal(run("WPModel.phaseForSpeed(4).slot"),'walk');assert.equal(run("WPModel.phaseForSpeed(26).slot"),'run1');assert.equal(run("WPModel.phaseForSpeed(44).slot"),'run2');assert.equal(run("WPModel.phaseForSpeed(68).slot"),'run3');assert.equal(run("WPModel.phaseForSpeed(92).slot"),'fast');});
 test('Meshy locomotion aliases resolve numbered phases',()=>{const m=run("WPModel.resolveAnimationNames(['Idle','Walk','Run','Run 2','Run 3','Fast Run'])");assert.equal(m.walk,'Walk');assert.equal(m.run1,'Run');assert.equal(m.run2,'Run 2');assert.equal(m.run3,'Run 3');assert.equal(m.fast,'Fast Run');});
-test('expanded WP animation aliases resolve authored states',()=>{const m=run("WPModel.resolveAnimationNames(['Idle_11','Walking','Running','Run_02','Run_03','RunFast','Fall2','slide_light','slide_right','Dive_Down_and_Land','Dive_Down_and_Land_1','Dive_Down_and_Land_2'])");assert.equal(m.idle,'Idle_11');assert.equal(m.air,'Fall2');assert.equal(m.slide,'slide_light');assert.equal(m.slideRight,'slide_right');assert.equal(m.landQuick,'Dive_Down_and_Land_1');assert.equal(m.land,'Dive_Down_and_Land');assert.equal(m.landHard,'Dive_Down_and_Land_2');});
+test('expanded WP animation aliases resolve authored states',()=>{const m=run("WPModel.resolveAnimationNames(['Idle_11','Walking','Running','Run_02','Run_03','RunFast','Fall2','slide_light','slide_right','Dive_Down_and_Land','Dive_Down_and_Land_1','Dive_Down_and_Land_2'])");assert.equal(m.idle,'Idle_11');assert.equal(m.air,'Fall2');assert.equal(m.slide,'slide_light');assert.equal(m.slideRight,'slide_right');assert.equal(m.waterDive,'Dive_Down_and_Land_1');assert.equal(m.superLand,'Dive_Down_and_Land_2');assert.equal(m.land,undefined);});
 test('airborne states use falling animation slot',()=>{assert.equal(run("WPModel.slotFor('AIRBORNE',20,0)"),'air');assert.equal(run("WPModel.slotFor('CAPE FLIGHT',80,0)"),'air');assert.equal(run("WPModel.slotFor('DOUBLE JUMP',20,0)"),'air');});
 test('slide steering can select authored right slide',()=>{assert.equal(run("WPModel.slotFor('SLIDE',40,0)"),'slide');assert.equal(run("WPModel.slotFor('SLIDE',40,.8)"),'slideRight');});
 test('cape dive banks energy then pull spends it for lift',()=>{run("testReset();P.onGround=false;P.y=20;P.vx=0;P.vz=80;P.speed=80;P.capeFlight=true;P.capeEnergy=.2;for(let i=0;i<30;i++){P.vy-=KIN.gravity/60;capeStep(1/60,{pitch:-1,roll:0,yaw:0,thrust:0,brake:0},true)}");const banked=run('P.capeEnergy'),down=run('P.vy');assert(banked>.2);run("for(let i=0;i<24;i++){P.vy-=KIN.gravity/60;capeStep(1/60,{pitch:1,roll:0,yaw:0,thrust:0,brake:0},true)}");assert(run('P.capeEnergy')<banked);assert(run('P.vy')>down);});
 test('releasing sprint while holding jump commits cape glide',()=>{run("testReset();P.onGround=false;P.y=20;P.vz=80;P.capeFlight=true;input.jump=true;capeStep(1/60,{pitch:0,roll:0,yaw:0,thrust:0,brake:0},false)");assert.equal(run('P.capeGlide'),true);assert.equal(run('P.capeMode'),'GLIDE');});
 test('flight keyboard separates thrust brake and corrected yaw',()=>{run("testReset();moveHeld.set('ArrowUp','up');moveHeld.set('ArrowLeft','left')");let c=run('flightControls()');assert.equal(c.thrust,1);assert.equal(c.brake,0);assert(c.yaw>0);run("moveHeld.clear();moveHeld.set('ArrowDown','down');moveHeld.set('ArrowRight','right')");c=run('flightControls()');assert.equal(c.thrust,0);assert.equal(c.brake,1);assert(c.yaw<0);});
-test('flight mouse defaults to joystick-style inverted pitch',()=>{run("testReset();P.onGround=false;P.capeFlight=true;flightPointer.pitch=0;flightPointer.roll=0;flightSettings.invertPitch=true");const before=run('CAM.yaw');run('handleFlightMotion(20,10)');const c=run('flightControls()');assert(c.pitch>0);assert(run('flightPointer.roll<0'));assert.equal(run('CAM.yaw'),before);});
+test('flight mouse defaults to joystick-style inverted pitch',()=>{run("testReset();P.onGround=false;P.capeFlight=true;flightSettings.mode='stick';flightPointer.pitch=0;flightPointer.roll=0;flightSettings.invertPitch=true");const before=run('CAM.yaw');run('handleFlightMotion(20,10)');const c=run('flightControls()');assert(c.pitch>0);assert(run('flightPointer.roll<0'));assert.equal(run('CAM.yaw'),before);});
 test('custom physical flight binding overrides typed layout',()=>{run("testReset();flightSettings.bindings.flightThrust=['KeyQ',null];heldInputs.add('KeyQ')");assert.equal(run('flightControls().thrust'),1);run("heldInputs.clear();flightSettings.bindings.flightThrust=['KeyW','ArrowUp']");});
 test('custom flight bind is independent of ground-forward bind',()=>{run("testReset();flightSettings.bindings.moveForward=['KeyW',null];flightSettings.bindings.flightThrust=['KeyQ',null];heldInputs.add('KeyW');moveHeld.set('KeyW','up')");assert.equal(run('flightControls().thrust'),0);run("heldInputs.clear();moveHeld.clear();flightSettings.bindings.flightThrust=['KeyW','ArrowUp'];flightSettings.bindings.moveForward=['KeyW','ArrowUp']");});
 test('mouse button can be bound to flight thrust',()=>{run("testReset();flightSettings.bindings.flightThrust=['Mouse4',null];heldInputs.add('Mouse4')");assert.equal(run('flightControls().thrust'),1);run("heldInputs.clear();flightSettings.bindings.flightThrust=['KeyW','ArrowUp']");});
 test('mouse axes can be swapped',()=>{run("testReset();flightSettings.pitchAxis='MouseX';flightSettings.rollAxis='MouseY';flightSettings.invertPitch=false;flightPointer.pitch=0;flightPointer.roll=0;handleFlightMotion(20,-10)");assert(run('flightPointer.pitch<0'));assert(run('flightPointer.roll>0'));run("flightSettings.pitchAxis='MouseY';flightSettings.rollAxis='MouseX';flightSettings.invertPitch=true")});
 test('desktop hover orbit remains no-button on foot',()=>{run('testReset()');const before=run('CAM.yaw');run("orbitFromPointer({pointerType:'mouse',movementX:20,movementY:0})");assert.notEqual(run('CAM.yaw'),before);});
 test('touch does not invoke mouse hover',()=>{const before=run('CAM.yaw');run("orbitFromPointer({pointerType:'touch',movementX:20,movementY:0})");assert.equal(run('CAM.yaw'),before);});
+test('ground landings never pick a sub-floor water dive',()=>{assert.equal(run("WPModel.landingShot('GROUND',.3,2)"),'land');assert.equal(run("WPModel.landingShot('RUN',.3,26)"),null);assert.equal(run("WPModel.landingShot('GROUND',.55,2)"),'superLand');assert.equal(run("WPModel.landingShot('SLIDE',.55,40)"),null);assert.equal(run("WPModel.landingShot('SPRINT',.3,60)"),null);});
+test('aim mode honours flight pitch inversion',()=>{run("testReset();P.onGround=false;P.y=40;P.vz=80;P.capeFlight=true;flightSettings.mode='aim';flightSettings.invertPitch=false;syncAim();handleFlightMotion(0,-40)");const up=run('flightAim.pitch');assert(up>0);run("syncAim();flightSettings.invertPitch=true;handleFlightMotion(0,-40)");assert(run('flightAim.pitch')<0);run("flightSettings.invertPitch=false");});
+test('camera Y inversion applies on foot',()=>{run("testReset();CAM.pitch=.3;flightSettings.invertLook=false;routeLook(0,20)");const a=run('CAM.pitch');run("CAM.pitch=.3;flightSettings.invertLook=true;routeLook(0,20)");assert(a>.3&&run('CAM.pitch')<.3);run("flightSettings.invertLook=false");});
+test('aim steering converges heading and banks into the turn',()=>{run("testReset();P.onGround=false;P.y=200;P.vx=0;P.vz=80;P.capeFlight=true;flightSettings.mode='aim';syncAim();flightAim.yaw=-.6;for(let i=0;i<20;i++){P.vy-=KIN.gravity/60;capeStep(1/60,flightControls(),true)}");assert(run('P.flightBank')>0);run("for(let i=0;i<100;i++){P.vy-=KIN.gravity/60;capeStep(1/60,flightControls(),true)}");assert(Math.abs(run('Math.atan2(Math.sin(flightAim.yaw-Math.atan2(P.vx,P.vz)),Math.cos(flightAim.yaw-Math.atan2(P.vx,P.vz)))'))<.08);});
+test('committed dive can reach ground-smash sink rate',()=>{run("testReset();P.onGround=false;P.y=400;P.vz=90;P.capeFlight=true;flightSettings.mode='aim';syncAim();flightAim.pitch=-1;for(let i=0;i<120;i++){P.vy-=KIN.gravity/60;capeStep(1/60,flightControls(),true)}");assert(run('P.vy<-KIN.capeSmashVy'));});
+test('flight reacts to frame stalls twice as fast as ground',()=>{assert.equal(run('qualityBadThreshold(true)'),1.2);assert.equal(run('qualityBadThreshold(false)'),2.5);assert(run('qualityBadThreshold(true)<qualityBadThreshold(false)'));});
+test('camera boom step widens as quality tier degrades, never narrows',()=>{const s=[0,1,2,3].map(q=>run('boomStep('+q+')'));assert(s[0]<s[1]&&s[1]<s[2]&&s[2]<s[3]);assert(s[0]>0);});
+test('a single very bad frame drops quality without waiting on the EMA',()=>{run('testReset();quality=0;frameEMA=16.7;badTime=0;goodTime=0;trafficMeter(0.06)');assert.equal(run('quality'),1);run('quality=0');});
+test('context-loss handler is registered and preventable',()=>{assert(events.has('gl:webglcontextlost'));const e={defaultPrevented:false,preventDefault(){this.defaultPrevented=true;}};events.get('gl:webglcontextlost')(e);assert.equal(e.defaultPrevented,true);assert.equal(run('paused'),true);run('paused=false;glLost=false');});
 console.log(JSON.stringify({passed:count,mobile,inventory:run('Infrastructure.records.length'),duplicates:run('[...Infrastructure.duplicates]'),chunks:run('Infrastructure.chunks.length'),counts:run('Infrastructure.counts')},null,2));
 </script>
 <script id="main">
@@ -4266,7 +4288,8 @@ const KIN = Object.freeze({hz:60, radius:.58, height:2.75, step:.65,
   capeTakeoff:72, capeMin:46, capeMax:112, capeLift:31, capeDive:31, capeDiveSink:36, capePull:46,
   capeYaw:2.1, capeRollTurn:1.35, capeThrust:34, capeBrake:42, capeControlReturn:2.35,
   capeDrag:10, capeFall:16, capeGlideFall:6, capeGlideLift:32, capeGlideDrag:7,
-  capeEnergyGain:.52, capeEnergyFall:.015, capeEnergySpend:.68, capeSmashVy:22, capeSpinTime:.42});
+  capeEnergyGain:.52, capeEnergyFall:.015, capeEnergySpend:.68, capeSmashVy:22, capeSpinTime:.42,
+  capeDiveFall:24, aimTurn:2.4, aimYaw:1.1, aimPitch:3.2, aimRate:.0022, aimPitchMax:1.2});
 const SOLIDS = [], SOLID_GRID = new Map(), CELL = 64;
 function addSolid(cx,cy,cz,sx,sy,sz,yaw=0,kind='box'){
   const s={id:SOLIDS.length,cx,cz,bottom:cy-sy/2,top:cy+sy/2,hx:sx/2,hz:sz/2,
@@ -4330,6 +4353,19 @@ function bodyClear(x,y,z){
 /* ------------------------------------------------------------- three setup */
 const canvas = document.getElementById('gl');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias:false, powerPreference:'high-performance' });
+// Memory-constrained devices reclaim the GL context under pressure — a real risk with a
+// ~20 MB character model loaded. Three r128 does not auto-recreate GPU resources, so
+// silently trying to keep running just means a black screen with input still live.
+// Freeze cleanly, say why, and offer the one recovery that actually works: reload.
+let glLost=false;
+canvas.addEventListener('webglcontextlost',e=>{
+  e.preventDefault();glLost=true;paused=true;
+  const el=document.createElement('div');
+  el.style.cssText='position:fixed;inset:0;z-index:999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;background:#0b1210ee;color:#fff;font:13px monospace;text-align:center;padding:24px';
+  el.innerHTML='<div>GRAPHICS CONTEXT LOST</div><div style="opacity:.7;max-width:340px">The device reclaimed graphics memory — common on low-memory devices. Progress in this session cannot be resumed in place.</div>';
+  const btn=document.createElement('button');btn.textContent='RELOAD';btn.style.cssText='padding:10px 22px;font:12px monospace;letter-spacing:.1em';
+  btn.onclick=()=>location.reload();el.append(btn);document.body.append(el);
+});
 renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, IS_TOUCH?1:1.5));
 renderer.setSize(window.innerWidth, window.innerHeight);
 const SHADOWS = CONFIG.SHADOWS==='auto' ? !IS_TOUCH : !!CONFIG.SHADOWS;
@@ -5230,10 +5266,16 @@ const WPModel=(()=>{
     air:['fall2','fall','falling','wpfall','airborne'],
     slide:['slidelight','slide','wpslide','powerslide'],
     slideRight:['slideright','wpslideright'],
-    landQuick:['divedownandland1','landquick','softland','landsoft'],
-    land:['divedownandland','land','wpland'],
-    landHard:['divedownandland2','landhard','hardland','groundsmash']
+    // The three Dive_Down_and_Land takes are not ground landings. _1 and the
+    // base take are head-first plunges that end 0.6 m BELOW their start floor
+    // (pool dives), so they only play on water entry. _2 drops from 8.5 m into a
+    // three-point crouch and rises — the superhero landing — used from its impact frame.
+    waterDive:['divedownandland1','divedownandland','waterdive','plunge'],
+    superLand:['divedownandland2','superland','landhard','hardland','groundsmash','superherolanding']
   };
+  // One-shot windows in authored seconds: [start, end, timeScale].
+  const ONE_SHOTS={superLand:[.64,2.25,1.35],land:[.64,1.02,1.25],waterDive:[.06,.46,1]};
+  const CLIP_START={slide:.2,slideRight:.24};
   const PHASES=Object.freeze([
     {slot:'idle',max:.5,nominal:0},
     {slot:'walk',max:5.5,nominal:4},
@@ -5258,8 +5300,7 @@ const WPModel=(()=>{
     if(!map.air){const r=rows.find(r=>/fall|airborne/.test(r.n));if(r)map.air=r.name;}
     if(!map.slide){const r=rows.find(r=>/slide/.test(r.n)&&!/right/.test(r.n));if(r)map.slide=r.name;}
     if(!map.slideRight){const r=rows.find(r=>/slide.*right|right.*slide/.test(r.n));if(r)map.slideRight=r.name;}
-    const dives=rows.filter(r=>/dive.*down.*land|land/.test(r.n));
-    if(!map.land&&dives[0])map.land=dives[0].name;
+    if(!map.superLand){const r=rows.find(r=>/land/.test(r.n)&&!/dive/.test(r.n));if(r)map.superLand=r.name;}
     return map;
   }
   const phaseForSpeed=speed=>PHASES.find(p=>speed<p.max)||PHASES[PHASES.length-1];
@@ -5275,9 +5316,7 @@ const WPModel=(()=>{
       air:['air','run1','walk','idle'],
       slideRight:['slideRight','slide','run2','run1','idle'],
       slide:['slide','run2','run1','idle'],
-      landQuick:['landQuick','land','idle'],
-      land:['land','landQuick','idle'],
-      landHard:['landHard','land','landQuick','idle']
+      superLand:['superLand'],land:['superLand'],waterDive:['waterDive']
     };
     if(paths[slot])for(const candidate of paths[slot]){const n=info.clipMap[candidate];if(n&&actions[n])return actions[n];}
     const name=info.clipMap[slot];
@@ -5288,43 +5327,86 @@ const WPModel=(()=>{
     for(let i=idx-1;i>=0;i--){const n=info.clipMap[order[i]];if(n&&actions[n])return actions[n];}
     return null;
   }
-  function update(dt,state,speed,wallSide,landing,capePitch=0,capeBank=0,lateral=0){
-    if(!info.ready)return;
-    if(landing>0&&!landingLatch)landingLatch=landing>=.45?'landHard':landing>=.17?'land':'landQuick';
-    if(landing<=.001)landingLatch=null;
-    const slot=landingLatch||slotFor(state,speed,lateral),next=actionFor(slot);
-    if(next&&next!==active){
-      next.reset().setEffectiveWeight(1).play();
-      next.fadeIn(.12);if(active)active.fadeOut(.12);active=next;activeSlot=slot;info.slot=slot;
-      info.clip=Object.keys(actions).find(k=>actions[k]===next)||info.clip;
-    }
-    if(active){
-      const phase=PHASES.find(p=>p.slot===activeSlot);
-      if(phase&&phase.nominal)active.timeScale=clamp(speed/phase.nominal,.68,1.65);
-      else if(activeSlot==='slide'||activeSlot==='slideRight')active.timeScale=clamp(speed/42,.78,1.55);
-      else if(activeSlot==='landQuick')active.timeScale=3.5;
-      else if(activeSlot==='land')active.timeScale=5;
-      else if(activeSlot==='landHard')active.timeScale=5.5;
-      else active.timeScale=1;
-      mixer.update(dt);
-      for(const a of Object.values(actions))if(a!==active&&a.isRunning()&&a.getEffectiveWeight()<.001)a.stop();
-    }
-    // Fall2 is an excellent authored airborne silhouette. During cape flight the
-    // presentation layer rotates that upright falling pose ninety degrees so the
-    // body becomes a prone flyer; physics position and velocity remain untouched.
-    const pitch=state==='CAPE FLIGHT'?(-Math.PI/2+capePitch*.42):state==='SWIM'?.9:state==='SLIDE'?.45:state==='SUPER SPRINT'?.14:state==='SPRINT'?.07:0;
-    const bank=state==='WALL RUN'?wallSide*.18:state==='CAPE FLIGHT'?capeBank*.34:0;
-    pivot.rotation.x=lerp(pivot.rotation.x,pitch,damp(state==='CAPE FLIGHT'?7:10,dt));
-    pivot.rotation.z=lerp(pivot.rotation.z,bank,damp(10,dt));
-    pivot.position.y=lerp(pivot.position.y,-landing*.12+(state==='SLIDE'?-.18:0),damp(16,dt));
-  }
-  const status=document.createElement('div');status.textContent='Loading WP…';
+  let prevLanding=0,prevSplash=0,shot=null;
+ const att={pitch:0,bank:0,lift:0},qP=new THREE.Quaternion(),qB=new THREE.Quaternion(),AX=new THREE.Vector3(1,0,0),AZ=new THREE.Vector3(0,0,1),C=new THREE.Vector3();
+ function startShot(slot){
+   const a=actionFor(slot),w=ONE_SHOTS[slot];if(!a||!w)return false;
+   if(active&&active!==a)active.fadeOut(.08);
+   a.reset().setEffectiveWeight(1).play();a.time=w[0];a.timeScale=w[2];a.fadeIn(.06);
+   active=a;activeSlot=slot;info.slot=slot;info.clip=Object.keys(actions).find(k=>actions[k]===a)||info.clip;
+   shot={slot,end:w[1],age:0};return true;
+ }
+ // Pure decision so the regression suite can pin it without a GPU.
+ function landingShot(state,landing,speed){
+   if(state==='SLIDE'||state==='SWIM'||state==='WALL RUN')return null;
+   if(landing>=.45)return 'superLand';
+   if(landing>=.17&&speed<10)return 'land';
+   return null;
+ }
+ function attitude(dt,state,speed,wallSide,landing){
+   // Body attitude is presentation only. Flight rotates Fall2 about the body's
+   // centre of mass: +90° about X lays it prone with the head leading, bank rolls
+   // about the flight direction. Order matters: bank ∘ pitch, never Euler XYZ.
+   const flying=state==='CAPE FLIGHT',glide=flying&&P.capeGlide;
+   let pitch=0,bank=0,lift=0;
+   if(flying){
+     const gamma=Math.atan2(P.vy,Math.max(1,Math.hypot(P.vx,P.vz)));
+     pitch=(glide?Math.PI*.36:Math.PI/2)-clamp(gamma+P.capePitch*.22,-1.1,1.1);
+     bank=clamp(P.flightBank||0,-1.25,1.25);lift=1;
+   }else if(state==='SWIM')pitch=.9;
+   else if(!info.ready&&state==='SLIDE')pitch=.45;
+   else if(state==='SUPER SPRINT')pitch=.14;
+   else if(state==='SPRINT')pitch=.07;
+   if(state==='WALL RUN')bank=-wallSide*.18;
+   const k=damp(flying?8:10,dt);
+   att.pitch=lerp(att.pitch,pitch,k);att.bank=lerp(att.bank,bank,damp(flying?6:10,dt));att.lift=lerp(att.lift,lift,damp(6,dt));
+   qP.setFromAxisAngle(AX,att.pitch);qB.setFromAxisAngle(AZ,att.bank);pivot.quaternion.copy(qB).multiply(qP);
+   // Rotate about a point that rises to the centre of mass as flight blends in.
+   // A radius equal to its height keeps the feet above the floor at every angle.
+   C.set(0,KIN.height*.38*att.lift,0);const r=C.clone().applyQuaternion(pivot.quaternion);
+   pivot.position.set(C.x-r.x,C.y-r.y-landing*.12,C.z-r.z);
+ }
+ function update(dt,state,speed,wallSide,landing,capePitch=0,capeBank=0,lateral=0){
+   attitude(dt,state,speed,wallSide,landing);
+   if(!info.ready){prevLanding=landing;prevSplash=P.splash||0;return;}
+   const splash=P.splash||0;
+   if(splash>0&&prevSplash<=0)startShot('waterDive');
+   else if(landing>0&&prevLanding<=0){const s=landingShot(state,landing,speed);if(s)startShot(s);}
+   prevLanding=landing;prevSplash=splash;
+   if(shot){
+     shot.age+=dt;
+     // A one-shot yields as soon as the body is clearly doing something else.
+     const moving=shot.age>(shot.slot==='superLand'?.45:.22)&&speed>8&&shot.slot!=='waterDive',airborne=!P.onGround&&!P.inWater&&shot.age>.1;
+     if(!active||active.time>=shot.end||moving||airborne||state==='SLIDE'||(shot.slot==='waterDive'&&state!=='SWIM'&&shot.age>.1))shot=null;
+   }
+   if(!shot){
+     const slot=slotFor(state,speed,lateral),next=actionFor(slot);
+     if(next&&next!==active){
+       next.reset().setEffectiveWeight(1).play();
+       if(CLIP_START[slot])next.time=CLIP_START[slot];
+       next.fadeIn(.14);if(active)active.fadeOut(.14);active=next;activeSlot=slot;info.slot=slot;
+       info.clip=Object.keys(actions).find(k=>actions[k]===next)||info.clip;
+     }
+     if(active){
+       const phase=PHASES.find(p=>p.slot===activeSlot);
+       if(phase&&phase.nominal)active.timeScale=clamp(speed/phase.nominal,.68,1.65);
+       else if(activeSlot==='slide'||activeSlot==='slideRight')active.timeScale=clamp(speed/42,.78,1.55);
+       else if(activeSlot==='air')active.timeScale=state==='CAPE FLIGHT'?clamp(.6+speed/180,.6,1.2):1;
+       else active.timeScale=1;
+     }
+   }
+   if(active){
+     mixer.update(dt);
+     for(const a of Object.values(actions))if(a!==active&&a.isRunning()&&a.getEffectiveWeight()<.001)a.stop();
+   }
+ }
+ const status=document.createElement('div');status.textContent='Loading WP…';
   status.style.cssText='position:fixed;bottom:12px;left:50%;transform:translateX(-50%);padding:8px 14px;background:#10221f;color:#fff;z-index:100;font:12px monospace;pointer-events:none';document.body.append(status);
-  function fail(e){info.error=String(e);status.textContent='wp.glb unavailable · geometric runner active';console.error('WP model:',e);}
+  function fail(e){info.error=String(e);pivot.add(Hero.rig);status.textContent='wp.glb unavailable · geometric runner active';console.error('WP model:',e);}
   new THREE.GLTFLoader().load('wp.glb',gltf=>{
     try{
       model=gltf.scene;info.animations=gltf.animations.map(a=>a.name);info.clipMap=resolveAnimationNames(info.animations);
-      info.missing=['walk','run1','run2','run3','fast','air','slide','landQuick','land','landHard'].filter(k=>!info.clipMap[k]);model.updateMatrixWorld(true);
+      info.missing=['walk','run1','run2','run3','fast','air','slide','superLand','waterDive'].filter(k=>!info.clipMap[k]);model.updateMatrixWorld(true);
       // r128 Box3 ignores skin deformation. Measure a neutral skinned frame so
       // visual height continues to equal the established 2.75 m collision body.
       const neutral=gltf.animations.find(a=>a.name===info.clipMap.idle)||gltf.animations.find(a=>a.name===info.clipMap.walk)||gltf.animations[0];
@@ -5347,20 +5429,25 @@ const WPModel=(()=>{
       info.height=size.y*scale;modelRoot.add(model);
       model.traverse(o=>{if(o.isMesh){o.frustumCulled=false;o.castShadow=SHADOWS;info.triangles+=(o.geometry.index?o.geometry.index.count:o.geometry.attributes.position.count)/3;}});
       mixer=new THREE.AnimationMixer(model);
-      const hips=model.getObjectByName('mixamorig:Hips')||model.getObjectByName('Hips'),anchor=hips?hips.position.clone():new THREE.Vector3();
-      const oneShots=new Set([info.clipMap.landQuick,info.clipMap.land,info.clipMap.landHard].filter(Boolean));
+      // Root bone = first skinned bone whose parent is not a bone. This rig calls
+      // it 'pelvis'; the old 'Hips' lookup never matched, so slides carried the
+      // mesh 4.7 m forward and snapped back. Name-agnostic now.
+      let root=null;model.traverse(o=>{if(!root&&o.isSkinnedMesh&&o.skeleton.bones.length){root=o.skeleton.bones.find(b=>!(b.parent&&b.parent.isBone))||o.skeleton.bones[0];}});
+      root=root||model.getObjectByName('mixamorig:Hips')||model.getObjectByName('Hips')||model.getObjectByName('pelvis');
+      const anchor=root?root.position.clone():new THREE.Vector3(),rootTrack=root?root.name+'.position':'Hips.position';info.rootBone=root?root.name:null;
+      const oneShots=new Set([info.clipMap.superLand,info.clipMap.waterDive].filter(Boolean));
       for(const original of gltf.animations){
         const clip=original.clone();
         // Strip horizontal root travel: animation may articulate the mesh but it
-        // may never move the authoritative collision body.
-        for(const track of clip.tracks)if(track.name.endsWith('Hips.position'))for(let i=0;i<track.values.length;i+=3){track.values[i]=anchor.x;track.values[i+2]=anchor.z;}
+        // may never move the authoritative collision body. Vertical travel stays.
+        for(const track of clip.tracks)if(track.name.endsWith(rootTrack))for(let i=0;i<track.values.length;i+=3){track.values[i]=anchor.x;track.values[i+2]=anchor.z;}
         const action=mixer.clipAction(clip);if(oneShots.has(clip.name)){action.setLoop(THREE.LoopOnce,1);action.clampWhenFinished=true;}actions[clip.name]=action;
       }
       info.ready=true;Hero.rig.visible=false;status.remove();update(0,'GROUND',0,1,0,0,0,0);
       if(info.missing.length)console.warn('WP animation fallbacks active:',info.missing,'resolved:',info.clipMap);
     }catch(e){fail(e);}
   },undefined,fail);
-  return {info,update,resolveAnimationNames,phaseForSpeed,slotFor};
+  return {info,update,resolveAnimationNames,phaseForSpeed,slotFor,landingShot,pivot};
 })()
 
 /* Bourbon water-tower research (2026-09-22): no verified SketchUp asset acquired.
@@ -5882,9 +5969,11 @@ const CONTROL_ACTIONS=Object.freeze([
   {id:'flightYawRight',label:'Yaw right',section:'FLIGHT',defaults:['KeyD','ArrowRight']},
 ]);
 const defaultBindings=()=>Object.fromEntries(CONTROL_ACTIONS.map(a=>[a.id,a.defaults.slice()]));
-const FLIGHT_DEFAULTS=Object.freeze({sensitivity:1,invertPitch:true,invertRoll:false,invertYaw:false,pitchAxis:'MouseY',rollAxis:'MouseX',bindings:defaultBindings()});
-const flightSettings={sensitivity:FLIGHT_DEFAULTS.sensitivity,invertPitch:FLIGHT_DEFAULTS.invertPitch,invertRoll:false,invertYaw:false,pitchAxis:'MouseY',rollAxis:'MouseX',bindings:defaultBindings()};
+const FLIGHT_DEFAULTS=Object.freeze({mode:'aim',sensitivity:1,invertPitch:false,invertLook:false,invertRoll:false,invertYaw:false,pitchAxis:'MouseY',rollAxis:'MouseX',bindings:defaultBindings()});
+const flightSettings={mode:'aim',sensitivity:1,invertPitch:false,invertLook:false,invertRoll:false,invertYaw:false,pitchAxis:'MouseY',rollAxis:'MouseX',bindings:defaultBindings()};
 const flightPointer={pitch:0,roll:0};
+// Aim mode: a world-space direction the flyer chases. yaw uses heading convention atan2(vx,vz); pitch is elevation.
+const flightAim={yaw:0,pitch:0,active:false};
 const heldInputs=new Set();
 const moveHeld=new Map(); // compatibility + ground direction cache; keyed by physical input code.
 let keyboardLayoutMap=null,rebinding=null,suppressBindClickUntil=0;
@@ -5900,10 +5989,15 @@ function sanitizeBindings(raw){
   return out;
 }
 try{
-  const saved=JSON.parse(localStorage.getItem('crawford.flightControls.v2')||'null');
+  const saved=JSON.parse(localStorage.getItem('crawford.flightControls.v3')||'null'),v2=saved?null:JSON.parse(localStorage.getItem('crawford.flightControls.v2')||'null');
   if(saved&&typeof saved==='object'){
-    for(const k of ['sensitivity','invertPitch','invertRoll','invertYaw','pitchAxis','rollAxis'])if(k in saved)flightSettings[k]=saved[k];
+    for(const k of ['mode','sensitivity','invertPitch','invertLook','invertRoll','invertYaw','pitchAxis','rollAxis'])if(k in saved)flightSettings[k]=saved[k];
     flightSettings.bindings=sanitizeBindings(saved.bindings);
+  }else if(v2&&typeof v2==='object'){
+    // v2 → v3: keep bindings/axes/sensitivity. Pitch inversion meant "joystick" under the
+    // old stick-only model; under the new aim default it would read backwards, so it resets.
+    for(const k of ['sensitivity','invertRoll','invertYaw','pitchAxis','rollAxis'])if(k in v2)flightSettings[k]=v2[k];
+    flightSettings.bindings=sanitizeBindings(v2.bindings);
   }else{
     // v1 migration keeps sensitivity/roll/yaw preferences, but intentionally adopts the new joystick-style pitch default.
     const legacy=JSON.parse(localStorage.getItem('crawford.flightControls.v1')||'null');
@@ -5916,10 +6010,11 @@ try{
   }
 }catch(_){}
 flightSettings.sensitivity=clamp(Number(flightSettings.sensitivity)||1,.5,2);
+if(!['aim','stick'].includes(flightSettings.mode))flightSettings.mode='aim';flightSettings.invertLook=!!flightSettings.invertLook;
 flightSettings.invertPitch=!!flightSettings.invertPitch;flightSettings.invertRoll=!!flightSettings.invertRoll;flightSettings.invertYaw=!!flightSettings.invertYaw;
 if(!['MouseX','MouseY','None'].includes(flightSettings.pitchAxis))flightSettings.pitchAxis='MouseY';
 if(!['MouseX','MouseY','None'].includes(flightSettings.rollAxis))flightSettings.rollAxis='MouseX';
-function saveFlightSettings(){try{localStorage.setItem('crawford.flightControls.v2',JSON.stringify(flightSettings));}catch(_){}}
+function saveFlightSettings(){try{localStorage.setItem('crawford.flightControls.v3',JSON.stringify(flightSettings));}catch(_){}}
 function codeMatches(binding,code){
   if(!binding||!code)return false;
   if(binding===code)return true;
@@ -5983,10 +6078,12 @@ function syncControlSettings(){
   document.getElementById('flightPitchAxis').value=flightSettings.pitchAxis;
   document.getElementById('flightRollAxis').value=flightSettings.rollAxis;
   document.getElementById('invertFlightPitch').checked=flightSettings.invertPitch;
+  document.getElementById('flightMode').value=flightSettings.mode;document.getElementById('invertLookY').checked=flightSettings.invertLook;
+  const rl=document.getElementById('mapRollLabel');if(rl)rl.textContent=flightSettings.mode==='aim'?'turn (aim)':'roll';
   document.getElementById('invertFlightRoll').checked=flightSettings.invertRoll;
   document.getElementById('invertFlightYaw').checked=flightSettings.invertYaw;
   document.getElementById('comfortSetting').checked=comfort;
-  document.getElementById('mapPitch').textContent=flightSettings.pitchAxis==='None'?'UNBOUND':flightSettings.pitchAxis.replace('Mouse','MOUSE ')+(flightSettings.invertPitch?' · INVERTED':'');
+  document.getElementById('mapPitch').textContent=flightSettings.pitchAxis==='None'?'UNBOUND':flightSettings.pitchAxis.replace('Mouse','MOUSE ')+(flightSettings.invertPitch?' · MOUSE UP DIVES':' · MOUSE UP CLIMBS');
   document.getElementById('mapRoll').textContent=flightSettings.rollAxis==='None'?'UNBOUND':flightSettings.rollAxis.replace('Mouse','MOUSE ')+(flightSettings.invertRoll?' · INVERTED':'');
   document.getElementById('mapThrust').textContent=bindingSummary('flightThrust');document.getElementById('mapBrake').textContent=bindingSummary('flightBrake');
   document.getElementById('mapYaw').textContent=bindingSummary('flightYawLeft')+'  /  '+bindingSummary('flightYawRight');
@@ -5995,7 +6092,7 @@ function syncControlSettings(){
   renderBindingUI();
 }
 function resetControlDefaults(){
-  Object.assign(flightSettings,{sensitivity:1,invertPitch:true,invertRoll:false,invertYaw:false,pitchAxis:'MouseY',rollAxis:'MouseX'});flightSettings.bindings=defaultBindings();rebinding=null;
+  Object.assign(flightSettings,{mode:'aim',sensitivity:1,invertPitch:false,invertLook:false,invertRoll:false,invertYaw:false,pitchAxis:'MouseY',rollAxis:'MouseX'});flightSettings.bindings=defaultBindings();rebinding=null;
   flightPointer.pitch=flightPointer.roll=0;saveFlightSettings();syncControlSettings();
 }
 function finishRebind(code){
@@ -6017,7 +6114,7 @@ function resetInput(){
   for(const k of Object.keys(keys))delete keys[k];
   heldInputs.clear();moveHeld.clear();
   Object.assign(input,{x:0,z:0,jump:false,edge:false,sprint:false,slideEdge:false});
-  movePointer=null;lookPointer=null;lookLast=null;knob.style.transform='';flightPointer.pitch=0;flightPointer.roll=0;
+  movePointer=null;lookPointer=null;lookLast=null;knob.style.transform='';flightPointer.pitch=0;flightPointer.roll=0;flightAim.active=false;P.flightBank=0;P.splash=0;
   P.buffer=0;P.slideT=0;P.slideBuf=0;P.jumpHold=0;P.sprintCharge=0;P.superSprint=false;P.capeFlight=false;P.capeGlide=false;P.capeStored=false;P.capeEnergy=0;P.capeMode='NONE';P.capeSpin=0;P.capeSpinDir=1;P.capePitch=0;P.capeBank=0;
   syncSprintButton();
 }
@@ -6130,13 +6227,30 @@ function beginJump(power,state){
   const capeTakeoff=state==='LEAP'&&P.superSprint&&P.speed>=KIN.capeTakeoff;
   endSlide();P.vy=power;P.onGround=false;P.coyote=0;P.buffer=0;P.jumpHold=KIN.jumpHold;P.jumpsUsed=Math.min(2,P.jumpsUsed+1);
   if(capeTakeoff){
-    P.capeFlight=true;P.capeGlide=false;P.capeStored=false;P.capeMode='FLIGHT';P.capeSpin=0;
+    flightAim.active=false;P.capeFlight=true;P.capeGlide=false;P.capeStored=false;P.capeMode='FLIGHT';P.capeSpin=0;
     P.capeEnergy=clamp((P.speed-KIN.capeTakeoff)/(KIN.capeMax-KIN.capeTakeoff)*.55+.18,.18,.72);
   }
   P.state=P.capeFlight?'CAPE FLIGHT':state;
 }
+function syncAim(){
+  const sp=Math.max(1,Math.hypot(P.vx,P.vz));
+  flightAim.yaw=Math.atan2(P.vx,P.vz);flightAim.pitch=clamp(Math.atan2(P.vy,sp),-.3,.3);flightAim.active=true;
+}
+function aimControls(){
+  // Aim → attitude. Heading error banks (roll) and rudders (yaw); flight-path
+  // error pulls or dives. The momentum model underneath is unchanged.
+  const sp=Math.max(1,Math.hypot(P.vx,P.vz)),heading=Math.atan2(P.vx,P.vz),gamma=Math.atan2(P.vy,sp);
+  const e=Math.atan2(Math.sin(flightAim.yaw-heading),Math.cos(flightAim.yaw-heading));
+  return {pitch:clamp((flightAim.pitch-gamma)*KIN.aimPitch,-1,1),roll:clamp(e*KIN.aimTurn,-1,1),yaw:clamp(e*KIN.aimYaw,-1,1)};
+}
 function flightControls(){
   const keyYaw=(actionHeld('flightYawLeft')?1:0)-(actionHeld('flightYawRight')?1:0),touchYaw=-input.x;
+  if(flightSettings.mode==='aim'&&flightAim.active){
+    const a=aimControls();
+    return {pitch:a.pitch,roll:a.roll,yaw:a.yaw,
+      thrust:clamp((actionHeld('flightThrust')?1:0)+Math.max(0,-input.z),0,1),
+      brake:clamp((actionHeld('flightBrake')?1:0)+Math.max(0,input.z),0,1),keyYaw:clamp((keyYaw+touchYaw)*(flightSettings.invertYaw?-1:1),-1,1)};
+  }
   return {
     pitch:flightPointer.pitch*(flightSettings.invertPitch?-1:1),
     roll:flightPointer.roll*(flightSettings.invertRoll?-1:1),
@@ -6185,9 +6299,14 @@ function capeStep(dt,control,sprintHeld){
     heading+=P.capeSpinDir*Math.PI/KIN.capeSpinTime*dt;
     P.capeSpin=Math.max(0,P.capeSpin-dt);
   }
+  const turnRate=yaw*KIN.capeYaw+roll*KIN.capeRollTurn+(P.capeSpin>0?P.capeSpinDir*Math.PI/KIN.capeSpinTime:0);
   heading+=(yaw*KIN.capeYaw+roll*KIN.capeRollTurn)*dt;
   speed=clamp(speed,KIN.capeMin*.82,KIN.capeMax);
-  P.vy=clamp(P.vy,-KIN.capeFall,KIN.capePull*1.2);
+  // A committed dive may out-fall level flight; otherwise the ground smash
+  // (capeSmashVy 22 > capeFall 16) was unreachable.
+  P.vy=clamp(P.vy,-(KIN.capeFall+KIN.capeDiveFall*dive*(P.capeGlide?0:1)),KIN.capePull*1.2);
+  // Coordinated-turn bank: tan(φ)=vω/g. Positive = right side down in the model frame.
+  P.flightBank=lerp(P.flightBank||0,-Math.atan(speed*turnRate/KIN.gravity),damp(8,dt));
   P.vx=Math.sin(heading)*speed;P.vz=Math.cos(heading)*speed;
   P.capePitch=lerp(P.capePitch,P.capeGlide?-.15:pitch,damp(5,dt));
   P.capeBank=lerp(P.capeBank,P.capeSpin>0?P.capeSpinDir:roll,damp(7,dt));
@@ -6264,7 +6383,10 @@ function physics(dt){
     if(!wallKicked&&P.buffer>0&&(P.onGround||P.coyote>0)&&!P.inWater){beginJump(KIN.jump,'LEAP');jumped=true;}
     else if(!wallKicked&&input.edge&&!P.onGround&&!P.inWater&&P.coyote<=0&&P.jumpsUsed<2&&!P.capeFlight){beginJump(KIN.doubleJump,'DOUBLE JUMP');jumped=true;}
     if(P.capeFlight&&!P.onGround&&!P.inWater){
-      capeStep(dt,flightControls(),sprint);
+      if(!flightAim.active)syncAim();
+      const fc=flightControls();
+      if(fc.keyYaw)flightAim.yaw+=fc.keyYaw*KIN.capeYaw*dt;   // keys steer the aim, the flyer follows
+      capeStep(dt,fc,sprint);
       flightPointer.pitch=lerp(flightPointer.pitch,0,damp(KIN.capeControlReturn,dt));
       flightPointer.roll=lerp(flightPointer.roll,0,damp(KIN.capeControlReturn,dt));
     }
@@ -6272,13 +6394,16 @@ function physics(dt){
       const c=wallCandidate();if(c){P.capeStored=P.capeStored||P.capeFlight;P.ride=c;P.rideTime=0;P.rideLift=0;P.capeFlight=false;P.jumpHold=0;P.state='WALL RUN';}
     }
   }
-  const capeWasFlying=P.capeFlight,capeImpactVy=P.vy,capeImpactSpeed=Math.hypot(P.vx,P.vz),capeImpactMode=P.capeMode;
+  if(!P.capeFlight)flightAim.active=false;
+  const capeWasFlying=P.capeFlight,capeImpactVy=P.vy,capeImpactSpeed=Math.hypot(P.vx,P.vz),capeImpactMode=P.capeMode,wasWater=P.inWater,entryVy=P.vy,wasAir=!P.onGround;
   moveBody(dt);
+  P.splash=Math.max(0,(P.splash||0)-dt);
   if(capeWasFlying&&P.onGround){
-    if(capeImpactMode==='DIVE'&&capeImpactVy<-KIN.capeSmashVy){P.landPulse=.55;toast('CAPE GROUND SMASH','dive energy discharged');}
+    if(capeImpactMode==='DIVE'&&capeImpactVy<-KIN.capeSmashVy){P.landPulse=.55;P.vx*=.12;P.vz*=.12;toast('CAPE GROUND SMASH','dive energy discharged');}
     else if(capeImpactSpeed>=KIN.slideMin&&capeImpactVy<0){const sp=Math.max(.001,capeImpactSpeed);P.slideT=Math.min(.68,KIN.slideTime);P.slideX=P.vx/sp;P.slideZ=P.vz/sp;toast('BODY PRESS','cape glide carried into a slide');}
     P.capeFlight=false;P.capeGlide=false;P.capeStored=false;P.capeEnergy=0;P.capeMode='NONE';P.capeSpin=0;
   }
+  if(P.inWater&&!wasWater&&wasAir&&entryVy<-9)P.splash=.5;
   if(P.inWater){
     const w=waterAt(P.x,P.z);
     if(w){const h=surfaceAt(P.x,P.z,P.y+KIN.step);P.y=Math.max(h,lerp(P.y,w.surf-.6,damp(12,dt)));P.vy=0;P.onGround=false;}
@@ -6288,7 +6413,7 @@ function physics(dt){
     P.state=P.slideT>0?'SLIDE':P.onGround?(P.superSprint?'SUPER SPRINT':sprint?'SPRINT':'RUN'):P.capeFlight?'CAPE FLIGHT':P.vy>0?(P.jumpsUsed>1?'DOUBLE JUMP':'LEAP'):'AIRBORNE';
   }
   P.coyote=P.onGround?KIN.coyote:Math.max(0,P.coyote-dt);
-  if(P.onGround){P.jumpsUsed=0;P.jumpHold=0;P.capeFlight=false;P.capeGlide=false;P.capeStored=false;P.capeEnergy=0;P.capeMode='NONE';P.capeSpin=0;P.capePitch=lerp(P.capePitch,0,damp(10,dt));P.capeBank=lerp(P.capeBank,0,damp(10,dt));}
+  if(P.onGround){P.jumpsUsed=0;P.jumpHold=0;P.capeFlight=false;P.capeGlide=false;P.capeStored=false;P.capeEnergy=0;P.capeMode='NONE';P.capeSpin=0;P.capePitch=lerp(P.capePitch,0,damp(10,dt));P.capeBank=lerp(P.capeBank,0,damp(10,dt));P.flightBank=lerp(P.flightBank||0,0,damp(10,dt));}
   else if(P.coyote===0&&P.jumpsUsed===0)P.jumpsUsed=1;
   P.speed=Math.hypot(P.vx,P.vz);P.peak=Math.max(P.peak,P.speed);
   if(P.speed<.5&&P.onGround)P.state='GROUND';
@@ -6378,15 +6503,24 @@ document.addEventListener('pointerlockerror',()=>{
   refreshLockChip();
 });
 function handleFlightMotion(dx,dy){
-  const k=.0105*flightSettings.sensitivity,axis={MouseX:dx,MouseY:dy,None:0};
+  const axis={MouseX:dx,MouseY:dy,None:0};
+  if(flightSettings.mode==='aim'){
+    if(!flightAim.active)syncAim();
+    const k=KIN.aimRate*flightSettings.sensitivity;
+    // Non-inverted: mouse up (dy<0) raises the aim. Inverted: mouse up dives. Same meaning as stick mode.
+    flightAim.pitch=clamp(flightAim.pitch-(axis[flightSettings.pitchAxis]||0)*k*(flightSettings.invertPitch?-1:1),-KIN.aimPitchMax,KIN.aimPitchMax);
+    flightAim.yaw-=(axis[flightSettings.rollAxis]||0)*k*(flightSettings.invertRoll?-1:1);
+    return;
+  }
+  const k=.0105*flightSettings.sensitivity;
   // Raw mouse-down is negative aerodynamic pitch; default invertPitch=true reverses it at flightControls(), joystick-style.
   flightPointer.pitch=clamp(flightPointer.pitch-(axis[flightSettings.pitchAxis]||0)*k,-1,1);
   // Crawford's model/camera frame uses negative bank for a screen-right roll.
   flightPointer.roll=clamp(flightPointer.roll-(axis[flightSettings.rollAxis]||0)*k,-1,1);
 }
 function routeLook(dx,dy){
-  if(P.capeFlight&&!P.capeGlide){handleFlightMotion(dx,dy);return 'flight';}
-  CAM.yaw-=dx*.004;CAM.pitch=clamp(CAM.pitch+dy*.003,-.25,1.1);return 'camera';
+  if(P.capeFlight&&(!P.capeGlide||flightSettings.mode==='aim')){handleFlightMotion(dx,dy);return 'flight';}
+  CAM.yaw-=dx*.004;CAM.pitch=clamp(CAM.pitch+dy*.003*(flightSettings.invertLook?-1:1),-.25,1.1);return 'camera';
 }
 document.addEventListener('mousemove',e=>{   // mousemove is the event the spec guarantees under lock
   if(!isLocked()||blocked())return;
@@ -6445,6 +6579,8 @@ sensitivityControl.addEventListener('input',()=>{flightSettings.sensitivity=clam
 for(const [id,key] of [['invertFlightPitch','invertPitch'],['invertFlightRoll','invertRoll'],['invertFlightYaw','invertYaw']])document.getElementById(id).addEventListener('change',e=>{flightSettings[key]=!!e.target.checked;saveFlightSettings();syncControlSettings();});
 for(const [id,key] of [['flightPitchAxis','pitchAxis'],['flightRollAxis','rollAxis']])document.getElementById(id).addEventListener('change',e=>{flightSettings[key]=e.target.value;flightPointer.pitch=flightPointer.roll=0;saveFlightSettings();syncControlSettings();});
 document.getElementById('bindGrid').addEventListener('click',e=>{if(performance.now()<suppressBindClickUntil)return;const b=e.target.closest&&e.target.closest('[data-bind-action]');if(!b)return;rebinding={action:b.dataset.bindAction,slot:+b.dataset.bindSlot};document.getElementById('bindStatus').textContent='PRESS A KEY OR MOUSE BUTTON · ESC CANCELS · DELETE CLEARS';renderBindingUI();});
+document.getElementById('flightMode').addEventListener('change',e=>{flightSettings.mode=e.target.value==='stick'?'stick':'aim';flightPointer.pitch=flightPointer.roll=0;syncAim();saveFlightSettings();syncControlSettings();});
+document.getElementById('invertLookY').addEventListener('change',e=>{flightSettings.invertLook=!!e.target.checked;saveFlightSettings();syncControlSettings();});
 document.getElementById('comfortSetting').addEventListener('change',e=>{comfort=!!e.target.checked;document.getElementById('comfortBtn').setAttribute('aria-pressed',String(comfort));});
 document.getElementById('resetControlsBtn').addEventListener('click',resetControlDefaults);
 document.getElementById('comfortBtn').setAttribute('aria-pressed',String(comfort));
@@ -6453,6 +6589,11 @@ syncControlSettings();
 /* -------------------------------------------- presentation and performance */
 let quality=0,frameEMA=16.7,badTime=0,goodTime=0,fps=60;
 const qualityTiers=[1,.8,.65,.5];
+// Pure so the regression suite can pin behaviour without a GPU. Flight reacts twice as
+// fast: a stutter is far more jarring mid-air than on foot, and low-spec devices are
+// exactly the case this exists for.
+function qualityBadThreshold(flying){return flying?1.2:2.5;}
+function boomStep(q){return .45*(1+q*.55);}
 function resize(){
   renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,IS_TOUCH?1:1.5)*qualityTiers[quality]);
   renderer.setSize(window.innerWidth,window.innerHeight);
@@ -6465,7 +6606,10 @@ function trafficMeter(dt){
   if(dt>.15)return; // tab scheduling stalls are not GPU pressure
   frameEMA=lerp(frameEMA,dt*1000,.05);fps=1000/frameEMA;
   badTime=frameEMA>23?badTime+dt:0;goodTime=frameEMA<18?goodTime+dt:0;
-  if(badTime>2.5&&quality<3){quality++;badTime=goodTime=0;resize();}
+  // A single frame at or below 20 fps is dropped instantly rather than waiting on the
+  // EMA to catch up — the EMA alone let a low-spec device stay choppy through several
+  // seconds of flight before quality reacted.
+  if((dt*1000>50||badTime>qualityBadThreshold(P.capeFlight))&&quality<3){quality++;badTime=goodTime=0;resize();}
   if(goodTime>9&&quality>0){quality--;badTime=goodTime=0;resize();}
 }
 function presentation(dt){
@@ -6479,32 +6623,76 @@ function presentation(dt){
   const wallSide=P.ride?(P.ride.nx*Math.cos(P.yaw)-P.ride.nz*Math.sin(P.yaw)>=0?1:-1):1;
   Hero.pose(dt,P.state,animTime,speed,lookDelta,wallSide,P.landPulse);
   WPModel.update(blocked()?0:dt,P.state,speed,wallSide,P.landPulse,P.capePitch,P.capeBank,input.x);
-  if(P.capeFlight){
-    CAM.yaw=lerpAngle(CAM.yaw,P.yaw+Math.PI,damp(5.5,dt));
-    CAM.pitch=lerp(CAM.pitch,clamp(.18-P.capePitch*.07,-.08,.36),damp(3.2,dt));
-  }
-  CAM.smoothX=lerp(CAM.smoothX,P.x,damp(18,dt));CAM.smoothY=lerp(CAM.smoothY,P.y+(P.slideT>0?1.05:1.75),damp(14,dt));CAM.smoothZ=lerp(CAM.smoothZ,P.z,damp(18,dt));
-  CAM.smoothYaw=lerpAngle(CAM.smoothYaw,CAM.yaw,damp(20,dt));CAM.smoothPitch=lerp(CAM.smoothPitch,CAM.pitch,damp(20,dt));
+  const aiming=P.capeFlight&&flightSettings.mode==='aim'&&flightAim.active;
+  CAM.flightW=lerp(CAM.flightW||0,aiming?1:0,damp(4,dt));
+  if(aiming){
+    // Chase camera sits on the aim line: screen centre is where you are pointing.
+    CAM.yaw=flightAim.yaw+Math.PI;CAM.pitch=clamp(.14-flightAim.pitch*.9,-.95,1.25);
+  }else if(P.capeFlight){
+    const gamma=Math.atan2(P.vy,Math.max(1,speed));
+    CAM.yaw=lerpAngle(CAM.yaw,Math.atan2(P.vx,P.vz)+Math.PI,damp(5.5,dt));
+    CAM.pitch=lerp(CAM.pitch,clamp(.2-gamma*.85,-.6,.9),damp(4,dt));
+  }else if(CAM.airW>.05)CAM.pitch=lerp(CAM.pitch,.2,damp(3,dt));   // recentre after touchdown
+  else if(CAM.pitch<-.25||CAM.pitch>1.1)CAM.pitch=lerp(CAM.pitch,clamp(CAM.pitch,-.25,1.1),damp(6,dt));
+  // Velocity feed-forward: at 110 m/s a plain lerp trailed ~6 m and shrank the flyer to a speck.
+  CAM.smoothX+=P.vx*dt;CAM.smoothZ+=P.vz*dt;if(!P.onGround)CAM.smoothY+=P.vy*dt;
+  const bodyY=P.y+(P.slideT>0?1.05:P.capeFlight?1.2:1.75);
+  CAM.smoothX=lerp(CAM.smoothX,P.x,damp(12,dt));CAM.smoothY=lerp(CAM.smoothY,bodyY,damp(12,dt));CAM.smoothZ=lerp(CAM.smoothZ,P.z,damp(12,dt));
+  CAM.smoothYaw=lerpAngle(CAM.smoothYaw,CAM.yaw,damp(aiming?16:20,dt));CAM.smoothPitch=lerp(CAM.smoothPitch,CAM.pitch,damp(aiming?16:20,dt));
   const pitch=CAM.smoothPitch,yaw=CAM.smoothYaw,dx=Math.sin(yaw)*Math.cos(pitch),dz=Math.cos(yaw)*Math.cos(pitch),dy=Math.sin(pitch);
-  const boom=CAM.dist+(comfort?0:Math.min(4,speed*.055));let dist=.6;
-  // Walk the camera segment; terrain and buildings both shorten the boom.
-  for(let d=.6;d<=boom;d+=.45){
+  // Flight pulls the boom in (16 m made a 2.75 m flyer a speck); blended so landing never snaps.
+  CAM.airW=lerp(CAM.airW||0,P.capeFlight?1:0,damp(3,dt));
+  const boom=lerp(CAM.dist+(comfort?0:Math.min(4,speed*.055)),CAM.dist*.62+(comfort?0:Math.min(2,speed*.02)),CAM.airW);let dist=.6;
+  // Walk the camera segment; terrain always shortens the boom. Buildings only matter
+  // near the ground — skipping that spatial-grid lookup while clearly airborne is the
+  // single biggest per-frame saving available here, and it's free: nothing overhangs
+  // the flyer's boom at altitude.
+  const checkBuildings=CAM.airW<.6,step=boomStep(quality);
+  for(let d=.6;d<=boom;d+=step){
     const x=CAM.smoothX+dx*d,y=CAM.smoothY+dy*d,z=CAM.smoothZ+dz*d;
     if(y<groundHeight(x,z)+.4)break;
-    if(nearby(x,z).some(s=>y>s.bottom-.2&&y<solidTop(s,x,z)+.25&&inFootprint(s,x,z,.25)))break;
+    if(checkBuildings&&nearby(x,z).some(s=>y>s.bottom-.2&&y<solidTop(s,x,z)+.25&&inFootprint(s,x,z,.25)))break;
     dist=d;
   }
   camera.position.set(CAM.smoothX+dx*dist,CAM.smoothY+dy*dist,CAM.smoothZ+dz*dist);
-  camera.lookAt(CAM.smoothX,CAM.smoothY,CAM.smoothZ);
+  { // In aim flight look far down the aim line, not at the body: the flyer rides low in frame.
+    const w=CAM.flightW,L=60*w;camera.position.y+=w*.9;
+    camera.lookAt(CAM.smoothX-dx*L,CAM.smoothY-dy*L+w*.9,CAM.smoothZ-dz*L);
+  }
+  if(!comfort&&P.capeFlight)camera.rotateZ(-(P.flightBank||0)*.28);
   Streamer.cull(camera);
   if(!comfort&&P.ride){const side=P.ride.nx*Math.cos(yaw)-P.ride.nz*Math.sin(yaw);camera.rotateZ(side*.06);}
   camera.fov=lerp(camera.fov,comfort?68:68+Math.min(12,speed*.16),damp(5,dt));camera.updateProjectionMatrix();
+  flightHUD();
   sun.position.set(P.x+90,P.y+160,P.z+40);sun.target.position.set(P.x,P.y,P.z);
   beacons.visible=WAYMARKS_ON;R66.beacons.visible=WAYMARKS_ON;R66.beacons.children.forEach(b=>{b.visible=!b.userData.landmark.found;});
   beacons.children.forEach(b=>{b.visible=!b.userData.landmark.found;});
   hudClock+=dt;
   if(hudClock>=.1){hudClock=0;updateHUD();}
   if(toastT>0){toastT-=dt;if(toastT<=0)toastEl.classList.remove('on');}
+}
+const aimRingEl=document.getElementById('aimRing'),pathMarkEl=document.getElementById('pathMark'),flightReadoutEl=document.getElementById('flightReadout'),_hv=new THREE.Vector3();
+function placeMark(el,x,y,z){
+  _hv.set(x,y,z).project(camera);const on=_hv.z<1&&Math.abs(_hv.x)<1.2&&Math.abs(_hv.y)<1.2;
+  el.style.transform=on?'translate('+((_hv.x*.5+.5)*innerWidth).toFixed(1)+'px,'+((-_hv.y*.5+.5)*innerHeight).toFixed(1)+'px)':'translate(-99px,-99px)';
+}
+let flightHUDFrame=0;
+function flightHUD(){
+  const flying=P.capeFlight&&!blocked();document.body.classList.toggle('flying',flying);if(!flying)return;
+  flightHUDFrame++;
+  // On the worst quality tier a low-spec device skips every other ring/mark
+  // reprojection; on any better tier it runs every frame as before.
+  if(quality>=3&&flightHUDFrame&1)return;
+  const cp=Math.cos(flightAim.pitch);
+  if(flightSettings.mode==='aim')placeMark(aimRingEl,P.x+Math.sin(flightAim.yaw)*cp*120,P.y+1.2+Math.sin(flightAim.pitch)*120,P.z+Math.cos(flightAim.yaw)*cp*120);
+  else aimRingEl.style.transform='translate(-99px,-99px)';
+  placeMark(pathMarkEl,P.x+P.vx*1.2,P.y+1.2+P.vy*1.2,P.z+P.vz*1.2);
+  // Text writes force layout; the rest of the HUD already settled for 10 Hz (hudClock),
+  // so the flight readout follows the same cadence instead of every rendered frame.
+  if(hudClock!==0)return;
+  const agl=Math.max(0,P.y-groundHeight(P.x,P.z)),tti=P.vy<-4?agl/-P.vy:Infinity,warn=tti<1.6&&!P.capeGlide;
+  flightReadoutEl.classList.toggle('warn',warn);
+  flightReadoutEl.textContent=(warn?'PULL UP · ':'')+Math.round(agl)+' M AGL · '+(P.vy>=0?'+':'')+Math.round(P.vy)+' M/S';
 }
 function updateHUD(){
   for(const l of LANDMARKS)if(!l.found&&Math.hypot(P.x-l.x,P.z-l.z)<(l.r||40)){
@@ -6605,7 +6793,7 @@ window.__CRAWFORD__={version:'3.7.0',infrastructure:{meta:Infrastructure.data.me
     articulation:Object.keys(Hero.joints).length===19,roads:ROADS.length===OSM.roads.length,
     externalCharacter:WPModel.info.url==='wp.glb',fixedStep:KIN.hz===60,runSpeed:CONFIG.RUN===26,sprintSpeed:CONFIG.SPRINT===68,
     collider:KIN.radius===.58&&KIN.height===2.75&&KIN.step===.65,variableJump:KIN.jumpHold>0&&KIN.jumpHoldGravity<1,doubleJump:KIN.doubleJump>0,
-    superSprint:KIN.superCharge===3&&CONFIG.SUPER_SPRINT>CONFIG.SPRINT,cape:KIN.capeMax>CONFIG.SUPER_SPRINT&&KIN.capeTakeoff>CONFIG.SPRINT,flightControls:KIN.capeThrust>0&&KIN.capeBrake>0&&KIN.capeYaw>0&&KIN.capeRollTurn>0&&FLIGHT_DEFAULTS.invertPitch===true&&flightSettings.bindings.flightThrust.length===2,runPhases:WPModel.phaseForSpeed(26).slot==='run1'&&WPModel.phaseForSpeed(68).slot==='run3'&&WPModel.phaseForSpeed(92).slot==='fast',animationStates:(()=>{const m=WPModel.resolveAnimationNames(['Idle_11','Walking','Running','Run_02','Run_03','RunFast','Fall2','slide_light','slide_right','Dive_Down_and_Land','Dive_Down_and_Land_1','Dive_Down_and_Land_2']);return m.idle==='Idle_11'&&m.air==='Fall2'&&m.slide==='slide_light'&&m.slideRight==='slide_right'&&m.land==='Dive_Down_and_Land'&&m.landQuick==='Dive_Down_and_Land_1'&&m.landHard==='Dive_Down_and_Land_2';})(),offlineEngine:typeof THREE!=='undefined'})
+    superSprint:KIN.superCharge===3&&CONFIG.SUPER_SPRINT>CONFIG.SPRINT,cape:KIN.capeMax>CONFIG.SUPER_SPRINT&&KIN.capeTakeoff>CONFIG.SPRINT,flightControls:KIN.capeThrust>0&&KIN.capeBrake>0&&KIN.capeYaw>0&&KIN.capeRollTurn>0&&FLIGHT_DEFAULTS.mode==='aim'&&FLIGHT_DEFAULTS.invertPitch===false&&KIN.capeFall+KIN.capeDiveFall>KIN.capeSmashVy&&flightSettings.bindings.flightThrust.length===2,runPhases:WPModel.phaseForSpeed(26).slot==='run1'&&WPModel.phaseForSpeed(68).slot==='run3'&&WPModel.phaseForSpeed(92).slot==='fast',animationStates:(()=>{const m=WPModel.resolveAnimationNames(['Idle_11','Walking','Running','Run_02','Run_03','RunFast','Fall2','slide_light','slide_right','Dive_Down_and_Land','Dive_Down_and_Land_1','Dive_Down_and_Land_2']);return m.idle==='Idle_11'&&m.air==='Fall2'&&m.slide==='slide_light'&&m.slideRight==='slide_right'&&m.waterDive==='Dive_Down_and_Land_1'&&m.superLand==='Dive_Down_and_Land_2'&&!m.land;})(),offlineEngine:typeof THREE!=='undefined'})
 };
 console.log('CRAWFORD FREE RUNNER',window.__CRAWFORD__.contracts());
 requestAnimationFrame(loop);
