@@ -92,50 +92,53 @@
     #lives-el  { color: #f800f8; text-align: center; }
     #wave-el   { color: #7b5fff; text-align: right; }
 
-    /* ── Touch NUI (SNAKIA lineage) ────────────────────────────────────
-       touch-action does NOT inherit — it must be set on every element or a
-       pinch that starts on the console zooms the page. Hence the universal
-       selector, not just html/body. */
-    *{touch-action:none}
-    #nui{
-      display:none; width:min(600px,100vw); box-sizing:border-box;
-      padding:8px max(12px,env(safe-area-inset-left)) max(8px,env(safe-area-inset-bottom));
-      gap:12px; align-items:stretch; margin-top:6px; height:var(--ctrl-h);
+    /* ── Touch Controls ───────────────────────────────────────────────── */
+    #touch-controls {
+      display: none;           /* JS shows this on touch devices */
+      width: min(600px, 100vw);
+      box-sizing: border-box;
+      padding: 8px 12px 4px;
+      gap: 10px;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 6px;
     }
-    body.touch #nui{display:flex}
-    /* Slide rail: the whole rail is the hit zone. Finger X maps to ship X
-       (absolute), pointer-captured so sliding off the rail never drops it. */
-    #rail{
-      position:relative; flex:1 1 auto; border-radius:14px; overflow:hidden;
-      background:linear-gradient(180deg,rgba(0,216,216,.06),rgba(0,216,216,.02));
-      border:1px solid rgba(0,216,216,.45);
-      box-shadow:inset 0 0 18px rgba(0,216,216,.08),0 0 12px rgba(0,216,216,.12);
-      -webkit-tap-highlight-color:transparent; cursor:pointer;
+    .touch-btn {
+      font-family: monospace;
+      font-size: 22px;
+      font-weight: bold;
+      color: #00d8d8;
+      background: rgba(0, 216, 216, 0.08);
+      border: 2px solid rgba(0, 216, 216, 0.55);
+      border-radius: 10px;
+      width: 82px;
+      height: 56px;
+      cursor: pointer;
+      touch-action: none;
+      -webkit-tap-highlight-color: transparent;
+      text-shadow: 0 0 10px #00d8d8;
+      box-shadow: 0 0 10px rgba(0, 216, 216, 0.18), inset 0 0 8px rgba(0, 216, 216, 0.04);
+      transition: background 0.07s, box-shadow 0.07s;
     }
-    #rail::before{ /* ruler ticks — the dot-grid's cousin */
-      content:""; position:absolute; inset:0; pointer-events:none; opacity:.35;
-      background:repeating-linear-gradient(90deg,rgba(0,216,216,.5) 0 1px,transparent 1px 12.5%),
-                 repeating-linear-gradient(90deg,rgba(0,216,216,.25) 0 1px,transparent 1px 3.125%);
-      -webkit-mask:linear-gradient(180deg,transparent 60%,#000 60%); mask:linear-gradient(180deg,transparent 60%,#000 60%);
+    .touch-btn.pressed {
+      background: rgba(0, 216, 216, 0.26);
+      box-shadow: 0 0 22px rgba(0, 216, 216, 0.5), inset 0 0 12px rgba(0, 216, 216, 0.12);
     }
-    #rail-knob{
-      position:absolute; top:50%; left:0; width:52px; height:52px; margin:-26px 0 0 -26px;
-      border-radius:50%; pointer-events:none; will-change:transform;
-      border:2px solid rgba(0,216,216,.8); background:rgba(0,216,216,.10);
-      box-shadow:0 0 16px rgba(0,216,216,.45); transition:background .08s,box-shadow .08s;
+    .fire-btn {
+      font-size: 13px;
+      letter-spacing: 2px;
+      color: #f800f8;
+      background: rgba(248, 0, 248, 0.08);
+      border-color: rgba(248, 0, 248, 0.55);
+      text-shadow: 0 0 10px #f800f8;
+      box-shadow: 0 0 10px rgba(248, 0, 248, 0.18), inset 0 0 8px rgba(248, 0, 248, 0.04);
+      width: 110px;
+      flex-shrink: 0;
     }
-    #rail.active #rail-knob{background:rgba(0,216,216,.28);box-shadow:0 0 26px rgba(0,216,216,.8)}
-    #rail-label{position:absolute;top:6px;left:10px;font:bold 9px monospace;letter-spacing:.2em;
-      color:rgba(0,216,216,.5);pointer-events:none}
-    #fire{
-      flex:0 0 min(30vw,128px); border-radius:50%/42%; appearance:none; cursor:pointer;
-      font:bold 13px monospace; letter-spacing:3px; color:#f800f8; text-shadow:0 0 10px #f800f8;
-      background:rgba(248,0,248,.08); border:2px solid rgba(248,0,248,.55);
-      box-shadow:0 0 10px rgba(248,0,248,.18); -webkit-tap-highlight-color:transparent;
-      transition:background .07s,box-shadow .07s,transform .07s;
+    .fire-btn.pressed {
+      background: rgba(248, 0, 248, 0.26);
+      box-shadow: 0 0 22px rgba(248, 0, 248, 0.5), inset 0 0 12px rgba(248, 0, 248, 0.12);
     }
-    #fire.pressed{background:rgba(248,0,248,.28);box-shadow:0 0 24px rgba(248,0,248,.6);transform:translateY(2px)}
-    #mobile-name-input{touch-action:auto}
 
     /* ── Mobile Name-Entry Overlay ────────────────────────────────────── */
     #mobile-name-overlay {
@@ -204,10 +207,11 @@
 </div>
 <canvas id="c" width="600" height="520"></canvas>
 
-<!-- ── Touch NUI: slide rail + fire (pointer events, multi-touch safe) ── -->
-<div id="nui">
-  <div id="rail" role="slider" aria-label="Ship position"><span id="rail-label">SLIDE</span><div id="rail-knob"></div></div>
-  <button id="fire" aria-label="Fire (hold for auto)">FIRE</button>
+<!-- ── Mobile touch controls (shown on touch devices via JS) ── -->
+<div id="touch-controls">
+  <button class="touch-btn" id="btn-left"  aria-label="Move Left">◀</button>
+  <button class="touch-btn fire-btn" id="btn-fire" aria-label="Fire">FIRE</button>
+  <button class="touch-btn" id="btn-right" aria-label="Move Right">▶</button>
 </div>
 
 <!-- ── Mobile name-entry overlay ── -->
@@ -222,10 +226,9 @@
 
 <script>
 // ── MOBILE DETECTION ─────────────────────────────────────────────────────────
-const _touchQ = (location.search.match(/[?&]touch=([01])/) || [])[1];
-const isMobile = _touchQ ? _touchQ === '1'
-  : (window.matchMedia && matchMedia('(pointer:coarse)').matches)
-    || navigator.maxTouchPoints > 0 || ('ontouchstart' in window);
+const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+              || ('ontouchstart' in window)
+              || navigator.maxTouchPoints > 0;
 
 // ── PERF TIER ────────────────────────────────────────────────────────────────
 // One switch drives every cost decision below. Desktop keeps the original
@@ -320,7 +323,6 @@ generateBranding();
 
 // ── CONSTANTS ────────────────────────────────────────────────────────────────
 const C = document.getElementById('c'), ctx = C.getContext('2d');
-const FRAME_MS = 1000 / 60;
 const W = 600, H = 520, ROWS = 5, COLS = 11, MAX_WAVES = 5;
 
 // ── 2-frame animated sprites ──────────────────────────────────────────────────
@@ -596,7 +598,7 @@ function init(persist) {
   S = { aliens, bunkers, alienDir: 1, alienDx: 24, alienDy: 16, alienTimer: 0,
     alienInterval: Math.max(150, 800 - (wave - 1) * 60),
     px: W / 2 - 16, py: H - 50, pw: 32, ph: 12,
-    bullets: [], abullets: [], keys: {}, touchX: null, score, lives, wave,
+    bullets: [], abullets: [], keys: {}, score, lives, wave,
     phase: 'announce', announceTimer: 2400, shootCD: 0,
     boss: null, flash: false, flashTimer: 0,
     minions: [], beams: [], enrageFlash: 0, critFlash: 0,
@@ -649,18 +651,9 @@ function update(dt) {
   S.shootCD = Math.max(0, S.shootCD - dt);
   // Boss patterns demand real repositioning; base speed was tuned for a
   // slow-marching alien block and can't clear a sweeping beam in time.
-  // px/frame @60Hz, scaled by dt so 120Hz phones don't move the ship 2x.
-  const mv = (S.phase === 'boss' ? 6.6 : 5) * (dt / FRAME_MS);
-  if (S.touchX !== null) {
-    // Rail = absolute target. Speed cap is the SAME as keyboard, so touch is
-    // smoother but not a balance cheat against boss beams.
-    const tgt = Math.max(0, Math.min(W - 36, S.touchX - S.pw / 2));
-    const d = tgt - S.px;
-    S.px += Math.abs(d) <= mv ? d : Math.sign(d) * mv;
-  } else {
-    if (S.keys['ArrowLeft']  || S.keys['a']) S.px = Math.max(0, S.px - mv);
-    if (S.keys['ArrowRight'] || S.keys['d']) S.px = Math.min(W - 36, S.px + mv);
-  }
+  const mv = S.phase === 'boss' ? 6.6 : 5;
+  if (S.keys['ArrowLeft']  || S.keys['a']) S.px = Math.max(0, S.px - mv);
+  if (S.keys['ArrowRight'] || S.keys['d']) S.px = Math.min(W - 36, S.px + mv);
   if ((S.keys[' '] || S.keys['ArrowUp']) && S.shootCD <= 0) {
     // Boss fights unlock a faster cadence and a twin shot. The bosses got a
     // lot meaner; the player gets real firepower back rather than just being
@@ -1008,12 +1001,13 @@ function bossDefeated() {
   S.boss = null; S.bullets = []; S.abullets = []; S.minions = []; S.beams = [];
   if (S.wave >= MAX_WAVES) { triggerWin(); return; }
   S.wave++;
-  // Was a 100ms setTimeout: a hit landing inside that window mutated a state
-  // object that was then thrown away, and the handoff was untestable.
-  // Synchronous persist-init; explosion particles survive the reset.
-  const keepFx = particles, keepTouch = S.touchX, keepKeys = S.keys;
-  init(true);
-  particles = keepFx; S.touchX = keepTouch; S.keys = keepKeys;
+  S.phase = 'announce'; S.announceTimer = 2400; updateHUD();
+  setTimeout(() => {
+    const sc = S.score, wv = S.wave, lv = S.lives;
+    init(false); S.score = sc; S.wave = wv; S.lives = lv;
+    S.alienInterval = Math.max(150, 800 - (wv - 1) * 60);
+    S.phase = 'announce'; S.announceTimer = 2400; updateHUD();
+  }, 100);
 }
 function playerHit() {
   spawnRing(S.px + 16, S.py + 6, '#00d8d8', 24, 5);
@@ -1408,106 +1402,75 @@ document.addEventListener('visibilitychange', () => {
 init(false);
 requestAnimationFrame(tick);
 
-// ── TOUCH NUI ───────────────────────────────────────────────────────────────
-// Pointer Events + setPointerCapture (SNAKIA pattern): each control owns ONE
-// pointerId, so rail + fire work simultaneously and a finger that drifts off
-// a control keeps driving it until lift. Old build used touchstart on
-// buttons: no capture, ◀/▶ digital only, and lifting the wrong finger
-// cancelled the other button.
-const NUI = (function () {
-  const body = document.body, rail = document.getElementById('rail'),
-        knob = document.getElementById('rail-knob'), fire = document.getElementById('fire'),
-        cvs = document.getElementById('c');
-  if (!isMobile) return { active: false };
-  body.classList.add('touch');
-  document.documentElement.style.setProperty('--ctrl-h', '96px');
+// ── MOBILE SETUP ─────────────────────────────────────────────────────────────
+if (isMobile) {
+  // 1. Adjust canvas height budget so it doesn't overlap controls
+  document.documentElement.style.setProperty('--ctrl-h', '76px');
 
-  let railId = null, fireId = null;
-  const buzz = ms => { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) {} };
-  function railToField(clientX) {
-    const r = rail.getBoundingClientRect();
-    const u = r.width ? Math.max(0, Math.min(1, (clientX - r.left) / r.width)) : 0.5;
-    return u * W;
+  // 2. Show the touch control bar
+  const touchControls = document.getElementById('touch-controls');
+  touchControls.style.display = 'flex';
+
+  // 3. Wire up each button to the existing S.keys system
+  function bindTouchBtn(id, key) {
+    const el = document.getElementById(id);
+    function down(e) {
+      e.preventDefault();
+      if (S && S.phase !== 'namentry') {
+        S.keys[key] = true;
+        el.classList.add('pressed');
+      }
+    }
+    function up(e) {
+      e.preventDefault();
+      if (S) S.keys[key] = false;
+      el.classList.remove('pressed');
+    }
+    el.addEventListener('touchstart',  down, { passive: false });
+    el.addEventListener('touchend',    up,   { passive: false });
+    el.addEventListener('touchcancel', up,   { passive: false });
   }
-  function syncKnob() {
-    const r = rail.getBoundingClientRect();
-    const u = (S.px + S.pw / 2) / W;
-    knob.style.transform = `translateX(${(u * r.width).toFixed(1)}px)`;
-  }
-  rail.addEventListener('pointerdown', e => {
-    if (railId !== null || S.phase === 'namentry') return;
-    e.preventDefault(); railId = e.pointerId;
-    try { rail.setPointerCapture(railId); } catch (err) {}
-    rail.classList.add('active'); S.touchX = railToField(e.clientX);
-  });
-  rail.addEventListener('pointermove', e => {
-    if (e.pointerId !== railId) return;
-    S.touchX = railToField(e.clientX);
-  });
-  const railEnd = e => {
-    if (e.pointerId !== railId) return;
-    railId = null; S.touchX = null; rail.classList.remove('active');
-  };
-  rail.addEventListener('pointerup', railEnd);
-  rail.addEventListener('pointercancel', railEnd);
-  rail.addEventListener('lostpointercapture', railEnd);
+  bindTouchBtn('btn-left',  'ArrowLeft');
+  bindTouchBtn('btn-right', 'ArrowRight');
+  bindTouchBtn('btn-fire',  ' ');
 
-  fire.addEventListener('pointerdown', e => {
-    if (fireId !== null || S.phase === 'namentry') return;
-    e.preventDefault(); fireId = e.pointerId;
-    try { fire.setPointerCapture(fireId); } catch (err) {}
-    S.keys[' '] = true; fire.classList.add('pressed'); buzz(8);
-  });
-  const fireEnd = e => {
-    if (e.pointerId !== fireId) return;
-    fireId = null; S.keys[' '] = false; fire.classList.remove('pressed');
-  };
-  fire.addEventListener('pointerup', fireEnd);
-  fire.addEventListener('pointercancel', fireEnd);
-  fire.addEventListener('lostpointercapture', fireEnd);
+  // 4. Tap canvas to restart on game-over / win screens
+  document.getElementById('c').addEventListener('touchstart', e => {
+    e.preventDefault();
+    if (S && (S.phase === 'over' || S.phase === 'win')) {
+      particles = [];
+      init(false);
+    }
+  }, { passive: false });
 
-  // Tap the field to restart after game over / win
-  cvs.addEventListener('pointerdown', e => {
-    if (S.phase === 'over' || S.phase === 'win') { e.preventDefault(); particles = []; init(false); }
-  });
+  // 5. Mobile name-entry overlay wiring
+  const nameOverlay  = document.getElementById('mobile-name-overlay');
+  const nameInput    = document.getElementById('mobile-name-input');
+  const nameSubmit   = document.getElementById('mobile-name-submit');
 
-  // Zoom guard (SNAKIA L3): block pinch at touchSTART, iOS gesture*, dbl-tap.
-  const block = e => { if (e.cancelable) e.preventDefault(); };
-  ['gesturestart', 'gesturechange', 'gestureend'].forEach(n => document.addEventListener(n, block, { passive: false }));
-  const multi = e => { if (e.touches && e.touches.length > 1 && e.target !== rail && e.target !== fire && e.cancelable) e.preventDefault(); };
-  document.addEventListener('touchstart', multi, { passive: false });
-  document.addEventListener('touchmove', multi, { passive: false });
-  document.addEventListener('dblclick', block, { passive: false });
-
-  // Knob follows the SHIP (not the finger) so the rail shows true position.
-  (function knobLoop() { if (S) syncKnob(); requestAnimationFrame(knobLoop); })();
-
-  // Name entry overlay
-  const nameOverlay = document.getElementById('mobile-name-overlay');
-  const nameInput   = document.getElementById('mobile-name-input');
-  const nameSubmit  = document.getElementById('mobile-name-submit');
   function submitMobileName() {
     const name = nameInput.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3);
     if (!name.length) return;
     saveScore({ name, score: S.score, wave: S.wave });
     S.phase = S.wave >= MAX_WAVES ? 'win' : 'over';
-    nameOverlay.classList.remove('visible'); nameInput.blur();
+    nameOverlay.classList.remove('visible');
+    nameInput.blur();
   }
+
+  // Exposed so checkHS() can call it
   window._mobileNameEntry = {
-    show() { nameInput.value = ''; nameOverlay.classList.add('visible'); setTimeout(() => nameInput.focus(), 120); }
+    show() {
+      nameInput.value = '';
+      nameOverlay.classList.add('visible');
+      // Small delay lets the overlay paint before keyboard opens
+      setTimeout(() => nameInput.focus(), 120);
+    }
   };
+
+  nameSubmit.addEventListener('touchend', e => { e.preventDefault(); submitMobileName(); }, { passive: false });
   nameSubmit.addEventListener('click', submitMobileName);
   nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') submitMobileName(); });
-  return { active: true, get railId() { return railId; }, get fireId() { return fireId; } };
-})();
-
-// ── TEST HOOK ───────────────────────────────────────────────────────────────
-// Read-only window into the lexical state for tests/regression.test.mjs.
-// Costs nothing at runtime; do not wire gameplay through it.
-window.__NI = {
-  get S() { return S; }, init, update, spawnBoss, triggerBoss, bossDefeated, playerHit,
-  BOSS, MAX_WAVES, W, H, FRAME_MS, get nui() { return NUI; },
-};
+}
 </script>
 
 </body>
