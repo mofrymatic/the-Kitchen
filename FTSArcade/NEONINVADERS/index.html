@@ -120,9 +120,9 @@
     }
 
     /* ── Brazen Mobile NUI ────────────────────────────────────────────────
-       The right thumb deck is one continuous control family: a forgiving
-       left/right rocker plus a separate fire actuator. The rocker owns one
-       pointer capture, so sliding LEFT -> RIGHT never requires lifting. */
+       Three-actuator FTS cabinet surface: dedicated LEFT / RIGHT keys plus FIRE.
+       The paired movement keys share pointer capture so sliding LEFT -> RIGHT
+       never requires lifting; FIRE remains an independent second-thumb control. */
     #touch-controls {
       display: none;
       position: fixed;
@@ -142,10 +142,10 @@
     .control-deck {
       display: flex;
       align-items: center;
-      justify-content: flex-end;
-      gap: 12px;
-      width: min(100%, 360px);
-      margin-left: auto;
+      justify-content: space-between;
+      gap: clamp(18px, 7vw, 42px);
+      width: min(100%, 430px);
+      margin: 0 auto;
       pointer-events: auto;
       touch-action: none;
     }
@@ -153,31 +153,21 @@
       position: relative;
       display: grid;
       grid-template-columns: 1fr 1fr;
-      width: 172px;
-      height: 68px;
-      flex: 0 0 172px;
-      overflow: hidden;
-      border: 2px solid rgba(0,216,216,.62);
-      border-radius: 19px;
-      background:
-        linear-gradient(180deg, rgba(0,216,216,.13), rgba(0,216,216,.055));
+      gap: 3px;
+      width: 202px;
+      height: 82px;
+      flex: 0 0 202px;
+      padding: 4px;
+      border: 2px solid rgba(52,235,255,.72);
+      border-radius: 31px;
+      background: rgba(0,10,24,.76);
       box-shadow:
-        0 8px 20px rgba(0,0,0,.42),
-        0 0 18px rgba(0,216,216,.12),
-        inset 0 1px 0 rgba(255,255,255,.08),
-        inset 0 -8px 18px rgba(0,0,0,.28);
+        0 10px 28px rgba(0,0,0,.5),
+        0 0 24px rgba(0,216,216,.2),
+        inset 0 1px 0 rgba(255,255,255,.08);
       touch-action: none;
       -webkit-tap-highlight-color: transparent;
-    }
-    .move-rocker::after {
-      content: "";
-      position: absolute;
-      top: 10px;
-      bottom: 10px;
-      left: 50%;
-      width: 1px;
-      background: rgba(0,216,216,.28);
-      pointer-events: none;
+      isolation: isolate;
     }
     .rocker-btn,
     .fire-btn {
@@ -197,49 +187,59 @@
       position: relative;
       min-width: 0;
       height: 100%;
-      color: #a8ffff;
-      background: transparent;
-      font-size: 27px;
+      color: #c8ffff;
+      background:
+        radial-gradient(circle at 38% 26%, rgba(255,255,255,.2), transparent 20%),
+        linear-gradient(180deg, rgba(13,78,94,.72), rgba(2,28,42,.92));
+      border: 1px solid rgba(86,246,255,.42);
+      font-size: 31px;
       line-height: 1;
-      text-shadow: 0 0 11px #00d8d8;
+      text-shadow: 0 0 12px #00d8d8;
+      box-shadow:
+        inset 0 2px 0 rgba(255,255,255,.12),
+        inset 0 -9px 16px rgba(0,0,0,.3),
+        0 0 14px rgba(0,216,216,.12);
     }
-    .rocker-btn:first-child { border-radius: 16px 0 0 16px; }
-    .rocker-btn:last-child  { border-radius: 0 16px 16px 0; }
+    .rocker-btn:first-child { border-radius: 25px 8px 8px 25px; }
+    .rocker-btn:last-child  { border-radius: 8px 25px 25px 8px; }
     .rocker-btn.pressed {
-      background: rgba(0,216,216,.29);
-      box-shadow: inset 0 0 18px rgba(0,216,216,.2), 0 0 20px rgba(0,216,216,.12);
-      transform: translateY(2px);
+      background:
+        radial-gradient(circle at 38% 26%, rgba(255,255,255,.28), transparent 22%),
+        linear-gradient(180deg, rgba(24,147,165,.88), rgba(3,48,64,.98));
+      box-shadow: inset 0 0 22px rgba(122,255,255,.28), 0 0 26px rgba(0,216,216,.32);
+      transform: translateY(3px) scale(.985);
+      filter: brightness(1.18);
     }
     .fire-btn {
       position: relative;
       display: grid;
       place-items: center;
-      width: 78px;
-      height: 78px;
-      flex: 0 0 78px;
+      width: 94px;
+      height: 94px;
+      flex: 0 0 94px;
       border-radius: 50%;
       color: #fff2ff;
       background:
         radial-gradient(circle at 38% 30%, rgba(255,255,255,.34), transparent 18%),
         radial-gradient(circle at 50% 46%, rgba(248,0,248,.38), rgba(91,0,91,.82) 74%);
-      border: 2px solid rgba(255,90,255,.8);
+      border: 3px solid rgba(255,90,255,.92);
       box-shadow:
-        0 7px 0 rgba(70,0,70,.72),
-        0 11px 24px rgba(0,0,0,.42),
-        0 0 22px rgba(248,0,248,.26),
+        0 8px 0 rgba(70,0,70,.76),
+        0 13px 28px rgba(0,0,0,.46),
+        0 0 30px rgba(248,0,248,.32),
         inset 0 2px 0 rgba(255,255,255,.2),
         inset 0 -9px 14px rgba(0,0,0,.34);
       text-shadow: 0 0 10px #f800f8;
     }
     .fire-btn .fire-glyph {
       display: block;
-      font-size: 20px;
+      font-size: 23px;
       line-height: .8;
       transform: translateY(-2px);
     }
     .fire-btn .fire-label {
       display: block;
-      font-size: 9px;
+      font-size: 10px;
       line-height: 1;
       letter-spacing: .14em;
     }
@@ -267,15 +267,15 @@
     @media (max-width: 420px) {
       #ui { gap: 10px; font-size: 11px; }
       #ui span { letter-spacing: 1px; }
-      .control-deck { gap: 9px; width: min(100%, 326px); }
-      .move-rocker { width: 158px; flex-basis: 158px; height: 64px; }
-      .fire-btn { width: 74px; height: 74px; flex-basis: 74px; }
+      .control-deck { gap: 18px; width: min(100%, 360px); }
+      .move-rocker { width: 184px; flex-basis: 184px; height: 72px; border-radius: 27px; }
+      .fire-btn { width: 84px; height: 84px; flex-basis: 84px; }
     }
     @media (pointer: coarse) and (orientation: landscape), (max-height: 540px) {
       #touch-controls { min-height: 76px; padding-top: 6px; padding-bottom: max(6px, var(--safe-bottom)); }
-      .control-deck { gap: 9px; width: min(100%, 320px); }
-      .move-rocker { width: 154px; flex-basis: 154px; height: 56px; border-radius: 16px; }
-      .fire-btn { width: 64px; height: 64px; flex-basis: 64px; }
+      .control-deck { gap: 16px; width: min(100%, 340px); }
+      .move-rocker { width: 174px; flex-basis: 174px; height: 60px; border-radius: 22px; }
+      .fire-btn { width: 68px; height: 68px; flex-basis: 68px; }
       .fire-btn .fire-glyph { font-size: 17px; }
       .fire-btn .fire-label { font-size: 8px; }
     }
@@ -578,10 +578,11 @@ const BOSS_TAGLINE = [
 ];
 function getPalette(w) { return WAVE_PALETTES[(w - 1) % WAVE_PALETTES.length]; }
 
-// ── grid ──────────────────────────────────────────────────────────────────────
-// Structure-of-Arrays, same layout fts-mesh-v2 will upload straight to a VBO.
-// Desktop 31x26 = 806 nodes. Mobile 19x16 = 304 nodes (~2.6x less work per
-// frame in BOTH the spring integrator and the stroke path).
+// ── GRID / ELASTIC FIELD ───────────────────────────────────────────────────────
+// Geometry-Wars-inspired contract: the grid is a spring mesh, not wallpaper.
+// Moving entities continuously push/pull nearby nodes; explosions inject radial
+// impulses; the mesh damps back to rest and sleeps when quiet. Gameplay never
+// reads deformed node positions, keeping presentation separate from simulation.
 const GCOLS = PERF.gridCols, GROWS = PERF.gridRows;
 const GSW = W / (GCOLS - 1), GSH = H / (GROWS - 1);
 const GN = GCOLS * GROWS;
@@ -594,9 +595,17 @@ for (let r = 0, i = 0; r < GROWS; r++)
     gOY[i] = gY[i] = r * GSH;
   }
 
-// Sleep detection: when the mesh has settled we skip the integrator entirely.
-// We can't skip drawGrid (the mesh is always visible) but the settled node
-// positions are identical to origin, so we stroke a cached static path.
+const GRID = {
+  spring: 0.052,
+  damping: 0.89,
+  sleepEnergy: 0.028,
+  playerRadius: LOW ? 92 : 118,
+  bulletRadius: LOW ? 54 : 72,
+  enemyRadius: LOW ? 44 : 58,
+  bossRadius: LOW ? 112 : 148,
+  maxVel: 10.5,
+};
+
 let gridEnergy = 1, gridAsleep = false, staticPath = null;
 
 function buildStaticPath() {
@@ -613,52 +622,111 @@ function buildStaticPath() {
 }
 staticPath = buildStaticPath();
 
-function updateGrid(dt) {
-  if (gridAsleep) return;
-  const k = 0.065, d = 0.87, f = dt / 16;
-  let e = 0;
-  for (let i = 0; i < GN; i++) {
-    const vx = (gVX[i] + (gOX[i] - gX[i]) * k) * d;
-    const vy = (gVY[i] + (gOY[i] - gY[i]) * k) * d;
-    gVX[i] = vx; gVY[i] = vy;
-    gX[i] += vx * f; gY[i] += vy * f;
-    e += Math.abs(vx) + Math.abs(vy);
-  }
-  gridEnergy = e;
-  if (e < 0.04 * GN) {           // settled — snap to origin and sleep
-    gX.set(gOX); gY.set(gOY); gVX.fill(0); gVY.fill(0);
-    gridAsleep = true;
-  }
-}
+function wakeGrid() { gridAsleep = false; }
 
-const R_RAD = 220;
-function ripple(wx, wy, str) {
-  gridAsleep = false;
-  // Only touch nodes inside the radius instead of scanning all GN every call.
-  const c0 = Math.max(0, Math.floor((wx - R_RAD) / GSW));
-  const c1 = Math.min(GCOLS - 1, Math.ceil((wx + R_RAD) / GSW));
-  const r0 = Math.max(0, Math.floor((wy - R_RAD) / GSH));
-  const r1 = Math.min(GROWS - 1, Math.ceil((wy + R_RAD) / GSH));
+function gridImpulse(wx, wy, fx, fy, radius) {
+  wakeGrid();
+  const r2 = radius * radius;
+  const c0 = Math.max(0, Math.floor((wx - radius) / GSW));
+  const c1 = Math.min(GCOLS - 1, Math.ceil((wx + radius) / GSW));
+  const r0 = Math.max(0, Math.floor((wy - radius) / GSH));
+  const r1 = Math.min(GROWS - 1, Math.ceil((wy + radius) / GSH));
   for (let r = r0; r <= r1; r++) {
     const base = r * GCOLS;
     for (let c = c0; c <= c1; c++) {
       const i = base + c;
       const dx = gOX[i] - wx, dy = gOY[i] - wy;
       const d2 = dx * dx + dy * dy;
-      if (d2 < 25 || d2 > R_RAD * R_RAD) continue;   // squared compare, no sqrt in the reject path
-      const d = Math.sqrt(d2);
-      const f = str * (1 - d / R_RAD) / (d < 12 ? 12 : d);
-      gVX[i] -= dx * f; gVY[i] -= dy * f;
+      if (d2 > r2) continue;
+      const falloff = 1 - d2 / r2;
+      gVX[i] += fx * falloff;
+      gVY[i] += fy * falloff;
     }
+  }
+}
+
+function gridRadial(wx, wy, strength, radius = 220) {
+  wakeGrid();
+  const r2 = radius * radius;
+  const c0 = Math.max(0, Math.floor((wx - radius) / GSW));
+  const c1 = Math.min(GCOLS - 1, Math.ceil((wx + radius) / GSW));
+  const r0 = Math.max(0, Math.floor((wy - radius) / GSH));
+  const r1 = Math.min(GROWS - 1, Math.ceil((wy + radius) / GSH));
+  for (let r = r0; r <= r1; r++) {
+    const base = r * GCOLS;
+    for (let c = c0; c <= c1; c++) {
+      const i = base + c;
+      const dx = gOX[i] - wx, dy = gOY[i] - wy;
+      const d2 = dx * dx + dy * dy;
+      if (d2 < 16 || d2 > r2) continue;
+      const d = Math.sqrt(d2);
+      const falloff = (1 - d / radius) * strength / Math.max(10, d);
+      gVX[i] += dx * falloff;
+      gVY[i] += dy * falloff;
+    }
+  }
+}
+
+// Compatibility name used by the combat code. Positive strength pushes outward.
+function ripple(wx, wy, str) { gridRadial(wx, wy, str, 220); }
+
+function updateGridForces(dt) {
+  if (!S || REDUCED_MOTION) return;
+  const f = Math.min(1.5, dt / 16.6667);
+
+  // Player wake: lateral motion drags the lattice; even at rest the ship exerts
+  // a tiny pressure so the floor feels physically present rather than decorative.
+  const pvx = S.playerVX || 0;
+  gridImpulse(S.px + S.pw * 0.5, S.py + S.ph * 0.5,
+    pvx * 0.045 * f, -0.045 * f, GRID.playerRadius);
+
+  // Projectiles carve short directional wakes. Sample every other projectile on
+  // mobile to preserve the field sensation without turning the mesh into the hot path.
+  const bStep = LOW ? 2 : 1;
+  for (let i = 0; i < S.bullets.length; i += bStep) {
+    const b = S.bullets[i];
+    gridImpulse(b.x, b.y, 0, -0.11 * f, GRID.bulletRadius);
+  }
+  for (let i = 0; i < S.abullets.length; i += bStep) {
+    const b = S.abullets[i];
+    gridImpulse(b.x, b.y, (b.vx || 0) * 0.012 * f, 0.075 * f, GRID.enemyRadius);
+  }
+
+  if (S.boss && S.phase === 'boss') {
+    const idx = S.boss.idx, bw = bossW(idx), bh = bossH(idx);
+    gridImpulse(S.boss.x + bw * .5, S.boss.y + bh * .65,
+      S.boss.dir * 0.055 * f, 0.028 * f, GRID.bossRadius);
+  }
+}
+
+function updateGrid(dt) {
+  if (gridAsleep) return;
+  const step = dt / 16.6667;
+  let e = 0;
+  for (let i = 0; i < GN; i++) {
+    let vx = (gVX[i] + (gOX[i] - gX[i]) * GRID.spring * step) * Math.pow(GRID.damping, step);
+    let vy = (gVY[i] + (gOY[i] - gY[i]) * GRID.spring * step) * Math.pow(GRID.damping, step);
+    if (vx > GRID.maxVel) vx = GRID.maxVel; else if (vx < -GRID.maxVel) vx = -GRID.maxVel;
+    if (vy > GRID.maxVel) vy = GRID.maxVel; else if (vy < -GRID.maxVel) vy = -GRID.maxVel;
+    gVX[i] = vx; gVY[i] = vy;
+    gX[i] += vx * step; gY[i] += vy * step;
+    e += Math.abs(vx) + Math.abs(vy);
+  }
+  gridEnergy = e;
+  if (e < GRID.sleepEnergy * GN) {
+    gX.set(gOX); gY.set(gOY); gVX.fill(0); gVY.fill(0);
+    gridAsleep = true;
   }
 }
 
 function drawGrid(gc) {
   ctx.save();
-  ctx.lineWidth = 0.75; ctx.strokeStyle = gc; ctx.globalAlpha = 0.35;
-  if (PERF.gridShadow) { ctx.shadowColor = gc; ctx.shadowBlur = PERF.gridShadow; }
+  const activity = Math.min(1, gridEnergy / Math.max(1, GN * .42));
+  ctx.lineWidth = 0.75 + activity * 0.35;
+  ctx.strokeStyle = gc;
+  ctx.globalAlpha = 0.26 + activity * 0.2;
+  if (PERF.gridShadow) { ctx.shadowColor = gc; ctx.shadowBlur = PERF.gridShadow + activity * 5; }
   if (gridAsleep) {
-    // Settled: one cached Path2D, two stroke calls' worth of geometry in one.
     ctx.stroke(staticPath);
   } else {
     for (let r = 0; r < GROWS; r++) {
@@ -762,7 +830,7 @@ function init(persist) {
   particles = [];
   S = { aliens, bunkers, alienDir: 1, alienDx: 24, alienDy: 16, alienTimer: 0,
     alienInterval: Math.max(150, 800 - (wave - 1) * 60),
-    px: W / 2 - 16, py: H - 50, pw: 32, ph: 12,
+    px: W / 2 - 16, py: H - 50, pw: 32, ph: 12, playerVX: 0,
     bullets: [], abullets: [], keys: {}, score, lives, wave,
     phase: 'announce', announceTimer: 2400, shootCD: 0,
     boss: null, flash: false, flashTimer: 0,
@@ -788,14 +856,25 @@ function alienBodyVsBunkers() {
 
 const aliveBuf = new Array(ROWS * COLS);
 
-let lastT = 0;
+let lastT = 0, accumulator = 0;
+const SIM_DT = 1000 / 60;
+const MAX_FRAME = 50;
+const MAX_STEPS = 6;
 function tick(ts) {
   requestAnimationFrame(tick);
-  // First real frame: lastT is 0, so dt would be the full page-load timestamp.
-  // Clamped to 50 already, but seed it properly so wave 1 doesn't start mid-step.
-  if (!lastT) { lastT = ts; return; }
-  const dt = Math.min(ts - lastT, 50); lastT = ts;
-  update(dt); draw();
+  if (!lastT) { lastT = ts; draw(); return; }
+  const frame = Math.min(ts - lastT, MAX_FRAME);
+  lastT = ts;
+  accumulator += frame;
+  let steps = 0;
+  while (accumulator >= SIM_DT && steps < MAX_STEPS) {
+    update(SIM_DT);
+    accumulator -= SIM_DT;
+    steps++;
+  }
+  // Spiral-of-death guard after tab stalls or thermal throttling.
+  if (steps === MAX_STEPS) accumulator = 0;
+  draw();
 }
 
 // Dead bunker blocks were kept in the array forever, so every bullet still
@@ -814,11 +893,23 @@ function update(dt) {
   if (ph === 'namentry' || ph === 'over' || ph === 'win') return;
 
   S.shootCD = Math.max(0, S.shootCD - dt);
-  // Boss patterns demand real repositioning; base speed was tuned for a
-  // slow-marching alien block and can't clear a sweeping beam in time.
-  const mv = S.phase === 'boss' ? 6.6 : 5;
-  if (S.keys['ArrowLeft']  || S.keys['a']) S.px = Math.max(0, S.px - mv);
-  if (S.keys['ArrowRight'] || S.keys['d']) S.px = Math.min(W - 36, S.px + mv);
+
+  // Cabinet-neutral movement contract: inputs express intent, physics owns motion.
+  // Acceleration + drag make keyboard and touch feel analog without changing the
+  // game's one-dimensional rules. Frame-rate independent and safe under 120 Hz.
+  const moveIntent = (S.keys['ArrowRight'] || S.keys['d'] ? 1 : 0) - (S.keys['ArrowLeft'] || S.keys['a'] ? 1 : 0);
+  const maxSpeed = S.phase === 'boss' ? 420 : 330;   // logical px / second
+  const accel = S.phase === 'boss' ? 2200 : 1850;
+  const drag = moveIntent ? 0.86 : 0.72;
+  const dtS = Math.min(dt, 34) / 1000;
+  S.playerVX += moveIntent * accel * dtS;
+  S.playerVX *= Math.pow(drag, dt / 16.6667);
+  S.playerVX = Math.max(-maxSpeed, Math.min(maxSpeed, S.playerVX));
+  S.px += S.playerVX * dtS;
+  if (S.px < 0) { S.px = 0; S.playerVX = Math.max(0, S.playerVX) * .25; }
+  if (S.px > W - 36) { S.px = W - 36; S.playerVX = Math.min(0, S.playerVX) * .25; }
+
+  updateGridForces(dt);
   if ((S.keys[' '] || S.keys['ArrowUp']) && S.shootCD <= 0) {
     // Boss fights unlock a faster cadence and a twin shot. The bosses got a
     // lot meaner; the player gets real firepower back rather than just being
@@ -1178,7 +1269,7 @@ function playerHit() {
   spawnRing(S.px + 16, S.py + 6, '#00d8d8', 24, 5);
   spawnParticles(S.px + 16, S.py + 6, '#0078f8', 20, 6);
   ripple(S.px + 16, S.py + 6, 5); addShake(12);
-  S.lives--; updateHUD(); announceA11y('Hit. ' + S.lives + (S.lives === 1 ? ' life remaining.' : ' lives remaining.')); if (S.lives <= 0) triggerGameOver(); else S.px = W / 2 - 16;
+  S.lives--; updateHUD(); announceA11y('Hit. ' + S.lives + (S.lives === 1 ? ' life remaining.' : ' lives remaining.')); if (S.lives <= 0) triggerGameOver(); else { S.px = W / 2 - 16; S.playerVX = 0; }
 }
 function triggerGameOver() { S.phase = 'over'; announceA11y('Game over. Score ' + S.score + '.'); checkHS(); }
 function triggerWin()      { S.phase = 'win';  announceA11y('You win. Score ' + S.score + '.'); checkHS(); }
@@ -1573,7 +1664,7 @@ window.addEventListener('blur', () => { if (S && S.keys) S.keys = {}; });
 // Returning from a backgrounded tab: reset the clock so the first frame back
 // isn't a giant dt (mobile browsers park RAF aggressively on lock/app-switch).
 document.addEventListener('visibilitychange', () => {
-  if (!document.hidden) { lastT = 0; gridAsleep = false; }
+  if (!document.hidden) { lastT = 0; accumulator = 0; gridAsleep = false; }
 });
 
 init(false);
@@ -1771,6 +1862,8 @@ if (isMobile) {
     syncControlBudget,
     getReducedMotion: () => REDUCED_MOTION,
     getControlHeight: () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ctrl-h')) || 0,
+    getGridEnergy: () => gridEnergy,
+    getPlayerVelocity: () => S ? S.playerVX : 0,
   };
 }
 </script>
