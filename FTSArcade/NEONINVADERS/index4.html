@@ -11,7 +11,7 @@
     gtag('config', 'G-42GJ11SXE3');
   </script>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <title>NEON INVADERS</title>
 
   <!-- ── Primary Meta ─────────────────────────────────────────────────────── -->
@@ -39,18 +39,11 @@
 
   <style>
     :root {
+      /* JS sets --ctrl-h to 76px on mobile; stays 0px on desktop so canvas fills freely */
       --ctrl-h: 0px;
-      --safe-top: env(safe-area-inset-top, 0px);
-      --safe-right: env(safe-area-inset-right, 0px);
-      --safe-bottom: env(safe-area-inset-bottom, 0px);
-      --safe-left: env(safe-area-inset-left, 0px);
     }
-    * { box-sizing: border-box; }
     html {
-      width: 100%;
-      height: 100%;
       overscroll-behavior: none;
-      background: #000010;
     }
     body {
       margin: 0;
@@ -59,32 +52,23 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      width: 100%;
       min-height: 100vh;
-      min-height: 100dvh;
       height: 100vh;
-      height: 100dvh;
-      padding-top: var(--safe-top);
-      padding-bottom: var(--ctrl-h);
       overflow: hidden;
+      touch-action: none;
       user-select: none;
       -webkit-user-select: none;
       overscroll-behavior: none;
-      -webkit-text-size-adjust: 100%;
-      text-size-adjust: 100%;
     }
     canvas {
       display: block;
       image-rendering: pixelated;
       border: 2px solid #1a1a2e;
       box-shadow: 0 0 50px rgba(0, 216, 216, 0.1);
-      touch-action: pan-x pan-y pinch-zoom;
-      width: min(
-        600px,
-        calc(100vw - var(--safe-left) - var(--safe-right)),
-        calc((100dvh - 42px - var(--ctrl-h) - var(--safe-top)) * 600 / 520)
-      );
-      max-width: 100%;
+      /* Scale to fit screen on both axes without ever growing past native 600px.
+         Formula: whichever is smallest — native size, viewport width, or the
+         width that keeps canvas within the remaining height after UI + controls. */
+      width: min(600px, 100vw, calc((100vh - 40px - var(--ctrl-h)) * 600 / 520));
       height: auto;
     }
     #ui {
@@ -93,199 +77,67 @@
       display: flex;
       gap: 32px;
       margin-bottom: 6px;
-      width: min(600px, calc(100vw - var(--safe-left) - var(--safe-right)));
+      /* Match canvas width so it never overflows on small screens */
+      width: min(600px, 100vw);
       padding: 0 8px;
+      box-sizing: border-box;
     }
     #ui span {
       flex: 1;
       text-shadow: 0 0 15px currentColor;
       letter-spacing: 2px;
       font-weight: bold;
-      white-space: nowrap;
     }
     #score-el { color: #00d8d8; }
     #lives-el  { color: #f800f8; text-align: center; }
     #wave-el   { color: #7b5fff; text-align: right; }
 
-    .sr-only {
-      position: absolute !important;
-      width: 1px !important;
-      height: 1px !important;
-      padding: 0 !important;
-      margin: -1px !important;
-      overflow: hidden !important;
-      clip: rect(0, 0, 0, 0) !important;
-      white-space: nowrap !important;
-      border: 0 !important;
-    }
-
-    /* ── Brazen Mobile NUI ────────────────────────────────────────────────
-       The right thumb deck is one continuous control family: a forgiving
-       left/right rocker plus a separate fire actuator. The rocker owns one
-       pointer capture, so sliding LEFT -> RIGHT never requires lifting. */
+    /* ── Touch Controls ───────────────────────────────────────────────── */
     #touch-controls {
-      display: none;
-      position: fixed;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      z-index: 80;
-      min-height: 96px;
-      padding: 10px max(12px, var(--safe-right)) max(10px, var(--safe-bottom)) max(12px, var(--safe-left));
+      display: none;           /* JS shows this on touch devices */
+      width: min(600px, 100vw);
+      box-sizing: border-box;
+      padding: 8px 12px 4px;
+      gap: 10px;
+      justify-content: space-between;
       align-items: center;
-      justify-content: flex-end;
-      pointer-events: none;
-      background:
-        linear-gradient(180deg, rgba(0,0,16,0), rgba(0,0,16,.68) 28%, rgba(0,0,16,.94) 100%);
+      margin-top: 6px;
     }
-    body.touch-ui #touch-controls { display: flex; }
-    .control-deck {
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      gap: 12px;
-      width: min(100%, 360px);
-      margin-left: auto;
-      pointer-events: auto;
-      touch-action: none;
-    }
-    .move-rocker {
-      position: relative;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      width: 172px;
-      height: 68px;
-      flex: 0 0 172px;
-      overflow: hidden;
-      border: 2px solid rgba(0,216,216,.62);
-      border-radius: 19px;
-      background:
-        linear-gradient(180deg, rgba(0,216,216,.13), rgba(0,216,216,.055));
-      box-shadow:
-        0 8px 20px rgba(0,0,0,.42),
-        0 0 18px rgba(0,216,216,.12),
-        inset 0 1px 0 rgba(255,255,255,.08),
-        inset 0 -8px 18px rgba(0,0,0,.28);
-      touch-action: none;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .move-rocker::after {
-      content: "";
-      position: absolute;
-      top: 10px;
-      bottom: 10px;
-      left: 50%;
-      width: 1px;
-      background: rgba(0,216,216,.28);
-      pointer-events: none;
-    }
-    .rocker-btn,
-    .fire-btn {
-      appearance: none;
-      border: 0;
-      margin: 0;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-weight: 900;
+    .touch-btn {
+      font-family: monospace;
+      font-size: 22px;
+      font-weight: bold;
+      color: #00d8d8;
+      background: rgba(0, 216, 216, 0.08);
+      border: 2px solid rgba(0, 216, 216, 0.55);
+      border-radius: 10px;
+      width: 82px;
+      height: 56px;
       cursor: pointer;
       touch-action: none;
       -webkit-tap-highlight-color: transparent;
-      -webkit-user-select: none;
-      user-select: none;
-      transition: transform .07s ease, background .07s ease, box-shadow .07s ease, filter .07s ease;
+      text-shadow: 0 0 10px #00d8d8;
+      box-shadow: 0 0 10px rgba(0, 216, 216, 0.18), inset 0 0 8px rgba(0, 216, 216, 0.04);
+      transition: background 0.07s, box-shadow 0.07s;
     }
-    .rocker-btn {
-      position: relative;
-      min-width: 0;
-      height: 100%;
-      color: #a8ffff;
-      background: transparent;
-      font-size: 27px;
-      line-height: 1;
-      text-shadow: 0 0 11px #00d8d8;
-    }
-    .rocker-btn:first-child { border-radius: 16px 0 0 16px; }
-    .rocker-btn:last-child  { border-radius: 0 16px 16px 0; }
-    .rocker-btn.pressed {
-      background: rgba(0,216,216,.29);
-      box-shadow: inset 0 0 18px rgba(0,216,216,.2), 0 0 20px rgba(0,216,216,.12);
-      transform: translateY(2px);
+    .touch-btn.pressed {
+      background: rgba(0, 216, 216, 0.26);
+      box-shadow: 0 0 22px rgba(0, 216, 216, 0.5), inset 0 0 12px rgba(0, 216, 216, 0.12);
     }
     .fire-btn {
-      position: relative;
-      display: grid;
-      place-items: center;
-      width: 78px;
-      height: 78px;
-      flex: 0 0 78px;
-      border-radius: 50%;
-      color: #fff2ff;
-      background:
-        radial-gradient(circle at 38% 30%, rgba(255,255,255,.34), transparent 18%),
-        radial-gradient(circle at 50% 46%, rgba(248,0,248,.38), rgba(91,0,91,.82) 74%);
-      border: 2px solid rgba(255,90,255,.8);
-      box-shadow:
-        0 7px 0 rgba(70,0,70,.72),
-        0 11px 24px rgba(0,0,0,.42),
-        0 0 22px rgba(248,0,248,.26),
-        inset 0 2px 0 rgba(255,255,255,.2),
-        inset 0 -9px 14px rgba(0,0,0,.34);
+      font-size: 13px;
+      letter-spacing: 2px;
+      color: #f800f8;
+      background: rgba(248, 0, 248, 0.08);
+      border-color: rgba(248, 0, 248, 0.55);
       text-shadow: 0 0 10px #f800f8;
-    }
-    .fire-btn .fire-glyph {
-      display: block;
-      font-size: 20px;
-      line-height: .8;
-      transform: translateY(-2px);
-    }
-    .fire-btn .fire-label {
-      display: block;
-      font-size: 9px;
-      line-height: 1;
-      letter-spacing: .14em;
+      box-shadow: 0 0 10px rgba(248, 0, 248, 0.18), inset 0 0 8px rgba(248, 0, 248, 0.04);
+      width: 110px;
+      flex-shrink: 0;
     }
     .fire-btn.pressed {
-      transform: translateY(4px) scale(.98);
-      filter: brightness(1.18);
-      background:
-        radial-gradient(circle at 38% 30%, rgba(255,255,255,.5), transparent 18%),
-        radial-gradient(circle at 50% 46%, rgba(255,54,255,.62), rgba(105,0,105,.88) 74%);
-      box-shadow:
-        0 3px 0 rgba(70,0,70,.72),
-        0 6px 15px rgba(0,0,0,.46),
-        0 0 30px rgba(248,0,248,.48),
-        inset 0 2px 0 rgba(255,255,255,.24),
-        inset 0 -6px 12px rgba(0,0,0,.26);
-    }
-    .rocker-btn:focus-visible,
-    .fire-btn:focus-visible,
-    #mobile-name-submit:focus-visible,
-    #mobile-name-input:focus-visible {
-      outline: 3px solid #fff;
-      outline-offset: 3px;
-    }
-
-    @media (max-width: 420px) {
-      #ui { gap: 10px; font-size: 11px; }
-      #ui span { letter-spacing: 1px; }
-      .control-deck { gap: 9px; width: min(100%, 326px); }
-      .move-rocker { width: 158px; flex-basis: 158px; height: 64px; }
-      .fire-btn { width: 74px; height: 74px; flex-basis: 74px; }
-    }
-    @media (pointer: coarse) and (orientation: landscape), (max-height: 540px) {
-      #touch-controls { min-height: 76px; padding-top: 6px; padding-bottom: max(6px, var(--safe-bottom)); }
-      .control-deck { gap: 9px; width: min(100%, 320px); }
-      .move-rocker { width: 154px; flex-basis: 154px; height: 56px; border-radius: 16px; }
-      .fire-btn { width: 64px; height: 64px; flex-basis: 64px; }
-      .fire-btn .fire-glyph { font-size: 17px; }
-      .fire-btn .fire-label { font-size: 8px; }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .rocker-btn, .fire-btn { transition: none; }
-    }
-    @media (prefers-contrast: more) {
-      .move-rocker { border-color: #5fffff; }
-      .rocker-btn { color: #fff; }
-      .fire-btn { border-color: #fff; }
+      background: rgba(248, 0, 248, 0.26);
+      box-shadow: 0 0 22px rgba(248, 0, 248, 0.5), inset 0 0 12px rgba(248, 0, 248, 0.12);
     }
 
     /* ── Mobile Name-Entry Overlay ────────────────────────────────────── */
@@ -300,8 +152,6 @@
       justify-content: center;
       gap: 18px;
       font-family: monospace;
-      padding: max(18px, var(--safe-top)) max(18px, var(--safe-right)) max(18px, var(--safe-bottom)) max(18px, var(--safe-left));
-      touch-action: manipulation;
     }
     #mobile-name-overlay.visible { display: flex; }
     .mn-title {
@@ -350,46 +200,35 @@
 </head>
 <body>
 
-<div id="ui" aria-label="Game status">
-  <span id="score-el" aria-label="Score 0">SCORE: 0</span>
-  <span id="lives-el" aria-label="3 lives">▶ ▶ ▶</span>
-  <span id="wave-el" aria-label="Wave 1 of 5">WAVE: 1/5</span>
+<div id="ui">
+  <span id="score-el">SCORE: 0</span>
+  <span id="lives-el">▶ ▶ ▶</span>
+  <span id="wave-el">WAVE: 1/5</span>
 </div>
-<canvas id="c" width="600" height="520" role="img" aria-label="Neon Invaders playfield. Move left and right and fire upward to defend against the invaders."></canvas>
-<div id="game-status" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+<canvas id="c" width="600" height="520"></canvas>
 
-<!-- ── Brazen mobile NUI: right-side rocker + independent fire button ── -->
-<div id="touch-controls" aria-label="Touch controls">
-  <div class="control-deck">
-    <div id="move-rocker" class="move-rocker" role="group" aria-label="Horizontal movement">
-      <button class="rocker-btn" id="btn-left" type="button" aria-label="Move left" aria-pressed="false" aria-keyshortcuts="ArrowLeft A">◀</button>
-      <button class="rocker-btn" id="btn-right" type="button" aria-label="Move right" aria-pressed="false" aria-keyshortcuts="ArrowRight D">▶</button>
-    </div>
-    <button class="fire-btn" id="btn-fire" type="button" aria-label="Fire" aria-pressed="false" aria-keyshortcuts="Space ArrowUp">
-      <span aria-hidden="true"><span class="fire-glyph">●</span><span class="fire-label">FIRE</span></span>
-    </button>
-  </div>
+<!-- ── Mobile touch controls (shown on touch devices via JS) ── -->
+<div id="touch-controls">
+  <button class="touch-btn" id="btn-left"  aria-label="Move Left">◀</button>
+  <button class="touch-btn fire-btn" id="btn-fire" aria-label="Fire">FIRE</button>
+  <button class="touch-btn" id="btn-right" aria-label="Move Right">▶</button>
 </div>
 
 <!-- ── Mobile name-entry overlay ── -->
-<div id="mobile-name-overlay" role="dialog" aria-modal="true" aria-labelledby="mobile-name-title">
-  <div class="mn-title" id="mobile-name-title">NEW HIGH SCORE!</div>
+<div id="mobile-name-overlay">
+  <div class="mn-title">NEW HIGH SCORE!</div>
   <div class="mn-sub">ENTER YOUR NAME (3 CHARS)</div>
   <input id="mobile-name-input" type="text" maxlength="3"
     autocomplete="off" autocorrect="off" spellcheck="false"
-    autocapitalize="characters" inputmode="text" aria-label="High score name, three characters">
-  <button id="mobile-name-submit" type="button">SUBMIT ▶</button>
+    autocapitalize="characters" inputmode="text">
+  <button id="mobile-name-submit">SUBMIT ▶</button>
 </div>
 
 <script>
-// ── INPUT / ACCESSIBILITY CAPABILITY PROBES ─────────────────────────────────
-const hasTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints || 0) > 0;
-let coarsePointer = false;
-try { coarsePointer = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches); } catch {}
+// ── MOBILE DETECTION ─────────────────────────────────────────────────────────
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-              || hasTouch || coarsePointer;
-let REDUCED_MOTION = false;
-try { REDUCED_MOTION = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); } catch {}
+              || ('ontouchstart' in window)
+              || navigator.maxTouchPoints > 0;
 
 // ── PERF TIER ────────────────────────────────────────────────────────────────
 // One switch drives every cost decision below. Desktop keeps the original
@@ -401,12 +240,12 @@ const SOCIAL_PREVIEW = false;   // flip true on desktop to regenerate og image
 const PERF = {
   gridCols:      LOW ? 19 : 31,
   gridRows:      LOW ? 16 : 26,
-  partMul:       REDUCED_MOTION ? 0.28 : (LOW ? 0.45 : 1),
+  partMul:       LOW ? 0.45 : 1,
   partCap:       LOW ? 140 : 500,
-  partTrail:     (LOW || REDUCED_MOTION) ? 0 : 7,
+  partTrail:     LOW ? 0 : 7,
   bulletTrail:   LOW ? 4 : 9,
   aBulletTrail:  LOW ? 3 : 6,
-  gridShadow:    (LOW || REDUCED_MOTION) ? 0 : 5,
+  gridShadow:    LOW ? 0 : 5,
   maxDpr:        LOW ? 2 : 2,
 };
 
@@ -731,12 +570,8 @@ function drawParticles() {
 }
 
 let shakeAmt = 0;
-function addShake(v) { if (!REDUCED_MOTION) shakeAmt = Math.min(shakeAmt + v, 20); }
-function getShake() {
-  if (REDUCED_MOTION) { shakeAmt = 0; return [0,0]; }
-  shakeAmt *= 0.86;
-  return shakeAmt < 0.1 ? [0,0] : [(Math.random() - .5) * shakeAmt, (Math.random() - .5) * shakeAmt];
-}
+function addShake(v) { shakeAmt = Math.min(shakeAmt + v, 20); }
+function getShake() { shakeAmt *= 0.86; return shakeAmt < 0.1 ? [0,0] : [(Math.random() - .5) * shakeAmt, (Math.random() - .5) * shakeAmt]; }
 
 function makeBunker(bx, by) {
   const bl = [];
@@ -1154,7 +989,7 @@ function updateBeams(dt) {
   }
   S.beams.length = w;
 }
-function triggerBoss() { S.phase = 'bossannounce'; S.announceTimer = 2400; S.bullets = []; S.abullets = []; announceA11y('Warning. ' + BOSS_NAMES[S.wave - 1] + ' approaches.'); }
+function triggerBoss() { S.phase = 'bossannounce'; S.announceTimer = 2400; S.bullets = []; S.abullets = []; }
 function bossDefeated() {
   const idx = S.boss.idx, BW = bossW(idx), BH = bossH(idx);
   const bx = S.boss.x + BW / 2, by = S.boss.y + BH / 2;
@@ -1178,10 +1013,10 @@ function playerHit() {
   spawnRing(S.px + 16, S.py + 6, '#00d8d8', 24, 5);
   spawnParticles(S.px + 16, S.py + 6, '#0078f8', 20, 6);
   ripple(S.px + 16, S.py + 6, 5); addShake(12);
-  S.lives--; updateHUD(); announceA11y('Hit. ' + S.lives + (S.lives === 1 ? ' life remaining.' : ' lives remaining.')); if (S.lives <= 0) triggerGameOver(); else S.px = W / 2 - 16;
+  S.lives--; updateHUD(); if (S.lives <= 0) triggerGameOver(); else S.px = W / 2 - 16;
 }
-function triggerGameOver() { S.phase = 'over'; announceA11y('Game over. Score ' + S.score + '.'); checkHS(); }
-function triggerWin()      { S.phase = 'win';  announceA11y('You win. Score ' + S.score + '.'); checkHS(); }
+function triggerGameOver() { S.phase = 'over'; checkHS(); }
+function triggerWin()      { S.phase = 'win';  checkHS(); }
 function checkHS() {
   const sc = getScores();
   if (sc.length < 5 || S.score > sc[sc.length - 1].score) {
@@ -1194,22 +1029,11 @@ function checkHS() {
 const elScore = document.getElementById('score-el');
 const elLives = document.getElementById('lives-el');
 const elWave  = document.getElementById('wave-el');
-const elGameStatus = document.getElementById('game-status');
 let hudScore = -1, hudLives = -1, hudWave = -1;
-function announceA11y(message) { if (elGameStatus) elGameStatus.textContent = message; }
 function updateHUD() {
-  if (S.score !== hudScore) {
-    hudScore = S.score; elScore.textContent = 'SCORE: ' + S.score;
-    elScore.setAttribute('aria-label', 'Score ' + S.score);
-  }
-  if (S.lives !== hudLives) {
-    hudLives = S.lives; elLives.textContent = '▶ '.repeat(Math.max(0, S.lives)).trim();
-    elLives.setAttribute('aria-label', S.lives + (S.lives === 1 ? ' life' : ' lives'));
-  }
-  if (S.wave !== hudWave) {
-    hudWave = S.wave; elWave.textContent = 'WAVE: ' + S.wave + '/' + MAX_WAVES;
-    elWave.setAttribute('aria-label', 'Wave ' + S.wave + ' of ' + MAX_WAVES);
-  }
+  if (S.score !== hudScore) { hudScore = S.score; elScore.textContent = 'SCORE: ' + S.score; }
+  if (S.lives !== hudLives) { hudLives = S.lives; elLives.textContent = '▶ '.repeat(Math.max(0, S.lives)).trim(); }
+  if (S.wave  !== hudWave)  { hudWave  = S.wave;  elWave.textContent  = 'WAVE: ' + S.wave + '/' + MAX_WAVES; }
 }
 
 // ── animated sprite renderer ──────────────────────────────────────────────────
@@ -1568,7 +1392,6 @@ window.addEventListener('keydown', e => {
   if ([' ', 'ArrowLeft', 'ArrowRight', 'ArrowUp'].includes(e.key)) e.preventDefault();
 });
 window.addEventListener('keyup', e => { if (S.phase !== 'namentry') S.keys[e.key] = false; });
-window.addEventListener('blur', () => { if (S && S.keys) S.keys = {}; });
 
 // Returning from a backgrounded tab: reset the clock so the first frame back
 // isn't a giant dt (mobile browsers park RAF aggressively on lock/app-switch).
@@ -1579,160 +1402,48 @@ document.addEventListener('visibilitychange', () => {
 init(false);
 requestAnimationFrame(tick);
 
-// ── BRAZEN MOBILE NUI ───────────────────────────────────────────────────────
+// ── MOBILE SETUP ─────────────────────────────────────────────────────────────
 if (isMobile) {
+  // 1. Adjust canvas height budget so it doesn't overlap controls
+  document.documentElement.style.setProperty('--ctrl-h', '76px');
+
+  // 2. Show the touch control bar
   const touchControls = document.getElementById('touch-controls');
-  const rocker        = document.getElementById('move-rocker');
-  const btnLeft       = document.getElementById('btn-left');
-  const btnRight      = document.getElementById('btn-right');
-  const btnFire       = document.getElementById('btn-fire');
-  const canvas        = document.getElementById('c');
+  touchControls.style.display = 'flex';
 
-  document.body.classList.add('touch-ui');
-
-  // Reserve exactly the rendered NUI footprint instead of hard-coding a
-  // portrait-only constant. Dynamic safe-area and orientation changes are
-  // reflected on the next frame, avoiding the old canvas/control overlap.
-  function syncControlBudget() {
-    if (!touchControls) return;
-    const h = Math.ceil(touchControls.getBoundingClientRect().height || 96);
-    document.documentElement.style.setProperty('--ctrl-h', h + 'px');
+  // 3. Wire up each button to the existing S.keys system
+  function bindTouchBtn(id, key) {
+    const el = document.getElementById(id);
+    function down(e) {
+      e.preventDefault();
+      if (S && S.phase !== 'namentry') {
+        S.keys[key] = true;
+        el.classList.add('pressed');
+      }
+    }
+    function up(e) {
+      e.preventDefault();
+      if (S) S.keys[key] = false;
+      el.classList.remove('pressed');
+    }
+    el.addEventListener('touchstart',  down, { passive: false });
+    el.addEventListener('touchend',    up,   { passive: false });
+    el.addEventListener('touchcancel', up,   { passive: false });
   }
-  syncControlBudget();
-  window.addEventListener('resize', () => requestAnimationFrame(syncControlBudget), { passive: true });
-  window.addEventListener('orientationchange', () => requestAnimationFrame(syncControlBudget), { passive: true });
+  bindTouchBtn('btn-left',  'ArrowLeft');
+  bindTouchBtn('btn-right', 'ArrowRight');
+  bindTouchBtn('btn-fire',  ' ');
 
-  const supportsVibrate = typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function';
-  function haptic(ms) {
-    if (REDUCED_MOTION || !supportsVibrate) return;
-    try { navigator.vibrate(ms); } catch {}
-  }
-
-  function setPressed(el, on) {
-    if (!el) return;
-    el.classList.toggle('pressed', !!on);
-    el.setAttribute('aria-pressed', on ? 'true' : 'false');
-  }
-
-  let movePointerId = null;
-  let moveDir = 0; // -1 left, +1 right, 0 dead-zone
-  const ROCKER_DEADZONE = 10;
-
-  function setMoveDir(dir, withHaptic) {
-    if (!S) return;
-    const next = dir < 0 ? -1 : dir > 0 ? 1 : 0;
-    if (next === moveDir) return;
-    moveDir = next;
-    S.keys['ArrowLeft'] = next < 0;
-    S.keys['ArrowRight'] = next > 0;
-    setPressed(btnLeft, next < 0);
-    setPressed(btnRight, next > 0);
-    if (withHaptic && next) haptic(7);
-  }
-
-  function rockerPoint(clientX) {
-    const r = rocker.getBoundingClientRect();
-    const dx = clientX - (r.left + r.width / 2);
-    if (Math.abs(dx) <= ROCKER_DEADZONE) setMoveDir(0, false);
-    else setMoveDir(dx < 0 ? -1 : 1, true);
-  }
-
-  rocker.addEventListener('pointerdown', e => {
-    if (movePointerId !== null || S.phase === 'namentry') return;
-    movePointerId = e.pointerId;
-    try { rocker.setPointerCapture(movePointerId); } catch {}
-    rockerPoint(e.clientX);
+  // 4. Tap canvas to restart on game-over / win screens
+  document.getElementById('c').addEventListener('touchstart', e => {
     e.preventDefault();
-  }, { passive: false });
-
-  rocker.addEventListener('pointermove', e => {
-    if (e.pointerId !== movePointerId) return;
-    rockerPoint(e.clientX);
-    e.preventDefault();
-  }, { passive: false });
-
-  function releaseMove(e) {
-    if (e && movePointerId !== null && e.pointerId !== movePointerId) return;
-    movePointerId = null;
-    setMoveDir(0, false);
-  }
-  rocker.addEventListener('pointerup', releaseMove, { passive: false });
-  rocker.addEventListener('pointercancel', releaseMove, { passive: false });
-  rocker.addEventListener('lostpointercapture', releaseMove);
-
-  // Keyboard / switch-device access on the visible buttons. Pointer users use
-  // the rocker surface above; assistive click gets a short, deterministic nudge.
-  let semanticPulse = 0;
-  function pulseMove(dir) {
-    setMoveDir(dir, true);
-    clearTimeout(semanticPulse);
-    semanticPulse = setTimeout(() => setMoveDir(0, false), 150);
-  }
-  [btnLeft, btnRight].forEach((el, i) => {
-    const dir = i === 0 ? -1 : 1;
-    el.addEventListener('keydown', e => {
-      if (e.key === 'Enter' || e.key === ' ') { setMoveDir(dir, true); e.preventDefault(); }
-    });
-    el.addEventListener('keyup', e => {
-      if (e.key === 'Enter' || e.key === ' ') { setMoveDir(0, false); e.preventDefault(); }
-    });
-    el.addEventListener('click', e => {
-      if (e.detail === 0) pulseMove(dir); // synthetic/assistive click only
-    });
-  });
-
-  let firePointers = new Set();
-  function setFire(on, withHaptic) {
-    if (!S) return;
-    S.keys[' '] = !!on;
-    setPressed(btnFire, !!on);
-    if (on && withHaptic) haptic(9);
-  }
-  btnFire.addEventListener('pointerdown', e => {
-    if (S.phase === 'namentry') return;
-    firePointers.add(e.pointerId);
-    try { btnFire.setPointerCapture(e.pointerId); } catch {}
-    setFire(true, true);
-    e.preventDefault();
-  }, { passive: false });
-  function releaseFire(e) {
-    if (e && typeof e.pointerId === 'number') firePointers.delete(e.pointerId);
-    if (!firePointers.size) setFire(false, false);
-  }
-  btnFire.addEventListener('pointerup', releaseFire, { passive: false });
-  btnFire.addEventListener('pointercancel', releaseFire, { passive: false });
-  btnFire.addEventListener('lostpointercapture', releaseFire);
-  btnFire.addEventListener('keydown', e => {
-    if (e.key === 'Enter' || e.key === ' ') { setFire(true, true); e.preventDefault(); }
-  });
-  btnFire.addEventListener('keyup', e => {
-    if (e.key === 'Enter' || e.key === ' ') { setFire(false, false); e.preventDefault(); }
-  });
-  btnFire.addEventListener('click', e => {
-    if (e.detail !== 0 || S.phase === 'namentry') return;
-    setFire(true, true);
-    setTimeout(() => setFire(false, false), 90);
-  });
-
-  function releaseTouchInputs() {
-    firePointers.clear();
-    releaseMove();
-    setFire(false, false);
-  }
-  window.addEventListener('blur', releaseTouchInputs);
-  document.addEventListener('visibilitychange', () => { if (document.hidden) releaseTouchInputs(); });
-
-  // Tap/click the playfield to restart after a completed run. Pointerup avoids
-  // cancelling pinch-zoom gestures on the canvas during normal play.
-  canvas.addEventListener('pointerup', e => {
-    if (e.pointerType === 'touch' && S && (S.phase === 'over' || S.phase === 'win')) {
+    if (S && (S.phase === 'over' || S.phase === 'win')) {
       particles = [];
       init(false);
-      announceA11y('New game. Wave 1.');
     }
-  });
+  }, { passive: false });
 
-  // Mobile name-entry overlay wiring.
+  // 5. Mobile name-entry overlay wiring
   const nameOverlay  = document.getElementById('mobile-name-overlay');
   const nameInput    = document.getElementById('mobile-name-input');
   const nameSubmit   = document.getElementById('mobile-name-submit');
@@ -1744,34 +1455,21 @@ if (isMobile) {
     S.phase = S.wave >= MAX_WAVES ? 'win' : 'over';
     nameOverlay.classList.remove('visible');
     nameInput.blur();
-    announceA11y('High score saved for ' + name + '.');
   }
 
+  // Exposed so checkHS() can call it
   window._mobileNameEntry = {
     show() {
-      releaseTouchInputs();
       nameInput.value = '';
       nameOverlay.classList.add('visible');
+      // Small delay lets the overlay paint before keyboard opens
       setTimeout(() => nameInput.focus(), 120);
     }
   };
 
+  nameSubmit.addEventListener('touchend', e => { e.preventDefault(); submitMobileName(); }, { passive: false });
   nameSubmit.addEventListener('click', submitMobileName);
   nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') submitMobileName(); });
-
-  // Regression surface: deliberately small and side-effect-light so a future
-  // browser harness can assert stuck-key release, rocker direction, reduced
-  // motion, and dynamic control budgeting against the real implementation.
-  window.NEON_INVADERS_TEST = {
-    getState: () => S,
-    getMoveDir: () => moveDir,
-    setMoveDir,
-    setFire,
-    releaseTouchInputs,
-    syncControlBudget,
-    getReducedMotion: () => REDUCED_MOTION,
-    getControlHeight: () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ctrl-h')) || 0,
-  };
 }
 </script>
 

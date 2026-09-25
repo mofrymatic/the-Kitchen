@@ -1,34 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-42GJ11SXE3"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-
-    gtag('config', 'G-42GJ11SXE3');
-  </script>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <title>NEON INVADERS</title>
 
   <!-- ── Primary Meta ─────────────────────────────────────────────────────── -->
   <meta name="description" content="NEON INVADERS — A retro pixel space shooter with 5 waves, neon glow, animated sprites, and epic bosses." />
 
   <!-- ── Favicons ─────────────────────────────────────────────────────────── -->
-  <link rel="icon" type="image/png" href="../fts-favicon.png">
-  <link rel="shortcut icon" type="image/png" href="../fts-favicon.png">
-  <link rel="apple-touch-icon" href="../fts-favicon.png">
+  <link rel="icon" type="image/png" href="fts-favicon.png">
+  <link rel="shortcut icon" type="image/png" href="fts-favicon.png">
+  <link rel="apple-touch-icon" href="fts-favicon.png">
 
   <!-- ── Open Graph (Facebook, Discord, iMessage, etc.) ────────────────────── -->
   <meta property="og:title" content="NEON INVADERS">
   <meta property="og:description" content="Defend the neon realm in this high-octane arcade experience.">
-  <meta property="og:url" content="https://mofrymatic.github.io/the-KitchenFTSArcade/NEONINVADERS/neon_invaders.html">
+  <meta property="og:url" content="https://mofrymatic.github.io/the-KitchenFTSArcade/neon_invaders.html">
   <meta property="og:type" content="website">
 
-  <meta property="og:image" content="https://mofrymatic.github.io/the-Kitchen/FTSArcade/NEONINVADERS/ni_preview.png">
+  <meta property="og:image" content="https://mofrymatic.github.io/the-Kitchen/FTSArcade/ni_preview.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:image:type" content="image/png">
@@ -39,18 +30,11 @@
 
   <style>
     :root {
+      /* JS sets --ctrl-h to 76px on mobile; stays 0px on desktop so canvas fills freely */
       --ctrl-h: 0px;
-      --safe-top: env(safe-area-inset-top, 0px);
-      --safe-right: env(safe-area-inset-right, 0px);
-      --safe-bottom: env(safe-area-inset-bottom, 0px);
-      --safe-left: env(safe-area-inset-left, 0px);
     }
-    * { box-sizing: border-box; }
     html {
-      width: 100%;
-      height: 100%;
       overscroll-behavior: none;
-      background: #000010;
     }
     body {
       margin: 0;
@@ -59,32 +43,23 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      width: 100%;
       min-height: 100vh;
-      min-height: 100dvh;
       height: 100vh;
-      height: 100dvh;
-      padding-top: var(--safe-top);
-      padding-bottom: var(--ctrl-h);
       overflow: hidden;
+      touch-action: none;
       user-select: none;
       -webkit-user-select: none;
       overscroll-behavior: none;
-      -webkit-text-size-adjust: 100%;
-      text-size-adjust: 100%;
     }
     canvas {
       display: block;
       image-rendering: pixelated;
       border: 2px solid #1a1a2e;
       box-shadow: 0 0 50px rgba(0, 216, 216, 0.1);
-      touch-action: pan-x pan-y pinch-zoom;
-      width: min(
-        600px,
-        calc(100vw - var(--safe-left) - var(--safe-right)),
-        calc((100dvh - 42px - var(--ctrl-h) - var(--safe-top)) * 600 / 520)
-      );
-      max-width: 100%;
+      /* Scale to fit screen on both axes without ever growing past native 600px.
+         Formula: whichever is smallest — native size, viewport width, or the
+         width that keeps canvas within the remaining height after UI + controls. */
+      width: min(600px, 100vw, calc((100vh - 40px - var(--ctrl-h)) * 600 / 520));
       height: auto;
     }
     #ui {
@@ -93,199 +68,67 @@
       display: flex;
       gap: 32px;
       margin-bottom: 6px;
-      width: min(600px, calc(100vw - var(--safe-left) - var(--safe-right)));
+      /* Match canvas width so it never overflows on small screens */
+      width: min(600px, 100vw);
       padding: 0 8px;
+      box-sizing: border-box;
     }
     #ui span {
       flex: 1;
       text-shadow: 0 0 15px currentColor;
       letter-spacing: 2px;
       font-weight: bold;
-      white-space: nowrap;
     }
     #score-el { color: #00d8d8; }
     #lives-el  { color: #f800f8; text-align: center; }
     #wave-el   { color: #7b5fff; text-align: right; }
 
-    .sr-only {
-      position: absolute !important;
-      width: 1px !important;
-      height: 1px !important;
-      padding: 0 !important;
-      margin: -1px !important;
-      overflow: hidden !important;
-      clip: rect(0, 0, 0, 0) !important;
-      white-space: nowrap !important;
-      border: 0 !important;
-    }
-
-    /* ── Brazen Mobile NUI ────────────────────────────────────────────────
-       The right thumb deck is one continuous control family: a forgiving
-       left/right rocker plus a separate fire actuator. The rocker owns one
-       pointer capture, so sliding LEFT -> RIGHT never requires lifting. */
+    /* ── Touch Controls ───────────────────────────────────────────────── */
     #touch-controls {
-      display: none;
-      position: fixed;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      z-index: 80;
-      min-height: 96px;
-      padding: 10px max(12px, var(--safe-right)) max(10px, var(--safe-bottom)) max(12px, var(--safe-left));
+      display: none;           /* JS shows this on touch devices */
+      width: min(600px, 100vw);
+      box-sizing: border-box;
+      padding: 8px 12px 4px;
+      gap: 10px;
+      justify-content: space-between;
       align-items: center;
-      justify-content: flex-end;
-      pointer-events: none;
-      background:
-        linear-gradient(180deg, rgba(0,0,16,0), rgba(0,0,16,.68) 28%, rgba(0,0,16,.94) 100%);
+      margin-top: 6px;
     }
-    body.touch-ui #touch-controls { display: flex; }
-    .control-deck {
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      gap: 12px;
-      width: min(100%, 360px);
-      margin-left: auto;
-      pointer-events: auto;
-      touch-action: none;
-    }
-    .move-rocker {
-      position: relative;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      width: 172px;
-      height: 68px;
-      flex: 0 0 172px;
-      overflow: hidden;
-      border: 2px solid rgba(0,216,216,.62);
-      border-radius: 19px;
-      background:
-        linear-gradient(180deg, rgba(0,216,216,.13), rgba(0,216,216,.055));
-      box-shadow:
-        0 8px 20px rgba(0,0,0,.42),
-        0 0 18px rgba(0,216,216,.12),
-        inset 0 1px 0 rgba(255,255,255,.08),
-        inset 0 -8px 18px rgba(0,0,0,.28);
-      touch-action: none;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .move-rocker::after {
-      content: "";
-      position: absolute;
-      top: 10px;
-      bottom: 10px;
-      left: 50%;
-      width: 1px;
-      background: rgba(0,216,216,.28);
-      pointer-events: none;
-    }
-    .rocker-btn,
-    .fire-btn {
-      appearance: none;
-      border: 0;
-      margin: 0;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-weight: 900;
+    .touch-btn {
+      font-family: monospace;
+      font-size: 22px;
+      font-weight: bold;
+      color: #00d8d8;
+      background: rgba(0, 216, 216, 0.08);
+      border: 2px solid rgba(0, 216, 216, 0.55);
+      border-radius: 10px;
+      width: 82px;
+      height: 56px;
       cursor: pointer;
       touch-action: none;
       -webkit-tap-highlight-color: transparent;
-      -webkit-user-select: none;
-      user-select: none;
-      transition: transform .07s ease, background .07s ease, box-shadow .07s ease, filter .07s ease;
+      text-shadow: 0 0 10px #00d8d8;
+      box-shadow: 0 0 10px rgba(0, 216, 216, 0.18), inset 0 0 8px rgba(0, 216, 216, 0.04);
+      transition: background 0.07s, box-shadow 0.07s;
     }
-    .rocker-btn {
-      position: relative;
-      min-width: 0;
-      height: 100%;
-      color: #a8ffff;
-      background: transparent;
-      font-size: 27px;
-      line-height: 1;
-      text-shadow: 0 0 11px #00d8d8;
-    }
-    .rocker-btn:first-child { border-radius: 16px 0 0 16px; }
-    .rocker-btn:last-child  { border-radius: 0 16px 16px 0; }
-    .rocker-btn.pressed {
-      background: rgba(0,216,216,.29);
-      box-shadow: inset 0 0 18px rgba(0,216,216,.2), 0 0 20px rgba(0,216,216,.12);
-      transform: translateY(2px);
+    .touch-btn.pressed {
+      background: rgba(0, 216, 216, 0.26);
+      box-shadow: 0 0 22px rgba(0, 216, 216, 0.5), inset 0 0 12px rgba(0, 216, 216, 0.12);
     }
     .fire-btn {
-      position: relative;
-      display: grid;
-      place-items: center;
-      width: 78px;
-      height: 78px;
-      flex: 0 0 78px;
-      border-radius: 50%;
-      color: #fff2ff;
-      background:
-        radial-gradient(circle at 38% 30%, rgba(255,255,255,.34), transparent 18%),
-        radial-gradient(circle at 50% 46%, rgba(248,0,248,.38), rgba(91,0,91,.82) 74%);
-      border: 2px solid rgba(255,90,255,.8);
-      box-shadow:
-        0 7px 0 rgba(70,0,70,.72),
-        0 11px 24px rgba(0,0,0,.42),
-        0 0 22px rgba(248,0,248,.26),
-        inset 0 2px 0 rgba(255,255,255,.2),
-        inset 0 -9px 14px rgba(0,0,0,.34);
+      font-size: 13px;
+      letter-spacing: 2px;
+      color: #f800f8;
+      background: rgba(248, 0, 248, 0.08);
+      border-color: rgba(248, 0, 248, 0.55);
       text-shadow: 0 0 10px #f800f8;
-    }
-    .fire-btn .fire-glyph {
-      display: block;
-      font-size: 20px;
-      line-height: .8;
-      transform: translateY(-2px);
-    }
-    .fire-btn .fire-label {
-      display: block;
-      font-size: 9px;
-      line-height: 1;
-      letter-spacing: .14em;
+      box-shadow: 0 0 10px rgba(248, 0, 248, 0.18), inset 0 0 8px rgba(248, 0, 248, 0.04);
+      width: 110px;
+      flex-shrink: 0;
     }
     .fire-btn.pressed {
-      transform: translateY(4px) scale(.98);
-      filter: brightness(1.18);
-      background:
-        radial-gradient(circle at 38% 30%, rgba(255,255,255,.5), transparent 18%),
-        radial-gradient(circle at 50% 46%, rgba(255,54,255,.62), rgba(105,0,105,.88) 74%);
-      box-shadow:
-        0 3px 0 rgba(70,0,70,.72),
-        0 6px 15px rgba(0,0,0,.46),
-        0 0 30px rgba(248,0,248,.48),
-        inset 0 2px 0 rgba(255,255,255,.24),
-        inset 0 -6px 12px rgba(0,0,0,.26);
-    }
-    .rocker-btn:focus-visible,
-    .fire-btn:focus-visible,
-    #mobile-name-submit:focus-visible,
-    #mobile-name-input:focus-visible {
-      outline: 3px solid #fff;
-      outline-offset: 3px;
-    }
-
-    @media (max-width: 420px) {
-      #ui { gap: 10px; font-size: 11px; }
-      #ui span { letter-spacing: 1px; }
-      .control-deck { gap: 9px; width: min(100%, 326px); }
-      .move-rocker { width: 158px; flex-basis: 158px; height: 64px; }
-      .fire-btn { width: 74px; height: 74px; flex-basis: 74px; }
-    }
-    @media (pointer: coarse) and (orientation: landscape), (max-height: 540px) {
-      #touch-controls { min-height: 76px; padding-top: 6px; padding-bottom: max(6px, var(--safe-bottom)); }
-      .control-deck { gap: 9px; width: min(100%, 320px); }
-      .move-rocker { width: 154px; flex-basis: 154px; height: 56px; border-radius: 16px; }
-      .fire-btn { width: 64px; height: 64px; flex-basis: 64px; }
-      .fire-btn .fire-glyph { font-size: 17px; }
-      .fire-btn .fire-label { font-size: 8px; }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .rocker-btn, .fire-btn { transition: none; }
-    }
-    @media (prefers-contrast: more) {
-      .move-rocker { border-color: #5fffff; }
-      .rocker-btn { color: #fff; }
-      .fire-btn { border-color: #fff; }
+      background: rgba(248, 0, 248, 0.26);
+      box-shadow: 0 0 22px rgba(248, 0, 248, 0.5), inset 0 0 12px rgba(248, 0, 248, 0.12);
     }
 
     /* ── Mobile Name-Entry Overlay ────────────────────────────────────── */
@@ -300,8 +143,6 @@
       justify-content: center;
       gap: 18px;
       font-family: monospace;
-      padding: max(18px, var(--safe-top)) max(18px, var(--safe-right)) max(18px, var(--safe-bottom)) max(18px, var(--safe-left));
-      touch-action: manipulation;
     }
     #mobile-name-overlay.visible { display: flex; }
     .mn-title {
@@ -350,46 +191,35 @@
 </head>
 <body>
 
-<div id="ui" aria-label="Game status">
-  <span id="score-el" aria-label="Score 0">SCORE: 0</span>
-  <span id="lives-el" aria-label="3 lives">▶ ▶ ▶</span>
-  <span id="wave-el" aria-label="Wave 1 of 5">WAVE: 1/5</span>
+<div id="ui">
+  <span id="score-el">SCORE: 0</span>
+  <span id="lives-el">▶ ▶ ▶</span>
+  <span id="wave-el">WAVE: 1/5</span>
 </div>
-<canvas id="c" width="600" height="520" role="img" aria-label="Neon Invaders playfield. Move left and right and fire upward to defend against the invaders."></canvas>
-<div id="game-status" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+<canvas id="c" width="600" height="520"></canvas>
 
-<!-- ── Brazen mobile NUI: right-side rocker + independent fire button ── -->
-<div id="touch-controls" aria-label="Touch controls">
-  <div class="control-deck">
-    <div id="move-rocker" class="move-rocker" role="group" aria-label="Horizontal movement">
-      <button class="rocker-btn" id="btn-left" type="button" aria-label="Move left" aria-pressed="false" aria-keyshortcuts="ArrowLeft A">◀</button>
-      <button class="rocker-btn" id="btn-right" type="button" aria-label="Move right" aria-pressed="false" aria-keyshortcuts="ArrowRight D">▶</button>
-    </div>
-    <button class="fire-btn" id="btn-fire" type="button" aria-label="Fire" aria-pressed="false" aria-keyshortcuts="Space ArrowUp">
-      <span aria-hidden="true"><span class="fire-glyph">●</span><span class="fire-label">FIRE</span></span>
-    </button>
-  </div>
+<!-- ── Mobile touch controls (shown on touch devices via JS) ── -->
+<div id="touch-controls">
+  <button class="touch-btn" id="btn-left"  aria-label="Move Left">◀</button>
+  <button class="touch-btn fire-btn" id="btn-fire" aria-label="Fire">FIRE</button>
+  <button class="touch-btn" id="btn-right" aria-label="Move Right">▶</button>
 </div>
 
 <!-- ── Mobile name-entry overlay ── -->
-<div id="mobile-name-overlay" role="dialog" aria-modal="true" aria-labelledby="mobile-name-title">
-  <div class="mn-title" id="mobile-name-title">NEW HIGH SCORE!</div>
+<div id="mobile-name-overlay">
+  <div class="mn-title">NEW HIGH SCORE!</div>
   <div class="mn-sub">ENTER YOUR NAME (3 CHARS)</div>
   <input id="mobile-name-input" type="text" maxlength="3"
     autocomplete="off" autocorrect="off" spellcheck="false"
-    autocapitalize="characters" inputmode="text" aria-label="High score name, three characters">
-  <button id="mobile-name-submit" type="button">SUBMIT ▶</button>
+    autocapitalize="characters" inputmode="text">
+  <button id="mobile-name-submit">SUBMIT ▶</button>
 </div>
 
 <script>
-// ── INPUT / ACCESSIBILITY CAPABILITY PROBES ─────────────────────────────────
-const hasTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints || 0) > 0;
-let coarsePointer = false;
-try { coarsePointer = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches); } catch {}
+// ── MOBILE DETECTION ─────────────────────────────────────────────────────────
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-              || hasTouch || coarsePointer;
-let REDUCED_MOTION = false;
-try { REDUCED_MOTION = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); } catch {}
+              || ('ontouchstart' in window)
+              || navigator.maxTouchPoints > 0;
 
 // ── PERF TIER ────────────────────────────────────────────────────────────────
 // One switch drives every cost decision below. Desktop keeps the original
@@ -401,12 +231,12 @@ const SOCIAL_PREVIEW = false;   // flip true on desktop to regenerate og image
 const PERF = {
   gridCols:      LOW ? 19 : 31,
   gridRows:      LOW ? 16 : 26,
-  partMul:       REDUCED_MOTION ? 0.28 : (LOW ? 0.45 : 1),
+  partMul:       LOW ? 0.45 : 1,
   partCap:       LOW ? 140 : 500,
-  partTrail:     (LOW || REDUCED_MOTION) ? 0 : 7,
+  partTrail:     LOW ? 0 : 7,
   bulletTrail:   LOW ? 4 : 9,
   aBulletTrail:  LOW ? 3 : 6,
-  gridShadow:    (LOW || REDUCED_MOTION) ? 0 : 5,
+  gridShadow:    LOW ? 0 : 5,
   maxDpr:        LOW ? 2 : 2,
 };
 
@@ -514,52 +344,7 @@ const BOSS_SPRITES = [
   [[0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0],[0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0],[0,1,1,1,0,0,1,1,1,1,0,0,1,1,1,0],[1,1,0,1,1,1,1,1,1,1,1,1,1,0,1,1],[1,0,1,0,1,0,1,1,1,1,0,1,0,1,0,1],[1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1],[1,0,1,1,0,1,1,1,1,1,1,0,1,1,0,1],[0,1,1,1,1,0,1,1,1,1,0,1,1,1,1,0],[0,0,1,1,1,1,1,0,0,1,1,1,1,1,0,0],[0,0,0,1,0,1,0,1,1,0,1,0,1,0,0,0]],
 ];
 const BOSS_NAMES  = ['THE SAUCER','SPIDER CRAB','THE SKULL','DREAD DRAGON','THE MOTHERSHIP'];
-
-// ── BOSS SPEC ────────────────────────────────────────────────────────────────
-// Each boss now owns an attack pattern, a size, and a cadence. HP alone was
-// never the difficulty curve — a longer healthbar on identical behavior just
-// makes the same fight take longer. The pattern is the fight.
-//
-// px      : sprite cell size. 3 was the old value for everything; bosses now
-//           physically grow across the run (bigger target, but bigger threat).
-// hp      : raised across the board to account for the player's new tools.
-// pattern : which attack script runs. See bossAttack().
-// cadence : ms between attack cycles at full HP. Enrage cuts this.
-// moveMs  : ms between horizontal steps. Lower = faster slide.
-// step    : px per horizontal step.
-const BOSS = [
-  { name:'THE SAUCER',     px:4, hp:55,  pattern:'aimed',  cadence:1100, moveMs:110, step:8,  col:'#f83800' },
-  { name:'SPIDER CRAB',    px:4, hp:75,  pattern:'adds',   cadence:1250, moveMs:95,  step:9,  col:'#00d8d8' },
-  { name:'THE SKULL',      px:5, hp:100, pattern:'beam',   cadence:1500, moveMs:85,  step:10, col:'#f800f8' },
-  { name:'DREAD DRAGON',   px:5, hp:130, pattern:'spiral', cadence:900,  moveMs:75,  step:11, col:'#fca044' },
-  { name:'THE MOTHERSHIP', px:6, hp:165, pattern:'all',    cadence:850,  moveMs:70,  step:12, col:'#7b00d4' },
-];
-const BOSS_HP = BOSS.map(b => b.hp);
-
-// Sprites are 16 wide x 10 tall in cells; these derive the pixel hitbox.
-const bossW = i => 16 * BOSS[i].px;
-const bossH = i => 10 * BOSS[i].px;
-
-// ── Enrage ───────────────────────────────────────────────────────────────────
-// Below this HP fraction the boss visibly turns on you: color shifts hot,
-// movement and fire rate spike, and the transition punches the screen. This is
-// the cheapest way to make a fight feel dangerous exactly when the player
-// thinks they've won.
-const ENRAGE_AT = 0.35;
-const ENRAGE_COL = '#ff2200';
-const enraged = bo => bo.hp / BOSS_HP[bo.idx] <= ENRAGE_AT;
-
-// ── Weak point ───────────────────────────────────────────────────────────────
-// Center-mass core. Hits here deal 3x. Rewards players who hold the center
-// lane and eat more risk instead of plinking safely from the wings.
-const WEAK_MUL = 3;
-
-// ── Punish window ────────────────────────────────────────────────────────────
-// After every heavy attack the boss is exposed for this long: it stops moving,
-// stops shooting, and takes 2x. This is the "something back" — the fight has a
-// rhythm you can learn and exploit rather than a wall you out-tank.
-const PUNISH_MS  = 900;
-const PUNISH_MUL = 2;
+const BOSS_HP     = [8, 12, 16, 20, 30];
 
 const WAVE_PALETTES = [
   ['#f83800','#f83800','#0058f8','#0058f8','#00a800'],
@@ -568,14 +353,7 @@ const WAVE_PALETTES = [
   ['#004058','#004058','#e40058','#e40058','#fca044'],
   ['#0078f8','#0078f8','#f85898','#f85898','#b8f818'],
 ];
-const BOSS_COLORS = BOSS.map(b => b.col);
-const BOSS_TAGLINE = [
-  'IT TRACKS YOUR MOVEMENT',
-  'IT DOES NOT COME ALONE',
-  'IT CUTS THROUGH EVERYTHING',
-  'IT FILLS THE SKY',
-  'IT HAS LEARNED ALL OF THEM',
-];
+const BOSS_COLORS = ['#f83800','#00d8d8','#f800f8','#fca044','#7b00d4'];
 function getPalette(w) { return WAVE_PALETTES[(w - 1) % WAVE_PALETTES.length]; }
 
 // ── grid ──────────────────────────────────────────────────────────────────────
@@ -731,12 +509,8 @@ function drawParticles() {
 }
 
 let shakeAmt = 0;
-function addShake(v) { if (!REDUCED_MOTION) shakeAmt = Math.min(shakeAmt + v, 20); }
-function getShake() {
-  if (REDUCED_MOTION) { shakeAmt = 0; return [0,0]; }
-  shakeAmt *= 0.86;
-  return shakeAmt < 0.1 ? [0,0] : [(Math.random() - .5) * shakeAmt, (Math.random() - .5) * shakeAmt];
-}
+function addShake(v) { shakeAmt = Math.min(shakeAmt + v, 20); }
+function getShake() { shakeAmt *= 0.86; return shakeAmt < 0.1 ? [0,0] : [(Math.random() - .5) * shakeAmt, (Math.random() - .5) * shakeAmt]; }
 
 function makeBunker(bx, by) {
   const bl = [];
@@ -766,7 +540,6 @@ function init(persist) {
     bullets: [], abullets: [], keys: {}, score, lives, wave,
     phase: 'announce', announceTimer: 2400, shootCD: 0,
     boss: null, flash: false, flashTimer: 0,
-    minions: [], beams: [], enrageFlash: 0, critFlash: 0,
     nameEntry: { name: '' }, time: 0 };
   layoutAliens(); updateHUD(); prewarmWave(wave);
 }
@@ -814,25 +587,11 @@ function update(dt) {
   if (ph === 'namentry' || ph === 'over' || ph === 'win') return;
 
   S.shootCD = Math.max(0, S.shootCD - dt);
-  // Boss patterns demand real repositioning; base speed was tuned for a
-  // slow-marching alien block and can't clear a sweeping beam in time.
-  const mv = S.phase === 'boss' ? 6.6 : 5;
-  if (S.keys['ArrowLeft']  || S.keys['a']) S.px = Math.max(0, S.px - mv);
-  if (S.keys['ArrowRight'] || S.keys['d']) S.px = Math.min(W - 36, S.px + mv);
+  if (S.keys['ArrowLeft']  || S.keys['a']) S.px = Math.max(0, S.px - 5);
+  if (S.keys['ArrowRight'] || S.keys['d']) S.px = Math.min(W - 36, S.px + 5);
   if ((S.keys[' '] || S.keys['ArrowUp']) && S.shootCD <= 0) {
-    // Boss fights unlock a faster cadence and a twin shot. The bosses got a
-    // lot meaner; the player gets real firepower back rather than just being
-    // asked to dodge more. This is the "something back."
-    const inBoss = S.phase === 'boss';
-    if (inBoss) {
-      S.bullets.push({ x: S.px + 7,  y: S.py - 4, w: 3, h: 10, spd: 8, trail: [] });
-      S.bullets.push({ x: S.px + 22, y: S.py - 4, w: 3, h: 10, spd: 8, trail: [] });
-      S.shootCD = 190;
-    } else {
-      S.bullets.push({ x: S.px + 14, y: S.py - 4, w: 3, h: 10, spd: 7, trail: [] });
-      S.shootCD = 280;
-    }
-    ripple(S.px + 16, S.py, 1);
+    S.bullets.push({ x: S.px + 14, y: S.py - 4, w: 3, h: 10, spd: 7, trail: [] });
+    S.shootCD = 280; ripple(S.px + 16, S.py, 1);
   }
 
   if (ph === 'play') {
@@ -895,55 +654,14 @@ function update(dt) {
   }
 
   if (ph === 'boss' && S.boss) {
-    const bo = S.boss, idx = bo.idx, spec = BOSS[idx];
-    const BW = bossW(idx), BH = bossH(idx);
-    const rage = enraged(bo);
-
-    // Enrage transition — fires once, and it should feel like a threat.
-    if (rage && !bo.wasEnraged) {
-      bo.wasEnraged = true;
-      addShake(16);
-      spawnRing(bo.x + BW / 2, bo.y + BH / 2, ENRAGE_COL, 30, 6);
-      ripple(bo.x + BW / 2, bo.y + BH / 2, 10);
-      S.enrageFlash = 700;
-    }
-    if (S.enrageFlash > 0) S.enrageFlash -= dt;
-
-    // ── Player bullets vs boss ───────────────────────────────────────────
-    // Damage is no longer flat. Weak point (center core) multiplies, and the
-    // punish window after a heavy attack multiplies again. Stacked, a core hit
-    // during a punish window is 6x — that's the aggression payoff.
-    const vulnerable = bo.state !== 'entry';
-    // Weak point is a HORIZONTAL band only. Player bullets travel upward and
-    // are consumed on first overlap — i.e. always at the boss's bottom edge —
-    // so any vertically-inset core box is geometrically unreachable and the
-    // crit could never fire. Gating on x alone makes "hold the centre lane"
-    // the actual skill expression, which is what we wanted anyway.
-    const wpX0 = bo.x + BW * 0.34, wpX1 = bo.x + BW * 0.66;
-
+    const bo = S.boss, idx = S.wave - 1;
     S.bullets = S.bullets.filter(b => {
       b.trail.unshift({ x: b.x, y: b.y }); if (b.trail.length > PERF.bulletTrail) b.trail.pop();
       b.y -= b.spd; if (b.y < 0) return false;
-      // S.boss guard: twin shots mean two bullets can land in the same filter
-      // pass, and the second would re-enter bossDefeated() on a null boss.
-      if (S.boss && vulnerable && b.x < bo.x + BW && b.x + b.w > bo.x && b.y < bo.y + BH && b.y + b.h > bo.y) {
-        const core = b.x + b.w > wpX0 && b.x < wpX1;
-        // Twin shot fires two bullets that land on the SAME frame, so a naive
-        // crit multiplier gets applied twice per trigger pull — 2 x 3 = 6 dmg,
-        // which deleted a 14 HP boss in two pulls. Crit is per-pull, not
-        // per-bullet, so each bullet carries half of it.
-        let dmg = 1;
-        if (core) dmg *= WEAK_MUL / 2;
-        if (bo.state === 'punish') dmg *= PUNISH_MUL;
-        bo.hp -= dmg;
-        S.score += 50 * dmg; updateHUD();
-        S.flash = true; S.flashTimer = 80;
-        const hitCol = core ? '#ffffff' : BOSS_COLORS[idx];
-        spawnParticles(b.x + 1, b.y, hitCol, core ? 20 : 10, core ? 5 : 3.5);
-        if (core) { spawnRing(b.x, b.y, '#ffee00', 8, 3); S.critFlash = 220; }
-        ripple(b.x, b.y, core ? 4 : 2); addShake(core ? 8 : 5);
-        if (bo.hp <= 0) { bossDefeated(); return false; }
-        return false;
+      if (b.x < bo.x + 48 && b.x + b.w > bo.x && b.y < bo.y + 30 && b.y + b.h > bo.y) {
+        bo.hp--; S.score += 50; updateHUD(); S.flash = true; S.flashTimer = 80;
+        spawnParticles(b.x + 1, b.y, BOSS_COLORS[idx], 10, 3.5); ripple(b.x, b.y, 2); addShake(5);
+        if (bo.hp <= 0) { bossDefeated(); return false; } return false;
       }
       for (const bl of S.bunkers) {
         if (!bl.alive) continue;
@@ -951,53 +669,23 @@ function update(dt) {
       }
       return true;
     });
-    if (!S.boss) return;   // bossDefeated() cleared it
-    if (S.critFlash > 0) S.critFlash -= dt;
-
-    // ── State machine ────────────────────────────────────────────────────
-    bo.stateTimer -= dt;
-    if (bo.state === 'entry') {
-      bo.y += 0.11 * dt;                      // descend into position
-      if (bo.y >= 40) { bo.y = 40; bo.state = 'active'; bo.shootTimer = spec.cadence * 0.5; addShake(10); }
-    } else {
-      // Movement — frozen during telegraph and punish, so both read clearly.
-      if (bo.state === 'active') {
-        bo.moveTimer += dt;
-        const moveMs = rage ? spec.moveMs * 0.6 : spec.moveMs;
-        const step = rage ? spec.step * 1.4 : spec.step;
-        if (bo.moveTimer > moveMs) {
-          bo.moveTimer = 0;
-          bo.x += bo.dir * step;
-          if (bo.x <= 10) { bo.x = 10; bo.dir = 1; bo.y += 8; }
-          if (bo.x + BW >= W - 10) { bo.x = W - 10 - BW; bo.dir = -1; bo.y += 8; }
-        }
-        bo.shootTimer -= dt;
-        if (bo.shootTimer <= 0) {
-          bo.state = 'telegraph';
-          bo.stateTimer = rage ? 320 : 480;   // windup tell
-          bo.telegraphKind = pickPattern(bo, spec);
-        }
-      } else if (bo.state === 'telegraph' && bo.stateTimer <= 0) {
-        bossAttack(bo, spec, bo.telegraphKind, rage);
-        bo.state = 'punish';
-        bo.stateTimer = rage ? PUNISH_MS * 0.65 : PUNISH_MS;
-      } else if (bo.state === 'punish' && bo.stateTimer <= 0) {
-        bo.state = 'active';
-        bo.shootTimer = rage ? spec.cadence * 0.55 : spec.cadence;
+    bo.moveTimer += dt;
+    const bspd = Math.max(40, 120 - (BOSS_HP[idx] - bo.hp) * 5);
+    if (bo.moveTimer > bspd) { bo.moveTimer = 0; bo.x += bo.dir * 8; if (bo.x <= 10 || bo.x + 48 >= W - 10) { bo.dir *= -1; bo.y += 12; } }
+    if (bo.y + 30 >= S.py) { triggerGameOver(); return; }
+    if (S.flashTimer > 0) { S.flashTimer -= dt; if (S.flashTimer <= 0) S.flash = false; }
+    bo.shootTimer += dt;
+    const shots = 1 + Math.floor((BOSS_HP[idx] - bo.hp) / (BOSS_HP[idx] / 3));
+    if (bo.shootTimer > Math.max(350, 1200 - S.wave * 100)) {
+      bo.shootTimer = 0;
+      for (let i = 0; i < shots; i++) {
+        const spread = (i - (shots - 1) / 2) * 14;
+        S.abullets.push({ x: bo.x + 24 + spread, y: bo.y + 30, w: 4, h: 12, spd: 4 + S.wave * 0.5, trail: [] });
       }
     }
-
-    if (bo.y + BH >= S.py) { triggerGameOver(); return; }
-    if (S.flashTimer > 0) { S.flashTimer -= dt; if (S.flashTimer <= 0) S.flash = false; }
-
-    updateMinions(dt);
-    updateBeams(dt);
-
     S.abullets = S.abullets.filter(b => {
       b.trail.unshift({ x: b.x, y: b.y }); if (b.trail.length > PERF.aBulletTrail) b.trail.pop();
-      // Boss bullets can now carry velocity on both axes (aimed / spiral shots).
-      b.x += (b.vx || 0); b.y += (b.vy !== undefined ? b.vy : b.spd);
-      if (b.y > H || b.y < -20 || b.x < -20 || b.x > W + 20) return false;
+      b.y += b.spd; if (b.y > H) return false;
       if (b.x < S.px + S.pw && b.x + b.w > S.px && b.y < S.py + S.ph && b.y + b.h > S.py) { playerHit(); return false; }
       for (const bl of S.bunkers) {
         if (!bl.alive) continue;
@@ -1008,162 +696,14 @@ function update(dt) {
   }
 }
 
-// ── ATTACK PATTERNS ──────────────────────────────────────────────────────────
-// The Mothership cycles every other boss's pattern; everyone else has one.
-function pickPattern(bo, spec) {
-  if (spec.pattern !== 'all') return spec.pattern;
-  const cycle = ['aimed', 'adds', 'beam', 'spiral'];
-  return cycle[bo.subPattern++ % cycle.length];
-}
-
-function bossAttack(bo, spec, kind, rage) {
-  const idx = bo.idx, BW = bossW(idx), BH = bossH(idx);
-  const cx = bo.x + BW / 2, cy = bo.y + BH;
-  const spd = 4 + S.wave * 0.4 + (rage ? 1.2 : 0);
-  addShake(rage ? 7 : 4);
-  ripple(cx, cy, 3);
-
-  if (kind === 'aimed') {
-    // Leads the player's position. Standing still is now a mistake.
-    const n = rage ? 5 : 3;
-    for (let i = 0; i < n; i++) {
-      const tx = S.px + S.pw / 2, ty = S.py;
-      const spreadAng = (i - (n - 1) / 2) * 0.20;
-      let ang = Math.atan2(ty - cy, tx - cx) + spreadAng;
-      S.abullets.push({ x: cx - 2, y: cy, w: 4, h: 12,
-        vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd, trail: [] });
-    }
-  } else if (kind === 'adds') {
-    // Escorts. Cap so the screen never becomes unreadable.
-    const cap = rage ? 5 : 3;
-    const want = rage ? 3 : 2;
-    for (let i = 0; i < want && S.minions.length < cap; i++)
-      spawnMinion(bo.x + (i ? BW - 27 : 0), bo.y + BH);
-    // ...plus a token volley so 'adds' isn't a free window
-    for (let i = -1; i <= 1; i++)
-      S.abullets.push({ x: cx + i * 16, y: cy, w: 4, h: 12, vx: 0, vy: spd, trail: [] });
-  } else if (kind === 'beam') {
-    // Sweeping laser with a telegraph preview, then a lethal sweep.
-    const n = rage ? 2 : 1;
-    for (let i = 0; i < n; i++) {
-      S.beams.push({
-        x: i === 0 ? cx : (bo.dir > 0 ? 60 : W - 60),
-        hw: 9, phase: 'tell', t: 520, fireMs: rage ? 1100 : 900,
-        vx: (i === 0 ? bo.dir : -bo.dir) * (rage ? 3.1 : 2.2),
-        col: BOSS_COLORS[idx],
-      });
-    }
-  } else if (kind === 'spiral') {
-    // Rotating barrage. Readable if you track the rotation, lethal if not.
-    const arms = rage ? 12 : 9;
-    bo.spiralAng += 0.55;
-    for (let i = 0; i < arms; i++) {
-      const ang = bo.spiralAng + (i / arms) * Math.PI * 2;
-      // lower hemisphere only — no shots the player physically cannot see coming
-      const vy = Math.sin(ang) * spd;
-      if (vy < 0.15) continue;
-      S.abullets.push({ x: cx - 2, y: cy - 6, w: 4, h: 10,
-        vx: Math.cos(ang) * spd, vy, trail: [] });
-    }
-  }
-}
-
-function spawnBoss() {
-  const idx = S.wave - 1, spec = BOSS[idx];
-  S.boss = {
-    idx,
-    x: W / 2 - bossW(idx) / 2,
-    y: -bossH(idx) - 10,     // starts off-screen; descends during 'entry'
-    dir: 1, hp: spec.hp,
-    moveTimer: 0, shootTimer: 0,
-    state: 'entry',          // entry -> active -> (telegraph -> fire -> punish) -> active
-    stateTimer: 0,
-    wasEnraged: false,
-    beamX: 0, beamDir: 1,    // sweeping laser
-    spiralAng: 0,            // rotating barrage
-    subPattern: 0,           // Mothership cycling
-  };
-  S.minions = [];
-  S.beams = [];
-  S.bullets = []; S.abullets = [];
-}
-
-// ── Minions (Spider Crab adds) ───────────────────────────────────────────────
-function spawnMinion(bx, by) {
-  S.minions.push({
-    x: bx, y: by, vx: (Math.random() < 0.5 ? -1 : 1) * (1.1 + Math.random() * 0.6),
-    vy: 0.45 + Math.random() * 0.35, hp: 2, shootTimer: 600 + Math.random() * 800,
-    row: 2, col: 0,
-  });
-}
-
-function updateMinions(dt) {
-  const f = dt / 16;
-  let w = 0;
-  for (let i = 0; i < S.minions.length; i++) {
-    const m = S.minions[i];
-    m.x += m.vx * f; m.y += m.vy * f;
-    if (m.x <= 6 || m.x + 27 >= W - 6) m.vx *= -1;
-    if (m.y > H - 120) m.vy = -Math.abs(m.vy);
-    if (m.y < 60) m.vy = Math.abs(m.vy);
-    m.shootTimer -= dt;
-    if (m.shootTimer <= 0) {
-      m.shootTimer = 900 + Math.random() * 900;
-      S.abullets.push({ x: m.x + 12, y: m.y + 24, w: 4, h: 12, spd: 4.2, trail: [] });
-    }
-    // player bullet collision
-    for (let j = 0; j < S.bullets.length; j++) {
-      const b = S.bullets[j];
-      if (b.x < m.x + 27 && b.x + b.w > m.x && b.y < m.y + 24 && b.y + b.h > m.y) {
-        m.hp--; S.bullets.splice(j, 1); j--;
-        spawnParticles(m.x + 13, m.y + 12, '#00d8d8', 8, 3);
-        if (m.hp <= 0) {
-          S.score += 25; updateHUD();
-          spawnRing(m.x + 13, m.y + 12, '#00d8d8', 10, 3.5);
-          ripple(m.x + 13, m.y + 12, 3); addShake(3);
-          m.dead = true;
-        }
-        break;
-      }
-    }
-    // body-check the player
-    if (!m.dead && m.x < S.px + S.pw && m.x + 27 > S.px && m.y < S.py + S.ph && m.y + 24 > S.py) {
-      m.dead = true; playerHit();
-    }
-    if (!m.dead) S.minions[w++] = m;
-  }
-  S.minions.length = w;
-}
-
-// ── Beams (Skull sweeping laser) ─────────────────────────────────────────────
-// A beam has a telegraph phase (thin preview line, no damage) then a fire
-// phase (thick, lethal). The tell is the whole point: scary but readable.
-function updateBeams(dt) {
-  let w = 0;
-  for (let i = 0; i < S.beams.length; i++) {
-    const bm = S.beams[i];
-    bm.t -= dt;
-    if (bm.phase === 'tell' && bm.t <= 0) { bm.phase = 'fire'; bm.t = bm.fireMs; addShake(6); }
-    else if (bm.phase === 'fire') {
-      bm.x += bm.vx * (dt / 16);
-      // lethal only during fire
-      if (S.px + S.pw > bm.x - bm.hw && S.px < bm.x + bm.hw) playerHit();
-      if (bm.t <= 0) bm.dead = true;
-    }
-    if (!bm.dead) S.beams[w++] = bm;
-  }
-  S.beams.length = w;
-}
-function triggerBoss() { S.phase = 'bossannounce'; S.announceTimer = 2400; S.bullets = []; S.abullets = []; announceA11y('Warning. ' + BOSS_NAMES[S.wave - 1] + ' approaches.'); }
+function spawnBoss() { S.boss = { x: W / 2 - 24, y: 40, dir: 1, hp: BOSS_HP[S.wave - 1], moveTimer: 0, shootTimer: 0 }; S.bullets = []; S.abullets = []; }
+function triggerBoss() { S.phase = 'bossannounce'; S.announceTimer = 2400; S.bullets = []; S.abullets = []; }
 function bossDefeated() {
-  const idx = S.boss.idx, BW = bossW(idx), BH = bossH(idx);
-  const bx = S.boss.x + BW / 2, by = S.boss.y + BH / 2;
+  const idx = S.wave - 1, bx = S.boss.x + 24, by = S.boss.y + 15;
   spawnRing(bx, by, BOSS_COLORS[idx], 40, 6);
-  spawnRing(bx, by, '#ffffff', 24, 9);
-  for (let i = 0; i < 5; i++)
-    spawnParticles(S.boss.x + Math.random() * BW, S.boss.y + Math.random() * BH, BOSS_COLORS[idx], 25, 7);
-  ripple(bx, by, 14); addShake(22);
-  S.boss = null; S.bullets = []; S.abullets = []; S.minions = []; S.beams = [];
+  for (let i = 0; i < 4; i++) spawnParticles(S.boss.x + Math.random() * 48, S.boss.y + Math.random() * 30, BOSS_COLORS[idx], 25, 7);
+  ripple(bx, by, 12); addShake(18);
+  S.boss = null; S.bullets = []; S.abullets = [];
   if (S.wave >= MAX_WAVES) { triggerWin(); return; }
   S.wave++;
   S.phase = 'announce'; S.announceTimer = 2400; updateHUD();
@@ -1178,10 +718,10 @@ function playerHit() {
   spawnRing(S.px + 16, S.py + 6, '#00d8d8', 24, 5);
   spawnParticles(S.px + 16, S.py + 6, '#0078f8', 20, 6);
   ripple(S.px + 16, S.py + 6, 5); addShake(12);
-  S.lives--; updateHUD(); announceA11y('Hit. ' + S.lives + (S.lives === 1 ? ' life remaining.' : ' lives remaining.')); if (S.lives <= 0) triggerGameOver(); else S.px = W / 2 - 16;
+  S.lives--; updateHUD(); if (S.lives <= 0) triggerGameOver(); else S.px = W / 2 - 16;
 }
-function triggerGameOver() { S.phase = 'over'; announceA11y('Game over. Score ' + S.score + '.'); checkHS(); }
-function triggerWin()      { S.phase = 'win';  announceA11y('You win. Score ' + S.score + '.'); checkHS(); }
+function triggerGameOver() { S.phase = 'over'; checkHS(); }
+function triggerWin()      { S.phase = 'win';  checkHS(); }
 function checkHS() {
   const sc = getScores();
   if (sc.length < 5 || S.score > sc[sc.length - 1].score) {
@@ -1194,22 +734,11 @@ function checkHS() {
 const elScore = document.getElementById('score-el');
 const elLives = document.getElementById('lives-el');
 const elWave  = document.getElementById('wave-el');
-const elGameStatus = document.getElementById('game-status');
 let hudScore = -1, hudLives = -1, hudWave = -1;
-function announceA11y(message) { if (elGameStatus) elGameStatus.textContent = message; }
 function updateHUD() {
-  if (S.score !== hudScore) {
-    hudScore = S.score; elScore.textContent = 'SCORE: ' + S.score;
-    elScore.setAttribute('aria-label', 'Score ' + S.score);
-  }
-  if (S.lives !== hudLives) {
-    hudLives = S.lives; elLives.textContent = '▶ '.repeat(Math.max(0, S.lives)).trim();
-    elLives.setAttribute('aria-label', S.lives + (S.lives === 1 ? ' life' : ' lives'));
-  }
-  if (S.wave !== hudWave) {
-    hudWave = S.wave; elWave.textContent = 'WAVE: ' + S.wave + '/' + MAX_WAVES;
-    elWave.setAttribute('aria-label', 'Wave ' + S.wave + ' of ' + MAX_WAVES);
-  }
+  if (S.score !== hudScore) { hudScore = S.score; elScore.textContent = 'SCORE: ' + S.score; }
+  if (S.lives !== hudLives) { hudLives = S.lives; elLives.textContent = '▶ '.repeat(Math.max(0, S.lives)).trim(); }
+  if (S.wave  !== hudWave)  { hudWave  = S.wave;  elWave.textContent  = 'WAVE: ' + S.wave + '/' + MAX_WAVES; }
 }
 
 // ── animated sprite renderer ──────────────────────────────────────────────────
@@ -1257,10 +786,9 @@ function getBossSprite(idx, color, flash) {
   const key = 'b|' + idx + (flash ? 'F' : color);
   let s = spriteCache.get(key);
   if (!s) {
-    const px = BOSS[idx].px;
     s = flash
-      ? bakeSprite(BOSS_SPRITES[idx], px, '#ffffff', 26, 0)   // flash frame: solid white, no inner pass
-      : bakeSprite(BOSS_SPRITES[idx], px, color, 26, 0.65);
+      ? bakeSprite(BOSS_SPRITES[idx], 3, '#ffffff', 22, 0)   // flash frame: solid white, no inner pass
+      : bakeSprite(BOSS_SPRITES[idx], 3, color, 22, 0.65);
     spriteCache.set(key, s);
   }
   return s;
@@ -1270,9 +798,7 @@ function prewarmWave(w) {
   const pal = getPalette(w);
   for (let r = 0; r < ROWS; r++) for (let f = 0; f < 2; f++) getAlienSprite(ROW_TYPES[r], f, pal[r]);
   const idx = (w - 1) % BOSS_COLORS.length;
-  getBossSprite(idx, BOSS_COLORS[idx], false);
-  getBossSprite(idx, BOSS_COLORS[idx], true);
-  getBossSprite(idx, ENRAGE_COL, false);   // enrage palette, baked ahead of the transition
+  getBossSprite(idx, BOSS_COLORS[idx], false); getBossSprite(idx, BOSS_COLORS[idx], true);
 }
 
 function glowSprite(type, frame, x, y, px, color) {
@@ -1300,9 +826,7 @@ function draw() {
   const pal = getPalette(S.wave); const [sx, sy] = getShake();
   ctx.fillStyle = '#000010'; ctx.fillRect(0, 0, W, H);
   let gc;
-  // The whole arena reacts to enrage — mesh included.
-  if (S.phase === 'boss' && S.boss && enraged(S.boss)) gc = ENRAGE_COL;
-  else if (S.phase === 'boss' || S.phase === 'bossannounce') gc = BOSS_COLORS[S.wave - 1];
+  if (S.phase === 'boss' || S.phase === 'bossannounce') gc = BOSS_COLORS[S.wave - 1];
   else { const t = S.time / 3000; gc = `hsl(${185 + Math.sin(t) * 20},100%,45%)`; }
   drawGrid(gc);
 
@@ -1328,109 +852,17 @@ function draw() {
     ctx.restore();
   }
 
-  // ── minions (drawn under the boss) ──
-  if (S.minions && S.minions.length) {
-    ctx.save();
-    for (const m of S.minions) {
-      ctx.globalAlpha = 0.9;
-      glowSprite('B', (S.time / 200 | 0) % 2, m.x, m.y, 3, '#00d8d8');
-    }
-    ctx.restore();
-  }
-
-  // ── beams ──
-  // Telegraph draws a thin, semi-transparent preview so the player can read
-  // the incoming sweep. Fire draws the lethal column. The tell IS the fairness.
-  if (S.beams && S.beams.length) {
-    ctx.save();
-    for (const bm of S.beams) {
-      if (bm.phase === 'tell') {
-        const blink = 0.25 + 0.35 * Math.abs(Math.sin(S.time / 60));
-        ctx.globalAlpha = blink; ctx.fillStyle = bm.col;
-        ctx.shadowColor = bm.col; ctx.shadowBlur = 12;
-        ctx.fillRect(bm.x - 1.5, 0, 3, H);
-      } else {
-        ctx.globalAlpha = 0.85; ctx.fillStyle = bm.col;
-        ctx.shadowColor = bm.col; ctx.shadowBlur = 26;
-        ctx.fillRect(bm.x - bm.hw, 0, bm.hw * 2, H);
-        ctx.globalAlpha = 1; ctx.fillStyle = '#ffffff'; ctx.shadowBlur = 10;
-        ctx.fillRect(bm.x - bm.hw * 0.32, 0, bm.hw * 0.64, H);
-      }
-    }
-    ctx.restore();
-  }
-
   // boss
   if (S.boss && S.phase === 'boss') {
-    const bo = S.boss, idx = bo.idx;
-    const BW = bossW(idx), BH = bossH(idx);
-    const rage = enraged(bo);
-    const bodyCol = rage ? ENRAGE_COL : BOSS_COLORS[idx];
-
-    // Telegraph: the boss swells and glows white-hot just before it attacks.
-    let pulse = 0.8 + 0.2 * Math.sin(S.time / 180);
-    if (bo.state === 'telegraph') pulse = 0.72 + 0.28 * Math.abs(Math.sin(S.time / 45));
-    if (rage) pulse = Math.min(1, pulse + 0.12);
-
-    ctx.save();
-    ctx.globalAlpha = bo.state === 'entry' ? 0.85 : pulse;
-    glowBoss(idx, bo.x, bo.y, BOSS[idx].px, bodyCol, S.flash || bo.state === 'telegraph');
-    ctx.restore();
-
-    // Punish window marker — a visible "hit me now" ring. This is the reward
-    // signal for the aggression the player is being asked to take on.
-    if (bo.state === 'punish') {
-      const t = 0.45 + 0.35 * Math.sin(S.time / 90);
-      ctx.save(); ctx.globalAlpha = t;
-      ctx.strokeStyle = '#ffee00'; ctx.lineWidth = 2;
-      ctx.shadowColor = '#ffee00'; ctx.shadowBlur = 14;
-      ctx.strokeRect(bo.x - 4, bo.y - 4, BW + 8, BH + 8);
-      ctx.restore();
-    }
-
-    // Weak point indicator — only visible while vulnerable, so the player
-    // learns where to aim without it cluttering the entry animation.
-    // Drawn on the UNDERSIDE, because that's where shots actually land. The
-    // indicator has to match the real hitbox or it teaches the wrong lesson.
-    if (bo.state !== 'entry') {
-      const wx = bo.x + BW * 0.34, ww = BW * 0.32, wy = bo.y + BH;
-      const cf = S.critFlash > 0 ? 1 : 0.35 + 0.20 * Math.sin(S.time / 130);
-      ctx.save(); ctx.globalAlpha = cf;
-      ctx.strokeStyle = S.critFlash > 0 ? '#ffffff' : '#ffee00'; ctx.lineWidth = 2;
-      ctx.shadowColor = '#ffee00'; ctx.shadowBlur = 12;
-      ctx.beginPath();
-      ctx.moveTo(wx, wy + 3); ctx.lineTo(wx + ww, wy + 3);
-      // downward ticks marking the lane edges
-      ctx.moveTo(wx, wy + 3); ctx.lineTo(wx, wy + 9);
-      ctx.moveTo(wx + ww, wy + 3); ctx.lineTo(wx + ww, wy + 9);
-      ctx.stroke();
-      ctx.restore();
-    }
-
-    // ── health bar ──
-    const bW = 220, bH2 = 9, bx = (W - bW) / 2 - sx, by = 12 - sy;
-    ctx.save();
-    ctx.fillStyle = '#0a0a1a'; ctx.fillRect(bx, by, bW, bH2);
-    const frac = Math.max(0, bo.hp / BOSS_HP[idx]);
-    const bc = rage ? ENRAGE_COL : frac > 0.6 ? BOSS_COLORS[idx] : frac > 0.35 ? '#fca044' : '#f83800';
-    ctx.shadowColor = bc; ctx.shadowBlur = rage ? 16 : 8; ctx.fillStyle = bc;
-    ctx.fillRect(bx, by, Math.round(bW * frac), bH2);
-    // enrage threshold notch — tells the player where the fight gets worse
-    const ex = bx + bW * ENRAGE_AT;
-    ctx.shadowBlur = 0; ctx.fillStyle = 'rgba(255,255,255,0.55)';
-    ctx.fillRect(ex - 1, by - 2, 2, bH2 + 4);
-    ctx.strokeStyle = '#222244'; ctx.lineWidth = 1; ctx.strokeRect(bx, by, bW, bH2);
+    const bo = S.boss, idx = S.wave - 1, pulse = 0.8 + 0.2 * Math.sin(S.time / 180);
+    ctx.save(); ctx.globalAlpha = pulse; glowBoss(idx, bo.x, bo.y, 3, BOSS_COLORS[idx], S.flash); ctx.restore();
+    const bW = 180, bH = 8, bx = (W - bW) / 2 - sx, by = 12 - sy;
+    ctx.save(); ctx.fillStyle = '#0a0a1a'; ctx.fillRect(bx, by, bW, bH);
+    const frac = bo.hp / BOSS_HP[idx], bc = frac > 0.5 ? BOSS_COLORS[idx] : frac > 0.25 ? '#fca044' : '#f83800';
+    ctx.shadowColor = bc; ctx.shadowBlur = 8; ctx.fillStyle = bc; ctx.fillRect(bx, by, Math.round(bW * frac), bH);
+    ctx.strokeStyle = '#222244'; ctx.lineWidth = 1; ctx.strokeRect(bx, by, bW, bH);
     ctx.fillStyle = '#fff'; ctx.font = '10px monospace'; ctx.textAlign = 'center';
-    ctx.fillText(BOSS_NAMES[idx] + (rage ? '  ·  ENRAGED' : ''), W / 2, by + bH2 + 13);
-    ctx.restore();
-  }
-
-  // Enrage screen-flash — brief red wash on the transition.
-  if (S.enrageFlash > 0) {
-    ctx.save();
-    ctx.globalAlpha = Math.min(0.4, S.enrageFlash / 700 * 0.4);
-    ctx.fillStyle = ENRAGE_COL; ctx.fillRect(0, 0, W, H);
-    ctx.restore();
+    ctx.fillText(BOSS_NAMES[idx], W / 2, by + bH + 13); ctx.restore();
   }
 
   // player
@@ -1506,14 +938,7 @@ function draw() {
     glowText('WARNING', W / 2, H / 2 - 36, 36, BOSS_COLORS[idx], a);
     glowText(BOSS_NAMES[idx], W / 2, H / 2 + 12, 28, BOSS_COLORS[idx], a);
     ctx.save(); ctx.globalAlpha = a * 0.65; ctx.fillStyle = '#ccccee'; ctx.font = '14px monospace'; ctx.textAlign = 'center';
-    ctx.fillText('APPROACHES', W / 2, H / 2 + 42);
-    // Name the threat. Telling the player what's coming is free intimidation
-    // and it front-loads the pattern they're about to have to learn.
-    ctx.globalAlpha = a * 0.5; ctx.fillStyle = BOSS_COLORS[idx]; ctx.font = '11px monospace';
-    ctx.fillText(BOSS_TAGLINE[idx], W / 2, H / 2 + 66);
-    ctx.globalAlpha = a * 0.38; ctx.fillStyle = '#889'; ctx.font = '10px monospace';
-    ctx.fillText('AIM FOR THE CORE', W / 2, H / 2 + 86);
-    ctx.restore();
+    ctx.fillText('APPROACHES', W / 2, H / 2 + 42); ctx.restore();
   }
   if (S.phase === 'over' || S.phase === 'win') {
     ctx.fillStyle = 'rgba(0,0,18,0.76)'; ctx.fillRect(0, 0, W, H);
@@ -1568,7 +993,6 @@ window.addEventListener('keydown', e => {
   if ([' ', 'ArrowLeft', 'ArrowRight', 'ArrowUp'].includes(e.key)) e.preventDefault();
 });
 window.addEventListener('keyup', e => { if (S.phase !== 'namentry') S.keys[e.key] = false; });
-window.addEventListener('blur', () => { if (S && S.keys) S.keys = {}; });
 
 // Returning from a backgrounded tab: reset the clock so the first frame back
 // isn't a giant dt (mobile browsers park RAF aggressively on lock/app-switch).
@@ -1579,160 +1003,48 @@ document.addEventListener('visibilitychange', () => {
 init(false);
 requestAnimationFrame(tick);
 
-// ── BRAZEN MOBILE NUI ───────────────────────────────────────────────────────
+// ── MOBILE SETUP ─────────────────────────────────────────────────────────────
 if (isMobile) {
+  // 1. Adjust canvas height budget so it doesn't overlap controls
+  document.documentElement.style.setProperty('--ctrl-h', '76px');
+
+  // 2. Show the touch control bar
   const touchControls = document.getElementById('touch-controls');
-  const rocker        = document.getElementById('move-rocker');
-  const btnLeft       = document.getElementById('btn-left');
-  const btnRight      = document.getElementById('btn-right');
-  const btnFire       = document.getElementById('btn-fire');
-  const canvas        = document.getElementById('c');
+  touchControls.style.display = 'flex';
 
-  document.body.classList.add('touch-ui');
-
-  // Reserve exactly the rendered NUI footprint instead of hard-coding a
-  // portrait-only constant. Dynamic safe-area and orientation changes are
-  // reflected on the next frame, avoiding the old canvas/control overlap.
-  function syncControlBudget() {
-    if (!touchControls) return;
-    const h = Math.ceil(touchControls.getBoundingClientRect().height || 96);
-    document.documentElement.style.setProperty('--ctrl-h', h + 'px');
+  // 3. Wire up each button to the existing S.keys system
+  function bindTouchBtn(id, key) {
+    const el = document.getElementById(id);
+    function down(e) {
+      e.preventDefault();
+      if (S && S.phase !== 'namentry') {
+        S.keys[key] = true;
+        el.classList.add('pressed');
+      }
+    }
+    function up(e) {
+      e.preventDefault();
+      if (S) S.keys[key] = false;
+      el.classList.remove('pressed');
+    }
+    el.addEventListener('touchstart',  down, { passive: false });
+    el.addEventListener('touchend',    up,   { passive: false });
+    el.addEventListener('touchcancel', up,   { passive: false });
   }
-  syncControlBudget();
-  window.addEventListener('resize', () => requestAnimationFrame(syncControlBudget), { passive: true });
-  window.addEventListener('orientationchange', () => requestAnimationFrame(syncControlBudget), { passive: true });
+  bindTouchBtn('btn-left',  'ArrowLeft');
+  bindTouchBtn('btn-right', 'ArrowRight');
+  bindTouchBtn('btn-fire',  ' ');
 
-  const supportsVibrate = typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function';
-  function haptic(ms) {
-    if (REDUCED_MOTION || !supportsVibrate) return;
-    try { navigator.vibrate(ms); } catch {}
-  }
-
-  function setPressed(el, on) {
-    if (!el) return;
-    el.classList.toggle('pressed', !!on);
-    el.setAttribute('aria-pressed', on ? 'true' : 'false');
-  }
-
-  let movePointerId = null;
-  let moveDir = 0; // -1 left, +1 right, 0 dead-zone
-  const ROCKER_DEADZONE = 10;
-
-  function setMoveDir(dir, withHaptic) {
-    if (!S) return;
-    const next = dir < 0 ? -1 : dir > 0 ? 1 : 0;
-    if (next === moveDir) return;
-    moveDir = next;
-    S.keys['ArrowLeft'] = next < 0;
-    S.keys['ArrowRight'] = next > 0;
-    setPressed(btnLeft, next < 0);
-    setPressed(btnRight, next > 0);
-    if (withHaptic && next) haptic(7);
-  }
-
-  function rockerPoint(clientX) {
-    const r = rocker.getBoundingClientRect();
-    const dx = clientX - (r.left + r.width / 2);
-    if (Math.abs(dx) <= ROCKER_DEADZONE) setMoveDir(0, false);
-    else setMoveDir(dx < 0 ? -1 : 1, true);
-  }
-
-  rocker.addEventListener('pointerdown', e => {
-    if (movePointerId !== null || S.phase === 'namentry') return;
-    movePointerId = e.pointerId;
-    try { rocker.setPointerCapture(movePointerId); } catch {}
-    rockerPoint(e.clientX);
+  // 4. Tap canvas to restart on game-over / win screens
+  document.getElementById('c').addEventListener('touchstart', e => {
     e.preventDefault();
-  }, { passive: false });
-
-  rocker.addEventListener('pointermove', e => {
-    if (e.pointerId !== movePointerId) return;
-    rockerPoint(e.clientX);
-    e.preventDefault();
-  }, { passive: false });
-
-  function releaseMove(e) {
-    if (e && movePointerId !== null && e.pointerId !== movePointerId) return;
-    movePointerId = null;
-    setMoveDir(0, false);
-  }
-  rocker.addEventListener('pointerup', releaseMove, { passive: false });
-  rocker.addEventListener('pointercancel', releaseMove, { passive: false });
-  rocker.addEventListener('lostpointercapture', releaseMove);
-
-  // Keyboard / switch-device access on the visible buttons. Pointer users use
-  // the rocker surface above; assistive click gets a short, deterministic nudge.
-  let semanticPulse = 0;
-  function pulseMove(dir) {
-    setMoveDir(dir, true);
-    clearTimeout(semanticPulse);
-    semanticPulse = setTimeout(() => setMoveDir(0, false), 150);
-  }
-  [btnLeft, btnRight].forEach((el, i) => {
-    const dir = i === 0 ? -1 : 1;
-    el.addEventListener('keydown', e => {
-      if (e.key === 'Enter' || e.key === ' ') { setMoveDir(dir, true); e.preventDefault(); }
-    });
-    el.addEventListener('keyup', e => {
-      if (e.key === 'Enter' || e.key === ' ') { setMoveDir(0, false); e.preventDefault(); }
-    });
-    el.addEventListener('click', e => {
-      if (e.detail === 0) pulseMove(dir); // synthetic/assistive click only
-    });
-  });
-
-  let firePointers = new Set();
-  function setFire(on, withHaptic) {
-    if (!S) return;
-    S.keys[' '] = !!on;
-    setPressed(btnFire, !!on);
-    if (on && withHaptic) haptic(9);
-  }
-  btnFire.addEventListener('pointerdown', e => {
-    if (S.phase === 'namentry') return;
-    firePointers.add(e.pointerId);
-    try { btnFire.setPointerCapture(e.pointerId); } catch {}
-    setFire(true, true);
-    e.preventDefault();
-  }, { passive: false });
-  function releaseFire(e) {
-    if (e && typeof e.pointerId === 'number') firePointers.delete(e.pointerId);
-    if (!firePointers.size) setFire(false, false);
-  }
-  btnFire.addEventListener('pointerup', releaseFire, { passive: false });
-  btnFire.addEventListener('pointercancel', releaseFire, { passive: false });
-  btnFire.addEventListener('lostpointercapture', releaseFire);
-  btnFire.addEventListener('keydown', e => {
-    if (e.key === 'Enter' || e.key === ' ') { setFire(true, true); e.preventDefault(); }
-  });
-  btnFire.addEventListener('keyup', e => {
-    if (e.key === 'Enter' || e.key === ' ') { setFire(false, false); e.preventDefault(); }
-  });
-  btnFire.addEventListener('click', e => {
-    if (e.detail !== 0 || S.phase === 'namentry') return;
-    setFire(true, true);
-    setTimeout(() => setFire(false, false), 90);
-  });
-
-  function releaseTouchInputs() {
-    firePointers.clear();
-    releaseMove();
-    setFire(false, false);
-  }
-  window.addEventListener('blur', releaseTouchInputs);
-  document.addEventListener('visibilitychange', () => { if (document.hidden) releaseTouchInputs(); });
-
-  // Tap/click the playfield to restart after a completed run. Pointerup avoids
-  // cancelling pinch-zoom gestures on the canvas during normal play.
-  canvas.addEventListener('pointerup', e => {
-    if (e.pointerType === 'touch' && S && (S.phase === 'over' || S.phase === 'win')) {
+    if (S && (S.phase === 'over' || S.phase === 'win')) {
       particles = [];
       init(false);
-      announceA11y('New game. Wave 1.');
     }
-  });
+  }, { passive: false });
 
-  // Mobile name-entry overlay wiring.
+  // 5. Mobile name-entry overlay wiring
   const nameOverlay  = document.getElementById('mobile-name-overlay');
   const nameInput    = document.getElementById('mobile-name-input');
   const nameSubmit   = document.getElementById('mobile-name-submit');
@@ -1744,34 +1056,21 @@ if (isMobile) {
     S.phase = S.wave >= MAX_WAVES ? 'win' : 'over';
     nameOverlay.classList.remove('visible');
     nameInput.blur();
-    announceA11y('High score saved for ' + name + '.');
   }
 
+  // Exposed so checkHS() can call it
   window._mobileNameEntry = {
     show() {
-      releaseTouchInputs();
       nameInput.value = '';
       nameOverlay.classList.add('visible');
+      // Small delay lets the overlay paint before keyboard opens
       setTimeout(() => nameInput.focus(), 120);
     }
   };
 
+  nameSubmit.addEventListener('touchend', e => { e.preventDefault(); submitMobileName(); }, { passive: false });
   nameSubmit.addEventListener('click', submitMobileName);
   nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') submitMobileName(); });
-
-  // Regression surface: deliberately small and side-effect-light so a future
-  // browser harness can assert stuck-key release, rocker direction, reduced
-  // motion, and dynamic control budgeting against the real implementation.
-  window.NEON_INVADERS_TEST = {
-    getState: () => S,
-    getMoveDir: () => moveDir,
-    setMoveDir,
-    setFire,
-    releaseTouchInputs,
-    syncControlBudget,
-    getReducedMotion: () => REDUCED_MOTION,
-    getControlHeight: () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ctrl-h')) || 0,
-  };
 }
 </script>
 
