@@ -11,7 +11,7 @@
     gtag('config', 'G-42GJ11SXE3');
   </script>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <title>NEON INVADERS</title>
 
   <!-- ── Primary Meta ─────────────────────────────────────────────────────── -->
@@ -39,18 +39,11 @@
 
   <style>
     :root {
+      /* JS sets --ctrl-h to 76px on mobile; stays 0px on desktop so canvas fills freely */
       --ctrl-h: 0px;
-      --safe-top: env(safe-area-inset-top, 0px);
-      --safe-right: env(safe-area-inset-right, 0px);
-      --safe-bottom: env(safe-area-inset-bottom, 0px);
-      --safe-left: env(safe-area-inset-left, 0px);
     }
-    * { box-sizing: border-box; }
     html {
-      width: 100%;
-      height: 100%;
       overscroll-behavior: none;
-      background: #000010;
     }
     body {
       margin: 0;
@@ -59,32 +52,23 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      width: 100%;
       min-height: 100vh;
-      min-height: 100dvh;
       height: 100vh;
-      height: 100dvh;
-      padding-top: var(--safe-top);
-      padding-bottom: var(--ctrl-h);
       overflow: hidden;
+      touch-action: none;
       user-select: none;
       -webkit-user-select: none;
       overscroll-behavior: none;
-      -webkit-text-size-adjust: 100%;
-      text-size-adjust: 100%;
     }
     canvas {
       display: block;
       image-rendering: pixelated;
       border: 2px solid #1a1a2e;
       box-shadow: 0 0 50px rgba(0, 216, 216, 0.1);
-      touch-action: pan-x pan-y pinch-zoom;
-      width: min(
-        600px,
-        calc(100vw - var(--safe-left) - var(--safe-right)),
-        calc((100dvh - 42px - var(--ctrl-h) - var(--safe-top)) * 600 / 520)
-      );
-      max-width: 100%;
+      /* Scale to fit screen on both axes without ever growing past native 600px.
+         Formula: whichever is smallest — native size, viewport width, or the
+         width that keeps canvas within the remaining height after UI + controls. */
+      width: min(600px, 100vw, calc((100vh - 40px - var(--ctrl-h)) * 600 / 520));
       height: auto;
     }
     #ui {
@@ -93,200 +77,65 @@
       display: flex;
       gap: 32px;
       margin-bottom: 6px;
-      width: min(600px, calc(100vw - var(--safe-left) - var(--safe-right)));
+      /* Match canvas width so it never overflows on small screens */
+      width: min(600px, 100vw);
       padding: 0 8px;
+      box-sizing: border-box;
     }
     #ui span {
       flex: 1;
       text-shadow: 0 0 15px currentColor;
       letter-spacing: 2px;
       font-weight: bold;
-      white-space: nowrap;
     }
     #score-el { color: #00d8d8; }
     #lives-el  { color: #f800f8; text-align: center; }
     #wave-el   { color: #7b5fff; text-align: right; }
 
-    .sr-only {
-      position: absolute !important;
-      width: 1px !important;
-      height: 1px !important;
-      padding: 0 !important;
-      margin: -1px !important;
-      overflow: hidden !important;
-      clip: rect(0, 0, 0, 0) !important;
-      white-space: nowrap !important;
-      border: 0 !important;
+    /* ── Touch NUI (SNAKIA lineage) ────────────────────────────────────
+       touch-action does NOT inherit — it must be set on every element or a
+       pinch that starts on the console zooms the page. Hence the universal
+       selector, not just html/body. */
+    *{touch-action:none}
+    #nui{
+      display:none; width:min(600px,100vw); box-sizing:border-box;
+      padding:8px max(12px,env(safe-area-inset-left)) max(8px,env(safe-area-inset-bottom));
+      gap:12px; align-items:stretch; margin-top:6px; height:var(--ctrl-h);
     }
-
-    /* ── Brazen Mobile NUI ────────────────────────────────────────────────
-       Three-actuator FTS cabinet surface: dedicated LEFT / RIGHT keys plus FIRE.
-       The paired movement keys share pointer capture so sliding LEFT -> RIGHT
-       never requires lifting; FIRE remains an independent second-thumb control. */
-    #touch-controls {
-      display: none;
-      position: fixed;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      z-index: 80;
-      min-height: 96px;
-      padding: 10px max(12px, var(--safe-right)) max(10px, var(--safe-bottom)) max(12px, var(--safe-left));
-      align-items: center;
-      justify-content: flex-end;
-      pointer-events: none;
-      background:
-        linear-gradient(180deg, rgba(0,0,16,0), rgba(0,0,16,.68) 28%, rgba(0,0,16,.94) 100%);
+    body.touch #nui{display:flex}
+    /* Slide rail: the whole rail is the hit zone. Finger X maps to ship X
+       (absolute), pointer-captured so sliding off the rail never drops it. */
+    #rail{
+      position:relative; flex:1 1 auto; border-radius:14px; overflow:hidden;
+      background:linear-gradient(180deg,rgba(0,216,216,.06),rgba(0,216,216,.02));
+      border:1px solid rgba(0,216,216,.45);
+      box-shadow:inset 0 0 18px rgba(0,216,216,.08),0 0 12px rgba(0,216,216,.12);
+      -webkit-tap-highlight-color:transparent; cursor:pointer;
     }
-    body.touch-ui #touch-controls { display: flex; }
-    .control-deck {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: clamp(18px, 7vw, 42px);
-      width: min(100%, 430px);
-      margin: 0 auto;
-      pointer-events: auto;
-      touch-action: none;
+    #rail::before{ /* ruler ticks — the dot-grid's cousin */
+      content:""; position:absolute; inset:0; pointer-events:none; opacity:.35;
+      background:repeating-linear-gradient(90deg,rgba(0,216,216,.5) 0 1px,transparent 1px 12.5%),
+                 repeating-linear-gradient(90deg,rgba(0,216,216,.25) 0 1px,transparent 1px 3.125%);
+      -webkit-mask:linear-gradient(180deg,transparent 60%,#000 60%); mask:linear-gradient(180deg,transparent 60%,#000 60%);
     }
-    .move-rocker {
-      position: relative;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 3px;
-      width: 202px;
-      height: 82px;
-      flex: 0 0 202px;
-      padding: 4px;
-      border: 2px solid rgba(52,235,255,.72);
-      border-radius: 31px;
-      background: rgba(0,10,24,.76);
-      box-shadow:
-        0 10px 28px rgba(0,0,0,.5),
-        0 0 24px rgba(0,216,216,.2),
-        inset 0 1px 0 rgba(255,255,255,.08);
-      touch-action: none;
-      -webkit-tap-highlight-color: transparent;
-      isolation: isolate;
+    #rail-knob{
+      position:absolute; top:50%; left:0; width:52px; height:52px; margin:-26px 0 0 -26px;
+      border-radius:50%; pointer-events:none; will-change:transform;
+      border:2px solid rgba(0,216,216,.8); background:rgba(0,216,216,.10);
+      box-shadow:0 0 16px rgba(0,216,216,.45); transition:background .08s,box-shadow .08s;
     }
-    .rocker-btn,
-    .fire-btn {
-      appearance: none;
-      border: 0;
-      margin: 0;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-weight: 900;
-      cursor: pointer;
-      touch-action: none;
-      -webkit-tap-highlight-color: transparent;
-      -webkit-user-select: none;
-      user-select: none;
-      transition: transform .07s ease, background .07s ease, box-shadow .07s ease, filter .07s ease;
+    #rail.active #rail-knob{background:rgba(0,216,216,.28);box-shadow:0 0 26px rgba(0,216,216,.8)}
+    #rail-label{position:absolute;top:6px;left:10px;font:bold 9px monospace;letter-spacing:.2em;
+      color:rgba(0,216,216,.5);pointer-events:none}
+    #fire{
+      flex:0 0 min(30vw,128px); border-radius:50%/42%; appearance:none; cursor:pointer;
+      font:bold 13px monospace; letter-spacing:3px; color:#f800f8; text-shadow:0 0 10px #f800f8;
+      background:rgba(248,0,248,.08); border:2px solid rgba(248,0,248,.55);
+      box-shadow:0 0 10px rgba(248,0,248,.18); -webkit-tap-highlight-color:transparent;
+      transition:background .07s,box-shadow .07s,transform .07s;
     }
-    .rocker-btn {
-      position: relative;
-      min-width: 0;
-      height: 100%;
-      color: #c8ffff;
-      background:
-        radial-gradient(circle at 38% 26%, rgba(255,255,255,.2), transparent 20%),
-        linear-gradient(180deg, rgba(13,78,94,.72), rgba(2,28,42,.92));
-      border: 1px solid rgba(86,246,255,.42);
-      font-size: 31px;
-      line-height: 1;
-      text-shadow: 0 0 12px #00d8d8;
-      box-shadow:
-        inset 0 2px 0 rgba(255,255,255,.12),
-        inset 0 -9px 16px rgba(0,0,0,.3),
-        0 0 14px rgba(0,216,216,.12);
-    }
-    .rocker-btn:first-child { border-radius: 25px 8px 8px 25px; }
-    .rocker-btn:last-child  { border-radius: 8px 25px 25px 8px; }
-    .rocker-btn.pressed {
-      background:
-        radial-gradient(circle at 38% 26%, rgba(255,255,255,.28), transparent 22%),
-        linear-gradient(180deg, rgba(24,147,165,.88), rgba(3,48,64,.98));
-      box-shadow: inset 0 0 22px rgba(122,255,255,.28), 0 0 26px rgba(0,216,216,.32);
-      transform: translateY(3px) scale(.985);
-      filter: brightness(1.18);
-    }
-    .fire-btn {
-      position: relative;
-      display: grid;
-      place-items: center;
-      width: 94px;
-      height: 94px;
-      flex: 0 0 94px;
-      border-radius: 50%;
-      color: #fff2ff;
-      background:
-        radial-gradient(circle at 38% 30%, rgba(255,255,255,.34), transparent 18%),
-        radial-gradient(circle at 50% 46%, rgba(248,0,248,.38), rgba(91,0,91,.82) 74%);
-      border: 3px solid rgba(255,90,255,.92);
-      box-shadow:
-        0 8px 0 rgba(70,0,70,.76),
-        0 13px 28px rgba(0,0,0,.46),
-        0 0 30px rgba(248,0,248,.32),
-        inset 0 2px 0 rgba(255,255,255,.2),
-        inset 0 -9px 14px rgba(0,0,0,.34);
-      text-shadow: 0 0 10px #f800f8;
-    }
-    .fire-btn .fire-glyph {
-      display: block;
-      font-size: 23px;
-      line-height: .8;
-      transform: translateY(-2px);
-    }
-    .fire-btn .fire-label {
-      display: block;
-      font-size: 10px;
-      line-height: 1;
-      letter-spacing: .14em;
-    }
-    .fire-btn.pressed {
-      transform: translateY(4px) scale(.98);
-      filter: brightness(1.18);
-      background:
-        radial-gradient(circle at 38% 30%, rgba(255,255,255,.5), transparent 18%),
-        radial-gradient(circle at 50% 46%, rgba(255,54,255,.62), rgba(105,0,105,.88) 74%);
-      box-shadow:
-        0 3px 0 rgba(70,0,70,.72),
-        0 6px 15px rgba(0,0,0,.46),
-        0 0 30px rgba(248,0,248,.48),
-        inset 0 2px 0 rgba(255,255,255,.24),
-        inset 0 -6px 12px rgba(0,0,0,.26);
-    }
-    .rocker-btn:focus-visible,
-    .fire-btn:focus-visible,
-    #mobile-name-submit:focus-visible,
-    #mobile-name-input:focus-visible {
-      outline: 3px solid #fff;
-      outline-offset: 3px;
-    }
-
-    @media (max-width: 420px) {
-      #ui { gap: 10px; font-size: 11px; }
-      #ui span { letter-spacing: 1px; }
-      .control-deck { gap: 18px; width: min(100%, 360px); }
-      .move-rocker { width: 184px; flex-basis: 184px; height: 72px; border-radius: 27px; }
-      .fire-btn { width: 84px; height: 84px; flex-basis: 84px; }
-    }
-    @media (pointer: coarse) and (orientation: landscape), (max-height: 540px) {
-      #touch-controls { min-height: 76px; padding-top: 6px; padding-bottom: max(6px, var(--safe-bottom)); }
-      .control-deck { gap: 16px; width: min(100%, 340px); }
-      .move-rocker { width: 174px; flex-basis: 174px; height: 60px; border-radius: 22px; }
-      .fire-btn { width: 68px; height: 68px; flex-basis: 68px; }
-      .fire-btn .fire-glyph { font-size: 17px; }
-      .fire-btn .fire-label { font-size: 8px; }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .rocker-btn, .fire-btn { transition: none; }
-    }
-    @media (prefers-contrast: more) {
-      .move-rocker { border-color: #5fffff; }
-      .rocker-btn { color: #fff; }
-      .fire-btn { border-color: #fff; }
-    }
+    #fire.pressed{background:rgba(248,0,248,.28);box-shadow:0 0 24px rgba(248,0,248,.6);transform:translateY(2px)}
+    #mobile-name-input{touch-action:auto}
 
     /* ── Mobile Name-Entry Overlay ────────────────────────────────────── */
     #mobile-name-overlay {
@@ -300,8 +149,6 @@
       justify-content: center;
       gap: 18px;
       font-family: monospace;
-      padding: max(18px, var(--safe-top)) max(18px, var(--safe-right)) max(18px, var(--safe-bottom)) max(18px, var(--safe-left));
-      touch-action: manipulation;
     }
     #mobile-name-overlay.visible { display: flex; }
     .mn-title {
@@ -350,46 +197,35 @@
 </head>
 <body>
 
-<div id="ui" aria-label="Game status">
-  <span id="score-el" aria-label="Score 0">SCORE: 0</span>
-  <span id="lives-el" aria-label="3 lives">▶ ▶ ▶</span>
-  <span id="wave-el" aria-label="Wave 1 of 5">WAVE: 1/5</span>
+<div id="ui">
+  <span id="score-el">SCORE: 0</span>
+  <span id="lives-el">▶ ▶ ▶</span>
+  <span id="wave-el">WAVE: 1/5</span>
 </div>
-<canvas id="c" width="600" height="520" role="img" aria-label="Neon Invaders playfield. Move left and right and fire upward to defend against the invaders."></canvas>
-<div id="game-status" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+<canvas id="c" width="600" height="520"></canvas>
 
-<!-- ── Brazen mobile NUI: right-side rocker + independent fire button ── -->
-<div id="touch-controls" aria-label="Touch controls">
-  <div class="control-deck">
-    <div id="move-rocker" class="move-rocker" role="group" aria-label="Horizontal movement">
-      <button class="rocker-btn" id="btn-left" type="button" aria-label="Move left" aria-pressed="false" aria-keyshortcuts="ArrowLeft A">◀</button>
-      <button class="rocker-btn" id="btn-right" type="button" aria-label="Move right" aria-pressed="false" aria-keyshortcuts="ArrowRight D">▶</button>
-    </div>
-    <button class="fire-btn" id="btn-fire" type="button" aria-label="Fire" aria-pressed="false" aria-keyshortcuts="Space ArrowUp">
-      <span aria-hidden="true"><span class="fire-glyph">●</span><span class="fire-label">FIRE</span></span>
-    </button>
-  </div>
+<!-- ── Touch NUI: slide rail + fire (pointer events, multi-touch safe) ── -->
+<div id="nui">
+  <div id="rail" role="slider" aria-label="Ship position"><span id="rail-label">SLIDE</span><div id="rail-knob"></div></div>
+  <button id="fire" aria-label="Fire (hold for auto)">FIRE</button>
 </div>
 
 <!-- ── Mobile name-entry overlay ── -->
-<div id="mobile-name-overlay" role="dialog" aria-modal="true" aria-labelledby="mobile-name-title">
-  <div class="mn-title" id="mobile-name-title">NEW HIGH SCORE!</div>
+<div id="mobile-name-overlay">
+  <div class="mn-title">NEW HIGH SCORE!</div>
   <div class="mn-sub">ENTER YOUR NAME (3 CHARS)</div>
   <input id="mobile-name-input" type="text" maxlength="3"
     autocomplete="off" autocorrect="off" spellcheck="false"
-    autocapitalize="characters" inputmode="text" aria-label="High score name, three characters">
-  <button id="mobile-name-submit" type="button">SUBMIT ▶</button>
+    autocapitalize="characters" inputmode="text">
+  <button id="mobile-name-submit">SUBMIT ▶</button>
 </div>
 
 <script>
-// ── INPUT / ACCESSIBILITY CAPABILITY PROBES ─────────────────────────────────
-const hasTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints || 0) > 0;
-let coarsePointer = false;
-try { coarsePointer = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches); } catch {}
-const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-              || hasTouch || coarsePointer;
-let REDUCED_MOTION = false;
-try { REDUCED_MOTION = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); } catch {}
+// ── MOBILE DETECTION ─────────────────────────────────────────────────────────
+const _touchQ = (location.search.match(/[?&]touch=([01])/) || [])[1];
+const isMobile = _touchQ ? _touchQ === '1'
+  : (window.matchMedia && matchMedia('(pointer:coarse)').matches)
+    || navigator.maxTouchPoints > 0 || ('ontouchstart' in window);
 
 // ── PERF TIER ────────────────────────────────────────────────────────────────
 // One switch drives every cost decision below. Desktop keeps the original
@@ -401,12 +237,12 @@ const SOCIAL_PREVIEW = false;   // flip true on desktop to regenerate og image
 const PERF = {
   gridCols:      LOW ? 19 : 31,
   gridRows:      LOW ? 16 : 26,
-  partMul:       REDUCED_MOTION ? 0.28 : (LOW ? 0.45 : 1),
+  partMul:       LOW ? 0.45 : 1,
   partCap:       LOW ? 140 : 500,
-  partTrail:     (LOW || REDUCED_MOTION) ? 0 : 7,
+  partTrail:     LOW ? 0 : 7,
   bulletTrail:   LOW ? 4 : 9,
   aBulletTrail:  LOW ? 3 : 6,
-  gridShadow:    (LOW || REDUCED_MOTION) ? 0 : 5,
+  gridShadow:    LOW ? 0 : 5,
   maxDpr:        LOW ? 2 : 2,
 };
 
@@ -484,6 +320,7 @@ generateBranding();
 
 // ── CONSTANTS ────────────────────────────────────────────────────────────────
 const C = document.getElementById('c'), ctx = C.getContext('2d');
+const FRAME_MS = 1000 / 60;
 const W = 600, H = 520, ROWS = 5, COLS = 11, MAX_WAVES = 5;
 
 // ── 2-frame animated sprites ──────────────────────────────────────────────────
@@ -578,11 +415,10 @@ const BOSS_TAGLINE = [
 ];
 function getPalette(w) { return WAVE_PALETTES[(w - 1) % WAVE_PALETTES.length]; }
 
-// ── GRID / ELASTIC FIELD ───────────────────────────────────────────────────────
-// Geometry-Wars-inspired contract: the grid is a spring mesh, not wallpaper.
-// Moving entities continuously push/pull nearby nodes; explosions inject radial
-// impulses; the mesh damps back to rest and sleeps when quiet. Gameplay never
-// reads deformed node positions, keeping presentation separate from simulation.
+// ── grid ──────────────────────────────────────────────────────────────────────
+// Structure-of-Arrays, same layout fts-mesh-v2 will upload straight to a VBO.
+// Desktop 31x26 = 806 nodes. Mobile 19x16 = 304 nodes (~2.6x less work per
+// frame in BOTH the spring integrator and the stroke path).
 const GCOLS = PERF.gridCols, GROWS = PERF.gridRows;
 const GSW = W / (GCOLS - 1), GSH = H / (GROWS - 1);
 const GN = GCOLS * GROWS;
@@ -595,17 +431,9 @@ for (let r = 0, i = 0; r < GROWS; r++)
     gOY[i] = gY[i] = r * GSH;
   }
 
-const GRID = {
-  spring: 0.052,
-  damping: 0.89,
-  sleepEnergy: 0.028,
-  playerRadius: LOW ? 92 : 118,
-  bulletRadius: LOW ? 54 : 72,
-  enemyRadius: LOW ? 44 : 58,
-  bossRadius: LOW ? 112 : 148,
-  maxVel: 10.5,
-};
-
+// Sleep detection: when the mesh has settled we skip the integrator entirely.
+// We can't skip drawGrid (the mesh is always visible) but the settled node
+// positions are identical to origin, so we stroke a cached static path.
 let gridEnergy = 1, gridAsleep = false, staticPath = null;
 
 function buildStaticPath() {
@@ -622,111 +450,52 @@ function buildStaticPath() {
 }
 staticPath = buildStaticPath();
 
-function wakeGrid() { gridAsleep = false; }
-
-function gridImpulse(wx, wy, fx, fy, radius) {
-  wakeGrid();
-  const r2 = radius * radius;
-  const c0 = Math.max(0, Math.floor((wx - radius) / GSW));
-  const c1 = Math.min(GCOLS - 1, Math.ceil((wx + radius) / GSW));
-  const r0 = Math.max(0, Math.floor((wy - radius) / GSH));
-  const r1 = Math.min(GROWS - 1, Math.ceil((wy + radius) / GSH));
-  for (let r = r0; r <= r1; r++) {
-    const base = r * GCOLS;
-    for (let c = c0; c <= c1; c++) {
-      const i = base + c;
-      const dx = gOX[i] - wx, dy = gOY[i] - wy;
-      const d2 = dx * dx + dy * dy;
-      if (d2 > r2) continue;
-      const falloff = 1 - d2 / r2;
-      gVX[i] += fx * falloff;
-      gVY[i] += fy * falloff;
-    }
-  }
-}
-
-function gridRadial(wx, wy, strength, radius = 220) {
-  wakeGrid();
-  const r2 = radius * radius;
-  const c0 = Math.max(0, Math.floor((wx - radius) / GSW));
-  const c1 = Math.min(GCOLS - 1, Math.ceil((wx + radius) / GSW));
-  const r0 = Math.max(0, Math.floor((wy - radius) / GSH));
-  const r1 = Math.min(GROWS - 1, Math.ceil((wy + radius) / GSH));
-  for (let r = r0; r <= r1; r++) {
-    const base = r * GCOLS;
-    for (let c = c0; c <= c1; c++) {
-      const i = base + c;
-      const dx = gOX[i] - wx, dy = gOY[i] - wy;
-      const d2 = dx * dx + dy * dy;
-      if (d2 < 16 || d2 > r2) continue;
-      const d = Math.sqrt(d2);
-      const falloff = (1 - d / radius) * strength / Math.max(10, d);
-      gVX[i] += dx * falloff;
-      gVY[i] += dy * falloff;
-    }
-  }
-}
-
-// Compatibility name used by the combat code. Positive strength pushes outward.
-function ripple(wx, wy, str) { gridRadial(wx, wy, str, 220); }
-
-function updateGridForces(dt) {
-  if (!S || REDUCED_MOTION) return;
-  const f = Math.min(1.5, dt / 16.6667);
-
-  // Player wake: lateral motion drags the lattice; even at rest the ship exerts
-  // a tiny pressure so the floor feels physically present rather than decorative.
-  const pvx = S.playerVX || 0;
-  gridImpulse(S.px + S.pw * 0.5, S.py + S.ph * 0.5,
-    pvx * 0.045 * f, -0.045 * f, GRID.playerRadius);
-
-  // Projectiles carve short directional wakes. Sample every other projectile on
-  // mobile to preserve the field sensation without turning the mesh into the hot path.
-  const bStep = LOW ? 2 : 1;
-  for (let i = 0; i < S.bullets.length; i += bStep) {
-    const b = S.bullets[i];
-    gridImpulse(b.x, b.y, 0, -0.11 * f, GRID.bulletRadius);
-  }
-  for (let i = 0; i < S.abullets.length; i += bStep) {
-    const b = S.abullets[i];
-    gridImpulse(b.x, b.y, (b.vx || 0) * 0.012 * f, 0.075 * f, GRID.enemyRadius);
-  }
-
-  if (S.boss && S.phase === 'boss') {
-    const idx = S.boss.idx, bw = bossW(idx), bh = bossH(idx);
-    gridImpulse(S.boss.x + bw * .5, S.boss.y + bh * .65,
-      S.boss.dir * 0.055 * f, 0.028 * f, GRID.bossRadius);
-  }
-}
-
 function updateGrid(dt) {
   if (gridAsleep) return;
-  const step = dt / 16.6667;
+  const k = 0.065, d = 0.87, f = dt / 16;
   let e = 0;
   for (let i = 0; i < GN; i++) {
-    let vx = (gVX[i] + (gOX[i] - gX[i]) * GRID.spring * step) * Math.pow(GRID.damping, step);
-    let vy = (gVY[i] + (gOY[i] - gY[i]) * GRID.spring * step) * Math.pow(GRID.damping, step);
-    if (vx > GRID.maxVel) vx = GRID.maxVel; else if (vx < -GRID.maxVel) vx = -GRID.maxVel;
-    if (vy > GRID.maxVel) vy = GRID.maxVel; else if (vy < -GRID.maxVel) vy = -GRID.maxVel;
+    const vx = (gVX[i] + (gOX[i] - gX[i]) * k) * d;
+    const vy = (gVY[i] + (gOY[i] - gY[i]) * k) * d;
     gVX[i] = vx; gVY[i] = vy;
-    gX[i] += vx * step; gY[i] += vy * step;
+    gX[i] += vx * f; gY[i] += vy * f;
     e += Math.abs(vx) + Math.abs(vy);
   }
   gridEnergy = e;
-  if (e < GRID.sleepEnergy * GN) {
+  if (e < 0.04 * GN) {           // settled — snap to origin and sleep
     gX.set(gOX); gY.set(gOY); gVX.fill(0); gVY.fill(0);
     gridAsleep = true;
   }
 }
 
+const R_RAD = 220;
+function ripple(wx, wy, str) {
+  gridAsleep = false;
+  // Only touch nodes inside the radius instead of scanning all GN every call.
+  const c0 = Math.max(0, Math.floor((wx - R_RAD) / GSW));
+  const c1 = Math.min(GCOLS - 1, Math.ceil((wx + R_RAD) / GSW));
+  const r0 = Math.max(0, Math.floor((wy - R_RAD) / GSH));
+  const r1 = Math.min(GROWS - 1, Math.ceil((wy + R_RAD) / GSH));
+  for (let r = r0; r <= r1; r++) {
+    const base = r * GCOLS;
+    for (let c = c0; c <= c1; c++) {
+      const i = base + c;
+      const dx = gOX[i] - wx, dy = gOY[i] - wy;
+      const d2 = dx * dx + dy * dy;
+      if (d2 < 25 || d2 > R_RAD * R_RAD) continue;   // squared compare, no sqrt in the reject path
+      const d = Math.sqrt(d2);
+      const f = str * (1 - d / R_RAD) / (d < 12 ? 12 : d);
+      gVX[i] -= dx * f; gVY[i] -= dy * f;
+    }
+  }
+}
+
 function drawGrid(gc) {
   ctx.save();
-  const activity = Math.min(1, gridEnergy / Math.max(1, GN * .42));
-  ctx.lineWidth = 0.75 + activity * 0.35;
-  ctx.strokeStyle = gc;
-  ctx.globalAlpha = 0.26 + activity * 0.2;
-  if (PERF.gridShadow) { ctx.shadowColor = gc; ctx.shadowBlur = PERF.gridShadow + activity * 5; }
+  ctx.lineWidth = 0.75; ctx.strokeStyle = gc; ctx.globalAlpha = 0.35;
+  if (PERF.gridShadow) { ctx.shadowColor = gc; ctx.shadowBlur = PERF.gridShadow; }
   if (gridAsleep) {
+    // Settled: one cached Path2D, two stroke calls' worth of geometry in one.
     ctx.stroke(staticPath);
   } else {
     for (let r = 0; r < GROWS; r++) {
@@ -799,12 +568,8 @@ function drawParticles() {
 }
 
 let shakeAmt = 0;
-function addShake(v) { if (!REDUCED_MOTION) shakeAmt = Math.min(shakeAmt + v, 20); }
-function getShake() {
-  if (REDUCED_MOTION) { shakeAmt = 0; return [0,0]; }
-  shakeAmt *= 0.86;
-  return shakeAmt < 0.1 ? [0,0] : [(Math.random() - .5) * shakeAmt, (Math.random() - .5) * shakeAmt];
-}
+function addShake(v) { shakeAmt = Math.min(shakeAmt + v, 20); }
+function getShake() { shakeAmt *= 0.86; return shakeAmt < 0.1 ? [0,0] : [(Math.random() - .5) * shakeAmt, (Math.random() - .5) * shakeAmt]; }
 
 function makeBunker(bx, by) {
   const bl = [];
@@ -830,8 +595,8 @@ function init(persist) {
   particles = [];
   S = { aliens, bunkers, alienDir: 1, alienDx: 24, alienDy: 16, alienTimer: 0,
     alienInterval: Math.max(150, 800 - (wave - 1) * 60),
-    px: W / 2 - 16, py: H - 50, pw: 32, ph: 12, playerVX: 0,
-    bullets: [], abullets: [], keys: {}, score, lives, wave,
+    px: W / 2 - 16, py: H - 50, pw: 32, ph: 12,
+    bullets: [], abullets: [], keys: {}, touchX: null, score, lives, wave,
     phase: 'announce', announceTimer: 2400, shootCD: 0,
     boss: null, flash: false, flashTimer: 0,
     minions: [], beams: [], enrageFlash: 0, critFlash: 0,
@@ -856,25 +621,14 @@ function alienBodyVsBunkers() {
 
 const aliveBuf = new Array(ROWS * COLS);
 
-let lastT = 0, accumulator = 0;
-const SIM_DT = 1000 / 60;
-const MAX_FRAME = 50;
-const MAX_STEPS = 6;
+let lastT = 0;
 function tick(ts) {
   requestAnimationFrame(tick);
-  if (!lastT) { lastT = ts; draw(); return; }
-  const frame = Math.min(ts - lastT, MAX_FRAME);
-  lastT = ts;
-  accumulator += frame;
-  let steps = 0;
-  while (accumulator >= SIM_DT && steps < MAX_STEPS) {
-    update(SIM_DT);
-    accumulator -= SIM_DT;
-    steps++;
-  }
-  // Spiral-of-death guard after tab stalls or thermal throttling.
-  if (steps === MAX_STEPS) accumulator = 0;
-  draw();
+  // First real frame: lastT is 0, so dt would be the full page-load timestamp.
+  // Clamped to 50 already, but seed it properly so wave 1 doesn't start mid-step.
+  if (!lastT) { lastT = ts; return; }
+  const dt = Math.min(ts - lastT, 50); lastT = ts;
+  update(dt); draw();
 }
 
 // Dead bunker blocks were kept in the array forever, so every bullet still
@@ -893,23 +647,20 @@ function update(dt) {
   if (ph === 'namentry' || ph === 'over' || ph === 'win') return;
 
   S.shootCD = Math.max(0, S.shootCD - dt);
-
-  // Cabinet-neutral movement contract: inputs express intent, physics owns motion.
-  // Acceleration + drag make keyboard and touch feel analog without changing the
-  // game's one-dimensional rules. Frame-rate independent and safe under 120 Hz.
-  const moveIntent = (S.keys['ArrowRight'] || S.keys['d'] ? 1 : 0) - (S.keys['ArrowLeft'] || S.keys['a'] ? 1 : 0);
-  const maxSpeed = S.phase === 'boss' ? 420 : 330;   // logical px / second
-  const accel = S.phase === 'boss' ? 2200 : 1850;
-  const drag = moveIntent ? 0.86 : 0.72;
-  const dtS = Math.min(dt, 34) / 1000;
-  S.playerVX += moveIntent * accel * dtS;
-  S.playerVX *= Math.pow(drag, dt / 16.6667);
-  S.playerVX = Math.max(-maxSpeed, Math.min(maxSpeed, S.playerVX));
-  S.px += S.playerVX * dtS;
-  if (S.px < 0) { S.px = 0; S.playerVX = Math.max(0, S.playerVX) * .25; }
-  if (S.px > W - 36) { S.px = W - 36; S.playerVX = Math.min(0, S.playerVX) * .25; }
-
-  updateGridForces(dt);
+  // Boss patterns demand real repositioning; base speed was tuned for a
+  // slow-marching alien block and can't clear a sweeping beam in time.
+  // px/frame @60Hz, scaled by dt so 120Hz phones don't move the ship 2x.
+  const mv = (S.phase === 'boss' ? 6.6 : 5) * (dt / FRAME_MS);
+  if (S.touchX !== null) {
+    // Rail = absolute target. Speed cap is the SAME as keyboard, so touch is
+    // smoother but not a balance cheat against boss beams.
+    const tgt = Math.max(0, Math.min(W - 36, S.touchX - S.pw / 2));
+    const d = tgt - S.px;
+    S.px += Math.abs(d) <= mv ? d : Math.sign(d) * mv;
+  } else {
+    if (S.keys['ArrowLeft']  || S.keys['a']) S.px = Math.max(0, S.px - mv);
+    if (S.keys['ArrowRight'] || S.keys['d']) S.px = Math.min(W - 36, S.px + mv);
+  }
   if ((S.keys[' '] || S.keys['ArrowUp']) && S.shootCD <= 0) {
     // Boss fights unlock a faster cadence and a twin shot. The bosses got a
     // lot meaner; the player gets real firepower back rather than just being
@@ -1245,7 +996,7 @@ function updateBeams(dt) {
   }
   S.beams.length = w;
 }
-function triggerBoss() { S.phase = 'bossannounce'; S.announceTimer = 2400; S.bullets = []; S.abullets = []; announceA11y('Warning. ' + BOSS_NAMES[S.wave - 1] + ' approaches.'); }
+function triggerBoss() { S.phase = 'bossannounce'; S.announceTimer = 2400; S.bullets = []; S.abullets = []; }
 function bossDefeated() {
   const idx = S.boss.idx, BW = bossW(idx), BH = bossH(idx);
   const bx = S.boss.x + BW / 2, by = S.boss.y + BH / 2;
@@ -1257,22 +1008,21 @@ function bossDefeated() {
   S.boss = null; S.bullets = []; S.abullets = []; S.minions = []; S.beams = [];
   if (S.wave >= MAX_WAVES) { triggerWin(); return; }
   S.wave++;
-  S.phase = 'announce'; S.announceTimer = 2400; updateHUD();
-  setTimeout(() => {
-    const sc = S.score, wv = S.wave, lv = S.lives;
-    init(false); S.score = sc; S.wave = wv; S.lives = lv;
-    S.alienInterval = Math.max(150, 800 - (wv - 1) * 60);
-    S.phase = 'announce'; S.announceTimer = 2400; updateHUD();
-  }, 100);
+  // Was a 100ms setTimeout: a hit landing inside that window mutated a state
+  // object that was then thrown away, and the handoff was untestable.
+  // Synchronous persist-init; explosion particles survive the reset.
+  const keepFx = particles, keepTouch = S.touchX, keepKeys = S.keys;
+  init(true);
+  particles = keepFx; S.touchX = keepTouch; S.keys = keepKeys;
 }
 function playerHit() {
   spawnRing(S.px + 16, S.py + 6, '#00d8d8', 24, 5);
   spawnParticles(S.px + 16, S.py + 6, '#0078f8', 20, 6);
   ripple(S.px + 16, S.py + 6, 5); addShake(12);
-  S.lives--; updateHUD(); announceA11y('Hit. ' + S.lives + (S.lives === 1 ? ' life remaining.' : ' lives remaining.')); if (S.lives <= 0) triggerGameOver(); else { S.px = W / 2 - 16; S.playerVX = 0; }
+  S.lives--; updateHUD(); if (S.lives <= 0) triggerGameOver(); else S.px = W / 2 - 16;
 }
-function triggerGameOver() { S.phase = 'over'; announceA11y('Game over. Score ' + S.score + '.'); checkHS(); }
-function triggerWin()      { S.phase = 'win';  announceA11y('You win. Score ' + S.score + '.'); checkHS(); }
+function triggerGameOver() { S.phase = 'over'; checkHS(); }
+function triggerWin()      { S.phase = 'win';  checkHS(); }
 function checkHS() {
   const sc = getScores();
   if (sc.length < 5 || S.score > sc[sc.length - 1].score) {
@@ -1285,22 +1035,11 @@ function checkHS() {
 const elScore = document.getElementById('score-el');
 const elLives = document.getElementById('lives-el');
 const elWave  = document.getElementById('wave-el');
-const elGameStatus = document.getElementById('game-status');
 let hudScore = -1, hudLives = -1, hudWave = -1;
-function announceA11y(message) { if (elGameStatus) elGameStatus.textContent = message; }
 function updateHUD() {
-  if (S.score !== hudScore) {
-    hudScore = S.score; elScore.textContent = 'SCORE: ' + S.score;
-    elScore.setAttribute('aria-label', 'Score ' + S.score);
-  }
-  if (S.lives !== hudLives) {
-    hudLives = S.lives; elLives.textContent = '▶ '.repeat(Math.max(0, S.lives)).trim();
-    elLives.setAttribute('aria-label', S.lives + (S.lives === 1 ? ' life' : ' lives'));
-  }
-  if (S.wave !== hudWave) {
-    hudWave = S.wave; elWave.textContent = 'WAVE: ' + S.wave + '/' + MAX_WAVES;
-    elWave.setAttribute('aria-label', 'Wave ' + S.wave + ' of ' + MAX_WAVES);
-  }
+  if (S.score !== hudScore) { hudScore = S.score; elScore.textContent = 'SCORE: ' + S.score; }
+  if (S.lives !== hudLives) { hudLives = S.lives; elLives.textContent = '▶ '.repeat(Math.max(0, S.lives)).trim(); }
+  if (S.wave  !== hudWave)  { hudWave  = S.wave;  elWave.textContent  = 'WAVE: ' + S.wave + '/' + MAX_WAVES; }
 }
 
 // ── animated sprite renderer ──────────────────────────────────────────────────
@@ -1659,213 +1398,116 @@ window.addEventListener('keydown', e => {
   if ([' ', 'ArrowLeft', 'ArrowRight', 'ArrowUp'].includes(e.key)) e.preventDefault();
 });
 window.addEventListener('keyup', e => { if (S.phase !== 'namentry') S.keys[e.key] = false; });
-window.addEventListener('blur', () => { if (S && S.keys) S.keys = {}; });
 
 // Returning from a backgrounded tab: reset the clock so the first frame back
 // isn't a giant dt (mobile browsers park RAF aggressively on lock/app-switch).
 document.addEventListener('visibilitychange', () => {
-  if (!document.hidden) { lastT = 0; accumulator = 0; gridAsleep = false; }
+  if (!document.hidden) { lastT = 0; gridAsleep = false; }
 });
 
 init(false);
 requestAnimationFrame(tick);
 
-// ── BRAZEN MOBILE NUI ───────────────────────────────────────────────────────
-if (isMobile) {
-  const touchControls = document.getElementById('touch-controls');
-  const rocker        = document.getElementById('move-rocker');
-  const btnLeft       = document.getElementById('btn-left');
-  const btnRight      = document.getElementById('btn-right');
-  const btnFire       = document.getElementById('btn-fire');
-  const canvas        = document.getElementById('c');
+// ── TOUCH NUI ───────────────────────────────────────────────────────────────
+// Pointer Events + setPointerCapture (SNAKIA pattern): each control owns ONE
+// pointerId, so rail + fire work simultaneously and a finger that drifts off
+// a control keeps driving it until lift. Old build used touchstart on
+// buttons: no capture, ◀/▶ digital only, and lifting the wrong finger
+// cancelled the other button.
+const NUI = (function () {
+  const body = document.body, rail = document.getElementById('rail'),
+        knob = document.getElementById('rail-knob'), fire = document.getElementById('fire'),
+        cvs = document.getElementById('c');
+  if (!isMobile) return { active: false };
+  body.classList.add('touch');
+  document.documentElement.style.setProperty('--ctrl-h', '96px');
 
-  document.body.classList.add('touch-ui');
-
-  // Reserve exactly the rendered NUI footprint instead of hard-coding a
-  // portrait-only constant. Dynamic safe-area and orientation changes are
-  // reflected on the next frame, avoiding the old canvas/control overlap.
-  function syncControlBudget() {
-    if (!touchControls) return;
-    const h = Math.ceil(touchControls.getBoundingClientRect().height || 96);
-    document.documentElement.style.setProperty('--ctrl-h', h + 'px');
+  let railId = null, fireId = null;
+  const buzz = ms => { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) {} };
+  function railToField(clientX) {
+    const r = rail.getBoundingClientRect();
+    const u = r.width ? Math.max(0, Math.min(1, (clientX - r.left) / r.width)) : 0.5;
+    return u * W;
   }
-  syncControlBudget();
-  window.addEventListener('resize', () => requestAnimationFrame(syncControlBudget), { passive: true });
-  window.addEventListener('orientationchange', () => requestAnimationFrame(syncControlBudget), { passive: true });
-
-  const supportsVibrate = typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function';
-  function haptic(ms) {
-    if (REDUCED_MOTION || !supportsVibrate) return;
-    try { navigator.vibrate(ms); } catch {}
+  function syncKnob() {
+    const r = rail.getBoundingClientRect();
+    const u = (S.px + S.pw / 2) / W;
+    knob.style.transform = `translateX(${(u * r.width).toFixed(1)}px)`;
   }
+  rail.addEventListener('pointerdown', e => {
+    if (railId !== null || S.phase === 'namentry') return;
+    e.preventDefault(); railId = e.pointerId;
+    try { rail.setPointerCapture(railId); } catch (err) {}
+    rail.classList.add('active'); S.touchX = railToField(e.clientX);
+  });
+  rail.addEventListener('pointermove', e => {
+    if (e.pointerId !== railId) return;
+    S.touchX = railToField(e.clientX);
+  });
+  const railEnd = e => {
+    if (e.pointerId !== railId) return;
+    railId = null; S.touchX = null; rail.classList.remove('active');
+  };
+  rail.addEventListener('pointerup', railEnd);
+  rail.addEventListener('pointercancel', railEnd);
+  rail.addEventListener('lostpointercapture', railEnd);
 
-  function setPressed(el, on) {
-    if (!el) return;
-    el.classList.toggle('pressed', !!on);
-    el.setAttribute('aria-pressed', on ? 'true' : 'false');
-  }
+  fire.addEventListener('pointerdown', e => {
+    if (fireId !== null || S.phase === 'namentry') return;
+    e.preventDefault(); fireId = e.pointerId;
+    try { fire.setPointerCapture(fireId); } catch (err) {}
+    S.keys[' '] = true; fire.classList.add('pressed'); buzz(8);
+  });
+  const fireEnd = e => {
+    if (e.pointerId !== fireId) return;
+    fireId = null; S.keys[' '] = false; fire.classList.remove('pressed');
+  };
+  fire.addEventListener('pointerup', fireEnd);
+  fire.addEventListener('pointercancel', fireEnd);
+  fire.addEventListener('lostpointercapture', fireEnd);
 
-  let movePointerId = null;
-  let moveDir = 0; // -1 left, +1 right, 0 dead-zone
-  const ROCKER_DEADZONE = 10;
-
-  function setMoveDir(dir, withHaptic) {
-    if (!S) return;
-    const next = dir < 0 ? -1 : dir > 0 ? 1 : 0;
-    if (next === moveDir) return;
-    moveDir = next;
-    S.keys['ArrowLeft'] = next < 0;
-    S.keys['ArrowRight'] = next > 0;
-    setPressed(btnLeft, next < 0);
-    setPressed(btnRight, next > 0);
-    if (withHaptic && next) haptic(7);
-  }
-
-  function rockerPoint(clientX) {
-    const r = rocker.getBoundingClientRect();
-    const dx = clientX - (r.left + r.width / 2);
-    if (Math.abs(dx) <= ROCKER_DEADZONE) setMoveDir(0, false);
-    else setMoveDir(dx < 0 ? -1 : 1, true);
-  }
-
-  rocker.addEventListener('pointerdown', e => {
-    if (movePointerId !== null || S.phase === 'namentry') return;
-    movePointerId = e.pointerId;
-    try { rocker.setPointerCapture(movePointerId); } catch {}
-    rockerPoint(e.clientX);
-    e.preventDefault();
-  }, { passive: false });
-
-  rocker.addEventListener('pointermove', e => {
-    if (e.pointerId !== movePointerId) return;
-    rockerPoint(e.clientX);
-    e.preventDefault();
-  }, { passive: false });
-
-  function releaseMove(e) {
-    if (e && movePointerId !== null && e.pointerId !== movePointerId) return;
-    movePointerId = null;
-    setMoveDir(0, false);
-  }
-  rocker.addEventListener('pointerup', releaseMove, { passive: false });
-  rocker.addEventListener('pointercancel', releaseMove, { passive: false });
-  rocker.addEventListener('lostpointercapture', releaseMove);
-
-  // Keyboard / switch-device access on the visible buttons. Pointer users use
-  // the rocker surface above; assistive click gets a short, deterministic nudge.
-  let semanticPulse = 0;
-  function pulseMove(dir) {
-    setMoveDir(dir, true);
-    clearTimeout(semanticPulse);
-    semanticPulse = setTimeout(() => setMoveDir(0, false), 150);
-  }
-  [btnLeft, btnRight].forEach((el, i) => {
-    const dir = i === 0 ? -1 : 1;
-    el.addEventListener('keydown', e => {
-      if (e.key === 'Enter' || e.key === ' ') { setMoveDir(dir, true); e.preventDefault(); }
-    });
-    el.addEventListener('keyup', e => {
-      if (e.key === 'Enter' || e.key === ' ') { setMoveDir(0, false); e.preventDefault(); }
-    });
-    el.addEventListener('click', e => {
-      if (e.detail === 0) pulseMove(dir); // synthetic/assistive click only
-    });
+  // Tap the field to restart after game over / win
+  cvs.addEventListener('pointerdown', e => {
+    if (S.phase === 'over' || S.phase === 'win') { e.preventDefault(); particles = []; init(false); }
   });
 
-  let firePointers = new Set();
-  function setFire(on, withHaptic) {
-    if (!S) return;
-    S.keys[' '] = !!on;
-    setPressed(btnFire, !!on);
-    if (on && withHaptic) haptic(9);
-  }
-  btnFire.addEventListener('pointerdown', e => {
-    if (S.phase === 'namentry') return;
-    firePointers.add(e.pointerId);
-    try { btnFire.setPointerCapture(e.pointerId); } catch {}
-    setFire(true, true);
-    e.preventDefault();
-  }, { passive: false });
-  function releaseFire(e) {
-    if (e && typeof e.pointerId === 'number') firePointers.delete(e.pointerId);
-    if (!firePointers.size) setFire(false, false);
-  }
-  btnFire.addEventListener('pointerup', releaseFire, { passive: false });
-  btnFire.addEventListener('pointercancel', releaseFire, { passive: false });
-  btnFire.addEventListener('lostpointercapture', releaseFire);
-  btnFire.addEventListener('keydown', e => {
-    if (e.key === 'Enter' || e.key === ' ') { setFire(true, true); e.preventDefault(); }
-  });
-  btnFire.addEventListener('keyup', e => {
-    if (e.key === 'Enter' || e.key === ' ') { setFire(false, false); e.preventDefault(); }
-  });
-  btnFire.addEventListener('click', e => {
-    if (e.detail !== 0 || S.phase === 'namentry') return;
-    setFire(true, true);
-    setTimeout(() => setFire(false, false), 90);
-  });
+  // Zoom guard (SNAKIA L3): block pinch at touchSTART, iOS gesture*, dbl-tap.
+  const block = e => { if (e.cancelable) e.preventDefault(); };
+  ['gesturestart', 'gesturechange', 'gestureend'].forEach(n => document.addEventListener(n, block, { passive: false }));
+  const multi = e => { if (e.touches && e.touches.length > 1 && e.target !== rail && e.target !== fire && e.cancelable) e.preventDefault(); };
+  document.addEventListener('touchstart', multi, { passive: false });
+  document.addEventListener('touchmove', multi, { passive: false });
+  document.addEventListener('dblclick', block, { passive: false });
 
-  function releaseTouchInputs() {
-    firePointers.clear();
-    releaseMove();
-    setFire(false, false);
-  }
-  window.addEventListener('blur', releaseTouchInputs);
-  document.addEventListener('visibilitychange', () => { if (document.hidden) releaseTouchInputs(); });
+  // Knob follows the SHIP (not the finger) so the rail shows true position.
+  (function knobLoop() { if (S) syncKnob(); requestAnimationFrame(knobLoop); })();
 
-  // Tap/click the playfield to restart after a completed run. Pointerup avoids
-  // cancelling pinch-zoom gestures on the canvas during normal play.
-  canvas.addEventListener('pointerup', e => {
-    if (e.pointerType === 'touch' && S && (S.phase === 'over' || S.phase === 'win')) {
-      particles = [];
-      init(false);
-      announceA11y('New game. Wave 1.');
-    }
-  });
-
-  // Mobile name-entry overlay wiring.
-  const nameOverlay  = document.getElementById('mobile-name-overlay');
-  const nameInput    = document.getElementById('mobile-name-input');
-  const nameSubmit   = document.getElementById('mobile-name-submit');
-
+  // Name entry overlay
+  const nameOverlay = document.getElementById('mobile-name-overlay');
+  const nameInput   = document.getElementById('mobile-name-input');
+  const nameSubmit  = document.getElementById('mobile-name-submit');
   function submitMobileName() {
     const name = nameInput.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3);
     if (!name.length) return;
     saveScore({ name, score: S.score, wave: S.wave });
     S.phase = S.wave >= MAX_WAVES ? 'win' : 'over';
-    nameOverlay.classList.remove('visible');
-    nameInput.blur();
-    announceA11y('High score saved for ' + name + '.');
+    nameOverlay.classList.remove('visible'); nameInput.blur();
   }
-
   window._mobileNameEntry = {
-    show() {
-      releaseTouchInputs();
-      nameInput.value = '';
-      nameOverlay.classList.add('visible');
-      setTimeout(() => nameInput.focus(), 120);
-    }
+    show() { nameInput.value = ''; nameOverlay.classList.add('visible'); setTimeout(() => nameInput.focus(), 120); }
   };
-
   nameSubmit.addEventListener('click', submitMobileName);
   nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') submitMobileName(); });
+  return { active: true, get railId() { return railId; }, get fireId() { return fireId; } };
+})();
 
-  // Regression surface: deliberately small and side-effect-light so a future
-  // browser harness can assert stuck-key release, rocker direction, reduced
-  // motion, and dynamic control budgeting against the real implementation.
-  window.NEON_INVADERS_TEST = {
-    getState: () => S,
-    getMoveDir: () => moveDir,
-    setMoveDir,
-    setFire,
-    releaseTouchInputs,
-    syncControlBudget,
-    getReducedMotion: () => REDUCED_MOTION,
-    getControlHeight: () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ctrl-h')) || 0,
-    getGridEnergy: () => gridEnergy,
-    getPlayerVelocity: () => S ? S.playerVX : 0,
-  };
-}
+// ── TEST HOOK ───────────────────────────────────────────────────────────────
+// Read-only window into the lexical state for tests/regression.test.mjs.
+// Costs nothing at runtime; do not wire gameplay through it.
+window.__NI = {
+  get S() { return S; }, init, update, spawnBoss, triggerBoss, bossDefeated, playerHit,
+  BOSS, MAX_WAVES, W, H, FRAME_MS, get nui() { return NUI; },
+};
 </script>
 
 </body>
