@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PINBALL x STEAM — Interactive Joint Venture Proposal</title>
+  <style>
+    :root {
+      --bg: #090a0f;
+      --card-bg: #12151e;
+      --card-border: #232938;
+      --accent: #38bdf8;
+      --accent-hover: #0284c7;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --tag-bg: #1e293b;
+      --highlight: #22c55e;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace; }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      padding: 40px 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1100px;
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1fr 420px;
+      gap: 30px;
+    }
+
+    @media (max-width: 900px) {
+      .container { grid-template-columns: 1fr; }
+    }
+
+    /* Left Panel - Header & Sliders */
+    .brand-header {
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      font-size: 42px;
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 15px;
+      letter-spacing: -1px;
+    }
+
+    h1 span { color: var(--accent); }
+
+    .tagline {
+      font-size: 16px;
+      color: var(--text-muted);
+      margin-bottom: 25px;
+      line-height: 1.5;
+    }
+
+    .tags {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 35px;
+      flex-wrap: wrap;
+    }
+
+    .tag {
+      background: var(--tag-bg);
+      border: 1px solid var(--card-border);
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      color: var(--text-main);
+    }
+
+    .slider-group {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+
+    .slider-header span.val {
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    input[type=range] {
+      width: 100%;
+      height: 6px;
+      background: #1e293b;
+      border-radius: 3px;
+      outline: none;
+      accent-color: var(--accent);
+    }
+
+    /* Right Panel - Proposal Card */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 25px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    }
+
+    .card-top { margin-bottom: 20px; }
+
+    .card-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      letter-spacing: 1.5px;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+    }
+
+    .badge {
+      background: rgba(56, 189, 248, 0.1);
+      color: var(--accent);
+      padding: 4px 8px;
+      border-radius: 4px;
+      border: 1px solid var(--accent);
+      font-size: 10px;
+    }
+
+    .stat-box {
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 20px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .stat-label { font-size: 10px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 5px; }
+    .stat-value { font-size: 28px; font-weight: 800; }
+    .stat-value.green { color: var(--highlight); }
+
+    .waterfall {
+      font-size: 12px;
+      border-top: 1px solid var(--card-border);
+      padding-top: 15px;
+      margin-bottom: 20px;
+    }
+
+    .waterfall-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      color: var(--text-muted);
+    }
+
+    .waterfall-row.total {
+      color: var(--text-main);
+      font-weight: 700;
+      border-top: 1px dashed var(--card-border);
+      padding-top: 8px;
+    }
+
+    .actions { display: flex; gap: 10px; }
+
+    button {
+      flex: 1;
+      padding: 14px;
+      border-radius: 6px;
+      border: none;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary { background: var(--accent); color: #000; }
+    .btn-primary:hover { background: var(--accent-hover); color: #fff; }
+
+    .btn-secondary { background: transparent; border: 1px solid var(--card-border); color: var(--text-main); }
+    .btn-secondary:hover { background: var(--tag-bg); }
+
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.85);
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .modal-content {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 30px;
+      max-width: 600px;
+      width: 100%;
+    }
+
+    pre {
+      background: #000;
+      padding: 15px;
+      border-radius: 6px;
+      font-size: 11px;
+      color: #38bdf8;
+      white-space: pre-wrap;
+      margin: 15px 0;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Left Side: Customization -->
+  <div class="main-panel">
+    <div class="brand-header">FTS ARCADE × STEAMWORKS // PROPOSED COMMERCIAL TERMS</div>
+    <h1>PINBALL <br><span>× JOINT VENTURE</span></h1>
+    <p class="tagline">Adjust responsibilities and sales projections below to model a transparent, milestone-driven commercial partnership.</p>
+    
+    <div class="tags">
+      <div class="tag">DEV KEEPS IP & CODE</div>
+      <div class="tag">NON-EXCLUSIVE LICENSE</div>
+      <div class="tag">NO DIRECT LIABILITY</div>
+    </div>
+
+    <!-- Sliders -->
+    <div class="slider-group">
+      <div class="slider-header">
+        <span>Partner Revenue Share Cut</span>
+        <span class="val" id="split-val">80%</span>
+      </div>
+      <input type="range" id="split-slider" min="10" max="90" value="80" step="5">
+      <div style="font-size: 11px; color: var(--text-muted); margin-top: 8px;">Developer retains remaining share (<span id="dev-split-val">20%</span>).</div>
+    </div>
+
+    <div class="slider-group">
+      <div class="slider-header">
+        <span>Game Retail Price (Steam)</span>
+        <span class="val" id="price-val">$5.00</span>
+      </div>
+      <input type="range" id="price-slider" min="1" max="20" value="5" step="0.5">
+    </div>
+
+    <div class="slider-group">
+      <div class="slider-header">
+        <span>Estimated Unit Sales Volume</span>
+        <span class="val" id="volume-val">1,000 units</span>
+      </div>
+      <input type="range" id="volume-slider" min="100" max="10000" value="1000" step="100">
+    </div>
+
+    <div class="slider-group">
+      <div class="slider-header">
+        <span>Steam Direct Fee Recoupment</span>
+        <span class="val" id="recoup-val">Enabled</span>
+      </div>
+      <input type="checkbox" id="recoup-check" checked style="accent-color: var(--accent); margin-top: 5px;">
+      <span style="font-size: 11px; color: var(--text-muted); margin-left: 8px;">Partner recoups $100 fee from gross proceeds before standard split.</span>
+    </div>
+  </div>
+
+  <!-- Right Side: Deal Preview Box -->
+  <div class="card">
+    <div class="card-top">
+      <div class="card-title">
+        <span>THE SHORT VERSION</span>
+        <span class="badge">PROPOSAL</span>
+      </div>
+
+      <div class="stat-box">
+        <div>
+          <div class="stat-label">Partner Payout</div>
+          <div class="stat-value green" id="partner-payout">$2,800</div>
+        </div>
+        <div>
+          <div class="stat-label">Dev Payout</div>
+          <div class="stat-value" id="dev-payout">$700</div>
+        </div>
+      </div>
+
+      <div class="waterfall">
+        <div class="waterfall-row">
+          <span>Gross Store Sales</span>
+          <span id="wf-gross">$5,000</span>
+        </div>
+        <div class="waterfall-row">
+          <span>Steam Direct Fee ($100)</span>
+          <span id="wf-fee">-$100</span>
+        </div>
+        <div class="waterfall-row">
+          <span>Steam Platform Cut (30%)</span>
+          <span id="wf-steam">-$1,500</span>
+        </div>
+        <div class="waterfall-row total">
+          <span>Net Distributable Pool</span>
+          <span id="wf-net">$3,500</span>
+        </div>
+      </div>
+
+      <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
+        Developer retains 100% ownership of source code and underlying IP. Partner receives distribution license on Steam in exchange for wrapper engineering, store setup, fee coverage, and marketing.
+      </p>
+    </div>
+
+    <div class="actions">
+      <button class="btn-primary" onclick="generatePaper()">Generate Deal Paper</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal" id="paper-modal">
+  <div class="modal-content">
+    <h3 style="margin-bottom: 10px;">Commercial Summary & Term Sheet</h3>
+    <p style="font-size: 12px; color: var(--text-muted);">Copy this agreement outline into your contract or email thread:</p>
+    <pre id="paper-text"></pre>
+    <div style="display: flex; gap: 10px;">
+      <button class="btn-primary" onclick="navigator.clipboard.writeText(document.getElementById('paper-text').innerText); alert('Copied to clipboard!');">Copy to Clipboard</button>
+      <button class="btn-secondary" onclick="document.getElementById('paper-modal').style.display='none'">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const splitSlider = document.getElementById('split-slider');
+  const priceSlider = document.getElementById('price-slider');
+  const volumeSlider = document.getElementById('volume-slider');
+  const recoupCheck = document.getElementById('recoup-check');
+
+  function calculate() {
+    const partnerSplit = parseInt(splitSlider.value);
+    const devSplit = 100 - partnerSplit;
+    const price = parseFloat(priceSlider.value);
+    const units = parseInt(volumeSlider.value);
+    const recoup = recoupCheck.checked;
+
+    document.getElementById('split-val').innerText = `${partnerSplit}%`;
+    document.getElementById('dev-split-val').innerText = `${devSplit}%`;
+    document.getElementById('price-val').innerText = `$${price.toFixed(2)}`;
+    document.getElementById('volume-val').innerText = `${units.toLocaleString()} units`;
+
+    const gross = price * units;
+    const steamCut = gross * 0.30;
+    let net = gross - steamCut;
+    
+    let partnerFeeRecoup = 0;
+    if (recoup && net >= 100) {
+      partnerFeeRecoup = 100;
+      net -= 100;
+    }
+
+    const partnerNetShare = net * (partnerSplit / 100);
+    const devNetShare = net * (devSplit / 100);
+
+    const partnerTotal = partnerNetShare + partnerFeeRecoup;
+    const devTotal = devNetShare;
+
+    document.getElementById('partner-payout').innerText = `$${Math.round(partnerTotal).toLocaleString()}`;
+    document.getElementById('dev-payout').innerText = `$${Math.round(devTotal).toLocaleString()}`;
+
+    document.getElementById('wf-gross').innerText = `$${gross.toLocaleString()}`;
+    document.getElementById('wf-fee').innerText = recoup ? `-$100` : `$0`;
+    document.getElementById('wf-steam').innerText = `-$${steamCut.toLocaleString()}`;
+    document.getElementById('wf-net').innerText = `$${Math.max(0, net).toLocaleString()}`;
+  }
+
+  [splitSlider, priceSlider, volumeSlider, recoupCheck].forEach(el => el.addEventListener('input', calculate));
+
+  function generatePaper() {
+    const partnerSplit = splitSlider.value;
+    const devSplit = 100 - partnerSplit;
+    const price = priceSlider.value;
+    const units = volumeSlider.value;
+
+    const text = `JOINT VENTURE TERM SHEET: FTS ARCADE PINBALL (STEAM)
+
+1. INTELLECTUAL PROPERTY & CODE OWNERSHIP
+- Developer (Licensor) retains 100% ownership of source code, title, and underlying IP.
+- Partner (Licensee) receives a non-exclusive distribution license to package and publish the game on Steam.
+
+2. COMMERCIAL TERMS & REVENUE SPLIT
+- Retail Price: $${parseFloat(price).toFixed(2)} USD
+- Steam Platform Cut: 30%
+- Net Pool Distribution Split:
+  * Partner Share: ${partnerSplit}%
+  * Developer Share: ${devSplit}%
+- Steam Direct Fee ($100): ${recoupCheck.checked ? 'Partner pays upfront and recoups $100 from gross net proceeds before split.' : 'Partner pays upfront without recoupment deduction.'}
+
+3. RESPONSIBILITIES
+- Partner: Wrapper setup (Tauri/Electron), Steamworks integration, store page creation, graphics/marketing, customer support.
+- Developer: Codebase provision, core bug fixes if required.
+
+4. MODEL PROJECTION (AT ${units} UNITS)
+- Estimated Net Pool: ${document.getElementById('wf-net').innerText}
+- Projected Partner Payout: ${document.getElementById('partner-payout').innerText}
+- Projected Dev Payout: ${document.getElementById('dev-payout').innerText}`;
+
+    document.getElementById('paper-text').innerText = text;
+    document.getElementById('paper-modal').style.display = 'flex';
+  }
+
+  calculate();
+</script>
+</body>
+</html>
