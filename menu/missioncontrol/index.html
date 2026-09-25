@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AQUA-TRACK — SOMALIA WATER RESOURCE MISSION CONTROL</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Exo+2:wght@200;300;400;600;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#090c10; --panel:#0d1117; --panel2:#111820;
+  --border:#1e2d3d; --border-hi:#1e4060;
+  --cyan:#00d4ff; --cyan-dim:#004a66; --cyan-glow:rgba(0,212,255,0.15);
+  --red:#ff2d55; --red-dim:#660018; --red-glow:rgba(255,45,85,0.15);
+  --orange:#ff7a00; --orange-dim:#663300;
+  --green:#00ff88; --green-dim:#00441f;
+  --yellow:#ffe500;
+  --text:#c8dde8; --text-dim:#4a6070; --text-hi:#e8f4ff;
+  --glass:rgba(13,17,23,0.85);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Exo 2',sans-serif;font-size:12px;overflow:hidden;cursor:default}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 40% at 50% 0%,rgba(0,212,255,0.04) 0%,transparent 60%),radial-gradient(ellipse 60% 30% at 20% 100%,rgba(255,45,85,0.03) 0%,transparent 50%);pointer-events:none;z-index:0}
+/* LAYOUT */
+#app{position:relative;z-index:1;display:flex;flex-direction:column;height:100vh}
+/* HEADER */
+#hdr{display:flex;align-items:center;padding:0 14px;gap:12px;background:linear-gradient(180deg,#0f1a24,#090c10);border-bottom:1px solid var(--border-hi);box-shadow:0 2px 20px rgba(0,212,255,0.08);height:50px;flex-shrink:0;position:relative;z-index:10}
+#hdr::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--cyan) 30%,var(--cyan) 70%,transparent);opacity:.35}
+.hdr-icon{width:30px;height:30px;background:linear-gradient(135deg,var(--cyan),#0080a0);clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;animation:rotateSlow 25s linear infinite}
+@keyframes rotateSlow{to{transform:rotate(360deg)}}
+.hdr-titles{flex-shrink:0}
+.hdr-t1{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:14px;letter-spacing:3px;color:var(--cyan);text-shadow:0 0 18px rgba(0,212,255,0.5)}
+.hdr-t2{font-size:8px;color:var(--text-dim);letter-spacing:2px;margin-top:1px}
+.hdr-ver{font-size:8px;color:var(--cyan-dim);background:rgba(0,212,255,0.08);padding:1px 4px;border:1px solid var(--cyan-dim);flex-shrink:0}
+.hdr-sep{flex:1}
+.hdr-kpi{display:flex;align-items:center;gap:4px;padding:0 10px;border-left:1px solid var(--border)}
+.hdr-kv{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:18px;line-height:1;letter-spacing:.5px}
+.hdr-kl{font-size:8px;color:var(--text-dim);letter-spacing:1px;max-width:55px}
+#clock{font-family:'Rajdhani',sans-serif;font-weight:600;font-size:17px;letter-spacing:2px;color:var(--cyan);text-shadow:0 0 10px rgba(0,212,255,0.5);padding:0 10px;border-left:1px solid var(--border)}
+.sys-status{display:flex;align-items:center;gap:5px;padding:0 10px;border-left:1px solid var(--border);font-size:10px;letter-spacing:2px;font-weight:600}
+.s-pip{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:pip 2s ease-in-out infinite}
+.s-pip.c{background:var(--red);box-shadow:0 0 6px var(--red);animation:pip .4s steps(1) infinite}
+.s-pip.w{background:var(--orange);box-shadow:0 0 6px var(--orange)}
+@keyframes pip{0%,100%{opacity:1}50%{opacity:.2}}
+/* BODY */
+#body{flex:1;display:grid;grid-template-columns:190px 1fr 268px 210px;overflow:hidden}
+/* SIDEBAR */
+#sb{background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;scrollbar-width:none}
+#sb::-webkit-scrollbar{display:none}
+.sb-s{padding:9px 11px;border-bottom:1px solid var(--border)}
+.sb-st{font-size:8px;letter-spacing:3px;color:var(--text-dim);font-weight:600;margin-bottom:7px;display:flex;justify-content:space-between;align-items:center}
+.sb-badge{background:rgba(0,212,255,0.1);color:var(--cyan);padding:1px 4px;font-size:8px;border:1px solid var(--cyan-dim)}
+.sb-ni{display:flex;align-items:center;gap:7px;padding:5px 7px;font-size:10px;letter-spacing:1px;font-weight:500;cursor:pointer;transition:all .15s;position:relative}
+.sb-ni:hover{background:rgba(0,212,255,0.06);color:var(--cyan)}
+.sb-ni.on{background:rgba(0,212,255,0.1);color:var(--cyan)}
+.sb-ni.on::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--cyan);box-shadow:0 0 6px var(--cyan)}
+.sb-ni-ico{width:15px;text-align:center;font-size:11px;opacity:.7}
+.sb-cnt{margin-left:auto;font-size:8px;background:rgba(255,45,85,0.2);color:var(--red);padding:1px 3px;border:1px solid var(--red-dim)}
+.sb-fi{display:flex;align-items:center;gap:5px;padding:3px 0;font-size:10px;color:var(--text-dim)}
+.sb-fd{width:5px;height:5px;background:var(--cyan-dim);border-radius:50%;flex-shrink:0}
+.sb-fd.w{background:var(--orange)} .sb-fd.c{background:var(--red)}
+.ph-i{display:flex;align-items:center;gap:5px;padding:3px 0;font-size:10px}
+.ph-ck{color:var(--green)} .ph-pd{color:var(--text-dim)}
+/* SYNC BAR */
+#sync-bar{display:flex;align-items:center;gap:9px;padding:7px 11px;border-top:1px solid var(--border);background:#0a0e14;flex-shrink:0;margin-top:auto}
+.sync-status-l{font-size:8px;color:var(--text-dim);letter-spacing:1px}
+.sync-btn{display:flex;align-items:center;gap:4px;padding:3px 9px;background:rgba(0,212,255,0.08);border:1px solid var(--cyan-dim);color:var(--cyan);font-size:9px;font-weight:600;letter-spacing:1px;cursor:pointer;transition:all .15s;font-family:'Exo 2',sans-serif}
+.sync-btn:hover{background:rgba(0,212,255,0.18);box-shadow:0 0 8px rgba(0,212,255,0.2)}
+.sync-ico{display:inline-block}.sync-ico.spin{animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+/* CENTER */
+#ctr{display:flex;flex-direction:column;overflow:hidden;border-right:1px solid var(--border)}
+/* KPI STRIP */
+#kpi-strip{display:grid;grid-template-columns:repeat(5,1fr);flex-shrink:0}
+.kc{padding:9px 12px;border-right:1px solid var(--border);background:var(--panel);position:relative;overflow:hidden}
+.kc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.kc.cy::before{background:linear-gradient(90deg,transparent,var(--cyan),transparent)}
+.kc.re::before{background:linear-gradient(90deg,transparent,var(--red),transparent)}
+.kc.gr::before{background:linear-gradient(90deg,transparent,var(--green),transparent)}
+.kc.or::before{background:linear-gradient(90deg,transparent,var(--orange),transparent)}
+.kc-l{font-size:8px;letter-spacing:2px;color:var(--text-dim);font-weight:600;margin-bottom:3px}
+.kc-v{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:24px;line-height:1;letter-spacing:-.5px}
+.kc.cy .kc-v{color:var(--cyan);text-shadow:0 0 18px rgba(0,212,255,0.4)}
+.kc.re .kc-v{color:var(--red);text-shadow:0 0 18px rgba(255,45,85,0.4)}
+.kc.gr .kc-v{color:var(--green);text-shadow:0 0 18px rgba(0,255,136,0.4)}
+.kc.or .kc-v{color:var(--orange);text-shadow:0 0 18px rgba(255,122,0,0.4)}
+.kc-d{font-size:9px;margin-top:2px;display:flex;align-items:center;gap:3px}
+.kc-sp{position:absolute;bottom:0;left:0;right:0;height:26px;opacity:.4}
+/* PANEL HEAD */
+.ph{display:flex;align-items:center;justify-content:space-between;padding:5px 11px;background:linear-gradient(180deg,#111820,#0d1117);border-bottom:1px solid var(--border);flex-shrink:0}
+.pt{font-family:'Rajdhani',sans-serif;font-weight:600;font-size:9px;letter-spacing:3px;color:var(--text-dim)}
+.pb{font-size:8px;padding:2px 5px;letter-spacing:1px;font-weight:600;border:1px solid;border-radius:1px}
+.pb.lv{color:var(--green);border-color:var(--green-dim);background:rgba(0,255,136,0.08)}
+.pb.wn{color:var(--orange);border-color:var(--orange-dim);background:rgba(255,122,0,0.08)}
+.pb.ct{color:var(--red);border-color:var(--red-dim);background:rgba(255,45,85,0.08);animation:blink 1s step-end infinite}
+.pb.in{color:var(--cyan);border-color:var(--cyan-dim);background:rgba(0,212,255,0.08)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+/* MAP */
+#mapCanvas{width:100%;flex:1;display:block}
+/* IMAGE REPORTS */
+.ir-item{display:grid;grid-template-columns:46px 1fr;gap:7px;padding:7px 10px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s}
+.ir-item:hover{background:rgba(0,212,255,0.04)}
+.ir-th{width:46px;height:36px;background:var(--panel2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;position:relative;overflow:hidden}
+.ir-th::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,212,255,0.1),transparent)}
+.ir-loc{font-size:11px;font-weight:600;color:var(--text-hi)}
+.ir-desc{font-size:9px;color:var(--text-dim);margin-top:1px;line-height:1.3}
+.ir-meta{display:flex;gap:7px;margin-top:2px;font-size:8px;color:var(--text-dim)}
+.ir-sev{padding:1px 4px;font-size:8px;font-weight:700;letter-spacing:1px}
+.ir-sev.hi{background:rgba(255,45,85,.2);color:var(--red);border:1px solid var(--red-dim)}
+.ir-sev.md{background:rgba(255,122,0,.2);color:var(--orange);border:1px solid var(--orange-dim)}
+.ir-sev.lo{background:rgba(0,255,136,.15);color:var(--green);border:1px solid var(--green-dim)}
+/* TRIAGE */
+.tr-row{display:grid;grid-template-columns:26px 58px 1fr 42px 42px 66px;gap:3px;align-items:center;padding:4px 9px;border-bottom:1px solid var(--border);font-size:9px;cursor:pointer;transition:background .15s}
+.tr-row:hover{background:rgba(0,212,255,0.04)}
+.tr-id{font-family:'Share Tech Mono';font-size:8px;color:var(--text-dim)}
+.sev-p{padding:1px 4px;font-size:7px;font-weight:700;letter-spacing:1px;text-align:center}
+.sev-p.SLR{background:rgba(255,45,85,.2);color:var(--red);border:1px solid var(--red-dim)}
+.sev-p.MED{background:rgba(255,122,0,.2);color:var(--orange);border:1px solid var(--orange-dim)}
+.sev-p.LOW{background:rgba(0,255,136,.1);color:var(--green);border:1px solid var(--green-dim)}
+/* ALERTS */
+.al-item{display:flex;gap:7px;align-items:flex-start;padding:6px 9px;border-bottom:1px solid var(--border);animation:slin .3s ease}
+@keyframes slin{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:none}}
+.al-stripe{width:2px;flex-shrink:0;align-self:stretch;border-radius:1px}
+.sev-crit .al-stripe{background:var(--red);box-shadow:0 0 4px var(--red)} .sev-crit .al-m{color:var(--red)}
+.sev-warn .al-stripe{background:var(--orange)} .sev-warn .al-m{color:var(--orange)}
+.sev-info .al-stripe{background:var(--cyan)}   .sev-info .al-m{color:var(--cyan)}
+.sev-ok   .al-stripe{background:var(--green)}  .sev-ok   .al-m{color:var(--green)}
+.al-t{font-size:8px;color:var(--text-dim);font-family:'Share Tech Mono';margin-bottom:1px}
+.al-m{font-size:10px;line-height:1.3;font-weight:500}
+.al-s{font-size:8px;color:var(--text-dim);margin-top:1px;letter-spacing:1px}
+/* GAUGE PANEL */
+#gauge-row{display:grid;grid-template-columns:repeat(3,1fr);background:var(--panel)}
+.gc{display:flex;flex-direction:column;align-items:center;padding:9px 3px 5px;border-right:1px solid var(--border)}
+.gw{position:relative;width:88px;height:58px}
+.gcanv{position:absolute;top:0;left:0}
+.gctr{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:3px}
+.gv{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:17px;line-height:1}
+.gu{font-size:8px;color:var(--text-dim)}
+.gl{font-size:8px;letter-spacing:2px;color:var(--text-dim);margin-top:2px;font-weight:600}
+/* INVENTORY */
+.inv-r{display:flex;align-items:center;gap:7px;padding:7px 11px;border-bottom:1px solid var(--border)}
+.inv-ico{font-size:17px;width:22px;text-align:center;flex-shrink:0}
+.inv-v{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:19px;text-align:right;flex-shrink:0}
+.inv-bw{height:3px;background:var(--border);margin-top:2px;border-radius:1px}
+.inv-b{height:100%;border-radius:1px;transition:width .5s ease}
+/* DISTRIBUTIONS */
+.dt-r{display:grid;grid-template-columns:1fr 76px 42px 52px;gap:3px;align-items:center;padding:5px 9px;border-bottom:1px solid var(--border);font-size:10px}
+.dt-r.hd{font-size:8px;letter-spacing:2px;color:var(--text-dim);background:#0a0e14}
+.dt-cnt{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:13px;text-align:right}
+/* TEAM */
+.tm-r{display:grid;grid-template-columns:22px 1fr 28px 28px 28px;gap:4px;align-items:center;padding:5px 9px;border-bottom:1px solid var(--border);font-size:9px}
+.tm-av{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0}
+.tm-s{text-align:center;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:13px}
+/* QA */
+.qa-i{display:flex;align-items:center;gap:7px;padding:6px 9px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s}
+.qa-i:hover{background:rgba(0,212,255,0.05)}
+.qa-ico{width:18px;height:18px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border-hi);font-size:10px;flex-shrink:0;background:rgba(0,212,255,0.05)}
+.qa-key{font-size:8px;color:var(--text-dim);font-family:'Share Tech Mono'}
+/* NOTES */
+.nt-i{padding:5px 9px;border-bottom:1px solid var(--border);font-size:9px;line-height:1.5;color:var(--text-dim);display:flex;gap:5px;align-items:flex-start}
+.nt-b{color:var(--cyan);flex-shrink:0;margin-top:1px}
+/* FOOTER */
+#ftr{display:flex;align-items:center;gap:0;border-top:1px solid var(--border);background:#0a0e14;padding:0 14px;height:32px;flex-shrink:0;position:relative}
+#ftr::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--cyan) 50%,transparent);opacity:.25}
+.ft-s{display:flex;align-items:center;gap:8px;padding:0 14px;border-right:1px solid var(--border)}
+.ft-t{font-size:8px;letter-spacing:3px;color:var(--text-dim);font-weight:600}
+.ft-ck{color:var(--green);font-size:8px}
+.ft-item{display:flex;align-items:center;gap:3px;font-size:9px}
+.leg-d{width:7px;height:7px;border-radius:50%}
+/* SCROLL */
+.scroll-y{overflow-y:auto;scrollbar-width:thin;scrollbar-color:#1e2d3d transparent}
+.scroll-y::-webkit-scrollbar{width:3px}
+.scroll-y::-webkit-scrollbar-track{background:transparent}
+.scroll-y::-webkit-scrollbar-thumb{background:#1e2d3d}
+.f1{flex:1;overflow:hidden}
+.fc{display:flex;flex-direction:column;overflow:hidden}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ════ HEADER ════ -->
+<div id="hdr">
+  <div class="hdr-icon">💧</div>
+  <div class="hdr-titles">
+    <div class="hdr-t1">AQUA-TRACK · SOMALIA WATER RESOURCE MISSION CONTROL</div>
+    <div class="hdr-t2">PILOT: SOMALIA ONLY · IMAGE-FIRST WORKFLOW · LOW-BANDWIDTH OPTIMIZED</div>
+  </div>
+  <div class="hdr-ver">v0.2</div>
+  <div class="hdr-sep"></div>
+  <div class="hdr-kpi" style="border-left:none">
+    <div><div class="hdr-kv" style="color:var(--cyan)" id="h-rep">128</div><div class="hdr-kl">REPORTS TODAY</div></div>
+  </div>
+  <div class="hdr-kpi">
+    <div><div class="hdr-kv" style="color:var(--green)" id="h-wpt">342</div><div class="hdr-kl">WATER POINTS ACTIVE</div></div>
+  </div>
+  <div class="hdr-kpi">
+    <div><div class="hdr-kv" style="color:var(--orange)" id="h-jug">1,254</div><div class="hdr-kl">ORANGE JUG INVENTORY</div></div>
+  </div>
+  <div class="hdr-kpi">
+    <div><div class="hdr-kv" style="color:var(--cyan)" id="h-kit">6,842</div><div class="hdr-kl">CUP+LID KITS DIST.</div></div>
+  </div>
+  <div class="hdr-kpi">
+    <div><div class="hdr-kv" style="color:var(--red)" id="h-res">18.6<span style="font-size:10px">h</span></div><div class="hdr-kl">AVG RESOLUTION</div></div>
+  </div>
+  <div id="clock">--:--:--</div>
+  <div class="sys-status">
+    <div class="s-pip w" id="sysDot"></div>
+    <span id="sysLbl" style="color:var(--orange)">WARNING</span>
+  </div>
+</div>
+
+<!-- ════ BODY ════ -->
+<div id="body">
+
+  <!-- ── SIDEBAR ── -->
+  <div id="sb">
+    <div class="sb-s">
+      <div class="sb-st">NAVIGATION <span class="sb-badge">SOMALIA</span></div>
+      <div class="sb-ni on"><span class="sb-ni-ico">⬡</span>Overview</div>
+      <div class="sb-ni"><span class="sb-ni-ico">📋</span>Reports <span class="sb-cnt">33</span></div>
+      <div class="sb-ni"><span class="sb-ni-ico">🗺</span>Map</div>
+      <div class="sb-ni"><span class="sb-ni-ico">⚠</span>Incidents <span class="sb-cnt">2</span></div>
+      <div class="sb-ni"><span class="sb-ni-ico">📦</span>Inventory</div>
+      <div class="sb-ni"><span class="sb-ni-ico">📊</span>Analytics</div>
+      <div class="sb-ni"><span class="sb-ni-ico">🔔</span>Alerts <span class="sb-cnt">2</span></div>
+      <div class="sb-ni"><span class="sb-ni-ico">👥</span>Teams</div>
+      <div class="sb-ni"><span class="sb-ni-ico">⚙</span>Settings</div>
+    </div>
+    <div class="sb-s">
+      <div class="sb-st">FOCUS AREAS</div>
+      <div class="sb-fi"><div class="sb-fd w"></div>Water point outages</div>
+      <div class="sb-fi"><div class="sb-fd"></div>Quality stores</div>
+      <div class="sb-fi"><div class="sb-fd w"></div>Access businesses</div>
+      <div class="sb-fi"><div class="sb-fd c"></div>Supply shortages</div>
+      <div class="sb-fi"><div class="sb-fd w"></div>Infrastructure damage</div>
+    </div>
+    <div class="sb-s">
+      <div class="sb-st">ROLL-OUT PLAN</div>
+      <div class="ph-i"><span class="ph-ck">✓</span>Phase 1: Somalia pilot</div>
+      <div class="ph-i"><span class="ph-ck">✓</span>Phase 2: Refine + rescale</div>
+      <div class="ph-i"><span class="ph-pd">○</span>Phase 3: Expand to others</div>
+      <div class="ph-i"><span class="ph-pd">○</span>Phase 4: Multi-severity rollout</div>
+    </div>
+    <div class="sb-s">
+      <div class="sb-st">WHY IMAGE-FIRST</div>
+      <div class="sb-fi"><div class="sb-fd"></div>Works on basic phones</div>
+      <div class="sb-fi"><div class="sb-fd"></div>Low-bandwidth friendly</div>
+      <div class="sb-fi"><div class="sb-fd"></div>Faster reporting</div>
+      <div class="sb-fi"><div class="sb-fd"></div>Better contact</div>
+      <div class="sb-fi"><div class="sb-fd"></div>Stronger evidence</div>
+    </div>
+    <div class="sb-s">
+      <div class="sb-st">NEXT ITERATIONS</div>
+      <div class="sb-fi"><div class="sb-fd"></div>Predictive model</div>
+      <div class="sb-fi"><div class="sb-fd"></div>SMS / IVR reporting</div>
+      <div class="sb-fi"><div class="sb-fd"></div>Water quality results</div>
+      <div class="sb-fi"><div class="sb-fd"></div>Route optimization</div>
+      <div class="sb-fi"><div class="sb-fd"></div>Community feedback</div>
+    </div>
+    <div id="sync-bar">
+      <div><div class="sync-status-l">LAST SYNC</div><div style="font-size:10px;color:var(--cyan)" id="syncTime">2 min ago</div></div>
+      <button class="sync-btn" onclick="triggerSync()"><span class="sync-ico" id="sico">↻</span> SYNC NOW</button>
+    </div>
+  </div>
+
+  <!-- ── CENTER ── -->
+  <div id="ctr">
+    <!-- KPI STRIP -->
+    <div id="kpi-strip">
+      <div class="kc cy"><div class="kc-l">OPEN REPORTS</div><div class="kc-v">220</div><div class="kc-d" style="color:var(--red)">▲ 280 reported</div><canvas class="kc-sp" id="sp0"></canvas></div>
+      <div class="kc or"><div class="kc-l">RESOLVED</div><div class="kc-v">198</div><div class="kc-d" style="color:var(--green)">▲ 155 this week</div><canvas class="kc-sp" id="sp1"></canvas></div>
+      <div class="kc gr"><div class="kc-l">WATER POINTS ACTIVE</div><div class="kc-v">342</div><div class="kc-d" style="color:var(--green)">▲ 12 vs last wk</div><canvas class="kc-sp" id="sp2"></canvas></div>
+      <div class="kc re"><div class="kc-l">HIGH SEVERITY</div><div class="kc-v" id="hs-cnt">3</div><div class="kc-d" style="color:var(--red)">▲ 2 new today</div><canvas class="kc-sp" id="sp3"></canvas></div>
+      <div class="kc cy" style="border-right:none"><div class="kc-l">TEAMS ACTIVE</div><div class="kc-v">5</div><div class="kc-d" style="color:var(--green)">128 pts resolved</div><canvas class="kc-sp" id="sp4"></canvas></div>
+    </div>
+
+    <!-- MAP + IMAGE REPORTS -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;flex:1;overflow:hidden">
+      <!-- MAP -->
+      <div class="fc" style="border-right:1px solid var(--border)">
+        <div class="ph">
+          <div class="pt">INCIDENT HEATMAP — SOMALIA</div>
+          <div style="display:flex;gap:5px;align-items:center">
+            <span style="font-size:8px;color:var(--text-dim);display:flex;align-items:center;gap:4px">
+              <span style="display:inline-block;width:7px;height:7px;background:var(--red);border-radius:50%"></span>Hi
+              <span style="display:inline-block;width:7px;height:7px;background:var(--orange);border-radius:50%"></span>Med
+              <span style="display:inline-block;width:7px;height:7px;background:var(--cyan);border-radius:50%"></span>Lo
+              <span style="display:inline-block;width:7px;height:7px;background:var(--green);border-radius:50%"></span>WP
+            </span>
+            <span class="pb lv">LIVE</span>
+          </div>
+        </div>
+        <canvas id="mapCanvas" style="flex:1;width:100%"></canvas>
+      </div>
+      <!-- IMAGE REPORTS -->
+      <div class="fc">
+        <div class="ph">
+          <div class="pt">INCOMING IMAGE REPORTS</div>
+          <div style="display:flex;gap:5px"><span style="font-size:9px;color:var(--text-dim)" id="img-cnt">New (20)</span><span class="pb in">VIEW ALL</span></div>
+        </div>
+        <div class="scroll-y f1" id="imgList"></div>
+        <div style="padding:4px 9px;border-top:1px solid var(--border);background:#0a0e14;font-size:9px;color:var(--cyan);cursor:pointer;text-align:center">+ 16 MORE REPORTS</div>
+      </div>
+    </div>
+
+    <!-- BOTTOM: Triage + Alerts -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--border);max-height:175px;overflow:hidden">
+      <div class="fc" style="border-right:1px solid var(--border)">
+        <div class="ph"><div class="pt">SEVERITY / TRIAGE QUEUE</div><span class="pb wn">VIEW ALL</span></div>
+        <div class="scroll-y f1" id="triageList"></div>
+      </div>
+      <div class="fc">
+        <div class="ph"><div class="pt">ALERT PIPELINE</div><span class="pb ct" id="alertBadge">2 CRITICAL</span></div>
+        <div class="scroll-y f1" id="alertList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RIGHT COL ── -->
+  <div class="fc" style="border-right:1px solid var(--border)">
+    <div class="ph"><div class="pt">SYSTEM VITALS</div><span class="pb lv" id="vbadge">OPTIMAL</span></div>
+    <div id="gauge-row" style="background:var(--panel);flex-shrink:0"></div>
+
+    <div class="ph"><div class="pt">INVENTORY STATUS</div><span class="pb in">LIVE</span></div>
+    <div id="invPanel" style="flex-shrink:0"></div>
+
+    <div class="ph"><div class="pt">RECENT DISTRIBUTIONS</div></div>
+    <div class="scroll-y" style="flex:1" id="distTable"></div>
+
+    <div class="ph" style="border-top:1px solid var(--border)"><div class="pt">AUTO OBJECT DETECTION</div><span class="pb in" id="detBadge">CONF K2.5</span></div>
+    <div id="detPanel" style="padding:7px 9px;display:flex;flex-wrap:wrap;gap:5px;flex-shrink:0"></div>
+  </div>
+
+  <!-- ── FAR RIGHT ── -->
+  <div class="fc">
+    <div class="ph"><div class="pt">TEAM ACTIVITY (LAST 24H)</div></div>
+    <div id="teamPanel" style="flex-shrink:0"></div>
+
+    <div class="ph" style="border-top:1px solid var(--border)"><div class="pt">QUICK ACTIONS</div></div>
+    <div id="qaPanel" style="flex-shrink:0"></div>
+
+    <div class="ph" style="border-top:1px solid var(--border)"><div class="pt">NOTES / QUESTIONS</div></div>
+    <div class="scroll-y" style="max-height:120px;flex-shrink:0" id="notesPanel"></div>
+
+    <div class="ph" style="border-top:1px solid var(--border)"><div class="pt">ACTION ITEMS</div><span class="pb wn" id="actBadge">-- PENDING</span></div>
+    <div class="scroll-y f1" id="actionPanel"></div>
+  </div>
+
+</div><!-- /body -->
+
+<!-- ════ FOOTER ════ -->
+<div id="ftr">
+  <div class="ft-s" style="padding-left:0">
+    <span class="ft-t">SUCCESS METRICS</span>
+    <div class="ft-item"><span class="ft-ck">✓</span>Faster resolution</div>
+    <div class="ft-item"><span class="ft-ck">✓</span>More water points</div>
+    <div class="ft-item"><span class="ft-ck">✓</span>Community satisfaction</div>
+  </div>
+  <div class="ft-s">
+    <span class="ft-t">LEGEND</span>
+    <div class="ft-item"><div class="leg-d" style="background:var(--red)"></div><span style="font-size:9px;color:var(--text-dim)">High</span></div>
+    <div class="ft-item"><div class="leg-d" style="background:var(--orange)"></div><span style="font-size:9px;color:var(--text-dim)">Medium</span></div>
+    <div class="ft-item"><div class="leg-d" style="background:var(--cyan)"></div><span style="font-size:9px;color:var(--text-dim)">Low</span></div>
+    <div class="ft-item"><div class="leg-d" style="background:var(--green)"></div><span style="font-size:9px;color:var(--text-dim)">Water Point</span></div>
+  </div>
+  <div class="ft-s"><span style="font-size:9px;color:var(--text-dim)">Action &gt; Data · Keep it simple · Listen to community feedback</span></div>
+  <div style="margin-left:auto;display:flex;align-items:center;gap:7px;font-size:9px;color:var(--text-dim)">
+    <span>OPERATOR ▼</span>
+    <span style="padding:1px 6px;border:1px solid var(--border);color:var(--text)">Somalia</span>
+    <span style="padding:1px 6px;border:1px solid var(--border);cursor:pointer">🌙 DARK</span>
+  </div>
+</div>
+
+</div><!-- /app -->
+<script>
+// ── DATA ──────────────────────────────────────────────────────
+const GAUGES_DEF=[
+  {id:'cpu',  label:'CPU',     unit:'%',  color:'#00d4ff',val:42,max:100},
+  {id:'mem',  label:'MEMORY',  unit:'%',  color:'#ff2d55',val:67,max:100},
+  {id:'net',  label:'NETWORK', unit:'%',  color:'#00ff88',val:34,max:100},
+  {id:'sync', label:'SYNC',    unit:'%',  color:'#ff7a00',val:88,max:100},
+  {id:'cover',label:'COVERAGE',unit:'%',  color:'#00d4ff',val:61,max:100},
+  {id:'res',  label:'RESOLVE', unit:'h',  color:'#ff2d55',val:18.6,max:48},
+];
+const IMG_REPORTS=[
+  {loc:'Hodan District, Mogadishu',desc:'Broken keg — field photo received',time:'08:22 AM',dist:'2.2 km',sev:'hi',ico:'📸'},
+  {loc:'Garowe, Nugaal',          desc:'Leaking storage — community report',time:'06:33 AM',dist:'2.2 km',sev:'md',ico:'💧'},
+  {loc:'Bardax, Bay',             desc:'Low water pressure at distribution',time:'06:43 AM',dist:'2.2 km',sev:'md',ico:'🚰'},
+  {loc:'Beletweyne, Marane',      desc:'Contaminated vessel — urgent review',time:'07:43 AM',dist:'4.7 km',sev:'hi',ico:'⚠️'},
+  {loc:'Kismayo, Jubbaland',      desc:'Water point functional — routine check',time:'05:12 AM',dist:'3.1 km',sev:'lo',ico:'✅'},
+  {loc:'Baidoa, Bay',             desc:'Queue overflow at distribution well',time:'07:55 AM',dist:'5.0 km',sev:'md',ico:'👥'},
+];
+const TRIAGE=[
+  {id:'#1293',loc:'Hodan, Mogadishu',type:'Orange Bag',   sev:'SLR',age:'1.8h',status:'New',     team:'Team B'},
+  {id:'#1395',loc:'Garowe, Nugaal', type:'Loading Jugs',  sev:'SLR',age:'1.6h',status:'Review',  team:'Team B'},
+  {id:'#1203',loc:'Berlaw, Bay',    type:'Low Pressure',  sev:'MED',age:'2.9h',status:'Assigned',team:'Team C'},
+  {id:'#1283',loc:'Maidureyno',     type:'Contaminated',  sev:'SLR',age:'3.0h',status:'Raw',     team:'Team A'},
+  {id:'#1265',loc:'Kismayo',        type:'Alt Maker',     sev:'LOW',age:'4.6h',status:'Review',  team:'Team B'},
+];
+const ALERTS_SEED=[
+  {sev:'crit',msg:'High incident — Mogadishu (Hodan): 12 unresolved in 1h',src:'WATCHDOG',ts:'07:55'},
+  {sev:'warn',msg:'Low stock: Orange Jugs in Bay Region. Quality monitoring',src:'INVENTORY',ts:'07:32'},
+  {sev:'crit',msg:'Multiple quality reports from Beledharre — urgent',src:'QUALITY',ts:'06:44'},
+  {sev:'info',msg:'Data sync completed — 128 records updated',src:'SYNC',ts:'06:00'},
+  {sev:'ok',  msg:'Team B resolved 18 water point issues overnight',src:'TEAMS',ts:'05:30'},
+];
+const ALERT_POOL=[
+  {sev:'warn',msg:'Water point offline — Hodan District',src:'FIELD'},
+  {sev:'info',msg:'Image report processed — Garowe sector',src:'AI-DETECT'},
+  {sev:'crit',msg:'Supply chain gap detected — Bay Region',src:'LOGISTICS'},
+  {sev:'ok',  msg:'Distribution completed — Mogadishu South',src:'TEAMS'},
+  {sev:'warn',msg:'Weather alert: Flooding risk in Jubbaland',src:'WEATHER'},
+];
+const TEAMS=[
+  {name:'Pragma', role:'Field Lead',pts:128,res:98,fund:118,col:'#00d4ff'},
+  {name:'Kayflow',role:'Support',   pts:98, res:98,fund:98, col:'#00ff88'},
+  {name:'Tongoa', role:'Quality',   pts:98, res:98,fund:98, col:'#ff7a00'},
+];
+const DISTS=[
+  {loc:'Mogadishu, Maden',type:'Orange Jugs',    cnt:100,date:'Today'},
+  {loc:'Garowe, Hagrist', type:'Cup + Lid Kits', cnt:360,date:'Today'},
+  {loc:'Baidoa, Bag',     type:'Orange Jugs',    cnt:120,date:'Yesterday'},
+  {loc:'Kismayo',         type:'Cup + Lid Kits', cnt:220,date:'Yesterday'},
+];
+const DETS=[
+  {label:'Orange Jug',   cnt:5,col:'#ff7a00'},
+  {label:'Cup+Lid Kit',  cnt:2,col:'#00d4ff'},
+  {label:'Water Point',  cnt:3,col:'#00ff88'},
+  {label:'Person',       cnt:2,col:'#c8dde8'},
+  {label:'Pipe',         cnt:1,col:'#ff2d55'},
+];
+const ACTIONS=[
+  {id:1,text:'Verify failover — secondary cluster',pri:'P1',done:false},
+  {id:2,text:'Acknowledge jitter spike — Bay Region stock',pri:'P1',done:false},
+  {id:3,text:'Update capacity forecast for Q3',pri:'P2',done:false},
+  {id:4,text:'Rotate TLS certificates — 4 nodes',pri:'P2',done:false},
+  {id:5,text:'Run post-mortem for INC-0447',pri:'P2',done:true},
+  {id:6,text:'Sync MRTG thresholds with SLA',pri:'P3',done:true},
+];
+const NOTES=[
+  'Stick to stored logs in Mogadishu — multiple parts shortage strategy',
+  'Last die of Orange Jugs in Bag — possible severity elevation',
+  'Last quality quote in resalia — indefinite training needed',
+  'Need more female enumerators in Somalia — community voices',
+  'Cap slippage at low-bandwidth node — verify compression',
+];
+const SP_DATA=[
+  [100,130,110,150,170,160,220],
+  [80,120,110,160,140,170,198],
+  [310,320,318,330,325,338,342],
+  [1,2,1,3,2,4,3],
+  [4,4,5,5,5,5,5],
+];
+const SP_COLS=['#00d4ff','#ff7a00','#00ff88','#ff2d55','#00d4ff'];
+
+let liveAlerts=[...ALERTS_SEED];
+// ── CLOCK ──────────────────────────────────────────────────────
+const pad=n=>String(n).padStart(2,'0');
+setInterval(()=>{const n=new Date();document.getElementById('clock').textContent=`${pad(n.getHours())}:${pad(n.getMinutes())}:${pad(n.getSeconds())}`;},1000);
+
+// ── SPARKLINES ─────────────────────────────────────────────────
+function drawSpark(id,data,col){
+  const c=document.getElementById(id); if(!c)return;
+  const dpr=devicePixelRatio||1;
+  const rect=c.parentElement.getBoundingClientRect();
+  c.width=rect.width*dpr; c.height=26*dpr;
+  const ctx=c.getContext('2d'); ctx.scale(dpr,dpr);
+  const W=rect.width,H=26,mn=Math.min(...data),mx=Math.max(...data),range=mx-mn||1;
+  const g=ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,col+'55'); g.addColorStop(1,col+'00');
+  ctx.beginPath();
+  data.forEach((v,i)=>{const x=i/(data.length-1)*W,y=H-((v-mn)/range)*(H-4)-2;i?ctx.lineTo(x,y):ctx.moveTo(x,y);});
+  ctx.lineTo(W,H);ctx.lineTo(0,H);ctx.closePath();
+  ctx.fillStyle=g;ctx.fill();
+  ctx.beginPath();
+  data.forEach((v,i)=>{const x=i/(data.length-1)*W,y=H-((v-mn)/range)*(H-4)-2;i?ctx.lineTo(x,y):ctx.moveTo(x,y);});
+  ctx.strokeStyle=col;ctx.lineWidth=1.5;ctx.shadowColor=col;ctx.shadowBlur=5;ctx.stroke();
+}
+// ── MAP ─────────────────────────────────────────────────────────
+const CITIES=[
+  {name:'Mogadishu',x:.72,y:.65,sev:'high',sz:8},
+  {name:'Bosaso',   x:.75,y:.08,sev:'med', sz:6},
+  {name:'Hargesa',  x:.22,y:.12,sev:'low', sz:5},
+  {name:'Garowe',   x:.62,y:.28,sev:'med', sz:6},
+  {name:'Kismayo',  x:.60,y:.88,sev:'med', sz:5},
+  {name:'Baidoa',   x:.38,y:.65,sev:'high',sz:7},
+  {name:'Beldensia',x:.30,y:.45,sev:'low', sz:4},
+];
+const WPS=[{x:.55,y:.50},{x:.65,y:.40},{x:.45,y:.70},{x:.70,y:.75},{x:.30,y:.60},{x:.50,y:.30},{x:.40,y:.20},{x:.60,y:.60},{x:.25,y:.35},{x:.80,y:.45},{x:.55,y:.80}];
+const OUTLINE=[[.13,0],[.55,0],[.72,.05],[.88,.15],[1,.30],[.98,.50],[.95,.65],[.82,.75],[.72,.88],[.65,1],[.40,1],[.22,.85],[.10,.70],[.05,.55],[.08,.35],[.13,0]];
+let mapPh=0;
+function drawMap(){
+  const c=document.getElementById('mapCanvas'); if(!c)return;
+  const dpr=devicePixelRatio||1;
+  const rect=c.parentElement.getBoundingClientRect();
+  c.width=rect.width*dpr; c.height=rect.height*dpr;
+  const ctx=c.getContext('2d'); ctx.scale(dpr,dpr);
+  const W=rect.width,H=rect.height;
+  mapPh=(mapPh+.025)%(Math.PI*2);
+  // BG
+  const bg=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,Math.max(W,H)/2);
+  bg.addColorStop(0,'#111820');bg.addColorStop(1,'#090c10');
+  ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+  // Grid
+  ctx.strokeStyle='rgba(0,212,255,0.04)';ctx.lineWidth=.5;
+  for(let x=0;x<W;x+=28){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(let y=0;y<H;y+=28){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+  // Outline
+  ctx.beginPath();
+  OUTLINE.forEach(([px,py],i)=>i?ctx.lineTo(px*W,py*H):ctx.moveTo(px*W,py*H));
+  ctx.closePath();
+  const fg=ctx.createLinearGradient(0,0,W,H);
+  fg.addColorStop(0,'rgba(0,212,255,0.05)');fg.addColorStop(1,'rgba(0,212,255,0.01)');
+  ctx.fillStyle=fg;ctx.fill();
+  ctx.strokeStyle='rgba(0,212,255,0.3)';ctx.lineWidth=1.5;ctx.stroke();
+  // Water points
+  WPS.forEach(wp=>{
+    const x=wp.x*W,y=wp.y*H;
+    ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);
+    ctx.fillStyle='rgba(0,255,136,0.5)';ctx.fill();
+    ctx.strokeStyle='#00ff88';ctx.lineWidth=1;ctx.stroke();
+  });
+  // Cities
+  const sc={high:'#ff2d55',med:'#ff7a00',low:'#00d4ff'};
+  CITIES.forEach(c=>{
+    const x=c.x*W,y=c.y*H,col=sc[c.sev];
+    if(c.sev==='high'){
+      const pr=c.sz+5+Math.sin(mapPh)*3;
+      ctx.beginPath();ctx.arc(x,y,pr,0,Math.PI*2);
+      ctx.strokeStyle=col+'55';ctx.lineWidth=1.5;ctx.stroke();
+    }
+    ctx.beginPath();ctx.arc(x,y,c.sz,0,Math.PI*2);
+    ctx.fillStyle=col+'cc';ctx.fill();
+    ctx.strokeStyle=col;ctx.lineWidth=1.5;
+    ctx.shadowColor=col;ctx.shadowBlur=10;ctx.stroke();ctx.shadowBlur=0;
+    ctx.fillStyle='rgba(200,221,232,0.9)';
+    ctx.font='500 9px "Exo 2",sans-serif';
+    ctx.fillText(c.name,x+c.sz+3,y+3);
+  });
+  ctx.setTransform(1,0,0,1,0,0);
+}
+// ── GAUGES ─────────────────────────────────────────────────────
+function buildGauges(){
+  const row=document.getElementById('gauge-row');row.innerHTML='';
+  GAUGES_DEF.forEach(g=>{
+    const cell=document.createElement('div');cell.className='gc';
+    cell.innerHTML=`
+      <div class="gw" id="gw-${g.id}">
+        <canvas id="gc-${g.id}" width="88" height="58" class="gcanv"></canvas>
+        <div class="gctr">
+          <div class="gv" id="gv-${g.id}" style="color:${g.color}">--</div>
+          <div class="gu" style="color:${g.color}88">${g.unit}</div>
+        </div>
+      </div>
+      <div class="gl">${g.label}</div>`;
+    row.appendChild(cell);
+  });
+}
+function drawGauge(g){
+  const c=document.getElementById('gc-'+g.id);if(!c)return;
+  const dpr=devicePixelRatio||1;
+  c.width=88*dpr;c.height=58*dpr;c.style.width='88px';c.style.height='58px';
+  const ctx=c.getContext('2d');ctx.scale(dpr,dpr);
+  const cx=44,cy=50,r=36;
+  const sA=Math.PI*1.15,span=Math.PI*1.7;
+  const pct=Math.min(g.val/g.max,1),vA=sA+pct*span;
+  // Track
+  ctx.beginPath();ctx.arc(cx,cy,r,sA,sA+span);
+  ctx.strokeStyle='#1e2d3d';ctx.lineWidth=5;ctx.stroke();
+  // Fill
+  ctx.beginPath();ctx.arc(cx,cy,r,sA,vA);
+  const ag=ctx.createLinearGradient(cx-r,cy,cx+r,cy);
+  ag.addColorStop(0,g.color+'88');ag.addColorStop(1,g.color);
+  ctx.strokeStyle=ag;ctx.lineWidth=5;
+  ctx.shadowColor=g.color;ctx.shadowBlur=8;ctx.stroke();ctx.shadowBlur=0;
+  // Ticks (motorsport style)
+  const nT=20;
+  for(let i=0;i<=nT;i++){
+    const a=sA+(i/nT)*span;
+    const maj=i%4===0,inner=maj?r-7:r-4;
+    ctx.beginPath();
+    ctx.moveTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r);
+    ctx.lineTo(cx+Math.cos(a)*inner,cy+Math.sin(a)*inner);
+    ctx.strokeStyle=i/nT<=pct?g.color+'cc':'rgba(0,212,255,0.15)';
+    ctx.lineWidth=maj?2:1;ctx.stroke();
+  }
+  // Needle
+  ctx.save();ctx.translate(cx,cy);ctx.rotate(vA-Math.PI/2);
+  const ng=ctx.createLinearGradient(0,-(r-9),0,5);
+  ng.addColorStop(0,g.color);ng.addColorStop(1,'transparent');
+  ctx.beginPath();ctx.moveTo(-1.5,5);ctx.lineTo(1.5,5);ctx.lineTo(.5,-(r-9));ctx.lineTo(-.5,-(r-9));
+  ctx.closePath();ctx.fillStyle=ng;ctx.fill();ctx.restore();
+  // Cap
+  ctx.beginPath();ctx.arc(cx,cy,4.5,0,Math.PI*2);
+  ctx.fillStyle=g.color;ctx.shadowColor=g.color;ctx.shadowBlur=8;ctx.fill();ctx.shadowBlur=0;
+  // Val
+  const ve=document.getElementById('gv-'+g.id);if(ve)ve.textContent=g.val.toFixed(g.unit==='h'?1:0);
+}
+// ── INVENTORY ──────────────────────────────────────────────────
+function buildInv(){
+  const el=document.getElementById('invPanel');
+  const items=[
+    {ico:'🧴',name:'ORANGE JUG STOCK',sub:'Primary field icon',val:1254,prev:1340,max:2000,col:'#ff7a00'},
+    {ico:'🥤',name:'CUP + LID KITS',  sub:'Consumer layer',   val:6842,prev:6657,max:10000,col:'#00d4ff'},
+  ];
+  el.innerHTML=items.map(it=>{
+    const pct=Math.round(it.val/it.max*100);
+    const delta=it.val-it.prev;
+    const dc=delta>=0?'var(--green)':'var(--red)';
+    const ds=delta>=0?'▲':'▼';
+    return `<div class="inv-r">
+      <div class="inv-ico">${it.ico}</div>
+      <div style="flex:1">
+        <div style="font-size:10px;font-weight:600;letter-spacing:1px;color:${it.col}">${it.name}</div>
+        <div style="font-size:9px;color:var(--text-dim)">${it.sub}</div>
+        <div class="inv-bw"><div class="inv-b" style="width:${pct}%;background:${it.col}"></div></div>
+      </div>
+      <div style="text-align:right">
+        <div class="inv-v" style="color:${it.col}">${it.val.toLocaleString()}</div>
+        <div style="font-size:8px;color:${dc}">${ds} ${Math.abs(delta)} vs yesterday</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+// ── DISTRIBUTIONS ──────────────────────────────────────────────
+function buildDist(){
+  const el=document.getElementById('distTable');
+  el.innerHTML=`<div class="dt-r hd"><div>LOCATION</div><div>ITEM</div><div>CNT</div><div>DATE</div></div>`
+    +DISTS.map(d=>`<div class="dt-r"><div>${d.loc}</div><div style="color:var(--cyan);font-size:9px">${d.type}</div><div class="dt-cnt">${d.cnt}</div><div style="color:var(--text-dim);font-size:9px">${d.date}</div></div>`).join('');
+}
+// ── DETECTIONS ─────────────────────────────────────────────────
+function buildDet(){
+  document.getElementById('detPanel').innerHTML=DETS.map(d=>
+    `<div style="display:flex;align-items:center;gap:3px;padding:2px 6px;background:rgba(0,0,0,.3);border:1px solid ${d.col}33">
+      <div style="width:5px;height:5px;background:${d.col};border-radius:50%"></div>
+      <span style="font-size:9px;color:${d.col}">${d.label}</span>
+      <span style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:12px;color:${d.col};margin-left:2px">${d.cnt}</span>
+    </div>`).join('');
+}
+// ── IMAGE REPORTS ──────────────────────────────────────────────
+function buildImgReports(){
+  document.getElementById('imgList').innerHTML=IMG_REPORTS.map(r=>`
+    <div class="ir-item">
+      <div class="ir-th">${r.ico}</div>
+      <div>
+        <div class="ir-loc">${r.loc}</div>
+        <div class="ir-desc">${r.desc}</div>
+        <div class="ir-meta"><span class="ir-sev ${r.sev}">${r.sev.toUpperCase()}</span><span>Today · ${r.time}</span><span>📍 ${r.dist}</span></div>
+      </div>
+    </div>`).join('');
+}
+// ── TRIAGE ─────────────────────────────────────────────────────
+function buildTriage(){
+  document.getElementById('triageList').innerHTML=TRIAGE.map(r=>`
+    <div class="tr-row">
+      <div class="tr-id">${r.id}</div>
+      <div style="font-size:10px;font-weight:500">${r.loc}</div>
+      <div style="color:var(--text-dim);font-size:9px">${r.type}</div>
+      <div><span class="sev-p ${r.sev}">${r.sev}</span></div>
+      <div style="color:var(--text-dim);font-size:8px;text-align:center">${r.age}</div>
+      <div style="font-size:9px;color:${r.status==='New'?'var(--red)':r.status==='Review'?'var(--orange)':'var(--cyan)'}">${r.status} → ${r.team}</div>
+    </div>`).join('');
+}
+// ── ALERTS ─────────────────────────────────────────────────────
+function renderAlerts(){
+  document.getElementById('alertList').innerHTML=liveAlerts.slice(0,8).map(a=>`
+    <div class="al-item sev-${a.sev}">
+      <div class="al-stripe"></div>
+      <div>
+        <div class="al-t">${a.ts||'--:--'}</div>
+        <div class="al-m">${a.msg}</div>
+        <div class="al-s">SRC: ${a.src}</div>
+      </div>
+    </div>`).join('');
+  const crits=liveAlerts.filter(a=>a.sev==='crit').length;
+  const warns=liveAlerts.filter(a=>a.sev==='warn').length;
+  const ab=document.getElementById('alertBadge');
+  ab.textContent=crits>0?`${crits} CRITICAL`:warns>0?`${warns} WARNINGS`:'NOMINAL';
+  ab.className=crits>0?'pb ct':warns>0?'pb wn':'pb lv';
+  const dot=document.getElementById('sysDot');
+  dot.className=crits>0?'s-pip c':warns>0?'s-pip w':'s-pip';
+  const lbl=document.getElementById('sysLbl');
+  lbl.textContent=crits>0?'CRITICAL':warns>0?'WARNING':'NOMINAL';
+  lbl.style.color=crits>0?'var(--red)':warns>0?'var(--orange)':'var(--green)';
+}
+// ── TEAMS ──────────────────────────────────────────────────────
+function buildTeams(){
+  document.getElementById('teamPanel').innerHTML=`
+    <div class="tm-r" style="font-size:7px;letter-spacing:2px;color:var(--text-dim);background:#0a0e14">
+      <div></div><div>OPERATIVE</div><div style="text-align:center">PTS</div><div style="text-align:center">RES</div><div style="text-align:center">FND</div>
+    </div>`
+    +TEAMS.map(t=>`<div class="tm-r">
+      <div class="tm-av" style="background:${t.col}22;color:${t.col};border:1px solid ${t.col}44">${t.name[0]}</div>
+      <div><div style="font-size:10px;font-weight:600">${t.name}</div><div style="font-size:8px;color:var(--text-dim)">${t.role}</div></div>
+      <div class="tm-s" style="color:${t.col}">${t.pts}</div>
+      <div class="tm-s" style="color:var(--cyan)">${t.res}</div>
+      <div class="tm-s" style="color:var(--green)">${t.fund}</div>
+    </div>`).join('');
+}
+// ── QUICK ACTIONS ──────────────────────────────────────────────
+function buildQA(){
+  const items=[{ico:'📝',lbl:'New Report',key:'N'},{ico:'🗺',lbl:'Map View',key:'M'},{ico:'👥',lbl:'Team Report',key:'T'},{ico:'📤',lbl:'Export Data',key:'E'},{ico:'↻',lbl:'Sync Now',key:'S'}];
+  document.getElementById('qaPanel').innerHTML=items.map(i=>`
+    <div class="qa-i"><div class="qa-ico">${i.ico}</div><div style="font-size:11px;font-weight:500;flex:1">${i.lbl}</div><div class="qa-key">[${i.key}]</div></div>`).join('');
+}
+// ── NOTES ──────────────────────────────────────────────────────
+function buildNotes(){
+  document.getElementById('notesPanel').innerHTML=NOTES.map(n=>`<div class="nt-i"><span class="nt-b">›</span>${n}</div>`).join('');
+}
+// ── ACTIONS ────────────────────────────────────────────────────
+function renderActions(){
+  const pc=p=>p==='P1'?'var(--red)':p==='P2'?'var(--orange)':'var(--cyan)';
+  document.getElementById('actionPanel').innerHTML=ACTIONS.map(a=>`
+    <div class="qa-i" onclick="toggleAct(${a.id})" style="${a.done?'opacity:.35':''}">
+      <div class="qa-ico" style="${a.done?'color:var(--green);border-color:var(--green)':''}">${a.done?'✓':'○'}</div>
+      <div style="font-size:10px;font-weight:500;flex:1;text-decoration:${a.done?'line-through':'none'}">${a.text}</div>
+      <div class="qa-key" style="color:${pc(a.pri)}">${a.pri}</div>
+    </div>`).join('');
+  const pend=ACTIONS.filter(a=>!a.done).length;
+  const ab=document.getElementById('actBadge');
+  ab.textContent=`${pend} PENDING`;
+  ab.className=pend>2?'pb wn':'pb lv';
+}
+function toggleAct(id){const a=ACTIONS.find(x=>x.id===id);if(a){a.done=!a.done;renderActions();}}
+// ── SYNC ───────────────────────────────────────────────────────
+function triggerSync(){
+  const i=document.getElementById('sico');i.classList.add('spin');
+  document.getElementById('syncTime').textContent='Syncing...';
+  setTimeout(()=>{
+    i.classList.remove('spin');
+    document.getElementById('syncTime').textContent='Just now';
+    const n=new Date(),ts=`${pad(n.getHours())}:${pad(n.getMinutes())}`;
+    liveAlerts.unshift({sev:'ok',msg:'Manual sync complete — all systems up to date',src:'SYSTEM',ts});
+    if(liveAlerts.length>20)liveAlerts.pop();
+    renderAlerts();
+  },1800);
+}
+// ── SIMULATION ─────────────────────────────────────────────────
+const noise=(v,mn,mx,a)=>Math.max(mn,Math.min(mx,v+(Math.random()-.5)*a*2));
+let tick=0;
+function simulate(){
+  tick++;
+  GAUGES_DEF.forEach(g=>{g.val=noise(g.val,g.max*.05,g.max*.95,g.max*.04);drawGauge(g);});
+  const ov=GAUGES_DEF.filter(g=>g.val/g.max>.85).length;
+  const vb=document.getElementById('vbadge');
+  vb.textContent=ov>2?'DEGRADED':ov>0?'WATCH':'OPTIMAL';
+  vb.className=ov>2?'pb ct':ov>0?'pb wn':'pb lv';
+  if(tick%12===0){
+    const a=ALERT_POOL[Math.floor(Math.random()*ALERT_POOL.length)];
+    const n=new Date(),ts=`${pad(n.getHours())}:${pad(n.getMinutes())}`;
+    liveAlerts.unshift({...a,ts});
+    if(liveAlerts.length>20)liveAlerts.pop();
+    renderAlerts();
+  }
+  document.getElementById('h-rep').textContent=(128+Math.floor(tick/8)).toLocaleString();
+}
+// ── RENDER LOOP ─────────────────────────────────────────────────
+let lm=0,ls=0;
+function loop(ts){
+  if(ts-lm>40){drawMap();lm=ts;}
+  if(ts-ls>300){simulate();ls=ts;}
+  requestAnimationFrame(loop);
+}
+// ── INIT ───────────────────────────────────────────────────────
+function init(){
+  buildGauges();buildInv();buildDist();buildDet();buildImgReports();
+  buildTriage();buildTeams();buildQA();buildNotes();renderAlerts();renderActions();
+  setTimeout(()=>{
+    SP_DATA.forEach((d,i)=>drawSpark('sp'+i,d,SP_COLS[i]));
+    GAUGES_DEF.forEach(drawGauge);
+  },120);
+  requestAnimationFrame(loop);
+}
+window.addEventListener('load',init);
+window.addEventListener('resize',()=>SP_DATA.forEach((d,i)=>drawSpark('sp'+i,d,SP_COLS[i])));
+</script>
+</body>
+</html>
