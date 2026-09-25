@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MERCH & APPAREL — Interactive Deal Sheet</title>
+  <style>
+    :root {
+      --bg: #090a0f;
+      --card-bg: #12151e;
+      --card-border: #232938;
+      --accent: #f43f5e; /* Vibrant Rose/Merch Accent */
+      --accent-hover: #e11d48;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --tag-bg: #1e293b;
+      --highlight: #22c55e;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace; }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      padding: 40px 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1100px;
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1fr 420px;
+      gap: 30px;
+    }
+
+    @media (max-width: 900px) {
+      .container { grid-template-columns: 1fr; }
+    }
+
+    .brand-header {
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      font-size: 42px;
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 15px;
+      letter-spacing: -1px;
+    }
+
+    h1 span { color: var(--accent); }
+
+    .tagline {
+      font-size: 16px;
+      color: var(--text-muted);
+      margin-bottom: 25px;
+      line-height: 1.5;
+    }
+
+    .tags {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 35px;
+      flex-wrap: wrap;
+    }
+
+    .tag {
+      background: var(--tag-bg);
+      border: 1px solid var(--card-border);
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      color: var(--text-main);
+    }
+
+    .slider-group {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+
+    .slider-header span.val {
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    input[type=range] {
+      width: 100%;
+      height: 6px;
+      background: #1e293b;
+      border-radius: 3px;
+      outline: none;
+      accent-color: var(--accent);
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 25px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    }
+
+    .card-top { margin-bottom: 20px; }
+
+    .card-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      letter-spacing: 1.5px;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+    }
+
+    .badge {
+      background: rgba(244, 63, 94, 0.1);
+      color: var(--accent);
+      padding: 4px 8px;
+      border-radius: 4px;
+      border: 1px solid var(--accent);
+      font-size: 10px;
+    }
+
+    .stat-box {
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 20px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .stat-label { font-size: 10px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 5px; }
+    .stat-value { font-size: 26px; font-weight: 800; }
+    .stat-value.green { color: var(--highlight); }
+
+    .waterfall {
+      font-size: 12px;
+      border-top: 1px solid var(--card-border);
+      padding-top: 15px;
+      margin-bottom: 20px;
+    }
+
+    .waterfall-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      color: var(--text-muted);
+    }
+
+    .waterfall-row.total {
+      color: var(--text-main);
+      font-weight: 700;
+      border-top: 1px dashed var(--card-border);
+      padding-top: 8px;
+    }
+
+    .actions { display: flex; gap: 10px; }
+
+    button {
+      flex: 1;
+      padding: 14px;
+      border-radius: 6px;
+      border: none;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent-hover); }
+
+    .btn-secondary { background: transparent; border: 1px solid var(--card-border); color: var(--text-main); }
+    .btn-secondary:hover { background: var(--tag-bg); }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.85);
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .modal-content {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 30px;
+      max-width: 600px;
+      width: 100%;
+    }
+
+    pre {
+      background: #000;
+      padding: 15px;
+      border-radius: 6px;
+      font-size: 11px;
+      color: var(--accent);
+      white-space: pre-wrap;
+      margin: 15px 0;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Left Side: Controls & Sliders -->
+  <div class="main-panel">
+    <div class="brand-header">ARTIST × MERCH OPERATOR // PROPOSED COMMERCIAL TERMS</div>
+    <h1>ARTIST BRAND <br><span>× MERCH LANE</span></h1>
+    <p class="tagline">Model unit margins, manufacturing COGS, and profit splits for physical merchandise and apparel drops.</p>
+    
+    <div class="tags">
+      <div class="tag">ARTIST KEEPS BRAND & IP</div>
+      <div class="tag">CREATIVE APPROVAL REQUIRED</div>
+      <div class="tag">ZERO UPFRONT INVENTORY RISK</div>
+    </div>
+
+    <!-- Sliders -->
+    <div class="slider-group">
+      <div class="slider-header">
+        <span>Artist Net Revenue Share</span>
+        <span class="val" id="split-val">80%</span>
+      </div>
+      <input type="range" id="split-slider" min="20" max="90" value="80" step="5">
+      <div style="font-size: 11px; color: var(--text-muted); margin-top: 8px;">Merch operator keeps remaining net share (<span id="operator-split-val">20%</span>) for fulfillment/operations.</div>
+    </div>
+
+    <div class="slider-group">
+      <div class="slider-header">
+        <span>Average Item Retail Price</span>
+        <span class="val" id="price-val">$45.00</span>
+      </div>
+      <input type="range" id="price-slider" min="15" max="150" value="45" step="5">
+    </div>
+
+    <div class="slider-group">
+      <div class="slider-header">
+        <span>Unit Manufacturing Cost (COGS)</span>
+        <span class="val" id="cogs-val">$15.00</span>
+      </div>
+      <input type="range" id="cogs-slider" min="5" max="60" value="15" step="1">
+      <div style="font-size: 11px; color: var(--text-muted); margin-top: 8px;">Blank garment, printing/embroidery, and neck-label tag costs.</div>
+    </div>
+
+    <div class="slider-group">
+      <div class="slider-header">
+        <span>Drop Sales Volume</span>
+        <span class="val" id="volume-val">500 units</span>
+      </div>
+      <input type="range" id="volume-slider" min="50" max="5000" value="500" step="50">
+    </div>
+  </div>
+
+  <!-- Right Side: Live Margin & Waterfall Card -->
+  <div class="card">
+    <div class="card-top">
+      <div class="card-title">
+        <span>THE SHORT VERSION</span>
+        <span class="badge">PROPOSAL</span>
+      </div>
+
+      <div class="stat-box">
+        <div>
+          <div class="stat-label">Artist Profit</div>
+          <div class="stat-value green" id="artist-payout">$10,800</div>
+        </div>
+        <div>
+          <div class="stat-label">Operator Profit</div>
+          <div class="stat-value" id="operator-payout">$2,700</div>
+        </div>
+      </div>
+
+      <div class="waterfall">
+        <div class="waterfall-row">
+          <span>Gross Merch Revenue</span>
+          <span id="wf-gross">$22,500</span>
+        </div>
+        <div class="waterfall-row">
+          <span>Production Costs (COGS)</span>
+          <span id="wf-cogs">-$7,500</span>
+        </div>
+        <div class="waterfall-row">
+          <span>Store Processing Fee (6%)</span>
+          <span id="wf-fee">-$1,350</span>
+        </div>
+        <div class="waterfall-row total">
+          <span>Net Profit Pool</span>
+          <span id="wf-net">$13,650</span>
+        </div>
+      </div>
+
+      <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
+        Artist holds full creative control, design sign-off, and trademark rights. Operator manages inventory, e-commerce storefront, pick/pack fulfillment, and customer service.
+      </p>
+    </div>
+
+    <div class="actions">
+      <button class="btn-primary" onclick="generatePaper()">Generate Merch Deal Paper</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal" id="paper-modal">
+  <div class="modal-content">
+    <h3 style="margin-bottom: 10px;">Merch & Apparel Commercial Summary</h3>
+    <p style="font-size: 12px; color: var(--text-muted);">Copy this agreement outline into your contract or email thread:</p>
+    <pre id="paper-text"></pre>
+    <div style="display: flex; gap: 10px;">
+      <button class="btn-primary" onclick="navigator.clipboard.writeText(document.getElementById('paper-text').innerText); alert('Copied to clipboard!');">Copy to Clipboard</button>
+      <button class="btn-secondary" onclick="document.getElementById('paper-modal').style.display='none'">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const splitSlider = document.getElementById('split-slider');
+  const priceSlider = document.getElementById('price-slider');
+  const cogsSlider = document.getElementById('cogs-slider');
+  const volumeSlider = document.getElementById('volume-slider');
+
+  function calculate() {
+    const artistSplit = parseInt(splitSlider.value);
+    const operatorSplit = 100 - artistSplit;
+    const price = parseFloat(priceSlider.value);
+    const cogs = parseFloat(cogsSlider.value);
+    const units = parseInt(volumeSlider.value);
+
+    document.getElementById('split-val').innerText = `${artistSplit}%`;
+    document.getElementById('operator-split-val').innerText = `${operatorSplit}%`;
+    document.getElementById('price-val').innerText = `$${price.toFixed(2)}`;
+    document.getElementById('cogs-val').innerText = `$${cogs.toFixed(2)}`;
+    document.getElementById('volume-val').innerText = `${units.toLocaleString()} units`;
+
+    const gross = price * units;
+    const totalCogs = cogs * units;
+    const processingFee = gross * 0.06; // Standard 6% e-commerce + payment gateway fee
+    
+    const netPool = Math.max(0, gross - totalCogs - processingFee);
+
+    const artistTotal = netPool * (artistSplit / 100);
+    const operatorTotal = netPool * (operatorSplit / 100);
+
+    document.getElementById('artist-payout').innerText = `$${Math.round(artistTotal).toLocaleString()}`;
+    document.getElementById('operator-payout').innerText = `$${Math.round(operatorTotal).toLocaleString()}`;
+
+    document.getElementById('wf-gross').innerText = `$${gross.toLocaleString()}`;
+    document.getElementById('wf-cogs').innerText = `-$${totalCogs.toLocaleString()}`;
+    document.getElementById('wf-fee').innerText = `-$${processingFee.toLocaleString()}`;
+    document.getElementById('wf-net').innerText = `$${Math.round(netPool).toLocaleString()}`;
+  }
+
+  [splitSlider, priceSlider, cogsSlider, volumeSlider].forEach(el => el.addEventListener('input', calculate));
+
+  function generatePaper() {
+    const artistSplit = splitSlider.value;
+    const operatorSplit = 100 - artistSplit;
+    const price = priceSlider.value;
+    const cogs = cogsSlider.value;
+    const units = volumeSlider.value;
+
+    const text = `MERCHANDISE & APPAREL COMMERCIAL TERM SHEET
+
+1. INTELLECTUAL PROPERTY & BRAND RIGHTS
+- Artist/Licensor retains 100% ownership of trademarks, logos, artwork, and brand identity.
+- Artist retains absolute creative approval over all garment selections, proofs, and store copy.
+- Operator receives a temporary, non-exclusive license solely to produce, market, and fulfill approved merch items.
+
+2. UNIT ECONOMICS & PROFIT WATERFALL
+- Average Retail Price: $${parseFloat(price).toFixed(2)} USD
+- Manufacturing Cost (COGS): $${parseFloat(cogs).toFixed(2)} USD / unit
+- E-commerce & Gateway Processing Fee: 6% of Gross Sales
+- Net Profit Pool Distribution:
+  * Artist Share: ${artistSplit}%
+  * Merch Operator Share: ${operatorSplit}%
+
+3. OPERATIONAL RESPONSIBILITIES
+- Operator: E-commerce setup, raw garment sourcing, screenprinting/embroidery, pick/pack fulfillment, international shipping, and customer support.
+- Artist: Artwork assets, marketing promotion, creative sign-off.
+
+4. DROP PROJECTION (AT ${units} UNITS)
+- Estimated Gross Revenue: ${document.getElementById('wf-gross').innerText}
+- Total Net Profit Pool: ${document.getElementById('wf-net').innerText}
+- Projected Artist Payout: ${document.getElementById('artist-payout').innerText}
+- Projected Operator Payout: ${document.getElementById('operator-payout').innerText}`;
+
+    document.getElementById('paper-text').innerText = text;
+    document.getElementById('paper-modal').style.display = 'flex';
+  }
+
+  calculate();
+</script>
+</body>
+</html>
