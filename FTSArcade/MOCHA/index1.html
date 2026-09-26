@@ -227,39 +227,6 @@ hr.thin{border:0;height:1px;background:var(--hair-cool);width:46px;margin:.2rem 
 #dock-mark span{display:block;font-size:.5rem;letter-spacing:.26em;color:var(--dust);
   text-transform:uppercase;line-height:1.9;margin-top:.2rem}
 
-
-/* ── Lighting mixer ───────────────────────────────────────────────── */
-#light-toggle{position:absolute;right:var(--shell);top:var(--shell);z-index:7;
-  display:flex;align-items:center;gap:.55rem;border:1px solid var(--hair-cool);
-  background:rgba(16,14,12,.66);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
-  color:var(--smoke);font:inherit;font-size:.54rem;letter-spacing:.28em;text-transform:uppercase;
-  padding:.7rem .85rem;cursor:pointer}
-#light-toggle:hover,#light-toggle[aria-expanded="true"]{color:var(--bone);border-color:var(--gild-lo)}
-#light-toggle:focus-visible{outline:1px solid var(--gild);outline-offset:2px}
-#light-mixer{position:absolute;right:var(--shell);top:calc(var(--shell) + 44px);z-index:7;
-  width:min(350px,calc(100% - 2*var(--shell)));padding:1rem 1rem .9rem;
-  border:1px solid var(--hair-cool);background:rgba(16,14,12,.88);
-  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);box-shadow:0 18px 55px rgba(0,0,0,.28)}
-#light-mixer[hidden]{display:none}
-.light-head{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:.85rem}
-.light-head b{font-size:.57rem;font-weight:400;letter-spacing:.3em;text-transform:uppercase;color:var(--bone)}
-#light-reset{border:0;background:none;color:var(--smoke);font:inherit;font-size:.5rem;letter-spacing:.22em;text-transform:uppercase;cursor:pointer}
-#light-reset:hover{color:var(--gild)}
-.light-source{padding:.75rem 0;border-top:1px solid var(--hair-cool)}
-.light-source:first-of-type{border-top:0;padding-top:.1rem}
-.light-source-title{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:.55rem}
-.light-source-title b{font-size:.58rem;font-weight:400;letter-spacing:.24em;text-transform:uppercase;color:var(--bone)}
-.light-source-title span{font-size:.48rem;letter-spacing:.2em;color:var(--dust);text-transform:uppercase}
-.light-row{display:grid;grid-template-columns:44px 1fr 34px;align-items:center;gap:.55rem;margin:.34rem 0}
-.light-row label{font-size:.5rem;letter-spacing:.18em;color:var(--smoke);text-transform:uppercase}
-.light-row output{font-size:.5rem;color:var(--dust);text-align:right;font-variant-numeric:tabular-nums}
-.light-row input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:1px;background:var(--hair-cool);cursor:pointer}
-.light-row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:10px;height:10px;border-radius:50%;background:var(--bone);border:0}
-.light-row input[type=range]::-moz-range-thumb{width:10px;height:10px;border-radius:50%;background:var(--bone);border:0}
-.light-row input[data-ch="r"]{accent-color:#df6f63}.light-row input[data-ch="g"]{accent-color:#8ebc78}.light-row input[data-ch="b"]{accent-color:#779bc8}
-.light-chip{width:22px;height:8px;border-radius:99px;border:1px solid var(--hair-cool);background:#fff;display:inline-block;margin-left:.5rem;vertical-align:middle}
-@media (max-width:700px){#light-toggle{top:auto;bottom:var(--shell)}#light-mixer{top:auto;bottom:calc(var(--shell) + 44px)}}
-
 /* ── Load / error veil ─────────────────────────────────────────────── */
 #veil{position:fixed;inset:0;z-index:20;background:var(--void);
   display:grid;place-items:center;text-align:center;padding:2rem;
@@ -325,13 +292,6 @@ hr.thin{border:0;height:1px;background:var(--hair-cool);width:46px;margin:.2rem 
   <section id="view">
     <canvas id="gl" tabindex="0" aria-describedby="hint"
       aria-label="Interactive three-dimensional view of Mocha. Use arrow keys to turn, plus and minus to move closer."></canvas>
-
-
-    <button id="light-toggle" type="button" aria-expanded="false" aria-controls="light-mixer">Light</button>
-    <section id="light-mixer" hidden aria-label="Lighting controls">
-      <div class="light-head"><b>Ring light mixer</b><button id="light-reset" type="button">Reset</button></div>
-      <div id="light-controls"></div>
-    </section>
 
     <header id="wordmark">
       <h1 class="serif" id="house">Stick Nation</h1>
@@ -4339,30 +4299,21 @@ function buildEnvironment() {
 scene.environment = buildEnvironment();
 
 /* ── 8. Bistro portrait rig. Scene-space lighting matches the backdrop. ── */
-const LIGHT_DEFAULTS = {
-  key:    { intensity: 2.15, rgb: [236, 232, 218] },
-  rim:    { intensity: 0.78, rgb: [255, 190, 132] },
-  bounce: { intensity: 0.58, rgb: [176, 190, 200] }
-};
-
-const key = new THREE.DirectionalLight(0xece8da, LIGHT_DEFAULTS.key.intensity);
+const key = new THREE.DirectionalLight(0xe6e7d9, 2.3);
 key.position.set(-3.1, 5.0, 2.6);
 key.castShadow = true;
-key.shadow.mapSize.set(isMobile ? 1024 : 2048, isMobile ? 1024 : 2048);
-key.shadow.bias = -0.00045;
-key.shadow.normalBias = 0.018;
-key.shadow.radius = 3;
+key.shadow.mapSize.set(1024, 1024);
+key.shadow.bias = -0.0006;
+key.shadow.normalBias = 0.022;
 scene.add(key, key.target);
 
-const rim = new THREE.DirectionalLight(0xffbe84, LIGHT_DEFAULTS.rim.intensity);
+const rim = new THREE.DirectionalLight(0xffc48b, 0.85);
 rim.position.set(2.8, 1.6, -3.4);
-scene.add(rim, rim.target);
+scene.add(rim);
 
-const bounce = new THREE.DirectionalLight(0xb0bec8, LIGHT_DEFAULTS.bounce.intensity);
+const bounce = new THREE.DirectionalLight(0xc5c9c1, 0.72);
 bounce.position.set(0.3, -1.1, -2.6);
-scene.add(bounce, bounce.target);
-
-const lightRig = { key, rim, bounce };
+scene.add(bounce);
 
 /* Shadow catcher. Renders dark over the transparent clear, so it
    composites onto the CSS ember floor rather than onto a 3D plane. */
@@ -4373,9 +4324,6 @@ const shadowPlane = new THREE.Mesh(
 shadowPlane.rotation.x = -Math.PI / 2;
 shadowPlane.receiveShadow = true;
 scene.add(shadowPlane);
-
-const turntable = new THREE.Group();
-scene.add(turntable);
 
 /* ── 9. Camera state ─────────────────────────────────────────────── */
 const cam = {
@@ -4390,14 +4338,11 @@ let tween = null;
 
 function applyCamera() {
   const sp = Math.sin(cam.phi);
-  // Camera elevation and dolly are independent from azimuth. Horizontal
-  // "turn" input rotates only the relic, leaving the studio and shadow world-fixed.
   camera.position.set(
-    cam.target.x,
+    cam.target.x + cam.radius * sp * Math.sin(cam.theta),
     cam.target.y + cam.radius * Math.cos(cam.phi),
-    cam.target.z + cam.radius * sp
+    cam.target.z + cam.radius * sp * Math.cos(cam.theta)
   );
-  turntable.rotation.y = -cam.theta;
   camera.lookAt(cam.target);
 }
 
@@ -4470,8 +4415,9 @@ function onLoad(gltf) {
     });
   });
 
-  turntable.clear();
-  turntable.add(relic);
+  const holder = new THREE.Group();
+  holder.add(relic);
+  scene.add(holder);
 
   /* Rig and shadow bounds sized to the relic */
   const span = Math.max(relicHeight, relicRadius * 2);
@@ -4485,17 +4431,13 @@ function onLoad(gltf) {
   sc.updateProjectionMatrix();
 
   rim.position.set(0.9 * span, 0.8 * span, -1.0 * span);
-  rim.target.position.set(0, relicHeight * 0.52, 0);
-  rim.target.updateMatrixWorld();
   bounce.position.set(1.1 * span, 0.25 * span, 1.2 * span);
-  bounce.target.position.set(0, relicHeight * 0.42, 0);
-  bounce.target.updateMatrixWorld();
 
   shadowPlane.scale.set(span * 3, span * 3, 1);
-  shadowPlane.position.y = -0.002 * span;
 
-  /* On-demand renderer means dynamic shadows only cost frames while the relic moves. */
-  key.shadow.autoUpdate = true;
+  /* Static portrait: shadow map is updated once, while orbit remains cheap. */
+  key.shadow.autoUpdate = false;
+  key.shadow.needsUpdate = true;
 
   resize();
   const v = RELIC.views[0];
@@ -4556,15 +4498,13 @@ function renderThumbnails() {
   const viewBtns = el.views.querySelectorAll('img');
   const detailBtns = el.details.querySelectorAll('img');
 
-  const savedTurn = turntable.rotation.y;
   RELIC.views.forEach((v, i) => {
     const t = new THREE.Vector3(0, relicHeight * v.ty, 0);
     const r = fit * v.r, sp = Math.sin(v.phi);
-    turntable.rotation.y = -v.theta;
     shotCam.position.set(
-      t.x,
+      t.x + r * sp * Math.sin(v.theta),
       t.y + r * Math.cos(v.phi),
-      t.z + r * sp
+      t.z + r * sp * Math.cos(v.theta)
     );
     shotCam.lookAt(t);
 
@@ -4591,7 +4531,6 @@ function renderThumbnails() {
   });
 
   renderer.setRenderTarget(null);
-  turntable.rotation.y = savedTurn;
   shadowPlane.visible = planeWasVisible;
   rt.dispose();
   requestRender();
@@ -4600,72 +4539,6 @@ function renderThumbnails() {
 if (matchMedia('(pointer: coarse)').matches) {
   el.hint.textContent = 'Drag to turn · Pinch to examine';
 }
-
-
-/* ── 11b. Lighting mixer. Familiar ring-light semantics. ─────────── */
-const lightToggle = $('#light-toggle');
-const lightMixer = $('#light-mixer');
-const lightControls = $('#light-controls');
-const lightReset = $('#light-reset');
-
-function setLightRGB(light, rgb) {
-  light.color.setRGB(rgb[0] / 255, rgb[1] / 255, rgb[2] / 255, THREE.SRGBColorSpace);
-}
-function lightControl(name, label) {
-  const def = LIGHT_DEFAULTS[name], light = lightRig[name];
-  const wrap = document.createElement('div');
-  wrap.className = 'light-source';
-  wrap.innerHTML = `<div class="light-source-title"><b>${label}<i class="light-chip" aria-hidden="true"></i></b><span>${name === 'key' ? 'casts shadow' : 'fill'}</span></div>`;
-  const chip = wrap.querySelector('.light-chip');
-  const state = { intensity: def.intensity, rgb: [...def.rgb] };
-
-  const rows = [
-    ['Dim', 'intensity', 0, 300, Math.round(def.intensity / 3 * 300)],
-    ['R', 'r', 0, 255, def.rgb[0]], ['G', 'g', 0, 255, def.rgb[1]], ['B', 'b', 0, 255, def.rgb[2]]
-  ];
-  rows.forEach(([lab, ch, min, max, val]) => {
-    const row = document.createElement('div'); row.className = 'light-row';
-    row.innerHTML = `<label>${lab}</label><input type="range" min="${min}" max="${max}" value="${val}" data-ch="${ch}" aria-label="${label} ${lab}"><output>${ch === 'intensity' ? Math.round(def.intensity / 3 * 100) + '%' : val}</output>`;
-    const input = row.querySelector('input'), output = row.querySelector('output');
-    input.addEventListener('input', () => {
-      if (ch === 'intensity') {
-        state.intensity = Number(input.value) / 100;
-        light.intensity = state.intensity;
-        output.value = Math.round(state.intensity / 3 * 100) + '%';
-      } else {
-        const idx = ch === 'r' ? 0 : ch === 'g' ? 1 : 2;
-        state.rgb[idx] = Number(input.value);
-        setLightRGB(light, state.rgb);
-        output.value = input.value;
-      }
-      chip.style.background = `rgb(${state.rgb.join(',')})`;
-      requestRender();
-    });
-    wrap.appendChild(row);
-  });
-  setLightRGB(light, state.rgb);
-  chip.style.background = `rgb(${state.rgb.join(',')})`;
-  wrap._reset = () => {
-    const inputs = wrap.querySelectorAll('input');
-    inputs[0].value = Math.round(def.intensity * 100);
-    inputs[1].value = def.rgb[0]; inputs[2].value = def.rgb[1]; inputs[3].value = def.rgb[2];
-    light.intensity = def.intensity; setLightRGB(light, def.rgb);
-    inputs.forEach(i => i.dispatchEvent(new Event('input')));
-  };
-  lightControls.appendChild(wrap);
-}
-lightControl('key', 'Key');
-lightControl('rim', 'Rim');
-lightControl('bounce', 'Bounce');
-lightToggle.addEventListener('click', () => {
-  const open = lightMixer.hidden;
-  lightMixer.hidden = !open;
-  lightToggle.setAttribute('aria-expanded', String(open));
-});
-lightReset.addEventListener('click', () => {
-  lightControls.querySelectorAll('.light-source').forEach(s => s._reset && s._reset());
-  requestRender();
-});
 
 /* ── 12. Controls. Inertia is the point. ─────────────────────────── */
 let dragging = false, lastX = 0, lastY = 0, lastMove = 0;
