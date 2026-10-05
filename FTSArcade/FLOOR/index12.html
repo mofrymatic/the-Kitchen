@@ -28,13 +28,12 @@
 <link rel="preload" as="image" href="fts-arcade-fixture-atlas.png">
 <link rel="preload" as="image" href="the-Cabinet.png">
 <link rel="preload" as="audio" href="crowd.mp3" type="audio/mpeg">
-<title>FTS Arcade Floor 1.4.0 Full Roster</title>
+<title>FTS Arcade Floor 1.3.0 Nightlife Egress</title>
 <!-- 0.5.2 art fit: external world/fixture/screen atlases + Cabinets01-Cabinets04, exact per-CRT crops. -->
 <!-- 0.7.0 feel pass: outer ring 430->510, ceiling 132->192, jump 132->156. Sprint stays 22 mph. Cabinet layout frozen. -->
 <!-- 0.8.1 movement pass: threshold-based Apex-inspired slide, landing-slide buffer, momentum-preserving slide jumps and air steering. -->
 <!-- 0.9.0 soundscape pass: four cardinal crowd zones, HRTF panning, opposite-quadrant muting, random-offset adjacent-zone handoffs. -->
 <!-- 0.9.1 roof pass: procedural celestial-koi point schools orbit just beneath the ceiling annulus; depth-tested, no sprite assets. -->
-<!-- 1.4.0 FULL ROSTER: +12 cabinets (AF-AQ) from the link sheet in three 2x2 islands; West trio J/K/L restacked into one straight bank; cabinet plinth no longer overhangs the footprint; fixture atlas re-exported at 3191x2541 (same layout, scale-by-natural-width); NEW nightlife pack (fixture2: Hi Dive, Music City Underground, 4 performer prints, crowd print, Combat Krav); jukebox + vending re-scaled to the top of the real-world range. -->
 <!-- 1.2.0: every wall fixture now has a context menu (prompt + confirm). Food service windows -> ordering (PORTALS.order), tokens -> PORTALS.tokens (payment seam), vending + jukebox -> ad inventory (FTS-VEND-*, FTS-JUKEBOX), office door -> frymatic.us. FTS-RING-01..08 now identify order windows. -->
 <!-- 1.1.1: vending machines, jukebox and token machine are now flat wall panels (no carcass, no collision); the token link and all ids/kinds are unchanged. -->
 <!-- 1.1.0 fixture facelift: 4788x3812 cut-out fixture atlas (17 pieces), stage + DJ booth removed, teller/ad art -> food service window, 9 posters on outer AND core walls, flush wall mounting, per-material hi-res textures + mips. Cabinet layout, movement, ads, exits, links untouched. -->
@@ -110,7 +109,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;image-renderi
 <body>
 <canvas id="c"></canvas>
 <div id="telemetry">BOOTING...</div>
-<div id="brand"><b>FTS ARCADE</b>CIRCULAR FLOOR / A-AQ CABINET PORTAL HUB</div>
+<div id="brand"><b>FTS ARCADE</b>CIRCULAR FLOOR / A-AE CABINET PORTAL HUB</div>
 <div id="prompt"></div>
 <div id="toolbar"><button id="mapBtn">MAP: OFF</button><button id="audioBtn">AUDIO: OFF</button></div>
 <div id="lock"><div><b>FTS ARCADE</b><br><span class="pink">THE RING</span><br><br>WASD MOVE / MOUSE LOOK / SHIFT RUN<br>SPACE JUMP / CTRL OR C CROUCH + SLIDE<br>E OR CLICK INTERACT / M MAP / N SPATIAL AUDIO<br><span style="opacity:.55">DEV: K KALEIDO / P PLANE BACKEND / O KOI</span><br><br>CLICK TO WALK IN</div></div>
@@ -123,7 +122,7 @@ const RUNTIME_ERRORS=[];
 addEventListener('error',e=>{if(e.error||e.message)RUNTIME_ERRORS.push(String(e.error&&e.error.stack||e.message||e.error));});
 addEventListener('unhandledrejection',e=>RUNTIME_ERRORS.push(String(e.reason&&e.reason.stack||e.reason||'unhandled rejection')));
 
-const VERSION='fts-arcade-floor-1.4.0-full-roster';
+const VERSION='fts-arcade-floor-1.3.0-nightlife-egress';
 const TAU=Math.PI*2, DEG=Math.PI/180;
 // Dimensional contract: 1 engine unit = 1 inch.
 // =============================================================================
@@ -215,9 +214,7 @@ const PORTALS={
  tokens:'https://frymatic.us/FTSArcade/tokens/',
  // order: food-service windows. PLACEHOLDER path (sits beside the deal form) - replace with the real ordering service.
  order:'https://frymatic.us/menu/',
- adDeal:'https://frymatic.us/menu/gas-works.html',
-  // 1.4.0: from the link sheet (rows 'partners' and 'menu'). Stand-in destinations for the nightlife wall pieces until the authoring system is online.
-  partners:'https://frymatic.us/partners'
+ adDeal:'https://frymatic.us/menu/gas-works.html'
 };
 
 // 0.9.0 SPATIAL CROWDSCAPE ------------------------------------------------------
@@ -348,7 +345,6 @@ const ASSET_NAMES={
  cab4:['Cabinets04.png','cabinets04.png'],
  screen:'fts_sprites.png',
  fixture:'fts-arcade-fixture-atlas.png',
- fixture2:['fts-arcade-fixture-atlas-02.png','fts-arcade-fixture-atlas_.png'], // 1.4.0 nightlife pack; canonical name first, the as-uploaded name as fallback
  cabinetRef:['the-Cabinet.png','the-cabinet.png','./the-Cabinet.png','./the-cabinet.png'],
  pkgD:'art/cabinets/cave-defender/package.png',
  pkgAA:'art/cabinets/nightfall/package.png',
@@ -455,15 +451,11 @@ function atlasDebugOverlay(im){
 // time, so a down-scaled copy of the SAME layout drops in with no code change.
 // h = authored world height in inches. Width always follows the art aspect: nothing is stretched.
 const FIXTURE_ATLAS_META={width:4788,height:3812};
-// 1.4.0: the 3191x2541 re-export is the SAME layout scaled by 0.6665; measured against the old rects, every edge lands within 2 px
-// (door + poster 8 differ by the baked label band, as documented above). No rect changes: resampleHQ scales by naturalWidth/4788.
-// 1.4.0 NIGHTLIFE PACK (fixture2): 1250x1347, 8 pieces, rects MEASURED by alpha connected-components (not eyeballed).
-const FIXTURE2_META={width:1250,height:1347};
 const FIXTURE_TEX={texelsPerInch:5,maxSide:384,mips:3}; // N=1 hypotheses: judge by walking up to a poster
 const FIXTURE_ART={
- VEND_SNACK:{rect:[37,247,493,811],h:75,matte:true}, // source has an OPAQUE white backdrop; edge-connected white is keyed out at bake
- VEND_DRINK:{rect:[622,252,474,801],h:75},
- JUKEBOX:{rect:[1161,241,444,826],h:66},
+ VEND_SNACK:{rect:[37,247,493,811],h:72,matte:true}, // source has an OPAQUE white backdrop; edge-connected white is keyed out at bake
+ VEND_DRINK:{rect:[622,252,474,801],h:72},
+ JUKEBOX:{rect:[1161,241,444,826],h:60},
  TOKEN:{rect:[1754,257,289,796],h:68},
  BULLETIN:{rect:[2173,506,588,392],h:32},
  WHITEBOARD:{rect:[2854,450,614,448],h:35},
@@ -477,23 +469,8 @@ const FIXTURE_ART={
  POSTER_6:{rect:[0,2406,784,1178],h:44},
  POSTER_7:{rect:[893,2433,726,1379],h:52},
  POSTER_8:{rect:[1749,2449,889,1130],h:44},
- POSTER_9:{rect:[2739,2482,760,1121],h:46},
- // ---- 1.4.0 nightlife pack (sheet 'fixture2', rects in 1250x1347 px) ----
- HI_DIVE:{sheet:'fixture2',rect:[39,14,701,492],h:56},       // drinks kiosk facade, mounted at window height
- MUSIC_CITY:{sheet:'fixture2',rect:[772,24,462,499],h:40},   // round neon sign, hung above eye line
- PERFORMER_1:{sheet:'fixture2',rect:[41,538,290,361],h:40},
- PERFORMER_2:{sheet:'fixture2',rect:[346,538,285,361],h:40},
- PERFORMER_3:{sheet:'fixture2',rect:[651,538,290,365],h:40},
- PERFORMER_4:{sheet:'fixture2',rect:[961,538,289,364],h:40},
- CROWD_PRINT:{sheet:'fixture2',rect:[41,928,779,419],h:30},
- COMBAT_KRAV:{sheet:'fixture2',rect:[855,928,395,247],h:30,matte:true} // opaque white backdrop, keyed like the snack machine
+ POSTER_9:{rect:[2739,2482,760,1121],h:46}
 };
-// 1.4.0 SCALE CONTRACT (1 unit = 1 in). Real-world envelopes, so tuning conversations happen against a spec and not a feeling.
-//   Full-size glass-front vending: 72-76 H x 29-47 W x 30-36 D (Crane 158 / Seaga ENV5 / Selectivend all list 72 H; beverage ~47 W).
-//   Jukebox: Rock-Ola Bubbler 59.75-63 H x 33 W x 26.75 D; vintage AMI ~66 H x 32 W x 23.75 D.
-//   Player is 74 in tall (PLAYER_H), arcade uprights are 78 (CABINET_DIM.h). The 1.3.0 values (vending 72, jukebox 60) were already
-//   at the LOW edge of spec; 1.4.0 moves them to the top of it. Past this the machines out-scale the 74 in player (hero scale = a style choice).
-const INDUSTRY_DIMS_IN={VEND_SNACK:{h:[72,76],w:[29,47]},VEND_DRINK:{h:[72,76],w:[29,47]},JUKEBOX:{h:[59,66],w:[30,40]}};
 function artSize(key){const a=FIXTURE_ART[key],r=a.rect;return{w:a.h*r[2]/r[3],h:a.h};}
 const SKIN_PARTS=['MARQUEE','LEFT','RIGHT','CONTROL','FRONT'];
 const PACKAGE_SKIN_PARTS=['MARQUEE','LEFT','RIGHT','SCREEN','CONTROL','FRONT'];
@@ -572,7 +549,7 @@ Object.keys(WORLD_ATLAS_V2.tiles).forEach(k=>{if(MAT[k]===undefined)mat(k,'world
 Object.keys(FIXTURE_ART).forEach(k=>{
  // Tile size follows the piece's WORLD size so texels stay square: ~5 texels/in, capped.
  const a=FIXTURE_ART[k],F=artSize(k),sc=Math.min(FIXTURE_TEX.texelsPerInch,FIXTURE_TEX.maxSide/Math.max(F.w,F.h));
- mat('FIX_'+k,a.sheet||'fixture',a.rect,{stretch:true,hq:true,matte:!!a.matte,atlasMeta:a.sheet==='fixture2'?FIXTURE2_META:undefined,tw:Math.max(16,Math.round(F.w*sc)),th:Math.max(16,Math.round(F.h*sc)),mips:FIXTURE_TEX.mips});
+ mat('FIX_'+k,'fixture',a.rect,{stretch:true,hq:true,matte:!!a.matte,tw:Math.max(16,Math.round(F.w*sc)),th:Math.max(16,Math.round(F.h*sc)),mips:FIXTURE_TEX.mips});
 });
 for(let cc=65;cc<=90;cc++){
  const L=String.fromCharCode(cc);
@@ -909,38 +886,7 @@ const CABINET_ROSTER=[
  ['AB','BOGFROG','https://frymatic.us/FTSArcade/BOGFROG',27,'_blank'],
  ['AC','MOCHA BISTRO','',29,'_blank'],
  ['AD','VITRINE','https://frymatic.us/FTSArcade/VITRINE',30,'_blank'],
- ['AE','YOUR GAME HERE','https://frymatic.us/FTSArcade/SUBMISSION',31,'_blank'],
- // 1.4.0: AF-AQ come straight from the link sheet. Art is PLACEHOLDER (see PLACEHOLDER_SKIN); URLs are the sheet's, verbatim.
- ['AF','DEFENDER','https://frymatic.us/FTSArcade/DEFENDER',3,'_blank'],
- ['AG','MOTOCROSS','https://frymatic.us/FTSArcade/MOTOCROSS',14,'_blank'],
- ['AH','RAVENWOOD FAIRE','https://frymatic.us/FTSArcade/RAVENWOODFAIRE',21,'_blank'],
- ['AI','AREA 51','https://www.redeyegame.com/Area51',19,'_blank'], // sheet alias column: https://area51.binaryranch.com
- ['AJ','HUD','https://frymatic.us/FTSArcade/HUD',23,'_blank'],
- ['AK','HEX PUZZLE','https://frymatic.us/FTSArcade/HEXPUZZLE',12,'_blank'],
- ['AL','R3D3Y3','https://frymatic.us/FTSArcade/R3D3Y3',8,'_blank'],
- ['AM','FREESKI','https://frymatic.us/FTSArcade/FREESKI',22,'_blank'],
- ['AN','PACKMAN','https://frymatic.us/FTSArcade/PACKMAN',9,'_blank'],
- ['AO','ZITTRIS','https://frymatic.us/FTSArcade/ZITTRIS',16,'_blank'],
- ['AP','ZORK','https://frymatic.us/FTSArcade/ZORK',2,'_blank'],
- ['AQ','JEVICA','https://frymatic.us/FTSArcade/JEVICA',25,'_blank']
-];
-const LAST_CABINET=CABINET_ROSTER[CABINET_ROSTER.length-1][0];
-// 1.4.0 PLACEHOLDER ART: AF-AQ borrow the four most generic cabinet skins (W FREE PLAY, X COMING SOON, Y EVENT SERIES, Z BRAZEN INDEX)
-// until the authoring system produces real packages. Each still gets its own CRT tile. To give one real art, add it to PACKAGE_CABINETS
-// and delete its line here: nothing else changes.
-const PLACEHOLDER_SKIN={AF:'W',AG:'X',AH:'Y',AI:'Z',AJ:'W',AK:'X',AL:'Y',AM:'Z',AN:'W',AO:'X',AP:'Y',AQ:'Z'};
-const skinOf=L=>PLACEHOLDER_SKIN[L]||L;
-
-// 1.4.0 LINK MANIFEST: every row of the link sheet and where it lives on the floor. 'cabinet:XX' = a cabinet, 'self' = this page,
-// 'wall:ID' = a wall piece, 'amenity' = already a fixture. Anything not covered here is a gap, and a test says so.
-const LINK_MANIFEST=[
-['ASTROIDS','cabinet:A'],['ASTROVULPIS','cabinet:Q'],['CRAWFORDCOUNTY','cabinet:F'],['CAVERACER','cabinet:D'],['DEFENDER','cabinet:AF'],['MOTOCROSS','cabinet:AG'],
-['GRACE','cabinet:G'],['RAVENWOODFAIRE','cabinet:AH'],['AREA51','cabinet:AI'],['HUD','cabinet:AJ'],['REDEYE','cabinet:K'],['TOURNAMENT','cabinet:V'],
-['ARCADE','cabinet:R'],['FLOOR','self'],['BRAZENTOWER','cabinet:B'],['partners','wall:MUSIC_CITY'],['menu','wall:HI_DIVE'],['NIGHTFALL','cabinet:AA'],
-['HEXPUZZLE','cabinet:AK'],['PINBALL','cabinet:S'],['PLINKO','cabinet:U'],['COVENBLITZ','cabinet:E'],['MINESWEEPER','cabinet:H'],['AUXOR','cabinet:P'],
-['NEONINVADERS','cabinet:I'],['SOVTHPAWZOMBIES','cabinet:O'],['CAMELOT','cabinet:C'],['SNAKIA','cabinet:L'],['RC RACER','cabinet:J'],['VECTOR SIEGE','cabinet:N'],
-['MOCHA BISTRO','cabinet:AC'],['UNDERHALL','cabinet:M'],['SUBMISSION','cabinet:AE'],['COMINGSOON','cabinet:X'],['R3D3Y3','cabinet:AL'],['FREESKI','cabinet:AM'],
-['GRIDWARDEN','cabinet:T'],['PACKMAN','cabinet:AN'],['VITRINE','cabinet:AD'],['ZITTRIS','cabinet:AO'],['ZORK','cabinet:AP'],['JEVICA','cabinet:AQ'],['BOGFROG','cabinet:AB']
+ ['AE','YOUR GAME HERE','https://frymatic.us/FTSArcade/SUBMISSION',31,'_blank']
 ];
 
 // -----------------------------------------------------------------------------
@@ -979,11 +925,9 @@ const AUTHORING={
   {letter:'O',x:-40.25,y:148.5,deg:90},
   {letter:'I',x:0,y:148.5,deg:90},
   {letter:'P',x:40.25,y:148.5,deg:90},
-  // 1.4.0 WEST BANK: J/K/L were a T (K and L faced +/-y with their backs against J's flanks and overhung J's rear by 20 in, leaving a
-  // dead-end pocket against the core). Now one straight bank, same 40.25 pitch as the north bank O/I/P, all facing the west ring.
-  {letter:'K',x:-148.5,y:40.25,deg:180},
-  {letter:'J',x:-148.5,y:0,deg:180},
-  {letter:'L',x:-148.5,y:-40.25,deg:180}
+  {letter:'J',x:-168,y:0,deg:180},
+  {letter:'K',x:-148.5,y:40.25,deg:90},
+  {letter:'L',x:-148.5,y:-40.25,deg:-90}
  ],
  // New content rides the open outer ring. Existing A-Z positions remain frozen.
  // 1.2.0 placement of AA-AE (polar, r=400): each one sat in front of an exit or floated alone. Kept for ?layout=legacy only.
@@ -998,11 +942,7 @@ const AUTHORING={
  // Wires run down the seam between the rows, so an island has no visible back. A cap is one cabinet across the END of the rows, back to the seam
  // (side 'left'|'right' as seen from the front row), so every back in the island is against another cabinet. front[0] sits on the LEFT of the front row as seen from the front.
  cabinetIslands:[
-  {id:'NORTH_ISLAND',front:['AA','AB'],back:['AC','AD'],caps:[{letter:'AE',side:'left'}],cx:0,cy:318.5,deg:-90},
-  // 1.4.0: AF-AQ. Three 2x2 islands, N=1 placements: walk them, then move.
-  {id:'NNW_ISLAND',front:['AF','AG'],back:['AH','AI'],cx:-190,cy:352,deg:-90},
-  {id:'NNE_ISLAND',front:['AJ','AK'],back:['AL','AM'],cx:190,cy:352,deg:-90},
-  {id:'SSW_ISLAND',front:['AN','AO'],back:['AP','AQ'],cx:-170,cy:-405,deg:90}
+  {id:'NORTH_ISLAND',front:['AA','AB'],back:['AC','AD'],caps:[{letter:'AE',side:'left'}],cx:0,cy:318.5,deg:-90}
  ],
  // 1.3.0 FLOORING: rugs and aprons are floor decals (see Flooring). All dimensions are multiples of the 64 in tile so patterns start and end clean.
  // Later decals win. u runs along the long axis (deg); the pattern origin is the rug's start edge, which is the edge you walk up to.
@@ -1031,18 +971,6 @@ const AUTHORING={
   {id:'TOKEN_VEND',label:'FTS TOKEN VENDING',art:'TOKEN',facet:22,off:0,kind:'token',url:PORTALS.tokens,cta:'BUY TOKENS'}
  ],
  // Eight food service windows (FTS-RING-01..08, ascending angle): the ordering ring (1.2.0; was the 1.0.0 ad ring).
- // 1.4.0 NIGHTLIFE PACK: wall dressings on free outer facets (none beside an exit). cz = centre height in. Destinations are STAND-INS
- // (menu / partners rows of the link sheet) until the authoring system assigns real ones: N=1.
- nightlife:[
-  {id:'HI_DIVE',art:'HI_DIVE',facet:4,off:0,cz:60,label:'HI DIVE \u00b7 PIER 28\u00bd',url:PORTALS.order,cta:'ORDER DRINKS'},
-  {id:'MUSIC_CITY',art:'MUSIC_CITY',facet:19,off:0,cz:96,label:'MUSIC CITY UNDERGROUND',url:PORTALS.partners,cta:'MEET THE PARTNERS'},
-  {id:'PERFORMER_1',art:'PERFORMER_1',facet:9,off:-27,cz:64,label:'LIVE WALL 1',url:PORTALS.partners,cta:'MEET THE PARTNERS'},
-  {id:'PERFORMER_2',art:'PERFORMER_2',facet:9,off:27,cz:64,label:'LIVE WALL 2',url:PORTALS.partners,cta:'MEET THE PARTNERS'},
-  {id:'PERFORMER_3',art:'PERFORMER_3',facet:11,off:-27,cz:64,label:'LIVE WALL 3',url:PORTALS.partners,cta:'MEET THE PARTNERS'},
-  {id:'PERFORMER_4',art:'PERFORMER_4',facet:11,off:27,cz:64,label:'LIVE WALL 4',url:PORTALS.partners,cta:'MEET THE PARTNERS'},
-  {id:'CROWD_PRINT',art:'CROWD_PRINT',facet:13,off:0,cz:64,label:'MAIN STAGE CROWD',url:PORTALS.partners,cta:'MEET THE PARTNERS'},
-  {id:'COMBAT_KRAV',art:'COMBAT_KRAV',facet:26,off:0,cz:64,label:'COMBAT KRAV',url:PORTALS.partners,cta:'MEET THE PARTNERS'}
- ],
  windowFacets:[1,5,10,14,18,21,25,29], // food service windows; unit ids FTS-RING-01..08 ride along in the order URL
  // Ten poster records = ten destinations (content inventory: art + link + CTA). Labels and URLs are
  // VERBATIM from 1.0.0 except one cosmetic fix (REDEYE's label read 'POSTER 1' twice, now 'POSTER 2'); the
@@ -1064,7 +992,7 @@ const AUTHORING={
 
 function cabinetSolid(letter,slot,x,y,faceAng,title,url,screenIndex,target='_blank'){
  const hasPkg=!!PACKAGE_CABINETS[letter];
- const K=p=>hasPkg?MAT['PKG_'+letter+'_'+p]:MAT['SKIN_'+skinOf(letter)+'_'+p], black=MAT.CAB_BLACK;
+ const K=p=>hasPkg?MAT['PKG_'+letter+'_'+p]:MAT['SKIN_'+letter+'_'+p], black=MAT.CAB_BLACK;
  const coin=MAT.CAB_REF_COIN_DOOR;
  const kick=MAT.CAB_REF_KICK_PLATE;
  const screen=hasPkg?MAT['PKG_'+letter+'_SCREEN']:MAT['SCREEN_'+String(screenIndex||17).padStart(2,'0')];
@@ -1076,7 +1004,7 @@ function cabinetSolid(letter,slot,x,y,faceAng,title,url,screenIndex,target='_bla
  return{id:'CAB_'+letter,kind:'cabinet',letter,slot,title,url,target,screenIndex,x,y,ang:faceAng,w:CABINET_DIM.w,d:CABINET_DIM.d,collision:true,light:1,
   parts:[
    // Structural faces are deliberately plain black. Cabinets01-04 own the visible outline.
-   {role:'plinth',w:40,d:38,of:-1,ro:0,z0:0,z1:5, /* 1.4.0: was d:40 -> overhung the footprint 1 in at the back, so back-to-back pods interpenetrated 1.5 in at the floor */ front:black,left:black,right:black,back:black,stretch:true},
+   {role:'plinth',w:40,d:40,of:-1,ro:0,z0:0,z1:5,front:black,left:black,right:black,back:black,stretch:true},
    {role:'left-shell', w:2,d:31,of:-1,ro:-19,z0:0,z1:CABINET_DIM.screenBayTop,front:black,left:K('LEFT'),right:black,back:black,stretch:true},
    {role:'right-shell',w:2,d:31,of:-1,ro: 19,z0:0,z1:CABINET_DIM.screenBayTop,front:black,left:black,right:K('RIGHT'),back:black,stretch:true},
    {role:'lower-core',w:34,d:27,of:1.5,ro:0,z0:5,z1:36.5,front:black,left:black,right:black,back:black,stretch:true},
@@ -1150,9 +1078,6 @@ function buildLevel(){
 
  // Every poster is content inventory: art + destination + CTA live in AUTHORING.posters.
  AUTHORING.posters.forEach((d,i)=>{const F=artSize(d.art),z0=AUTHORING.posterCenterZ-F.h/2,core=d.wall==='core',pose=core?corePose(d.face,d.off,2):outerPose(d.facet,d.off||0,2),p=panelSolid('POSTER_'+String(i+1).padStart(2,'0'),pose.x,pose.y,pose.ang,F.w,z0,z0+F.h,MAT['FIX_'+d.art],{kind:'dressing',label:d.label,url:d.url,cta:d.cta,target:'_blank',mount:core?'core':'outer',art:d.art});map.solids.push(p);map.fixtures.push(p);map.targets.push(p);});
-  // 1.4.0 nightlife pack: flush outer-wall dressings, same mount helper as posters.
-  AUTHORING.nightlife.forEach(d=>{const F=artSize(d.art),z0=d.cz-F.h/2,pose=outerPose(d.facet,d.off||0,2),p=panelSolid(d.id,pose.x,pose.y,pose.ang,F.w,z0,z0+F.h,MAT['FIX_'+d.art],{kind:'dressing',label:d.label,url:d.url,cta:d.cta,target:'_blank',mount:'outer',art:d.art});map.solids.push(p);map.fixtures.push(p);map.targets.push(p);});
-
 
  // Programmatic ad inventory now lives on the amenities (AUTHORING.amenities[].unit); see the builder above.
  // Food service windows: the old 8-unit ad ring becomes the ordering ring. Same facets, art and unit ids; the
@@ -1185,11 +1110,11 @@ function solidsOverlap(a,b,eps=.01){const pa=solidCorners(a),pb=solidCorners(b),
  for(const ax of axes){const ra=rangeOnAxis(pa,ax),rb=rangeOnAxis(pb,ax);if(ra.hi<=rb.lo+eps||rb.hi<=ra.lo+eps)return false;}
  return true;
 }
-// Frozen cabinet layout, snapshotted from 0.6.4 before the ring was widened. 1.4.0: re-snapshotted ON PURPOSE after the J/K/L bank restack (only J, K, L differ from 0.6.4).
+// Frozen cabinet layout, snapshotted from 0.6.4 before the ring was widened.
 // This is the thing that makes "do not rearrange the cabinets tonight" testable.
 // Regenerate ONLY when a layout change is intentional:
 //   console.log(__FTS_ARCADE__.cabinetLayoutSignature())
-const CABINET_LAYOUT_SNAPSHOT='A:-272.34,217.41,60.0 B:-292.59,182.34,240.0 C:-307.41,237.66,60.0 D:-327.66,202.59,240.0 E:292.59,182.34,300.0 F:272.34,217.41,120.0 G:307.41,237.66,120.0 H:327.66,202.59,300.0 I:0.00,148.50,90.0 J:-148.50,0.00,180.0 K:-148.50,40.25,180.0 L:-148.50,-40.25,180.0 M:-256.36,-245.00,315.0 N:-285.00,-216.36,135.0 O:-40.25,148.50,90.0 P:40.25,148.50,90.0 Q:148.50,20.25,90.0 R:148.50,-20.25,270.0 S:189.00,20.25,90.0 T:189.00,-20.25,270.0 U:-313.64,-245.00,135.0 V:-285.00,-273.64,315.0 W:285.00,-273.64,225.0 X:313.64,-245.00,45.0 Y:256.36,-245.00,225.0 Z:285.00,-216.36,45.0';
+const CABINET_LAYOUT_SNAPSHOT='A:-272.34,217.41,60.0 B:-292.59,182.34,240.0 C:-307.41,237.66,60.0 D:-327.66,202.59,240.0 E:292.59,182.34,300.0 F:272.34,217.41,120.0 G:307.41,237.66,120.0 H:327.66,202.59,300.0 I:0.00,148.50,90.0 J:-168.00,0.00,180.0 K:-148.50,40.25,90.0 L:-148.50,-40.25,-90.0 M:-256.36,-245.00,315.0 N:-285.00,-216.36,135.0 O:-40.25,148.50,90.0 P:40.25,148.50,90.0 Q:148.50,20.25,90.0 R:148.50,-20.25,270.0 S:189.00,20.25,90.0 T:189.00,-20.25,270.0 U:-313.64,-245.00,135.0 V:-285.00,-273.64,315.0 W:285.00,-273.64,225.0 X:313.64,-245.00,45.0 Y:256.36,-245.00,225.0 Z:285.00,-216.36,45.0';
 function cabinetLayoutSignature(m){return m.cabinets.slice().sort((a,b)=>a.letter<b.letter?-1:1).map(c=>c.letter+':'+c.x.toFixed(2)+','+c.y.toFixed(2)+','+(c.ang/DEG).toFixed(1)).join(' ');}
 function cabinetClearOfOffice(c,gap=AUTHORING.officeClearance){const a=solidAabb(c),lim=RING.inner+gap;return a.x2<=-lim||a.x1>=lim||a.y2<=-lim||a.y1>=lim;}
 
@@ -1406,7 +1331,7 @@ const RenderCore={
 };
 
 const canvas=document.getElementById('c'),ctx=canvas.getContext('2d'),telemetry=document.getElementById('telemetry'),promptEl=document.getElementById('prompt'),lockEl=document.getElementById('lock'),modal=document.getElementById('modal'),modalEyebrow=document.getElementById('modalEyebrow'),modalTitle=document.getElementById('modalTitle'),modalCopy=document.getElementById('modalCopy'),confirmBtn=document.getElementById('confirmBtn'),cancelBtn=document.getElementById('cancelBtn'),mapBtn=document.getElementById('mapBtn'),audioBtn=document.getElementById('audioBtn');
-const IMG={world:null,cab1:null,cab2:null,cab3:null,cab4:null,screen:null,fixture:null,fixture2:null,cabinetRef:null,ready:false,artBaked:false,sourcesReleased:false,meta:{},errors:[]};for(const k of PACKAGE_ASSET_KEYS)IMG[k]=null;let baseBank=[],texBank=[],flatBank=[],shadeTileBank=[],planePixelBank=[],mipBank=[],mipSrcBank=[],RW=0,RH=0,RSCALE=1,dl=null,showMap=false,activeTarget=null,modalTarget=null,VIGNETTE=null;const PAINT_ORDER=[];const PLANE_SOFT={canvas:null,ctx:null,image:null,u32:null,width:0,height:0};const PLANE_STATS={patternTransforms:0,softwareSpans:0,softwarePixels:0};
+const IMG={world:null,cab1:null,cab2:null,cab3:null,cab4:null,screen:null,fixture:null,cabinetRef:null,ready:false,artBaked:false,sourcesReleased:false,meta:{},errors:[]};for(const k of PACKAGE_ASSET_KEYS)IMG[k]=null;let baseBank=[],texBank=[],flatBank=[],shadeTileBank=[],planePixelBank=[],mipBank=[],mipSrcBank=[],RW=0,RH=0,RSCALE=1,dl=null,showMap=false,activeTarget=null,modalTarget=null,VIGNETTE=null;const PAINT_ORDER=[];const PLANE_SOFT={canvas:null,ctx:null,image:null,u32:null,width:0,height:0};const PLANE_STATS={patternTransforms:0,softwareSpans:0,softwarePixels:0};
 
 function loadImage(src,label){
  const candidates=Array.isArray(src)?src:[src];
@@ -1443,7 +1368,7 @@ function resampleHQ(g,im,r,tw,th,m){
 function cropCanvas(im,r,sheet,m){const tw=(m&&m.tw)||64,th=(m&&m.th)||64,cv=document.createElement('canvas');cv.width=tw;cv.height=th;const g=cv.getContext('2d');g.imageSmoothingEnabled=false;if(sheet==='solid'){g.fillStyle=(m&&m.color)||'#03050a';g.fillRect(0,0,tw,th);}else if(im&&r&&m&&m.hq){resampleHQ(g,im,r,tw,th,m);if(m.seam>0)healSeams(cv,m.seam);}else if(im&&r)g.drawImage(im,r[0],r[1],r[2],r[3],0,0,tw,th);else{g.fillStyle='#222833';g.fillRect(0,0,tw,th);g.strokeStyle='#ff4a98';g.strokeRect(2,2,tw-4,th-4);}return cv;}
 function shadeStrip(src,level){const cv=document.createElement('canvas');cv.width=64;cv.height=TILE_H;const g=cv.getContext('2d');g.imageSmoothingEnabled=false;for(let y=0;y<TILE_H;y+=64)g.drawImage(src,0,y,64,64);const k=level/(SHADES-1);g.globalCompositeOperation='source-atop';g.fillStyle='rgba(2,4,8,'+(k*.9)+')';g.fillRect(0,0,64,TILE_H);return cv;}
 function shadeTile(src,level){const cv=document.createElement('canvas');cv.width=src.width;cv.height=src.height;const g=cv.getContext('2d');g.imageSmoothingEnabled=false;g.drawImage(src,0,0);const k=level/(SHADES-1);g.globalCompositeOperation='source-atop';g.fillStyle='rgba(2,4,8,'+(k*.9)+')';g.fillRect(0,0,cv.width,cv.height);return cv;}
-function buildTextures(){baseBank=new Array(MATERIALS.length);texBank=new Array(MATERIALS.length);flatBank=new Array(MATERIALS.length);shadeTileBank=new Array(MATERIALS.length);planePixelBank=new Array(MATERIALS.length);mipBank=new Array(MATERIALS.length);mipSrcBank=new Array(MATERIALS.length);IMG.ready=IMG.errors.length===0&&!!(IMG.world&&IMG.cab1&&IMG.cab2&&IMG.cab3&&IMG.cab4&&IMG.screen&&IMG.fixture&&IMG.fixture2&&IMG.cabinetRef)&&PACKAGE_ASSET_KEYS.every(k=>!!IMG[k]);}
+function buildTextures(){baseBank=new Array(MATERIALS.length);texBank=new Array(MATERIALS.length);flatBank=new Array(MATERIALS.length);shadeTileBank=new Array(MATERIALS.length);planePixelBank=new Array(MATERIALS.length);mipBank=new Array(MATERIALS.length);mipSrcBank=new Array(MATERIALS.length);IMG.ready=IMG.errors.length===0&&!!(IMG.world&&IMG.cab1&&IMG.cab2&&IMG.cab3&&IMG.cab4&&IMG.screen&&IMG.fixture&&IMG.cabinetRef)&&PACKAGE_ASSET_KEYS.every(k=>!!IMG[k]);}
 function baseTile(i){
  if(baseBank[i])return baseBank[i];const m=MATERIALS[i];
  if(m.sheet==='world'){const s=WorldAtlas.source(m);return baseBank[i]=cropCanvas(IMG.world,s.rect,'world',Object.assign({},m,{hq:s.hq,atlasMeta:s.meta,seam:s.seam}));}
@@ -1459,7 +1384,7 @@ function flatPattern(i,level){let row=flatBank[i];if(!row)row=flatBank[i]=new Ar
 function planePixels(i,level){let row=planePixelBank[i];if(!row)row=planePixelBank[i]=new Array(SHADES);if(row[level])return row[level];const tile=shadedTile(i,level),g=tile.getContext('2d',{willReadFrequently:true}),img=g.getImageData(0,0,64,64);return row[level]=new Uint32Array(img.data.buffer.slice(0));}
 function bakeBaseTilesAndRelease(){
  for(let i=0;i<MATERIALS.length;i++)baseTile(i);IMG.artBaked=true;
- for(const k of['world','cab1','cab2','cab3','cab4','screen','fixture','fixture2','cabinetRef',...PACKAGE_ASSET_KEYS])IMG[k]=null;
+ for(const k of['world','cab1','cab2','cab3','cab4','screen','fixture','cabinetRef',...PACKAGE_ASSET_KEYS])IMG[k]=null;
  IMG.sourcesReleased=true;
 }
 function ensureSoftwareFrame(w,h){if(PLANE_SOFT.width===w&&PLANE_SOFT.height===h&&PLANE_SOFT.image)return;const cv=document.createElement('canvas');cv.width=w;cv.height=h;const g=cv.getContext('2d',{alpha:true});PLANE_SOFT.canvas=cv;PLANE_SOFT.ctx=g;PLANE_SOFT.width=w;PLANE_SOFT.height=h;PLANE_SOFT.image=g.createImageData(w,h);PLANE_SOFT.u32=new Uint32Array(PLANE_SOFT.image.data.buffer);}
@@ -1588,10 +1513,10 @@ touchCrouch.addEventListener('pointerdown',e=>{input.crouch=1;sim.beginSlide();t
 touchCrouch.addEventListener('pointerup',e=>{input.crouch=0;e.preventDefault();});touchCrouch.addEventListener('pointercancel',()=>{input.crouch=0;});
 
 let last=0,fpsAcc=0,fpsN=0,fps=0,frames=0,simAcc=0;
-function loop(ts){const frameDt=Math.min((ts-last)/1000||.016,.12);last=ts;simAcc=Math.min(.20,simAcc+frameDt);const fixedDt=1/KINETIC.simHz;let simSteps=0;while(simAcc>=fixedDt&&simSteps<KINETIC.maxCatchupSteps){sim.step(fixedDt,input);simAcc-=fixedDt;simSteps++;}SpatialCrowd.update(sim);RenderCore.solve(sim,dl,RW,RH);paint(sim,dl);if(showMap)drawMap(sim,RW,RH);updatePrompt();fpsAcc+=frameDt;fpsN++;if(fpsAcc>.45){fps=fpsN/fpsAcc;fpsAcc=0;fpsN=0;}if((frames++&7)===0){const moveState=sim.slideT>0?'SLIDE':input.crouch?'CROUCH':input.run?'RUN':'WALK';telemetry.textContent=VERSION+' | '+RW+'x'+RH+' | '+fps.toFixed(0)+' fps | '+moveState+' | Z '+sim.jumpZ.toFixed(0)+' | SEC '+(sim.sector+1)+'/'+map.sectors.length+' | CAB '+map.cabinets.length+' A-'+LAST_CABINET+' | FIX '+map.fixtures.length+' | ADS '+map.ads.length+' | VIS '+dl.stats.sectors+'s '+dl.stats.solidFaces+'g/'+dl.stats.culledSolids+'c/'+dl.stats.lodParts+'l'+(dl.stats.grows?' GROW '+dl.stats.grows:'')+(dl.stats.dropped?' DROP '+dl.stats.dropped:'')+' | PLN '+PLANE_BACKEND.active.toUpperCase()+'/'+PLANE_MAPPING.mode.toUpperCase()+' | KOI '+(CELESTIAL_KOI.enabled?CELESTIAL_KOI_STATS.visible:'OFF')+' | AUD '+(SpatialCrowd.on?(SpatialCrowd.quadrant||crowdQuadrantAt(sim.x,sim.y))+'>'+SpatialCrowd.activeZones().join(''):'OFF')+' | ART '+(IMG.ready?'ATLAS':'FALLBACK')+(MAP_ERRORS.length?' | MAP ERR '+MAP_ERRORS.length:'');}requestAnimationFrame(loop);}
+function loop(ts){const frameDt=Math.min((ts-last)/1000||.016,.12);last=ts;simAcc=Math.min(.20,simAcc+frameDt);const fixedDt=1/KINETIC.simHz;let simSteps=0;while(simAcc>=fixedDt&&simSteps<KINETIC.maxCatchupSteps){sim.step(fixedDt,input);simAcc-=fixedDt;simSteps++;}SpatialCrowd.update(sim);RenderCore.solve(sim,dl,RW,RH);paint(sim,dl);if(showMap)drawMap(sim,RW,RH);updatePrompt();fpsAcc+=frameDt;fpsN++;if(fpsAcc>.45){fps=fpsN/fpsAcc;fpsAcc=0;fpsN=0;}if((frames++&7)===0){const moveState=sim.slideT>0?'SLIDE':input.crouch?'CROUCH':input.run?'RUN':'WALK';telemetry.textContent=VERSION+' | '+RW+'x'+RH+' | '+fps.toFixed(0)+' fps | '+moveState+' | Z '+sim.jumpZ.toFixed(0)+' | SEC '+(sim.sector+1)+'/'+map.sectors.length+' | CAB '+map.cabinets.length+' A-AE | FIX '+map.fixtures.length+' | ADS '+map.ads.length+' | VIS '+dl.stats.sectors+'s '+dl.stats.solidFaces+'g/'+dl.stats.culledSolids+'c/'+dl.stats.lodParts+'l'+(dl.stats.grows?' GROW '+dl.stats.grows:'')+(dl.stats.dropped?' DROP '+dl.stats.dropped:'')+' | PLN '+PLANE_BACKEND.active.toUpperCase()+'/'+PLANE_MAPPING.mode.toUpperCase()+' | KOI '+(CELESTIAL_KOI.enabled?CELESTIAL_KOI_STATS.visible:'OFF')+' | AUD '+(SpatialCrowd.on?(SpatialCrowd.quadrant||crowdQuadrantAt(sim.x,sim.y))+'>'+SpatialCrowd.activeZones().join(''):'OFF')+' | ART '+(IMG.ready?'ATLAS':'FALLBACK')+(MAP_ERRORS.length?' | MAP ERR '+MAP_ERRORS.length:'');}requestAnimationFrame(loop);}
 addEventListener('resize',resize);if(window.visualViewport)visualViewport.addEventListener('resize',resize);
 const IMAGE_LOADS=[
- ['world',ASSET_FILES.world,'world'],['cab1',ASSET_FILES.cab1,'Cabinets01'],['cab2',ASSET_FILES.cab2,'Cabinets02'],['cab3',ASSET_FILES.cab3,'Cabinets03'],['cab4',ASSET_FILES.cab4,'Cabinets04'],['screen',ASSET_FILES.screen,'screen'],['fixture',ASSET_FILES.fixture,'fixture'],['fixture2',ASSET_FILES.fixture2,'fixture2'],['cabinetRef',ASSET_FILES.cabinetRef,'the-Cabinet'],
+ ['world',ASSET_FILES.world,'world'],['cab1',ASSET_FILES.cab1,'Cabinets01'],['cab2',ASSET_FILES.cab2,'Cabinets02'],['cab3',ASSET_FILES.cab3,'Cabinets03'],['cab4',ASSET_FILES.cab4,'Cabinets04'],['screen',ASSET_FILES.screen,'screen'],['fixture',ASSET_FILES.fixture,'fixture'],['cabinetRef',ASSET_FILES.cabinetRef,'the-Cabinet'],
  ...PACKAGE_ASSET_KEYS.map(k=>[k,ASSET_FILES[k],k])
 ];
 Promise.all(IMAGE_LOADS.map(([,src,label])=>loadImage(src,label))).then(images=>{
@@ -1620,7 +1545,7 @@ const REF_TESTS={
  cabinetBacksConcealed:()=>OPTS.layout!=='nightlife'||Cluster.analyze(map).exposed.length===0,
  cabinetsFormClusters:()=>OPTS.layout!=='nightlife'||Cluster.analyze(map).small.length===0,
  cabinetsInHoppingRange:()=>OPTS.layout!=='nightlife'||Cluster.analyze(map).lonely.length===0,
- legacyCabinetsUnchanged:()=>cabinetLayoutSignature({cabinets:map.cabinets.filter(c=>c.letter.length===1)})===CABINET_LAYOUT_SNAPSHOT&&map.cabinets.length===(OPTS.layout==='nightlife'?43:31),
+ legacyCabinetsUnchanged:()=>cabinetLayoutSignature({cabinets:map.cabinets.filter(c=>c.letter.length===1)})===CABINET_LAYOUT_SNAPSHOT&&map.cabinets.length===31,
  // ---- 1.3.0 flooring ----
  flooringLayoutGate:()=>OPTS.layout==='legacy'||!OPTS.rugs?map.sectors.length===RING.sides&&!map.sectors.some(s=>s.decal):AUTHORING.flooring.decals.every(d=>map.sectors.some(s=>s.decal===d.id)),
  flooringAreaConserved:()=>{const wedges=ringDefs(),sum={};for(const s of map.sectors)sum[s.parent]=(sum[s.parent]||0)+Math.abs(Geom.area(s.poly));return wedges.every((w,i)=>Math.abs((sum[i]||0)-Math.abs(Geom.area(w.poly)))<.05);},
@@ -1654,8 +1579,8 @@ const REF_TESTS={
   const before=gap(cv);healSeams(cv,5);const after=gap(cv),mid=cv.getContext('2d').getImageData(32,32,1,1).data;return before>200&&after<=4&&mid[0]>0&&mid[2]>0;},
  floorHasNoHoles:()=>{const apo=RING.outer*Math.cos(Math.PI/RING.sides);for(let x=-507;x<=507;x+=3)for(let y=-507;y<=507;y+=3){if(Math.max(Math.abs(x),Math.abs(y))>RING.inner+.01&&Math.hypot(x,y)<apo-.5&&sim.sectorAt(x,y)<0)return false;}return true;},
  mapValid:()=>MAP_ERRORS.length===0,
- cabinetCount:()=>map.cabinets.length===(OPTS.layout==='nightlife'?43:31),
- cabinetAlphabet:()=>map.cabinets.slice(0,26).map(c=>c.letter).sort().join('')==='ABCDEFGHIJKLMNOPQRSTUVWXYZ'&&['AA','AB','AC','AD','AE'].every(L=>map.cabinets.some(c=>c.letter===L))&&(OPTS.layout!=='nightlife'||['AF','AG','AH','AI','AJ','AK','AL','AM','AN','AO','AP','AQ'].every(L=>map.cabinets.some(c=>c.letter===L))),
+ cabinetCount:()=>map.cabinets.length===31,
+ cabinetAlphabet:()=>map.cabinets.slice(0,26).map(c=>c.letter).sort().join('')==='ABCDEFGHIJKLMNOPQRSTUVWXYZ'&&['AA','AB','AC','AD','AE'].every(L=>map.cabinets.some(c=>c.letter===L)),
  exitCount:()=>map.exits.length===3,
  geometryCabinets:()=>map.cabinets.every(c=>c.parts&&c.parts.length>=16),
  cabinetCoinDoors:()=>map.cabinets.every(c=>{const p=c.parts.find(x=>x.role==='coin-door');return p&&p.front===MAT.CAB_REF_COIN_DOOR&&p.z0>=12&&p.z1<=34;}),
@@ -1672,14 +1597,14 @@ const REF_TESTS={
  cabinetRefMinimal:()=>Object.keys(CABINET_REF_RECTS).join(',')==='COIN_DOOR,KICK_PLATE',
  cabinetRefDeclared:()=>!!ASSET_NAMES.cabinetRef&&Array.isArray(ASSET_NAMES.cabinetRef)&&ASSET_NAMES.cabinetRef.some(x=>/the-Cabinet\.png$/i.test(x)),
  cabinetControlsHorizontal:()=>map.cabinets.every(c=>{const p=c.parts.find(x=>x.role==='control');return p&&p.top!=null&&(p.z1-p.z0)<=1.01;}),
- cabinetControlDeckClean:()=>map.cabinets.every(c=>!c.parts.some(p=>p.role==='control-pedestal')&&(()=>{const p=c.parts.find(x=>x.role==='control'),want=PACKAGE_CABINETS[c.letter]?MAT['PKG_'+c.letter+'_CONTROL']:MAT['SKIN_'+skinOf(c.letter)+'_CONTROL'];return p&&(p.z1-p.z0)<=.03&&p.top===want;})()),
+ cabinetControlDeckClean:()=>map.cabinets.every(c=>!c.parts.some(p=>p.role==='control-pedestal')&&(()=>{const p=c.parts.find(x=>x.role==='control'),want=PACKAGE_CABINETS[c.letter]?MAT['PKG_'+c.letter+'_CONTROL']:MAT['SKIN_'+c.letter+'_CONTROL'];return p&&(p.z1-p.z0)<=.03&&p.top===want;})()),
  cabinetNoFrontCrossbar:()=>map.cabinets.every(c=>!c.parts.some(p=>p.role==='bezel-bottom'||p.role==='lower-front'||p.role==='control-pedestal')),
  cabinetRefSurgical:()=>map.cabinets.every(c=>{const refs=c.parts.filter(p=>p.front===MAT.CAB_REF_COIN_DOOR||p.front===MAT.CAB_REF_KICK_PLATE);return refs.length===2&&refs.some(p=>p.role==='coin-door')&&refs.some(p=>p.role==='kick-plate')&&!c.parts.some(p=>p.role==='control'&&(p.front===MAT.CAB_REF_COIN_DOOR||p.front===MAT.CAB_REF_KICK_PLATE||p.top===MAT.CAB_REF_COIN_DOOR||p.top===MAT.CAB_REF_KICK_PLATE));}),
  cabinetOfficeClearance:()=>AUTHORING.officeClearance>=8&&map.cabinets.every(c=>cabinetClearOfOffice(c,AUTHORING.officeClearance)),
  westTrioNoOverlap:()=>{const j=map.cabinets.find(c=>c.letter==='J'),k=map.cabinets.find(c=>c.letter==='K'),l=map.cabinets.find(c=>c.letter==='L');return !!(j&&k&&l&&!solidsOverlap(j,k)&&!solidsOverlap(j,l)&&!solidsOverlap(k,l));},
  officeEntryFlanked:()=>{const d=AUTHORING.officeEntry.find(x=>x.id==='OFFICE_DOOR'),w=AUTHORING.officeEntry.find(x=>x.id==='WHITEBOARD'),b=AUTHORING.officeEntry.find(x=>x.id==='BULLETIN');return !!(d&&w&&b&&w.x<d.x&&b.x>d.x&&w.y===d.y&&b.y===d.y);},
  tightCabinetPacking:()=>AUTHORING.packing.sideGap<=.5&&AUTHORING.packing.backGap<=.5,
- wallDressingsInteractive:()=>map.fixtures.filter(f=>f.kind==='dressing').length===AUTHORING.posters.length+AUTHORING.wallPortals.length+AUTHORING.officeEntry.length+AUTHORING.nightlife.length&&map.fixtures.filter(f=>f.kind==='dressing').every(f=>f.url&&f.cta),
+ wallDressingsInteractive:()=>map.fixtures.filter(f=>f.kind==='dressing').length===AUTHORING.posters.length+AUTHORING.wallPortals.length+AUTHORING.officeEntry.length&&map.fixtures.filter(f=>f.kind==='dressing').every(f=>f.url&&f.cta),
  // --- 0.7.0 feel-pass locks -------------------------------------------------
  runSpeed22mph:()=>Math.abs(SPEED_RUN-387.2)<.001,
  sprintUntouched:()=>KINETIC.sprintSpeed===SPEED_RUN&&Math.abs(SPEED_RUN/17.6-22)<1e-9,
@@ -1703,10 +1628,10 @@ const REF_TESTS={
  // Stage, DJ booth, speakers and their two signs are gone; nothing else references them.
  stageRemoved:()=>!map.solids.some(s=>/^(STAGE_|DJ_|SPEAKER_)/.test(s.id))&&!map.fixtures.some(f=>/^(STAGE_SIGN|DJ_SIGN)$/.test(f.id))&&AUTHORING.stageRotateDeg===undefined&&!/addStageBox|rotatePose/.test(String(buildLevel)),
  // Wall dressing, amenities, exits and cabinets never occupy the same footprint.
- wallItemsDisjoint:()=>{const items=map.solids.filter(s=>s.mount||s.kind==='exit'||s.kind==='cabinet');for(let i=0;i<items.length;i++)for(let j=i+1;j<items.length;j++)if(solidsOverlap(items[i],items[j]))return false;return items.length===map.cabinets.length+AUTHORING.windowFacets.length+AUTHORING.posters.length+AUTHORING.officeEntry.length+AUTHORING.amenities.length+AUTHORING.nightlife.length+map.exits.length;},
+ wallItemsDisjoint:()=>{const items=map.solids.filter(s=>s.mount||s.kind==='exit'||s.kind==='cabinet');for(let i=0;i<items.length;i++)for(let j=i+1;j<items.length;j++)if(solidsOverlap(items[i],items[j]))return false;return items.length===map.cabinets.length+AUTHORING.windowFacets.length+AUTHORING.posters.length+AUTHORING.officeEntry.length+AUTHORING.amenities.length+map.exits.length;},
  // Every provided art piece is placed at least once, and no face is stretched off its source aspect.
- atlasFullyPlaced:()=>{const placed=new Set(map.solids.filter(s=>s.art).map(s=>s.art));AUTHORING.officeEntry.forEach(d=>placed.add(d.mat.replace(/^FIX_/,'')));return Object.keys(FIXTURE_ART).length===25&&Object.keys(FIXTURE_ART).every(k=>placed.has(k));},
- fixtureArtAspect:()=>{const a=map.solids.filter(s=>s.art);return a.length===AUTHORING.amenities.length+AUTHORING.posters.length+AUTHORING.windowFacets.length+AUTHORING.nightlife.length&&a.every(s=>{const r=FIXTURE_ART[s.art].rect,p=s.parts[0];return Math.abs(s.w/(p.z1-p.z0)-r[2]/r[3])<.01;})&&AUTHORING.officeEntry.every(d=>{const r=FIXTURE_ART[d.mat.replace(/^FIX_/,'')].rect;return Math.abs(d.w/(d.z1-d.z0)-r[2]/r[3])<.01;});},
+ atlasFullyPlaced:()=>{const placed=new Set(map.solids.filter(s=>s.art).map(s=>s.art));AUTHORING.officeEntry.forEach(d=>placed.add(d.mat.replace(/^FIX_/,'')));return Object.keys(FIXTURE_ART).length===17&&Object.keys(FIXTURE_ART).every(k=>placed.has(k));},
+ fixtureArtAspect:()=>{const a=map.solids.filter(s=>s.art);return a.length===AUTHORING.amenities.length+AUTHORING.posters.length+AUTHORING.windowFacets.length&&a.every(s=>{const r=FIXTURE_ART[s.art].rect,p=s.parts[0];return Math.abs(s.w/(p.z1-p.z0)-r[2]/r[3])<.01;})&&AUTHORING.officeEntry.every(d=>{const r=FIXTURE_ART[d.mat.replace(/^FIX_/,'')].rect;return Math.abs(d.w/(d.z1-d.z0)-r[2]/r[3])<.01;});},
  // Snack machine ships on a white backdrop: the edge-flood matte must have keyed the corners clear.
  snackMatteKeyed:()=>{try{const t=baseTile(MAT.FIX_VEND_SNACK),d=t.getContext('2d').getImageData(0,0,1,1).data;return d[3]===0&&t.width>=128;}catch(e){return false;}},
  // Amenity carcasses: still solid (collision), still tagged, token link untouched, capped so they don't read hollow.
@@ -1763,18 +1688,18 @@ const REF_TESTS={
  // The 8 ring windows are ordering windows: unique unit ids, order URL with ?window=, none left in the ad list.
  orderWindows:()=>{const w=map.fixtures.filter(f=>f.kind==='order');return w.length===8&&w.length===AUTHORING.windowFacets.length&&new Set(w.map(x=>x.window)).size===8&&w.every(x=>x.url===orderUrl(x.window)&&x.url.startsWith(PORTALS.order)&&x.cta==='ORDER FOOD'&&map.targets.includes(x)&&!map.ads.includes(x)&&/^FTS-RING-0[1-8]$/.test(x.window));},
  // EVERYTHING has a context menu: every solid on the floor is a target with a destination and a name.
- everySolidHasContextMenu:()=>{const known=new Set(['cabinet','exit','token','ad','order','dressing']);return map.solids.length===map.cabinets.length+map.exits.length+AUTHORING.posters.length+AUTHORING.officeEntry.length+AUTHORING.wallPortals.length+AUTHORING.amenities.length+AUTHORING.windowFacets.length+AUTHORING.nightlife.length&&map.solids.every(s=>map.targets.includes(s)&&(!!s.url||s.pending===true)&&!!(s.label||s.title)&&known.has(s.kind));},
+ everySolidHasContextMenu:()=>{const known=new Set(['cabinet','exit','token','ad','order','dressing']);return map.solids.length===map.cabinets.length+map.exits.length+AUTHORING.posters.length+AUTHORING.officeEntry.length+AUTHORING.wallPortals.length+AUTHORING.amenities.length+AUTHORING.windowFacets.length&&map.solids.every(s=>map.targets.includes(s)&&(!!s.url||s.pending===true)&&!!(s.label||s.title)&&known.has(s.kind));},
  // ...and every menu resolves to its own confirm copy (no fixture falls through to the generic EXIT dialog).
  contextMenusResolve:()=>{const eb={cabinet:'LEAVE FTS ARCADE?',exit:'LEAVE FTS ARCADE?',token:'TOKEN PURCHASE',ad:'PROGRAMMATIC INVENTORY',order:'FOOD SERVICE',dressing:'WALL PORTAL'};let ok=map.targets.length===map.solids.length,opens=0;const wo=window.open;window.open=()=>{opens++;return null;};try{for(const t of map.targets){openConfirm(t);const shown=modal.classList.contains('show')&&modalTarget===t&&modalTitle.textContent.length>1&&modalEyebrow.textContent===(t.pending?'COMING SOON':eb[t.kind])&&(t.pending?confirmBtn.style.display==='none':confirmBtn.textContent.length>1)&&(t.kind==='cabinet'||t.kind==='exit'||modalCopy.textContent.indexOf('Use this exit')<0);if(t.pending){const before=opens;leaveArcade();if(opens!==before)ok=false;}closeConfirm(false);if(!shown)ok=false;}}finally{window.open=wo;}return ok&&opens===0&&!modal.classList.contains('show')&&modalTarget===null&&confirmBtn.style.display==='';},
  // A cabinet with no destination yet (AC) is menu-only: it must never navigate.
  pendingCabinetsMenuOnly:()=>{const p=map.cabinets.filter(c=>!c.url);return p.length>=1&&p.every(c=>c.pending===true&&map.targets.includes(c))&&map.cabinets.filter(c=>c.url).every(c=>!c.pending);},
  // Every wall fixture is selectable from a natural standing spot (29 in off the wall, looking straight at it) and wins its own prompt.
- everyFixtureSelectable:()=>{const sv=[sim.x,sim.y,sim.ang];let ok=true;try{for(const t of map.targets){if(t.kind==='cabinet'||t.kind==='exit')continue;const r=(t.d||10)/2+27;sim.x=t.x+Math.cos(t.ang)*r;sim.y=t.y+Math.sin(t.ang)*r;sim.ang=t.ang+Math.PI;if(findTarget()!==t){ok=false;}}}finally{sim.x=sv[0];sim.y=sv[1];sim.ang=sv[2];}return ok&&map.targets.filter(t=>t.mount).length===AUTHORING.amenities.length+AUTHORING.posters.length+AUTHORING.windowFacets.length+AUTHORING.officeEntry.length+AUTHORING.nightlife.length;},
+ everyFixtureSelectable:()=>{const sv=[sim.x,sim.y,sim.ang];let ok=true;try{for(const t of map.targets){if(t.kind==='cabinet'||t.kind==='exit')continue;const r=(t.d||10)/2+27;sim.x=t.x+Math.cos(t.ang)*r;sim.y=t.y+Math.sin(t.ang)*r;sim.ang=t.ang+Math.PI;if(findTarget()!==t){ok=false;}}}finally{sim.x=sv[0];sim.y=sv[1];sim.ang=sv[2];}return ok&&map.targets.filter(t=>t.mount).length===AUTHORING.amenities.length+AUTHORING.posters.length+AUTHORING.windowFacets.length+AUTHORING.officeEntry.length;},
  offsiteExits:()=>map.exits.every(e=>/^https:\/\//.test(e.url)),
  sameDirectoryAssets:()=>Object.values(ASSET_FILES).every(v=>(Array.isArray(v)?v:[v]).every(s=>!/^https?:/i.test(s))),
  packageAssets:()=>PACKAGE_ASSET_KEYS.every(k=>ASSET_FILES[k]&&/package\.png$/.test(ASSET_FILES[k])),
  packageAtlasContract:()=>Object.values(PACKAGE_ATLAS_RECTS).every(r=>r[0]>=0&&r[1]>=0&&r[0]+r[2]<=1024&&r[1]+r[3]<=1024),
- assetDimensions:()=>{const m=IMG.meta;return m.world&&((m.world[0]===1024&&m.world[1]===1024)||Math.abs(m.world[0]/m.world[1]-WORLD_ATLAS_V2.ref[0]/WORLD_ATLAS_V2.ref[1])<.03)&&['cab1','cab2','cab3','cab4'].every(k=>m[k]&&m[k][0]===1254&&m[k][1]===1254)&&m.screen&&m.screen[0]===2048&&m.screen[1]===1433&&m.fixture&&Math.abs(m.fixture[0]/m.fixture[1]-FIXTURE_ATLAS_META.width/FIXTURE_ATLAS_META.height)<.002&&m.fixture[0]>=1024&&m.fixture2&&Math.abs(m.fixture2[0]/m.fixture2[1]-FIXTURE2_META.width/FIXTURE2_META.height)<.002&&m.cabinetRef&&m.cabinetRef[0]===767&&m.cabinetRef[1]===1432&&PACKAGE_ASSET_KEYS.every(k=>m[k]&&m[k][0]===1024&&m[k][1]===1024);},
+ assetDimensions:()=>{const m=IMG.meta;return m.world&&((m.world[0]===1024&&m.world[1]===1024)||Math.abs(m.world[0]/m.world[1]-WORLD_ATLAS_V2.ref[0]/WORLD_ATLAS_V2.ref[1])<.03)&&['cab1','cab2','cab3','cab4'].every(k=>m[k]&&m[k][0]===1254&&m[k][1]===1254)&&m.screen&&m.screen[0]===2048&&m.screen[1]===1433&&m.fixture&&Math.abs(m.fixture[0]/m.fixture[1]-FIXTURE_ATLAS_META.width/FIXTURE_ATLAS_META.height)<.002&&m.fixture[0]>=1024&&m.cabinetRef&&m.cabinetRef[0]===767&&m.cabinetRef[1]===1432&&PACKAGE_ASSET_KEYS.every(k=>m[k]&&m[k][0]===1024&&m[k][1]===1024);},
  assetsReady:()=>IMG.ready&&IMG.errors.length===0,
  sourceAtlasesReleased:()=>!IMG.artBaked||IMG.sourcesReleased,
  staticRenderGeometry:()=>map.solids.every(s=>s._render&&s._render.faces.length>0&&Number.isFinite(s._render.radius)),
@@ -1782,18 +1707,6 @@ const REF_TESTS={
  lazyShadeBanks:()=>texBank.length===MATERIALS.length&&flatBank.length===MATERIALS.length&&shadeTileBank.length===MATERIALS.length,
  noFrameOriginTrap:()=>document.querySelectorAll('iframe,frame').length===0,
  renderProducesGeometry:()=>!!dl&&dl.wN>0&&dl.sN>0&&dl.stats.solidFaces>0,
- // ---- 1.4.0 ----
- // The generic form of "no overlapping trio": EVERY pair of cabinets, true rotated-rectangle test (SAT), plus the core and the outer wall.
- noCabinetFootprintOverlaps:()=>{const C=map.cabinets;for(let i=0;i<C.length;i++)for(let j=i+1;j<C.length;j++)if(solidsOverlap(C[i],C[j],.01))return false;return true;},
- cabinetsInsideRing:()=>{const apo=RING.outer*Math.cos(Math.PI/RING.sides),step=TAU/RING.sides;return map.cabinets.every(c=>solidCorners(c).every(q=>{let a=Math.atan2(q.y,q.x);if(a<0)a+=TAU;const am=(Math.floor(a/step)+.5)*step;return q.x*Math.cos(am)+q.y*Math.sin(am)<=apo-8;}));},
- // Every drawn part must sit inside the 40x40 footprint the collision + overlap tests reason about (this is what caught the plinth).
- cabinetPartsInsideFootprint:()=>map.cabinets.every(c=>c.parts.every(p=>{const f0=p.of-p.d/2,f1=p.of+p.d/2,r0=(p.ro||0)-p.w/2,r1=(p.ro||0)+p.w/2,e=.011;return f0>=-c.d/2-e&&f1<=c.d/2+e&&r0>=-c.w/2-e&&r1<=c.w/2+e;})),
- fullRosterPlaced:()=>OPTS.layout!=='nightlife'||LINK_MANIFEST.every(([name,where])=>{const [k,id]=where.split(':');if(k==='self')return true;if(k==='cabinet')return map.cabinets.some(c=>c.letter===id)&&true;if(k==='wall')return map.fixtures.some(f=>f.id===id);return false;}),
- newCabinetsCarryTheirSheetUrls:()=>OPTS.layout!=='nightlife'||[['AF','DEFENDER'],['AG','MOTOCROSS'],['AH','RAVENWOODFAIRE'],['AK','HEXPUZZLE'],['AL','R3D3Y3'],['AM','FREESKI'],['AN','PACKMAN'],['AO','ZITTRIS'],['AP','ZORK'],['AQ','JEVICA'],['AJ','HUD']].every(([L,g])=>(map.cabinets.find(c=>c.letter===L)||{}).url==='https://frymatic.us/FTSArcade/'+g)&&(map.cabinets.find(c=>c.letter==='AI')||{}).url==='https://www.redeyegame.com/Area51',
- placeholderSkinsResolve:()=>Object.entries(PLACEHOLDER_SKIN).every(([L,sk])=>!!CABINET_PART_RECTS[sk]&&!PACKAGE_CABINETS[L]&&(OPTS.layout!=='nightlife'||map.cabinets.some(c=>c.letter===L))),
- westBankIsStraight:()=>{const b=['K','J','L'].map(L=>map.cabinets.find(c=>c.letter===L));return b.every(Boolean)&&b.every(c=>Math.abs(c.x-b[0].x)<.01&&Math.abs(c.ang-b[0].ang)<1e-9)&&Math.abs((b[0].y-b[1].y)-(b[1].y-b[2].y))<.01&&cabinetClearOfOffice(b[0])&&cabinetClearOfOffice(b[1])&&cabinetClearOfOffice(b[2]);},
- amenityScaleWithinIndustryRange:()=>Object.entries(INDUSTRY_DIMS_IN).every(([k,R])=>{const F=artSize(k);return F.h>=R.h[0]&&F.h<=R.h[1]&&F.w>=R.w[0]&&F.w<=R.w[1];})&&artSize('JUKEBOX').h<=PLAYER_H&&artSize('VEND_SNACK').h<=PLAYER_H+2,
- nightlifeFacetsClearOfExits:()=>{const step=TAU/RING.sides;return AUTHORING.nightlife.every(d=>{const am=(d.facet+.5)*step;return map.exits.every(e=>{let da=Math.abs(Math.atan2(Math.sin(am-Math.atan2(e.y,e.x)),Math.cos(am-Math.atan2(e.y,e.x))));return da>step*1.4;});});},
  runtimeClean:()=>RUNTIME_ERRORS.length===0
 };
 function runRefTests(){
