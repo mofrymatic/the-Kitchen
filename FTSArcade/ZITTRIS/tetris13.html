@@ -62,162 +62,125 @@ canvas{display:block;position:fixed;top:0;left:0;touch-action:none;image-renderi
     radial-gradient(ellipse at center,rgba(0,0,0,0) 55%,rgba(0,0,0,.55) 100%);
 }
 
-/* Snakia's original cruciform SVG and rocker response. Only theme tokens and layout differ. */
+/* ── NUI (touch only) ─────────────────────────────────────────── */
 #nui,#nui-pause{display:none}
 @media(pointer:coarse){#nui,#nui-pause{display:flex}}
+
 #nui{
-  position:fixed;inset:auto 0 0;z-index:50;height:var(--nui-h,clamp(198px,30vh,270px));
-  display:none;align-items:flex-end;pointer-events:none;
-  padding:20px max(10px,env(safe-area-inset-right)) max(14px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));
-  background:radial-gradient(circle at 50% -25%,rgba(45,172,255,.18),transparent 45%),linear-gradient(180deg,#24445a 0%,#122a40 24%,#08192e 62%,#030b17 100%);
-  border-top:2px solid rgba(126,234,255,.34);
-  box-shadow:0 -12px 30px rgba(0,0,0,.5),inset 0 2px rgba(206,247,255,.16),inset 0 -10px 22px rgba(0,0,0,.4);
+  position:fixed;bottom:0;left:0;right:0;
+  height:var(--nui-h,206px);z-index:50;
+  pointer-events:none;align-items:flex-end;
+  justify-content:space-between;
+  padding:0 clamp(12px,4vw,32px) clamp(10px,2.5vh,22px);
+  background:linear-gradient(to top,rgba(5,8,16,.80) 0%,transparent 100%);
 }
-#nui-cluster{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;width:100%;height:100%;pointer-events:none}
-#dpad{
-  /* 90% of the previous 232px control. Width/height, rather than a CSS scale,
-     keep its touch geometry and visual geometry identical. */
-  position:relative;width:209px;height:209px;pointer-events:all;touch-action:none;
-  -webkit-tap-highlight-color:transparent;cursor:pointer;flex:0 0 auto;margin:0 auto;
-  --dp-shell-hi:#f2efe7; --dp-shell-mid:#e3dfd4; --dp-shell-lo:#cbc6b8;
-  --dp-olive-hi:#c2c66a; --dp-olive-lo:#6d7136;
-  --dp-well-mid:#2b2d2c; --dp-well-lo:#101211;
-  /* Warm charcoal, not neutral. The reference part is pigmented ABS;
-     a neutral grey key next to a warm cream shell reads as two
-     different materials photographed separately. */
-  --dp-key-hi:#787672;   --dp-key-mid:#50504e;  --dp-key-lo:#2d2e2e;
-  --dp-arrow:#9ca2a5;    --dp-arrow-on:#f4f8f6;
-}
-body.theme-night #dpad{
-  --dp-shell-hi:#20415a; --dp-shell-mid:#12293a; --dp-shell-lo:#07141d;
-  --dp-olive-hi:#7ef6ff; --dp-olive-lo:#14505f;
-  --dp-well-mid:#06171e; --dp-well-lo:#010708;
-  --dp-key-hi:#35586a;   --dp-key-mid:#1f3b48;  --dp-key-lo:#0c1d25;
-  --dp-arrow:#79bccb;    --dp-arrow-on:var(--ui-cyan);
-}
-#dpad-art{
-  display:block;width:100%;height:100%;overflow:visible;
-  /* A d-pad pivots at its hub. It does not slide — which is why the
-     previous translating knob read as a joystick however it was
-     styled. Rock the whole key instead. */
-  transform:perspective(560px) rotateX(0deg) rotateY(0deg);
-  transition:transform .11s cubic-bezier(.2,.9,.3,1);
-}
-#dpad-art[data-dir="up"]   {transform:perspective(560px) rotateX(7deg)}
-#dpad-art[data-dir="down"] {transform:perspective(560px) rotateX(-7deg)}
-#dpad-art[data-dir="left"] {transform:perspective(560px) rotateY(-7deg)}
-#dpad-art[data-dir="right"]{transform:perspective(560px) rotateY(7deg)}
-
-.dp-grain{opacity:.10;mix-blend-mode:overlay;pointer-events:none}
-.dp-grain-key{opacity:.17}
-body.theme-night .dp-grain{opacity:.14}
-.dp-olive{opacity:.92}
-body.theme-night .dp-olive{opacity:.7}
-
-.dp-cast{fill:rgba(0,0,0,.5)}
-body.theme-night .dp-cast{fill:rgba(0,0,0,.72)}
-.dp-face{fill:url(#dpCross)}
-.dp-bevel{fill:none;stroke:url(#dpBevel);stroke-width:5.5}
-
-/* Pressed arm sinks into shadow; the opposite arm catches light. Both
-   are clipped to the key, so neither can bleed onto the housing. */
-.dp-press-shade,.dp-press-lift{
-  opacity:0;transition:opacity .1s ease,transform .11s cubic-bezier(.2,.9,.3,1);
-}
-#dpad-art[data-dir]     .dp-press-shade,
-#dpad-art[data-dir]     .dp-press-lift{opacity:1}
-#dpad-art[data-dir="up"]    .dp-press-shade{transform:translate(0,-44px)}
-#dpad-art[data-dir="down"]  .dp-press-shade{transform:translate(0,44px)}
-#dpad-art[data-dir="left"]  .dp-press-shade{transform:translate(-44px,0)}
-#dpad-art[data-dir="right"] .dp-press-shade{transform:translate(44px,0)}
-#dpad-art[data-dir="up"]    .dp-press-lift{transform:translate(0,40px)}
-#dpad-art[data-dir="down"]  .dp-press-lift{transform:translate(0,-40px)}
-#dpad-art[data-dir="left"]  .dp-press-lift{transform:translate(40px,0)}
-#dpad-art[data-dir="right"] .dp-press-lift{transform:translate(-40px,0)}
-
-/* Hub detent is embossed INWARD — a shallow dish — so its highlight
-   sits below its shadow. Swapping those two is the single tell that
-   separates a dish from a dome. */
-.dp-detent-light{fill:none;stroke:rgba(255,255,255,.20);stroke-width:1.6}
-.dp-detent-shade{fill:none;stroke:rgba(0,0,0,.34);stroke-width:1.4}
-
-.dp-arrow{
-  fill:var(--dp-arrow);opacity:.82;
-  transition:fill .1s ease,opacity .1s ease;
-}
-#dpad-art[data-dir="up"]    .dp-arrow[data-arrow="up"],
-#dpad-art[data-dir="down"]  .dp-arrow[data-arrow="down"],
-#dpad-art[data-dir="left"]  .dp-arrow[data-arrow="left"],
-#dpad-art[data-dir="right"] .dp-arrow[data-arrow="right"]{fill:var(--dp-arrow-on);opacity:1}
-body.theme-night #dpad-art[data-dir] .dp-arrow[data-arrow]{filter:none}
-
-@media (prefers-reduced-motion:reduce){
-  #dpad-art,.dp-press-shade,.dp-press-lift{transition:none}
-}
-
-/* Same Snakia paths, bevels and tilt; palette tokens are ZITTRIS cyan/navy. */
-#dpad{
-  width:min(44vw,209px);height:min(44vw,209px);max-height:calc(var(--nui-h,270px) - 30px);
-  --dp-shell-hi:#b7cbd8;--dp-shell-mid:#7394a8;--dp-shell-lo:#263e52;
-  --dp-olive-hi:#52e3ff;--dp-olive-lo:#176782;
-  --dp-well-mid:#091c29;--dp-well-lo:#02080f;
-  --dp-key-hi:#607784;--dp-key-mid:#344853;--dp-key-lo:#192731;
-  --dp-arrow:#9bd4e2;--dp-arrow-on:#f0ffff;
-  margin:0;min-width:0;
-}
+#nui-move{display:flex;flex-direction:column;align-items:center;gap:clamp(5px,1.2vh,10px);pointer-events:none}
+#nui-lr-row{display:flex;align-items:center;gap:clamp(6px,2.2vw,14px)}
 #nui-act{
-  position:relative;flex:0 0 min(43vw,210px);width:min(43vw,210px);
-  height:min(44vw,209px);max-height:calc(var(--nui-h,270px) - 30px);
-  border-radius:50%;pointer-events:auto;touch-action:none;
-  background:radial-gradient(circle at 45% 38%,#1e2937 0%,#0a111c 66%,#03070e 82%);
-  box-shadow:inset 0 3px 9px #5e7485,inset 0 -7px 12px #000,0 7px 12px rgba(0,0,0,.55),0 0 0 3px #132b3a;
+  position:relative;pointer-events:none;align-self:stretch;
+  width:clamp(170px,34vw,250px);height:clamp(150px,28vw,215px);
+  margin-right:clamp(2px,1vw,10px);
 }
-.nb-act{
-  position:absolute;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  border:1px solid rgba(255,255,255,.42);cursor:pointer;pointer-events:auto;touch-action:none;
-  font:bold 10px/1 ui-monospace,'SFMono-Regular',Menlo,monospace;letter-spacing:.06em;
-  -webkit-tap-highlight-color:transparent;user-select:none;
-  transition:transform .09s ease,filter .09s ease,opacity .09s ease;
+
+.nb{
+  pointer-events:all;touch-action:none;-webkit-tap-highlight-color:transparent;
+  -webkit-appearance:none;appearance:none;outline:none;cursor:pointer;
+  position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  width:var(--nb-sz,clamp(60px,13vw,88px));height:var(--nb-sz,clamp(60px,13vw,88px));
+  border-radius:12px;background:rgba(5,10,24,.70);
+  border:1.5px solid rgba(80,200,255,.25);
+  box-shadow:0 0 12px rgba(60,180,255,.10),inset 0 0 10px rgba(60,160,255,.04);
+  color:rgba(80,210,255,.70);font-family:ui-monospace,'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+  font-weight:bold;font-size:clamp(18px,5vw,28px);
+  animation:nb-appear .4s ease both;
+  transition:background .06s,border-color .06s,box-shadow .06s,color .06s,transform .06s;
 }
-.nb-act .nb-glyph{font-size:clamp(20px,5.5vw,34px);line-height:1}
-.nb-act .nb-lbl{font-size:clamp(7px,1.7vw,9px);margin-top:2px}
-.nb-act.hit,.nb-act:active{filter:brightness(1.22);transform:translateY(3px) scale(.96)}
-.nb-act:focus-visible,#dpad:focus-visible,#nui-pause:focus-visible{outline:3px solid #fff;outline-offset:3px}
-.nb-hold{
-  top:8%;left:39%;width:45%;height:22%;min-height:38px;border-radius:50% 50% 48% 48%;
-  color:#fff1ff;background:linear-gradient(#e4d3ed,#946cab 55%,#382e4a);
-  box-shadow:inset 0 2px 4px #fff9,inset 0 -5px 7px #211129,0 4px 0 #191425,0 6px 10px #000b;
+.nb-lbl{font-size:clamp(7px,1.5vw,9px);letter-spacing:.12em;margin-top:2px;opacity:.60}
+.nb:active,.nb.hit{
+  background:rgba(60,190,255,.13);border-color:rgba(80,220,255,.85);
+  color:#00ffff;transform:scale(.92);
+  box-shadow:0 0 22px rgba(60,200,255,.55),0 0 44px rgba(60,200,255,.18),inset 0 0 12px rgba(60,200,255,.10);
 }
-.nb-hold .nb-glyph{font-size:clamp(14px,3.8vw,22px)}
+.nb-rot{
+  --nb-sz:clamp(80px,18vw,114px);border-radius:18px;
+  border-color:rgba(255,178,60,.45);color:rgba(255,196,96,.92);
+  font-size:clamp(10px,2.5vw,14px);letter-spacing:.16em;
+  box-shadow:0 0 16px rgba(255,165,0,.18),inset 0 0 12px rgba(255,170,0,.07);
+  animation-delay:.12s;
+}
+.nb-rot .nb-dot,.nb-glyph{font-size:clamp(24px,5.5vw,36px);line-height:1;margin-bottom:2px}
+/* GameCube-style action cluster: primary rotate button centered, with
+   hold above-left and slam below-left. */
+.nb-act{position:absolute;pointer-events:all}
 .nb-rotate-gc{
-  top:38%;right:8%;width:48%;height:48%;border-radius:50%;color:#031b24;
-  background:radial-gradient(circle at 38% 28%,#81ffff 0%,#03d8dd 44%,#048797 76%,#06516c 100%);
-  box-shadow:inset 0 3px 7px #ecffffb0,inset 0 -8px 9px #00495d,0 5px 0 #023948,0 8px 15px #000c;
+  right:0;top:50%;transform:translateY(-50%);
+  --nb-sz:clamp(88px,20vw,126px);width:var(--nb-sz);height:var(--nb-sz);
+  border-radius:22px;
+}
+.nb-rotate-gc:active,.nb-rotate-gc.hit{
+  transform:translateY(-50%) scale(.92);
+}
+.nb-hold{
+  left:clamp(18px,4vw,38px);top:0;
+  --nb-sz:clamp(58px,12vw,82px);width:var(--nb-sz);height:var(--nb-sz);
+  border-radius:18px;
+  border-color:rgba(196,170,255,.44);color:rgba(226,214,255,.92);
+  box-shadow:0 0 13px rgba(176,150,255,.15),inset 0 0 10px rgba(176,150,255,.05);
+  animation-delay:.06s;
+}
+.nb-hold .nb-glyph{font-size:clamp(22px,4.5vw,30px)}
+.nb-hold:active,.nb-hold.hit{
+  background:rgba(170,145,255,.15);border-color:rgba(214,196,255,.94);color:#f0e8ff;
+  box-shadow:0 0 22px rgba(183,157,255,.52),0 0 44px rgba(183,157,255,.18),inset 0 0 12px rgba(183,157,255,.10);
+}
+/* Cooldown: hold already used this drop. Dim + non-interactive, matching the
+   "cannot hold again yet" state (panel 4) in the design reference. */
+.nb-hold.cooldown{
+  opacity:.32;pointer-events:none;
+  border-color:rgba(120,140,160,.25);color:rgba(150,170,190,.5);
+  box-shadow:none;
 }
 .nb-slam{
-  bottom:8%;left:12%;width:30%;height:30%;min-width:42px;min-height:42px;border-radius:50%;
-  color:#fff;background:radial-gradient(circle at 38% 26%,#ff7481,#ed173c 52%,#8d0620);
-  box-shadow:inset 0 2px 6px #ffbbbb,inset 0 -6px 7px #6d0516,0 5px 0 #570816,0 7px 12px #000a;
+  left:0;bottom:0;
+  --nb-sz:clamp(58px,12vw,82px);width:var(--nb-sz);height:var(--nb-sz);
+  border-radius:18px;
+  border-color:rgba(255,104,126,.46);color:rgba(255,126,144,.92);
+  box-shadow:0 0 14px rgba(255,82,110,.16),inset 0 0 10px rgba(255,82,110,.06);
+  animation-delay:.18s;
 }
-.nb-hold.cooldown{opacity:.32;filter:grayscale(.6);pointer-events:none}
-.nb-act[hidden]{display:none}
+.nb-slam .nb-glyph{font-size:clamp(24px,4.8vw,32px)}
+.nb-slam:active,.nb-slam.hit{
+  background:rgba(255,92,120,.15);border-color:rgba(255,132,154,.95);color:#ffd6dd;
+  box-shadow:0 0 22px rgba(255,86,116,.55),0 0 44px rgba(255,86,116,.18),inset 0 0 12px rgba(255,86,116,.10);
+}
+.nb-rot:active,.nb-rot.hit{
+  background:rgba(255,190,40,.14);border-color:rgba(255,215,120,.95);color:#fff0b8;
+  box-shadow:0 0 24px rgba(255,188,32,.60),0 0 50px rgba(255,188,32,.22),inset 0 0 14px rgba(255,188,32,.10);
+}
 #nui-pause{
-  position:fixed;right:max(10px,env(safe-area-inset-right));top:max(58px,env(safe-area-inset-top));z-index:60;
-  align-items:center;justify-content:center;width:48px;height:44px;border-radius:12px;pointer-events:auto;
-  touch-action:none;color:#d8faff;background:linear-gradient(#284357,#102439);border:1px solid #4ec7f0;
-  box-shadow:inset 0 2px #ffffff35,0 4px 0 #03111c;font:bold 17px ui-monospace,monospace;
+  position:fixed;top:clamp(6px,1.5vh,12px);left:50%;transform:translateX(-50%);
+  z-index:60;pointer-events:all;touch-action:none;-webkit-tap-highlight-color:transparent;
+  -webkit-appearance:none;appearance:none;outline:none;cursor:pointer;
+  align-items:center;justify-content:center;
+  width:44px;height:36px;border-radius:8px;
+  background:rgba(5,12,28,.70);border:1.5px solid rgba(80,190,255,.28);
+  color:rgba(80,210,255,.72);font-family:ui-monospace,'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace;
+  font-size:13px;font-weight:bold;letter-spacing:2px;
+  box-shadow:0 0 10px rgba(60,170,255,.12);
+  transition:background .06s,border-color .06s,box-shadow .06s;
 }
-#nui-pause.hit{transform:translateY(2px)}
-#nui-pause[data-state="paused"]{color:#ffe557}
+#nui-pause:active,#nui-pause.hit{background:rgba(60,190,255,.14);border-color:rgba(80,220,255,.82);color:#00ffff;box-shadow:0 0 18px rgba(60,200,255,.5)}
+#nui-pause[data-state="paused"]{border-color:rgba(255,220,0,.5);color:rgba(255,220,0,.85);box-shadow:0 0 12px rgba(255,200,0,.2);letter-spacing:0;font-size:15px}
 @media(pointer:coarse)and(orientation:landscape){
-  #nui{--nui-h:clamp(112px,28vh,154px);padding:5px max(12px,env(safe-area-inset-right)) max(5px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left))}
-  #nui-cluster{justify-content:space-around}
-  #dpad,#nui-act{width:min(28vh,154px);height:min(28vh,154px);max-height:calc(var(--nui-h) - 10px)}
-  #nui-act{flex-basis:min(28vh,154px)}
-  .nb-hold{min-height:30px}.nb-slam{min-width:36px;min-height:36px}
-  #nui-pause{top:6px;right:max(8px,env(safe-area-inset-right))}
+  #nui{--nui-h:clamp(118px,25vh,152px)}
+  .nb{--nb-sz:clamp(50px,10.5vw,74px)}
+  .nb-rot{--nb-sz:clamp(63px,13.5vw,88px)}
+  #nui-act{width:clamp(148px,27vw,200px);height:clamp(112px,22vh,154px)}
+  .nb-rotate-gc{--nb-sz:clamp(72px,13vw,96px)}
+  .nb-hold,.nb-slam{--nb-sz:clamp(48px,9vw,66px)}
 }
-@media(prefers-reduced-motion:reduce){.nb-act{transition:none}}
+@keyframes nb-appear{from{opacity:0;transform:translateY(16px) scale(.88)}to{opacity:1;transform:none}}
+
 
 /* ── ZITTRIS command deck / settings overhaul ───────────────────────── */
 :root{
@@ -228,7 +191,6 @@ body.theme-night #dpad-art[data-dir] .dp-arrow[data-arrow]{filter:none}
 button,select,input{font:inherit}
 button{touch-action:manipulation}
 .ui-hidden{display:none!important}
-.ui-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 #menu-layer,#settings-backdrop,#how-backdrop{font-family:ui-monospace,'SFMono-Regular',Menlo,Consolas,'Liberation Mono',monospace}
 #menu-layer{
   position:fixed;inset:0;z-index:80;display:grid;grid-template-columns:minmax(150px,22vw) minmax(340px,620px) minmax(130px,19vw);
@@ -460,139 +422,22 @@ body::after{
 
 
 <div id="nui" aria-label="Game controls" role="group">
-  <div id="nui-cluster">
-    <div id="dpad" role="group" tabindex="0" aria-label="Direction pad: left and right move, down soft drops, up rotates">
-      <svg id="dpad-art" viewBox="0 0 200 200" aria-hidden="true" focusable="false">
-        <defs>
-          <!-- Fine matte grain. feTurbulence is the only thing here that
-               costs a raster pass; it renders on class change, not per
-               frame, because nothing in this pad animates continuously.
-               N=1 FLAG: baseFrequency 0.85 reads as moulded ABS at 232px.
-               Below ~0.6 it becomes visible mottling. -->
-          <filter id="dpGrain" x="0" y="0" width="100%" height="100%">
-            <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="7"/>
-            <feColorMatrix type="saturate" values="0"/>
-          </filter>
-
-          <linearGradient id="dpShell" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0"   stop-color="var(--dp-shell-hi)"/>
-            <stop offset="0.55" stop-color="var(--dp-shell-mid)"/>
-            <stop offset="1"   stop-color="var(--dp-shell-lo)"/>
-          </linearGradient>
-          <!-- Lip and wall are deliberate inverses. A raised rim is light
-               on top and shadowed below; a sunken wall is the opposite.
-               Running the same gradient on both is what makes a CSS
-               "recess" read as a flat printed circle. -->
-          <!-- N=1 FLAG: the lip started at .95 white and shouted, reading
-               as a chrome bezel rather than as moulded plastic catching
-               light. Moulded ABS has a soft specular, so the top stop is
-               well short of white and the shadow end carries more of the
-               shape. Tune it against the shell highlight property, not
-               in isolation.
-               (Note for anyone editing SVG comments here: XML forbids a
-               double hyphen inside a comment, so custom-property names
-               cannot be written literally. The HTML parser tolerates it;
-               the preview rasteriser does not, which is how this was
-               caught rather than shipped.) -->
-          <linearGradient id="dpLip" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0"   stop-color="rgba(255,255,255,.62)"/>
-            <stop offset="0.5" stop-color="rgba(255,255,255,.10)"/>
-            <stop offset="1"   stop-color="rgba(0,0,0,.26)"/>
-          </linearGradient>
-          <linearGradient id="dpWall" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stop-color="rgba(0,0,0,.42)"/>
-            <stop offset="1" stop-color="rgba(255,255,255,.55)"/>
-          </linearGradient>
-          <linearGradient id="dpOlive" x1="0.2" y1="0" x2="0.8" y2="1">
-            <stop offset="0"   stop-color="var(--dp-olive-lo)"/>
-            <stop offset="0.5" stop-color="var(--dp-olive-hi)"/>
-            <stop offset="1"   stop-color="var(--dp-olive-lo)"/>
-          </linearGradient>
-          <radialGradient id="dpWell" cx="0.5" cy="0.42" r="0.62">
-            <stop offset="0"   stop-color="var(--dp-well-mid)"/>
-            <stop offset="1"   stop-color="var(--dp-well-lo)"/>
-          </radialGradient>
-
-          <linearGradient id="dpCross" x1="0.18" y1="0" x2="0.72" y2="1">
-            <stop offset="0"    stop-color="var(--dp-key-hi)"/>
-            <stop offset="0.42" stop-color="var(--dp-key-mid)"/>
-            <stop offset="1"    stop-color="var(--dp-key-lo)"/>
-          </linearGradient>
-          <linearGradient id="dpBevel" x1="0" y1="0" x2="0.35" y2="1">
-            <stop offset="0"    stop-color="rgba(255,255,255,.55)"/>
-            <stop offset="0.45" stop-color="rgba(255,255,255,.06)"/>
-            <stop offset="1"    stop-color="rgba(0,0,0,.45)"/>
-          </linearGradient>
-          <radialGradient id="dpPress" cx="0.5" cy="0.5" r="0.5">
-            <stop offset="0"    stop-color="rgba(0,0,0,.55)"/>
-            <stop offset="0.55" stop-color="rgba(0,0,0,.24)"/>
-            <stop offset="1"    stop-color="rgba(0,0,0,0)"/>
-          </radialGradient>
-          <radialGradient id="dpLift" cx="0.5" cy="0.5" r="0.5">
-            <stop offset="0"   stop-color="rgba(255,255,255,.34)"/>
-            <stop offset="1"   stop-color="rgba(255,255,255,0)"/>
-          </radialGradient>
-
-          <clipPath id="dpCrossClip">
-            <path d="M74 43 A15 15 0 0 1 89 28 L111 28 A15 15 0 0 1 126 43 L126 62 A12 12 0 0 0 138 74 L157 74 A15 15 0 0 1 172 89 L172 111 A15 15 0 0 1 157 126 L138 126 A12 12 0 0 0 126 138 L126 157 A15 15 0 0 1 111 172 L89 172 A15 15 0 0 1 74 157 L74 138 A12 12 0 0 0 62 126 L43 126 A15 15 0 0 1 28 111 L28 89 A15 15 0 0 1 43 74 L62 74 A12 12 0 0 0 74 62 Z"/>
-          </clipPath>
-          <clipPath id="dpShellClip"><circle cx="100" cy="100" r="100"/></clipPath>
-        </defs>
-
-        <!-- ── housing ────────────────────────────────────────────── -->
-        <g class="dp-housing">
-          <!-- Circular hardware only. The old full-viewBox rectangle was the
-               light/dark square visible around the d-pad on mobile. -->
-          <circle cx="100" cy="100" r="100" fill="url(#dpShell)"/>
-          <g clip-path="url(#dpShellClip)">
-            <rect x="0" y="0" width="200" height="200" class="dp-grain" filter="url(#dpGrain)"/>
-          </g>
-          <circle cx="100" cy="100" r="94" fill="none" stroke="url(#dpLip)"  stroke-width="2.2"/>
-          <circle cx="100" cy="100" r="89" fill="none" stroke="url(#dpWall)" stroke-width="6"/>
-          <circle cx="100" cy="100" r="84" fill="none" stroke="url(#dpLip)"  stroke-width="2"/>
-          <circle cx="100" cy="100" r="81" fill="none" stroke="url(#dpOlive)" stroke-width="3.4" class="dp-olive"/>
-          <circle cx="100" cy="100" r="79" fill="url(#dpWell)"/>
-          <circle cx="100" cy="100" r="79" fill="none" stroke="rgba(0,0,0,.6)" stroke-width="2.2"/>
-        </g>
-
-        <!-- ── the key ────────────────────────────────────────────── -->
-        <g id="dp-key">
-          <path class="dp-cast" transform="translate(0 3.5)" d="M74 43 A15 15 0 0 1 89 28 L111 28 A15 15 0 0 1 126 43 L126 62 A12 12 0 0 0 138 74 L157 74 A15 15 0 0 1 172 89 L172 111 A15 15 0 0 1 157 126 L138 126 A12 12 0 0 0 126 138 L126 157 A15 15 0 0 1 111 172 L89 172 A15 15 0 0 1 74 157 L74 138 A12 12 0 0 0 62 126 L43 126 A15 15 0 0 1 28 111 L28 89 A15 15 0 0 1 43 74 L62 74 A12 12 0 0 0 74 62 Z"/>
-          <path class="dp-face" d="M74 43 A15 15 0 0 1 89 28 L111 28 A15 15 0 0 1 126 43 L126 62 A12 12 0 0 0 138 74 L157 74 A15 15 0 0 1 172 89 L172 111 A15 15 0 0 1 157 126 L138 126 A12 12 0 0 0 126 138 L126 157 A15 15 0 0 1 111 172 L89 172 A15 15 0 0 1 74 157 L74 138 A12 12 0 0 0 62 126 L43 126 A15 15 0 0 1 28 111 L28 89 A15 15 0 0 1 43 74 L62 74 A12 12 0 0 0 74 62 Z"/>
-
-          <g clip-path="url(#dpCrossClip)">
-            <!-- Rocking feedback: the pressed arm sinks into shadow and
-                 the opposite arm catches the light. A d-pad pivots at its
-                 hub; it does not slide, which is why the old translating
-                 knob read as a joystick however it was styled. -->
-            <circle class="dp-press-shade" cx="100" cy="100" r="74" fill="url(#dpPress)"/>
-            <circle class="dp-press-lift"  cx="100" cy="100" r="66" fill="url(#dpLift)"/>
-            <rect x="0" y="0" width="200" height="200" class="dp-grain dp-grain-key" filter="url(#dpGrain)"/>
-            <path class="dp-bevel" d="M74 43 A15 15 0 0 1 89 28 L111 28 A15 15 0 0 1 126 43 L126 62 A12 12 0 0 0 138 74 L157 74 A15 15 0 0 1 172 89 L172 111 A15 15 0 0 1 157 126 L138 126 A12 12 0 0 0 126 138 L126 157 A15 15 0 0 1 111 172 L89 172 A15 15 0 0 1 74 157 L74 138 A12 12 0 0 0 62 126 L43 126 A15 15 0 0 1 28 111 L28 89 A15 15 0 0 1 43 74 L62 74 A12 12 0 0 0 74 62 Z"/>
-          </g>
-
-          <!-- hub detent — embossed, so its highlight sits BELOW its shadow -->
-          <circle class="dp-detent-light" cx="100" cy="101" r="17"/>
-          <circle class="dp-detent-shade" cx="100" cy="100" r="17"/>
-
-          <g class="dp-arrows">
-            <path class="dp-arrow" data-arrow="up"    d="M100 43 L109 57 L91 57 Z"/>
-            <path class="dp-arrow" data-arrow="down"  d="M100 157 L91 143 L109 143 Z"/>
-            <path class="dp-arrow" data-arrow="left"  d="M43 100 L57 91 L57 109 Z"/>
-            <path class="dp-arrow" data-arrow="right" d="M157 100 L143 109 L143 91 Z"/>
-          </g>
-        </g>
-      </svg>
+  <div id="nui-move" role="group" aria-label="Movement">
+    <div id="nui-lr-row">
+      <button class="nb" id="nb-left" aria-label="Move left"><span>◄</span><span class="nb-lbl">LEFT</span></button>
+      <button class="nb" id="nb-right" aria-label="Move right"><span>►</span><span class="nb-lbl">RIGHT</span></button>
     </div>
-    <div id="nui-act" role="group" aria-label="Actions">
-      <button class="nb-act nb-hold" id="nb-hold" aria-label="Hold piece"><span class="nb-glyph" aria-hidden="true">⇄</span><span class="nb-lbl">HOLD</span></button>
-      <button class="nb-act nb-rotate-gc" id="nb-rotate" aria-label="Rotate clockwise"><span class="nb-glyph" aria-hidden="true">↻</span><span class="nb-lbl">ROTATE</span></button>
-      <button class="nb-act nb-slam" id="nb-harddrop" aria-label="Hard drop"><span class="nb-glyph" aria-hidden="true">⬇</span><span class="nb-lbl">SLAM</span></button>
-    </div>
+    <button class="nb" id="nb-down" aria-label="Soft drop" style="width:var(--nb-sz,clamp(60px,13vw,88px));height:calc(var(--nb-sz,clamp(60px,13vw,88px)) * 0.72)"><span>▼</span><span class="nb-lbl">DROP</span></button>
+  </div>
+  <div id="nui-act" role="group" aria-label="Actions">
+    <button class="nb nb-act nb-hold" id="nb-hold" aria-label="Hold piece"><span class="nb-glyph">⇄</span><span class="nb-lbl">HOLD</span></button>
+    <button class="nb nb-act nb-rot nb-rotate-gc" id="nb-rotate" aria-label="Rotate">
+      <span class="nb-dot">↻</span><span class="nb-lbl">ROTATE</span>
+    </button>
+    <button class="nb nb-act nb-slam" id="nb-harddrop" aria-label="Hard drop"><span class="nb-glyph">⬇</span><span class="nb-lbl">SLAM</span></button>
   </div>
 </div>
-<button id="nui-pause" aria-label="Pause game" data-state="playing">II</button>
-<div id="game-status" role="status" aria-live="polite" class="ui-sr-only"></div>
+<button id="nui-pause" aria-label="Pause" data-state="playing">II</button>
 
 <script>
 // ═══════════════════════════════════════════════════════════════════════
@@ -735,17 +580,16 @@ function saveSettings(next){
   renderMenuData();
 }
 
-let releaseTouchControls=()=>{};
 const pauseReasons=new Set();
 let settingsOpen=false, howOpen=false, settingsOpener=null;
 function syncPauseState(){
   if(!gs || gs.state!=='playing') return;
   gs.paused=pauseReasons.size>0;
   const pb=document.getElementById('nui-pause');
-  if(pb){ pb.dataset.state=gs.paused?'paused':'playing'; pb.textContent=gs.paused?'▶':'II'; pb.setAttribute('aria-label',gs.paused?'Resume game':'Pause game'); }
+  if(pb){ pb.dataset.state=gs.paused?'paused':'playing'; pb.textContent=gs.paused?'▶':'II'; }
   reconcileBGM();
 }
-function setPauseReason(reason,active){ if(active)releaseTouchControls(); active?pauseReasons.add(reason):pauseReasons.delete(reason); syncPauseState(); }
+function setPauseReason(reason,active){ active?pauseReasons.add(reason):pauseReasons.delete(reason); syncPauseState(); }
 function toggleManualPause(){ if(!gs||gs.state!=='playing'||settingsOpen) return; setPauseReason('manual',!pauseReasons.has('manual')); }
 function clearPauseReasons(){ pauseReasons.clear(); if(gs) gs.paused=false; syncPauseState(); }
 
@@ -783,7 +627,7 @@ function updateRangeOutputs(){
 }
 function openSettings(opener=document.activeElement){
   if(settingsOpen) return;
-  releaseTouchControls();settingsOpen=true; settingsOpener=opener;
+  settingsOpen=true; settingsOpener=opener;
   populateSettingsForm(settings);
   document.getElementById('settings-backdrop').classList.remove('ui-hidden');
   if(gs&&gs.state==='playing') setPauseReason('settings-modal',true);
@@ -855,12 +699,10 @@ function resize() {
   // constants — they get divided by PIXEL_SCALE for the same reason the
   // touch-NUI height does: they're anchored to the physical device, not to
   // whatever internal resolution the backbuffer happens to be running at.
-  const panel=document.getElementById('nui');
-  const fallbackConsole=winW>winH?Math.min(154,Math.max(112,winH*.28)):Math.min(270,Math.max(198,winH*.30));
-  const consolePx=nuiActive?(panel?.offsetHeight||fallbackConsole):0;
-  const nuiH=consolePx/PIXEL_SCALE;
-  const bottomGap=Math.max(2,Math.round(6/PIXEL_SCALE));
-  const gutter=Math.max(3,Math.round(8/PIXEL_SCALE));
+  const nuiH      = nuiActive ? Math.min(206 / PIXEL_SCALE, H * 0.28) : 0;
+  const minCell   = Math.round(18 / PIXEL_SCALE);
+  const bottomGap = Math.max(2, Math.round(6 / PIXEL_SCALE));   // breathing room above the NUI zone, not a dead zone
+  const gutter    = Math.max(3, Math.round(12 / PIXEL_SCALE));
 
   // The board now owns the full screen height — flush to the true top
   // (open well, no ceiling — see drawBoard), filling down to just above
@@ -872,10 +714,10 @@ function resize() {
   // would have allowed. Decoupled, height wins the fit on typical portrait
   // phones; the width-based cap below is what still protects unusually
   // wide/short viewports where width remains the tighter constraint.
-  const hudW        = clamp(108 / PIXEL_SCALE, 94 / PIXEL_SCALE, W * 0.29);
+  const hudW        = clamp(132 / PIXEL_SCALE, 112 / PIXEL_SCALE, W * 0.34);
   const cellByHeight = Math.floor((H - nuiH - bottomGap) / ROWS);
   const cellByWidth  = Math.floor((W - gutter * 2 - hudW) / COLS);
-  CELL = Math.max(2, Math.min(cellByHeight, cellByWidth));
+  CELL = Math.max(Math.min(cellByHeight, cellByWidth), minCell);
 
   BOARD_W = CELL * COLS;
   BOARD_H = CELL * ROWS;
@@ -2452,7 +2294,7 @@ function ghostY(){if(!gs.current)return 0;let dy=0;while(canPlace(gs.current,0,d
 function startGame(){
   try{AC().resume()}catch(e){}
   clearPauseReasons();initGS();gs.level=titleLevel;applyStartHeight(titleHeight);gs.state='playing';spawnNext();
-  updateChromeVisibility();resize();reconcileBGM();
+  updateChromeVisibility();reconcileBGM();
 }
 function togglePause(){toggleManualPause()}
 
@@ -3158,7 +3000,6 @@ function loop(ts) {
   if(gs.state==='playing'&&gs.paused&&!settingsOpen) drawPause();
 
   syncHoldButton();
-  syncGameStatus();
 
   // ── CRT pass ─────────────────────────────────────────────────────────
   // One drawImage, nearest-neighbor: the whole reduced-res backbuffer
@@ -3170,15 +3011,6 @@ function loop(ts) {
   dispCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, dispCanvas.width, dispCanvas.height);
 
   requestAnimationFrame(loop);
-}
-
-// Expose canvas-only game states to assistive technology, updating only on change.
-let _announcedGameState='';
-function syncGameStatus(){
-  const state=gs.state==='gameover'?'Game over':gs.state==='playing'?(gs.paused?'Paused':'Playing'):'Main menu';
-  if(state===_announcedGameState)return;
-  _announcedGameState=state;
-  const status=document.getElementById('game-status');if(status)status.textContent=state;
 }
 
 // ── NUI hold-button cooldown reflection ────────────────────────────────
@@ -3196,76 +3028,84 @@ function syncHoldButton() {
     _nbHoldEl.classList.toggle('cooldown', cd);
     _nbHoldCooldownShown = cd;
   }
-  const unavailable=cd||!settings.holdEnabled;
-  if(_nbHoldEl.disabled!==unavailable)_nbHoldEl.disabled=unavailable;
 }
 
 // ── Touch NUI ──────────────────────────────────────────────────────────
 function setupNUI() {
-  nuiActive=window.matchMedia('(pointer:coarse)').matches || ('ontouchstart' in window && navigator.maxTouchPoints>0);
-  if(!nuiActive) return;
+  const isTouch = window.matchMedia('(pointer:coarse)').matches
+               || ('ontouchstart' in window && navigator.maxTouchPoints>0);
+  nuiActive = isTouch;
+  if(!isTouch) return;
+
   updateChromeVisibility();
-  const zone=document.getElementById('dpad'), art=document.getElementById('dpad-art');
-  const vector={left:[-1,0],right:[1,0],down:[0,1],up:[0,0]};
-  let owner=null, direction=null;
-  function clearDirection(){
-    keys['nb-left']=keys['nb-right']=keys['nb-down']=false;
-    direction=null;art.removeAttribute('data-dir');
-  }
-  function setDirection(next){
-    if(next===direction)return;
-    clearDirection();
-    if(!next||gs.state!=='playing'||gs.paused)return;
-    direction=next;art.setAttribute('data-dir',next);
-    if(next==='up')tryRotate(1);
-    else if(next==='down'){keys['nb-down']=true;tryMove(0,1);gs.dropTimer=0;SFX.softDrop()}
-    else{keys['nb-'+next]=true;tryMove(...vector[next])}
-  }
-  function point(e){
-    const r=zone.getBoundingClientRect();
-    const dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2);
-    // Snakia's 16px hub deadzone, with its transformed-box hit geometry.
-    setDirection(Math.hypot(dx,dy)<16?null:Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'down':'up'));
-  }
-  zone.addEventListener('pointerdown',e=>{
-    if(owner!==null||gs.state!=='playing'||gs.paused)return;
-    owner=e.pointerId;try{zone.setPointerCapture(owner)}catch(_){}
-    point(e);e.preventDefault();
-  },{passive:false});
-  zone.addEventListener('pointermove',e=>{if(e.pointerId!==owner)return;point(e);e.preventDefault()},{passive:false});
-  function releasePad(e){if(e.pointerId!==owner)return;owner=null;clearDirection()}
-  for(const type of ['pointerup','pointercancel','lostpointercapture'])zone.addEventListener(type,releasePad);
-  function clearPad(){owner=null;clearDirection()}
-  releaseTouchControls=()=>{clearPad();for(const el of document.querySelectorAll('.nb-act.hit, #nui-pause.hit'))el.classList.remove('hit')};
-  window.addEventListener('blur',clearPad);
-  document.addEventListener('visibilitychange',()=>{if(document.hidden)clearPad()});
-  // Releasing the active pointer never releases a separate thumb on the action cluster.
-  for(const [id,fn] of Object.entries({'nb-rotate':()=>tryRotate(1),'nb-hold':()=>holdPiece(),'nb-harddrop':()=>hardDrop()})){
-    const el=document.getElementById(id);let held=null;
-    const release=e=>{if(e&&e.pointerId!==held)return;held=null;el.classList.remove('hit')};
+
+  // Simple key injection
+  const btnActions = {
+    'nb-left':     () => tryMove(-1,0),
+    'nb-right':    () => tryMove(1,0),
+    'nb-down':     () => { keys['nb-down']=true; SFX.softDrop(); },
+    'nb-rotate':   () => tryRotate(1),
+    'nb-harddrop': () => hardDrop(),
+    'nb-hold':     () => holdPiece(),
+  };
+  const btnRelease = {
+    'nb-down': () => { keys['nb-down']=false; },
+  };
+  // On the title screen only, LEFT/RIGHT/ROTATE/DROP adjust the starting
+  // options instead of jumping straight into a game. SLAM has no title-
+  // screen mapping and falls through to startGame(), same as any button
+  // still does on the gameover screen — that flow is unchanged.
+  const titleActions = {
+    'nb-left':   () => adjustStartLevel(-1),
+    'nb-right':  () => adjustStartLevel(1),
+    'nb-rotate': () => adjustStartHeight(1),
+    'nb-down':   () => adjustStartHeight(-1),
+  };
+
+  for(const [id, fn] of Object.entries(btnActions)) {
+    const el=document.getElementById(id); if(!el) continue;
     el.addEventListener('pointerdown',e=>{
-      if(held!==null||el.disabled||gs.state!=='playing'||gs.paused)return;
-      e.preventDefault();held=e.pointerId;try{el.setPointerCapture(held)}catch(_){}
-      el.classList.add('hit');fn();
+      e.preventDefault(); el.setPointerCapture(e.pointerId);
+      el.classList.add('hit');
+      if (gs.state==='title') {
+        const titleFn = titleActions[id];
+        if (titleFn) { titleFn(); return; }
+        startGame(); return;
+      }
+      if(gs.state!=='playing') { startGame(); return; }
+      fn();
     },{passive:false});
-    for(const type of ['pointerup','pointercancel','lostpointercapture'])el.addEventListener(type,release);
-    window.addEventListener('blur',()=>release(null));
-    document.addEventListener('visibilitychange',()=>{if(document.hidden)release(null)});
-    // Pointer commands fire on down. Native keyboard activation still works.
-    el.addEventListener('click',e=>{if(e.detail===0&&gs.state==='playing'&&!gs.paused&&!el.disabled)fn()});
+    const up=e=>{ e.preventDefault(); el.classList.remove('hit'); (btnRelease[id]||function(){})(); };
+    el.addEventListener('pointerup',up,{passive:false});
+    el.addEventListener('pointercancel',up,{passive:false});
   }
-  const pause=document.getElementById('nui-pause');let pauseOwner=null;
-  const releasePause=e=>{if(e&&e.pointerId!==pauseOwner)return;pauseOwner=null;pause.classList.remove('hit')};
-  pause.addEventListener('pointerdown',e=>{
-    if(pauseOwner!==null)return;e.preventDefault();pauseOwner=e.pointerId;
-    try{pause.setPointerCapture(pauseOwner)}catch(_){}
-    pause.classList.add('hit');clearPad();togglePause();
+
+  // Repeat for left/right held
+  let repeatIntervals = {};
+  ['nb-left','nb-right'].forEach(id=>{
+    const el=document.getElementById(id); if(!el) return;
+    el.addEventListener('pointerdown',e=>{
+      clearInterval(repeatIntervals[id]);
+      let t=setTimeout(()=>{
+        const dir=id==='nb-left'?-1:1;
+        if(settings.arrMs===0){while(tryMove(dir,0)){}return;}
+        repeatIntervals[id]=setInterval(()=>tryMove(dir,0),Math.max(16,settings.arrMs));
+      },settings.dasMs);
+      el._clearRepeat=()=>{ clearTimeout(t); clearInterval(repeatIntervals[id]); };
+    },{passive:true});
+    ['pointerup','pointercancel'].forEach(ev=>{
+      el.addEventListener(ev,()=>{ if(el._clearRepeat) el._clearRepeat(); },{passive:true});
+    });
+  });
+
+  const pb=document.getElementById('nui-pause');
+  pb.addEventListener('pointerdown',e=>{
+    e.preventDefault(); pb.classList.add('hit'); togglePause();
   },{passive:false});
-  for(const type of ['pointerup','pointercancel','lostpointercapture'])pause.addEventListener(type,releasePause);
-  pause.addEventListener('click',e=>{if(e.detail===0){clearPad();togglePause()}});
-  window.addEventListener('blur',()=>releasePause(null));
-  document.addEventListener('visibilitychange',()=>{if(document.hidden)releasePause(null)});
-  dispCanvas.addEventListener('pointerdown',()=>{if(gs.state==='gameover')startGame()},{passive:true});
+  pb.addEventListener('pointerup',e=>{e.preventDefault();pb.classList.remove('hit');},{passive:false});
+  pb.addEventListener('pointercancel',()=>pb.classList.remove('hit'),{passive:false});
+
+  dispCanvas.addEventListener('pointerdown',()=>{ if(gs.state!=='playing') startGame(); },{passive:true});
 }
 
 // ── Swipe gestures ────────────────────────────────────────────────────
