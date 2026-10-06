@@ -46,7 +46,6 @@
   <meta name="twitter:description" content="Neon logic. City defense, imperative.">
   <meta name="twitter:image" content="https://frymatic.us/FTSArcade/VECTORSIEGE/vector_siege_preview.png">
   <meta name="twitter:image:alt" content="Vector Siege Arcade cabinet preview with neon graphics and city defense UI">
-</head>
 
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
@@ -78,37 +77,6 @@ canvas{display:block;position:fixed;top:0;left:0;cursor:crosshair}
 .panel .tap{margin-top:18px;font-size:12px;color:rgba(0,255,180,.85);letter-spacing:.14em;
   animation:pulse 1.6s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
-
-:root{
-  --bg:#020b18; --panel:rgba(2,14,32,.92); --text:#bdf3ff; --cyan:#00e5ff;
-  --muted:rgba(180,230,255,.72); --accent:#78ffbe; --danger:#ff465a;
-  --chrome:rgba(0,210,255,.38); --hud:rgba(0,210,255,.88);
-}
-body[data-theme="light"]{
-  --bg:#edf8ff; --panel:rgba(245,252,255,.94); --text:#07324a; --cyan:#007c99;
-  --muted:rgba(15,63,86,.74); --accent:#007a59; --danger:#b3192d;
-  --chrome:rgba(0,112,145,.34); --hud:rgba(0,92,125,.9);
-}
-html,body{background:var(--bg)}
-#hud{color:var(--hud)}
-.overlay{background:color-mix(in srgb,var(--bg) 72%,transparent)}
-.panel{border-color:var(--chrome);background:var(--panel);color:var(--text)}
-.panel h1{color:var(--cyan)}
-.panel p{color:var(--muted)}
-#cabinetControls{position:fixed;top:54px;right:12px;z-index:30;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;max-width:min(92vw,560px);font-family:'Courier New',monospace}
-.cabBtn{appearance:none;border:1px solid var(--chrome);background:var(--panel);color:var(--text);padding:8px 10px;border-radius:4px;font:11px 'Courier New',monospace;letter-spacing:.08em;cursor:pointer;box-shadow:0 0 14px rgba(0,190,255,.08)}
-.cabBtn:hover,.cabBtn:focus-visible{outline:none;border-color:var(--cyan);box-shadow:0 0 18px color-mix(in srgb,var(--cyan) 25%,transparent)}
-#settingsOverlay,#pauseOverlay{pointer-events:auto}
-.settingsGrid{display:grid;grid-template-columns:1fr auto;gap:10px 16px;align-items:center;text-align:left;margin-top:18px;min-width:min(78vw,380px)}
-.settingsGrid label{font-size:11px;color:var(--muted);letter-spacing:.08em}
-.settingsGrid select,.settingsGrid input[type="range"]{width:180px;max-width:42vw}
-.settingsGrid input[type="checkbox"]{transform:scale(1.2)}
-.settingsFoot{display:flex;gap:8px;justify-content:center;margin-top:18px;flex-wrap:wrap}
-#perfTag{position:fixed;left:10px;bottom:24px;z-index:12;font:9px 'Courier New',monospace;letter-spacing:.08em;color:color-mix(in srgb,var(--hud) 55%,transparent);pointer-events:none}
-body[data-theme="light"] canvas{filter:saturate(.9) brightness(1.05)}
-@media (max-width:700px){#cabinetControls{top:auto;bottom:30px;right:8px;left:8px;justify-content:center}.cabBtn{padding:9px 11px}.settingsGrid{grid-template-columns:1fr}.settingsGrid select,.settingsGrid input[type="range"]{width:100%;max-width:none}}
-@media (prefers-reduced-motion:reduce){.panel .tap{animation:none}}
-
 </style>
 </head>
 <body>
@@ -131,46 +99,6 @@ body[data-theme="light"] canvas{filter:saturate(.9) brightness(1.05)}
 </div>
 <div id="cities">● ● ● ● ● ●</div>
 <div id="seedTag">SEED —</div>
-
-
-<div id="cabinetControls" aria-label="Cabinet controls">
-  <button class="cabBtn" id="pauseBtn" type="button">PAUSE</button>
-  <button class="cabBtn" id="settingsBtn" type="button">SETTINGS</button>
-  <button class="cabBtn" id="themeBtn" type="button">LIGHT MODE</button>
-  <button class="cabBtn" id="arcadeBtn" type="button">BACK TO ARCADE</button>
-</div>
-<div id="perfTag">FX AUTO · -- FPS</div>
-
-<div class="overlay hidden" id="pauseOverlay">
-  <div class="panel">
-    <h1>PAUSED</h1>
-    <p>Simulation frozen. Press Esc or Resume.</p>
-    <div class="settingsFoot">
-      <button class="cabBtn" id="resumeBtn" type="button">RESUME</button>
-      <button class="cabBtn" id="pauseSettingsBtn" type="button">SETTINGS</button>
-    </div>
-  </div>
-</div>
-
-<div class="overlay hidden" id="settingsOverlay">
-  <div class="panel">
-    <h1>SETTINGS</h1>
-    <div class="settingsGrid">
-      <label for="themeSelect">THEME</label><select id="themeSelect"><option value="dark">Dark</option><option value="light">Light</option></select>
-      <label for="fxSelect">PARTICLE / FX QUALITY</label><select id="fxSelect"><option value="auto">Auto</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select>
-      <label for="audioToggle">AUDIO</label><input id="audioToggle" type="checkbox" checked>
-      <label for="motionToggle">REDUCED MOTION</label><input id="motionToggle" type="checkbox">
-      <label for="midiToggle">MIDI INPUT</label><input id="midiToggle" type="checkbox">
-      <label for="midiSelect">MIDI DEVICE</label><select id="midiSelect" disabled><option value="">No device</option></select>
-      <label for="debugToggle">PERFORMANCE HUD</label><input id="debugToggle" type="checkbox">
-    </div>
-    <p id="midiStatus" style="margin-top:14px">MIDI idle.</p>
-    <div class="settingsFoot">
-      <button class="cabBtn" id="defaultsBtn" type="button">RESET DEFAULTS</button>
-      <button class="cabBtn" id="closeSettingsBtn" type="button">DONE</button>
-    </div>
-  </div>
-</div>
 
 <div class="overlay" id="titleOverlay">
   <div class="panel">
@@ -386,7 +314,6 @@ const grid = {
       const baseR = pass ? 2.2 : 1.2;
       for (let i = 0; i < n; i++) {
         if (major[i] !== pass) continue;
-        if ((settings.reducedMotion || fxTier === 0) && !major[i]) continue;
         const dx = dispX[i], dy = dispY[i];
         const disp = Math.hypot(dx, dy);
         const boost = Math.min(1, disp * 0.05);
@@ -402,8 +329,6 @@ const grid = {
 // ── Game state ───────────────────────────────────────────────────────
 const STATE = { TITLE: 0, PLAYING: 1, WAVE_CLEAR: 2, GAME_OVER: 3 };
 let state = STATE.TITLE;
-let paused = false;
-let settingsOpen = false;
 let score = 0, wave = 1, highScore = 0;
 let simTime = 0;
 let waveClearTimer = 0;
@@ -760,7 +685,7 @@ function drawCrosshair() {
 
 function render() {
   ctx.clearRect(0, 0, W, H);
-  ctx.fillStyle = settings.theme === 'light' ? '#edf8ff' : '#020b18';
+  ctx.fillStyle = '#020b18';
   ctx.fillRect(0, 0, W, H);
 
   grid.draw();
@@ -770,11 +695,7 @@ function render() {
 
   for (const m of enemyMissiles) drawTrail(m.x0, m.y0, m.x1, m.y1, Math.min(1, m.progress), '255,90,60');
   for (const p of interceptors) drawTrail(p.x0, p.y0, p.x1, p.y1, Math.min(1, p.progress), '90,255,190');
-  for (const e of explosions) {
-    if (fxTier === 0 && e.kind === 'friendly' && e.age > e.growLife) continue;
-    const vr = (e.curR ?? 1) * (fxTier === 2 ? 1 : fxTier === 1 ? .9 : .75);
-    drawGlow(e.kind, e.x, e.y, vr, Math.min(1, 1.1 - e.age / (e.growLife + e.holdLife + e.shrinkLife)));
-  }
+  for (const e of explosions) drawGlow(e.kind, e.x, e.y, e.curR ?? 1, Math.min(1, 1.1 - e.age / (e.growLife + e.holdLife + e.shrinkLife)));
 
   if (state === STATE.PLAYING) drawCrosshair();
 }
@@ -782,11 +703,9 @@ function render() {
 // ── Main loop (fixed-step sim + render) ─────────────────────────────
 let rafId = null, _last = 0, _acc = 0;
 function loop(ts) {
-  updateAdaptiveFx(ts);
   if (_last === 0) _last = ts;
   let dt = Math.min((ts - _last) / 1000, 0.1);
   _last = ts;
-  if (paused || settingsOpen) { render(); rafId = requestAnimationFrame(loop); return; }
   _acc += dt;
   while (_acc >= SIM_STEP) { simStep(SIM_STEP); _acc -= SIM_STEP; }
   render();
@@ -806,7 +725,6 @@ function resize() {
   layoutStructures();
 }
 window.addEventListener('resize', resize);
-document.addEventListener('visibilitychange', () => { if (document.hidden && state === STATE.PLAYING && !paused) setPaused(true); });
 
 // ── Audio — procedural, zero external assets, gated on first gesture ─
 let actx = null, noiseBuf = null;
@@ -825,7 +743,7 @@ function ensureAudio() {
   if (actx.state === 'suspended') actx.resume();
 }
 function playLaunch() {
-  if (!settings.audio || !actx) return;
+  if (!actx) return;
   const o = actx.createOscillator(), g = actx.createGain();
   o.type = 'sine'; o.frequency.setValueAtTime(520, actx.currentTime);
   o.frequency.exponentialRampToValueAtTime(140, actx.currentTime + 0.22);
@@ -835,7 +753,7 @@ function playLaunch() {
   o.start(); o.stop(actx.currentTime + 0.25);
 }
 function playBoom() {
-  if (!settings.audio || !actx) return;
+  if (!actx) return;
   const src = actx.createBufferSource(); src.buffer = noiseBuf;
   const filt = actx.createBiquadFilter(); filt.type = 'lowpass';
   filt.frequency.setValueAtTime(900, actx.currentTime);
@@ -847,7 +765,7 @@ function playBoom() {
   src.start(); src.stop(actx.currentTime + 0.45);
 }
 function playAlarm() {
-  if (!settings.audio || !actx) return;
+  if (!actx) return;
   const o = actx.createOscillator(), g = actx.createGain();
   o.type = 'square'; o.frequency.setValueAtTime(220, actx.currentTime);
   g.gain.setValueAtTime(0.12, actx.currentTime);
@@ -856,7 +774,7 @@ function playAlarm() {
   o.start(); o.stop(actx.currentTime + 0.5);
 }
 function playFanfare() {
-  if (!settings.audio || !actx) return;
+  if (!actx) return;
   [440, 550, 660].forEach((f, i) => {
     const o = actx.createOscillator(), g = actx.createGain();
     o.type = 'triangle'; o.frequency.setValueAtTime(f, actx.currentTime + i * 0.12);
@@ -869,137 +787,6 @@ function playFanfare() {
 }
 // (spawnExplosion calls playBoom() directly — see its definition above.)
 
-
-// ── FTS cabinet settings / adaptive effects / MIDI ─────────────────────
-const SETTINGS_KEY = 'vectorSiege_settings_v1';
-const DEFAULT_SETTINGS = { theme:'dark', fx:'auto', audio:true, reducedMotion:false, midi:false, midiId:'', debug:false };
-let settings = { ...DEFAULT_SETTINGS };
-let midiAccess = null;
-let activeMidiInput = null;
-let renderScale = 1;
-let fxTier = 2; // 0 low, 1 medium, 2 high
-let perfFrames = 0, perfLast = performance.now(), fpsEstimate = 60;
-let lowFpsWindows = 0, highFpsWindows = 0;
-
-function loadSettings(){
-  try { settings = { ...DEFAULT_SETTINGS, ...JSON.parse(storageGet(SETTINGS_KEY, '{}')) }; }
-  catch(e){ settings = { ...DEFAULT_SETTINGS }; }
-}
-function saveSettings(){ storageSet(SETTINGS_KEY, JSON.stringify(settings)); }
-function updateSettingsUI(){
-  document.getElementById('themeSelect').value = settings.theme;
-  document.getElementById('fxSelect').value = settings.fx;
-  document.getElementById('audioToggle').checked = settings.audio;
-  document.getElementById('motionToggle').checked = settings.reducedMotion;
-  document.getElementById('midiToggle').checked = settings.midi;
-  document.getElementById('debugToggle').checked = settings.debug;
-  document.getElementById('perfTag').style.display = settings.debug ? 'block' : 'none';
-  document.getElementById('themeBtn').textContent = settings.theme === 'dark' ? 'LIGHT MODE' : 'DARK MODE';
-}
-function applyTheme(){
-  document.body.dataset.theme = settings.theme;
-  updateSettingsUI();
-}
-function setFxTier(tier){
-  fxTier = Math.max(0, Math.min(2, tier));
-  grid.cells = fxTier === 0 ? 20 : fxTier === 1 ? 26 : 30;
-  grid.init();
-}
-function applyFxPreference(){
-  if (settings.fx === 'low') setFxTier(0);
-  else if (settings.fx === 'medium') setFxTier(1);
-  else if (settings.fx === 'high') setFxTier(2);
-}
-function updateAdaptiveFx(ts){
-  perfFrames++;
-  if (ts - perfLast < 1500) return;
-  fpsEstimate = perfFrames * 1000 / (ts - perfLast);
-  perfFrames = 0; perfLast = ts;
-  if (settings.fx === 'auto') {
-    if (fpsEstimate < 48) { lowFpsWindows++; highFpsWindows = 0; }
-    else if (fpsEstimate > 57) { highFpsWindows++; lowFpsWindows = 0; }
-    else { lowFpsWindows = highFpsWindows = 0; }
-    if (lowFpsWindows >= 2 && fxTier > 0) { setFxTier(fxTier - 1); lowFpsWindows = 0; }
-    if (highFpsWindows >= 4 && fxTier < 2) { setFxTier(fxTier + 1); highFpsWindows = 0; }
-  }
-  document.getElementById('perfTag').textContent = `FX ${settings.fx.toUpperCase()} / ${['LOW','MED','HIGH'][fxTier]} · ${fpsEstimate.toFixed(0)} FPS`;
-}
-function openSettings(){
-  settingsOpen = true;
-  document.getElementById('settingsOverlay').classList.remove('hidden');
-  updateSettingsUI();
-}
-function closeSettings(){ settingsOpen = false; document.getElementById('settingsOverlay').classList.add('hidden'); }
-function setPaused(next){
-  if (state !== STATE.PLAYING && state !== STATE.WAVE_CLEAR) return;
-  paused = !!next;
-  document.getElementById('pauseOverlay').classList.toggle('hidden', !paused);
-  document.getElementById('pauseBtn').textContent = paused ? 'RESUME' : 'PAUSE';
-  _last = 0; _acc = 0;
-  logEvent(paused ? 'PAUSE' : 'RESUME', {});
-}
-function togglePause(){ setPaused(!paused); }
-
-async function enableMidi(){
-  const status = document.getElementById('midiStatus');
-  if (!navigator.requestMIDIAccess) { status.textContent = 'Web MIDI unavailable in this browser.'; settings.midi = false; updateSettingsUI(); return; }
-  try {
-    midiAccess = await navigator.requestMIDIAccess();
-    midiAccess.onstatechange = refreshMidiDevices;
-    refreshMidiDevices();
-    status.textContent = 'MIDI ready. Notes 36/38/42 select batteries; 60–84 fire across screen.';
-  } catch(e) { status.textContent = 'MIDI permission denied or unavailable.'; settings.midi = false; updateSettingsUI(); }
-}
-function refreshMidiDevices(){
-  const select = document.getElementById('midiSelect');
-  const inputs = midiAccess ? Array.from(midiAccess.inputs.values()) : [];
-  select.innerHTML = '<option value="">Any device</option>' + inputs.map(i => `<option value="${i.id}">${i.name || 'MIDI Input'}</option>`).join('');
-  select.disabled = !settings.midi;
-  if (settings.midiId) select.value = settings.midiId;
-  bindMidiInput();
-}
-function bindMidiInput(){
-  if (!midiAccess) return;
-  for (const input of midiAccess.inputs.values()) input.onmidimessage = null;
-  if (!settings.midi) return;
-  const candidates = Array.from(midiAccess.inputs.values());
-  activeMidiInput = candidates.find(i => i.id === settings.midiId) || candidates[0] || null;
-  if (activeMidiInput) activeMidiInput.onmidimessage = onMidiMessage;
-}
-function onMidiMessage(ev){
-  const [status,note,vel] = ev.data;
-  if ((status & 0xF0) !== 0x90 || vel === 0) return;
-  if (note === 36) preferredSilo = 0;
-  else if (note === 38) preferredSilo = 1;
-  else if (note === 42) preferredSilo = 2;
-  else if (note >= 60 && note <= 84 && state === STATE.PLAYING && !paused) {
-    const x = ((note - 60) / 24) * W;
-    const y = H * (0.25 + (1 - vel / 127) * 0.5);
-    fireInterceptor(x, Math.min(y, groundY - 12));
-  }
-}
-
-function bindCabinetUI(){
-  document.getElementById('pauseBtn').addEventListener('click', togglePause);
-  document.getElementById('resumeBtn').addEventListener('click', ()=>setPaused(false));
-  document.getElementById('settingsBtn').addEventListener('click', openSettings);
-  document.getElementById('pauseSettingsBtn').addEventListener('click', openSettings);
-  document.getElementById('closeSettingsBtn').addEventListener('click', closeSettings);
-  document.getElementById('themeBtn').addEventListener('click', ()=>{ settings.theme = settings.theme === 'dark' ? 'light' : 'dark'; saveSettings(); applyTheme(); });
-  document.getElementById('arcadeBtn').addEventListener('click', ()=>{
-    if (state === STATE.PLAYING && !paused && !confirm('Leave Vector Siege and return to the arcade?')) return;
-    location.href = '/FTSArcade/';
-  });
-  document.getElementById('themeSelect').addEventListener('change', e=>{ settings.theme=e.target.value; saveSettings(); applyTheme(); });
-  document.getElementById('fxSelect').addEventListener('change', e=>{ settings.fx=e.target.value; saveSettings(); applyFxPreference(); updateSettingsUI(); });
-  document.getElementById('audioToggle').addEventListener('change', e=>{ settings.audio=e.target.checked; saveSettings(); });
-  document.getElementById('motionToggle').addEventListener('change', e=>{ settings.reducedMotion=e.target.checked; saveSettings(); });
-  document.getElementById('debugToggle').addEventListener('change', e=>{ settings.debug=e.target.checked; saveSettings(); updateSettingsUI(); });
-  document.getElementById('midiToggle').addEventListener('change', async e=>{ settings.midi=e.target.checked; saveSettings(); if(settings.midi) await enableMidi(); else bindMidiInput(); updateSettingsUI(); });
-  document.getElementById('midiSelect').addEventListener('change', e=>{ settings.midiId=e.target.value; saveSettings(); bindMidiInput(); });
-  document.getElementById('defaultsBtn').addEventListener('click', ()=>{ settings={...DEFAULT_SETTINGS}; saveSettings(); applyTheme(); applyFxPreference(); bindMidiInput(); updateSettingsUI(); });
-}
-
 // ── Input ────────────────────────────────────────────────────────────
 // Listeners live on `window`, NOT on the canvas. The overlay panels are
 // full-screen fixed divs stacked above the canvas; a canvas-bound
@@ -1008,19 +795,16 @@ function bindCabinetUI(){
 // on .overlay is belt-and-braces so this can't regress.
 window.addEventListener('pointermove', e => { pointerX = e.clientX; pointerY = e.clientY; });
 window.addEventListener('pointerdown', e => {
-  if (e.target.closest && (e.target.closest('#cabinetControls') || e.target.closest('#settingsOverlay') || e.target.closest('#pauseOverlay'))) return;
   pointerX = e.clientX; pointerY = e.clientY;
   ensureAudio();
   if (state === STATE.TITLE || state === STATE.GAME_OVER) { beginGame(); return; }
-  if (state === STATE.PLAYING && !paused && !settingsOpen) {
+  if (state === STATE.PLAYING) {
     // Clamp above the ground line — detonating inside the earth is a
     // wasted round the player didn't mean to spend.
     fireInterceptor(e.clientX, Math.min(e.clientY, groundY - 12));
   }
 });
 window.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { e.preventDefault(); if (settingsOpen) closeSettings(); else togglePause(); return; }
-  if (settingsOpen || paused) return;
   if (e.key === '1') preferredSilo = 0;
   else if (e.key === '2') preferredSilo = 1;
   else if (e.key === '3') preferredSilo = 2;
@@ -1028,10 +812,6 @@ window.addEventListener('keydown', e => {
 });
 
 function beginGame() {
-  paused = false; settingsOpen = false;
-  document.getElementById('pauseOverlay').classList.add('hidden');
-  document.getElementById('settingsOverlay').classList.add('hidden');
-  document.getElementById('pauseBtn').textContent = 'PAUSE';
   document.getElementById('titleOverlay').classList.add('hidden');
   document.getElementById('overOverlay').classList.add('hidden');
   score = 0; document.getElementById('scoreVal').textContent = 0;
@@ -1059,10 +839,6 @@ function storageSet(key, value) {
 }
 
 // ── Boot ─────────────────────────────────────────────────────────────
-loadSettings();
-applyTheme();
-applyFxPreference();
-bindCabinetUI();
 highScore = parseInt(storageGet('vectorSiege_highScore', '0'), 10) || 0;
 document.getElementById('hiVal').textContent = highScore;
 buildStructures();
