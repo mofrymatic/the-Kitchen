@@ -5,25 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>The Original — Red Eye Relic Entry 001</title>
 
-<meta name="description" content="A singular, naturally grown relic presented in the Red Eye Vitrine by Stick Nation.">
+<meta name="description" content="A singular, naturally grown relic. Shaped by time, weather, and chance.">
 <meta name="theme-color" content="#08070a">
 <link rel="icon" href="fts-favicon.png" type="image/png">
-<link rel="canonical" href="https://frymatic.us/FTSArcade/VITRINE">
 
-<meta property="og:title" content="The Original — Red Eye Vitrine">
-<meta property="og:description" content="Found, not made. A singular Stick Nation relic in the Red Eye Vitrine.">
+<meta property="og:title" content="The Original — Red Eye Relic Entry 001">
+<meta property="og:description" content="Found, not made. Some sticks just happen once.">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="FTS Arcade — Red Eye">
-<meta property="og:url" content="https://frymatic.us/FTSArcade/VITRINE">
-<meta property="og:image" content="https://frymatic.us/FTSArcade/VITRINE/vitrine_preview.png">
-<meta property="og:image:secure_url" content="https://frymatic.us/FTSArcade/VITRINE/vitrine_preview.png">
-<meta property="og:image:type" content="image/png">
-<meta property="og:image:alt" content="The Original — Stick Nation relic displayed in the Red Eye Vitrine">
-
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="The Original — Red Eye Vitrine">
-<meta name="twitter:description" content="Found, not made. A singular Stick Nation relic in the Red Eye Vitrine.">
-<meta name="twitter:image" content="https://frymatic.us/FTSArcade/VITRINE/vitrine_preview.png">
+<meta property="og:site_name" content="RED EYE">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -4352,11 +4341,9 @@ scene.environment = buildEnvironment();
 const key = new THREE.DirectionalLight(0xffd9a0, 2.7);
 key.position.set(-3.1, 5.0, 2.6);
 key.castShadow = true;
-// MOCHA-style presentation: spend resolution on one deliberate key shadow.
-const shadowResolution = isMobile ? 1024 : 2048;
-key.shadow.mapSize.set(shadowResolution, shadowResolution);
-key.shadow.bias = -0.00018;
-key.shadow.normalBias = 0.006;
+key.shadow.mapSize.set(1024, 1024);
+key.shadow.bias = -0.0006;
+key.shadow.normalBias = 0.022;
 scene.add(key, key.target);
 
 const rim = new THREE.DirectionalLight(0x9fb8e0, 1.15);
@@ -4371,11 +4358,10 @@ scene.add(bounce);
    composites onto the CSS ember floor rather than onto a 3D plane. */
 const shadowPlane = new THREE.Mesh(
   new THREE.PlaneGeometry(1, 1),
-  new THREE.ShadowMaterial({ opacity: 0.44, transparent: true, depthWrite: false })
+  new THREE.ShadowMaterial({ opacity: 0.52 })
 );
 shadowPlane.rotation.x = -Math.PI / 2;
 shadowPlane.receiveShadow = true;
-shadowPlane.renderOrder = -1;
 scene.add(shadowPlane);
 
 /* ── 9. Camera state ─────────────────────────────────────────────── */
@@ -4479,43 +4465,26 @@ function onLoad(gltf) {
   holder.add(relic);
   scene.add(holder);
 
-  /* MOCHA-style rig: the shadow system is derived from the actual relic
-     bounds, not from an arbitrary stage-sized plane. This keeps the
-     umbra attached to the object and gives the PCF filter useful texels. */
+  /* Rig and shadow bounds sized to the relic */
   const span = Math.max(relicHeight, relicRadius * 2);
-  const footprint = Math.max(size.x, size.z);
-
-  key.position.set(-1.08 * span, 1.62 * span, 0.92 * span);
-  key.target.position.set(0, relicHeight * 0.38, 0);
-  key.target.updateMatrixWorld(true);
-
+  key.position.set(-1.1 * span, 1.5 * span, 0.85 * span);
+  key.target.position.set(0, relicHeight * 0.45, 0);
+  key.target.updateMatrixWorld();
   const sc = key.shadow.camera;
-  const shadowExtent = Math.max(footprint * 0.78, relicHeight * 0.58);
-  sc.left = -shadowExtent;
-  sc.right = shadowExtent;
-  sc.top = shadowExtent * 1.18;
-  sc.bottom = -shadowExtent * 0.82;
-  sc.near = Math.max(0.01, span * 0.02);
-  sc.far = span * 4.25;
+  sc.left = -span * 0.75; sc.right = span * 0.75;
+  sc.top = span * 0.95;   sc.bottom = -span * 0.35;
+  sc.near = 0.1;          sc.far = span * 5;
   sc.updateProjectionMatrix();
 
-  // Bias scales with the exhibit so tiny and giant GLBs remain stable.
-  key.shadow.bias = -Math.max(0.00008, Math.min(0.0012, span * 0.00012));
-  key.shadow.normalBias = Math.max(0.0015, Math.min(0.018, span * 0.0035));
+  rim.position.set(0.9 * span, 0.5 * span, -1.1 * span);
+  bounce.position.set(0.1 * span, -0.35 * span, -0.85 * span);
 
-  rim.position.set(0.9 * span, 0.52 * span, -1.1 * span);
-  bounce.position.set(0.1 * span, -0.28 * span, -0.85 * span);
+  shadowPlane.scale.set(span * 3, span * 3, 1);
 
-  // Put the catcher microscopically below the normalized base so the
-  // model never z-fights with its own contact shadow.
-  shadowPlane.position.y = -Math.max(0.0005, span * 0.0007);
-  const catcher = Math.max(footprint * 3.1, span * 2.45);
-  shadowPlane.scale.set(catcher, catcher, 1);
-
-  // Shadow maps are renderer-owned in three.js. Force a fresh map after
-  // sizing/repositioning the key; do not set non-functional flags on
-  // LightShadow itself.
-  renderer.shadowMap.needsUpdate = true;
+  /* Neither the light nor the relic ever moves — only the camera. Bake
+     the shadow map once instead of re-rendering 188k tris every frame. */
+  key.shadow.autoUpdate = false;
+  key.shadow.needsUpdate = true;
 
   resize();
   const v = RELIC.views[0];
