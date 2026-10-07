@@ -4367,14 +4367,24 @@ const bounce = new THREE.DirectionalLight(0xff2d2d, 1.35);
 bounce.position.set(0.3, -1.1, -2.6);
 scene.add(bounce);
 
-/* Shadow catcher. Renders dark over the transparent clear, so it
-   composites onto the CSS ember floor rather than onto a 3D plane. */
+/* Soft contact shadow. Its circular falloff has no directional silhouette,
+   so orbiting the camera cannot spin the floor shadow around the relic. */
+const shadowCanvas = document.createElement('canvas');
+shadowCanvas.width = shadowCanvas.height = 128;
+const shadowContext = shadowCanvas.getContext('2d');
+const falloff = shadowContext.createRadialGradient(64, 64, 3, 64, 64, 62);
+falloff.addColorStop(0, 'rgba(12,8,6,0.52)');
+falloff.addColorStop(0.28, 'rgba(12,8,6,0.34)');
+falloff.addColorStop(0.7, 'rgba(12,8,6,0.10)');
+falloff.addColorStop(1, 'rgba(12,8,6,0)');
+shadowContext.fillStyle = falloff;
+shadowContext.fillRect(0, 0, 128, 128);
+const shadowTexture = new THREE.CanvasTexture(shadowCanvas);
 const shadowPlane = new THREE.Mesh(
   new THREE.PlaneGeometry(1, 1),
-  new THREE.ShadowMaterial({ opacity: 0.44, transparent: true, depthWrite: false })
+  new THREE.MeshBasicMaterial({ map: shadowTexture, transparent: true, depthWrite: false })
 );
 shadowPlane.rotation.x = -Math.PI / 2;
-shadowPlane.receiveShadow = true;
 shadowPlane.renderOrder = -1;
 scene.add(shadowPlane);
 
@@ -4506,10 +4516,9 @@ function onLoad(gltf) {
   rim.position.set(0.9 * span, 0.52 * span, -1.1 * span);
   bounce.position.set(0.1 * span, -0.28 * span, -0.85 * span);
 
-  // Put the catcher microscopically below the normalized base so the
-  // model never z-fights with its own contact shadow.
+  // Keep the contact patch at the normalized base, below the relic.
   shadowPlane.position.y = -Math.max(0.0005, span * 0.0007);
-  const catcher = Math.max(footprint * 3.1, span * 2.45);
+  const catcher = Math.max(footprint * 1.85, span * 1.15);
   shadowPlane.scale.set(catcher, catcher, 1);
 
   // Shadow maps are renderer-owned in three.js. Force a fresh map after
