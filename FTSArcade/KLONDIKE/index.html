@@ -6,15 +6,15 @@
 <meta name="theme-color" content="#05070a">
 <meta name="color-scheme" content="dark light">
 
-<title>Klondike Solitaire · FTS Arcade</title>
-<meta name="title" content="Klondike Solitaire · FTS Arcade">
-<meta name="description" content="FTS Arcade Klondike: tactile casino-table solitaire with draw-one or draw-three, responsive mobile play, physical card animation, audio, undo and hints.">
+<title>Klondike Solitaire · Red Eye · FTS Arcade</title>
+<meta name="title" content="Klondike Solitaire · Red Eye · FTS Arcade">
+<meta name="description" content="Red Eye flagship Klondike for FTS Arcade: tactile casino-table solitaire with draw-one or draw-three, marathon-soft physical card audio, responsive mobile play, undo and hints.">
 <link rel="canonical" href="https://frymatic.us/FTSArcade/KLONDIKE/">
 
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://frymatic.us/FTSArcade/KLONDIKE/">
-<meta property="og:title" content="Klondike Solitaire · FTS Arcade">
-<meta property="og:description" content="Tactile FTS Arcade Klondike with responsive mobile play, physical card animation, casino-table polish, audio, undo and hints.">
+<meta property="og:title" content="Klondike Solitaire · Red Eye · FTS Arcade">
+<meta property="og:description" content="Red Eye flagship Klondike with responsive mobile play, tactile casino-table polish, marathon-soft physical card audio, undo and hints.">
 <meta property="og:site_name" content="FTS Arcade">
 <meta property="og:locale" content="en_US">
 <meta property="og:image" content="https://frymatic.us/FTSArcade/KLONDIKE/klondike_preview.png">
@@ -25,8 +25,8 @@
 <meta property="og:image:alt" content="Klondike Solitaire game preview with embedded FTS playing-card pack">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:url" content="https://frymatic.us/FTSArcade/KLONDIKE/">
-<meta name="twitter:title" content="Klondike Solitaire · FTS Arcade">
-<meta name="twitter:description" content="Tactile FTS Arcade Klondike with responsive mobile play, physical card animation, casino-table polish, audio, undo and hints.">
+<meta name="twitter:title" content="Klondike Solitaire · Red Eye · FTS Arcade">
+<meta name="twitter:description" content="Red Eye flagship Klondike with responsive mobile play, tactile casino-table polish, marathon-soft physical card audio, undo and hints.">
 <meta name="twitter:image" content="https://frymatic.us/FTSArcade/KLONDIKE/klondike_preview.png">
 <meta name="twitter:image:alt" content="Klondike Solitaire game preview with embedded FTS playing-card pack">
 
@@ -372,7 +372,9 @@ html[data-juice="minimal"] .fidgets{display:block}
 .fidget:active{scale:1.065;filter:brightness(1.08)}
 .fidget[data-kind="spinner"]{--rotor-deg:0;width:clamp(54px,5.4vw,82px);border:0;background:transparent;box-shadow:none;color:transparent;overflow:visible;outline:none;contain:layout style;filter:drop-shadow(0 8px 9px rgba(0,0,0,.48))}
 .fidget[data-kind="spinner"]::after{display:none}
-.spinnerRotor{position:absolute;inset:0;will-change:transform,filter;transform-origin:50% 50%;filter:blur(var(--spinner-blur,0px)) saturate(var(--spinner-sat,1))}
+/* Invisible interaction halo: enlarges the iOS swipe/hold target without changing the visible spinner. */
+.spinnerHitHalo{position:absolute;inset:calc(var(--spinner-hit-pad,30px) * -1);border-radius:50%;background:transparent;pointer-events:auto;touch-action:none;z-index:0;-webkit-user-select:none;user-select:none}
+.spinnerRotor{position:absolute;inset:0;z-index:1;pointer-events:none;will-change:transform,filter;transform-origin:50% 50%;filter:blur(var(--spinner-blur,0px)) saturate(var(--spinner-sat,1))}
 /* One geometry source of truth: lobe centers sit on a 31.5% orbit at -90deg / 30deg / 150deg.
    Their centers therefore form an exact equilateral triangle around the 50%/50% pivot. */
 .spinnerWeb{position:absolute;left:16%;top:16%;width:68%;height:68%;clip-path:polygon(50% 3.68%,90.13% 73.16%,9.87% 73.16%);border-radius:24%;background:radial-gradient(circle at 50% 50%,#5d686e 0 12%,#303a40 38%,#182025 67%,#0e1418 100%);box-shadow:inset 0 0 0 2px rgba(255,255,255,.08)}
@@ -384,7 +386,7 @@ html[data-juice="minimal"] .fidgets{display:block}
 .spinnerLobe.l1{--cx:50%;--cy:18.5%}.spinnerLobe.l2{--cx:77.2798%;--cy:65.75%}.spinnerLobe.l3{--cx:22.7202%;--cy:65.75%}
 .spinnerHub{position:absolute;left:50%;top:50%;width:30%;height:30%;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle at 50% 50%,#edf1f2 0 8%,#737e84 38%,#20282d 70%,#0b1013 100%);box-shadow:0 0 0 3px #2d373c,0 0 0 5px #8c969b,inset 0 0 0 1px rgba(255,255,255,.38)}
 .spinnerHub::before{content:"";position:absolute;inset:-9%;border-radius:50%;transform:rotate(calc(var(--rotor-deg) * -1deg));background:radial-gradient(circle at 36% 29%,rgba(255,255,255,.34),transparent 44%);pointer-events:none}
-.spinnerCap{position:absolute;left:50%;top:50%;width:22%;height:22%;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle at 36% 30%,#f2f4f5,#7a858a 44%,#252d31 72%);box-shadow:0 1px 4px rgba(0,0,0,.7),inset 0 0 0 1px rgba(255,255,255,.35);pointer-events:none}
+.spinnerCap{position:absolute;z-index:2;left:50%;top:50%;width:22%;height:22%;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle at 36% 30%,#f2f4f5,#7a858a 44%,#252d31 72%);box-shadow:0 1px 4px rgba(0,0,0,.7),inset 0 0 0 1px rgba(255,255,255,.35);pointer-events:none}
 
 
 /* =====================================================================
@@ -490,7 +492,7 @@ html[data-uv-mobile="true"][data-theme="blacklight"] .card{box-shadow:0 2px 8px 
     <section class="game" aria-label="Klondike Solitaire">
       <div class="gameHead">
         <div class="gameIcon" aria-hidden="true">&#9824;</div>
-        <div class="titleBlock"><h1>Klondike</h1><p>Classic solitaire &middot; draw one or three</p></div>
+        <div class="titleBlock"><h1>Klondike</h1><p>Red Eye flagship table &middot; classic solitaire &middot; draw one or three</p></div>
         <div class="metrics">
           <div class="metric"><strong id="timeMetric">00:00</strong><span>time</span></div>
           <div class="metric"><strong id="moveMetric">0</strong><span>moves</span></div>
@@ -549,7 +551,7 @@ const ASSETS=Object.freeze({"S1":"data:image/webp;base64,UklGRmo7AABXRUJQVlA4IF4
    ======================================================================= */
 const DEV = /[?&]dev=1(&|$)/.test(location.search);
 const QA = DEV && /[?&]qa=1(&|$)/.test(location.search);
-const BUILD = 'klondike-5.17.0-organic-gesture-audio-invisible-magnet';
+const BUILD = 'klondike-5.19.0-red-eye-flagship-mobile-spinner-dynamics';
 const $ = (s,r=document)=>r.querySelector(s);
 const clamp = (n,a,b)=>Math.max(a,Math.min(b,n));
 const reducedMotion = ()=>{ try{ return matchMedia('(prefers-reduced-motion: reduce)').matches }catch(_){ return false } };
@@ -676,11 +678,16 @@ const Prefs = (()=>{
 
 /* ---------- synthesized card-table audio: no external assets ---------- */
 const AudioFX = (()=>{
-  let ctx=null, master=null, cardBus=null, noise=null, voices=0, seq=0, lastGrain=0;
-  const CARD_AUDIO_SCALE=.44; // dedicated card bus, -7.1 dB; spinner voice stays on original master
+  let ctx=null, master=null, safetyGain=null, compressor=null, cardBus=null, spinnerBus=null, noise=null, voices=0, seq=0, lastGrain=0;
+  const CARD_AUDIO_SCALE=.44; // dedicated card bus, -7.1 dB; spinner voice stays on its own bus
+  // Marathon-play contract: card gestures live mainly in the spinner's soothing low/mid neighborhood.
+  // The upper band is detail, not the center of gravity; ordinary card transients intentionally stay below 1.7 kHz.
+  const CARD_REGISTER=Object.freeze({bodyHz:Object.freeze([360,760]),detailHz:Object.freeze([780,1550]),frictionHz:Object.freeze([350,1630]),transientCeilingHz:1700,attackMs:Object.freeze([5.5,11.5])});
+  const DYNAMICS=Object.freeze({thresholdDb:-20,kneeDb:14,ratio:4.5,attackSec:.007,releaseSec:.18,overlapFloor:.62,overlapStep:.055});
   let eventChannel='card';
   let friction=null, bearing=null, bearingBody=null;
   const SPINNER_AUDIO_SCALE=.70; // requested: fidget spinner is 30% quieter than the Earthborn lab voice
+  const SPINNER_REGISTER=Object.freeze({bodyHz:Object.freeze([285,595]),whirrHz:Object.freeze([760,2860]),bodyModHz:24,whirrModHz:75});
   const catalog=Object.freeze(['contact','skid','lift','finger','edge','withdraw','slide','drop','stackDrop','foundation','draw','draw3','flip','recycle','undo','nope','shuffle','win','bearing']);
   const patterns=Object.freeze({touch:3,lift:4,hover:2,drop:7,stack:[4,12,6],foundation:[4,10,10],draw:4,draw3:[3,9,3],flip:3,recycle:[4,14,7],reject:[3,16,3],fidget:4});
   const tactileScale=()=>Prefs.value.tactile==='quiet'?.48:Prefs.value.tactile==='warm'?.72:1;
@@ -689,8 +696,12 @@ const AudioFX = (()=>{
     try{
       if(!ctx){
         const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return null;
-        ctx=new AC(); master=ctx.createGain(); master.connect(ctx.destination);
+        ctx=new AC();
+        master=ctx.createGain(); safetyGain=ctx.createGain(); compressor=ctx.createDynamicsCompressor();
+        compressor.threshold.value=DYNAMICS.thresholdDb; compressor.knee.value=DYNAMICS.kneeDb; compressor.ratio.value=DYNAMICS.ratio; compressor.attack.value=DYNAMICS.attackSec; compressor.release.value=DYNAMICS.releaseSec;
+        master.connect(safetyGain); safetyGain.connect(compressor); compressor.connect(ctx.destination);
         cardBus=ctx.createGain(); cardBus.gain.value=CARD_AUDIO_SCALE; cardBus.connect(master);
+        spinnerBus=ctx.createGain(); spinnerBus.gain.value=1; spinnerBus.connect(master);
         const n=ctx.sampleRate*.5|0, buf=ctx.createBuffer(1,n,ctx.sampleRate), d=buf.getChannelData(0);
         // White paper hiss carried by a very slow simplex envelope: microscopic fiber density, not a looped sample.
         for(let i=0;i<n;i++){ const fiber=.89+Simplex.noise(i/3400,6.2)*.11; d[i]=(Math.random()*2-1)*fiber; } noise=buf;
@@ -699,16 +710,27 @@ const AudioFX = (()=>{
       master.gain.setTargetAtTime(Prefs.value.volume*.34,ctx.currentTime,.018); return ctx;
     }catch(_){return null}
   }
+  function unlock(){
+    const c=ensure(); if(!c) return Promise.resolve(null);
+    // iOS Safari is most reliable when resume + a silent source happen inside the first direct gesture.
+    try{const b=c.createBuffer(1,1,c.sampleRate),src=c.createBufferSource(),g=c.createGain();g.gain.value=.000001;src.buffer=b;src.connect(g);g.connect(safetyGain||master);src.start(0)}catch(_){}
+    try{return Promise.resolve(c.resume()).then(()=>c).catch(()=>c)}catch(_){return Promise.resolve(c)}
+  }
+  function updateOverlapDuck(){
+    if(!ctx||!safetyGain)return; const overlaps=Math.max(0,voices-1),target=Math.max(DYNAMICS.overlapFloor,1-overlaps*DYNAMICS.overlapStep),tc=target<safeGainValue?DYNAMICS.attackSec:DYNAMICS.releaseSec;
+    safeGainValue=target; safetyGain.gain.setTargetAtTime(target,ctx.currentTime,tc);
+  }
+  let safeGainValue=1;
   function organic(axis=0){
     const t=(seq+1)*.173+axis*7.13;
     return Simplex.noise(t,t*.618+axis*3.7);
   }
   function burst({dur=.08,cut=1200,gain=.2,type='noise',freq=220,slide=0,q=.72,delay=0,pan=0}={}){
     const c=ensure(); if(!c||voices>18) return;
-    const tex=ASMRTexture.sample(seq+voices*.37+delay*31,type==='noise'?1:2); voices++;
+    const tex=ASMRTexture.sample(seq+voices*.37+delay*31,type==='noise'?1:2); voices++; updateOverlapDuck();
     dur*=tex.duration; cut*=tex.tone; gain*=tex.gain; freq*=tex.pitch; slide*=tex.pitch; delay=Math.max(0,delay+tex.delay); pan=clamp(pan+tex.pan,-.8,.8);
-    const t=c.currentTime+delay, g=c.createGain(), attack=clamp(.005*tex.attack,.0034,.0072), peak=Math.max(.0002,gain*tactileScale()); let tail=g;
-    const destination=eventChannel==='spinner'?master:cardBus;
+    const t=c.currentTime+delay, g=c.createGain(), attack=clamp(.008*tex.attack,.0055,.0115), peak=Math.max(.0002,gain*tactileScale()); let tail=g;
+    const destination=eventChannel==='spinner'?spinnerBus:cardBus;
     if(c.createStereoPanner){ const pn=c.createStereoPanner(); pn.pan.value=pan; g.connect(pn); pn.connect(destination); } else g.connect(destination);
     // Every transient gets a slightly different simplex-shaped attack/body so repeated card sounds never tile mechanically.
     g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(peak,t+attack); g.gain.exponentialRampToValueAtTime(Math.max(.00015,peak*(.78+tex.grain*.14)),t+dur*.58); g.gain.exponentialRampToValueAtTime(.0001,t+dur);
@@ -720,18 +742,18 @@ const AudioFX = (()=>{
       src=c.createOscillator(); src.type=type; src.frequency.setValueAtTime(Math.max(35,freq),t);
       if(slide) src.frequency.exponentialRampToValueAtTime(Math.max(35,freq+slide),t+dur); src.connect(g);
     }
-    src.start(t); src.stop(t+dur+.025); src.onended=()=>{voices=Math.max(0,voices-1)};
+    src.start(t); src.stop(t+dur+.025); src.onended=()=>{voices=Math.max(0,voices-1);updateOverlapDuck()};
   }
   function paperGrain(p=.5,bright=1){
     const n=performance.now(); if(n-lastGrain<44) return; lastGrain=n;
-    const o=organic(2), cut=(760+bright*740)*(1+o*.08), g=(.022+.035*p)*(1+organic(3)*.12);
+    const o=organic(2), cut=(430+bright*520)*(1+o*.06), g=(.022+.035*p)*(1+organic(3)*.12);
     burst({dur:.055+Math.abs(o)*.025,cut,gain:g,q:.9});
   }
   function loopNoise(kind){
     const c=ensure(); if(!c) return null;
     const src=c.createBufferSource(), filter=c.createBiquadFilter(), gain=c.createGain();
     src.buffer=noise; src.loop=true; filter.type='bandpass'; filter.frequency.value=900; filter.Q.value=.8; gain.gain.value=.0001;
-    src.connect(filter); filter.connect(gain); gain.connect(kind==='bearing'||kind==='bearing-body'?master:cardBus); src.start();
+    src.connect(filter); filter.connect(gain); gain.connect(kind==='bearing'||kind==='bearing-body'?spinnerBus:cardBus); src.start();
     return {kind,src,filter,gain};
   }
   function startFriction(seed=0){ if(!Prefs.value.sound)return; if(!friction) friction=loopNoise('friction'); if(friction) friction.seed=seed; }
@@ -740,7 +762,7 @@ const AudioFX = (()=>{
     const t=c.currentTime, v=clamp(speed/1250,0,1), n=Simplex.noise((performance.now()/900)+(friction.seed||0),seq*.11+3.1);
     const level=(.00015+v*.055*pressure)*(1+n*.12)*tactileScale();
     friction.gain.gain.setTargetAtTime(Math.max(.0001,level),t,.022);
-    friction.filter.frequency.setTargetAtTime(620+v*1750+edge*520+n*120,t,.025);
+    friction.filter.frequency.setTargetAtTime(420+v*880+edge*260+n*70,t,.035);
     friction.filter.Q.setTargetAtTime(.72+v*.55,t,.04);
   }
   function stopFriction(){ if(!friction||!ctx)return; const f=friction; friction=null; const t=ctx.currentTime; try{f.gain.gain.setTargetAtTime(.0001,t,.026);f.src.stop(t+.14)}catch(_){} }
@@ -766,23 +788,24 @@ const AudioFX = (()=>{
     if(!Prefs.value.sound) return; seq++;
     eventChannel=meta.channel==='spinner'?'spinner':'card';
     const v=1+organic(0)*.025, pan=clamp(Number(meta.pan)||0,-.65,.65), n=organic(1);
-    if(kind==='contact'){burst({dur:.028,cut:1850*v,gain:.052*p,pan});burst({dur:.042,type:'sine',freq:105*v,gain:.018*p,slide:-12,pan});}
-    else if(kind==='skid'){burst({dur:.065,cut:980*v,gain:.038*p,q:1.1,pan});}
-    else if(kind==='lift'){burst({dur:.038,cut:2320*v,gain:.055*p,pan});burst({dur:.06,cut:720*v,gain:.022*p,delay:.018,pan});}
-    else if(kind==='finger'){burst({dur:.025,cut:3150*v,gain:.026*p,q:1.25,pan});}
-    else if(kind==='edge'){burst({dur:.027,cut:2850*v,gain:.032*p,q:1.35,pan});}
-    else if(kind==='withdraw'){burst({dur:.055,cut:1250*v,gain:.038*p,pan});burst({dur:.045,cut:1760*v,gain:.025*p,delay:.027,pan});}
-    else if(kind==='slide'){paperGrain(p,1+n*.08);}
-    else if(kind==='drop'){const spinning=eventChannel==='spinner';burst({dur:.055,cut:(spinning?1420:1180)*v,gain:(spinning?.105:.095)*p,pan});if(spinning)burst({dur:.085,type:'sine',freq:86*v,gain:.045*p,slide:-25,pan});else burst({dur:.058,cut:530*v,gain:.018*p,delay:.012,pan});}
-    else if(kind==='stackDrop'){burst({dur:.08,cut:920*v,gain:.105*p,pan});burst({dur:.042,cut:1660*v,gain:.025*p,delay:.018,pan});}
-    else if(kind==='foundation'){burst({dur:.042,cut:1830*v,gain:.078*p,pan});burst({dur:.068,cut:760*v,gain:.026*p,delay:.011,pan});}
-    else if(kind==='draw'){burst({dur:.06,cut:1550*v,gain:.085*p,pan});burst({dur:.035,cut:2450*v,gain:.032*p,delay:.018,pan});}
-    else if(kind==='draw3'){[0,.035,.073].forEach((d,i)=>burst({dur:.052,cut:(1320+i*210)*v,gain:.07*p*(1-i*.08),delay:d,pan:(i-1)*.08}));}
-    else if(kind==='flip'){burst({dur:.032,cut:2900*v,gain:.062*p,q:1.25,pan});burst({dur:.04,cut:1150*v,gain:.023*p,delay:.015,pan});}
-    else if(kind==='recycle'){burst({dur:.16,cut:690*v,gain:.105*p,pan});burst({dur:.11,type:'triangle',freq:112*v,gain:.038*p,slide:-38,pan});for(let i=0;i<3;i++)burst({dur:.04,cut:1200+i*180,gain:.026*p,delay:.04+i*.035,pan:(i-1)*.1});}
-    else if(kind==='undo'){burst({dur:.10,cut:820*v,gain:.06*p,pan});burst({dur:.11,type:'sine',freq:185*v,gain:.027*p,slide:140,pan});}
-    else if(kind==='nope'){burst({dur:.038,cut:720*v,gain:.024*p,pan});}
-    else if(kind==='shuffle'){for(let i=0;i<7;i++)setTimeout(()=>{seq++;burst({dur:.075,cut:780+210*i,gain:.055*(1-i*.045),pan:(i-3)*.12})},i*52);}
+    // Card voice = broad fiber/body first, restrained edge detail second. No pitched chirp is used for ordinary card contact.
+    if(kind==='contact'){burst({dur:.052,cut:720*v,gain:.050*p,q:.72,pan});burst({dur:.040,cut:1180*v,gain:.019*p,q:.78,delay:.010,pan});}
+    else if(kind==='skid'){burst({dur:.082,cut:620*v,gain:.038*p,q:.68,pan});}
+    else if(kind==='lift'){burst({dur:.072,cut:920*v,gain:.050*p,q:.72,pan});burst({dur:.086,cut:480*v,gain:.020*p,q:.62,delay:.012,pan});}
+    else if(kind==='finger'){burst({dur:.038,cut:1280*v,gain:.024*p,q:.82,pan});}
+    else if(kind==='edge'){const spinning=eventChannel==='spinner';burst({dur:spinning?.027:.046,cut:(spinning?2850:1380)*v,gain:(spinning?.032:.026)*p,q:spinning?1.35:.82,pan});}
+    else if(kind==='withdraw'){burst({dur:.088,cut:700*v,gain:.036*p,q:.68,pan});burst({dur:.060,cut:1180*v,gain:.021*p,q:.76,delay:.024,pan});}
+    else if(kind==='slide'){paperGrain(p,1+n*.06);}
+    else if(kind==='drop'){const spinning=eventChannel==='spinner';burst({dur:spinning?.055:.090,cut:(spinning?1420:650)*v,gain:(spinning?.105:.088)*p,q:spinning?.72:.66,pan});if(spinning)burst({dur:.085,type:'sine',freq:86*v,gain:.045*p,slide:-25,pan});else{burst({dur:.066,cut:1040*v,gain:.022*p,q:.75,delay:.008,pan});burst({dur:.105,cut:360*v,gain:.012*p,q:.58,delay:.014,pan});}}
+    else if(kind==='stackDrop'){burst({dur:.112,cut:560*v,gain:.092*p,q:.64,pan});burst({dur:.074,cut:980*v,gain:.023*p,q:.72,delay:.014,pan});}
+    else if(kind==='foundation'){burst({dur:.082,cut:760*v,gain:.068*p,q:.68,pan});burst({dur:.055,cut:1120*v,gain:.023*p,q:.76,delay:.010,pan});}
+    else if(kind==='draw'){burst({dur:.086,cut:740*v,gain:.074*p,q:.68,pan});burst({dur:.060,cut:1220*v,gain:.026*p,q:.76,delay:.016,pan});}
+    else if(kind==='draw3'){[0,.039,.081].forEach((d,i)=>burst({dur:.072,cut:(680+i*150)*v,gain:.061*p*(1-i*.08),q:.70,delay:d,pan:(i-1)*.07}));}
+    else if(kind==='flip'){burst({dur:.058,cut:980*v,gain:.054*p,q:.76,pan});burst({dur:.066,cut:560*v,gain:.020*p,q:.64,delay:.014,pan});}
+    else if(kind==='recycle'){burst({dur:.175,cut:520*v,gain:.094*p,q:.62,pan});burst({dur:.115,type:'triangle',freq:96*v,gain:.027*p,slide:-24,pan});for(let i=0;i<3;i++)burst({dur:.060,cut:720+i*120,gain:.022*p,q:.72,delay:.045+i*.042,pan:(i-1)*.08});}
+    else if(kind==='undo'){burst({dur:.112,cut:600*v,gain:.052*p,q:.65,pan});burst({dur:.12,type:'sine',freq:165*v,gain:.020*p,slide:62,pan});}
+    else if(kind==='nope'){burst({dur:.050,cut:520*v,gain:.022*p,q:.65,pan});}
+    else if(kind==='shuffle'){for(let i=0;i<7;i++)setTimeout(()=>{seq++;burst({dur:.088,cut:520+110*i,gain:.049*(1-i*.045),q:.68,pan:(i-3)*.10})},i*56);}
     else if(kind==='win'){[523,659,784,1047].forEach((f,i)=>setTimeout(()=>burst({dur:.34,type:'triangle',freq:f*(1+organic(i+5)*.006),gain:.038,slide:35}),i*92));}
     else if(kind==='bearing'){paperGrain(.18*p,1.5);}
     eventChannel='card'; // reset before deferred shuffle/win voices: a spinner cannot leak into the card mix
@@ -792,21 +815,21 @@ const AudioFX = (()=>{
     const pat=typeof kind==='number'||Array.isArray(kind)?kind:(patterns[kind]||patterns.touch);
     try{navigator.vibrate(pat)}catch(_){}
   }
-  return {ensure,play,haptic,startFriction,updateFriction,stopFriction,setBearing,stopBearing,catalog,patterns,SPINNER_AUDIO_SCALE,CARD_AUDIO_SCALE,get active(){return !!ctx}};
+  return {ensure,unlock,play,haptic,startFriction,updateFriction,stopFriction,setBearing,stopBearing,catalog,patterns,SPINNER_AUDIO_SCALE,CARD_AUDIO_SCALE,CARD_REGISTER,SPINNER_REGISTER,DYNAMICS,get active(){return !!ctx},get contextState(){return ctx?ctx.state:'uninitialized'},get overlapGain(){return safeGainValue}};
 })();
 
 /* One gesture, one intent. Preflight clicks and hover geometry are silent. */
 const CardVoice = (()=>{
   const history=[];
   function cue(action,detail={}){
-    if(action==='select') return {kind:'finger',gain:.26};
-    if(action==='lift') return {kind:'lift',gain:.37};
-    if(action==='reject') return {kind:'skid',gain:.20};
+    if(action==='select') return {kind:'finger',gain:.22};
+    if(action==='lift') return {kind:'lift',gain:.31};
+    if(action==='reject') return {kind:'skid',gain:.18};
     if(action==='land'){
       const count=Math.max(1,Number(detail.count)||1);
-      if(detail.zone==='foundation') return {kind:'foundation',gain:.62};
-      if(count>1) return {kind:'stackDrop',gain:Math.min(.82,.55+count*.023)};
-      return {kind:'drop',gain:.67};
+      if(detail.zone==='foundation') return {kind:'foundation',gain:.55};
+      if(count>1) return {kind:'stackDrop',gain:Math.min(.72,.49+count*.020)};
+      return {kind:'drop',gain:.58};
     }
     return null;
   }
@@ -1449,8 +1472,8 @@ const Fidgets = (()=>{
   const Config=Object.freeze({
     massKg:.084,outerRadiusM:.037,inertiaShapeFactor:.76,inertia:8.75e-5,
     stopOmega:.14,frictionCoulombTorque:2.20e-4,frictionViscousTorque:2.60e-6,frictionAeroTorque:2.30e-8,
-    maxOmega:76,maxStep:.025,maxResumeDt:45,holdMs:1000,holdSlop:12,touchSpinGain:.68,
-    tapAngularImpulse:3.5e-4,wheelCurve:.84,wheelAngularGain:4.6e-6,maxWheelAngularImpulse:3.2e-4,maxWheelGestureAngularImpulse:2.0e-3,wheelGestureGapMs:185,
+    maxOmega:76,maxStep:.025,maxResumeDt:45,holdMs:1000,holdSlop:12,touchSpinGain:1.08,touchReleaseBlend:.88,
+    hitPadPx:30,minTorqueRadiusPx:24,tapAngularImpulse:3.5e-4,wheelCurve:.84,wheelAngularGain:4.6e-6,maxWheelAngularImpulse:3.2e-4,maxWheelGestureAngularImpulse:2.0e-3,wheelGestureGapMs:185,
     tailClickOmega:8.5,visualPad:18,audioScale:.70
   });
   const wheelGesture={lastAt:-Infinity,dir:0,total:0};
@@ -1460,30 +1483,37 @@ const Fidgets = (()=>{
   function decayOmega(w,dt){const a=Math.abs(w);if(a<=Config.stopOmega)return 0;return sign(w)*Math.max(0,a-lossAlpha(w)*dt)}
   function integrate(obj,dt){let remain=clamp(dt,0,Config.maxResumeDt);while(remain>1e-9){const h=Math.min(Config.maxStep,remain),before=obj.omega,after=decayOmega(before,h);obj.r+=((before+after)*.5)*h*RAD2DEG;obj.omega=after;remain-=h}}
   function wheelAngularImpulse(raw,modeScale=1){const v=raw*modeScale;if(!v)return 0;return sign(v)*Math.min(Config.maxWheelAngularImpulse,Math.pow(Math.abs(v),Config.wheelCurve)*Config.wheelAngularGain)}
-  function markup(el){el.innerHTML='<div class="spinnerRotor" aria-hidden="true"><i class="spinnerWeb"></i><i class="spinnerLobe l1"><b></b></i><i class="spinnerLobe l2"><b></b></i><i class="spinnerLobe l3"><b></b></i><i class="spinnerHub"></i></div><span class="spinnerCap" aria-hidden="true"></span>';}
+  // Straight tangential swipes are converted to angular velocity using the visible rotor radius, not the expanded invisible halo radius.
+  function swipeOmega(dx,dy,rx,ry,dt,visibleRadius=32){const rr=Math.hypot(rx,ry),den=Math.max(Config.minTorqueRadiusPx,Math.min(rr||visibleRadius,visibleRadius)),tx=rr?(-ry/rr):0,ty=rr?(rx/rr):1,tangent=dx*tx+dy*ty;return clamp((tangent/den)/Math.max(.008,dt)*Config.touchSpinGain,-Config.maxOmega,Config.maxOmega)}
+  function markup(el){el.innerHTML='<span class="spinnerHitHalo" aria-hidden="true"></span><div class="spinnerRotor" aria-hidden="true"><i class="spinnerWeb"></i><i class="spinnerLobe l1"><b></b></i><i class="spinnerLobe l2"><b></b></i><i class="spinnerLobe l3"><b></b></i><i class="spinnerHub"></i></div><span class="spinnerCap" aria-hidden="true"></span>';}
   function bounds(){const r=View.el.board.getBoundingClientRect(),sz=st?.el.offsetWidth||64,p=Config.visualPad;return{r,sz,minX:p,minY:p,maxX:Math.max(p,r.width-sz-p),maxY:Math.max(p,r.height-sz-p)}}
   function constrain(){if(!st)return;const b=bounds();st.x=clamp(st.x,b.minX,b.maxX);st.y=clamp(st.y,b.minY,b.maxY)}
-  function paint(){if(!st)return;const n=clamp(Math.abs(st.omega)/Config.maxOmega,0,1),rotor=st.el.querySelector('.spinnerRotor');st.el.dataset.x=st.x.toFixed(2);st.el.dataset.y=st.y.toFixed(2);st.el.dataset.r=st.r.toFixed(2);st.el.style.transform=`translate3d(${st.x.toFixed(2)}px,${st.y.toFixed(2)}px,0)`;st.el.style.setProperty('--rotor-deg',st.r.toFixed(2));st.el.style.setProperty('--spinner-blur',reducedMotion()?'0px':(n*n*.34).toFixed(3)+'px');st.el.style.setProperty('--spinner-sat',(1-n*.055).toFixed(3));if(rotor)rotor.style.transform=`rotate(${st.r.toFixed(2)}deg)`}
+  function paint(){if(!st)return;const n=clamp(Math.abs(st.omega)/Config.maxOmega,0,1),rotor=st.el.querySelector('.spinnerRotor');st.el.dataset.x=st.x.toFixed(2);st.el.dataset.y=st.y.toFixed(2);st.el.dataset.r=st.r.toFixed(2);st.el.style.transform=`translate3d(${st.x.toFixed(2)}px,${st.y.toFixed(2)}px,0)`;st.el.style.setProperty('--rotor-deg',st.r.toFixed(2));st.el.style.setProperty('--spinner-hit-pad',Config.hitPadPx+'px');st.el.style.setProperty('--spinner-blur',reducedMotion()?'0px':(n*n*.34).toFixed(3)+'px');st.el.style.setProperty('--spinner-sat',(1-n*.055).toFixed(3));if(rotor)rotor.style.transform=`rotate(${st.r.toFixed(2)}deg)`}
   function reset(){if(!st)return;const b=bounds();st.x=clamp(b.r.width*.91-b.sz/2,b.minX,b.maxX);st.y=clamp(b.r.height*.18-b.sz/2,b.minY,b.maxY);st.r=-9;st.omega=0;paint()}
-  function angleFor(e){const br=st.el.getBoundingClientRect();return Math.atan2(e.clientY-(br.top+br.height/2),e.clientX-(br.left+br.width/2))}
-  function applyImpulse(delta,source='input'){if(!st||!Number.isFinite(delta)||!delta)return;st.omega=clamp(st.omega+delta,-Config.maxOmega,Config.maxOmega);AudioFX.ensure();AudioFX.play(source==='place'?'drop':'edge',(.18+.20*clamp(Math.abs(delta)/18,0,1))*Config.audioScale,{channel:'spinner'});AudioFX.setBearing(st.omega)}
+  function center(){const br=st.el.getBoundingClientRect();return{x:br.left+br.width/2,y:br.top+br.height/2,r:br.width/2}}
+  function angleFor(e){const c=center();return Math.atan2(e.clientY-c.y,e.clientX-c.x)}
+  function applyImpulse(delta,source='input'){if(!st||!Number.isFinite(delta)||!delta)return;st.omega=clamp(st.omega+delta,-Config.maxOmega,Config.maxOmega);AudioFX.unlock();AudioFX.play(source==='place'?'drop':'edge',(.18+.20*clamp(Math.abs(delta)/18,0,1))*Config.audioScale,{channel:'spinner'});AudioFX.setBearing(st.omega)}
   function clearHold(){if(holdTimer){clearTimeout(holdTimer);holdTimer=0}}
   function tick(now){const dt=Math.max(0,(now-last)/1000);last=now;if(st&&(!active||active.mode!=='spin')&&st.omega){integrate(st,dt);if(Math.abs(st.omega)<=Config.tailClickOmega&&st.omega){const bucket=Math.floor(st.r/120);if(tailBucket!==null&&bucket!==tailBucket)AudioFX.play('edge',.055*Config.audioScale,{channel:'spinner'});tailBucket=bucket}else tailBucket=null;paint()}if(st&&Math.abs(st.omega)>.02)AudioFX.setBearing(st.omega);else AudioFX.stopBearing();raf=requestAnimationFrame(tick)}
   function init(){
-    layer.replaceChildren(); const el=document.createElement('div');el.className='fidget';el.dataset.kind='spinner';el.tabIndex=0;el.setAttribute('role','application');el.setAttribute('aria-label','Fidget spinner. Swipe or scroll over it to spin. Touch and hold or drag to reposition. Double click to recenter.');markup(el);layer.appendChild(el);
+    layer.replaceChildren(); const el=document.createElement('div');el.className='fidget';el.dataset.kind='spinner';el.tabIndex=0;el.setAttribute('role','application');el.setAttribute('aria-label','Fidget spinner. Swipe the invisible halo or scroll over it to spin. Touch and hold for one second, then drag to reposition. Double click to recenter.');markup(el);layer.appendChild(el);
     st={el,x:0,y:0,r:-9,omega:0};const br0=View.el.board.getBoundingClientRect();lastW=br0.width;lastH=br0.height;requestAnimationFrame(reset);
-    el.addEventListener('pointerdown',e=>{if(e.button!==undefined&&e.pointerType!=='touch'&&e.button!==0)return;e.preventDefault();AudioFX.ensure();clearHold();const br=View.el.board.getBoundingClientRect(),t=performance.now();active={mode:e.pointerType==='touch'?'pending':'move',id:e.pointerId,pointerType:e.pointerType||'mouse',downX:e.clientX,downY:e.clientY,lastX:e.clientX,lastY:e.clientY,lastA:angleFor(e),lastT:t,ox:e.clientX-br.left-st.x,oy:e.clientY-br.top-st.y};if(active.mode==='pending')holdTimer=setTimeout(()=>{if(active&&active.mode==='pending'){active.mode='move';AudioFX.play('contact',.18*Config.audioScale,{channel:'spinner'});AudioFX.haptic('fidget')}},Config.holdMs);else{AudioFX.play('contact',.22*Config.audioScale,{channel:'spinner'});AudioFX.haptic('fidget')}try{el.setPointerCapture(e.pointerId)}catch(_){}});
-    layer.addEventListener('pointermove',e=>{if(!active||e.pointerId!==active.id)return;e.preventDefault();const now=performance.now(),dt=Math.max(.008,(now-active.lastT)/1000),travel=Math.hypot(e.clientX-active.downX,e.clientY-active.downY);if(active.mode==='pending'&&travel>Config.holdSlop){clearHold();active.mode='spin';active.lastA=angleFor(e)}if(active.mode==='spin'){const a=angleFor(e),da=wrapPi(a-active.lastA),target=clamp((da/dt)*Config.touchSpinGain,-Config.maxOmega,Config.maxOmega);st.r+=da*RAD2DEG;st.omega=st.omega*.18+target*.82;active.lastA=a;AudioFX.setBearing(st.omega);paint()}else if(active.mode==='move'){const br=View.el.board.getBoundingClientRect();st.x=e.clientX-br.left-active.ox;st.y=e.clientY-br.top-active.oy;constrain();paint()}active.lastX=e.clientX;active.lastY=e.clientY;active.lastT=now});
-    const end=e=>{if(!active||e.pointerId!==active.id)return;clearHold();const was=active.mode,travel=Math.hypot(e.clientX-active.downX,e.clientY-active.downY);if(was==='pending'&&travel<Config.holdSlop)applyImpulse(Config.tapAngularImpulse/Config.inertia,'tap');else if(was==='move')AudioFX.play('drop',.25*Config.audioScale,{channel:'spinner'});active=null;paint()};
-    layer.addEventListener('pointerup',end);layer.addEventListener('pointercancel',end);
-    el.addEventListener('wheel',e=>{e.preventDefault();AudioFX.ensure();const now=performance.now(),raw=Math.abs(e.deltaY)>=Math.abs(e.deltaX)?-e.deltaY:e.deltaX,modeScale=e.deltaMode===1?16:e.deltaMode===2?innerHeight:1,requested=wheelAngularImpulse(raw,modeScale),dir=sign(requested);if(!dir)return;const fresh=now-wheelGesture.lastAt>Config.wheelGestureGapMs||dir!==wheelGesture.dir;if(fresh){wheelGesture.dir=dir;wheelGesture.total=0}const room=Math.max(0,Config.maxWheelGestureAngularImpulse-wheelGesture.total),j=dir*Math.min(Math.abs(requested),room);wheelGesture.total+=Math.abs(j);wheelGesture.lastAt=now;if(j){st.omega=clamp(st.omega+j/Config.inertia,-Config.maxOmega,Config.maxOmega);AudioFX.setBearing(st.omega)}paint()},{passive:false});
+    // Dedicated touchstart unlock is intentionally redundant with pointerdown: WebKit audio policies vary across iOS versions.
+    el.addEventListener('touchstart',()=>{AudioFX.unlock()},{passive:true,capture:true});
+    const down=e=>{if(e.button!==undefined&&e.pointerType!=='touch'&&e.button!==0)return;e.preventDefault();AudioFX.unlock();clearHold();const br=View.el.board.getBoundingClientRect(),c=center(),t=performance.now();active={mode:e.pointerType==='touch'?'pending':'move',id:e.pointerId,pointerType:e.pointerType||'mouse',downX:e.clientX,downY:e.clientY,lastX:e.clientX,lastY:e.clientY,lastA:angleFor(e),lastT:t,lastOmega:0,grabDx:e.clientX-c.x,grabDy:e.clientY-c.y,ox:e.clientX-br.left-st.x,oy:e.clientY-br.top-st.y};if(active.mode==='pending')holdTimer=setTimeout(()=>{if(active&&active.mode==='pending'){active.mode='move';AudioFX.play('contact',.18*Config.audioScale,{channel:'spinner'});AudioFX.haptic('fidget')}},Config.holdMs);else{AudioFX.play('contact',.22*Config.audioScale,{channel:'spinner'});AudioFX.haptic('fidget')}try{el.setPointerCapture(e.pointerId)}catch(_){}};
+    const move=e=>{if(!active||e.pointerId!==active.id)return;e.preventDefault();const now=performance.now(),dt=Math.max(.008,(now-active.lastT)/1000),travel=Math.hypot(e.clientX-active.downX,e.clientY-active.downY);if(active.mode==='pending'&&travel>Config.holdSlop){clearHold();active.mode='spin';active.lastA=angleFor(e)}if(active.mode==='spin'){const c=center(),a=angleFor(e),da=wrapPi(a-active.lastA),angular=da/dt,fling=swipeOmega(e.clientX-active.lastX,e.clientY-active.lastY,active.lastX-c.x,active.lastY-c.y,dt,c.r*.92),target=Math.abs(fling)>Math.abs(angular*Config.touchSpinGain)?fling:clamp(angular*Config.touchSpinGain,-Config.maxOmega,Config.maxOmega);st.r+=da*RAD2DEG;st.omega=st.omega*.12+target*.88;active.lastOmega=target;active.lastA=a;AudioFX.setBearing(st.omega);paint()}else if(active.mode==='move'){const br=View.el.board.getBoundingClientRect(),sz=st.el.offsetWidth;st.x=e.clientX-active.grabDx-br.left-sz/2;st.y=e.clientY-active.grabDy-br.top-sz/2;constrain();paint()}active.lastX=e.clientX;active.lastY=e.clientY;active.lastT=now};
+    const end=e=>{if(!active||e.pointerId!==active.id)return;clearHold();const was=active.mode,travel=Math.hypot(e.clientX-active.downX,e.clientY-active.downY);if(was==='pending'&&travel<Config.holdSlop)applyImpulse(Config.tapAngularImpulse/Config.inertia,'tap');else if(was==='spin'&&Math.abs(active.lastOmega)>.1)st.omega=clamp(st.omega*(1-Config.touchReleaseBlend)+active.lastOmega*Config.touchReleaseBlend,-Config.maxOmega,Config.maxOmega);else if(was==='move')AudioFX.play('drop',.25*Config.audioScale,{channel:'spinner'});try{el.releasePointerCapture(e.pointerId)}catch(_){}active=null;paint()};
+    el.addEventListener('pointerdown',down);
+    // One global capture path avoids duplicate move processing and survives WebKit dropping element pointer capture during long-press.
+    window.addEventListener('pointermove',move,{capture:true,passive:false}); window.addEventListener('pointerup',end,{capture:true}); window.addEventListener('pointercancel',end,{capture:true});
+    el.addEventListener('wheel',e=>{e.preventDefault();AudioFX.unlock();const now=performance.now(),raw=Math.abs(e.deltaY)>=Math.abs(e.deltaX)?-e.deltaY:e.deltaX,modeScale=e.deltaMode===1?16:e.deltaMode===2?innerHeight:1,requested=wheelAngularImpulse(raw,modeScale),dir=sign(requested);if(!dir)return;const fresh=now-wheelGesture.lastAt>Config.wheelGestureGapMs||dir!==wheelGesture.dir;if(fresh){wheelGesture.dir=dir;wheelGesture.total=0}const room=Math.max(0,Config.maxWheelGestureAngularImpulse-wheelGesture.total),j=dir*Math.min(Math.abs(requested),room);wheelGesture.total+=Math.abs(j);wheelGesture.lastAt=now;if(j){st.omega=clamp(st.omega+j/Config.inertia,-Config.maxOmega,Config.maxOmega);AudioFX.setBearing(st.omega)}paint()},{passive:false});
     el.addEventListener('dblclick',reset);el.addEventListener('contextmenu',e=>e.preventDefault());
     el.addEventListener('keydown',e=>{let handled=true;if(e.key===' '||e.key==='Enter')applyImpulse((e.shiftKey?-1:1)*(1.55e-3/Config.inertia),'keyboard');else if(e.key==='ArrowLeft')st.x-=8;else if(e.key==='ArrowRight')st.x+=8;else if(e.key==='ArrowUp')st.y-=8;else if(e.key==='ArrowDown')st.y+=8;else handled=false;if(handled){e.preventDefault();constrain();paint()}});
     raf=requestAnimationFrame(tick);
   }
   function relayout(){if(!st)return;const r=View.el.board.getBoundingClientRect(),sx=lastW?r.width/lastW:1,sy=lastH?r.height/lastH:1;st.x*=sx;st.y*=sy;constrain();paint();lastW=r.width;lastH=r.height}
   function coastTime(w0=Config.maxOmega){const q={omega:w0,r:0},dt=.05;let t=0;while(Math.abs(q.omega)>0&&t<300){integrate(q,dt);t+=dt}return t}
-  return {init,relayout,Config,decayOmega,coastTime,get count(){return st?1:0},get state(){return st?{x:st.x,y:st.y,r:st.r,omega:st.omega}:null}};
+  return {init,relayout,Config,decayOmega,coastTime,swipeOmega,get count(){return st?1:0},get state(){return st?{x:st.x,y:st.y,r:st.r,omega:st.omega}:null}};
 })();
 
 /* =======================================================================
@@ -1977,10 +2007,13 @@ if (DEV) (()=>{
     faceFingerprint: id=>ASSETS[id]?fnv1aText(ASSETS[id]):null,
     dropProbe: (targetRect,cardRect)=>DropMagnet.probe('target',targetRect,cardRect),
     dropHaloFraction: DropMagnet.FRACTION,
-    audioContract: ()=>({cardScale:AudioFX.CARD_AUDIO_SCALE,spinnerScale:AudioFX.SPINNER_AUDIO_SCALE,cues:CardVoice.history()}),
+    audioContract: ()=>({cardScale:AudioFX.CARD_AUDIO_SCALE,spinnerScale:AudioFX.SPINNER_AUDIO_SCALE,cardRegister:AudioFX.CARD_REGISTER,spinnerRegister:AudioFX.SPINNER_REGISTER,dynamics:AudioFX.DYNAMICS,contextState:AudioFX.contextState,overlapGain:AudioFX.overlapGain,cues:CardVoice.history()}),
+    fuzz: o=>Dev.runFuzz(o||{}),
     clearAudioTrace: ()=>CardVoice.clear(),
     gestureCue: (action,detail)=>CardVoice.cue(action,detail),
-    captureClick: (source,target,point,isCard)=>Input.clickDestination(source,target&&target.zone,target&&target.index,point,!!isCard)
+    captureClick: (source,target,point,isCard)=>Input.clickDestination(source,target&&target.zone,target&&target.index,point,!!isCard),
+    spinnerState: ()=>Fidgets.state?{...Fidgets.state}:null,
+    spinnerConfig: ()=>({...Fidgets.Config})
   };
   window.__KLONDIKE_TEST__ = hook;
   // Compatibility shim for tooling written against v4 (dev-only now).
@@ -2058,19 +2091,22 @@ if (DEV) (()=>{
     const ft = Rules.deal(Rules.orderFromSeed(3),1); ft.tableau[3][3].faceUp = false;
     return ok && Rules.validate(dup).length>0 && Rules.validate(bf).length>0 && Rules.validate(ft).length>0;
   });
-  T('fuzz / 30 games × 400 random actions keep every invariant',()=>{
-    let seed = 1234567; const R = ()=>{ seed = (seed*1664525+1013904223)>>>0; return seed/4294967296; };
-    for (let g=0; g<30; g++){
-      const s = Rules.deal(Rules.orderFromSeed(5000+g),g%2?3:1);
-      for (let i=0;i<400;i++){
-        const p = R(); let did = false;
-        if (p<.3) Rules.draw(s);
-        else { const srcs = [{z:'waste',i:0}]; for (let k=0;k<4;k++) srcs.push({z:'foundation',i:k}); for (let k=0;k<7;k++) srcs.push({z:'tableau',i:k}); const a = srcs[Math.floor(R()*srcs.length)], pile = Rules.pileOf(s,a.z,a.i), n = a.z==='tableau'?1+Math.floor(R()*Math.max(1,pile.length)):1, dz = R()<.5?'foundation':'tableau', di = Math.floor(R()*(dz==='foundation'?4:7)); did = !!Rules.apply(s,mv(a.z,a.i,dz,di,n)); }
-        const bad = Rules.validate(s); if (bad.length) return false;
+  Dev.runFuzz = (o={})=>{
+    const games=clamp(Math.floor(Number(o.games)||30),1,300),steps=clamp(Math.floor(Number(o.steps)||400),1,2000),base=(Number(o.seed)||1234567)>>>0;
+    let seed=base,actions=0,applied=0,draws=0; const R=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296};
+    for(let g=0;g<games;g++){
+      const state=Rules.deal(Rules.orderFromSeed(5000+g+(base%100003)),g%2?3:1);
+      for(let i=0;i<steps;i++){
+        actions++; const p=R();
+        if(p<.30){Rules.draw(state);draws++;}
+        else{const srcs=[{z:'waste',i:0}];for(let k=0;k<4;k++)srcs.push({z:'foundation',i:k});for(let k=0;k<7;k++)srcs.push({z:'tableau',i:k});const a=srcs[Math.floor(R()*srcs.length)],pile=Rules.pileOf(state,a.z,a.i)||[],n=a.z==='tableau'?1+Math.floor(R()*Math.max(1,pile.length)):1,dz=R()<.5?'foundation':'tableau',di=Math.floor(R()*(dz==='foundation'?4:7));if(Rules.apply(state,mv(a.z,a.i,dz,di,n)))applied++;}
+        const bad=Rules.validate(state);if(bad.length)return{ok:false,games,steps,actions,applied,draws,at:{game:g,step:i},problems:bad};
       }
     }
-    return true;
-  });
+    return{ok:true,games,steps,actions,applied,draws,seed:base};
+  };
+  T('fuzz / 30 games × 400 random actions keep every invariant',()=>Dev.runFuzz({games:30,steps:400,seed:1234567}).ok);
+  T('fuzz / invalid plans are observationally pure across randomized sources',()=>{let q=0x51a7c0de;const R=()=>{q=(Math.imul(q,1664525)+1013904223)>>>0;return q/4294967296};for(let n=0;n<2500;n++){const st=Rules.deal(Rules.orderFromSeed(9000+(n%113)),n%2?3:1),before=JSON.stringify(Rules.toContract(st)),m=mv('tableau',Math.floor(R()*7),'foundation',Math.floor(R()*4),2+Math.floor(R()*5));if(Rules.plan(st,m))continue;Rules.apply(st,m);if(JSON.stringify(Rules.toContract(st))!==before)return false;}return true;});
 
   T('store / save → load round-trips a played game exactly',()=>{ const s = Rules.deal(Rules.orderFromSeed(5),3); Rules.draw(s); Rules.draw(s); s.score = 17; s.elapsedMs = 4321; s.seed = 5; const back = Store.decode(Store.encode(s)); return JSON.stringify(Rules.toContract(back))===JSON.stringify(Rules.toContract(s)) && back.deal.join()===s.deal.join() && back.score===17 && back.elapsedMs===4321 && back.seed===5; });
   T('store / v4 saves migrate (foundations object → slots, deal rebuilt from seed)',()=>{
@@ -2111,6 +2147,9 @@ if (DEV) (()=>{
   T('cosmetic / simplex card pose is deterministic and bounded',()=>{const a=Simplex.pose('H7','tableau',3,5,84),b=Simplex.pose('H7','tableau',3,5,84);return JSON.stringify(a)===JSON.stringify(b)&&Math.abs(a.x)<4&&Math.abs(a.y)<4&&Math.abs(a.r)<3});
   T('cosmetic / exactly one fidget exists and it is the spinner, never game state',()=>document.querySelectorAll('.fidget').length===1&&document.querySelectorAll('.fidget[data-kind="spinner"]').length===1&&document.querySelectorAll('#fidgets .card').length===0&&Rules.validate(S).length===0);
   T('cosmetic / spinner is a traditional three-lobe rotor with a stationary cap',()=>document.querySelectorAll('.fidget[data-kind="spinner"] .spinnerLobe').length===3&&document.querySelectorAll('.fidget[data-kind="spinner"] .spinnerCap').length===1);
+  T('spinner / invisible interaction halo exists and expands hit target by at least 24px',()=>{const h=document.querySelector('.spinnerHitHalo'),s=document.querySelector('.fidget[data-kind="spinner"]');return !!h&&!!s&&Fidgets.Config.hitPadPx>=24&&getComputedStyle(s).getPropertyValue('--spinner-hit-pad').trim()===Fidgets.Config.hitPadPx+'px'});
+  T('spinner / tangential 80px phone swipe yields meaningful angular velocity',()=>Math.abs(Fidgets.swipeOmega(0,80,30,0,.12,32))>=18);
+  T('spinner / long-press drag has window-capture fallback and one-second hold contract',()=>Fidgets.Config.holdMs===1000&&String(Fidgets.init).includes("window.addEventListener('pointermove',move,{capture:true,passive:false})"));
   T('spinner / lobe centers are an equilateral triad centered exactly on the hub pivot',()=>{const pts=[...document.querySelectorAll('.spinnerLobe')].map(e=>{const cs=getComputedStyle(e);return [parseFloat(cs.getPropertyValue('--cx')),parseFloat(cs.getPropertyValue('--cy'))]});if(pts.length!==3||pts.some(p=>p.some(v=>!Number.isFinite(v))))return false;const c=[50,50],rs=pts.map(p=>Math.hypot(p[0]-c[0],p[1]-c[1])),ds=[Math.hypot(pts[0][0]-pts[1][0],pts[0][1]-pts[1][1]),Math.hypot(pts[1][0]-pts[2][0],pts[1][1]-pts[2][1]),Math.hypot(pts[2][0]-pts[0][0],pts[2][1]-pts[0][1])];return Math.max(...rs)-Math.min(...rs)<.001&&Math.max(...ds)-Math.min(...ds)<.001;});
   T('spinner / fixed-scene highlights counter-rotate against rotor angle',()=>document.documentElement.innerHTML.includes('rotate(calc(var(--rotor-deg) * -1deg))')&&Number.isFinite(Fidgets.state?.r??0));
   T('field / simplex noise perturbs both grid phase and propagation speed',()=>{const a=FX.gridSample(8,11,1234,800,600),b=FX.gridSample(9,11,1234,800,600),c=FX.gridSample(8,11,2234,800,600);return Number.isFinite(a.phase)&&a.speed!==b.speed&&a.phase!==b.phase&&a.phase!==c.phase&&a.alpha>=0&&a.radius>0;});
@@ -2119,16 +2158,23 @@ if (DEV) (()=>{
   T('spinner / hard-spin coast stays physical at 17-22 seconds',()=>{const t=Fidgets.coastTime();return t>=17&&t<=22});
   T('spinner / voice is exactly 30 percent below source lab master',()=>Math.abs(AudioFX.SPINNER_AUDIO_SCALE-.70)<1e-12);
   T('spinner / added rolling-body band occupies low-mid range',()=>document.documentElement.innerHTML.includes("bearingBody.filter.frequency.setTargetAtTime(285+soft*310"));
+  T('spinner / card retune leaves both continuous bearing formulas untouched',()=>String(AudioFX.setBearing).includes('760+soft*2100+n*75')&&String(AudioFX.setBearing).includes('285+soft*310+n*24'));
   T('sensory / ASMR catalog covers contact, friction, edge, stack, draw-three and bearing events',()=>['contact','skid','lift','finger','edge','withdraw','slide','drop','stackDrop','draw3','bearing'].every(k=>AudioFX.catalog.includes(k))&&!!AudioFX.patterns.foundation&&!!AudioFX.patterns.reject);
   T('layout / short landscape remains a seven-column desktop-style table',()=>[[568,240],[667,280],[740,320],[844,296],[896,390]].every(([w,h])=>{const l=solveLayout(w,h,Rules.deal(Rules.orderFromSeed(4),3).tableau);return !l.mobile&&l.stockY===l.foundationY&&l.tableauY>l.foundationY&&l.cardW*7+l.gap*6+l.pad*2<=w+.5}));
   T('cosmetic / shuffle ghosts are separate from the 52 persistent card nodes',()=>document.querySelectorAll('.shuffleCard').length===16&&document.querySelectorAll('.cards .card').length===52);
   T('sensory / simplex ASMR microtexture is deterministic, subtle and bounded',()=>{const a=ASMRTexture.sample(17.25,3),b=ASMRTexture.sample(17.25,3);return JSON.stringify(a)===JSON.stringify(b)&&a.gain>=.90&&a.gain<=1.10&&a.duration>=.92&&a.duration<=1.08&&a.tone>=.91&&a.tone<=1.09&&a.pitch>=.985&&a.pitch<=1.015&&a.grain>=.93&&a.grain<=1.07&&a.attack>=.72&&a.attack<=1.28&&Math.abs(a.pan)<=.0321&&Math.abs(a.delay)<=.0036});
-  T('sensory / simplex grain is wired into transient attack, body and paper playback rate',()=>/attack=clamp\(\.005\*tex\.attack/.test(document.documentElement.innerHTML)&&/src\.playbackRate\.value=tex\.grain/.test(document.documentElement.innerHTML)&&/cut\*tex\.grain/.test(document.documentElement.innerHTML));
+  T('sensory / simplex grain is wired into softened transient attack, body and paper playback rate',()=>/attack=clamp\(\.008\*tex\.attack/.test(document.documentElement.innerHTML)&&/src\.playbackRate\.value=tex\.grain/.test(document.documentElement.innerHTML)&&/cut\*tex\.grain/.test(document.documentElement.innerHTML));
   T('sensory / generated paper-noise buffer carries a slow simplex fiber envelope',()=>/fiber=\.89\+Simplex\.noise\(i\/3400,6\.2\)\*\.11/.test(document.documentElement.innerHTML));
   T('input / invisible halo 25% larger than original half-card margin',()=>{const rc={x:300,y:180,w:100,h:140},edge={x:137.5,y:180,w:100,h:140},inward={x:137.501,y:180,w:100,h:140},outside={x:137.3,y:180,w:100,h:140};return DropMagnet.FRACTION===.625&&DropMagnet.probe('tableau',rc,edge).accept&&DropMagnet.probe('tableau',rc,inward).accept&&!DropMagnet.probe('tableau',rc,outside).accept;});
   T('input / capture probes Euclidean diagonal edge distances',()=>{const rc={x:300,y:180,w:100,h:140},diagonal=(gap)=>({x:200-gap/Math.sqrt(2),y:40-gap/Math.sqrt(2),w:100,h:140});return DropMagnet.probe('tableau',rc,diagonal(62.4)).accept&&!DropMagnet.probe('tableau',rc,diagonal(62.7)).accept;});
   T('fuzz / 18000 arbitrary drop rectangles match independent 0.625-width oracle',()=>{let q=0x71c0ffee;const R=()=>{q=(Math.imul(q,1664525)+1013904223)>>>0;return q/4294967296};for(let n=0;n<18000;n++){const w=28+R()*110,h=w*1.4,rc={x:R()*800,y:R()*600,w,h},r={x:R()*900-50,y:R()*700-50,w,h},dx=Math.max(0,rc.x-(r.x+r.w),r.x-(rc.x+rc.w)),dy=Math.max(0,rc.y-(r.y+r.h),r.y-(rc.y+rc.h)),expect=Math.hypot(dx,dy)<=w*.625+DropMagnet.EPS,got=DropMagnet.probe('tableau',rc,r).accept;if(got!==expect)return false;}return true;});
   T('audio / card bus is -7.1dB while spinner remains original 0.70 master voice',()=>AudioFX.CARD_AUDIO_SCALE===.44&&AudioFX.SPINNER_AUDIO_SCALE===.70);
+  T('audio / overlap safety uses event-aware ducking plus a soft-knee compressor',()=>AudioFX.DYNAMICS.thresholdDb===-20&&AudioFX.DYNAMICS.ratio>=4&&AudioFX.DYNAMICS.attackSec<=.008&&AudioFX.DYNAMICS.releaseSec>=.16&&AudioFX.DYNAMICS.overlapFloor>=.6&&String(AudioFX.ensure).includes('createDynamicsCompressor'));
+  T('audio / spinner has explicit first-gesture WebKit unlock path',()=>String(AudioFX.unlock).includes('createBuffer(1,1')&&String(Fidgets.init).includes("addEventListener('touchstart'")&&String(Fidgets.init).includes('AudioFX.unlock()'));
+  T('audio / card register is marathon-soft: body-first, detail below 1.55k, ordinary transient ceiling 1.7k',()=>AudioFX.CARD_REGISTER.bodyHz[0]===360&&AudioFX.CARD_REGISTER.bodyHz[1]===760&&AudioFX.CARD_REGISTER.detailHz[1]===1550&&AudioFX.CARD_REGISTER.transientCeilingHz===1700&&AudioFX.CARD_REGISTER.attackMs[0]>=5.5);
+  T('audio / spinner register remains the soothing reference: 285–595 Hz body + 760–2860 Hz whirr',()=>AudioFX.SPINNER_REGISTER.bodyHz.join(',')==='285,595'&&AudioFX.SPINNER_REGISTER.whirrHz.join(',')==='760,2860');
+  T('audio / card friction lives below the chirpy old 2–3k region',()=>{const x=String(AudioFX.updateFriction);return x.includes('420+v*880+edge*260+n*70')&&!x.includes('1750')&&!x.includes('520+n*120');});
+  T('audio / physical card contact is noise-led: no oscillator in select, lift, draw or flip recipes',()=>{const x=String(AudioFX.play),slice=(a,b)=>x.slice(x.indexOf(a),x.indexOf(b));return !/type:'(sine|triangle|square|sawtooth)'/.test(slice("kind==='contact'","kind==='skid'"))&&!/type:'(sine|triangle|square|sawtooth)'/.test(slice("kind==='lift'","kind==='finger'"))&&!/type:'(sine|triangle|square|sawtooth)'/.test(slice("kind==='draw'","kind==='draw3'"))&&!/type:'(sine|triangle|square|sawtooth)'/.test(slice("kind==='flip'","kind==='recycle'"));});
   T('audio / one semantic landing cue handles single card, tableau run and foundation',()=>CardVoice.cue('land',{zone:'tableau',count:1}).kind==='drop'&&CardVoice.cue('land',{zone:'tableau',count:5}).kind==='stackDrop'&&CardVoice.cue('land',{zone:'foundation',count:1}).kind==='foundation');
   T('audio / picking, lifting, canceling and rejecting each have restrained contracts',()=>CardVoice.cue('select').gain<.3&&CardVoice.cue('lift').gain<.4&&CardVoice.cue('reject').kind==='skid'&&CardVoice.cue('cancel')===null);
   T('audio / click-to-move never plays a selection contact on pointerdown',()=>!String(Input.bind).includes("AudioFX.play('contact'")&&!String(Input.clickDestination).includes('AudioFX.play'));
