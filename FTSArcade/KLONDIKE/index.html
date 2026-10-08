@@ -374,6 +374,8 @@ html[data-juice="minimal"] .fidgets{display:block}
 .fidget[data-kind="spinner"]::after{display:none}
 /* Invisible interaction halo: enlarges the iOS swipe/hold target without changing the visible spinner. */
 .spinnerHitHalo{position:absolute;inset:calc(var(--spinner-hit-pad,30px) * -1);border-radius:50%;background:transparent;pointer-events:auto;touch-action:none;z-index:0;-webkit-user-select:none;user-select:none}
+/* The oversized halo is touch-only. On a mouse/trackpad it made the spinner appear to orbit an invisible cursor point. */
+@media (pointer:fine){.spinnerHitHalo{pointer-events:none}}
 .spinnerRotor{position:absolute;inset:0;z-index:1;pointer-events:none;will-change:transform,filter;transform-origin:50% 50%;filter:blur(var(--spinner-blur,0px)) saturate(var(--spinner-sat,1))}
 /* One geometry source of truth: lobe centers sit on a 31.5% orbit at -90deg / 30deg / 150deg.
    Their centers therefore form an exact equilateral triangle around the 50%/50% pivot. */
@@ -581,48 +583,48 @@ html,body{
 .controls button,.controls select,.themeBtn,.utilityBtn,.settingsPanel button,.settingsPanel select,.settingsPanel input{touch-action:manipulation}
 .settingsScroll{touch-action:pan-y;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
 
-/* Mobile/WebKit blacklight: retain the safe no-SVG-parent path, but recreate
-   desktop bloom with compositor-friendly CSS drop shadows on each card. */
+/* CEP 5.32 — Mobile/WebKit UV parity.
+   Never put an SVG/CSS filter on the transformed card shell: WebKit can drop that compositor layer.
+   Bloom is box-shadow; color grade lives on the stationary face; fluorescent paper comes from two blend plates. */
 html[data-uv-mobile="true"][data-theme="blacklight"] .card{
-  --uv-card-a:57,247,255;
-  --uv-card-b:154,108,255;
-  box-shadow:
-    0 3px 10px rgba(0,0,0,.80),
-    0 0 0 1px rgba(var(--uv-card-a),.38),
-    0 0 11px rgba(var(--uv-card-a),.30),
-    0 0 22px rgba(var(--uv-card-b),.18);
+  --uv-card-a:57,247,255; --uv-card-b:154,108,255; --uv-paper-a:205,96,255; --uv-paper-b:255,46,117;
+  filter:none!important; -webkit-filter:none!important;
+  box-shadow:0 3px 10px rgba(0,0,0,.82),0 0 0 1px rgba(var(--uv-card-a),.42),0 0 12px rgba(var(--uv-card-a),.34),0 0 24px rgba(var(--uv-card-b),.22);
 }
 html[data-uv-mobile="true"][data-theme="blacklight"] .card[data-suit="H"],
-html[data-uv-mobile="true"][data-theme="blacklight"] .card[data-suit="D"]{--uv-card-a:255,46,117;--uv-card-b:255,155,61}
-html[data-uv-mobile="true"][data-theme="blacklight"] .card[data-suit="C"]{--uv-card-a:200,255,67;--uv-card-b:57,247,255}
-html[data-uv-mobile="true"][data-theme="blacklight"][data-card-glow="on"] .card{
-  filter:
-    saturate(1.24) contrast(1.055) brightness(1.025)
-    drop-shadow(0 0 2px rgba(var(--uv-card-a),.44))
-    drop-shadow(0 0 7px rgba(var(--uv-card-a),.30))
-    drop-shadow(0 0 14px rgba(var(--uv-card-b),.18));
-}
-html[data-uv-mobile="true"][data-theme="blacklight"][data-card-glow="off"] .card{
-  filter:saturate(1.24) contrast(1.055) brightness(1.025);
-  box-shadow:0 3px 9px rgba(0,0,0,.78),0 0 0 1px rgba(var(--uv-card-a),.24)!important;
-}
+html[data-uv-mobile="true"][data-theme="blacklight"] .card[data-suit="D"]{--uv-card-a:255,46,117;--uv-card-b:255,155,61;--uv-paper-a:255,56,184;--uv-paper-b:199,92,255}
+html[data-uv-mobile="true"][data-theme="blacklight"] .card[data-suit="C"]{--uv-card-a:200,255,67;--uv-card-b:57,247,255;--uv-paper-a:176,86,255;--uv-paper-b:57,247,255}
+html[data-uv-mobile="true"][data-theme="blacklight"] .card[data-suit="S"]{--uv-paper-a:155,78,255;--uv-paper-b:57,208,255}
 html[data-uv-mobile="true"][data-theme="blacklight"] .card[data-up="true"] .front{
-  filter:saturate(1.36) contrast(1.11) brightness(1.055) hue-rotate(3deg);
+  isolation:isolate;
+  filter:saturate(1.46) contrast(1.13) brightness(.99) hue-rotate(3deg);
+  -webkit-filter:saturate(1.46) contrast(1.13) brightness(.99) hue-rotate(3deg);
 }
-html[data-uv-mobile="true"][data-theme="blacklight"] .card[data-up="false"] .back{
-  filter:saturate(1.34) contrast(1.10) brightness(.99) hue-rotate(9deg);
+html[data-uv-mobile="true"][data-theme="blacklight"] .card[data-up="true"] .front::before,
+html[data-uv-mobile="true"][data-theme="blacklight"] .card[data-up="true"] .front::after{content:"";position:absolute;inset:-1px;border-radius:inherit;pointer-events:none}
+html[data-uv-mobile="true"][data-theme="blacklight"] .card[data-up="true"] .front::before{
+  z-index:1;
+  background:linear-gradient(128deg,rgba(var(--uv-paper-a),.92),rgba(var(--uv-paper-b),.80) 52%,rgba(112,94,255,.86));
+  mix-blend-mode:multiply;opacity:.64;
 }
-html[data-uv-mobile="true"][data-theme="blacklight"][data-uv-intensity="low"] .card{filter:saturate(1.12) contrast(1.035) brightness(1.01) drop-shadow(0 0 4px rgba(var(--uv-card-a),.16))}
-html[data-uv-mobile="true"][data-theme="blacklight"][data-uv-intensity="balanced"][data-card-glow="on"] .card{filter:saturate(1.20) contrast(1.05) brightness(1.02) drop-shadow(0 0 2px rgba(var(--uv-card-a),.34)) drop-shadow(0 0 7px rgba(var(--uv-card-b),.19))}
-html[data-uv-mobile="true"][data-theme="blacklight"][data-uv-intensity="searing"][data-card-glow="on"] .card{filter:saturate(1.34) contrast(1.075) brightness(1.035) drop-shadow(0 0 3px rgba(var(--uv-card-a),.55)) drop-shadow(0 0 9px rgba(var(--uv-card-a),.36)) drop-shadow(0 0 18px rgba(var(--uv-card-b),.23))}
-html[data-uv-mobile="true"][data-theme="blacklight"] .uvEtch{opacity:.94}
-html[data-uv-mobile="true"][data-theme="blacklight"] .uvEtch::before{opacity:.80}
-html[data-uv-mobile="true"][data-theme="blacklight"] .uvEtch::after{opacity:.58}
-
-/* A transformed card can keep the same UV voice while moving. */
-html[data-uv-mobile="true"][data-theme="blacklight"] .card.dragging{
-  box-shadow:0 18px 34px rgba(0,0,0,.62),0 0 0 1px rgba(var(--uv-card-a),.48),0 0 15px rgba(var(--uv-card-a),.36),0 0 28px rgba(var(--uv-card-b),.22)
+html[data-uv-mobile="true"][data-theme="blacklight"] .card[data-up="true"] .front::after{
+  z-index:2;
+  background:radial-gradient(circle at 30% 20%,rgba(255,255,255,.38),transparent 34%),linear-gradient(145deg,rgba(var(--uv-card-a),.15),transparent 38% 64%,rgba(var(--uv-card-b),.17));
+  mix-blend-mode:screen;opacity:.38;box-shadow:inset 0 0 18px rgba(var(--uv-card-a),.14);
 }
+html[data-uv-mobile="true"][data-theme="blacklight"] .card[data-up="false"] .back{filter:saturate(1.48) contrast(1.12) brightness(.98) hue-rotate(9deg);-webkit-filter:saturate(1.48) contrast(1.12) brightness(.98) hue-rotate(9deg)}
+html[data-uv-mobile="true"][data-theme="blacklight"][data-card-glow="off"] .card{box-shadow:0 3px 9px rgba(0,0,0,.80),0 0 0 1px rgba(var(--uv-card-a),.25)!important}
+html[data-uv-mobile="true"][data-theme="blacklight"][data-uv-intensity="low"] .card{box-shadow:0 3px 9px rgba(0,0,0,.80),0 0 0 1px rgba(var(--uv-card-a),.26),0 0 7px rgba(var(--uv-card-a),.16)}
+html[data-uv-mobile="true"][data-theme="blacklight"][data-uv-intensity="low"] .front::before{opacity:.42}
+html[data-uv-mobile="true"][data-theme="blacklight"][data-uv-intensity="low"] .front::after{opacity:.22}
+html[data-uv-mobile="true"][data-theme="blacklight"][data-uv-intensity="balanced"] .card{box-shadow:0 3px 10px rgba(0,0,0,.81),0 0 0 1px rgba(var(--uv-card-a),.34),0 0 10px rgba(var(--uv-card-a),.25),0 0 19px rgba(var(--uv-card-b),.14)}
+html[data-uv-mobile="true"][data-theme="blacklight"][data-uv-intensity="balanced"] .front::before{opacity:.54}
+html[data-uv-mobile="true"][data-theme="blacklight"][data-uv-intensity="searing"] .front::before{opacity:.68}
+html[data-uv-mobile="true"][data-theme="blacklight"][data-uv-intensity="searing"] .front::after{opacity:.42}
+html[data-uv-mobile="true"][data-theme="blacklight"] .uvEtch{opacity:.96}
+html[data-uv-mobile="true"][data-theme="blacklight"] .uvEtch::before{opacity:.84}
+html[data-uv-mobile="true"][data-theme="blacklight"] .uvEtch::after{opacity:.62}
+html[data-uv-mobile="true"][data-theme="blacklight"] .card.dragging{box-shadow:0 18px 34px rgba(0,0,0,.64),0 0 0 1px rgba(var(--uv-card-a),.52),0 0 17px rgba(var(--uv-card-a),.39),0 0 30px rgba(var(--uv-card-b),.24)}
 
 /* Landscape game mode: keep game telemetry, compress authored chrome, spend
    the recovered height on the table. Browser fullscreen is requested from
@@ -791,7 +793,7 @@ const ASSETS=Object.freeze({"S1":"data:image/webp;base64,UklGRmo7AABXRUJQVlA4IF4
    ======================================================================= */
 const DEV = /[?&]dev=1(&|$)/.test(location.search);
 const QA = DEV && /[?&]qa=1(&|$)/.test(location.search);
-const BUILD = 'klondike-5.31.0-mobile-uv-viewport';
+const BUILD = 'klondike-5.32.0-tech-week-gold';
 const $ = (s,r=document)=>r.querySelector(s);
 const clamp = (n,a,b)=>Math.max(a,Math.min(b,n));
 const reducedMotion = ()=>{ const forced=document.documentElement.dataset.motion; if(forced==='reduced') return true; if(forced==='full') return false; try{ return matchMedia('(prefers-reduced-motion: reduce)').matches }catch(_){ return false } };
@@ -1793,7 +1795,7 @@ const ShuffleFX = (()=>{
 })();
 
 const Fidgets = (()=>{
-  const layer=$('#fidgets'); let st=null, active=null, raf=0, last=performance.now(), lastW=0, lastH=0, holdTimer=0, tailBucket=null;
+  const layer=$('#fidgets'); let st=null, active=null, raf=0, last=performance.now(), lastW=0, lastH=0, lastSize=0, holdTimer=0, tailBucket=null;
   const TAU=Math.PI*2, RAD2DEG=180/Math.PI;
   // Earthborn spinner contract carried from the lab: substantial 84 g steel tri-spinner.
   const Config=Object.freeze({
@@ -1824,12 +1826,13 @@ const Fidgets = (()=>{
   function tick(now){const dt=Math.max(0,(now-last)/1000);last=now;if(st&&(!active||active.mode!=='spin')&&st.omega){integrate(st,dt);if(Math.abs(st.omega)<=Config.tailClickOmega&&st.omega){const bucket=Math.floor(st.r/120);if(tailBucket!==null&&bucket!==tailBucket)AudioFX.play('edge',.055*Config.audioScale,{channel:'spinner'});tailBucket=bucket}else tailBucket=null;paint()}if(st&&Math.abs(st.omega)>.02)AudioFX.setBearing(st.omega);else AudioFX.stopBearing();raf=requestAnimationFrame(tick)}
   function init(){
     layer.replaceChildren(); const el=document.createElement('div');el.className='fidget';el.dataset.kind='spinner';el.tabIndex=0;el.setAttribute('role','application');el.setAttribute('aria-label','Fidget spinner. Swipe the invisible halo or scroll over it to spin. Touch and hold for one second, then drag to reposition. Double click to recenter.');markup(el);layer.appendChild(el);
-    st={el,x:0,y:0,r:-9,omega:0};const br0=View.el.board.getBoundingClientRect();lastW=br0.width;lastH=br0.height;requestAnimationFrame(reset);
+    st={el,x:0,y:0,r:-9,omega:0};const br0=View.el.board.getBoundingClientRect();lastW=br0.width;lastH=br0.height;lastSize=el.offsetWidth||64;requestAnimationFrame(reset);
     // Dedicated touchstart unlock is intentionally redundant with pointerdown: WebKit audio policies vary across iOS versions.
     el.addEventListener('touchstart',()=>{AudioFX.unlock()},{passive:true,capture:true});
-    const down=e=>{if(e.button!==undefined&&e.pointerType!=='touch'&&e.button!==0)return;e.preventDefault();AudioFX.unlock();clearHold();const br=View.el.board.getBoundingClientRect(),c=center(),t=performance.now();active={mode:e.pointerType==='touch'?'pending':'move',id:e.pointerId,pointerType:e.pointerType||'mouse',downX:e.clientX,downY:e.clientY,lastX:e.clientX,lastY:e.clientY,lastA:angleFor(e),lastT:t,lastOmega:0,grabDx:e.clientX-c.x,grabDy:e.clientY-c.y,ox:e.clientX-br.left-st.x,oy:e.clientY-br.top-st.y};if(active.mode==='pending')holdTimer=setTimeout(()=>{if(active&&active.mode==='pending'){active.mode='move';AudioFX.play('contact',.18*Config.audioScale,{channel:'spinner'});AudioFX.haptic('fidget')}},Config.holdMs);else{AudioFX.play('contact',.22*Config.audioScale,{channel:'spinner'});AudioFX.haptic('fidget')}try{el.setPointerCapture(e.pointerId)}catch(_){}};
-    const move=e=>{if(!active||e.pointerId!==active.id)return;e.preventDefault();const now=performance.now(),dt=Math.max(.008,(now-active.lastT)/1000),travel=Math.hypot(e.clientX-active.downX,e.clientY-active.downY);if(active.mode==='pending'&&travel>Config.holdSlop){clearHold();active.mode='spin';active.lastA=angleFor(e)}if(active.mode==='spin'){const c=center(),a=angleFor(e),da=wrapPi(a-active.lastA),angular=da/dt,fling=swipeOmega(e.clientX-active.lastX,e.clientY-active.lastY,active.lastX-c.x,active.lastY-c.y,dt,c.r*.92),target=Math.abs(fling)>Math.abs(angular*Config.touchSpinGain)?fling:clamp(angular*Config.touchSpinGain,-Config.maxOmega,Config.maxOmega);st.r+=da*RAD2DEG;st.omega=st.omega*.12+target*.88;active.lastOmega=target;active.lastA=a;AudioFX.setBearing(st.omega);paint()}else if(active.mode==='move'){const br=View.el.board.getBoundingClientRect(),sz=st.el.offsetWidth;st.x=e.clientX-active.grabDx-br.left-sz/2;st.y=e.clientY-active.grabDy-br.top-sz/2;constrain();paint()}active.lastX=e.clientX;active.lastY=e.clientY;active.lastT=now};
-    const end=e=>{if(!active||e.pointerId!==active.id)return;clearHold();const was=active.mode,travel=Math.hypot(e.clientX-active.downX,e.clientY-active.downY);if(was==='pending'&&travel<Config.holdSlop)applyImpulse(Config.tapAngularImpulse/Config.inertia,'tap');else if(was==='spin'&&Math.abs(active.lastOmega)>.1)st.omega=clamp(st.omega*(1-Config.touchReleaseBlend)+active.lastOmega*Config.touchReleaseBlend,-Config.maxOmega,Config.maxOmega);else if(was==='move')AudioFX.play('drop',.25*Config.audioScale,{channel:'spinner'});try{el.releasePointerCapture(e.pointerId)}catch(_){}active=null;paint()};
+    const setMoveAnchor=(px,py)=>{if(!active)return;const br=View.el.board.getBoundingClientRect(),sz=st.el.offsetWidth||64,lx=px-br.left-st.x,ly=py-br.top-st.y,inside=lx>=0&&lx<=sz&&ly>=0&&ly<=sz;active.anchorX=inside?lx:sz/2;active.anchorY=inside?ly:sz/2};
+    const down=e=>{if(e.button!==undefined&&e.pointerType!=='touch'&&e.button!==0)return;e.preventDefault();AudioFX.unlock();clearHold();const t=performance.now();active={mode:e.pointerType==='touch'?'pending':'move',id:e.pointerId,pointerType:e.pointerType||'mouse',downX:e.clientX,downY:e.clientY,lastX:e.clientX,lastY:e.clientY,lastA:angleFor(e),lastT:t,lastOmega:0,anchorX:0,anchorY:0};setMoveAnchor(e.clientX,e.clientY);if(active.mode==='pending')holdTimer=setTimeout(()=>{if(active&&active.mode==='pending'){setMoveAnchor(active.lastX,active.lastY);active.mode='move';AudioFX.play('contact',.18*Config.audioScale,{channel:'spinner'});AudioFX.haptic('fidget')}},Config.holdMs);else{AudioFX.play('contact',.22*Config.audioScale,{channel:'spinner'});AudioFX.haptic('fidget')}try{el.setPointerCapture(e.pointerId)}catch(_){}};
+    const move=e=>{if(!active||e.pointerId!==active.id)return;e.preventDefault();const now=performance.now(),dt=Math.max(.008,(now-active.lastT)/1000),travel=Math.hypot(e.clientX-active.downX,e.clientY-active.downY);if(active.mode==='pending'&&travel>Config.holdSlop){clearHold();active.mode='spin';active.lastA=angleFor(e)}if(active.mode==='spin'){const c=center(),a=angleFor(e),da=wrapPi(a-active.lastA),angular=da/dt,fling=swipeOmega(e.clientX-active.lastX,e.clientY-active.lastY,active.lastX-c.x,active.lastY-c.y,dt,c.r*.92),target=Math.abs(fling)>Math.abs(angular*Config.touchSpinGain)?fling:clamp(angular*Config.touchSpinGain,-Config.maxOmega,Config.maxOmega);st.r+=da*RAD2DEG;st.omega=st.omega*.12+target*.88;active.lastOmega=target;active.lastA=a;AudioFX.setBearing(st.omega);paint()}else if(active.mode==='move'){const br=View.el.board.getBoundingClientRect();st.x=e.clientX-br.left-active.anchorX;st.y=e.clientY-br.top-active.anchorY;constrain();paint()}active.lastX=e.clientX;active.lastY=e.clientY;active.lastT=now};
+    const end=e=>{if(!active||e.pointerId!==active.id)return;clearHold();const ex=Number.isFinite(e.clientX)?e.clientX:active.lastX,ey=Number.isFinite(e.clientY)?e.clientY:active.lastY,was=active.mode,travel=Math.hypot(ex-active.downX,ey-active.downY);if(was==='pending'&&travel<Config.holdSlop)applyImpulse(Config.tapAngularImpulse/Config.inertia,'tap');else if(was==='spin'&&Math.abs(active.lastOmega)>.1)st.omega=clamp(st.omega*(1-Config.touchReleaseBlend)+active.lastOmega*Config.touchReleaseBlend,-Config.maxOmega,Config.maxOmega);else if(was==='move')AudioFX.play('drop',.25*Config.audioScale,{channel:'spinner'});try{el.releasePointerCapture(e.pointerId)}catch(_){}active=null;paint()};
     el.addEventListener('pointerdown',down);
     // One global capture path avoids duplicate move processing and survives WebKit dropping element pointer capture during long-press.
     window.addEventListener('pointermove',move,{capture:true,passive:false}); window.addEventListener('pointerup',end,{capture:true}); window.addEventListener('pointercancel',end,{capture:true});
@@ -1838,7 +1841,7 @@ const Fidgets = (()=>{
     el.addEventListener('keydown',e=>{let handled=true;if(e.key===' '||e.key==='Enter')applyImpulse((e.shiftKey?-1:1)*(1.55e-3/Config.inertia),'keyboard');else if(e.key==='ArrowLeft')st.x-=8;else if(e.key==='ArrowRight')st.x+=8;else if(e.key==='ArrowUp')st.y-=8;else if(e.key==='ArrowDown')st.y+=8;else handled=false;if(handled){e.preventDefault();constrain();paint()}});
     raf=requestAnimationFrame(tick);
   }
-  function relayout(){if(!st)return;const r=View.el.board.getBoundingClientRect(),sx=lastW?r.width/lastW:1,sy=lastH?r.height/lastH:1;st.x*=sx;st.y*=sy;constrain();paint();lastW=r.width;lastH=r.height}
+  function relayout(){if(!st)return;const r=View.el.board.getBoundingClientRect(),newSize=st.el.offsetWidth||lastSize||64;if(active){constrain();paint();lastW=r.width;lastH=r.height;lastSize=newSize;return}const cxRatio=lastW?clamp((st.x+(lastSize||newSize)/2)/lastW,0,1):.91,cyRatio=lastH?clamp((st.y+(lastSize||newSize)/2)/lastH,0,1):.18;st.x=cxRatio*r.width-newSize/2;st.y=cyRatio*r.height-newSize/2;constrain();paint();lastW=r.width;lastH=r.height;lastSize=newSize}
   function coastTime(w0=Config.maxOmega){const q={omega:w0,r:0},dt=.05;let t=0;while(Math.abs(q.omega)>0&&t<300){integrate(q,dt);t+=dt}return t}
   return {init,relayout,Config,decayOmega,coastTime,swipeOmega,get count(){return st?1:0},get state(){return st?{x:st.x,y:st.y,r:st.r,omega:st.omega}:null}};
 })();
@@ -2308,12 +2311,13 @@ const Viewport = (()=>{
   let raf=0,fullscreenTried=false;
   const root=document.documentElement;
   const coarse=()=>{try{return matchMedia('(pointer:coarse)').matches}catch(_){return false}};
+  const touchCapable=()=>coarse()||Number(navigator.maxTouchPoints||0)>0;
   const landscape=()=>{const vv=window.visualViewport,w=vv?.width||innerWidth,h=vv?.height||innerHeight;return w>h};
   function measure(){
     const vv=window.visualViewport,w=Math.round(vv?.width||innerWidth),h=Math.round(vv?.height||innerHeight);
     root.style.setProperty('--app-w',Math.max(1,w)+'px');
     root.style.setProperty('--app-h',Math.max(1,h)+'px');
-    root.dataset.uvMobile=String(coarse()||w<=900);
+    root.dataset.uvMobile=String(touchCapable()||w<=900);
     root.dataset.orientation=landscape()?'landscape':'portrait';
     root.dataset.compactLandscape=String(landscape()&&h<=560);
     return {w,h};
@@ -2529,7 +2533,7 @@ if (DEV) (()=>{
   T('uv / blacklight is a FILTER over the card layer: #uvNeon (grade + bloom) and #uvNeonLite (grade only) exist, only the first blurs',()=>{ const a=document.querySelector('#uvNeon'),b=document.querySelector('#uvNeonLite'); return !!a&&!!b&&a.querySelectorAll('feGaussianBlur').length>=1&&b.querySelectorAll('feGaussianBlur').length===0&&a.querySelector('feColorMatrix')&&b.querySelector('feColorMatrix'); });
   T('uv / glow gate follows Visual-juice and reduced-motion',()=>document.documentElement.dataset.uvGlow===((Prefs.value.juice!=='minimal'&&!reducedMotion())?'on':'off'));
   T('uv / the filter is scoped: card layer + victory layer only, never the board, chrome or slots',()=>{ const h=document.documentElement.innerHTML; return /html\[data-theme="blacklight"\] \.cards,html\[data-theme="blacklight"\] \.victoryFX\{filter:url\(#uvNeonLite\)\}/.test(h) && !/html\[data-theme="blacklight"\] \.(board|slot|topbar|controls)\{[^}]*filter:/.test(h); });
-  T('uv / mobile has a WebKit-safe first-class renderer: parent SVG filter is removed and visible faces are graded locally',()=>{const h=document.documentElement.innerHTML;return h.includes('data-uv-mobile="true"][data-theme="blacklight"] .cards')&&h.includes('filter:none!important')&&h.includes('.card[data-up="true"] .front{filter:saturate(1.66)')});
+  T('uv / mobile has a WebKit-safe first-class renderer: parent SVG filter is removed and visible faces are graded locally',()=>{const h=document.documentElement.innerHTML;return h.includes('data-uv-mobile="true"][data-theme="blacklight"] .cards')&&h.includes('filter:none!important')&&h.includes('mix-blend-mode:multiply')&&h.includes('-webkit-filter:saturate(1.46)')});
   T('uv / every persistent card carries exactly one non-semantic Intaglio etch plate',()=>document.querySelectorAll('.card').length===52&&document.querySelectorAll('.card > .uvEtch').length===52&&[...document.querySelectorAll('.uvEtch')].every(e=>e.getAttribute('aria-hidden')==='true'));
   T('uv / blacklight preserves felt material and exposes fluorescent frame linework instead of flattening the board',()=>{const root=document.documentElement,prev=root.dataset.theme;root.dataset.theme='blacklight';const felt=getComputedStyle(View.el.board,'::before'),field=getComputedStyle(View.el.board,'::after');const ok=felt.backgroundImage!=='none'&&felt.boxShadow!=='none'&&felt.boxShadow.includes('57, 247, 255')&&field.backgroundImage!=='none'&&field.display!=='none';root.dataset.theme=prev;return ok});
   T('uv / FTS Poster palette is present as fluorescent ink tokens',()=>{const root=document.documentElement,prev=root.dataset.theme;root.dataset.theme='blacklight';const cs=getComputedStyle(root),ok=['--uv-cyan','--uv-magenta','--uv-lime','--uv-violet','--uv-orange'].every(k=>cs.getPropertyValue(k).trim().length>0);root.dataset.theme=prev;return ok});
@@ -2546,8 +2550,10 @@ if (DEV) (()=>{
   T('responsive / zoom lock covers viewport meta + board gesture suppression',()=>document.querySelector('meta[name="viewport"]')?.content.includes('user-scalable=no')&&String(Viewport.bind).includes('gesturestart'));
   T('responsive / zoom contract pins min/max scale and viewport-fit',()=>{const c=document.querySelector('meta[name="viewport"]')?.content||'';return ['user-scalable=no','minimum-scale=1','maximum-scale=1','viewport-fit=cover'].every(x=>c.includes(x));});
   T('responsive / document surface is fixed, non-scrollable and settings keep their own vertical pan',()=>{const hb=getComputedStyle(document.body),hs=getComputedStyle(document.documentElement),ss=getComputedStyle(document.querySelector('.settingsScroll'));return hb.position==='fixed'&&hs.position==='fixed'&&hb.overflow==='hidden'&&ss.overflowY==='auto'&&ss.touchAction.includes('pan-y');});
-  T('responsive / mobile blacklight fallback recreates bloom with CSS drop-shadow instead of parent SVG filtering',()=>{const r=document.documentElement,old={theme:r.dataset.theme,uvMobile:r.dataset.uvMobile,cardGlow:r.dataset.cardGlow,uvIntensity:r.dataset.uvIntensity};r.dataset.theme='blacklight';r.dataset.uvMobile='true';r.dataset.cardGlow='on';r.dataset.uvIntensity='searing';const c=document.querySelector('.card'),cards=document.querySelector('.cards'),ok=!!c&&getComputedStyle(cards).filter==='none'&&getComputedStyle(c).filter.includes('drop-shadow');Object.entries(old).forEach(([k,v])=>v==null?delete r.dataset[k]:r.dataset[k]=v);return ok;});
-  T('responsive / card-bloom switch removes mobile drop-shadow without removing the UV grade',()=>{const r=document.documentElement,old={theme:r.dataset.theme,uvMobile:r.dataset.uvMobile,cardGlow:r.dataset.cardGlow};r.dataset.theme='blacklight';r.dataset.uvMobile='true';r.dataset.cardGlow='off';const f=getComputedStyle(document.querySelector('.card')).filter,ok=f!=='none'&&!f.includes('drop-shadow');Object.entries(old).forEach(([k,v])=>v==null?delete r.dataset[k]:r.dataset[k]=v);return ok;});
+  T('responsive / mobile blacklight is compositor-safe: no parent SVG filter and no filter on the transformed card shell',()=>{const r=document.documentElement,old={theme:r.dataset.theme,uvMobile:r.dataset.uvMobile,cardGlow:r.dataset.cardGlow,uvIntensity:r.dataset.uvIntensity};r.dataset.theme='blacklight';r.dataset.uvMobile='true';r.dataset.cardGlow='on';r.dataset.uvIntensity='searing';const c=document.querySelector('.card'),cards=document.querySelector('.cards'),ok=!!c&&getComputedStyle(cards).filter==='none'&&getComputedStyle(c).filter==='none'&&getComputedStyle(c).boxShadow!=='none';Object.entries(old).forEach(([k,v])=>v==null?delete r.dataset[k]:r.dataset[k]=v);return ok;});
+  T('responsive / mobile UV paper has an actual fluorescent blend plate, not saturation-only white paper',()=>{const r=document.documentElement,c=document.querySelector('.card'),old={theme:r.dataset.theme,uvMobile:r.dataset.uvMobile,uvIntensity:r.dataset.uvIntensity,up:c.dataset.up};r.dataset.theme='blacklight';r.dataset.uvMobile='true';r.dataset.uvIntensity='searing';c.dataset.up='true';const f=c.querySelector('.front'),p=getComputedStyle(f,'::before'),ok=p.content!=='none'&&p.mixBlendMode==='multiply'&&parseFloat(p.opacity)>=.6;c.dataset.up=old.up;Object.entries(old).forEach(([k,v])=>{if(k==='up')return;v==null?delete r.dataset[k]:r.dataset[k]=v});return ok;});
+  T('responsive / card-bloom switch removes wide mobile bloom without removing face grade or UV paper plate',()=>{const r=document.documentElement,c=document.querySelector('.card'),old={theme:r.dataset.theme,uvMobile:r.dataset.uvMobile,cardGlow:r.dataset.cardGlow,up:c.dataset.up};r.dataset.theme='blacklight';r.dataset.uvMobile='true';r.dataset.cardGlow='off';c.dataset.up='true';const f=c.querySelector('.front'),p=getComputedStyle(f,'::before'),ok=getComputedStyle(c).filter==='none'&&getComputedStyle(c).boxShadow!=='none'&&getComputedStyle(f).filter!=='none'&&p.content!=='none';c.dataset.up=old.up;Object.entries(old).forEach(([k,v])=>{if(k==='up')return;v==null?delete r.dataset[k]:r.dataset[k]=v});return ok;});
+  T('responsive / wide touch-capable tablets opt into the WebKit-safe UV renderer',()=>String(Viewport.measure).includes('touchCapable()||w<=900')&&String(Viewport.measure).includes('uvMobile'));
   T('responsive / compact landscape fullscreen is user-gesture gated and failure-safe',()=>String(Viewport.bind).includes('pointerup')&&String(Viewport.maybeFullscreen).includes('requestFullscreen')&&String(Viewport.maybeFullscreen).includes('catch'));
   T('responsive / compact landscape state derives from the visual viewport rather than UA sniffing',()=>{const m=Viewport.measure();return document.documentElement.dataset.orientation===(m.w>m.h?'landscape':'portrait')&&document.documentElement.dataset.compactLandscape===String(m.w>m.h&&m.h<=560);});
   T('responsive / safe-area insets exist for portrait and short landscape chrome',()=>document.documentElement.innerHTML.includes('env(safe-area-inset-left)')&&document.documentElement.innerHTML.includes('env(safe-area-inset-bottom)'));
@@ -2564,6 +2570,10 @@ if (DEV) (()=>{
   T('spinner / invisible interaction halo exists and expands hit target by at least 24px',()=>{const h=document.querySelector('.spinnerHitHalo'),s=document.querySelector('.fidget[data-kind="spinner"]');return !!h&&!!s&&Fidgets.Config.hitPadPx>=24&&getComputedStyle(s).getPropertyValue('--spinner-hit-pad').trim()===Fidgets.Config.hitPadPx+'px'});
   T('spinner / tangential 80px phone swipe yields meaningful angular velocity',()=>Math.abs(Fidgets.swipeOmega(0,80,30,0,.12,32))>=18);
   T('spinner / long-press drag has window-capture fallback and one-second hold contract',()=>Fidgets.Config.holdMs===1000&&String(Fidgets.init).includes("window.addEventListener('pointermove',move,{capture:true,passive:false})"));
+  T('spinner / fine pointers cannot grab the invisible halo outside the visible rotor',()=>document.documentElement.innerHTML.includes('@media (pointer:fine){.spinnerHitHalo{pointer-events:none}}'));
+  T('spinner / repositioning is pointer-local and never uses a center-delta orbit around the cursor',()=>String(Fidgets.init).includes('anchorX')&&String(Fidgets.init).includes('e.clientX-br.left-active.anchorX')&&!String(Fidgets.init).includes('grabDx'));
+  T('spinner / active viewport relayout never rescales the object under a held finger',()=>String(Fidgets.relayout).includes('if(active){constrain();paint();lastW=r.width;lastH=r.height;lastSize=newSize;return}'));
+  T('spinner / idle responsive relayout preserves normalized center across spinner size changes',()=>String(Fidgets.relayout).includes('cxRatio')&&String(Fidgets.relayout).includes('cyRatio')&&String(Fidgets.relayout).includes('lastSize'));
   T('spinner / lobe centers are an equilateral triad centered exactly on the hub pivot',()=>{const pts=[...document.querySelectorAll('.spinnerLobe')].map(e=>{const cs=getComputedStyle(e);return [parseFloat(cs.getPropertyValue('--cx')),parseFloat(cs.getPropertyValue('--cy'))]});if(pts.length!==3||pts.some(p=>p.some(v=>!Number.isFinite(v))))return false;const c=[50,50],rs=pts.map(p=>Math.hypot(p[0]-c[0],p[1]-c[1])),ds=[Math.hypot(pts[0][0]-pts[1][0],pts[0][1]-pts[1][1]),Math.hypot(pts[1][0]-pts[2][0],pts[1][1]-pts[2][1]),Math.hypot(pts[2][0]-pts[0][0],pts[2][1]-pts[0][1])];return Math.max(...rs)-Math.min(...rs)<.001&&Math.max(...ds)-Math.min(...ds)<.001;});
   T('spinner / fixed-scene highlights counter-rotate against rotor angle',()=>document.documentElement.innerHTML.includes('rotate(calc(var(--rotor-deg) * -1deg))')&&Number.isFinite(Fidgets.state?.r??0));
   T('field / simplex noise perturbs both grid phase and propagation speed',()=>{const a=FX.gridSample(8,11,1234,800,600),b=FX.gridSample(9,11,1234,800,600),c=FX.gridSample(8,11,2234,800,600);return Number.isFinite(a.phase)&&a.speed!==b.speed&&a.phase!==b.phase&&a.phase!==c.phase&&a.alpha>=0&&a.radius>0;});
