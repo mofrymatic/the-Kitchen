@@ -2,13 +2,13 @@
 <html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no, interactive-widget=resizes-content">
 <meta name="theme-color" content="#05070a">
 <meta name="color-scheme" content="dark light">
 
 <title>Klondike Solitaire · Red Eye · FTS Arcade</title>
 <meta name="title" content="Klondike Solitaire · Red Eye · FTS Arcade">
-<meta name="description" content="Red Eye flagship Klondike for FTS Arcade: tactile casino-table solitaire with draw-one or draw-three, marathon-soft physical card audio, responsive mobile play, undo and hints.">
+<meta name="description" content="FTS Arcade Klondike card-system laboratory: responsive solitaire with configurable rules, card/table styles, granular physical SFX, UV rendering, undo and hints.">
 <link rel="canonical" href="https://frymatic.us/FTSArcade/KLONDIKE/">
 
 <meta property="og:type" content="website">
@@ -530,6 +530,115 @@ html[data-theme="blacklight"][data-juice="minimal"] .uvEtch{opacity:.42}
 @media(min-width:601px) and (max-width:900px) and (orientation:portrait){.fidget[data-kind="spinner"]{width:clamp(52px,8vmin,72px)}}
 @media(prefers-reduced-motion:reduce){.card.dragging{--card-scale:1}.fidget[data-kind="spinner"] .spinnerRotor{transform:none!important}}
 
+
+
+/* =====================================================================
+   CEP 5.30 — MONTE CARLO CONTROL ROOM / CARD SYSTEM SETTINGS
+   ===================================================================== */
+:root{--settings-gold:#d8ae61;--settings-cyan:#39f7ff;--settings-red:#ff2e75}
+.settingsPanel{right:12px;bottom:62px;width:min(780px,calc(100vw - 24px));max-height:min(82dvh,760px);padding:0;overflow:hidden;border:1px solid rgba(216,174,97,.55);border-radius:10px;background:linear-gradient(145deg,rgba(7,10,15,.985),rgba(2,4,8,.985));box-shadow:0 28px 95px rgba(0,0,0,.72),0 0 0 1px rgba(57,247,255,.08),0 0 40px rgba(255,46,117,.08)}
+.settingsHead{height:58px;display:flex;align-items:center;gap:12px;padding:10px 12px 10px 15px;border-bottom:1px solid rgba(216,174,97,.24);background:radial-gradient(circle at 12% 0,rgba(57,247,255,.08),transparent 32%),radial-gradient(circle at 88% 0,rgba(255,46,117,.08),transparent 34%)}
+.settingsHead>div{min-width:0}.settingsHead h2{margin:0 0 5px}.settingsHead p{margin:0;color:#6f8095;font:700 8px/1 ui-monospace,monospace;text-transform:uppercase;letter-spacing:.16em}.settingsX{margin-left:auto;width:34px;height:34px;border:1px solid #344352;background:#090f16;color:#b8c4d4;font-size:20px;line-height:1}
+.settingsScroll{max-height:calc(min(82dvh,760px) - 58px);overflow:auto;overscroll-behavior:contain;padding:12px;scrollbar-gutter:stable}
+.settingsGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start}.settingGroup{border:1px solid rgba(255,255,255,.085);border-radius:7px;background:rgba(255,255,255,.018);overflow:hidden}.settingGroup>summary{cursor:pointer;list-style:none;padding:11px 12px;border-bottom:1px solid transparent;color:#dbe5f2;font:900 10px/1 ui-monospace,monospace;letter-spacing:.14em;text-transform:uppercase}.settingGroup[open]>summary{border-bottom-color:rgba(255,255,255,.065);color:#fff0cf}.settingGroup>summary::-webkit-details-marker{display:none}.settingGroup>summary::after{content:'+';float:right;color:#687a90}.settingGroup[open]>summary::after{content:'−';color:var(--settings-gold)}
+.settingsPanel .settingRow{padding:8px 11px;margin:0;min-height:42px}.settingsPanel .settingRow span{display:flex;align-items:center;gap:7px}.settingsPanel .settingRow select{width:154px;max-width:46vw}.settingsPanel .settingRow input[type="range"]{width:160px;max-width:46vw}.settingsPanel output{min-width:32px;color:#d4e3f5;font-variant-numeric:tabular-nums;font-size:9px}.rangeRow{align-items:start}.settingsAction{height:34px;margin:9px 11px;border:1px solid #354457;background:#0b121a;color:#cbd7e6;padding:0 11px;font:800 9px/1 ui-monospace,monospace;text-transform:uppercase;letter-spacing:.08em}.settingsAction:hover,.previewRow button:hover{border-color:rgba(57,247,255,.5);color:#fff}.primaryAction{width:calc(100% - 22px);background:linear-gradient(90deg,rgba(216,174,97,.19),rgba(255,46,117,.09));border-color:rgba(216,174,97,.48);color:#ffe4ad}.dangerAction{border-color:rgba(255,46,117,.36);color:#ff9ab7}.settingsButtons{display:flex;flex-wrap:wrap}.settingsButtons .settingsAction{flex:1 1 120px;margin-right:0}.settingsButtons .settingsAction:last-child{margin-right:11px}.previewRow{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;padding:9px 11px 11px}.previewRow button{height:30px;padding:0 3px;border:1px solid #29384a;background:#071019;color:#8798ad;font:800 8px ui-monospace,monospace;text-transform:uppercase}.engineBay{display:flex;gap:5px;flex-wrap:wrap;padding:2px 11px 11px}.engineChip{padding:5px 6px;border:1px solid #253244;color:#62738a;background:#060b11;font:700 7px/1.1 ui-monospace,monospace;text-transform:uppercase;letter-spacing:.04em}.engineChip.live{color:#bcffdf;border-color:rgba(98,255,190,.34);background:rgba(98,255,190,.035)}
+html[data-theme="light"] .settingsPanel{background:linear-gradient(145deg,rgba(255,253,248,.99),rgba(241,237,229,.99));box-shadow:0 25px 80px rgba(40,30,15,.22)}html[data-theme="light"] .settingsHead p{color:#68758a}html[data-theme="light"] .settingGroup{background:rgba(0,0,0,.018);border-color:rgba(0,0,0,.10)}html[data-theme="light"] .settingGroup>summary{color:#243149}html[data-theme="light"] .settingGroup[open]>summary{color:#6d4814}
+@media(max-width:700px){.settingsPanel{right:6px;bottom:54px;width:calc(100vw - 12px);max-height:calc(var(--app-h,100dvh) - 64px)}.settingsScroll{max-height:calc(var(--app-h,100dvh) - 122px);padding:7px}.settingsGrid{grid-template-columns:1fr;gap:7px}.settingsPanel .settingRow select,.settingsPanel .settingRow input[type="range"]{width:min(46vw,190px)}.previewRow{grid-template-columns:repeat(3,1fr)}.settingsHead{height:54px}.settingsHead p{display:none}}
+html[data-handedness="left"] .settingsPanel{right:auto;left:12px}html[data-handedness="left"] .controls{direction:rtl}html[data-handedness="left"] .control,html[data-handedness="left"] .drawSelect,html[data-handedness="left"] .utilityBtn{direction:ltr}
+html[data-large-controls="on"] .control{min-height:44px}html[data-large-controls="on"] .utilityBtn{min-width:42px;min-height:40px}html[data-large-controls="on"] .themeBtn{min-height:36px}
+html[data-focus-glow="off"] :focus-visible{outline:none!important;box-shadow:none!important}html[data-contrast="high"]{--muted:#aebbd0;--edge:rgba(255,255,255,.42)}html[data-contrast="high"] .slot{border-width:2px}html[data-contrast="high"] .card{filter:contrast(1.16) saturate(1.06)}
+html[data-motion="reduced"] .card,html[data-motion="reduced"] .board::after,html[data-motion="reduced"] .uvEtch,html[data-motion="reduced"] .spinnerRotor{animation:none!important;transition:none!important}html[data-speed="instant"] .card{transition:none!important}
+html[data-spinner="off"] .fidget[data-kind="spinner"]{display:none!important}html[data-felt-etch="off"] .board::after{display:none!important}html[data-card-glow="off"] .card{box-shadow:0 2px 6px rgba(0,0,0,.52)!important}
+
+/* Card-face treatments preserve the semantic 52-card atlas; they are optical plates only. */
+html:not([data-theme="blacklight"])[data-card-style="montecarlo"] .card[data-up="true"] .front{filter:saturate(1.04) contrast(1.025) sepia(.035)}
+html:not([data-theme="blacklight"])[data-card-style="montecarlo"] .card{box-shadow:0 2px 7px rgba(0,0,0,.52),0 0 0 1px rgba(216,174,97,.20),0 1px 0 rgba(255,255,255,.22) inset}
+html:not([data-theme="blacklight"])[data-card-style="red-eye"] .card[data-up="true"] .front{filter:saturate(1.18) contrast(1.08) brightness(.98)}html:not([data-theme="blacklight"])[data-card-style="red-eye"] .card{box-shadow:0 3px 9px rgba(0,0,0,.58),-1px 0 0 rgba(255,46,117,.38),1px 0 0 rgba(57,247,255,.28)}
+html:not([data-theme="blacklight"])[data-card-style="intaglio"] .uvEtch{display:block;opacity:.25;mix-blend-mode:screen}html:not([data-theme="blacklight"])[data-card-style="intaglio"] .card{box-shadow:0 3px 10px rgba(0,0,0,.62),0 0 0 1px rgba(154,108,255,.20)}
+html:not([data-theme="blacklight"])[data-card-style="ivory"] .card[data-up="true"] .front{filter:sepia(.12) saturate(.88) brightness(1.03)}html:not([data-theme="blacklight"])[data-card-style="ivory"] .card{box-shadow:0 2px 5px rgba(0,0,0,.42),0 0 0 1px rgba(117,79,34,.20)}
+html:not([data-theme="blacklight"])[data-card-style="high-contrast"] .card[data-up="true"] .front{filter:contrast(1.28) saturate(.92) brightness(1.06)}
+html[data-card-back="red-eye"] .back{background-image:radial-gradient(circle at 50% 50%,rgba(255,46,117,.30),transparent 18%),repeating-linear-gradient(45deg,rgba(57,247,255,.18) 0 1px,transparent 1px 8px),linear-gradient(145deg,#12030c,#02050a)!important}
+html[data-card-back="blueprint"] .back{background-image:linear-gradient(rgba(57,247,255,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(57,247,255,.10) 1px,transparent 1px),radial-gradient(circle,#11344c,#030a11 72%)!important;background-size:8px 8px,8px 8px,100% 100%!important}
+html[data-card-back="obsidian"] .back{background-image:radial-gradient(circle at 35% 25%,#28313a,#070a0d 34%,#010203 76%),repeating-radial-gradient(circle at 50% 50%,transparent 0 9%,rgba(216,174,97,.14) 9.5% 10%,transparent 10.5% 18%)!important}
+html[data-card-back="classic"] .back{background-image:var(--back-img)!important}
+
+/* Table skins: 80% Monte Carlo by default, with Red Eye and Galactica as accent systems. */
+html:not([data-theme="blacklight"])[data-table-style="montecarlo"] .board::before{background:radial-gradient(circle at 50% 104%,rgba(216,174,97,.10),transparent 28%),repeating-radial-gradient(ellipse at 50% 50%,transparent 0 76px,rgba(216,174,97,.018) 77px 78px,transparent 79px 112px),radial-gradient(ellipse at 45% 18%,rgba(11,77,91,.55),transparent 44%),linear-gradient(145deg,var(--felt2),var(--felt) 48%,var(--felt3));border-color:rgba(255,217,149,.82);box-shadow:0 0 0 2px rgba(91,57,19,.95),0 0 0 5px rgba(212,160,78,.22),inset 0 0 0 1px rgba(255,231,180,.18),inset 0 0 80px rgba(0,0,0,.63),0 22px 70px rgba(0,0,0,.55)}
+html:not([data-theme="blacklight"])[data-table-style="midnight"]{--felt:#07111b;--felt2:#0b1c2b;--felt3:#010307}html:not([data-theme="blacklight"])[data-table-style="red-eye"]{--felt:#17060c;--felt2:#240a12;--felt3:#050104}html:not([data-theme="blacklight"])[data-table-style="red-eye"] .board::before{border-color:rgba(255,46,117,.58);box-shadow:0 0 0 2px rgba(38,7,18,.95),0 0 0 5px rgba(255,46,117,.13),inset 0 0 0 1px rgba(57,247,255,.10),inset 0 0 85px rgba(0,0,0,.72),0 22px 70px rgba(0,0,0,.58)}html:not([data-theme="blacklight"])[data-table-style="classic-green"]{--felt:#0b3d2c;--felt2:#14543e;--felt3:#041b13}
+html[data-theme="blacklight"][data-uv-intensity="low"] .uvEtch{opacity:.34}html[data-theme="blacklight"][data-uv-intensity="low"] .card{box-shadow:0 2px 7px rgba(0,0,0,.72),0 0 0 1px rgba(145,217,255,.16),0 0 7px rgba(92,58,255,.10)}
+html[data-theme="blacklight"][data-uv-intensity="balanced"] .uvEtch{opacity:.58}html[data-theme="blacklight"][data-uv-intensity="balanced"] .card{box-shadow:0 2px 8px rgba(0,0,0,.74),0 0 0 1px rgba(145,217,255,.24),0 0 15px rgba(92,58,255,.22)}
+html[data-theme="blacklight"][data-uv-intensity="searing"] .uvEtch{opacity:.86}html[data-theme="blacklight"][data-uv-intensity="searing"] .card{box-shadow:0 2px 9px rgba(0,0,0,.76),0 0 0 1px rgba(145,217,255,.36),0 0 18px rgba(92,58,255,.30),0 0 28px rgba(255,46,117,.10)}html[data-theme="blacklight"][data-uv-intensity="searing"] .card[data-suit="H"],html[data-theme="blacklight"][data-uv-intensity="searing"] .card[data-suit="D"]{filter:saturate(1.12) brightness(1.04)}
+
+
+/* =====================================================================
+   CEP 5.31 — MOBILE UV PARITY / VIEWPORT LOCK / LANDSCAPE IMMERSION
+   ===================================================================== */
+html,body{
+  position:fixed; inset:0; width:100%; height:100%;
+  overflow:hidden; overscroll-behavior:none; touch-action:none;
+}
+.app{position:fixed;inset:0;width:100vw;height:var(--app-h,100dvh);max-height:var(--app-h,100dvh)}
+.controls button,.controls select,.themeBtn,.utilityBtn,.settingsPanel button,.settingsPanel select,.settingsPanel input{touch-action:manipulation}
+.settingsScroll{touch-action:pan-y;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+
+/* Mobile/WebKit blacklight: retain the safe no-SVG-parent path, but recreate
+   desktop bloom with compositor-friendly CSS drop shadows on each card. */
+html[data-uv-mobile="true"][data-theme="blacklight"] .card{
+  --uv-card-a:57,247,255;
+  --uv-card-b:154,108,255;
+  box-shadow:
+    0 3px 10px rgba(0,0,0,.80),
+    0 0 0 1px rgba(var(--uv-card-a),.38),
+    0 0 11px rgba(var(--uv-card-a),.30),
+    0 0 22px rgba(var(--uv-card-b),.18);
+}
+html[data-uv-mobile="true"][data-theme="blacklight"] .card[data-suit="H"],
+html[data-uv-mobile="true"][data-theme="blacklight"] .card[data-suit="D"]{--uv-card-a:255,46,117;--uv-card-b:255,155,61}
+html[data-uv-mobile="true"][data-theme="blacklight"] .card[data-suit="C"]{--uv-card-a:200,255,67;--uv-card-b:57,247,255}
+html[data-uv-mobile="true"][data-theme="blacklight"][data-card-glow="on"] .card{
+  filter:
+    saturate(1.24) contrast(1.055) brightness(1.025)
+    drop-shadow(0 0 2px rgba(var(--uv-card-a),.44))
+    drop-shadow(0 0 7px rgba(var(--uv-card-a),.30))
+    drop-shadow(0 0 14px rgba(var(--uv-card-b),.18));
+}
+html[data-uv-mobile="true"][data-theme="blacklight"][data-card-glow="off"] .card{
+  filter:saturate(1.24) contrast(1.055) brightness(1.025);
+  box-shadow:0 3px 9px rgba(0,0,0,.78),0 0 0 1px rgba(var(--uv-card-a),.24)!important;
+}
+html[data-uv-mobile="true"][data-theme="blacklight"] .card[data-up="true"] .front{
+  filter:saturate(1.36) contrast(1.11) brightness(1.055) hue-rotate(3deg);
+}
+html[data-uv-mobile="true"][data-theme="blacklight"] .card[data-up="false"] .back{
+  filter:saturate(1.34) contrast(1.10) brightness(.99) hue-rotate(9deg);
+}
+html[data-uv-mobile="true"][data-theme="blacklight"][data-uv-intensity="low"] .card{filter:saturate(1.12) contrast(1.035) brightness(1.01) drop-shadow(0 0 4px rgba(var(--uv-card-a),.16))}
+html[data-uv-mobile="true"][data-theme="blacklight"][data-uv-intensity="balanced"][data-card-glow="on"] .card{filter:saturate(1.20) contrast(1.05) brightness(1.02) drop-shadow(0 0 2px rgba(var(--uv-card-a),.34)) drop-shadow(0 0 7px rgba(var(--uv-card-b),.19))}
+html[data-uv-mobile="true"][data-theme="blacklight"][data-uv-intensity="searing"][data-card-glow="on"] .card{filter:saturate(1.34) contrast(1.075) brightness(1.035) drop-shadow(0 0 3px rgba(var(--uv-card-a),.55)) drop-shadow(0 0 9px rgba(var(--uv-card-a),.36)) drop-shadow(0 0 18px rgba(var(--uv-card-b),.23))}
+html[data-uv-mobile="true"][data-theme="blacklight"] .uvEtch{opacity:.94}
+html[data-uv-mobile="true"][data-theme="blacklight"] .uvEtch::before{opacity:.80}
+html[data-uv-mobile="true"][data-theme="blacklight"] .uvEtch::after{opacity:.58}
+
+/* A transformed card can keep the same UV voice while moving. */
+html[data-uv-mobile="true"][data-theme="blacklight"] .card.dragging{
+  box-shadow:0 18px 34px rgba(0,0,0,.62),0 0 0 1px rgba(var(--uv-card-a),.48),0 0 15px rgba(var(--uv-card-a),.36),0 0 28px rgba(var(--uv-card-b),.22)
+}
+
+/* Landscape game mode: keep game telemetry, compress authored chrome, spend
+   the recovered height on the table. Browser fullscreen is requested from
+   the first eligible user gesture by Viewport.maybeFullscreen(). */
+@media(max-height:560px) and (orientation:landscape){
+  .app{grid-template-rows:26px minmax(0,1fr) 38px}
+  .topbar{height:26px;padding:0 max(7px,env(safe-area-inset-right)) 0 max(7px,env(safe-area-inset-left))}
+  .brandMark{height:20px}.brand{font-size:8px}.crumbs{display:none}.themeBtn{height:22px}
+  .game{grid-template-rows:28px minmax(0,1fr)}
+  .gameHead{padding:0 7px}.gameIcon{font-size:13px}.titleBlock h1{font-size:12px}
+  .metrics{height:24px}.metric{min-width:43px;padding:2px 6px}.metric strong{font-size:9px}.metric span{font-size:5px;margin-top:2px}
+  .controls{min-height:38px;padding:2px max(4px,env(safe-area-inset-right)) max(2px,env(safe-area-inset-bottom)) max(4px,env(safe-area-inset-left))}
+  .control,.drawSelect,.utilityBtn{height:30px}
+  .board{--table-inset:2px}
+}
+
 </style>
 </head>
 <body>
@@ -599,13 +708,70 @@ html[data-theme="blacklight"][data-juice="minimal"] .uvEtch{opacity:.42}
   </nav>
 </div>
 <div class="settingsPanel" id="settingsPanel" role="dialog" aria-modal="false" aria-labelledby="settingsTitle">
-  <h2 id="settingsTitle">Table settings</h2>
-  <label class="settingRow"><span>Sound</span><input id="setSound" type="checkbox" checked></label>
-  <label class="settingRow"><span>Volume</span><input id="setVolume" type="range" min="0" max="1" step="0.05" value="0.7"></label>
-  <label class="settingRow"><span>Haptics</span><input id="setHaptics" type="checkbox" checked></label>
-  <label class="settingRow"><span>Tactile mix</span><select id="setTactile"><option value="studio">Studio ASMR</option><option value="warm">Warm / soft</option><option value="quiet">Quiet detail</option></select></label>
-  <label class="settingRow"><span>Visual juice</span><select id="setJuice"><option value="rich">Rich</option><option value="balanced">Balanced</option><option value="minimal">Minimal</option></select></label>
-  <button class="closeSettings" id="closeSettings" type="button">Close</button>
+  <div class="settingsHead"><div><h2 id="settingsTitle">Card System Control Room</h2><p>Game · cards · table · sound · access</p></div><button class="settingsX" id="closeSettings" type="button" aria-label="Close settings">×</button></div>
+  <div class="settingsScroll">
+    <div class="settingsGrid">
+      <details class="settingGroup" open>
+        <summary>Game / Rules</summary>
+        <label class="settingRow"><span>Klondike profile</span><select id="setRuleProfile"><option value="classic">Classic</option><option value="vegas">Vegas</option><option value="relaxed">Relaxed</option><option value="custom">Custom</option></select></label>
+        <label class="settingRow"><span>Draw</span><select id="setRuleDraw"><option value="1">Draw 1</option><option value="3">Draw 3</option></select></label>
+        <label class="settingRow"><span>Redeals</span><select id="setRedeals"><option value="unlimited">Unlimited</option><option value="3">3</option><option value="1">1</option><option value="0">None</option></select></label>
+        <label class="settingRow"><span>Empty column</span><select id="setEmptyPolicy"><option value="king">Kings only</option><option value="any">Any card/run</option></select></label>
+        <label class="settingRow"><span>Tableau build</span><select id="setBuildPolicy"><option value="alternate">Alternating color</option><option value="sameSuit">Same suit</option><option value="anySuit">Any suit</option></select></label>
+        <label class="settingRow"><span>Scoring</span><select id="setScoreMode"><option value="standard">Standard</option><option value="vegas">Vegas</option><option value="none">None</option></select></label>
+        <label class="settingRow"><span>Auto foundation</span><select id="setAutoFoundation"><option value="safe">Safe only</option><option value="aggressive">Aggressive</option><option value="off">Off</option></select></label>
+        <button class="settingsAction primaryAction" id="applyRules" type="button">Deal selected rules</button>
+        <div class="engineBay" id="engineBay" aria-label="Solitaire engine roadmap"></div>
+      </details>
+
+      <details class="settingGroup" open>
+        <summary>Cards / Table</summary>
+        <label class="settingRow"><span>Card face</span><select id="setCardStyle"><option value="montecarlo">Monte Carlo</option><option value="red-eye">Red Eye</option><option value="intaglio">Intaglio Galactica</option><option value="ivory">Ivory</option><option value="high-contrast">High contrast</option></select></label>
+        <label class="settingRow"><span>Card back</span><select id="setCardBack"><option value="galactica">Galactica</option><option value="red-eye">Red Eye</option><option value="blueprint">Blueprint</option><option value="obsidian">Obsidian</option><option value="classic">Classic pack</option></select></label>
+        <label class="settingRow"><span>Table</span><select id="setTableStyle"><option value="montecarlo">Monte Carlo</option><option value="midnight">Midnight</option><option value="red-eye">Red Eye</option><option value="classic-green">Classic green</option></select></label>
+        <label class="settingRow"><span>Lighting</span><select id="setTheme"><option value="dark">Dark</option><option value="blacklight">UV / blacklight</option><option value="light">Light</option></select></label>
+        <label class="settingRow"><span>UV intensity</span><select id="setUvIntensity"><option value="low">Low</option><option value="balanced">Balanced</option><option value="searing">Searing</option></select></label>
+        <label class="settingRow"><span>Visual juice</span><select id="setJuice"><option value="rich">Rich</option><option value="balanced">Balanced</option><option value="minimal">Minimal</option></select></label>
+        <label class="settingRow"><span>Card bloom</span><input id="setCardGlow" type="checkbox"></label>
+        <label class="settingRow"><span>Felt engraving</span><input id="setFeltEtch" type="checkbox"></label>
+        <label class="settingRow"><span>Fidget spinner</span><input id="setSpinner" type="checkbox"></label>
+      </details>
+
+      <details class="settingGroup" open>
+        <summary>Sound / SFX</summary>
+        <label class="settingRow"><span>Sound</span><input id="setSound" type="checkbox" checked></label>
+        <label class="settingRow rangeRow"><span>Master <output id="outVolume"></output></span><input id="setVolume" type="range" min="0" max="1" step="0.01"></label>
+        <label class="settingRow rangeRow"><span>Card body <output id="outSfxCards"></output></span><input id="setSfxCards" type="range" min="0" max="1" step="0.01"></label>
+        <label class="settingRow rangeRow"><span>Felt friction <output id="outSfxFriction"></output></span><input id="setSfxFriction" type="range" min="0" max="1" step="0.01"></label>
+        <label class="settingRow rangeRow"><span>Impacts <output id="outSfxImpact"></output></span><input id="setSfxImpact" type="range" min="0" max="1" step="0.01"></label>
+        <label class="settingRow rangeRow"><span>Deal / shuffle <output id="outSfxDeal"></output></span><input id="setSfxDeal" type="range" min="0" max="1" step="0.01"></label>
+        <label class="settingRow rangeRow"><span>Spinner <output id="outSfxSpinner"></output></span><input id="setSfxSpinner" type="range" min="0" max="1" step="0.01"></label>
+        <label class="settingRow rangeRow"><span>Win <output id="outSfxWin"></output></span><input id="setSfxWin" type="range" min="0" max="1" step="0.01"></label>
+        <label class="settingRow"><span>Tactile mix</span><select id="setTactile"><option value="studio">Studio ASMR</option><option value="warm">Warm / soft</option><option value="quiet">Quiet detail</option></select></label>
+        <div class="previewRow"><button type="button" data-sfx-preview="lift">Card</button><button type="button" data-sfx-preview="slide">Felt</button><button type="button" data-sfx-preview="drop">Impact</button><button type="button" data-sfx-preview="shuffle">Shuffle</button><button type="button" data-sfx-preview="bearing">Spinner</button><button type="button" data-sfx-preview="win">Win</button></div>
+      </details>
+
+      <details class="settingGroup">
+        <summary>Motion / Input</summary>
+        <label class="settingRow"><span>Haptics</span><input id="setHaptics" type="checkbox" checked></label>
+        <label class="settingRow"><span>Motion</span><select id="setMotion"><option value="system">Follow system</option><option value="full">Full</option><option value="reduced">Reduced</option></select></label>
+        <label class="settingRow"><span>Animation speed</span><select id="setAnimationSpeed"><option value="slow">Slow</option><option value="normal">Normal</option><option value="fast">Fast</option><option value="instant">Instant</option></select></label>
+        <label class="settingRow"><span>Handedness</span><select id="setHandedness"><option value="right">Right</option><option value="left">Left</option></select></label>
+      </details>
+
+      <details class="settingGroup">
+        <summary>Accessibility</summary>
+        <label class="settingRow"><span>Contrast</span><select id="setContrast"><option value="normal">Normal</option><option value="high">High</option></select></label>
+        <label class="settingRow"><span>Large controls</span><input id="setLargeControls" type="checkbox"></label>
+        <label class="settingRow"><span>Focus glow</span><input id="setFocusGlow" type="checkbox"></label>
+      </details>
+
+      <details class="settingGroup">
+        <summary>Data / Reset</summary>
+        <div class="settingsButtons"><button class="settingsAction" id="resetAudio" type="button">Reset audio</button><button class="settingsAction" id="resetSettings" type="button">Reset all settings</button><button class="settingsAction dangerAction" id="clearSavedGame" type="button">Clear saved game</button></div>
+      </details>
+    </div>
+  </div>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div class="win" id="win" role="dialog" aria-modal="true" aria-labelledby="winTitle">
@@ -625,10 +791,10 @@ const ASSETS=Object.freeze({"S1":"data:image/webp;base64,UklGRmo7AABXRUJQVlA4IF4
    ======================================================================= */
 const DEV = /[?&]dev=1(&|$)/.test(location.search);
 const QA = DEV && /[?&]qa=1(&|$)/.test(location.search);
-const BUILD = 'klondike-5.20.0-intaglio-galactica-uv-mobile';
+const BUILD = 'klondike-5.31.0-mobile-uv-viewport';
 const $ = (s,r=document)=>r.querySelector(s);
 const clamp = (n,a,b)=>Math.max(a,Math.min(b,n));
-const reducedMotion = ()=>{ try{ return matchMedia('(prefers-reduced-motion: reduce)').matches }catch(_){ return false } };
+const reducedMotion = ()=>{ const forced=document.documentElement.dataset.motion; if(forced==='reduced') return true; if(forced==='full') return false; try{ return matchMedia('(prefers-reduced-motion: reduce)').matches }catch(_){ return false } };
 
 /* ---------- constants ---------- */
 const SCHEMA = 5;
@@ -680,7 +846,47 @@ const CardSemantics = Object.freeze({
 const mk = (id,up)=>({id, suit:CARD[id].suit, rank:CARD[id].rank, faceUp:!!up});
 const cl = p=>p.map(c=>({id:c.id,suit:c.suit,rank:c.rank,faceUp:c.faceUp}));
 const cloneState = s=>({drawMode:s.drawMode, stock:cl(s.stock), waste:cl(s.waste), foundations:s.foundations.map(cl), tableau:s.tableau.map(cl),
-  score:s.score, moves:s.moves, elapsedMs:s.elapsedMs, won:s.won, deal:s.deal?s.deal.slice():null, seed:s.seed==null?null:s.seed});
+  score:s.score, moves:s.moves, elapsedMs:s.elapsedMs, won:s.won, deal:s.deal?s.deal.slice():null, seed:s.seed==null?null:s.seed,
+  rules:s.rules?{...s.rules}:GameRules.preset('classic'), redealsUsed:Math.max(0,+s.redealsUsed||0)});
+
+
+/* ---------- CEP game-profile seam: Klondike rules are data, future solitaire engines are explicit ---------- */
+const SOLITAIRE_ENGINES = Object.freeze([
+  {id:'klondike',label:'Klondike',status:'live',decks:1,tableau:7},
+  {id:'spider-1',label:'Spider · 1 suit',status:'next',decks:2,tableau:10},
+  {id:'spider-2',label:'Spider · 2 suits',status:'next',decks:2,tableau:10},
+  {id:'spider-4',label:'Spider · 4 suits',status:'next',decks:2,tableau:10},
+  {id:'freecell',label:'FreeCell',status:'next',decks:1,tableau:8},
+  {id:'yukon',label:'Yukon',status:'next',decks:1,tableau:7},
+  {id:'pyramid',label:'Pyramid',status:'next',decks:1,tableau:7},
+  {id:'golf',label:'Golf',status:'next',decks:1,tableau:7},
+  {id:'canfield',label:'Canfield',status:'next',decks:1,tableau:4}
+]);
+const GameRules = (()=>{
+  const PRESETS=Object.freeze({
+    classic:Object.freeze({profile:'classic',redealLimit:null,emptyPolicy:'king',buildPolicy:'alternate',scoreMode:'standard',autoFoundation:'safe'}),
+    vegas:Object.freeze({profile:'vegas',redealLimit:0,emptyPolicy:'king',buildPolicy:'alternate',scoreMode:'vegas',autoFoundation:'off'}),
+    relaxed:Object.freeze({profile:'relaxed',redealLimit:null,emptyPolicy:'any',buildPolicy:'alternate',scoreMode:'standard',autoFoundation:'aggressive'}),
+    custom:Object.freeze({profile:'custom',redealLimit:null,emptyPolicy:'king',buildPolicy:'alternate',scoreMode:'standard',autoFoundation:'safe'})
+  });
+  const valid=(v,a,d)=>a.includes(v)?v:d;
+  function normalize(r={}){
+    const profile=valid(r.profile,['classic','vegas','relaxed','custom'],'classic'), base=PRESETS[profile]||PRESETS.classic;
+    const lim=r.redealLimit===null||r.redealLimit==='unlimited'||r.redealLimit===''?null:clamp(Math.round(Number(r.redealLimit)||0),0,9);
+    return {
+      profile,
+      redealLimit:r.redealLimit===undefined?base.redealLimit:lim,
+      emptyPolicy:valid(r.emptyPolicy,['king','any'],base.emptyPolicy),
+      buildPolicy:valid(r.buildPolicy,['alternate','sameSuit','anySuit'],base.buildPolicy),
+      scoreMode:valid(r.scoreMode,['standard','vegas','none'],base.scoreMode),
+      autoFoundation:valid(r.autoFoundation,['safe','aggressive','off'],base.autoFoundation)
+    };
+  }
+  const preset=id=>normalize(PRESETS[id]||PRESETS.classic);
+  const fromPrefs=p=>normalize({profile:p.ruleProfile,redealLimit:p.redealLimit,emptyPolicy:p.emptyPolicy,buildPolicy:p.buildPolicy,scoreMode:p.scoreMode,autoFoundation:p.autoFoundation});
+  const label=r=>({classic:'Classic Klondike',vegas:'Vegas Klondike',relaxed:'Relaxed Klondike',custom:'Custom Klondike'}[normalize(r).profile]);
+  return {PRESETS,normalize,preset,fromPrefs,label};
+})();
 
 
 /* ---------- cosmetic randomness: deterministic 2-D simplex noise ---------- */
@@ -741,13 +947,36 @@ const ASMRTexture = (()=>{
 
 /* ---------- player presentation preferences ---------- */
 const Prefs = (()=>{
-  const base={sound:true,volume:.7,haptics:true,juice:'rich',tactile:'studio'};
+  const base={
+    sound:true,volume:.70,haptics:true,juice:'rich',tactile:'studio',
+    sfxCards:1,sfxFriction:.72,sfxImpact:.86,sfxDeal:.82,sfxSpinner:.70,sfxWin:.66,
+    cardStyle:'montecarlo',cardBack:'galactica',tableStyle:'montecarlo',uvIntensity:'searing',cardGlow:true,feltEtch:true,spinner:true,
+    motion:'system',animationSpeed:'normal',handedness:'right',contrast:'normal',largeControls:false,focusGlow:true,
+    ruleProfile:'classic',redealLimit:null,emptyPolicy:'king',buildPolicy:'alternate',scoreMode:'standard',autoFoundation:'safe'
+  };
   let v={...base};
   try{ const x=JSON.parse(localStorage.getItem(KEY_PREFS)||'null'); if(x&&typeof x==='object') v={...v,...x}; }catch(_){}
-  v.sound=v.sound!==false; v.volume=clamp(Number(v.volume)||0,0,1); v.haptics=v.haptics!==false; v.juice=['rich','balanced','minimal'].includes(v.juice)?v.juice:'rich'; v.tactile=['studio','warm','quiet'].includes(v.tactile)?v.tactile:'studio';
+  const enumv=(k,a,d)=>v[k]=a.includes(v[k])?v[k]:d, unit=k=>v[k]=clamp(Number(v[k]),0,1);
+  v.sound=v.sound!==false; unit('volume'); v.haptics=v.haptics!==false; enumv('juice',['rich','balanced','minimal'],'rich'); enumv('tactile',['studio','warm','quiet'],'studio');
+  ['sfxCards','sfxFriction','sfxImpact','sfxDeal','sfxSpinner','sfxWin'].forEach(unit);
+  enumv('cardStyle',['montecarlo','red-eye','intaglio','ivory','high-contrast'],'montecarlo'); enumv('cardBack',['galactica','red-eye','blueprint','obsidian','classic'],'galactica');
+  enumv('tableStyle',['montecarlo','midnight','red-eye','classic-green'],'montecarlo'); enumv('uvIntensity',['low','balanced','searing'],'searing');
+  v.cardGlow=v.cardGlow!==false; v.feltEtch=v.feltEtch!==false; v.spinner=v.spinner!==false;
+  enumv('motion',['system','full','reduced'],'system'); enumv('animationSpeed',['slow','normal','fast','instant'],'normal'); enumv('handedness',['right','left'],'right'); enumv('contrast',['normal','high'],'normal');
+  v.largeControls=!!v.largeControls; v.focusGlow=v.focusGlow!==false;
+  Object.assign(v,GameRules.fromPrefs(v));
   const save=()=>{ try{ localStorage.setItem(KEY_PREFS,JSON.stringify(v)); }catch(_){} };
-  const apply=()=>{ document.documentElement.dataset.juice=v.juice; document.documentElement.dataset.uvGlow=(v.juice!=='minimal'&&!reducedMotion())?'on':'off'; const b=$('#soundBtn'); if(b){ b.setAttribute('aria-pressed',String(v.sound)); b.textContent=v.sound?'♫':'×'; } };
-  return {get value(){return v},set(k,val){v[k]=val;save();apply();},apply};
+  function apply(){
+    const r=document.documentElement;
+    r.dataset.juice=v.juice; r.dataset.uvGlow=(v.juice!=='minimal'&&!reducedMotion())?'on':'off';
+    r.dataset.cardStyle=v.cardStyle; r.dataset.cardBack=v.cardBack; r.dataset.tableStyle=v.tableStyle; r.dataset.uvIntensity=v.uvIntensity; r.dataset.cardGlow=v.cardGlow?'on':'off'; r.dataset.feltEtch=v.feltEtch?'on':'off'; r.dataset.spinner=v.spinner?'on':'off';
+    r.dataset.motion=v.motion; r.dataset.speed=v.animationSpeed; r.dataset.handedness=v.handedness; r.dataset.contrast=v.contrast; r.dataset.largeControls=v.largeControls?'on':'off'; r.dataset.focusGlow=v.focusGlow?'on':'off';
+    const speed={slow:'430ms',normal:'280ms',fast:'165ms',instant:'0ms'}[v.animationSpeed]; r.style.setProperty('--move-ms',speed);
+    const b=$('#soundBtn'); if(b){ b.setAttribute('aria-pressed',String(v.sound)); b.textContent=v.sound?'♫':'×'; }
+  }
+  function patch(o){v={...v,...o};Object.assign(v,GameRules.fromPrefs(v));save();apply();return {...v}}
+  function reset(){v={...base};save();apply();return {...v}}
+  return {get value(){return v},set(k,val){v[k]=val;save();apply();},patch,reset,apply,defaults:()=>({...base})};
 })();
 
 /* ---------- synthesized card-table audio: no external assets ---------- */
@@ -765,6 +994,14 @@ const AudioFX = (()=>{
   const catalog=Object.freeze(['contact','skid','lift','finger','edge','withdraw','slide','drop','stackDrop','foundation','draw','draw3','flip','recycle','undo','nope','shuffle','win','bearing']);
   const patterns=Object.freeze({touch:3,lift:4,hover:2,drop:7,stack:[4,12,6],foundation:[4,10,10],draw:4,draw3:[3,9,3],flip:3,recycle:[4,14,7],reject:[3,16,3],fidget:4});
   const tactileScale=()=>Prefs.value.tactile==='quiet'?.48:Prefs.value.tactile==='warm'?.72:1;
+  const categoryGain=(kind,channel='card')=>{
+    const p=Prefs.value;if(channel==='spinner'||kind==='bearing')return p.sfxSpinner;
+    if(['slide','skid','contact','withdraw'].includes(kind))return p.sfxFriction;
+    if(['drop','stackDrop','foundation','nope','edge'].includes(kind))return p.sfxImpact;
+    if(['draw','draw3','flip','recycle','undo','shuffle'].includes(kind))return p.sfxDeal;
+    if(kind==='win')return p.sfxWin;
+    return p.sfxCards;
+  };
   function ensure(){
     if(!Prefs.value.sound) return null;
     try{
@@ -781,7 +1018,7 @@ const AudioFX = (()=>{
         for(let i=0;i<n;i++){ const fiber=.89+Simplex.noise(i/3400,6.2)*.11; d[i]=(Math.random()*2-1)*fiber; } noise=buf;
       }
       if(ctx.state==='suspended') ctx.resume();
-      master.gain.setTargetAtTime(Prefs.value.volume*.34,ctx.currentTime,.018); return ctx;
+      master.gain.setTargetAtTime(Prefs.value.volume*.34,ctx.currentTime,.018); cardBus.gain.setTargetAtTime(CARD_AUDIO_SCALE,ctx.currentTime,.018); spinnerBus.gain.setTargetAtTime(1,ctx.currentTime,.018); return ctx;
     }catch(_){return null}
   }
   function unlock(){
@@ -834,7 +1071,7 @@ const AudioFX = (()=>{
   function updateFriction(speed=0,pressure=1,edge=0){
     const c=ensure(); if(!c)return; if(!friction) startFriction(); if(!friction)return;
     const t=c.currentTime, v=clamp(speed/1250,0,1), n=Simplex.noise((performance.now()/900)+(friction.seed||0),seq*.11+3.1);
-    const level=(.00015+v*.055*pressure)*(1+n*.12)*tactileScale();
+    const level=(.00015+v*.055*pressure)*(1+n*.12)*tactileScale()*Prefs.value.sfxFriction;
     friction.gain.gain.setTargetAtTime(Math.max(.0001,level),t,.022);
     friction.filter.frequency.setTargetAtTime(420+v*880+edge*260+n*70,t,.035);
     friction.filter.Q.setTargetAtTime(.72+v*.55,t,.04);
@@ -848,10 +1085,10 @@ const AudioFX = (()=>{
     if(!bearing||!bearingBody)return;
     const t=c.currentTime,n=Simplex.noise(performance.now()/1500,9.7),soft=v*v*(3-2*v);
     // Characteristic lubricated whirr: narrow mid band, deliberately above the rolling body.
-    bearing.gain.gain.setTargetAtTime((.0012+soft*.025)*SPINNER_AUDIO_SCALE*(1+n*.055)*tactileScale(),t,.065);
+    bearing.gain.gain.setTargetAtTime((.0012+soft*.025)*SPINNER_AUDIO_SCALE*(1+n*.055)*tactileScale()*Prefs.value.sfxSpinner,t,.065);
     bearing.filter.frequency.setTargetAtTime(760+soft*2100+n*75,t,.075); bearing.filter.Q.setTargetAtTime(2.2-soft*.55,t,.09);
     // One additional low-mid rolling band: steel races + bearing body, no sub-bass drone.
-    bearingBody.gain.gain.setTargetAtTime((.00065+soft*.0115)*SPINNER_AUDIO_SCALE*(1-n*.04)*tactileScale(),t,.085);
+    bearingBody.gain.gain.setTargetAtTime((.00065+soft*.0115)*SPINNER_AUDIO_SCALE*(1-n*.04)*tactileScale()*Prefs.value.sfxSpinner,t,.085);
     bearingBody.filter.frequency.setTargetAtTime(285+soft*310+n*24,t,.095); bearingBody.filter.Q.setTargetAtTime(1.05+soft*.28,t,.11);
   }
   function stopBearing(){
@@ -860,7 +1097,7 @@ const AudioFX = (()=>{
   }
   function play(kind,p=1,meta={}){
     if(!Prefs.value.sound) return; seq++;
-    eventChannel=meta.channel==='spinner'?'spinner':'card';
+    eventChannel=meta.channel==='spinner'?'spinner':'card'; p*=categoryGain(kind,eventChannel); if(p<=.0001){eventChannel='card';return;}
     const v=1+organic(0)*.025, pan=clamp(Number(meta.pan)||0,-.65,.65), n=organic(1);
     // Card voice = broad fiber/body first, restrained edge detail second. No pitched chirp is used for ordinary card contact.
     if(kind==='contact'){burst({dur:.052,cut:720*v,gain:.050*p,q:.72,pan});burst({dur:.040,cut:1180*v,gain:.019*p,q:.78,delay:.010,pan});}
@@ -889,7 +1126,8 @@ const AudioFX = (()=>{
     const pat=typeof kind==='number'||Array.isArray(kind)?kind:(patterns[kind]||patterns.touch);
     try{navigator.vibrate(pat)}catch(_){}
   }
-  return {ensure,unlock,play,haptic,startFriction,updateFriction,stopFriction,setBearing,stopBearing,catalog,patterns,SPINNER_AUDIO_SCALE,CARD_AUDIO_SCALE,CARD_REGISTER,SPINNER_REGISTER,DYNAMICS,get active(){return !!ctx},get contextState(){return ctx?ctx.state:'uninitialized'},get overlapGain(){return safeGainValue}};
+  const preview=kind=>{unlock();play(kind,kind==='bearing'?.55:.72,{channel:kind==='bearing'?'spinner':'card'});};
+  return {ensure,unlock,play,preview,haptic,startFriction,updateFriction,stopFriction,setBearing,stopBearing,catalog,patterns,categoryGain,SPINNER_AUDIO_SCALE,CARD_AUDIO_SCALE,CARD_REGISTER,SPINNER_REGISTER,DYNAMICS,get active(){return !!ctx},get contextState(){return ctx?ctx.state:'uninitialized'},get overlapGain(){return safeGainValue}};
 })();
 
 /* One gesture, one intent. Preflight clicks and hover geometry are silent. */
@@ -941,10 +1179,12 @@ const Rules = (()=>{
   function orderRandom(){ const d = IDS.slice(); for (let i=51;i>0;i--){ const j = randomBelow(i+1); const t = d[i]; d[i] = d[j]; d[j] = t; } return d; }
 
   // Row-major deal: row r gives one card to piles r..6; the card landing on pile r is face up. Stock = remainder.
-  function deal(order, drawMode){
+  function deal(order, drawMode, ruleConfig){
+    const rules=GameRules.normalize(ruleConfig||GameRules.preset('classic'));
     const c = order.map(id=>mk(id,false)), tableau = [[],[],[],[],[],[],[]]; let k = 0;
     for (let r=0;r<7;r++) for (let p=r;p<7;p++){ const card = c[k++]; card.faceUp = (p===r); tableau[p].push(card); }
-    return {drawMode:drawMode===3?3:1, stock:c.slice(k), waste:[], foundations:[[],[],[],[]], tableau, score:0, moves:0, elapsedMs:0, won:false, deal:order.slice(), seed:null};
+    const initialScore=rules.scoreMode==='vegas'?-52:0;
+    return {drawMode:drawMode===3?3:1, stock:c.slice(k), waste:[], foundations:[[],[],[],[]], tableau, score:initialScore, moves:0, elapsedMs:0, won:false, deal:order.slice(), seed:null, rules, redealsUsed:0};
   }
 
   const pileOf = (s,z,i)=>{
@@ -953,10 +1193,10 @@ const Rules = (()=>{
     if (z==='tableau') return Number.isInteger(i)&&i>=0&&i<7 ? s.tableau[i] : null;
     return null;
   };
-  const stacks = (c,top)=>!!top && top.faceUp && red(c.suit)!==red(top.suit) && top.rank===c.rank+1;
-  const isRun = (pile,pos)=>{
+  const stacks = (c,top,rules)=>{ if(!top||!top.faceUp||top.rank!==c.rank+1)return false; const mode=(rules&&rules.buildPolicy)||'alternate'; return mode==='anySuit'||(mode==='sameSuit'?top.suit===c.suit:red(c.suit)!==red(top.suit)); };
+  const isRun = (pile,pos,rules)=>{
     if (!(pos>=0&&pos<pile.length)) return false;
-    for (let i=pos;i<pile.length;i++){ if (!pile[i].faceUp) return false; if (i>pos && !stacks(pile[i],pile[i-1])) return false; }
+    for (let i=pos;i<pile.length;i++){ if (!pile[i].faceUp) return false; if (i>pos && !stacks(pile[i],pile[i-1],rules)) return false; }
     return true;
   };
 
@@ -969,15 +1209,15 @@ const Rules = (()=>{
     if (!src||!dst||src===dst) return null;
     if (!Number.isInteger(n)||n<1||n>src.length) return null;
     if (f.zone!=='tableau' && n!==1) return null;
-    if (!isRun(src,src.length-n)) return null;
+    if (!isRun(src,src.length-n,s.rules)) return null;
     const cards = src.slice(src.length-n), c = cards[0], top = dst[dst.length-1];
     if (t.zone==='foundation'){
       if (n!==1) return null;
       if (!top){ if (c.rank!==1) return null; }
       else if (top.suit!==c.suit || c.rank!==top.rank+1) return null;
     } else {
-      if (!top){ if (c.rank!==13) return null; }
-      else if (!stacks(c,top)) return null;
+      if (!top){ if ((s.rules?.emptyPolicy||'king')==='king' && c.rank!==13) return null; }
+      else if (!stacks(c,top,s.rules)) return null;
     }
     return {src,dst,n,cards};
   }
@@ -988,11 +1228,14 @@ const Rules = (()=>{
     const p = plan(s,m); if (!p) return null;
     const {src,dst,n,cards} = p, fz = m.from.zone, tz = m.to.zone;
     src.splice(src.length-n,n); for (const c of cards) dst.push(c);
-    let pts = 0, revealed = null;
-    if (tz==='foundation' && fz!=='foundation') pts += 10;
-    else if (tz==='tableau'){ if (fz==='waste') pts += 5; else if (fz==='foundation') pts -= 15; }
-    if (fz==='tableau' && src.length){ const t = src[src.length-1]; if (!t.faceUp){ t.faceUp = true; pts += 5; revealed = t.id; } }
-    s.score = Math.max(0,s.score+pts); s.moves++;
+    let pts = 0, revealed = null, scoreMode=(s.rules&&s.rules.scoreMode)||'standard';
+    if(scoreMode==='vegas'){ if(tz==='foundation'&&fz!=='foundation')pts+=5; else if(fz==='foundation'&&tz!=='foundation')pts-=5; }
+    else if(scoreMode==='standard'){
+      if (tz==='foundation' && fz!=='foundation') pts += 10;
+      else if (tz==='tableau'){ if (fz==='waste') pts += 5; else if (fz==='foundation') pts -= 15; }
+    }
+    if (fz==='tableau' && src.length){ const t = src[src.length-1]; if (!t.faceUp){ t.faceUp = true; if(scoreMode==='standard')pts += 5; revealed = t.id; } }
+    s.score = scoreMode==='standard'?Math.max(0,s.score+pts):scoreMode==='none'?0:s.score+pts; s.moves++;
     s.won = s.foundations.every(f=>f.length===13);
     return {pts, revealed, cards};
   }
@@ -1004,8 +1247,9 @@ const Rules = (()=>{
       s.moves++; return {kind:'draw'};
     }
     if (s.waste.length){
+      const lim=s.rules&&s.rules.redealLimit; if(lim!==null&&lim!==undefined&&s.redealsUsed>=lim)return null;
       while (s.waste.length){ const c = s.waste.pop(); c.faceUp = false; s.stock.push(c); }   // order replays identically
-      s.moves++; return {kind:'recycle'};
+      s.redealsUsed=(s.redealsUsed||0)+1; s.moves++; return {kind:'recycle'};
     }
     return null;
   }
@@ -1023,6 +1267,7 @@ const Rules = (()=>{
     return opp.every(su=>{ const f = s.foundations.find(f=>f.length&&f[0].suit===su); return !!f && f.length>=need; });
   }
   function autoMove(s){
+    const policy=(s.rules&&s.rules.autoFoundation)||'safe'; if(policy==='off')return null;
     const trivial = !s.stock.length && !s.waste.length && s.tableau.every(p=>p.every(c=>c.faceUp));
     const cands = [];
     if (s.waste.length) cands.push({zone:'waste',index:0,card:s.waste[s.waste.length-1]});
@@ -1031,7 +1276,7 @@ const Rules = (()=>{
     for (const c of cands){
       if (!c.card.faceUp) continue;
       const slot = foundationSlot(s,c.card); if (slot<0) continue;
-      if (trivial || isSafe(s,c.card)) return {from:{zone:c.zone,index:c.index},to:{zone:'foundation',index:slot},count:1};
+      if (policy==='aggressive' || trivial || isSafe(s,c.card)) return {from:{zone:c.zone,index:c.index},to:{zone:'foundation',index:slot},count:1};
     }
     return null;
   }
@@ -1053,7 +1298,7 @@ const Rules = (()=>{
     for (let col=0; col<7; col++){
       const p = s.tableau[col];
       for (let i=0;i<p.length;i++){
-        if (!isRun(p,i)) continue;
+        if (!isRun(p,i,s.rules)) continue;
         const reveals = i>0 && !p[i-1].faceUp, empties = i===0;
         if (!reveals && !empties) continue;
         for (let d=0; d<7; d++){
@@ -1081,13 +1326,15 @@ const Rules = (()=>{
     if (n!==52||seen.size!==52) p.push('card-count:'+seen.size+'/'+n);
     if (p.includes('invalid-card')) return Array.from(new Set(p));
     if (s.drawMode!==1&&s.drawMode!==3) p.push('draw-mode');
+    const rr=GameRules.normalize(s.rules||{}); if(!s.rules||JSON.stringify(rr)!==JSON.stringify(GameRules.normalize(s.rules)))p.push('rules');
+    if(!Number.isInteger(s.redealsUsed)||s.redealsUsed<0)p.push('redeals-used'); if(rr.redealLimit!==null&&s.redealsUsed>rr.redealLimit)p.push('redeal-limit');
     for (const c of s.stock) if (c.faceUp) p.push('stock-faceup:'+c.id);
     for (const c of s.waste) if (!c.faceUp) p.push('waste-facedown:'+c.id);
     s.foundations.forEach((f,i)=>f.forEach((c,j)=>{ if (!c.faceUp||c.rank!==j+1||c.suit!==f[0].suit) p.push('foundation-'+i); }));
     s.tableau.forEach((pile,i)=>{
       let up = false;
       pile.forEach((c,j)=>{
-        if (c.faceUp){ if (up){ const o = pile[j-1]; if (red(o.suit)===red(c.suit)||o.rank!==c.rank+1) p.push('run-'+i); } up = true; }
+        if (c.faceUp){ if (up){ const o = pile[j-1]; if (!stacks(c,o,rr)) p.push('run-'+i); } up = true; }
         else if (up) p.push('face-order-'+i);
       });
       if (pile.length && !pile[pile.length-1].faceUp) p.push('top-facedown-'+i);
@@ -1096,11 +1343,11 @@ const Rules = (()=>{
     return Array.from(new Set(p));
   }
 
-  const toContract = s=>({drawMode:s.drawMode, stock:cl(s.stock), waste:cl(s.waste), foundations:s.foundations.map(cl), tableau:s.tableau.map(cl), won:!!s.won, score:s.score, moves:s.moves});
+  const toContract = s=>({drawMode:s.drawMode, stock:cl(s.stock), waste:cl(s.waste), foundations:s.foundations.map(cl), tableau:s.tableau.map(cl), won:!!s.won, score:s.score, moves:s.moves,rules:{...(s.rules||GameRules.preset('classic'))},redealsUsed:s.redealsUsed||0});
   function fromContract(st){
     const conv = p=>p.map(c=>{ const id = c.suit+c.rank; if (!CARD[id]) throw new Error('bad card '+id); return mk(id,c.faceUp); });
     const s = {drawMode:(st.drawMode||st.draw)===3?3:1, stock:conv(st.stock), waste:conv(st.waste), foundations:st.foundations.map(conv), tableau:st.tableau.map(conv),
-      score:+st.score||0, moves:+st.moves||0, elapsedMs:0, won:false, deal:null, seed:null};
+      score:Number.isFinite(+st.score)?+st.score:0, moves:+st.moves||0, elapsedMs:0, won:false, deal:null, seed:null,rules:GameRules.normalize(st.rules||GameRules.preset('classic')),redealsUsed:Math.max(0,+st.redealsUsed||0)};
     s.won = s.foundations.length===4 && s.foundations.every(f=>f.length===13);
     return s;
   }
@@ -1240,10 +1487,10 @@ const Store = (()=>{
   let timer = 0;
   const enc = p=>p.map(c=>c.id+(c.faceUp?'+':'-')).join(' ');
   const dec = t=>t?t.split(' ').map(x=>{ const id = x.slice(0,-1); if (!CARD[id]) throw new Error('bad id'); return mk(id,x.endsWith('+')); }):[];
-  function encode(s){ return JSON.stringify({v:SCHEMA,d:s.drawMode,st:enc(s.stock),wa:enc(s.waste),fo:s.foundations.map(enc),ta:s.tableau.map(enc),sc:s.score,mv:s.moves,el:Math.round(s.elapsedMs),deal:s.deal?s.deal.join(' '):null,sd:s.seed}); }
+  function encode(s){ return JSON.stringify({v:SCHEMA,d:s.drawMode,st:enc(s.stock),wa:enc(s.waste),fo:s.foundations.map(enc),ta:s.tableau.map(enc),sc:s.score,mv:s.moves,el:Math.round(s.elapsedMs),deal:s.deal?s.deal.join(' '):null,sd:s.seed,ru:s.rules||GameRules.preset('classic'),rd:s.redealsUsed||0}); }
   function decode(raw){
     const o = JSON.parse(raw); if (o.v!==SCHEMA) throw new Error('schema');
-    const s = {drawMode:o.d===3?3:1, stock:dec(o.st), waste:dec(o.wa), foundations:o.fo.map(dec), tableau:o.ta.map(dec), score:Math.max(0,+o.sc||0), moves:Math.max(0,+o.mv||0), elapsedMs:Math.max(0,+o.el||0), won:false, deal:null, seed:o.sd==null?null:+o.sd};
+    const s = {drawMode:o.d===3?3:1, stock:dec(o.st), waste:dec(o.wa), foundations:o.fo.map(dec), tableau:o.ta.map(dec), score:Number.isFinite(+o.sc)?+o.sc:0, moves:Math.max(0,+o.mv||0), elapsedMs:Math.max(0,+o.el||0), won:false, deal:null, seed:o.sd==null?null:+o.sd,rules:GameRules.normalize(o.ru||GameRules.preset('classic')),redealsUsed:Math.max(0,+o.rd||0)};
     s.won = s.foundations.length===4 && s.foundations.every(f=>f.length===13);
     if (typeof o.deal==='string'){ const d = o.deal.split(' '); if (d.length===52 && new Set(d).size===52 && d.every(x=>CARD[x])) s.deal = d; }
     const bad = Rules.validate(s); if (bad.length) throw new Error(bad.join(','));
@@ -1255,7 +1502,7 @@ const Store = (()=>{
       const o = JSON.parse(raw); if (!o||o.schema!==4) return null;
       const cv = c=>mk(c.suit+c.rank,c.faceUp);
       const s = {drawMode:o.draw===3?3:1, stock:o.stock.map(cv), waste:o.waste.map(cv), foundations:SUIT_ORDER.map(k=>(o.foundations[k]||[]).map(cv)), tableau:o.tableau.map(p=>p.map(cv)),
-        score:Math.max(0,+o.score||0), moves:Math.max(0,+o.moves||0), elapsedMs:0, won:false, deal:null, seed:null};
+        score:Math.max(0,+o.score||0), moves:Math.max(0,+o.moves||0), elapsedMs:0, won:false, deal:null, seed:null,rules:GameRules.preset('classic'),redealsUsed:0};
       s.won = s.foundations.every(f=>f.length===13);
       const sd = o.seed;
       if (sd && Array.isArray(sd.tableau) && sd.tableau.length===7 && Array.isArray(sd.stock) && sd.stock.length===24){
@@ -1337,7 +1584,7 @@ const core = {
     Auto.cancel(); history.length = 0; selected = null;
     const dm = o.drawMode!=null ? o.drawMode : (S ? S.drawMode : Number(safeGet(KEY_DRAW)||1));
     const order = o.order || (o.seed!=null ? Rules.orderFromSeed(o.seed) : Rules.orderRandom());
-    S = Rules.deal(order,dm); S.seed = o.seed!=null ? (o.seed>>>0) : null;
+    const rules=GameRules.normalize(o.rules||GameRules.fromPrefs(Prefs.value)); S = Rules.deal(order,dm,rules); S.seed = o.seed!=null ? (o.seed>>>0) : null;
     Clock.on = false; Clock.resume();
     if (!o.instant && !reducedMotion()) ShuffleFX.run();
     afterChange({instant:!!o.instant, deal:!o.instant && !reducedMotion()});
@@ -1348,7 +1595,7 @@ const core = {
     o = o||{};
     if (!S.deal) return false;
     Auto.cancel(); history.length = 0; selected = null;
-    const dm = S.drawMode, seed = S.seed; S = Rules.deal(S.deal,dm); S.seed = seed;
+    const dm = S.drawMode, seed = S.seed, rules={...S.rules}; S = Rules.deal(S.deal,dm,rules); S.seed = seed;
     Clock.on = false; Clock.resume();
     if (!o.instant && !reducedMotion()) ShuffleFX.run();
     afterChange({instant:!!o.instant, deal:!o.instant && !reducedMotion()});
@@ -1375,7 +1622,8 @@ const core = {
     o = o||{};
     if (!S.stock.length && !S.waste.length) return false;
     let kind = null;
-    const ok = transact('draw',()=>{ kind = Rules.draw(S).kind; },o);
+    const probe=Rules.draw(cloneState(S)); if(!probe){if(!o.quiet)toast('No redeals remaining');return false;}
+    const ok = transact('draw',()=>{ const rr=Rules.draw(S); if(!rr)throw new Error('draw blocked'); kind = rr.kind; },o);
     if (ok && !o.instant){ FX.at(View.rectOf(kind==='recycle'?'stock':'waste',0),kind==='recycle'?1.4:(S.drawMode===3?1.3:1)); AudioFX.play(kind==='recycle'?'recycle':(S.drawMode===3?'draw3':'draw')); AudioFX.haptic(kind==='recycle'?'recycle':(S.drawMode===3?'draw3':'draw')); }
     if (ok && kind==='recycle' && !o.quiet) toast('Waste recycled');
     return !!ok;
@@ -1390,6 +1638,11 @@ const core = {
   setDrawMode(n){
     S.drawMode = n===3?3:1; safeSet(KEY_DRAW,String(S.drawMode)); selected = null; afterChange({instant:true});
     toast('Draw '+S.drawMode);
+  },
+  applyRuleDraft(draft){
+    const rules=GameRules.normalize(draft), dm=Number(draft.drawMode)===3?3:1;
+    Prefs.patch({ruleProfile:rules.profile,redealLimit:rules.redealLimit,emptyPolicy:rules.emptyPolicy,buildPolicy:rules.buildPolicy,scoreMode:rules.scoreMode,autoFoundation:rules.autoFoundation});
+    this.newGame({drawMode:dm,rules}); safeSet(KEY_DRAW,String(dm)); toast(GameRules.label(rules)+' · Draw '+dm); return true;
   },
   autoStep(){ const m = Rules.autoMove(S); return m ? this.move(m) : false; },
   autoRun(){
@@ -1407,12 +1660,12 @@ const core = {
    HUD — diff-guarded writes (idle board produces zero DOM mutations except the clock text)
    ======================================================================= */
 const HUD = (()=>{
-  const el = {time:$('#timeMetric'),moves:$('#moveMetric'),score:$('#scoreMetric'),draw:$('#drawMode'),undo:$('#undoBtn'),restart:$('#restartBtn')}, cache = {};
+  const el = {time:$('#timeMetric'),moves:$('#moveMetric'),score:$('#scoreMetric'),draw:$('#drawMode'),undo:$('#undoBtn'),restart:$('#restartBtn'),sub:$('.titleBlock p')}, cache = {};
   const txt = (k,v)=>{ v = String(v); if (cache[k]!==v){ cache[k] = v; el[k].textContent = v; } };
   const prop = (k,p,v)=>{ if (cache[k+p]!==v){ cache[k+p] = v; el[k][p] = v; } };
   return {
     time(){ if (S) txt('time',fmtTime(Clock.elapsedSec())); },
-    update(){ if (!S) return; this.time(); txt('moves',S.moves); txt('score',S.score); prop('draw','value',String(S.drawMode)); prop('undo','disabled',!history.length); prop('restart','disabled',!S.deal); }
+    update(){ if (!S) return; this.time(); txt('moves',S.moves); txt('score',S.score); prop('draw','value',String(S.drawMode)); prop('undo','disabled',!history.length); prop('restart','disabled',!S.deal); const sub=GameRules.label(S.rules)+' · draw '+S.drawMode+' · '+(S.rules.redealLimit===null?'unlimited redeals':S.rules.redealLimit+' redeal'+(S.rules.redealLimit===1?'':'s')); if(cache.sub!==sub){cache.sub=sub;el.sub.textContent=sub;} }
   };
 })();
 
@@ -2010,14 +2263,39 @@ const Input = (()=>{
 /* ---------- settings ---------- */
 const Settings = (()=>{
   const panel=$('#settingsPanel'),btn=$('#settingsBtn'),soundBtn=$('#soundBtn');
-  function sync(){const p=Prefs.value;$('#setSound').checked=p.sound;$('#setVolume').value=String(p.volume);$('#setHaptics').checked=p.haptics;$('#setTactile').value=p.tactile;$('#setJuice').value=p.juice;Prefs.apply()}
-  function show(on){panel.classList.toggle('show',on);btn.setAttribute('aria-expanded',String(on));if(on){sync();setTimeout(()=>$('#setSound').focus(),0)}}
+  const $id=id=>$('#'+id), pct=v=>Math.round(Number(v)*100)+'%';
+  const audioKeys=['sfxCards','sfxFriction','sfxImpact','sfxDeal','sfxSpinner','sfxWin'];
+  const visualBindings={setCardStyle:'cardStyle',setCardBack:'cardBack',setTableStyle:'tableStyle',setUvIntensity:'uvIntensity',setJuice:'juice',setMotion:'motion',setAnimationSpeed:'animationSpeed',setHandedness:'handedness',setContrast:'contrast'};
+  const boolBindings={setHaptics:'haptics',setCardGlow:'cardGlow',setFeltEtch:'feltEtch',setSpinner:'spinner',setLargeControls:'largeControls',setFocusGlow:'focusGlow'};
+  function syncRange(id,key){const e=$id(id);if(!e)return;e.value=String(Prefs.value[key]);const o=$id('out'+id.slice(3));if(o)o.value=pct(Prefs.value[key]);}
+  function sync(){
+    const p=Prefs.value;$id('setSound').checked=p.sound;syncRange('setVolume','volume');
+    audioKeys.forEach(k=>syncRange('set'+k[0].toUpperCase()+k.slice(1),k));
+    $id('setTactile').value=p.tactile; Object.entries(visualBindings).forEach(([id,k])=>$id(id).value=p[k]); Object.entries(boolBindings).forEach(([id,k])=>$id(id).checked=!!p[k]);
+    $id('setTheme').value=document.documentElement.dataset.theme||'dark';
+    const r=S?.rules||GameRules.fromPrefs(p);$id('setRuleProfile').value=r.profile;$id('setRuleDraw').value=String(S?.drawMode||Number(safeGet(KEY_DRAW)||1));$id('setRedeals').value=r.redealLimit===null?'unlimited':String(r.redealLimit);$id('setEmptyPolicy').value=r.emptyPolicy;$id('setBuildPolicy').value=r.buildPolicy;$id('setScoreMode').value=r.scoreMode;$id('setAutoFoundation').value=r.autoFoundation;
+    Prefs.apply(); renderEngineBay();
+  }
+  function renderEngineBay(){ const host=$id('engineBay'); if(host.children.length)return; for(const e of SOLITAIRE_ENGINES){const chip=document.createElement('span');chip.className='engineChip '+e.status;chip.textContent=e.label+(e.status==='live'?' · LIVE':' · '+e.decks+' DECK ENGINE');host.appendChild(chip)} }
+  function show(on){panel.classList.toggle('show',on);btn.setAttribute('aria-expanded',String(on));if(on){sync();setTimeout(()=>$id('setRuleProfile').focus(),0)}}
+  function profileToDraft(id){ if(id==='custom')return; const r=GameRules.preset(id);$id('setRedeals').value=r.redealLimit===null?'unlimited':String(r.redealLimit);$id('setEmptyPolicy').value=r.emptyPolicy;$id('setBuildPolicy').value=r.buildPolicy;$id('setScoreMode').value=r.scoreMode;$id('setAutoFoundation').value=r.autoFoundation; }
   function bind(){
-    btn.onclick=()=>show(!panel.classList.contains('show'));$('#closeSettings').onclick=()=>show(false);
+    btn.onclick=()=>show(!panel.classList.contains('show'));$id('closeSettings').onclick=()=>show(false);
     soundBtn.onclick=()=>{Prefs.set('sound',!Prefs.value.sound);if(Prefs.value.sound){AudioFX.ensure();AudioFX.play('drop',.45)}sync()};
-    $('#setSound').onchange=e=>{Prefs.set('sound',e.target.checked);if(e.target.checked)AudioFX.ensure();sync()};
-    $('#setVolume').oninput=e=>{Prefs.set('volume',+e.target.value);AudioFX.ensure()};
-    $('#setHaptics').onchange=e=>Prefs.set('haptics',e.target.checked);$('#setTactile').onchange=e=>Prefs.set('tactile',e.target.value);$('#setJuice').onchange=e=>{Prefs.set('juice',e.target.value);FX.refresh()};
+    $id('setSound').onchange=e=>{Prefs.set('sound',e.target.checked);if(e.target.checked)AudioFX.ensure();sync()};
+    $id('setVolume').oninput=e=>{Prefs.set('volume',+e.target.value);AudioFX.ensure();syncRange('setVolume','volume')};
+    audioKeys.forEach(k=>{const id='set'+k[0].toUpperCase()+k.slice(1);$id(id).oninput=e=>{Prefs.set(k,+e.target.value);AudioFX.ensure();syncRange(id,k)}});
+    $id('setTactile').onchange=e=>Prefs.set('tactile',e.target.value);
+    Object.entries(visualBindings).forEach(([id,k])=>$id(id).onchange=e=>{Prefs.set(k,e.target.value);FX.refresh();if(k==='motion'||k==='animationSpeed')View.relayout()});
+    Object.entries(boolBindings).forEach(([id,k])=>$id(id).onchange=e=>{Prefs.set(k,e.target.checked);FX.refresh()});
+    $id('setTheme').onchange=e=>applyTheme(e.target.value);
+    $id('setRuleProfile').onchange=e=>profileToDraft(e.target.value);
+    ['setRedeals','setEmptyPolicy','setBuildPolicy','setScoreMode','setAutoFoundation'].forEach(id=>$id(id).addEventListener('change',()=>{$id('setRuleProfile').value='custom'}));
+    $id('applyRules').onclick=()=>{const redeal=$id('setRedeals').value;core.applyRuleDraft({profile:$id('setRuleProfile').value,drawMode:+$id('setRuleDraw').value,redealLimit:redeal==='unlimited'?null:+redeal,emptyPolicy:$id('setEmptyPolicy').value,buildPolicy:$id('setBuildPolicy').value,scoreMode:$id('setScoreMode').value,autoFoundation:$id('setAutoFoundation').value});sync()};
+    panel.querySelectorAll('[data-sfx-preview]').forEach(b=>b.onclick=()=>AudioFX.preview(b.dataset.sfxPreview));
+    $id('resetAudio').onclick=()=>{const d=Prefs.defaults();Prefs.patch({sound:d.sound,volume:d.volume,tactile:d.tactile,sfxCards:d.sfxCards,sfxFriction:d.sfxFriction,sfxImpact:d.sfxImpact,sfxDeal:d.sfxDeal,sfxSpinner:d.sfxSpinner,sfxWin:d.sfxWin});sync();AudioFX.preview('drop')};
+    $id('resetSettings').onclick=()=>{Prefs.reset();applyTheme('dark');sync();FX.refresh();toast('Settings reset')};
+    $id('clearSavedGame').onclick=()=>{safeDel(KEY_SAVE);toast('Saved game cleared')};
     document.addEventListener('pointerdown',e=>{if(panel.classList.contains('show')&&!panel.contains(e.target)&&e.target!==btn)show(false)});
     document.addEventListener('keydown',e=>{if(e.key==='Escape'&&panel.classList.contains('show'))show(false)});
     sync();
@@ -2027,16 +2305,55 @@ const Settings = (()=>{
 
 /* ---------- responsive viewport contract: REF mobile gate ---------- */
 const Viewport = (()=>{
-  let raf=0;
+  let raf=0,fullscreenTried=false;
+  const root=document.documentElement;
+  const coarse=()=>{try{return matchMedia('(pointer:coarse)').matches}catch(_){return false}};
+  const landscape=()=>{const vv=window.visualViewport,w=vv?.width||innerWidth,h=vv?.height||innerHeight;return w>h};
   function measure(){
     const vv=window.visualViewport,w=Math.round(vv?.width||innerWidth),h=Math.round(vv?.height||innerHeight);
-    document.documentElement.style.setProperty('--app-h',Math.max(1,h)+'px');
-    document.documentElement.dataset.uvMobile=String(matchMedia('(pointer:coarse)').matches||w<=900);
+    root.style.setProperty('--app-w',Math.max(1,w)+'px');
+    root.style.setProperty('--app-h',Math.max(1,h)+'px');
+    root.dataset.uvMobile=String(coarse()||w<=900);
+    root.dataset.orientation=landscape()?'landscape':'portrait';
+    root.dataset.compactLandscape=String(landscape()&&h<=560);
     return {w,h};
   }
-  function sync(){cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{measure();if(View?.layout)View.relayout();Fidgets.relayout();});}
-  function bind(){measure();window.addEventListener('resize',sync,{passive:true});window.addEventListener('orientationchange',sync,{passive:true});if(window.visualViewport){visualViewport.addEventListener('resize',sync,{passive:true});visualViewport.addEventListener('scroll',sync,{passive:true});}const board=View.el.board;board.addEventListener('gesturestart',e=>e.preventDefault(),{passive:false});board.addEventListener('gesturechange',e=>e.preventDefault(),{passive:false});board.addEventListener('gestureend',e=>e.preventDefault(),{passive:false});}
-  return {bind,measure,sync};
+  function pin(){
+    if(scrollX||scrollY) try{scrollTo(0,0)}catch(_){}
+  }
+  function sync(){cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{measure();pin();if(View?.layout)View.relayout();Fidgets.relayout();});}
+  async function maybeFullscreen(){
+    if(fullscreenTried||!landscape()||!coarse()||document.fullscreenElement)return false;
+    const el=document.documentElement, fn=el.requestFullscreen||el.webkitRequestFullscreen;
+    if(typeof fn!=='function')return false;
+    fullscreenTried=true;
+    try{ await fn.call(el,{navigationUI:'hide'}); sync(); return true; }catch(_){ return false; }
+  }
+  function preventGesture(e){e.preventDefault()}
+  function preventPagePan(e){
+    const t=e.target;
+    if(t&&t.closest&&t.closest('.settingsScroll,input[type="range"],select'))return;
+    e.preventDefault();
+  }
+  function bind(){
+    measure();pin();
+    window.addEventListener('resize',sync,{passive:true});
+    window.addEventListener('orientationchange',sync,{passive:true});
+    window.addEventListener('scroll',pin,{passive:true});
+    document.addEventListener('fullscreenchange',sync,{passive:true});
+    if(window.visualViewport){
+      visualViewport.addEventListener('resize',sync,{passive:true});
+      visualViewport.addEventListener('scroll',sync,{passive:true});
+    }
+    document.addEventListener('gesturestart',preventGesture,{passive:false});
+    document.addEventListener('gesturechange',preventGesture,{passive:false});
+    document.addEventListener('gestureend',preventGesture,{passive:false});
+    document.addEventListener('touchmove',preventPagePan,{passive:false});
+    /* Fullscreen can only be requested from a user activation. One best-effort
+       request in compact landscape; unsupported iPhone Safari simply falls back. */
+    document.addEventListener('pointerup',()=>{void maybeFullscreen()},{passive:true,capture:true});
+  }
+  return {bind,measure,sync,maybeFullscreen,get landscape(){return landscape()}};
 })();
 
 /* ---------- theme ---------- */
@@ -2108,7 +2425,7 @@ if (DEV) (()=>{
   const craft = spec=>{
     const used = new Set(), c = k=>{ const down = k[0]==='_', id = down?k.slice(1):k; used.add(id); return mk(id,!down); };
     const s = {drawMode:spec.drawMode||1, waste:(spec.waste||[]).map(c), foundations:[0,1,2,3].map(i=>((spec.foundations||[])[i]||[]).map(c)),
-      tableau:[0,1,2,3,4,5,6].map(i=>((spec.tableau||[])[i]||[]).map(c)), stock:[], score:spec.score||0, moves:0, elapsedMs:0, won:false, deal:null, seed:null};
+      tableau:[0,1,2,3,4,5,6].map(i=>((spec.tableau||[])[i]||[]).map(c)), stock:[], score:spec.score||0, moves:0, elapsedMs:0, won:false, deal:null, seed:null,rules:GameRules.normalize(spec.rules||GameRules.preset('classic')),redealsUsed:Math.max(0,+spec.redealsUsed||0)};
     s.stock = spec.stock ? spec.stock.map(k=>{ const x = c(k); x.faceUp = false; return x; }) : IDS.filter(id=>!used.has(id)).map(id=>mk(id,false));
     s.won = s.foundations.every(f=>f.length===13);
     return s;
@@ -2217,8 +2534,22 @@ if (DEV) (()=>{
   T('uv / blacklight preserves felt material and exposes fluorescent frame linework instead of flattening the board',()=>{const root=document.documentElement,prev=root.dataset.theme;root.dataset.theme='blacklight';const felt=getComputedStyle(View.el.board,'::before'),field=getComputedStyle(View.el.board,'::after');const ok=felt.backgroundImage!=='none'&&felt.boxShadow!=='none'&&felt.boxShadow.includes('57, 247, 255')&&field.backgroundImage!=='none'&&field.display!=='none';root.dataset.theme=prev;return ok});
   T('uv / FTS Poster palette is present as fluorescent ink tokens',()=>{const root=document.documentElement,prev=root.dataset.theme;root.dataset.theme='blacklight';const cs=getComputedStyle(root),ok=['--uv-cyan','--uv-magenta','--uv-lime','--uv-violet','--uv-orange'].every(k=>cs.getPropertyValue(k).trim().length>0);root.dataset.theme=prev;return ok});
   T('uv / theme control reports current blacklight state explicitly for icon-only mobile chrome',()=>$('#themeBtn').getAttribute('aria-pressed')===String(document.documentElement.dataset.theme==='blacklight')&&$('#themeBtn').dataset.mode===document.documentElement.dataset.theme);
+  T('cep / engine registry exposes Klondike live and Spider 1/2/4-suit as explicit two-deck next engines',()=>SOLITAIRE_ENGINES.find(e=>e.id==='klondike'&&e.status==='live')&&['spider-1','spider-2','spider-4'].every(id=>SOLITAIRE_ENGINES.find(e=>e.id===id&&e.decks===2&&e.status==='next')));
+  T('settings / granular SFX gains are finite normalized values',()=>['volume','sfxCards','sfxFriction','sfxImpact','sfxDeal','sfxSpinner','sfxWin'].every(k=>Number.isFinite(Prefs.value[k])&&Prefs.value[k]>=0&&Prefs.value[k]<=1));
+  T('settings / presentation selectors are valid and applied as root data contracts',()=>document.documentElement.dataset.cardStyle===Prefs.value.cardStyle&&document.documentElement.dataset.cardBack===Prefs.value.cardBack&&document.documentElement.dataset.tableStyle===Prefs.value.tableStyle&&document.documentElement.dataset.uvIntensity===Prefs.value.uvIntensity);
+  T('settings / control room is mobile-scrollable and groups game, cards, sound, motion, accessibility and data',()=>!!$('#settingsPanel .settingsScroll')&&$('#settingsPanel').querySelectorAll('.settingGroup').length>=6&&!!$('#applyRules')&&!!$('#setSfxFriction')&&!!$('#setCardStyle'));
+  T('rules / presets normalize deterministically',()=>{const a=GameRules.preset('classic'),v=GameRules.preset('vegas'),r=GameRules.preset('relaxed');return a.emptyPolicy==='king'&&a.redealLimit===null&&v.scoreMode==='vegas'&&v.redealLimit===0&&r.emptyPolicy==='any'&&r.autoFoundation==='aggressive'});
+  T('rules / Vegas starts at -52 and disallows recycle by default',()=>{const x=Rules.deal(Rules.orderFromSeed(7),1,GameRules.preset('vegas'));for(let i=0;i<24;i++)Rules.draw(x);return x.score===-52&&x.stock.length===0&&x.waste.length===24&&Rules.draw(x)===null});
+  T('rules / relaxed empty columns accept non-Kings while classic rejects them',()=>{const base=Rules.orderFromSeed(1),a=Rules.deal(base,1,GameRules.preset('classic')),b=Rules.deal(base,1,GameRules.preset('relaxed'));const c=mk('H12',true);a.tableau=[[],[c],[],[],[],[],[]];b.tableau=[[],[mk('H12',true)],[],[],[],[],[]];a.stock=IDS.filter(id=>id!=='H12').map(id=>mk(id,false));b.stock=IDS.filter(id=>id!=='H12').map(id=>mk(id,false));return !Rules.plan(a,{from:{zone:'tableau',index:1},to:{zone:'tableau',index:0},count:1})&&!!Rules.plan(b,{from:{zone:'tableau',index:1},to:{zone:'tableau',index:0},count:1})});
+  T('audio / SFX catalog routes into six player gain groups',()=>['contact','slide','drop','shuffle','bearing','win'].every(k=>AudioFX.categoryGain(k,k==='bearing'?'spinner':'card')>=0));
   T('responsive / dynamic app height follows visual viewport contract',()=>document.documentElement.innerHTML.includes('--app-h')&&typeof Viewport.measure==='function');
   T('responsive / zoom lock covers viewport meta + board gesture suppression',()=>document.querySelector('meta[name="viewport"]')?.content.includes('user-scalable=no')&&String(Viewport.bind).includes('gesturestart'));
+  T('responsive / zoom contract pins min/max scale and viewport-fit',()=>{const c=document.querySelector('meta[name="viewport"]')?.content||'';return ['user-scalable=no','minimum-scale=1','maximum-scale=1','viewport-fit=cover'].every(x=>c.includes(x));});
+  T('responsive / document surface is fixed, non-scrollable and settings keep their own vertical pan',()=>{const hb=getComputedStyle(document.body),hs=getComputedStyle(document.documentElement),ss=getComputedStyle(document.querySelector('.settingsScroll'));return hb.position==='fixed'&&hs.position==='fixed'&&hb.overflow==='hidden'&&ss.overflowY==='auto'&&ss.touchAction.includes('pan-y');});
+  T('responsive / mobile blacklight fallback recreates bloom with CSS drop-shadow instead of parent SVG filtering',()=>{const r=document.documentElement,old={theme:r.dataset.theme,uvMobile:r.dataset.uvMobile,cardGlow:r.dataset.cardGlow,uvIntensity:r.dataset.uvIntensity};r.dataset.theme='blacklight';r.dataset.uvMobile='true';r.dataset.cardGlow='on';r.dataset.uvIntensity='searing';const c=document.querySelector('.card'),cards=document.querySelector('.cards'),ok=!!c&&getComputedStyle(cards).filter==='none'&&getComputedStyle(c).filter.includes('drop-shadow');Object.entries(old).forEach(([k,v])=>v==null?delete r.dataset[k]:r.dataset[k]=v);return ok;});
+  T('responsive / card-bloom switch removes mobile drop-shadow without removing the UV grade',()=>{const r=document.documentElement,old={theme:r.dataset.theme,uvMobile:r.dataset.uvMobile,cardGlow:r.dataset.cardGlow};r.dataset.theme='blacklight';r.dataset.uvMobile='true';r.dataset.cardGlow='off';const f=getComputedStyle(document.querySelector('.card')).filter,ok=f!=='none'&&!f.includes('drop-shadow');Object.entries(old).forEach(([k,v])=>v==null?delete r.dataset[k]:r.dataset[k]=v);return ok;});
+  T('responsive / compact landscape fullscreen is user-gesture gated and failure-safe',()=>String(Viewport.bind).includes('pointerup')&&String(Viewport.maybeFullscreen).includes('requestFullscreen')&&String(Viewport.maybeFullscreen).includes('catch'));
+  T('responsive / compact landscape state derives from the visual viewport rather than UA sniffing',()=>{const m=Viewport.measure();return document.documentElement.dataset.orientation===(m.w>m.h?'landscape':'portrait')&&document.documentElement.dataset.compactLandscape===String(m.w>m.h&&m.h<=560);});
   T('responsive / safe-area insets exist for portrait and short landscape chrome',()=>document.documentElement.innerHTML.includes('env(safe-area-inset-left)')&&document.documentElement.innerHTML.includes('env(safe-area-inset-bottom)'));
   T('layout / portrait foundations are centered top and stock + waste form a bottom thumb deck',()=>{const l=solveLayout(390,700,Rules.deal(Rules.orderFromSeed(2),1).tableau),mid=(l.foundationX[0]+l.foundationX[3]+l.cardW)/2;return l.mobile&&Math.abs(mid-195)<1&&l.stockY>l.tableauY+l.cardH&&l.wasteY===l.stockY&&l.stockX<l.wasteX});
   T('layout / portrait lanes manspread through tall boards instead of top-stacking',()=>[[320,480],[360,640],[390,700],[390,844],[430,932],[600,1024]].every(([w,h])=>{const l=solveLayout(w,h,Rules.deal(Rules.orderFromSeed(2),1).tableau);return l.mobile&&l.foundationY/h>=.045&&l.foundationY/h<=.14&&l.tableauY/h>=.24&&l.tableauY/h<=.39&&l.stockY/h>=.70&&l.stockY/h<=.86&&l.tableauY>=l.foundationY+l.cardH+l.rowGap-0.5&&l.stockY>=l.tableauY+l.cardH+l.rowGap-0.5;}));
@@ -2348,8 +2679,9 @@ async function boot(){
   const restored = Store.load();
   const params = new URLSearchParams(location.search), seedParam = DEV && params.get('seed')!=null ? Number(params.get('seed')) : null;
   const savedDraw = Number(safeGet(KEY_DRAW)||1)===3 ? 3 : 1;
-  if (seedParam!=null && Number.isFinite(seedParam)) S = Rules.deal(Rules.orderFromSeed(seedParam>>>0),savedDraw), S.seed = seedParam>>>0;
-  else S = restored || Rules.deal(Rules.orderRandom(),savedDraw);
+  if (seedParam!=null && Number.isFinite(seedParam)) S = Rules.deal(Rules.orderFromSeed(seedParam>>>0),savedDraw,GameRules.fromPrefs(Prefs.value)), S.seed = seedParam>>>0;
+  else S = restored || Rules.deal(Rules.orderRandom(),savedDraw,GameRules.fromPrefs(Prefs.value));
+  S.rules=GameRules.normalize(S.rules||GameRules.fromPrefs(Prefs.value)); S.redealsUsed=Math.max(0,+S.redealsUsed||0);
   const fresh = !restored;
   Input.bind(); Settings.bind(); Prefs.apply(); Viewport.bind(); Fidgets.init();
   if ('ResizeObserver' in window){ let raf = 0; new ResizeObserver(()=>{ cancelAnimationFrame(raf); raf = requestAnimationFrame(()=>View.relayout()); }).observe(View.el.board); }
