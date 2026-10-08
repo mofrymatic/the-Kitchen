@@ -72,7 +72,7 @@ button:disabled{opacity:.3;cursor:not-allowed}
 /* =====================================================================
    SHELL
    ===================================================================== */
-.app{height:var(--app-h,100dvh);width:100vw;overflow:hidden;display:grid;grid-template-rows:44px minmax(0,1fr) 52px;
+.app{height:100dvh;width:100vw;overflow:hidden;display:grid;grid-template-rows:44px minmax(0,1fr) 52px;
   background:radial-gradient(circle at 20% 10%,rgba(24,202,215,.07),transparent 24%),
              radial-gradient(circle at 82% 22%,rgba(255,34,54,.055),transparent 28%),
              linear-gradient(180deg,#05080c,#020304 72%)}
@@ -133,9 +133,9 @@ html[data-theme="light"] .slot::after{color:#b5b5b0}
 .slot.stock::after{content:"\21BB"}
 
 .ring{position:absolute;left:0;top:0;--halo-x:0px;--halo-y:0px;width:calc(var(--cw) + var(--halo-x) + var(--halo-x));height:calc(var(--ch) + var(--halo-y) + var(--halo-y));border-radius:calc(var(--radius) + var(--halo-x));display:none;pointer-events:none}
-.ring.ok{display:none}
-.ring.hover{display:none}
-.ring.hint{display:none}
+.ring.ok{display:block;outline:1px solid rgba(24,202,215,.88);outline-offset:1px;background:rgba(24,202,215,.028);box-shadow:inset 0 0 0 1px rgba(24,202,215,.05)}
+.ring.hover{display:block;outline:2px solid var(--gold);outline-offset:1px;background:rgba(231,173,67,.045);box-shadow:0 0 10px rgba(231,173,67,.22),inset 0 0 0 1px rgba(231,173,67,.08)}
+.ring.hint{display:block;outline:2px solid var(--gold);outline-offset:1px;animation:hintPulse .7s ease-in-out infinite alternate}
 
 /* Cards. Size comes from --cw/--ch (exactly 5:7). Position is a transform; nodes are never rebuilt. */
 .card{position:absolute;left:0;top:0;width:var(--cw);height:var(--ch);aspect-ratio:5/7;border-radius:var(--radius);overflow:hidden;pointer-events:auto;
@@ -145,11 +145,11 @@ html[data-theme="light"] .slot::after{color:#b5b5b0}
 .card[data-up="true"]{cursor:grab}
 .card[data-up="true"]:active{cursor:grabbing}
 .card::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 0 1px var(--edge);pointer-events:none}
-.card.dragging{transition:none!important;box-shadow:0 12px 24px rgba(0,0,0,.5),0 0 12px rgba(24,202,215,.13)}
+.card.dragging{transition:none!important;box-shadow:0 14px 22px rgba(0,0,0,.5)}
 .card.flying,.card.dragging{will-change:transform}
-.card.selected{outline:1px solid rgba(24,202,215,.56);outline-offset:1px}
-.card.drop-ok{outline:none}
-.card.drop-hover{outline:none}
+.card.selected{outline:1.5px solid var(--cyan);outline-offset:1px}
+.card.drop-ok{outline:1px solid rgba(24,202,215,.92);outline-offset:1px}
+.card.drop-hover{outline:2px solid var(--gold);outline-offset:1px;box-shadow:0 2px 7px rgba(0,0,0,.52),0 0 9px rgba(231,173,67,.20)}
 .card.hint{outline:2px solid var(--gold);outline-offset:1px;animation:hintPulse .7s ease-in-out infinite alternate}
 .card.nope{animation:nope .22s linear}
 .card.flip .face{animation:flipIn .22s ease-out}
@@ -305,7 +305,7 @@ html[data-theme="light"] .board::before{box-shadow:0 0 0 2px rgba(91,57,19,.62),
   content:"";position:absolute;inset:0;z-index:3;pointer-events:none;border-radius:inherit;
   background:linear-gradient(120deg,rgba(255,255,255,.16),transparent 20% 72%,rgba(0,0,0,.11));mix-blend-mode:soft-light;
 }
-.card.dragging{box-shadow:0 17px 31px rgba(0,0,0,.54),0 0 14px rgba(24,202,215,.20);filter:saturate(1.04) brightness(1.03)}
+.card.dragging{box-shadow:0 23px 34px rgba(0,0,0,.58),0 0 22px rgba(231,173,67,.12);filter:saturate(1.07) brightness(1.04)}
 .card.selected{outline-color:rgba(24,202,215,.92);box-shadow:0 6px 22px rgba(24,202,215,.16),0 2px 7px rgba(0,0,0,.55)}
 .card.fidget-pop{animation:cardFidget .34s cubic-bezier(.18,.85,.25,1.35)}
 @keyframes cardFidget{40%{filter:brightness(1.07);scale:1.022}100%{scale:1}}
@@ -347,7 +347,7 @@ html[data-theme="light"] .settingsPanel{background:rgba(255,253,248,.97);color:#
 html[data-juice="balanced"]{--juice-opacity:.72}
 html[data-juice="minimal"]{--juice-opacity:.2}
 html[data-juice="minimal"] .board::after{display:none}
-html[data-juice="minimal"] .fidgets{display:block}
+html[data-juice="minimal"] .fidgets{display:none}
 
 @media(max-width:700px) and (min-height:360px){
   .board{--table-inset:4px}
@@ -363,28 +363,21 @@ html[data-juice="minimal"] .fidgets{display:block}
    ===================================================================== */
 .card{--card-scale:1;transform-style:preserve-3d;backface-visibility:hidden}
 .card[data-up="true"]:hover{filter:saturate(1.055) contrast(1.02) brightness(1.018)}
-.card.dragging{--card-scale:1.018;box-shadow:0 18px 33px rgba(0,0,0,.56),0 4px 10px rgba(0,0,0,.35),0 0 15px rgba(24,202,215,.26)}
+.card.dragging{--card-scale:1.028;box-shadow:0 28px 42px rgba(0,0,0,.6),0 5px 12px rgba(0,0,0,.42),0 0 28px rgba(231,173,67,.12)}
 .card.selected{--card-scale:1.012}
 .card.dragging::before{background:linear-gradient(112deg,rgba(255,255,255,.24),transparent 22% 70%,rgba(0,0,0,.14))}
-.ring.hover{box-shadow:none}
+.ring.hover{box-shadow:0 0 8px rgba(231,173,67,.22)}
 
 .fidget{will-change:transform;transition:filter .16s ease,scale .16s ease;contain:layout paint style}
 .fidget:active{scale:1.065;filter:brightness(1.08)}
-.fidget[data-kind="spinner"]{--rotor-deg:0;width:clamp(54px,5.4vw,82px);border:0;background:transparent;box-shadow:none;color:transparent;overflow:visible;outline:none;contain:layout style;filter:drop-shadow(0 8px 9px rgba(0,0,0,.48))}
-.fidget[data-kind="spinner"]::after{display:none}
-.spinnerRotor{position:absolute;inset:0;will-change:transform,filter;transform-origin:50% 50%;filter:blur(var(--spinner-blur,0px)) saturate(var(--spinner-sat,1))}
-/* One geometry source of truth: lobe centers sit on a 31.5% orbit at -90deg / 30deg / 150deg.
-   Their centers therefore form an exact equilateral triangle around the 50%/50% pivot. */
-.spinnerWeb{position:absolute;left:16%;top:16%;width:68%;height:68%;clip-path:polygon(50% 3.68%,90.13% 73.16%,9.87% 73.16%);border-radius:24%;background:radial-gradient(circle at 50% 50%,#5d686e 0 12%,#303a40 38%,#182025 67%,#0e1418 100%);box-shadow:inset 0 0 0 2px rgba(255,255,255,.08)}
-.spinnerWeb::before{content:"";position:absolute;inset:-18%;clip-path:inherit;transform:rotate(calc(var(--rotor-deg) * -1deg));background:linear-gradient(132deg,rgba(255,255,255,.17),transparent 31% 66%,rgba(0,0,0,.22));opacity:.72;pointer-events:none}
-.spinnerLobe{--lobe-size:36%;position:absolute;left:var(--cx);top:var(--cy);width:var(--lobe-size);height:var(--lobe-size);transform:translate(-50%,-50%);border-radius:50%;overflow:hidden;background:radial-gradient(circle at 50% 50%,#0b0f12 0 24%,#aeb7bc 26% 35%,#273137 38% 61%,#9aa4aa 64% 72%,#11171b 75% 100%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.18),0 2px 4px rgba(0,0,0,.55)}
-.spinnerLobe::before{content:"";position:absolute;inset:-12%;border-radius:50%;transform:rotate(calc(var(--rotor-deg) * -1deg));background:radial-gradient(circle at 34% 27%,rgba(255,255,255,.28),rgba(255,255,255,.05) 18%,transparent 38%),linear-gradient(135deg,rgba(255,255,255,.08),transparent 44%,rgba(0,0,0,.16));pointer-events:none}
-.spinnerLobe b{position:absolute;inset:29%;border-radius:50%;overflow:hidden;background:radial-gradient(circle at 50% 50%,#aeb7bc 0 18%,#657177 45%,#20282d 72%,#11171b 100%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.22)}
-.spinnerLobe b::before{content:"";position:absolute;inset:-18%;border-radius:50%;transform:rotate(calc(var(--rotor-deg) * -1deg));background:radial-gradient(circle at 34% 27%,rgba(255,255,255,.46),transparent 42%),linear-gradient(135deg,rgba(255,255,255,.08),transparent 52%,rgba(0,0,0,.18));pointer-events:none}
-.spinnerLobe.l1{--cx:50%;--cy:18.5%}.spinnerLobe.l2{--cx:77.2798%;--cy:65.75%}.spinnerLobe.l3{--cx:22.7202%;--cy:65.75%}
-.spinnerHub{position:absolute;left:50%;top:50%;width:30%;height:30%;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle at 50% 50%,#edf1f2 0 8%,#737e84 38%,#20282d 70%,#0b1013 100%);box-shadow:0 0 0 3px #2d373c,0 0 0 5px #8c969b,inset 0 0 0 1px rgba(255,255,255,.38)}
-.spinnerHub::before{content:"";position:absolute;inset:-9%;border-radius:50%;transform:rotate(calc(var(--rotor-deg) * -1deg));background:radial-gradient(circle at 36% 29%,rgba(255,255,255,.34),transparent 44%);pointer-events:none}
-.spinnerCap{position:absolute;left:50%;top:50%;width:22%;height:22%;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle at 36% 30%,#f2f4f5,#7a858a 44%,#252d31 72%);box-shadow:0 1px 4px rgba(0,0,0,.7),inset 0 0 0 1px rgba(255,255,255,.35);pointer-events:none}
+.fidget[data-kind="spinner"]{width:clamp(46px,4.6vw,64px);border:0;background:transparent;box-shadow:none;color:transparent;overflow:visible}
+.spinnerRotor{position:absolute;inset:0;will-change:transform;filter:drop-shadow(0 7px 8px rgba(0,0,0,.48))}
+.spinnerWeb{position:absolute;left:19%;top:19%;width:62%;height:62%;clip-path:polygon(50% 0,100% 83%,0 83%);background:linear-gradient(145deg,#1f2a31,#66727a 48%,#10161a);border-radius:22%;box-shadow:inset 0 0 0 2px rgba(255,255,255,.09)}
+.spinnerLobe{position:absolute;width:37%;height:37%;border-radius:50%;background:radial-gradient(circle,#0b0f12 0 25%,#aeb7bc 27% 35%,#273137 38% 62%,#9aa4aa 65% 72%,#11171b 75% 100%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.2),0 2px 4px rgba(0,0,0,.55)}
+.spinnerLobe b{position:absolute;inset:29%;border-radius:50%;background:radial-gradient(circle at 36% 30%,#d9e0e3,#5d686e 42%,#151c20 72%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.22)}
+.spinnerLobe.l1{left:31.5%;top:0}.spinnerLobe.l2{right:0;bottom:3%}.spinnerLobe.l3{left:0;bottom:3%}
+.spinnerHub{position:absolute;left:35%;top:35%;width:30%;height:30%;border-radius:50%;background:radial-gradient(circle at 38% 32%,#edf1f2,#737e84 38%,#20282d 70%,#0b1013 100%);box-shadow:0 0 0 3px #2d373c,0 0 0 5px #8c969b,inset 0 0 0 1px rgba(255,255,255,.4)}
+.spinnerCap{position:absolute;left:39%;top:39%;width:22%;height:22%;border-radius:50%;background:radial-gradient(circle at 36% 30%,#f2f4f5,#7a858a 44%,#252d31 72%);box-shadow:0 1px 4px rgba(0,0,0,.7),inset 0 0 0 1px rgba(255,255,255,.35);pointer-events:none}
 
 
 /* =====================================================================
@@ -417,9 +410,6 @@ html[data-theme="blacklight"] .card.drop-ok{outline-color:rgba(68,247,255,.94)}
 html[data-theme="blacklight"] .card.drop-hover,html[data-theme="blacklight"] .ring.hover{outline-color:#d8c5ff;box-shadow:0 0 10px rgba(132,88,255,.30)}
 html[data-theme="blacklight"] .ring.ok{outline-color:rgba(68,247,255,.86)}
 html[data-theme="blacklight"] .stockNoise i{box-shadow:0 0 8px rgba(91,233,255,.65)}
-/* Mobile UV fallback: CSS filters remain reliable when Safari/WebKit declines an SVG filter on a transformed layer. */
-html[data-uv-mobile="true"][data-theme="blacklight"] .cards,html[data-uv-mobile="true"][data-theme="blacklight"] .victoryFX{filter:saturate(1.72) contrast(1.16) brightness(1.08) hue-rotate(7deg)}
-html[data-uv-mobile="true"][data-theme="blacklight"] .card{box-shadow:0 2px 8px rgba(0,0,0,.76),0 0 0 1px rgba(145,217,255,.30),0 0 12px rgba(82,66,255,.28),0 0 22px rgba(255,35,126,.08)}
 
 .victoryFX{position:absolute;inset:0;z-index:60;pointer-events:none;overflow:hidden;contain:strict}
 .victoryCard{position:absolute;left:0;top:0;width:var(--cw);height:var(--ch);border-radius:var(--radius);background-position:center;background-repeat:no-repeat;background-size:100% 100%;box-shadow:0 7px 18px rgba(0,0,0,.38);will-change:transform,opacity;transform-origin:50% 58%}
@@ -434,7 +424,7 @@ html[data-uv-mobile="true"][data-theme="blacklight"] .card{box-shadow:0 2px 8px 
   .metrics{height:31px}.metric{min-width:43px;padding:3px 6px}.metric strong{font-size:11px}.metric span{font-size:6px}
   .controls{padding:4px max(4px,env(safe-area-inset-right)) max(4px,env(safe-area-inset-bottom)) max(4px,env(safe-area-inset-left))}
   .board::before{inset:2px;border-radius:10px}.board::after{inset:8px;border-radius:7px}
-  .fidget{display:grid}
+  .fidget{display:none}
 }
 
 @media(max-height:520px) and (orientation:landscape){
@@ -448,10 +438,11 @@ html[data-uv-mobile="true"][data-theme="blacklight"] .card{box-shadow:0 2px 8px 
   .control{height:31px;padding:0 9px;flex:1 1 0}.control .label{display:none}.control .ico{font-size:14px}.separator{display:none}
   .drawSelect{height:31px;min-width:68px;width:68px;margin-left:2px;padding:0 4px;font-size:8px}.utilityBtn{height:31px;min-width:32px}
   .board{--table-inset:3px}.board::before{border-radius:10px}.board::after{inset:10px;border-radius:7px}
-  .fidget[data-kind="spinner"]{display:grid;width:clamp(48px,13vmin,66px)}
+  .fidget[data-kind="coin"],.fidget[data-kind="crystal"]{display:none}
+  .fidget[data-kind="spinner"]{display:grid;width:46px}
 }
 
-@media(min-width:601px) and (max-width:900px) and (orientation:portrait){.fidget[data-kind="spinner"]{width:clamp(52px,8vmin,72px)}}
+@media(min-width:601px) and (max-width:900px) and (orientation:portrait){.fidget[data-kind="spinner"]{width:48px}.fidget[data-kind="coin"],.fidget[data-kind="crystal"]{opacity:.75}}
 @media(prefers-reduced-motion:reduce){.card.dragging{--card-scale:1}.fidget[data-kind="spinner"] .spinnerRotor{transform:none!important}}
 
 </style>
@@ -549,7 +540,7 @@ const ASSETS=Object.freeze({"S1":"data:image/webp;base64,UklGRmo7AABXRUJQVlA4IF4
    ======================================================================= */
 const DEV = /[?&]dev=1(&|$)/.test(location.search);
 const QA = DEV && /[?&]qa=1(&|$)/.test(location.search);
-const BUILD = 'klondike-5.17.0-organic-gesture-audio-invisible-magnet';
+const BUILD = 'klondike-5.15.0-faceaudit-halfcard-dropzone';
 const $ = (s,r=document)=>r.querySelector(s);
 const clamp = (n,a,b)=>Math.max(a,Math.min(b,n));
 const reducedMotion = ()=>{ try{ return matchMedia('(prefers-reduced-motion: reduce)').matches }catch(_){ return false } };
@@ -676,11 +667,8 @@ const Prefs = (()=>{
 
 /* ---------- synthesized card-table audio: no external assets ---------- */
 const AudioFX = (()=>{
-  let ctx=null, master=null, cardBus=null, noise=null, voices=0, seq=0, lastGrain=0;
-  const CARD_AUDIO_SCALE=.44; // dedicated card bus, -7.1 dB; spinner voice stays on original master
-  let eventChannel='card';
-  let friction=null, bearing=null, bearingBody=null;
-  const SPINNER_AUDIO_SCALE=.70; // requested: fidget spinner is 30% quieter than the Earthborn lab voice
+  let ctx=null, master=null, noise=null, voices=0, seq=0, lastGrain=0;
+  let friction=null, bearing=null;
   const catalog=Object.freeze(['contact','skid','lift','finger','edge','withdraw','slide','drop','stackDrop','foundation','draw','draw3','flip','recycle','undo','nope','shuffle','win','bearing']);
   const patterns=Object.freeze({touch:3,lift:4,hover:2,drop:7,stack:[4,12,6],foundation:[4,10,10],draw:4,draw3:[3,9,3],flip:3,recycle:[4,14,7],reject:[3,16,3],fidget:4});
   const tactileScale=()=>Prefs.value.tactile==='quiet'?.48:Prefs.value.tactile==='warm'?.72:1;
@@ -690,7 +678,6 @@ const AudioFX = (()=>{
       if(!ctx){
         const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return null;
         ctx=new AC(); master=ctx.createGain(); master.connect(ctx.destination);
-        cardBus=ctx.createGain(); cardBus.gain.value=CARD_AUDIO_SCALE; cardBus.connect(master);
         const n=ctx.sampleRate*.5|0, buf=ctx.createBuffer(1,n,ctx.sampleRate), d=buf.getChannelData(0);
         // White paper hiss carried by a very slow simplex envelope: microscopic fiber density, not a looped sample.
         for(let i=0;i<n;i++){ const fiber=.89+Simplex.noise(i/3400,6.2)*.11; d[i]=(Math.random()*2-1)*fiber; } noise=buf;
@@ -708,8 +695,7 @@ const AudioFX = (()=>{
     const tex=ASMRTexture.sample(seq+voices*.37+delay*31,type==='noise'?1:2); voices++;
     dur*=tex.duration; cut*=tex.tone; gain*=tex.gain; freq*=tex.pitch; slide*=tex.pitch; delay=Math.max(0,delay+tex.delay); pan=clamp(pan+tex.pan,-.8,.8);
     const t=c.currentTime+delay, g=c.createGain(), attack=clamp(.005*tex.attack,.0034,.0072), peak=Math.max(.0002,gain*tactileScale()); let tail=g;
-    const destination=eventChannel==='spinner'?master:cardBus;
-    if(c.createStereoPanner){ const pn=c.createStereoPanner(); pn.pan.value=pan; g.connect(pn); pn.connect(destination); } else g.connect(destination);
+    if(c.createStereoPanner){ const pn=c.createStereoPanner(); pn.pan.value=pan; g.connect(pn); pn.connect(master); } else g.connect(master);
     // Every transient gets a slightly different simplex-shaped attack/body so repeated card sounds never tile mechanically.
     g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(peak,t+attack); g.gain.exponentialRampToValueAtTime(Math.max(.00015,peak*(.78+tex.grain*.14)),t+dur*.58); g.gain.exponentialRampToValueAtTime(.0001,t+dur);
     let src;
@@ -731,7 +717,7 @@ const AudioFX = (()=>{
     const c=ensure(); if(!c) return null;
     const src=c.createBufferSource(), filter=c.createBiquadFilter(), gain=c.createGain();
     src.buffer=noise; src.loop=true; filter.type='bandpass'; filter.frequency.value=900; filter.Q.value=.8; gain.gain.value=.0001;
-    src.connect(filter); filter.connect(gain); gain.connect(kind==='bearing'||kind==='bearing-body'?master:cardBus); src.start();
+    src.connect(filter); filter.connect(gain); gain.connect(master); src.start();
     return {kind,src,filter,gain};
   }
   function startFriction(seed=0){ if(!Prefs.value.sound)return; if(!friction) friction=loopNoise('friction'); if(friction) friction.seed=seed; }
@@ -745,26 +731,16 @@ const AudioFX = (()=>{
   }
   function stopFriction(){ if(!friction||!ctx)return; const f=friction; friction=null; const t=ctx.currentTime; try{f.gain.gain.setTargetAtTime(.0001,t,.026);f.src.stop(t+.14)}catch(_){} }
   function setBearing(speed=0){
-    const c=ensure(); if(!c)return; const v=clamp(Math.abs(speed)/76,0,1);
-    if(v<.018){ stopBearing(); return; }
-    if(!bearing) bearing=loopNoise('bearing');
-    if(!bearingBody) bearingBody=loopNoise('bearing-body');
-    if(!bearing||!bearingBody)return;
-    const t=c.currentTime,n=Simplex.noise(performance.now()/1500,9.7),soft=v*v*(3-2*v);
-    // Characteristic lubricated whirr: narrow mid band, deliberately above the rolling body.
-    bearing.gain.gain.setTargetAtTime((.0012+soft*.025)*SPINNER_AUDIO_SCALE*(1+n*.055)*tactileScale(),t,.065);
-    bearing.filter.frequency.setTargetAtTime(760+soft*2100+n*75,t,.075); bearing.filter.Q.setTargetAtTime(2.2-soft*.55,t,.09);
-    // One additional low-mid rolling band: steel races + bearing body, no sub-bass drone.
-    bearingBody.gain.gain.setTargetAtTime((.00065+soft*.0115)*SPINNER_AUDIO_SCALE*(1-n*.04)*tactileScale(),t,.085);
-    bearingBody.filter.frequency.setTargetAtTime(285+soft*310+n*24,t,.095); bearingBody.filter.Q.setTargetAtTime(1.05+soft*.28,t,.11);
+    const c=ensure(); if(!c)return; const v=clamp(Math.abs(speed)/18,0,1);
+    if(v<.015){ stopBearing(); return; }
+    if(!bearing) bearing=loopNoise('bearing'); if(!bearing)return;
+    const t=c.currentTime,n=Simplex.noise(performance.now()/1500,9.7);
+    bearing.gain.gain.setTargetAtTime((.001+v*.018)*(1+n*.06)*tactileScale(),t,.07);
+    bearing.filter.frequency.setTargetAtTime(1050+v*2400+n*90,t,.08); bearing.filter.Q.setTargetAtTime(1.2+v*.7,t,.1);
   }
-  function stopBearing(){
-    if(!ctx)return; const t=ctx.currentTime;
-    for(const key of ['bearing','bearingBody']){ const b=key==='bearing'?bearing:bearingBody; if(!b)continue; if(key==='bearing')bearing=null;else bearingBody=null; try{b.gain.gain.setTargetAtTime(.0001,t,.12);b.src.stop(t+.38)}catch(_){} }
-  }
+  function stopBearing(){ if(!bearing||!ctx)return; const b=bearing;bearing=null;const t=ctx.currentTime;try{b.gain.gain.setTargetAtTime(.0001,t,.12);b.src.stop(t+.38)}catch(_){} }
   function play(kind,p=1,meta={}){
     if(!Prefs.value.sound) return; seq++;
-    eventChannel=meta.channel==='spinner'?'spinner':'card';
     const v=1+organic(0)*.025, pan=clamp(Number(meta.pan)||0,-.65,.65), n=organic(1);
     if(kind==='contact'){burst({dur:.028,cut:1850*v,gain:.052*p,pan});burst({dur:.042,type:'sine',freq:105*v,gain:.018*p,slide:-12,pan});}
     else if(kind==='skid'){burst({dur:.065,cut:980*v,gain:.038*p,q:1.1,pan});}
@@ -773,49 +749,25 @@ const AudioFX = (()=>{
     else if(kind==='edge'){burst({dur:.027,cut:2850*v,gain:.032*p,q:1.35,pan});}
     else if(kind==='withdraw'){burst({dur:.055,cut:1250*v,gain:.038*p,pan});burst({dur:.045,cut:1760*v,gain:.025*p,delay:.027,pan});}
     else if(kind==='slide'){paperGrain(p,1+n*.08);}
-    else if(kind==='drop'){const spinning=eventChannel==='spinner';burst({dur:.055,cut:(spinning?1420:1180)*v,gain:(spinning?.105:.095)*p,pan});if(spinning)burst({dur:.085,type:'sine',freq:86*v,gain:.045*p,slide:-25,pan});else burst({dur:.058,cut:530*v,gain:.018*p,delay:.012,pan});}
-    else if(kind==='stackDrop'){burst({dur:.08,cut:920*v,gain:.105*p,pan});burst({dur:.042,cut:1660*v,gain:.025*p,delay:.018,pan});}
-    else if(kind==='foundation'){burst({dur:.042,cut:1830*v,gain:.078*p,pan});burst({dur:.068,cut:760*v,gain:.026*p,delay:.011,pan});}
+    else if(kind==='drop'){burst({dur:.055,cut:1420*v,gain:.105*p,pan});burst({dur:.085,type:'sine',freq:86*v,gain:.045*p,slide:-25,pan});}
+    else if(kind==='stackDrop'){burst({dur:.075,cut:1180*v,gain:.13*p,pan});burst({dur:.035,cut:2100*v,gain:.045*p,delay:.028,pan});burst({dur:.10,type:'sine',freq:78*v,gain:.055*p,slide:-20,pan});}
+    else if(kind==='foundation'){burst({dur:.042,cut:2500*v,gain:.095*p,pan});burst({dur:.11,type:'triangle',freq:620*v,gain:.05*p,slide:155,pan});}
     else if(kind==='draw'){burst({dur:.06,cut:1550*v,gain:.085*p,pan});burst({dur:.035,cut:2450*v,gain:.032*p,delay:.018,pan});}
     else if(kind==='draw3'){[0,.035,.073].forEach((d,i)=>burst({dur:.052,cut:(1320+i*210)*v,gain:.07*p*(1-i*.08),delay:d,pan:(i-1)*.08}));}
     else if(kind==='flip'){burst({dur:.032,cut:2900*v,gain:.062*p,q:1.25,pan});burst({dur:.04,cut:1150*v,gain:.023*p,delay:.015,pan});}
     else if(kind==='recycle'){burst({dur:.16,cut:690*v,gain:.105*p,pan});burst({dur:.11,type:'triangle',freq:112*v,gain:.038*p,slide:-38,pan});for(let i=0;i<3;i++)burst({dur:.04,cut:1200+i*180,gain:.026*p,delay:.04+i*.035,pan:(i-1)*.1});}
     else if(kind==='undo'){burst({dur:.10,cut:820*v,gain:.06*p,pan});burst({dur:.11,type:'sine',freq:185*v,gain:.027*p,slide:140,pan});}
-    else if(kind==='nope'){burst({dur:.038,cut:720*v,gain:.024*p,pan});}
+    else if(kind==='nope'){burst({dur:.08,type:'square',freq:92*v,gain:.026*p,slide:-18,pan});burst({dur:.035,cut:520*v,gain:.028*p,delay:.04,pan});}
     else if(kind==='shuffle'){for(let i=0;i<7;i++)setTimeout(()=>{seq++;burst({dur:.075,cut:780+210*i,gain:.055*(1-i*.045),pan:(i-3)*.12})},i*52);}
     else if(kind==='win'){[523,659,784,1047].forEach((f,i)=>setTimeout(()=>burst({dur:.34,type:'triangle',freq:f*(1+organic(i+5)*.006),gain:.038,slide:35}),i*92));}
     else if(kind==='bearing'){paperGrain(.18*p,1.5);}
-    eventChannel='card'; // reset before deferred shuffle/win voices: a spinner cannot leak into the card mix
   }
   function haptic(kind='touch'){
     if(!Prefs.value.haptics||!navigator.vibrate) return;
     const pat=typeof kind==='number'||Array.isArray(kind)?kind:(patterns[kind]||patterns.touch);
     try{navigator.vibrate(pat)}catch(_){}
   }
-  return {ensure,play,haptic,startFriction,updateFriction,stopFriction,setBearing,stopBearing,catalog,patterns,SPINNER_AUDIO_SCALE,CARD_AUDIO_SCALE,get active(){return !!ctx}};
-})();
-
-/* One gesture, one intent. Preflight clicks and hover geometry are silent. */
-const CardVoice = (()=>{
-  const history=[];
-  function cue(action,detail={}){
-    if(action==='select') return {kind:'finger',gain:.26};
-    if(action==='lift') return {kind:'lift',gain:.37};
-    if(action==='reject') return {kind:'skid',gain:.20};
-    if(action==='land'){
-      const count=Math.max(1,Number(detail.count)||1);
-      if(detail.zone==='foundation') return {kind:'foundation',gain:.62};
-      if(count>1) return {kind:'stackDrop',gain:Math.min(.82,.55+count*.023)};
-      return {kind:'drop',gain:.67};
-    }
-    return null;
-  }
-  function emit(action,detail){
-    const c=cue(action,detail); if(!c)return false;
-    if(DEV){history.push({action,kind:c.kind,gain:c.gain,at:Math.round(performance.now())});if(history.length>64)history.shift();}
-    AudioFX.play(c.kind,c.gain);return true;
-  }
-  return {cue,emit,history:()=>history.slice(),clear:()=>{history.length=0}};
+  return {ensure,play,haptic,startFriction,updateFriction,stopFriction,setBearing,stopBearing,catalog,patterns,get active(){return !!ctx}};
 })();
 
 function safeGet(k){ try{ return localStorage.getItem(k) }catch(_){ return null } }
@@ -1271,7 +1223,7 @@ const core = {
     if (!Rules.plan(S,m)) return false;
     const mm = {from:{zone:m.from.zone,index:m.from.index},to:{zone:m.to.zone,index:m.to.index},count:m.count==null?1:m.count};
     const res = transact('move',()=>Rules.apply(S,mm),o);
-    if (res && !o.instant){ FX.at(View.rectOf(mm.to.zone,mm.to.index)); CardVoice.emit('land',{zone:mm.to.zone,count:mm.count||1}); AudioFX.haptic(mm.to.zone==='foundation'?'foundation':((mm.count||1)>1?'stack':'drop')); }
+    if (res && !o.instant){ FX.at(View.rectOf(mm.to.zone,mm.to.index)); const ak=mm.to.zone==='foundation'?'foundation':((mm.count||1)>1?'stackDrop':'drop'); AudioFX.play(ak,Math.min(1.35,.8+(mm.count||1)*.05)); AudioFX.haptic(mm.to.zone==='foundation'?'foundation':((mm.count||1)>1?'stack':'drop')); }
     return !!res;
   },
   draw(o){
@@ -1373,37 +1325,17 @@ const Win = (()=>{
    FX — canvas ripples under the cards. The rAF loop only runs while something is animating.
    ======================================================================= */
 const FX = (()=>{
-  const cv=$('#fieldFx'),ctx=cv.getContext('2d'),rip=[],sparks=[]; let w=1,h=1,raf=0,lastGrid=0;
+  const cv=$('#fieldFx'),ctx=cv.getContext('2d'),rip=[],sparks=[]; let w=1,h=1,raf=0;
   const lowEnd=(navigator.deviceMemory||4)<=2||(navigator.hardwareConcurrency||4)<=2,maxRip=lowEnd?3:8;
   const rgb=[['24,202,215','255,34,54','231,173,67'],['20,145,160','210,40,55','150,104,35']];
   const col=(i,a)=>'rgba('+rgb[document.documentElement.dataset.theme==='light'?1:0][i%3]+','+a+')';
-  const GRID=Object.freeze({step:lowEnd?24:18,fps:lowEnd?18:30,spatial:.105,drift:.035,time:.00019,phaseNoise:1.55,speedNoise:.32,baseAlpha:lowEnd?.026:.034,ampAlpha:lowEnd?.035:.052});
-  function gridEnabled(){return !reducedMotion()&&Prefs.value.juice!=='minimal'&&!document.hidden}
-  // Simplex perturbs local phase AND local propagation rate so the grid breathes like a field, not synchronized rings.
-  function gridSample(gx,gy,ts,w0=w,h0=h){
-    const t=ts*GRID.time,px=gx*GRID.step,py=gy*GRID.step,cx=w0*.52,cy=h0*.46,dist=Math.hypot(px-cx,py-cy)/Math.max(1,Math.min(w0,h0));
-    const staticN=Simplex.noise(gx*GRID.spatial,gy*GRID.spatial),driftN=Simplex.noise(gx*GRID.drift+t*.72,gy*GRID.drift-t*.51);
-    const speed=1+staticN*GRID.speedNoise,phase=t*8.4*speed-dist*11.5+staticN*GRID.phaseNoise+driftN*.68;
-    const wave=.5+.5*Math.sin(phase),pulse=wave*wave*(3-2*wave);
-    return {phase,wave:pulse,alpha:GRID.baseAlpha+GRID.ampAlpha*pulse,radius:.55+1.05*pulse,speed};
-  }
-  function drawGrid(ts){
-    if(!gridEnabled())return;
-    const theme=document.documentElement.dataset.theme,ink=theme==='light'?'20,88,102':theme==='blacklight'?'91,206,255':'24,202,215';
-    const ox=(w%GRID.step)*.5,oy=(h%GRID.step)*.5;
-    for(let y=oy,gy=0;y<h;y+=GRID.step,gy++)for(let x=ox,gx=0;x<w;x+=GRID.step,gx++){
-      const q=gridSample(gx,gy,ts);ctx.fillStyle='rgba('+ink+','+q.alpha.toFixed(4)+')';ctx.beginPath();ctx.arc(x,y,q.radius,0,Math.PI*2);ctx.fill();
-    }
-  }
-  function resize(){const r=cv.getBoundingClientRect();w=Math.max(1,Math.round(r.width));h=Math.max(1,Math.round(r.height));const d=Math.min(devicePixelRatio||1,lowEnd?1:1.5);cv.width=Math.round(w*d);cv.height=Math.round(h*d);ctx.setTransform(d,0,0,d,0,0);wake()}
+  function resize(){const r=cv.getBoundingClientRect();w=Math.max(1,Math.round(r.width));h=Math.max(1,Math.round(r.height));const d=Math.min(devicePixelRatio||1,lowEnd?1:1.5);cv.width=Math.round(w*d);cv.height=Math.round(h*d);ctx.setTransform(d,0,0,d,0,0)}
   function wake(){if(!raf)raf=requestAnimationFrame(loop)}
   function loop(ts){
-    raf=0;const gridDue=gridEnabled()&&(ts-lastGrid>=1000/GRID.fps);
-    if(gridDue||rip.length||sparks.length){ctx.clearRect(0,0,w,h);drawGrid(ts);if(gridDue)lastGrid=ts;
-      for(let i=rip.length-1;i>=0;i--){const r=rip[i],age=(ts-r.born)/1000;r.r+=.9*r.p;r.a*=.963;if(age>1.55||r.a<.015){rip.splice(i,1);continue}ctx.strokeStyle=col(i,r.a*.48);ctx.lineWidth=1.15;ctx.beginPath();ctx.arc(r.x,r.y,r.r,0,Math.PI*2);ctx.stroke()}
-      for(let i=sparks.length-1;i>=0;i--){const p=sparks[i],age=(ts-p.born)/1000;if(age>p.life){sparks.splice(i,1);continue}p.x+=p.vx;p.y+=p.vy;p.vy+=.035;p.vx*=.992;const a=1-age/p.life;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot+=p.spin);ctx.fillStyle=col(p.c,a*.78);ctx.fillRect(-p.s*.5,-p.s*.18,p.s,p.s*.36);ctx.restore()}
-    }
-    if(gridEnabled()||rip.length||sparks.length)raf=requestAnimationFrame(loop);else ctx.clearRect(0,0,w,h)
+    raf=0;ctx.clearRect(0,0,w,h);
+    for(let i=rip.length-1;i>=0;i--){const r=rip[i],age=(ts-r.born)/1000;r.r+=.9*r.p;r.a*=.963;if(age>1.55||r.a<.015){rip.splice(i,1);continue}ctx.strokeStyle=col(i,r.a*.48);ctx.lineWidth=1.15;ctx.beginPath();ctx.arc(r.x,r.y,r.r,0,Math.PI*2);ctx.stroke()}
+    for(let i=sparks.length-1;i>=0;i--){const p=sparks[i],age=(ts-p.born)/1000;if(age>p.life){sparks.splice(i,1);continue}p.x+=p.vx;p.y+=p.vy;p.vy+=.035;p.vx*=.992;const a=1-age/p.life;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot+=p.spin);ctx.fillStyle=col(p.c,a*.78);ctx.fillRect(-p.s*.5,-p.s*.18,p.s,p.s*.36);ctx.restore()}
+    if(rip.length||sparks.length)raf=requestAnimationFrame(loop);else ctx.clearRect(0,0,w,h)
   }
   function burst(x,y,p=1,n){
     if(reducedMotion()||Prefs.value.juice==='minimal'||document.hidden)return;
@@ -1412,12 +1344,12 @@ const FX = (()=>{
     if(sparks.length>(lowEnd?50:150))sparks.splice(0,sparks.length-(lowEnd?50:150));wake();
   }
   return {
-    resize,gridSample,GRID,refresh:wake,
+    resize,
     at(rect,p){if(!rect||reducedMotion()||document.hidden)return;const x=rect.x+rect.w/2,y=rect.y+Math.min(rect.h/2,90);rip.push({x,y,r:4,a:.55,p:p||1.2,born:performance.now()});if(rip.length>maxRip)rip.shift();burst(x,y,p||1.2);wake()},
     celebrate(){if(reducedMotion()||Prefs.value.juice==='minimal')return;for(let i=0;i<8;i++)setTimeout(()=>burst(w*(.15+Math.random()*.7),h*(.18+Math.random()*.55),1.8,lowEnd?8:18),i*90)},
     get active(){return !!raf},get level(){return lowEnd?'low':Prefs.value.juice}
   };
-})();;;
+})();;
 
 
 /* =======================================================================
@@ -1443,47 +1375,62 @@ const ShuffleFX = (()=>{
 })();
 
 const Fidgets = (()=>{
-  const layer=$('#fidgets'); let st=null, active=null, raf=0, last=performance.now(), lastW=0, lastH=0, holdTimer=0, tailBucket=null;
-  const TAU=Math.PI*2, RAD2DEG=180/Math.PI;
-  // Earthborn spinner contract carried from the lab: substantial 84 g steel tri-spinner.
-  const Config=Object.freeze({
-    massKg:.084,outerRadiusM:.037,inertiaShapeFactor:.76,inertia:8.75e-5,
-    stopOmega:.14,frictionCoulombTorque:2.20e-4,frictionViscousTorque:2.60e-6,frictionAeroTorque:2.30e-8,
-    maxOmega:76,maxStep:.025,maxResumeDt:45,holdMs:1000,holdSlop:12,touchSpinGain:.68,
-    tapAngularImpulse:3.5e-4,wheelCurve:.84,wheelAngularGain:4.6e-6,maxWheelAngularImpulse:3.2e-4,maxWheelGestureAngularImpulse:2.0e-3,wheelGestureGapMs:185,
-    tailClickOmega:8.5,visualPad:18,audioScale:.70
-  });
-  const wheelGesture={lastAt:-Infinity,dir:0,total:0};
-  const wrapPi=a=>{while(a>Math.PI)a-=TAU;while(a<-Math.PI)a+=TAU;return a};
-  const sign=v=>v<0?-1:v>0?1:0;
-  function lossAlpha(w){const a=Math.abs(w);return (Config.frictionCoulombTorque+Config.frictionViscousTorque*a+Config.frictionAeroTorque*a*a)/Config.inertia}
-  function decayOmega(w,dt){const a=Math.abs(w);if(a<=Config.stopOmega)return 0;return sign(w)*Math.max(0,a-lossAlpha(w)*dt)}
-  function integrate(obj,dt){let remain=clamp(dt,0,Config.maxResumeDt);while(remain>1e-9){const h=Math.min(Config.maxStep,remain),before=obj.omega,after=decayOmega(before,h);obj.r+=((before+after)*.5)*h*RAD2DEG;obj.omega=after;remain-=h}}
-  function wheelAngularImpulse(raw,modeScale=1){const v=raw*modeScale;if(!v)return 0;return sign(v)*Math.min(Config.maxWheelAngularImpulse,Math.pow(Math.abs(v),Config.wheelCurve)*Config.wheelAngularGain)}
-  function markup(el){el.innerHTML='<div class="spinnerRotor" aria-hidden="true"><i class="spinnerWeb"></i><i class="spinnerLobe l1"><b></b></i><i class="spinnerLobe l2"><b></b></i><i class="spinnerLobe l3"><b></b></i><i class="spinnerHub"></i></div><span class="spinnerCap" aria-hidden="true"></span>';}
-  function bounds(){const r=View.el.board.getBoundingClientRect(),sz=st?.el.offsetWidth||64,p=Config.visualPad;return{r,sz,minX:p,minY:p,maxX:Math.max(p,r.width-sz-p),maxY:Math.max(p,r.height-sz-p)}}
-  function constrain(){if(!st)return;const b=bounds();st.x=clamp(st.x,b.minX,b.maxX);st.y=clamp(st.y,b.minY,b.maxY)}
-  function paint(){if(!st)return;const n=clamp(Math.abs(st.omega)/Config.maxOmega,0,1),rotor=st.el.querySelector('.spinnerRotor');st.el.dataset.x=st.x.toFixed(2);st.el.dataset.y=st.y.toFixed(2);st.el.dataset.r=st.r.toFixed(2);st.el.style.transform=`translate3d(${st.x.toFixed(2)}px,${st.y.toFixed(2)}px,0)`;st.el.style.setProperty('--rotor-deg',st.r.toFixed(2));st.el.style.setProperty('--spinner-blur',reducedMotion()?'0px':(n*n*.34).toFixed(3)+'px');st.el.style.setProperty('--spinner-sat',(1-n*.055).toFixed(3));if(rotor)rotor.style.transform=`rotate(${st.r.toFixed(2)}deg)`}
-  function reset(){if(!st)return;const b=bounds();st.x=clamp(b.r.width*.91-b.sz/2,b.minX,b.maxX);st.y=clamp(b.r.height*.18-b.sz/2,b.minY,b.maxY);st.r=-9;st.omega=0;paint()}
-  function angleFor(e){const br=st.el.getBoundingClientRect();return Math.atan2(e.clientY-(br.top+br.height/2),e.clientX-(br.left+br.width/2))}
-  function applyImpulse(delta,source='input'){if(!st||!Number.isFinite(delta)||!delta)return;st.omega=clamp(st.omega+delta,-Config.maxOmega,Config.maxOmega);AudioFX.ensure();AudioFX.play(source==='place'?'drop':'edge',(.18+.20*clamp(Math.abs(delta)/18,0,1))*Config.audioScale,{channel:'spinner'});AudioFX.setBearing(st.omega)}
-  function clearHold(){if(holdTimer){clearTimeout(holdTimer);holdTimer=0}}
-  function tick(now){const dt=Math.max(0,(now-last)/1000);last=now;if(st&&(!active||active.mode!=='spin')&&st.omega){integrate(st,dt);if(Math.abs(st.omega)<=Config.tailClickOmega&&st.omega){const bucket=Math.floor(st.r/120);if(tailBucket!==null&&bucket!==tailBucket)AudioFX.play('edge',.055*Config.audioScale,{channel:'spinner'});tailBucket=bucket}else tailBucket=null;paint()}if(st&&Math.abs(st.omega)>.02)AudioFX.setBearing(st.omega);else AudioFX.stopBearing();raf=requestAnimationFrame(tick)}
-  function init(){
-    layer.replaceChildren(); const el=document.createElement('div');el.className='fidget';el.dataset.kind='spinner';el.tabIndex=0;el.setAttribute('role','application');el.setAttribute('aria-label','Fidget spinner. Swipe or scroll over it to spin. Touch and hold or drag to reposition. Double click to recenter.');markup(el);layer.appendChild(el);
-    st={el,x:0,y:0,r:-9,omega:0};const br0=View.el.board.getBoundingClientRect();lastW=br0.width;lastH=br0.height;requestAnimationFrame(reset);
-    el.addEventListener('pointerdown',e=>{if(e.button!==undefined&&e.pointerType!=='touch'&&e.button!==0)return;e.preventDefault();AudioFX.ensure();clearHold();const br=View.el.board.getBoundingClientRect(),t=performance.now();active={mode:e.pointerType==='touch'?'pending':'move',id:e.pointerId,pointerType:e.pointerType||'mouse',downX:e.clientX,downY:e.clientY,lastX:e.clientX,lastY:e.clientY,lastA:angleFor(e),lastT:t,ox:e.clientX-br.left-st.x,oy:e.clientY-br.top-st.y};if(active.mode==='pending')holdTimer=setTimeout(()=>{if(active&&active.mode==='pending'){active.mode='move';AudioFX.play('contact',.18*Config.audioScale,{channel:'spinner'});AudioFX.haptic('fidget')}},Config.holdMs);else{AudioFX.play('contact',.22*Config.audioScale,{channel:'spinner'});AudioFX.haptic('fidget')}try{el.setPointerCapture(e.pointerId)}catch(_){}});
-    layer.addEventListener('pointermove',e=>{if(!active||e.pointerId!==active.id)return;e.preventDefault();const now=performance.now(),dt=Math.max(.008,(now-active.lastT)/1000),travel=Math.hypot(e.clientX-active.downX,e.clientY-active.downY);if(active.mode==='pending'&&travel>Config.holdSlop){clearHold();active.mode='spin';active.lastA=angleFor(e)}if(active.mode==='spin'){const a=angleFor(e),da=wrapPi(a-active.lastA),target=clamp((da/dt)*Config.touchSpinGain,-Config.maxOmega,Config.maxOmega);st.r+=da*RAD2DEG;st.omega=st.omega*.18+target*.82;active.lastA=a;AudioFX.setBearing(st.omega);paint()}else if(active.mode==='move'){const br=View.el.board.getBoundingClientRect();st.x=e.clientX-br.left-active.ox;st.y=e.clientY-br.top-active.oy;constrain();paint()}active.lastX=e.clientX;active.lastY=e.clientY;active.lastT=now});
-    const end=e=>{if(!active||e.pointerId!==active.id)return;clearHold();const was=active.mode,travel=Math.hypot(e.clientX-active.downX,e.clientY-active.downY);if(was==='pending'&&travel<Config.holdSlop)applyImpulse(Config.tapAngularImpulse/Config.inertia,'tap');else if(was==='move')AudioFX.play('drop',.25*Config.audioScale,{channel:'spinner'});active=null;paint()};
-    layer.addEventListener('pointerup',end);layer.addEventListener('pointercancel',end);
-    el.addEventListener('wheel',e=>{e.preventDefault();AudioFX.ensure();const now=performance.now(),raw=Math.abs(e.deltaY)>=Math.abs(e.deltaX)?-e.deltaY:e.deltaX,modeScale=e.deltaMode===1?16:e.deltaMode===2?innerHeight:1,requested=wheelAngularImpulse(raw,modeScale),dir=sign(requested);if(!dir)return;const fresh=now-wheelGesture.lastAt>Config.wheelGestureGapMs||dir!==wheelGesture.dir;if(fresh){wheelGesture.dir=dir;wheelGesture.total=0}const room=Math.max(0,Config.maxWheelGestureAngularImpulse-wheelGesture.total),j=dir*Math.min(Math.abs(requested),room);wheelGesture.total+=Math.abs(j);wheelGesture.lastAt=now;if(j){st.omega=clamp(st.omega+j/Config.inertia,-Config.maxOmega,Config.maxOmega);AudioFX.setBearing(st.omega)}paint()},{passive:false});
-    el.addEventListener('dblclick',reset);el.addEventListener('contextmenu',e=>e.preventDefault());
-    el.addEventListener('keydown',e=>{let handled=true;if(e.key===' '||e.key==='Enter')applyImpulse((e.shiftKey?-1:1)*(1.55e-3/Config.inertia),'keyboard');else if(e.key==='ArrowLeft')st.x-=8;else if(e.key==='ArrowRight')st.x+=8;else if(e.key==='ArrowUp')st.y-=8;else if(e.key==='ArrowDown')st.y+=8;else handled=false;if(handled){e.preventDefault();constrain();paint()}});
-    raf=requestAnimationFrame(tick);
+  const layer=$('#fidgets'), states=new Map(); let active=null, raf=0, last=performance.now(), lastW=0, lastH=0;
+  const defs=[{kind:'coin',label:'FTS',x:.94,y:.82},{kind:'crystal',label:'',x:.055,y:.79},{kind:'spinner',label:'',x:.93,y:.18}];
+  const wrapPi=a=>{while(a>Math.PI)a-=Math.PI*2;while(a<-Math.PI)a+=Math.PI*2;return a};
+  function markup(el,d){
+    if(d.kind!=='spinner'){el.textContent=d.label;return;}
+    el.innerHTML='<div class="spinnerRotor" aria-hidden="true"><i class="spinnerWeb"></i><i class="spinnerLobe l1"><b></b></i><i class="spinnerLobe l2"><b></b></i><i class="spinnerLobe l3"><b></b></i><i class="spinnerHub"></i></div><span class="spinnerCap" aria-hidden="true"></span>';
   }
-  function relayout(){if(!st)return;const r=View.el.board.getBoundingClientRect(),sx=lastW?r.width/lastW:1,sy=lastH?r.height/lastH:1;st.x*=sx;st.y*=sy;constrain();paint();lastW=r.width;lastH=r.height}
-  function coastTime(w0=Config.maxOmega){const q={omega:w0,r:0},dt=.05;let t=0;while(Math.abs(q.omega)>0&&t<300){integrate(q,dt);t+=dt}return t}
-  return {init,relayout,Config,decayOmega,coastTime,get count(){return st?1:0},get state(){return st?{x:st.x,y:st.y,r:st.r,omega:st.omega}:null}};
+  function paint(st){
+    const el=st.el; el.dataset.x=st.x.toFixed(2);el.dataset.y=st.y.toFixed(2);el.dataset.r=st.r.toFixed(2);
+    el.style.transform=`translate3d(${st.x.toFixed(2)}px,${st.y.toFixed(2)}px,0)`;
+    if(st.kind==='spinner'){const rotor=el.querySelector('.spinnerRotor');if(rotor)rotor.style.transform=`rotate(${st.r.toFixed(2)}deg)`;}
+    else el.style.rotate=st.r.toFixed(2)+'deg';
+  }
+  function bounds(st){const r=View.el.board.getBoundingClientRect(),sz=st.el.offsetWidth||40;return{r,sz,maxX:Math.max(4,r.width-sz-4),maxY:Math.max(4,r.height-sz-4)}}
+  function reset(st,i){const b=bounds(st),d=defs[i];st.x=clamp(b.r.width*d.x-b.sz/2,6,b.maxX-2);st.y=clamp(b.r.height*d.y-b.sz/2,6,b.maxY-2);st.vx=st.vy=st.omega=0;st.r=i===1?17:-9;paint(st)}
+  function angleFor(e,st){const br=st.el.getBoundingClientRect(),cx=br.left+br.width/2,cy=br.top+br.height/2;return Math.atan2(e.clientY-cy,e.clientX-cx)}
+  function tick(now){
+    const dt=Math.min(.035,Math.max(.001,(now-last)/1000));last=now;let spinnerSpeed=0;
+    states.forEach(st=>{
+      if(active&&active.st===st)return;
+      if(st.kind==='spinner'){
+        st.r+=st.omega*dt*57.2958; st.omega*=Math.exp(-dt*.42); if(Math.abs(st.omega)<.015)st.omega=0; spinnerSpeed=Math.max(spinnerSpeed,Math.abs(st.omega)); if(st.omega)paint(st);
+      }else if(Math.abs(st.vx)+Math.abs(st.vy)+Math.abs(st.omega)>.08){
+        const b=bounds(st);st.x+=st.vx*dt;st.y+=st.vy*dt;st.r+=st.omega*dt;const damp=Math.exp(-dt*3.7);st.vx*=damp;st.vy*=damp;st.omega*=Math.exp(-dt*4.5);
+        if(st.x<4||st.x>b.maxX){st.x=clamp(st.x,4,b.maxX);st.vx*=-.38} if(st.y<4||st.y>b.maxY){st.y=clamp(st.y,4,b.maxY);st.vy*=-.38} paint(st);
+      }
+    });
+    if(spinnerSpeed>.02)AudioFX.setBearing(spinnerSpeed);else AudioFX.stopBearing(); raf=requestAnimationFrame(tick);
+  }
+  function init(){
+    const br0=View.el.board.getBoundingClientRect();lastW=br0.width;lastH=br0.height;
+    defs.forEach((d,i)=>{
+      const el=document.createElement('div');el.className='fidget';el.dataset.kind=d.kind;el.setAttribute('aria-label',d.kind==='spinner'?'Three-lobe bearing fidget spinner':'Decorative table fidget');markup(el,d);layer.appendChild(el);
+      const st={el,kind:d.kind,x:0,y:0,r:0,vx:0,vy:0,omega:0,index:i};states.set(el,st);requestAnimationFrame(()=>reset(st,i));
+      el.addEventListener('pointerdown',e=>{
+        if(e.button!==undefined&&e.button!==0)return;AudioFX.ensure();const br=View.el.board.getBoundingClientRect(),t=performance.now();
+        if(d.kind==='spinner')active={mode:'spin',st,id:e.pointerId,lastA:angleFor(e,st),lastT:t};
+        else active={mode:'move',st,id:e.pointerId,ox:e.clientX-br.left-st.x,oy:e.clientY-br.top-st.y,lastX:e.clientX,lastY:e.clientY,lastT:t};
+        st.vx=st.vy=0;AudioFX.play('contact',.42);AudioFX.haptic('fidget');try{el.setPointerCapture(e.pointerId)}catch(_){}
+      });
+      el.addEventListener('dblclick',()=>reset(st,i));
+    });
+    layer.addEventListener('pointermove',e=>{
+      if(!active||e.pointerId!==active.id)return;e.preventDefault();const st=active.st,now=performance.now(),dt=Math.max(8,now-active.lastT)/1000;
+      if(active.mode==='spin'){
+        const a=angleFor(e,st),da=wrapPi(a-active.lastA);st.r+=da*57.2958;st.omega=clamp(da/dt,-26,26);active.lastA=a;active.lastT=now;paint(st);AudioFX.setBearing(st.omega);
+      }else{
+        const br=View.el.board.getBoundingClientRect(),b=bounds(st),nx=clamp(e.clientX-br.left-active.ox,4,b.maxX),ny=clamp(e.clientY-br.top-active.oy,4,b.maxY);
+        st.vx=(e.clientX-active.lastX)/dt;st.vy=(e.clientY-active.lastY)/dt;st.omega=clamp(st.vx*.035,-220,220);st.x=nx;st.y=ny;active.lastX=e.clientX;active.lastY=e.clientY;active.lastT=now;paint(st);AudioFX.play('slide',.24);
+      }
+    });
+    const end=e=>{if(!active||e.pointerId!==active.id)return;const st=active.st;if(active.mode==='move'){AudioFX.play('drop',.36);AudioFX.haptic('fidget')}else{AudioFX.play('edge',.22)}active=null};
+    layer.addEventListener('pointerup',end);layer.addEventListener('pointercancel',end);raf=requestAnimationFrame(tick);
+  }
+  function relayout(){const r=View.el.board.getBoundingClientRect(),sx=lastW?r.width/lastW:1,sy=lastH?r.height/lastH:1;states.forEach(st=>{const b=bounds(st);st.x=clamp(st.x*sx,4,b.maxX);st.y=clamp(st.y*sy,4,b.maxY);paint(st)});lastW=r.width;lastH=r.height}
+  return {init,relayout,get count(){return states.size}};
 })();
 
 /* =======================================================================
@@ -1681,12 +1628,21 @@ const View = (()=>{
     if(el.style.getPropertyValue('--halo-y')!==sy)el.style.setProperty('--halo-y',sy);
     const v='translate3d('+r2(rc.x-hx)+'px,'+r2(rc.y-hy)+'px,0)';if(el.style.transform!==v)el.style.transform=v;
   }
-  // Visibility contract: hit-testing is generous, but never expose its capture geometry.
-  function showRings(targetsList,hoverKey){ /* intentional no-op; drag source itself glows */ }
-  function clearRings(){
-    for(const id in recs) recs[id].el.classList.remove('drop-ok','drop-hover');
-    for(const el of [...ringEls.foundation,...ringEls.tableau]) if(el.className!=='ring') el.className='ring';
+  function showRings(targetsList,hoverKey){
+    clearTargetCards();
+    const all = [];
+    for (let i=0;i<4;i++) all.push(['foundation',i,ringEls.foundation[i]]);
+    for (let i=0;i<7;i++) all.push(['tableau',i,ringEls.tableau[i]]);
+    for (const [z,i,el] of all){
+      const key = z+':'+i, ok = targetsList.includes(key), hover = key===hoverKey, card = (ok||hover)?destinationCard(z,i):null;
+      if(card) card.classList.add(hover?'drop-hover':'drop-ok');
+      const cls = hover ? 'ring hover' : ok ? 'ring ok' : 'ring';
+      if (el.className!==cls) el.className = cls;
+      if (ok||hover){ const rc = rectOf(z,i); placeRing(el,rc,DropMagnet.halo(rc)); }
+      else { el.style.setProperty('--halo-x','0px'); el.style.setProperty('--halo-y','0px'); }
+    }
   }
+  function clearRings(){ clearTargetCards(); for (const el of [...ringEls.foundation,...ringEls.tableau]){ if (el.className!=='ring') el.className = 'ring'; el.style.setProperty('--halo-x','0px'); el.style.setProperty('--halo-y','0px'); } }
 
   function showHint(m){
     clearTimeout(hintTimer); for (const id in recs) recs[id].el.classList.remove('hint'); clearRings();
@@ -1697,7 +1653,8 @@ const View = (()=>{
     else if (m.from.zone==='waste') ids = [S.waste[S.waste.length-1].id];
     else ids = [S.foundations[m.from.index][S.foundations[m.from.index].length-1].id];
     ids.forEach(id=>recs[id].el.classList.add('hint'));
-    // Hint remains a source-only glow; destination capture must not be visualized.
+    const ring = m.to.zone==='foundation' ? ringEls.foundation[m.to.index] : ringEls.tableau[m.to.index], rc = rectOf(m.to.zone,m.to.index);
+    ring.className = 'ring hint'; placeRing(ring,rc,null);
     hintTimer = setTimeout(()=>{ for (const id in recs) recs[id].el.classList.remove('hint'); clearRings(); },1700);
   }
   function nope(ids){ for (const id of ids){ const el = recs[id].el; el.classList.remove('nope'); void el.offsetWidth; el.classList.add('nope'); setTimeout(()=>el.classList.remove('nope'),260); } }
@@ -1713,9 +1670,9 @@ const View = (()=>{
    ======================================================================= */
 const DropMagnet = (()=>{
   // Contract: a rule-legal destination captures the lead card when the minimum distance between
-  // their axis-aligned outlines is <= 0.625 card widths (25% above the previous half-card). Independent of pointer
+  // their axis-aligned outlines is <= half a card width. This is deliberately independent of pointer
   // location, input device and tableau depth so mouse, pen and touch share one authorable rule.
-  const FRACTION=.625, EPS=.001;
+  const FRACTION=.5, EPS=.001;
   function gaps(a,b){
     return {dx:Math.max(0,b.x-(a.x+a.w),a.x-(b.x+b.w)),dy:Math.max(0,b.y-(a.y+a.h),a.y-(b.y+b.h))};
   }
@@ -1771,21 +1728,6 @@ const Input = (()=>{
     return best;
   }
 
-  function clickDestination(src,zone,index,point,cardEl){
-    const legal=legalTargets(src),direct=zone+':'+index;
-    if((zone==='foundation'||zone==='tableau')&&legal.includes(direct))return {zone,index};
-    if(cardEl||!point)return null; // never misinterpret a tap on another card
-    let best=null,score=Infinity;
-    for(const key of legal){
-      const [z,i]=key.split(':'),rc=View.rectOf(z,+i);if(!rc)continue;
-      const dx=Math.max(0,rc.x-point.x,point.x-(rc.x+rc.w));
-      const dy=Math.max(0,rc.y-point.y,point.y-(rc.y+rc.h));
-      const dist=Math.hypot(dx,dy),limit=DropMagnet.threshold(rc);
-      if(dist<=limit+DropMagnet.EPS&&dist<score){score=dist;best={zone:z,index:+i};}
-    }
-    return best;
-  }
-
   function onPointerDown(e){
     if (e.button!==undefined && e.button!==0) return;
     if (e.isPrimary===false) return;
@@ -1793,7 +1735,7 @@ const Input = (()=>{
     const cardEl = e.target.closest && e.target.closest('.card'); if (!cardEl) return;
     const loc = View.locate(cardEl.dataset.id); if (!loc || loc.zone==='stock') return;
     const src = sourceOf(loc.zone,loc.pile,loc.pos); if (!src) return;
-    const pt = View.boardPoint(e), now=performance.now(); // No audio on down: only a completed intent earns a sound.
+    const pt = View.boardPoint(e), now=performance.now(); AudioFX.play('contact',.72); AudioFX.haptic('touch');
     drag = {pointerId:e.pointerId, x0:pt.x, y0:pt.y, lastX:pt.x, lastY:pt.y, lastT:now, speed:0, src, ids:idsOf(src), active:false, legal:null, hover:null, el:cardEl};
     try{ cardEl.setPointerCapture(e.pointerId); }catch(_){}
   }
@@ -1802,13 +1744,13 @@ const Input = (()=>{
     const pt = View.boardPoint(e), dx = pt.x-d.x0, dy = pt.y-d.y0;
     if (!d.active){
       if (Math.hypot(dx,dy)<6) return;
-      d.active = true; d.legal = legalTargets(d.src); View.dragStart(d.ids); selected = null; CardVoice.emit('lift',{count:d.ids.length}); AudioFX.haptic('lift'); AudioFX.startFriction(d.ids.length*13+d.src.index);
+      d.active = true; d.legal = legalTargets(d.src); View.dragStart(d.ids); selected = null; AudioFX.play('skid',.72); AudioFX.play('withdraw',Math.min(1.1,.56+d.ids.length*.06)); AudioFX.play('lift',.64); AudioFX.haptic('lift'); AudioFX.startFriction(d.ids.length*13+d.src.index);
     }
     e.preventDefault();
     const now=performance.now(),dt=Math.max(8,now-d.lastT),stepX=pt.x-d.lastX,stepY=pt.y-d.lastY,inst=Math.hypot(stepX,stepY)/(dt/1000); d.speed=d.speed*.58+inst*.42;
-    View.dragMove(d.ids,dx,dy,stepX*.23); AudioFX.updateFriction(d.speed,.48,d.ids.length>1?.2:0);
-    const nextHover=bestDrop(d.legal,View.leadRect(d.ids,dx,dy),pt); if(nextHover&&nextHover!==d.hover)AudioFX.haptic('hover'); d.hover=nextHover;
-    d.lastX=pt.x;d.lastY=pt.y;d.lastT=now; // No target outlines or visible halos.
+    View.dragMove(d.ids,dx,dy,stepX*.23); AudioFX.updateFriction(d.speed,1,d.ids.length>1?.42:0);
+    const nextHover=bestDrop(d.legal,View.leadRect(d.ids,dx,dy),pt); if(nextHover&&nextHover!==d.hover){AudioFX.play('edge',.28);AudioFX.haptic('hover')} d.hover=nextHover;
+    d.lastX=pt.x;d.lastY=pt.y;d.lastT=now; View.showRings(d.legal,d.hover);
   }
   function finish(e,cancel){
     const d = drag; if (!d || (e.pointerId!==undefined && e.pointerId!==d.pointerId)) return;
@@ -1818,30 +1760,36 @@ const Input = (()=>{
     suppressUntil = performance.now()+320;
     const pt = View.boardPoint(e), dx = pt.x-d.x0, dy = pt.y-d.y0;
     const target = cancel ? null : bestDrop(d.legal,View.leadRect(d.ids,dx,dy),pt);
-    View.clearRings(); View.dragEnd(d.ids); AudioFX.stopFriction();
+    View.clearRings(); View.dragEnd(d.ids); AudioFX.stopFriction(); AudioFX.play('edge',.30);
     let moved = false;
     if (target){ const [z,i] = target.split(':'); moved = core.move(asMove(d.src,{zone:z,index:+i})); }
-    if (!moved){ if(!cancel){CardVoice.emit('reject'); AudioFX.haptic('reject');} View.sync({}); }                                  // dragEnd marked the cards dirty → they glide back
+    if (!moved){ AudioFX.play('nope',.7); AudioFX.haptic('reject'); View.sync({}); }                                  // dragEnd marked the cards dirty → they glide back
   }
 
   const isTarget = zone=>zone==='foundation'||zone==='tableau';
   function onClick(e){
-    if(performance.now()<suppressUntil||ShuffleFX.active)return;
-    AudioFX.ensure();Auto.cancel();
-    const cardEl=e.target.closest&&e.target.closest('.card'),point=View.boardPoint(e);
-    let zone=null,idx=-1,pos=-1;
-    if(cardEl){const loc=View.locate(cardEl.dataset.id);if(!loc)return;zone=loc.zone;idx=loc.pile;pos=loc.pos;}
-    else {const loc=View.zoneAt(point.x,point.y);if(loc){zone=loc.zone;idx=loc.index;}}
-    if(zone==='stock'){selected=null;core.draw();return;}
-    const src=cardEl?sourceOf(zone,idx,pos):null;
-    if(selected){
-      if(src&&sameSel(selected,src)){selected=null;View.sync({});return;}
-      const dest=clickDestination(selected,zone,idx,point,cardEl);
-      if(dest&&core.move(asMove(selected,dest)))return;
-      // Invalid destinations are quiet. Another movable card re-arms without a punitive beep.
+    if (performance.now()<suppressUntil) return;
+    if (ShuffleFX.active) return; AudioFX.ensure(); Auto.cancel();
+    const cardEl = e.target.closest && e.target.closest('.card');
+    let zone, idx, pos = -1;
+    if (cardEl){ const loc = View.locate(cardEl.dataset.id); if (!loc) return; zone = loc.zone; idx = loc.pile; pos = loc.pos; }
+    else {
+      const p = View.boardPoint(e), z = View.zoneAt(p.x,p.y);
+      if (!z){ if (selected){ selected = null; View.sync({}); } return; }
+      zone = z.zone; idx = z.index;
     }
-    if(src){selected=src;CardVoice.emit('select',{count:src.count});AudioFX.haptic('touch');View.sync({});}
-    else if(selected&&zone===null){selected=null;View.sync({});}
+    if (zone==='stock'){ core.draw(); return; }
+    const src = cardEl ? sourceOf(zone,idx,pos) : null;
+    if (selected){
+      if (src && sameSel(selected,src)){ selected = null; View.sync({}); return; }
+      const samePile = zone===selected.zone && idx===selected.index;
+      if (isTarget(zone) && !samePile){
+        if (core.move(asMove(selected,{zone,index:idx}))) return;
+        View.nope(idsOf(selected)); AudioFX.play('nope',.8);
+      }
+    }
+    if (src){ selected = src; if(cardEl){cardEl.classList.remove('fidget-pop');void cardEl.offsetWidth;cardEl.classList.add('fidget-pop');setTimeout(()=>cardEl.classList.remove('fidget-pop'),360)} View.sync({}); }
+    else if (selected && !isTarget(zone)){ selected = null; View.sync({}); }
   }
 
   function onDblClick(e){
@@ -1898,7 +1846,7 @@ const Input = (()=>{
     $('#themeBtn').onclick = toggleTheme;
     window.addEventListener('keydown',onKey);
   }
-  return {bind, clickDestination, get dragging(){ return !!(drag&&drag.active) }};
+  return {bind, get dragging(){ return !!(drag&&drag.active) }};
 })();
 
 
@@ -1912,26 +1860,12 @@ const Settings = (()=>{
     soundBtn.onclick=()=>{Prefs.set('sound',!Prefs.value.sound);if(Prefs.value.sound){AudioFX.ensure();AudioFX.play('drop',.45)}sync()};
     $('#setSound').onchange=e=>{Prefs.set('sound',e.target.checked);if(e.target.checked)AudioFX.ensure();sync()};
     $('#setVolume').oninput=e=>{Prefs.set('volume',+e.target.value);AudioFX.ensure()};
-    $('#setHaptics').onchange=e=>Prefs.set('haptics',e.target.checked);$('#setTactile').onchange=e=>Prefs.set('tactile',e.target.value);$('#setJuice').onchange=e=>{Prefs.set('juice',e.target.value);FX.refresh()};
+    $('#setHaptics').onchange=e=>Prefs.set('haptics',e.target.checked);$('#setTactile').onchange=e=>Prefs.set('tactile',e.target.value);$('#setJuice').onchange=e=>Prefs.set('juice',e.target.value);
     document.addEventListener('pointerdown',e=>{if(panel.classList.contains('show')&&!panel.contains(e.target)&&e.target!==btn)show(false)});
     document.addEventListener('keydown',e=>{if(e.key==='Escape'&&panel.classList.contains('show'))show(false)});
     sync();
   }
   return {bind,sync,show};
-})();
-
-/* ---------- responsive viewport contract: REF mobile gate ---------- */
-const Viewport = (()=>{
-  let raf=0;
-  function measure(){
-    const vv=window.visualViewport,w=Math.round(vv?.width||innerWidth),h=Math.round(vv?.height||innerHeight);
-    document.documentElement.style.setProperty('--app-h',Math.max(1,h)+'px');
-    document.documentElement.dataset.uvMobile=String(matchMedia('(pointer:coarse)').matches||w<=900);
-    return {w,h};
-  }
-  function sync(){cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{measure();if(View?.layout)View.relayout();Fidgets.relayout();});}
-  function bind(){measure();window.addEventListener('resize',sync,{passive:true});window.addEventListener('orientationchange',sync,{passive:true});if(window.visualViewport){visualViewport.addEventListener('resize',sync,{passive:true});visualViewport.addEventListener('scroll',sync,{passive:true});}const board=View.el.board;board.addEventListener('gesturestart',e=>e.preventDefault(),{passive:false});board.addEventListener('gesturechange',e=>e.preventDefault(),{passive:false});board.addEventListener('gestureend',e=>e.preventDefault(),{passive:false});}
-  return {bind,measure,sync};
 })();
 
 /* ---------- theme ---------- */
@@ -1976,11 +1910,7 @@ if (DEV) (()=>{
     card: id=>CARD[id]?CardSemantics.descriptor(id):null,
     faceFingerprint: id=>ASSETS[id]?fnv1aText(ASSETS[id]):null,
     dropProbe: (targetRect,cardRect)=>DropMagnet.probe('target',targetRect,cardRect),
-    dropHaloFraction: DropMagnet.FRACTION,
-    audioContract: ()=>({cardScale:AudioFX.CARD_AUDIO_SCALE,spinnerScale:AudioFX.SPINNER_AUDIO_SCALE,cues:CardVoice.history()}),
-    clearAudioTrace: ()=>CardVoice.clear(),
-    gestureCue: (action,detail)=>CardVoice.cue(action,detail),
-    captureClick: (source,target,point,isCard)=>Input.clickDestination(source,target&&target.zone,target&&target.index,point,!!isCard)
+    dropHaloFraction: DropMagnet.FRACTION
   };
   window.__KLONDIKE_TEST__ = hook;
   // Compatibility shim for tooling written against v4 (dev-only now).
@@ -2097,10 +2027,6 @@ if (DEV) (()=>{
   T('uv / blacklight is a FILTER over the card layer: #uvNeon (grade + bloom) and #uvNeonLite (grade only) exist, only the first blurs',()=>{ const a=document.querySelector('#uvNeon'),b=document.querySelector('#uvNeonLite'); return !!a&&!!b&&a.querySelectorAll('feGaussianBlur').length>=1&&b.querySelectorAll('feGaussianBlur').length===0&&a.querySelector('feColorMatrix')&&b.querySelector('feColorMatrix'); });
   T('uv / glow gate follows Visual-juice and reduced-motion',()=>document.documentElement.dataset.uvGlow===((Prefs.value.juice!=='minimal'&&!reducedMotion())?'on':'off'));
   T('uv / the filter is scoped: card layer + victory layer only, never the board, chrome or slots',()=>{ const h=document.documentElement.innerHTML; return /html\[data-theme="blacklight"\] \.cards,html\[data-theme="blacklight"\] \.victoryFX\{filter:url\(#uvNeonLite\)\}/.test(h) && !/html\[data-theme="blacklight"\] \.(board|slot|topbar|controls)\{[^}]*filter:/.test(h); });
-  T('uv / mobile has CSS-filter fallback independent of SVG filter rendering',()=>document.documentElement.innerHTML.includes('data-uv-mobile="true"')&&document.documentElement.innerHTML.includes('saturate(1.72) contrast(1.16) brightness(1.08)'));
-  T('responsive / dynamic app height follows visual viewport contract',()=>document.documentElement.innerHTML.includes('--app-h')&&typeof Viewport.measure==='function');
-  T('responsive / zoom lock covers viewport meta + board gesture suppression',()=>document.querySelector('meta[name="viewport"]')?.content.includes('user-scalable=no')&&String(Viewport.bind).includes('gesturestart'));
-  T('responsive / safe-area insets exist for portrait and short landscape chrome',()=>document.documentElement.innerHTML.includes('env(safe-area-inset-left)')&&document.documentElement.innerHTML.includes('env(safe-area-inset-bottom)'));
   T('layout / portrait foundations are centered top and stock + waste form a bottom thumb deck',()=>{const l=solveLayout(390,700,Rules.deal(Rules.orderFromSeed(2),1).tableau),mid=(l.foundationX[0]+l.foundationX[3]+l.cardW)/2;return l.mobile&&Math.abs(mid-195)<1&&l.stockY>l.tableauY+l.cardH&&l.wasteY===l.stockY&&l.stockX<l.wasteX});
   T('layout / portrait lanes manspread through tall boards instead of top-stacking',()=>[[320,480],[360,640],[390,700],[390,844],[430,932],[600,1024]].every(([w,h])=>{const l=solveLayout(w,h,Rules.deal(Rules.orderFromSeed(2),1).tableau);return l.mobile&&l.foundationY/h>=.045&&l.foundationY/h<=.14&&l.tableauY/h>=.24&&l.tableauY/h<=.39&&l.stockY/h>=.70&&l.stockY/h<=.86&&l.tableauY>=l.foundationY+l.cardH+l.rowGap-0.5&&l.stockY>=l.tableauY+l.cardH+l.rowGap-0.5;}));
   T('layout / vertical anchors consume added portrait height while card scale stays width-led',()=>{const a=solveLayout(390,640,Rules.deal(Rules.orderFromSeed(2),1).tableau),b=solveLayout(390,900,Rules.deal(Rules.orderFromSeed(2),1).tableau);return a.mobile&&b.mobile&&Math.abs(a.cardW-b.cardW)<.01&&b.foundationY>a.foundationY+8&&b.tableauY>a.tableauY+45&&b.stockY>a.stockY+150;});
@@ -2109,32 +2035,17 @@ if (DEV) (()=>{
   T('layout / landscape preserves generous symmetric outer gutters',()=>[[844,296],[1024,600],[1280,800],[1648,690],[1920,1080]].every(([w,h])=>{const l=solveLayout(w,h,Rules.deal(Rules.orderFromSeed(7),1).tableau),right=w-(l.originX+l.cardW*7+l.gap*6);return !l.mobile&&l.originX/w>=.065&&right/w>=.065&&Math.abs(l.originX-right)<.01;}));
   T('layout / compact portrait fallback remains collision-free',()=>[[280,300],[320,360],[360,390]].every(([w,h])=>{const l=solveLayout(w,h,Rules.deal(Rules.orderFromSeed(3),1).tableau);return l.mobile&&l.foundationY>=l.pad-.5&&l.tableauY>=l.foundationY+l.cardH+l.rowGap-.5&&l.stockY>=l.tableauY+l.cardH+l.rowGap-.5&&l.stockY+l.cardH<=h-l.pad+.5;}));
   T('cosmetic / simplex card pose is deterministic and bounded',()=>{const a=Simplex.pose('H7','tableau',3,5,84),b=Simplex.pose('H7','tableau',3,5,84);return JSON.stringify(a)===JSON.stringify(b)&&Math.abs(a.x)<4&&Math.abs(a.y)<4&&Math.abs(a.r)<3});
-  T('cosmetic / exactly one fidget exists and it is the spinner, never game state',()=>document.querySelectorAll('.fidget').length===1&&document.querySelectorAll('.fidget[data-kind="spinner"]').length===1&&document.querySelectorAll('#fidgets .card').length===0&&Rules.validate(S).length===0);
+  T('cosmetic / decorative fidgets are not card nodes or game-state cards',()=>document.querySelectorAll('.fidget').length===3&&document.querySelectorAll('#fidgets .card').length===0&&Rules.validate(S).length===0);
   T('cosmetic / spinner is a traditional three-lobe rotor with a stationary cap',()=>document.querySelectorAll('.fidget[data-kind="spinner"] .spinnerLobe').length===3&&document.querySelectorAll('.fidget[data-kind="spinner"] .spinnerCap').length===1);
-  T('spinner / lobe centers are an equilateral triad centered exactly on the hub pivot',()=>{const pts=[...document.querySelectorAll('.spinnerLobe')].map(e=>{const cs=getComputedStyle(e);return [parseFloat(cs.getPropertyValue('--cx')),parseFloat(cs.getPropertyValue('--cy'))]});if(pts.length!==3||pts.some(p=>p.some(v=>!Number.isFinite(v))))return false;const c=[50,50],rs=pts.map(p=>Math.hypot(p[0]-c[0],p[1]-c[1])),ds=[Math.hypot(pts[0][0]-pts[1][0],pts[0][1]-pts[1][1]),Math.hypot(pts[1][0]-pts[2][0],pts[1][1]-pts[2][1]),Math.hypot(pts[2][0]-pts[0][0],pts[2][1]-pts[0][1])];return Math.max(...rs)-Math.min(...rs)<.001&&Math.max(...ds)-Math.min(...ds)<.001;});
-  T('spinner / fixed-scene highlights counter-rotate against rotor angle',()=>document.documentElement.innerHTML.includes('rotate(calc(var(--rotor-deg) * -1deg))')&&Number.isFinite(Fidgets.state?.r??0));
-  T('field / simplex noise perturbs both grid phase and propagation speed',()=>{const a=FX.gridSample(8,11,1234,800,600),b=FX.gridSample(9,11,1234,800,600),c=FX.gridSample(8,11,2234,800,600);return Number.isFinite(a.phase)&&a.speed!==b.speed&&a.phase!==b.phase&&a.phase!==c.phase&&a.alpha>=0&&a.radius>0;});
-  T('field / animated grid is frame-capped and honors low-juice + reduced-motion gates',()=>FX.GRID.fps<=30&&FX.GRID.fps>=18&&String(FX.gridSample).includes('Simplex.noise')&&document.documentElement.innerHTML.includes("Prefs.value.juice!=='minimal'"));
-  T('spinner / Earthborn mass + inertia contract carried into Klondike',()=>Fidgets.Config.massKg===.084&&Fidgets.Config.inertia===8.75e-5&&Fidgets.Config.maxOmega===76);
-  T('spinner / hard-spin coast stays physical at 17-22 seconds',()=>{const t=Fidgets.coastTime();return t>=17&&t<=22});
-  T('spinner / voice is exactly 30 percent below source lab master',()=>Math.abs(AudioFX.SPINNER_AUDIO_SCALE-.70)<1e-12);
-  T('spinner / added rolling-body band occupies low-mid range',()=>document.documentElement.innerHTML.includes("bearingBody.filter.frequency.setTargetAtTime(285+soft*310"));
   T('sensory / ASMR catalog covers contact, friction, edge, stack, draw-three and bearing events',()=>['contact','skid','lift','finger','edge','withdraw','slide','drop','stackDrop','draw3','bearing'].every(k=>AudioFX.catalog.includes(k))&&!!AudioFX.patterns.foundation&&!!AudioFX.patterns.reject);
   T('layout / short landscape remains a seven-column desktop-style table',()=>[[568,240],[667,280],[740,320],[844,296],[896,390]].every(([w,h])=>{const l=solveLayout(w,h,Rules.deal(Rules.orderFromSeed(4),3).tableau);return !l.mobile&&l.stockY===l.foundationY&&l.tableauY>l.foundationY&&l.cardW*7+l.gap*6+l.pad*2<=w+.5}));
   T('cosmetic / shuffle ghosts are separate from the 52 persistent card nodes',()=>document.querySelectorAll('.shuffleCard').length===16&&document.querySelectorAll('.cards .card').length===52);
   T('sensory / simplex ASMR microtexture is deterministic, subtle and bounded',()=>{const a=ASMRTexture.sample(17.25,3),b=ASMRTexture.sample(17.25,3);return JSON.stringify(a)===JSON.stringify(b)&&a.gain>=.90&&a.gain<=1.10&&a.duration>=.92&&a.duration<=1.08&&a.tone>=.91&&a.tone<=1.09&&a.pitch>=.985&&a.pitch<=1.015&&a.grain>=.93&&a.grain<=1.07&&a.attack>=.72&&a.attack<=1.28&&Math.abs(a.pan)<=.0321&&Math.abs(a.delay)<=.0036});
   T('sensory / simplex grain is wired into transient attack, body and paper playback rate',()=>/attack=clamp\(\.005\*tex\.attack/.test(document.documentElement.innerHTML)&&/src\.playbackRate\.value=tex\.grain/.test(document.documentElement.innerHTML)&&/cut\*tex\.grain/.test(document.documentElement.innerHTML));
   T('sensory / generated paper-noise buffer carries a slow simplex fiber envelope',()=>/fiber=\.89\+Simplex\.noise\(i\/3400,6\.2\)\*\.11/.test(document.documentElement.innerHTML));
-  T('input / invisible halo 25% larger than original half-card margin',()=>{const rc={x:300,y:180,w:100,h:140},edge={x:137.5,y:180,w:100,h:140},inward={x:137.501,y:180,w:100,h:140},outside={x:137.3,y:180,w:100,h:140};return DropMagnet.FRACTION===.625&&DropMagnet.probe('tableau',rc,edge).accept&&DropMagnet.probe('tableau',rc,inward).accept&&!DropMagnet.probe('tableau',rc,outside).accept;});
-  T('input / capture probes Euclidean diagonal edge distances',()=>{const rc={x:300,y:180,w:100,h:140},diagonal=(gap)=>({x:200-gap/Math.sqrt(2),y:40-gap/Math.sqrt(2),w:100,h:140});return DropMagnet.probe('tableau',rc,diagonal(62.4)).accept&&!DropMagnet.probe('tableau',rc,diagonal(62.7)).accept;});
-  T('fuzz / 18000 arbitrary drop rectangles match independent 0.625-width oracle',()=>{let q=0x71c0ffee;const R=()=>{q=(Math.imul(q,1664525)+1013904223)>>>0;return q/4294967296};for(let n=0;n<18000;n++){const w=28+R()*110,h=w*1.4,rc={x:R()*800,y:R()*600,w,h},r={x:R()*900-50,y:R()*700-50,w,h},dx=Math.max(0,rc.x-(r.x+r.w),r.x-(rc.x+rc.w)),dy=Math.max(0,rc.y-(r.y+r.h),r.y-(rc.y+rc.h)),expect=Math.hypot(dx,dy)<=w*.625+DropMagnet.EPS,got=DropMagnet.probe('tableau',rc,r).accept;if(got!==expect)return false;}return true;});
-  T('audio / card bus is -7.1dB while spinner remains original 0.70 master voice',()=>AudioFX.CARD_AUDIO_SCALE===.44&&AudioFX.SPINNER_AUDIO_SCALE===.70);
-  T('audio / one semantic landing cue handles single card, tableau run and foundation',()=>CardVoice.cue('land',{zone:'tableau',count:1}).kind==='drop'&&CardVoice.cue('land',{zone:'tableau',count:5}).kind==='stackDrop'&&CardVoice.cue('land',{zone:'foundation',count:1}).kind==='foundation');
-  T('audio / picking, lifting, canceling and rejecting each have restrained contracts',()=>CardVoice.cue('select').gain<.3&&CardVoice.cue('lift').gain<.4&&CardVoice.cue('reject').kind==='skid'&&CardVoice.cue('cancel')===null);
-  T('audio / click-to-move never plays a selection contact on pointerdown',()=>!String(Input.bind).includes("AudioFX.play('contact'")&&!String(Input.clickDestination).includes('AudioFX.play'));
-  T('input / tap preference is exact legal target first, fuzzy only on empty felt',()=>{const rc=View.rectOf('tableau',0);if(!rc)return false;const source={zone:'waste',index:0,count:1},illegal=Input.clickDestination(source,'invalid',-1,{x:rc.x-10000,y:rc.y},false);return illegal===null;});
-  T('render / destination halos and hint rings remain invisible in all lighting modes',()=>['ok','hover','hint'].every(k=>{const e=document.querySelector('.ring'),was=e.className;e.className='ring '+k;const good=getComputedStyle(e).display==='none';e.className=was;return good;}));
-  T('render / target outlines are never assigned during drag',()=>!String(View.showRings).includes('destinationCard')&&!String(View.showRings).includes('drop-hover'));
+  T('input / legal capture radius is exactly half a card width from outline to outline',()=>{const rc={x:300,y:180,w:100,h:140},at={x:150,y:180,w:100,h:140},inside={x:150.001,y:180,w:100,h:140},outside={x:149.8,y:180,w:100,h:140};const a=DropMagnet.probe('tableau',rc,at),b=DropMagnet.probe('tableau',rc,inside),c=DropMagnet.probe('tableau',rc,outside);return DropMagnet.FRACTION===.5&&Math.abs(a.distance-50)<.001&&a.accept&&b.accept&&!c.accept;});
+  T('input / half-card capture uses outline distance, including diagonal misses',()=>{const rc={x:300,y:180,w:100,h:140},near={x:164.65,y:4.65,w:100,h:140},far={x:164,y:4,w:100,h:140};return DropMagnet.probe('tableau',rc,near).accept&&!DropMagnet.probe('tableau',rc,far).accept;});
+  T('fuzz / 8000 random drop rectangles agree with an independent half-card distance oracle',()=>{let q=0x71c0ffee;const R=()=>{q=(Math.imul(q,1664525)+1013904223)>>>0;return q/4294967296};for(let n=0;n<8000;n++){const w=28+R()*110,h=w*1.4,rc={x:R()*800,y:R()*600,w,h},r={x:R()*900-50,y:R()*700-50,w,h},dx=Math.max(0,rc.x-(r.x+r.w),r.x-(rc.x+rc.w)),dy=Math.max(0,rc.y-(r.y+r.h),r.y-(rc.y+rc.h)),expect=Math.hypot(dx,dy)<=w*.5+DropMagnet.EPS,got=DropMagnet.probe('tableau',rc,r).accept;if(got!==expect)return false;}return true;});
   T('settings / visual juice + tactile mix are valid and sound preference is boolean',()=>['rich','balanced','minimal'].includes(Prefs.value.juice)&&['studio','warm','quiet'].includes(Prefs.value.tactile)&&typeof Prefs.value.sound==='boolean');
 
 
@@ -2143,8 +2054,9 @@ if (DEV) (()=>{
   T('winfx / celebration budget scales 0, 12, 28, 52 by motion and device',()=>VictoryBudget.forProfile(8,8,'rich',true)===0&&VictoryBudget.forProfile(2,8,'rich',false)===12&&VictoryBudget.forProfile(4,4,'rich',false)===28&&VictoryBudget.forProfile(8,8,'rich',false)===52);
   T('winfx / celebration uses compositor card proxies, not authoritative card nodes',()=>document.querySelectorAll('.victoryCard').length===0&&document.querySelectorAll('.cards .card').length===52&&String(WinFX.play).includes('el.animate(['));
   T('drag / moving a tableau run uses local stack order for z-levels',()=>{const x=String(View.dragStart);return x.includes('ids.forEach((id,i)=>')&&x.includes('1200+i')&&!x.includes('IDS.indexOf');});
-  T('targets / ring sizing geometry remains 0.625-card even though never painted',()=>{const l=View.layout;if(!l)return false;const h=DropMagnet.halo({w:l.cardW,h:l.cardH});return Math.abs(h.x-l.cardW*.625)<.001&&Math.abs(h.y-l.cardW*.625)<.001;});
-  T('targets / only the source gets the selected or dragging glow',()=>{const el=document.querySelector('.card');return !!el&&getComputedStyle(el).outlineStyle!==''&&!document.querySelector('.card.drop-ok,.card.drop-hover');});
+  T('targets / occupied legal destinations outline the card and still show the expanded capture halo',()=>{const e=document.querySelector('.card'),had=e.classList.contains('drop-ok');e.classList.add('drop-ok');const off=getComputedStyle(e).outlineOffset,w=getComputedStyle(e).outlineWidth;if(!had)e.classList.remove('drop-ok');return String(View.showRings).includes('destinationCard')&&String(View.showRings).includes("card.classList.add(hover?'drop-hover':'drop-ok')")&&String(View.showRings).includes('DropMagnet.halo')&&off==='1px'&&w==='1px';});
+  T('targets / legal ring expands by half a card on every side',()=>{const l=View.layout;if(!l)return false;const e=document.querySelector('.ring'),c=e.className,old=e.getAttribute('style')||'';const h=DropMagnet.halo({w:l.cardW,h:l.cardH});e.style.setProperty('--halo-x',h.x+'px');e.style.setProperty('--halo-y',h.y+'px');e.className='ring ok';const st=getComputedStyle(e),w=parseFloat(st.width),hh=parseFloat(st.height);e.className=c;e.setAttribute('style',old);return Math.abs(w-l.cardW*2)<1&&Math.abs(hh-(l.cardH+l.cardW))<1;});
+
   T('assets / 54 images decoded, every one 250×350 (5:7), none failed',()=>Assets.ok===54 && !Assets.failed.length && Object.values(Assets.dims).every(([w,h])=>w===250&&h===350));
   T('assets / every card face and back renders atlas art (no text fallbacks)',()=>{ const cs = [...document.querySelectorAll('.card')]; return cs.length===52 && cs.every(e=>{ const f = e.querySelector('.front'), b = e.querySelector('.back'); return !f.classList.contains('noart') && /url\(/.test(getComputedStyle(f).backgroundImage) && /url\(/.test(getComputedStyle(b).backgroundImage); }); });
   T('a11y / every card node exposes canonical suit, rank and playing-card semantics independent of art',()=>[...document.querySelectorAll('.card')].every(e=>{const id=e.dataset.id;return CARD[id]&&e.dataset.suit===CARD[id].suit&&+e.dataset.rank===CARD[id].rank&&e.getAttribute('aria-roledescription')==='playing card';}));
@@ -2222,7 +2134,7 @@ async function boot(){
   if (seedParam!=null && Number.isFinite(seedParam)) S = Rules.deal(Rules.orderFromSeed(seedParam>>>0),savedDraw), S.seed = seedParam>>>0;
   else S = restored || Rules.deal(Rules.orderRandom(),savedDraw);
   const fresh = !restored;
-  Input.bind(); Settings.bind(); Prefs.apply(); Viewport.bind(); Fidgets.init();
+  Input.bind(); Settings.bind(); Fidgets.init(); Prefs.apply();
   if ('ResizeObserver' in window){ let raf = 0; new ResizeObserver(()=>{ cancelAnimationFrame(raf); raf = requestAnimationFrame(()=>View.relayout()); }).observe(View.el.board); }
   else window.addEventListener('resize',()=>View.relayout());
   Clock.resume();
@@ -2231,7 +2143,7 @@ async function boot(){
   FX.resize(); View.ready();
   if (fresh && !reducedMotion()) core.newGame({order:S.deal,drawMode:S.drawMode,seed:S.seed,quiet:true});
   setInterval(()=>HUD.time(),250);
-  document.addEventListener('visibilitychange',()=>{ if (document.hidden){ Clock.pause(); Store.flush(()=>S); } else { Clock.resume(); FX.refresh(); } });
+  document.addEventListener('visibilitychange',()=>{ if (document.hidden){ Clock.pause(); Store.flush(()=>S); } else Clock.resume(); });
   window.addEventListener('pagehide',()=>{ Clock.pause(); Store.flush(()=>S); });
   if (DEV){
     if (QA) requestAnimationFrame(()=>requestAnimationFrame(()=>Dev.runRegression()));
