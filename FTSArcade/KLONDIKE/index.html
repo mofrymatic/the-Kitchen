@@ -396,32 +396,106 @@ html[data-theme="blacklight"]{
   color-scheme:dark;
   --bg:#020108;--panel:#06040f;--line:#211b37;--ink:#f3efff;--muted:#81769e;
   --cyan:#39f7ff;--red:#ff2e75;--gold:#c9a7ff;--green:#62ffbe;
-  --felt:#061421;--felt2:#0a2432;--felt3:#02050d;--brass:#6d5ba8;--brass-hi:#bfefff;--marble:#020107;
+  --felt:#050a18;--felt2:#071c2a;--felt3:#01030a;--brass:#6d5ba8;--brass-hi:#bfefff;--marble:#020107;
   --edge:rgba(164,226,255,.42);--back-img:var(--back-dark,none);
+  /* FTS Poster palette, treated as fluorescent ink under UV rather than daytime UI chrome. */
+  --uv-cyan:#39f7ff;--uv-magenta:#ff2e75;--uv-lime:#c8ff43;--uv-violet:#9a6cff;--uv-orange:#ff9b3d;--uv-paper:#f8edff;
 }
 html[data-theme="blacklight"] body{background:#010006}
-html[data-theme="blacklight"] .app{background:radial-gradient(circle at 50% 0,rgba(99,50,255,.13),transparent 34%),linear-gradient(180deg,#05020d,#010104 74%)}
+html[data-theme="blacklight"] .app{background:
+  radial-gradient(circle at 18% 0,rgba(57,247,255,.08),transparent 24%),
+  radial-gradient(circle at 82% 0,rgba(255,46,117,.08),transparent 26%),
+  radial-gradient(circle at 50% -8%,rgba(154,108,255,.18),transparent 38%),
+  linear-gradient(180deg,#05020d,#010104 74%)}
 html[data-theme="blacklight"] .topbar,html[data-theme="blacklight"] .gameHead,html[data-theme="blacklight"] .controls{background:rgba(3,2,8,.95);border-color:#211a35}
 html[data-theme="blacklight"] .themeBtn,html[data-theme="blacklight"] .drawSelect,html[data-theme="blacklight"] .utilityBtn{background:#06030f;border-color:#2e2450;color:#cbc0e7}
-html[data-theme="blacklight"] .board{background:#010208}
-html[data-theme="blacklight"] .board::before{filter:saturate(1.25) brightness(.75);box-shadow:0 0 0 1px rgba(106,83,174,.72),0 0 0 4px rgba(86,56,160,.14),inset 0 0 0 1px rgba(110,233,255,.10),inset 0 0 90px rgba(0,0,0,.84),0 16px 68px rgba(0,0,0,.66)}
-html[data-theme="blacklight"] .slot{border-color:rgba(160,129,237,.28);background:rgba(1,2,9,.25)}
-html[data-theme="blacklight"] .slot::after{color:rgba(128,224,255,.28);text-shadow:0 0 10px rgba(84,196,255,.16)}
-/* UV = ONE filter over the whole card layer: grade (paper → fluorescent violet, inks → hot neon, blacks → indigo) + bloom.
-   It replaces five per-card drop-shadow chains (52 filter passes per frame → 1). #uvNeonLite is the same grade without the blur pass
-   (Visual juice = Minimal, or prefers-reduced-motion). Chrome, slots and the table stay unfiltered. */
+html[data-theme="blacklight"] .themeBtn[aria-pressed="true"]{color:var(--uv-cyan);border-color:rgba(57,247,255,.65);box-shadow:0 0 0 1px rgba(255,46,117,.16),0 0 14px rgba(57,247,255,.18),inset 0 0 13px rgba(154,108,255,.12);text-shadow:0 0 9px rgba(57,247,255,.72)}
+html[data-theme="blacklight"] .brandMark{color:var(--uv-magenta);border-color:rgba(57,247,255,.42);box-shadow:inset 0 0 10px rgba(154,108,255,.12),0 0 10px rgba(255,46,117,.10)}
+html[data-theme="blacklight"] .gameIcon{color:var(--uv-paper);text-shadow:2px 0 var(--uv-cyan),-2px 0 var(--uv-magenta),0 0 10px rgba(154,108,255,.75)}
+html[data-theme="blacklight"] .board{
+  background:
+    radial-gradient(ellipse at 50% 22%,rgba(57,247,255,.035),transparent 34%),
+    radial-gradient(ellipse at 18% 72%,rgba(255,46,117,.024),transparent 28%),
+    linear-gradient(125deg,rgba(200,255,67,.018),transparent 24% 70%,rgba(154,108,255,.028)),
+    #010208;
+}
+/* The table remains materially legible under UV: velvet/felt weave plus an engraved, poster-ink frame. */
+html[data-theme="blacklight"] .board::before{
+  filter:none;
+  border:1px solid rgba(57,247,255,.72);
+  background:
+    radial-gradient(circle at 13% 17%,rgba(200,255,67,.055) 0 1px,transparent 1.25px) 0 0/7px 7px,
+    repeating-linear-gradient(94deg,rgba(57,247,255,.016) 0 1px,transparent 1px 4px),
+    repeating-linear-gradient(4deg,rgba(255,46,117,.012) 0 1px,transparent 1px 5px),
+    radial-gradient(ellipse at 42% 18%,rgba(16,79,92,.48),transparent 45%),
+    linear-gradient(145deg,#0a2432,#050a18 48%,#01030a);
+  box-shadow:
+    0 0 0 1px rgba(255,46,117,.62),
+    0 0 0 3px rgba(154,108,255,.30),
+    0 0 0 6px rgba(200,255,67,.08),
+    0 0 24px rgba(57,247,255,.18),
+    inset 0 0 0 1px rgba(200,255,67,.12),
+    inset 0 0 36px rgba(57,247,255,.045),
+    inset 0 0 100px rgba(0,0,0,.86),
+    0 18px 72px rgba(0,0,0,.72);
+}
+html[data-theme="blacklight"] .board::after{
+  display:block;
+  border:1px solid rgba(154,108,255,.34);
+  background:
+    radial-gradient(ellipse at 50% 46%,transparent 0 48%,rgba(57,247,255,.065) 48.3% 48.55%,transparent 48.9% 57%,rgba(255,46,117,.052) 57.25% 57.5%,transparent 57.9%),
+    repeating-radial-gradient(ellipse at 50% 50%,transparent 0 28px,rgba(200,255,67,.027) 29px 30px,transparent 31px 42px),
+    repeating-linear-gradient(31deg,transparent 0 58px,rgba(154,108,255,.032) 59px 60px,transparent 61px 118px),
+    repeating-linear-gradient(149deg,transparent 0 74px,rgba(57,247,255,.026) 75px 76px,transparent 77px 146px);
+  box-shadow:inset 0 0 25px rgba(154,108,255,.10),0 0 18px rgba(57,247,255,.06);
+  mix-blend-mode:screen;opacity:.88;animation:uvEtchDrift 18s linear infinite;
+}
+@keyframes uvEtchDrift{to{background-position:0 0,5px -7px,18px 0,-14px 0}}
+html[data-theme="blacklight"] .slot{border-color:rgba(57,247,255,.38);background:radial-gradient(circle at 50% 40%,rgba(154,108,255,.08),transparent 52%),rgba(1,2,9,.22);box-shadow:inset 0 0 18px rgba(0,0,0,.46),0 0 8px rgba(57,247,255,.045)}
+html[data-theme="blacklight"] .slot:nth-child(3n+1){border-color:rgba(255,46,117,.34)}
+html[data-theme="blacklight"] .slot::after{color:rgba(200,255,67,.34);text-shadow:0 0 10px rgba(57,247,255,.22),0 0 18px rgba(154,108,255,.12)}
+
+/* Intaglio Galactica UV plate: every card gets a non-semantic engraving layer. It never participates in hit testing or rules. */
+.uvEtch{display:none;position:absolute;inset:0;z-index:5;pointer-events:none;border-radius:inherit;overflow:hidden;--uv-a:var(--uv-cyan,#39f7ff);--uv-b:var(--uv-lime,#c8ff43)}
+.card[data-suit="H"] .uvEtch,.card[data-suit="D"] .uvEtch{--uv-a:var(--uv-magenta,#ff2e75);--uv-b:var(--uv-orange,#ff9b3d)}
+.card[data-suit="C"] .uvEtch{--uv-a:var(--uv-lime,#c8ff43);--uv-b:var(--uv-cyan,#39f7ff)}
+html[data-theme="blacklight"] .uvEtch{display:block;mix-blend-mode:screen;opacity:.72}
+html[data-theme="blacklight"] .uvEtch::before{content:"";position:absolute;inset:3.1%;border:1px solid color-mix(in srgb,var(--uv-a) 58%,transparent);border-radius:calc(var(--radius)*.72);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--uv-b) 14%,transparent),0 0 5px color-mix(in srgb,var(--uv-a) 26%,transparent);background:
+  linear-gradient(90deg,var(--uv-a),transparent 19% 81%,var(--uv-b)) top left/100% 1px no-repeat,
+  linear-gradient(0deg,var(--uv-b),transparent 19% 81%,var(--uv-a)) bottom left/100% 1px no-repeat;opacity:.62}
+html[data-theme="blacklight"] .uvEtch::after{content:"";position:absolute;inset:9% 8%;border-radius:46%;background:
+  repeating-radial-gradient(ellipse at 50% 50%,transparent 0 7%,color-mix(in srgb,var(--uv-a) 24%,transparent) 7.5% 8%,transparent 8.5% 14%),
+  repeating-linear-gradient(37deg,transparent 0 15%,color-mix(in srgb,var(--uv-b) 18%,transparent) 15.5% 16%,transparent 16.5% 31%);
+  -webkit-mask:radial-gradient(ellipse at 50% 50%,transparent 0 23%,#000 25% 72%,transparent 74%);mask:radial-gradient(ellipse at 50% 50%,transparent 0 23%,#000 25% 72%,transparent 74%);opacity:.55}
+html[data-theme="blacklight"] .card[data-up="false"] .uvEtch::after{inset:7%;opacity:.82;background:
+  repeating-radial-gradient(circle at 50% 50%,transparent 0 9%,color-mix(in srgb,var(--uv-violet,#9a6cff) 34%,transparent) 9.5% 10.2%,transparent 10.7% 17%),
+  repeating-linear-gradient(45deg,transparent 0 11%,rgba(57,247,255,.12) 11.5% 12%,transparent 12.5% 23%)}
+/* UV = desktop color-grade over the card layer. Mobile deliberately bypasses SVG filters and grades visible faces directly. */
 html[data-theme="blacklight"] .cards,html[data-theme="blacklight"] .victoryFX{filter:url(#uvNeonLite)}
-html[data-theme="blacklight"][data-uv-glow="on"] .cards{filter:url(#uvNeon)}                       /* the win flow animates 52 proxies: it keeps the grade but never pays for a full-board blur */
+html[data-theme="blacklight"][data-uv-glow="on"] .cards{filter:url(#uvNeon)}
 html[data-theme="blacklight"] .card{box-shadow:0 2px 7px rgba(0,0,0,.72),0 0 0 1px rgba(145,217,255,.20),0 0 13px rgba(92,58,255,.17)}
 html[data-theme="blacklight"] .card::after{box-shadow:inset 0 0 0 1px rgba(167,228,255,.38),inset 0 0 10px rgba(113,61,255,.08)}
 html[data-theme="blacklight"] .victoryCard{box-shadow:0 7px 20px rgba(0,0,0,.54),0 0 12px rgba(106,86,255,.24)}
 html[data-theme="blacklight"] .card.drop-ok{outline-color:rgba(68,247,255,.94)}
 html[data-theme="blacklight"] .card.drop-hover,html[data-theme="blacklight"] .ring.hover{outline-color:#d8c5ff;box-shadow:0 0 10px rgba(132,88,255,.30)}
 html[data-theme="blacklight"] .ring.ok{outline-color:rgba(68,247,255,.86)}
-html[data-theme="blacklight"] .stockNoise i{box-shadow:0 0 8px rgba(91,233,255,.65)}
-/* Mobile UV fallback: CSS filters remain reliable when Safari/WebKit declines an SVG filter on a transformed layer. */
-html[data-uv-mobile="true"][data-theme="blacklight"] .cards,html[data-uv-mobile="true"][data-theme="blacklight"] .victoryFX{filter:saturate(1.72) contrast(1.16) brightness(1.08) hue-rotate(7deg)}
-html[data-uv-mobile="true"][data-theme="blacklight"] .card{box-shadow:0 2px 8px rgba(0,0,0,.76),0 0 0 1px rgba(145,217,255,.30),0 0 12px rgba(82,66,255,.28),0 0 22px rgba(255,35,126,.08)}
+html[data-theme="blacklight"] .stockNoise i{background:rgba(200,255,67,.82);box-shadow:0 0 8px rgba(57,247,255,.68),0 0 16px rgba(255,46,117,.20)}
+html[data-theme="blacklight"] .fidget[data-kind="spinner"]{filter:drop-shadow(0 8px 10px rgba(0,0,0,.6)) drop-shadow(0 0 9px rgba(57,247,255,.20)) drop-shadow(0 0 15px rgba(255,46,117,.10))}
+html[data-theme="blacklight"] .spinnerWeb{background:radial-gradient(circle at 50% 50%,#443465 0 12%,#1e2940 38%,#09101c 67%,#04060d 100%);box-shadow:inset 0 0 0 2px rgba(57,247,255,.14)}
+html[data-theme="blacklight"] .spinnerHub{box-shadow:0 0 0 3px #17132d,0 0 0 5px rgba(57,247,255,.62),0 0 13px rgba(255,46,117,.25),inset 0 0 0 1px rgba(200,255,67,.22)}
+
+/* Mobile/WebKit-safe path: no SVG URL filter on the transformed card layer. Keep effects local, simple and deterministic. */
+html[data-uv-mobile="true"][data-theme="blacklight"] .cards,html[data-uv-mobile="true"][data-theme="blacklight"] .victoryFX{filter:none!important}
+html[data-uv-mobile="true"][data-theme="blacklight"] .card[data-up="true"] .front{filter:saturate(1.66) contrast(1.14) brightness(1.07) hue-rotate(5deg)}
+html[data-uv-mobile="true"][data-theme="blacklight"] .card[data-up="false"] .back{filter:saturate(1.58) contrast(1.12) brightness(.98) hue-rotate(12deg)}
+html[data-uv-mobile="true"][data-theme="blacklight"] .victoryCard{filter:saturate(1.66) contrast(1.14) brightness(1.07) hue-rotate(5deg)}
+html[data-uv-mobile="true"][data-theme="blacklight"] .card{box-shadow:0 2px 8px rgba(0,0,0,.78),0 0 0 1px rgba(57,247,255,.30),0 0 10px rgba(154,108,255,.24),0 0 18px rgba(255,46,117,.07)}
+html[data-uv-mobile="true"][data-theme="blacklight"] .uvEtch{opacity:.86}
+html[data-uv-mobile="true"][data-theme="blacklight"] .uvEtch::after{opacity:.48}
+html[data-theme="blacklight"][data-juice="balanced"] .board::after{opacity:.62;animation-duration:28s}
+html[data-theme="blacklight"][data-juice="minimal"] .board::after{display:block;opacity:.32;animation:none;background:radial-gradient(ellipse at 50% 50%,transparent 0 56%,rgba(57,247,255,.06) 56.3% 56.55%,transparent 56.9%)}
+html[data-theme="blacklight"][data-juice="minimal"] .uvEtch{opacity:.42}
+@media(prefers-reduced-motion:reduce){html[data-theme="blacklight"] .board::after{animation:none}}
 
 .victoryFX{position:absolute;inset:0;z-index:60;pointer-events:none;overflow:hidden;contain:strict}
 .victoryCard{position:absolute;left:0;top:0;width:var(--cw);height:var(--ch);border-radius:var(--radius);background-position:center;background-repeat:no-repeat;background-size:100% 100%;box-shadow:0 7px 18px rgba(0,0,0,.38);will-change:transform,opacity;transform-origin:50% 58%}
@@ -551,7 +625,7 @@ const ASSETS=Object.freeze({"S1":"data:image/webp;base64,UklGRmo7AABXRUJQVlA4IF4
    ======================================================================= */
 const DEV = /[?&]dev=1(&|$)/.test(location.search);
 const QA = DEV && /[?&]qa=1(&|$)/.test(location.search);
-const BUILD = 'klondike-5.19.0-red-eye-flagship-mobile-spinner-dynamics';
+const BUILD = 'klondike-5.20.0-intaglio-galactica-uv-mobile';
 const $ = (s,r=document)=>r.querySelector(s);
 const clamp = (n,a,b)=>Math.max(a,Math.min(b,n));
 const reducedMotion = ()=>{ try{ return matchMedia('(prefers-reduced-motion: reduce)').matches }catch(_){ return false } };
@@ -1534,7 +1608,8 @@ const View = (()=>{
       if (Assets.urls[id]) front.style.backgroundImage = 'url("'+Assets.urls[id]+'")';
       else { front.classList.add('noart'); if (SUITS[CARD[id].suit].red) front.classList.add('red'); front.textContent = RANK_LABEL[CARD[id].rank]+SUITS[CARD[id].suit].glyph; }
       const back = document.createElement('div'); back.className = 'face back';
-      el.append(front,back); layerCards.appendChild(el);
+      const uvEtch = document.createElement('div'); uvEtch.className = 'uvEtch'; uvEtch.setAttribute('aria-hidden','true');
+      el.append(front,back,uvEtch); layerCards.appendChild(el);
       recs[id] = {el, x:NaN, y:NaN, z:0, baseZ:0, up:null, vis:null, hideLater:false, sel:false, flying:false, dirty:true, flipT:0, pk:''};
     }
     const mkSlot = (zone,index,cls,label)=>{ const s = document.createElement('div'); s.className = 'slot '+cls; s.dataset.zone = zone; s.dataset.index = String(index); s.setAttribute('aria-label',label); layerSlots.appendChild(s); return s; };
@@ -1969,10 +2044,14 @@ const THEME_ORDER=Object.freeze(['dark','blacklight','light']);
 function applyTheme(theme){
   theme = THEME_ORDER.includes(theme) ? theme : 'dark';
   document.documentElement.dataset.theme = theme; safeSet(KEY_THEME,theme);
-  const next=THEME_ORDER[(THEME_ORDER.indexOf(theme)+1)%THEME_ORDER.length], m=document.querySelector('meta[name="theme-color"]');
+  const next=THEME_ORDER[(THEME_ORDER.indexOf(theme)+1)%THEME_ORDER.length], m=document.querySelector('meta[name="theme-color"]'), btn=$('#themeBtn');
   if (m) m.content = theme==='light' ? '#f7f4ec' : theme==='blacklight' ? '#020108' : '#05070a';
-  $('#themeIcon').textContent = next==='blacklight' ? '✦' : next==='light' ? '☼' : '●'; $('#themeText').textContent = next==='blacklight' ? 'UV' : next[0].toUpperCase()+next.slice(1);
-  $('#themeBtn').setAttribute('aria-label','Switch to '+(next==='blacklight'?'blacklight':next)+' mode');
+  const label = theme==='blacklight' ? 'UV' : theme[0].toUpperCase()+theme.slice(1);
+  $('#themeIcon').textContent = theme==='blacklight' ? '✦' : theme==='light' ? '☼' : '●'; $('#themeText').textContent = label;
+  btn.dataset.mode = theme; btn.setAttribute('aria-pressed',String(theme==='blacklight'));
+  btn.setAttribute('aria-label',label+' lighting active. Switch to '+(next==='blacklight'?'UV blacklight':next)+' mode');
+  btn.title = label+' lighting · next: '+(next==='blacklight'?'UV blacklight':next);
+  if (typeof FX!=='undefined' && FX.refresh) FX.refresh();
 }
 function toggleTheme(){ const now=document.documentElement.dataset.theme, i=THEME_ORDER.indexOf(now); applyTheme(THEME_ORDER[(i+1+THEME_ORDER.length)%THEME_ORDER.length]); }
 
@@ -2133,7 +2212,11 @@ if (DEV) (()=>{
   T('uv / blacklight is a FILTER over the card layer: #uvNeon (grade + bloom) and #uvNeonLite (grade only) exist, only the first blurs',()=>{ const a=document.querySelector('#uvNeon'),b=document.querySelector('#uvNeonLite'); return !!a&&!!b&&a.querySelectorAll('feGaussianBlur').length>=1&&b.querySelectorAll('feGaussianBlur').length===0&&a.querySelector('feColorMatrix')&&b.querySelector('feColorMatrix'); });
   T('uv / glow gate follows Visual-juice and reduced-motion',()=>document.documentElement.dataset.uvGlow===((Prefs.value.juice!=='minimal'&&!reducedMotion())?'on':'off'));
   T('uv / the filter is scoped: card layer + victory layer only, never the board, chrome or slots',()=>{ const h=document.documentElement.innerHTML; return /html\[data-theme="blacklight"\] \.cards,html\[data-theme="blacklight"\] \.victoryFX\{filter:url\(#uvNeonLite\)\}/.test(h) && !/html\[data-theme="blacklight"\] \.(board|slot|topbar|controls)\{[^}]*filter:/.test(h); });
-  T('uv / mobile has CSS-filter fallback independent of SVG filter rendering',()=>document.documentElement.innerHTML.includes('data-uv-mobile="true"')&&document.documentElement.innerHTML.includes('saturate(1.72) contrast(1.16) brightness(1.08)'));
+  T('uv / mobile has a WebKit-safe first-class renderer: parent SVG filter is removed and visible faces are graded locally',()=>{const h=document.documentElement.innerHTML;return h.includes('data-uv-mobile="true"][data-theme="blacklight"] .cards')&&h.includes('filter:none!important')&&h.includes('.card[data-up="true"] .front{filter:saturate(1.66)')});
+  T('uv / every persistent card carries exactly one non-semantic Intaglio etch plate',()=>document.querySelectorAll('.card').length===52&&document.querySelectorAll('.card > .uvEtch').length===52&&[...document.querySelectorAll('.uvEtch')].every(e=>e.getAttribute('aria-hidden')==='true'));
+  T('uv / blacklight preserves felt material and exposes fluorescent frame linework instead of flattening the board',()=>{const root=document.documentElement,prev=root.dataset.theme;root.dataset.theme='blacklight';const felt=getComputedStyle(View.el.board,'::before'),field=getComputedStyle(View.el.board,'::after');const ok=felt.backgroundImage!=='none'&&felt.boxShadow!=='none'&&felt.boxShadow.includes('57, 247, 255')&&field.backgroundImage!=='none'&&field.display!=='none';root.dataset.theme=prev;return ok});
+  T('uv / FTS Poster palette is present as fluorescent ink tokens',()=>{const root=document.documentElement,prev=root.dataset.theme;root.dataset.theme='blacklight';const cs=getComputedStyle(root),ok=['--uv-cyan','--uv-magenta','--uv-lime','--uv-violet','--uv-orange'].every(k=>cs.getPropertyValue(k).trim().length>0);root.dataset.theme=prev;return ok});
+  T('uv / theme control reports current blacklight state explicitly for icon-only mobile chrome',()=>$('#themeBtn').getAttribute('aria-pressed')===String(document.documentElement.dataset.theme==='blacklight')&&$('#themeBtn').dataset.mode===document.documentElement.dataset.theme);
   T('responsive / dynamic app height follows visual viewport contract',()=>document.documentElement.innerHTML.includes('--app-h')&&typeof Viewport.measure==='function');
   T('responsive / zoom lock covers viewport meta + board gesture suppression',()=>document.querySelector('meta[name="viewport"]')?.content.includes('user-scalable=no')&&String(Viewport.bind).includes('gesturestart'));
   T('responsive / safe-area insets exist for portrait and short landscape chrome',()=>document.documentElement.innerHTML.includes('env(safe-area-inset-left)')&&document.documentElement.innerHTML.includes('env(safe-area-inset-bottom)'));
