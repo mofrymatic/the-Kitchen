@@ -8,13 +8,13 @@
 
 <title>Klondike Solitaire · FTS Arcade</title>
 <meta name="title" content="Klondike Solitaire · FTS Arcade">
-<meta name="description" content="FTS Arcade Klondike: tactile casino-table solitaire with draw-one or draw-three, responsive mobile play, physical card animation, audio, undo and hints.">
+<meta name="description" content="Classic Klondike Solitaire with draw-one or draw-three, undo, hints and a full 52-card texture pack.">
 <link rel="canonical" href="https://frymatic.us/FTSArcade/KLONDIKE/">
 
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://frymatic.us/FTSArcade/KLONDIKE/">
 <meta property="og:title" content="Klondike Solitaire · FTS Arcade">
-<meta property="og:description" content="Tactile FTS Arcade Klondike with responsive mobile play, physical card animation, casino-table polish, audio, undo and hints.">
+<meta property="og:description" content="Classic Klondike Solitaire with draw-one or draw-three, undo, hints and a full 52-card texture pack.">
 <meta property="og:site_name" content="FTS Arcade">
 <meta property="og:locale" content="en_US">
 <meta property="og:image" content="https://frymatic.us/FTSArcade/KLONDIKE/klondike_preview.png">
@@ -26,7 +26,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:url" content="https://frymatic.us/FTSArcade/KLONDIKE/">
 <meta name="twitter:title" content="Klondike Solitaire · FTS Arcade">
-<meta name="twitter:description" content="Tactile FTS Arcade Klondike with responsive mobile play, physical card animation, casino-table polish, audio, undo and hints.">
+<meta name="twitter:description" content="Classic Klondike Solitaire with draw-one or draw-three, undo, hints and a full 52-card texture pack.">
 <meta name="twitter:image" content="https://frymatic.us/FTSArcade/KLONDIKE/klondike_preview.png">
 <meta name="twitter:image:alt" content="Klondike Solitaire game preview with embedded FTS playing-card pack">
 
@@ -232,128 +232,6 @@ html[data-theme="light"] .winPanel p{color:#64738a}
 .dev .tests div{display:flex;gap:6px}.dev .tests i{font-style:normal;width:14px}
 .dev .probs{color:var(--red);word-break:break-word}
 @media(max-width:900px){.app[data-dev] .stage{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) 38%}.dev{border-left:0;border-top:1px solid var(--line)}}
-
-
-/* =====================================================================
-   AAA TABLE / TACTILE LAYER
-   Pure presentation. The rules model remains rigid; every flourish is disposable.
-   ===================================================================== */
-:root{
-  --felt:#031b29; --felt2:#062638; --felt3:#020d15; --brass:#d4a04e; --brass-hi:#ffd995;
-  --marble:#05070a; --juice-opacity:1; --table-inset:clamp(5px,1.15vw,18px);
-  --move-ms:280ms;
-}
-html[data-theme="light"]{--felt:#214f58;--felt2:#316871;--felt3:#123942;--brass:#9b6a22;--brass-hi:#e0bb75;--marble:#dad5cb}
-body{background:#020305}
-.app{background:
-  radial-gradient(ellipse at 50% -10%,rgba(231,173,67,.11),transparent 34%),
-  radial-gradient(circle at 12% 15%,rgba(24,202,215,.09),transparent 24%),
-  linear-gradient(180deg,#06090d,#010203 72%)}
-.gameHead,.topbar,.controls{backdrop-filter:blur(14px) saturate(1.2)}
-.gameHead{border-bottom-color:rgba(231,173,67,.22)}
-.board{
-  background:
-    radial-gradient(ellipse at 50% 24%,rgba(255,255,255,.035),transparent 33%),
-    linear-gradient(125deg,rgba(255,255,255,.018),transparent 28% 72%,rgba(231,173,67,.025)),
-    #020406;
-  perspective:1200px;
-}
-.board::before{
-  content:"";position:absolute;inset:var(--table-inset);z-index:0;pointer-events:none;border-radius:clamp(12px,2vw,28px);
-  border:1px solid rgba(255,217,149,.72);
-  box-shadow:
-    0 0 0 2px rgba(91,57,19,.95),
-    0 0 0 5px rgba(212,160,78,.20),
-    inset 0 0 0 1px rgba(255,231,180,.16),
-    inset 0 0 80px rgba(0,0,0,.63),
-    0 22px 70px rgba(0,0,0,.55);
-  background:
-    radial-gradient(circle at 22% 18%,rgba(255,255,255,.045) 0 1px,transparent 1.3px) 0 0/6px 6px,
-    repeating-linear-gradient(92deg,rgba(255,255,255,.015) 0 1px,transparent 1px 4px),
-    radial-gradient(ellipse at 45% 18%,rgba(11,77,91,.55),transparent 44%),
-    linear-gradient(145deg,var(--felt2),var(--felt) 48%,var(--felt3));
-  mask-image:none;
-}
-.board::after{
-  content:"";position:absolute;inset:calc(var(--table-inset) + 8px);z-index:1;pointer-events:none;border-radius:clamp(9px,1.7vw,23px);
-  border:1px solid rgba(212,160,78,.34);
-  background:
-    linear-gradient(112deg,transparent 14%,rgba(255,255,255,.032) 26%,transparent 38%) -55vw 0/52vw 100% no-repeat;
-  animation:tableSheen 11s ease-in-out infinite;
-  box-shadow:inset 0 0 35px rgba(0,0,0,.22);
-}
-@keyframes tableSheen{0%,25%{background-position:-55vw 0}70%,100%{background-position:120vw 0}}
-html[data-theme="light"] .board{background:#bcb7ad}
-html[data-theme="light"] .board::before{box-shadow:0 0 0 2px rgba(91,57,19,.62),0 0 0 5px rgba(155,106,34,.15),inset 0 0 0 1px rgba(255,255,255,.2),inset 0 0 70px rgba(0,0,0,.18),0 18px 60px rgba(37,28,15,.2)}
-.slots,.cards,.rings,.fidgets,.shuffleFX{z-index:2}.cards{z-index:4}.rings{z-index:5}.fidgets{z-index:6}.shuffleFX{z-index:40}
-.slot{
-  border-color:rgba(214,174,101,.34);
-  background:radial-gradient(circle at 50% 35%,rgba(255,255,255,.025),transparent 48%),rgba(0,0,0,.13);
-  box-shadow:inset 0 0 20px rgba(0,0,0,.35),0 0 0 1px rgba(0,0,0,.16);
-}
-.slot::after{color:rgba(219,180,108,.38);text-shadow:0 1px 12px rgba(231,173,67,.15)}
-.card{
-  transform-origin:50% 62%;
-  box-shadow:0 2px 6px rgba(0,0,0,.52),0 1px 0 rgba(255,255,255,.22) inset;
-  filter:saturate(1.03) contrast(1.015);
-}
-.card::before{
-  content:"";position:absolute;inset:0;z-index:3;pointer-events:none;border-radius:inherit;
-  background:linear-gradient(120deg,rgba(255,255,255,.16),transparent 20% 72%,rgba(0,0,0,.11));mix-blend-mode:soft-light;
-}
-.card.dragging{box-shadow:0 23px 34px rgba(0,0,0,.58),0 0 22px rgba(231,173,67,.12);filter:saturate(1.07) brightness(1.04)}
-.card.selected{outline-color:rgba(24,202,215,.92);box-shadow:0 6px 22px rgba(24,202,215,.16),0 2px 7px rgba(0,0,0,.55)}
-.card.fidget-pop{animation:cardFidget .34s cubic-bezier(.18,.85,.25,1.35)}
-@keyframes cardFidget{40%{filter:brightness(1.07);scale:1.022}100%{scale:1}}
-.fieldFx{z-index:3;opacity:var(--juice-opacity)}
-
-/* Small, intentionally pointless pieces of table furniture. They are draggable and never enter game state. */
-.fidgets{position:absolute;inset:0;pointer-events:none}
-.fidget{
-  position:absolute;width:clamp(28px,3.3vw,44px);aspect-ratio:1;border-radius:50%;pointer-events:auto;touch-action:none;cursor:grab;
-  display:grid;place-items:center;color:#231606;font:900 8px/1 ui-monospace,monospace;letter-spacing:.08em;user-select:none;
-  background:radial-gradient(circle at 34% 27%,#fff0bd 0 5%,#d9a449 22%,#805018 66%,#d5a558 79%,#57320d 100%);
-  border:1px solid rgba(255,235,184,.68);box-shadow:0 7px 16px rgba(0,0,0,.48),inset 0 0 0 3px rgba(55,30,8,.28),inset 0 0 0 5px rgba(255,225,154,.18);
-}
-.fidget::after{content:"";position:absolute;inset:23%;border:1px dashed rgba(52,27,5,.55);border-radius:50%}
-.fidget[data-kind="crystal"]{border-radius:28% 72% 66% 34% / 48% 33% 67% 52%;color:#dffcff;background:radial-gradient(circle at 32% 25%,#efffff,#37d5df 20%,#087c8d 58%,#022c35 100%);border-color:#81f6ff;box-shadow:0 8px 22px rgba(0,0,0,.5),0 0 22px rgba(24,202,215,.28),inset 0 0 9px rgba(255,255,255,.55)}
-.fidget:active{cursor:grabbing;scale:1.05}
-
-/* Shuffle ghosts: pure animation overlay, not card nodes. */
-.shuffleFX{position:absolute;inset:0;pointer-events:none;display:none;overflow:hidden}
-.shuffleFX.active{display:block}
-.shuffleCard{position:absolute;left:50%;top:45%;width:var(--cw);height:var(--ch);margin-left:calc(var(--cw)*-.5);margin-top:calc(var(--ch)*-.5);border-radius:var(--radius);background-color:#081827;background-image:var(--back-img);background-size:100% 100%;box-shadow:0 13px 26px rgba(0,0,0,.45),inset 0 0 0 1px rgba(255,255,255,.18);will-change:transform,opacity}
-.shuffleGlow{position:absolute;left:50%;top:45%;width:34vmin;height:20vmin;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(ellipse,rgba(231,173,67,.14),rgba(24,202,215,.06) 42%,transparent 70%);filter:blur(16px);opacity:.9}
-.board[data-shuffling="true"] .card{filter:brightness(.86) saturate(.85)}
-
-/* Settings */
-.utilityBtn{height:34px;min-width:34px;padding:0 9px;border:1px solid #2b3947;background:#080d13;color:#bdcadb;display:grid;place-items:center;font-size:15px}
-.utilityBtn:hover{border-color:rgba(231,173,67,.6);color:#fff}.utilityBtn[aria-pressed="true"]{color:var(--gold);border-color:rgba(231,173,67,.52)}
-.settingsPanel{position:fixed;right:12px;bottom:64px;z-index:950;width:min(330px,calc(100vw - 24px));padding:15px;border:1px solid rgba(231,173,67,.42);background:rgba(5,8,12,.96);backdrop-filter:blur(18px);box-shadow:0 22px 70px rgba(0,0,0,.6);display:none}
-.settingsPanel.show{display:block}.settingsPanel h2{margin:0 0 12px;font:900 14px/1 Arial Black,Arial,sans-serif;letter-spacing:.03em}.settingRow{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:9px 0;border-top:1px solid rgba(255,255,255,.07);font:700 10px/1.3 ui-monospace,monospace;text-transform:uppercase;letter-spacing:.08em;color:#9eacbd}.settingRow:first-of-type{border-top:0}.settingRow input[type="range"]{width:130px}.settingRow select{height:30px;background:#0b121a;color:#d7e1ed;border:1px solid #344352}.settingRow input[type="checkbox"]{width:18px;height:18px;accent-color:var(--gold)}
-.settingsPanel .closeSettings{width:100%;height:34px;margin-top:9px;border:1px solid #344352;background:#0b121a;color:#d7e1ed;font:800 10px ui-monospace,monospace;text-transform:uppercase}
-html[data-theme="light"] .settingsPanel{background:rgba(255,253,248,.97);color:#17243a}.settingsPanel.show~*{}
-
-/* richer win */
-.win{background:radial-gradient(circle at 50% 45%,rgba(231,173,67,.11),transparent 32%),rgba(0,0,0,.76)}
-.winPanel{border-color:rgba(231,173,67,.58);background:linear-gradient(155deg,#0b1118,#040608);box-shadow:0 30px 100px rgba(0,0,0,.68),0 0 70px rgba(231,173,67,.09)}
-.winPanel h2{color:#fff5df;text-shadow:0 0 24px rgba(231,173,67,.22)}
-
-/* visual quality tiers */
-html[data-juice="balanced"]{--juice-opacity:.72}
-html[data-juice="minimal"]{--juice-opacity:.2}
-html[data-juice="minimal"] .board::after{display:none}
-html[data-juice="minimal"] .fidgets{display:none}
-
-@media(max-width:700px) and (min-height:360px){
-  .board{--table-inset:4px}
-  .gameHead{background:rgba(3,8,11,.9)}
-  .fidget{display:none}
-  .settingsPanel{right:7px;bottom:56px;width:calc(100vw - 14px)}
-  .utilityBtn{height:36px;min-width:36px;padding:0 7px}
-}
-@media(prefers-reduced-motion:reduce){.board::after{animation:none}.shuffleFX{display:none!important}.fidget{transition:none}}
-
 </style>
 </head>
 <body>
@@ -379,8 +257,6 @@ html[data-juice="minimal"] .fidgets{display:none}
       </div>
       <div class="board noanim" id="board">
         <canvas class="fieldFx" id="fieldFx" aria-hidden="true"></canvas>
-        <div class="shuffleFX" id="shuffleFX" aria-hidden="true"><div class="shuffleGlow"></div></div>
-        <div class="fidgets" id="fidgets" aria-hidden="true"></div>
         <div class="slots" id="slots" aria-hidden="true"></div>
         <div class="cards" id="cards"></div>
         <div class="rings" id="rings" aria-hidden="true"></div>
@@ -397,17 +273,7 @@ html[data-juice="minimal"] .fidgets{display:none}
     <div class="separator"></div>
     <button class="control" id="restartBtn" type="button" title="Replay this deal (R)"><span class="ico">&#10227;</span><span class="label">Restart</span></button>
     <select class="drawSelect" id="drawMode" aria-label="Draw mode"><option value="1">Draw 1</option><option value="3">Draw 3</option></select>
-    <button class="utilityBtn" id="soundBtn" type="button" aria-label="Toggle sound" aria-pressed="true" title="Sound">&#9835;</button>
-    <button class="utilityBtn" id="settingsBtn" type="button" aria-label="Open settings" aria-expanded="false" title="Settings">&#9881;</button>
   </nav>
-</div>
-<div class="settingsPanel" id="settingsPanel" role="dialog" aria-modal="false" aria-labelledby="settingsTitle">
-  <h2 id="settingsTitle">Table settings</h2>
-  <label class="settingRow"><span>Sound</span><input id="setSound" type="checkbox" checked></label>
-  <label class="settingRow"><span>Volume</span><input id="setVolume" type="range" min="0" max="1" step="0.05" value="0.7"></label>
-  <label class="settingRow"><span>Haptics</span><input id="setHaptics" type="checkbox" checked></label>
-  <label class="settingRow"><span>Visual juice</span><select id="setJuice"><option value="rich">Rich</option><option value="balanced">Balanced</option><option value="minimal">Minimal</option></select></label>
-  <button class="closeSettings" id="closeSettings" type="button">Close</button>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div class="win" id="win" role="dialog" aria-modal="true" aria-labelledby="winTitle">
@@ -426,7 +292,7 @@ const ASSETS=Object.freeze({"S1":"data:image/webp;base64,UklGRmo7AABXRUJQVlA4IF4
                             → Input (pointer/keyboard) → Store → FX → Dev (only with ?dev=1)
    ======================================================================= */
 const DEV = /[?&]dev=1(&|$)/.test(location.search);
-const BUILD = 'klondike-5.6.0-aaa';
+const BUILD = 'klondike-5.0.0';
 const $ = (s,r=document)=>r.querySelector(s);
 const clamp = (n,a,b)=>Math.max(a,Math.min(b,n));
 const reducedMotion = ()=>{ try{ return matchMedia('(prefers-reduced-motion: reduce)').matches }catch(_){ return false } };
@@ -437,90 +303,18 @@ const KEY_SAVE  = DEV ? 'fts-klondike-v5-dev' : 'fts-klondike-v5';   // dev runs
 const KEY_OLD   = 'fts-klondike-v4';
 const KEY_DRAW  = 'fts-klondike-draw';
 const KEY_THEME = 'fts-klondike-theme';
-const KEY_PREFS = 'fts-klondike-prefs-v1';
 const SUIT_ORDER = ['S','H','D','C'];
 const SUITS = {S:{glyph:'♠',red:false,name:'spades'},H:{glyph:'♥',red:true,name:'hearts'},D:{glyph:'♦',red:true,name:'diamonds'},C:{glyph:'♣',red:false,name:'clubs'}};
 const RANK_LABEL = ['','A','2','3','4','5','6','7','8','9','10','J','Q','K'];
 const RANK_NAME  = ['','Ace','2','3','4','5','6','7','8','9','10','Jack','Queen','King'];
 const CARD_W = 5, CARD_H = 7;                      // 2.5" x 3.5" poker card
-const MAX_CARD_W = 118, MIN_CARD_W = 28, MAX_UNDO = 96, MOVE_MS = 280;
+const MAX_CARD_W = 118, MIN_CARD_W = 28, MAX_UNDO = 96, MOVE_MS = 220;
 const IDS = []; for (const s of SUIT_ORDER) for (let r=1;r<=13;r++) IDS.push(s+r);
 const CARD = Object.create(null); for (const id of IDS) CARD[id] = {suit:id[0], rank:+id.slice(1)};
 const mk = (id,up)=>({id, suit:CARD[id].suit, rank:CARD[id].rank, faceUp:!!up});
 const cl = p=>p.map(c=>({id:c.id,suit:c.suit,rank:c.rank,faceUp:c.faceUp}));
 const cloneState = s=>({drawMode:s.drawMode, stock:cl(s.stock), waste:cl(s.waste), foundations:s.foundations.map(cl), tableau:s.tableau.map(cl),
   score:s.score, moves:s.moves, elapsedMs:s.elapsedMs, won:s.won, deal:s.deal?s.deal.slice():null, seed:s.seed==null?null:s.seed});
-
-
-/* ---------- cosmetic randomness: deterministic 2-D simplex noise ---------- */
-const Simplex = (()=>{
-  const grad=[[1,1],[-1,1],[1,-1],[-1,-1],[1,0],[-1,0],[0,1],[0,-1]];
-  const perm=new Uint8Array(512), p=new Uint8Array(256); for(let i=0;i<256;i++)p[i]=i;
-  let x=0x9e3779b9; for(let i=255;i>0;i--){ x=(x*1664525+1013904223)>>>0; const j=x%(i+1),q=p[i]; p[i]=p[j]; p[j]=q; }
-  for(let i=0;i<512;i++) perm[i]=p[i&255];
-  const dot=(g,x,y)=>g[0]*x+g[1]*y;
-  function noise(xin,yin){
-    const F=.5*(Math.sqrt(3)-1), G=(3-Math.sqrt(3))/6, s=(xin+yin)*F, i=Math.floor(xin+s), j=Math.floor(yin+s), t=(i+j)*G;
-    const x0=xin-(i-t), y0=yin-(j-t), i1=x0>y0?1:0, j1=x0>y0?0:1, x1=x0-i1+G, y1=y0-j1+G, x2=x0-1+2*G, y2=y0-1+2*G;
-    const ii=i&255,jj=j&255, gi0=perm[ii+perm[jj]]%8,gi1=perm[ii+i1+perm[jj+j1]]%8,gi2=perm[ii+1+perm[jj+1]]%8;
-    let n0=0,n1=0,n2=0,t0=.5-x0*x0-y0*y0,t1=.5-x1*x1-y1*y1,t2=.5-x2*x2-y2*y2;
-    if(t0>0){t0*=t0;n0=t0*t0*dot(grad[gi0],x0,y0)} if(t1>0){t1*=t1;n1=t1*t1*dot(grad[gi1],x1,y1)} if(t2>0){t2*=t2;n2=t2*t2*dot(grad[gi2],x2,y2)}
-    return 70*(n0+n1+n2);
-  }
-  const hash=s=>{ let h=2166136261; for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619); } return h>>>0; };
-  function pose(id,zone,pile,pos,cardW){
-    const h=hash(id+'|'+zone+'|'+pile+'|'+pos), a=(h&65535)/8192, b=((h>>>16)&65535)/8192;
-    const amp=clamp(cardW*.022,.55,2.7), rot=clamp(cardW*.020,.45,2.15);
-    return {x:noise(a,b)*amp,y:noise(a+11.7,b-5.2)*amp*.68,r:noise(a-7.1,b+13.4)*rot};
-  }
-  return {noise,pose};
-})();
-
-/* ---------- player presentation preferences ---------- */
-const Prefs = (()=>{
-  const base={sound:true,volume:.7,haptics:true,juice:'rich'};
-  let v={...base};
-  try{ const x=JSON.parse(localStorage.getItem(KEY_PREFS)||'null'); if(x&&typeof x==='object') v={...v,...x}; }catch(_){}
-  v.sound=v.sound!==false; v.volume=clamp(Number(v.volume)||0,0,1); v.haptics=v.haptics!==false; v.juice=['rich','balanced','minimal'].includes(v.juice)?v.juice:'rich';
-  const save=()=>{ try{ localStorage.setItem(KEY_PREFS,JSON.stringify(v)); }catch(_){} };
-  const apply=()=>{ document.documentElement.dataset.juice=v.juice; const b=$('#soundBtn'); if(b){ b.setAttribute('aria-pressed',String(v.sound)); b.textContent=v.sound?'♫':'×'; } };
-  return {get value(){return v},set(k,val){v[k]=val;save();apply();},apply};
-})();
-
-/* ---------- synthesized card-table audio: no external assets ---------- */
-const AudioFX = (()=>{
-  let ctx=null, master=null, noise=null, lastSlide=0, voices=0;
-  function ensure(){
-    if(!Prefs.value.sound) return null;
-    try{
-      if(!ctx){ ctx=new (window.AudioContext||window.webkitAudioContext)(); master=ctx.createGain(); master.connect(ctx.destination); const n=ctx.sampleRate*.24|0, buf=ctx.createBuffer(1,n,ctx.sampleRate), d=buf.getChannelData(0); for(let i=0;i<n;i++) d[i]=Math.random()*2-1; noise=buf; }
-      if(ctx.state==='suspended') ctx.resume(); master.gain.setTargetAtTime(Prefs.value.volume*.38,ctx.currentTime,.015); return ctx;
-    }catch(_){return null}
-  }
-  function burst({dur=.08,cut=1200,gain=.2,type='noise',freq=220,slide=0}={}){
-    const c=ensure(); if(!c||voices>14) return; voices++; const t=c.currentTime, g=c.createGain(); g.connect(master); g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(Math.max(.0002,gain),t+.006); g.gain.exponentialRampToValueAtTime(.0001,t+dur);
-    let src;
-    if(type==='noise'){ src=c.createBufferSource(); src.buffer=noise; const f=c.createBiquadFilter(); f.type='bandpass'; f.frequency.value=cut; f.Q.value=.7; src.connect(f); f.connect(g); }
-    else { src=c.createOscillator(); src.type=type; src.frequency.setValueAtTime(freq,t); if(slide) src.frequency.exponentialRampToValueAtTime(Math.max(35,freq+slide),t+dur); src.connect(g); }
-    src.start(t); src.stop(t+dur+.02); src.onended=()=>{voices=Math.max(0,voices-1)};
-  }
-  function play(kind,p=1){
-    if(!Prefs.value.sound) return;
-    if(kind==='lift'){burst({dur:.045,cut:1750,gain:.07*p});burst({dur:.035,type:'sine',freq:110,gain:.03*p});}
-    else if(kind==='slide'){const n=performance.now();if(n-lastSlide<95)return;lastSlide=n;burst({dur:.07,cut:950,gain:.035*p});}
-    else if(kind==='drop'){burst({dur:.065,cut:1320,gain:.13*p});burst({dur:.08,type:'sine',freq:86,gain:.055*p,slide:-28});}
-    else if(kind==='foundation'){burst({dur:.05,cut:2350,gain:.12*p});burst({dur:.12,type:'triangle',freq:660,gain:.07*p,slide:220});}
-    else if(kind==='draw'){burst({dur:.07,cut:1550,gain:.11*p});}
-    else if(kind==='flip'){burst({dur:.04,cut:2600,gain:.075*p});}
-    else if(kind==='recycle'){burst({dur:.18,cut:720,gain:.13*p});burst({dur:.13,type:'triangle',freq:115,gain:.05*p,slide:-40});}
-    else if(kind==='undo'){burst({dur:.12,cut:800,gain:.08*p});burst({dur:.12,type:'sine',freq:190,gain:.035*p,slide:150});}
-    else if(kind==='nope'){burst({dur:.10,type:'square',freq:92,gain:.035*p,slide:-22});}
-    else if(kind==='shuffle'){for(let i=0;i<4;i++)setTimeout(()=>burst({dur:.12,cut:1000+280*i,gain:.075}),i*80);}
-    else if(kind==='win'){[523,659,784,1047].forEach((f,i)=>setTimeout(()=>burst({dur:.36,type:'triangle',freq:f,gain:.045,slide:40}),i*90));}
-  }
-  function haptic(ms=8){ if(Prefs.value.haptics&&navigator.vibrate) try{navigator.vibrate(ms)}catch(_){} }
-  return {ensure,play,haptic,get active(){return !!ctx}};
-})();
 
 function safeGet(k){ try{ return localStorage.getItem(k) }catch(_){ return null } }
 function safeSet(k,v){ try{ localStorage.setItem(k,v); return true }catch(_){ return false } }
@@ -719,35 +513,23 @@ const Rules = (()=>{
    ======================================================================= */
 function solveLayout(W,H,tableau){
   W = Math.max(240,W); H = Math.max(180,H);
-  const mobile = W<720 && H>W*.9;
-  const pad = mobile ? clamp(W*.018,6,10) : (W<560 ? 6 : clamp(W*.009,9,14));
-  const rowGap = clamp(H*(mobile?.014:.018),6,16);
+  const pad = W<560 ? 6 : clamp(W*.009,9,14);
+  const rowGap = clamp(H*.018,7,16);
+  const reserve = clamp(H*.21,38,118);
   let gap = clamp(W*.006,3,11);
   const wByW = (W-pad*2-gap*6)/7;
-  const reserve = clamp(H*.21,38,118);
-  const mobileAllowance = Math.max(0,H-pad*2-rowGap*2);
-  const wByH = mobile ? Math.max(26,(mobileAllowance/3)*(CARD_W/CARD_H)) : Math.max(30,((H-pad*2-rowGap-reserve)/2)*(CARD_W/CARD_H));
+  const wByH = Math.max(30,((H-pad*2-rowGap-reserve)/2)*(CARD_W/CARD_H));
   const cardW = clamp(Math.min(wByW,wByH,MAX_CARD_W),MIN_CARD_W,MAX_CARD_W), cardH = cardW*CARD_H/CARD_W;
-  gap = Math.max(gap, Math.min(cardW*.2,(W-pad*2-cardW*7)/6));
-  const originX = (W-(cardW*7+gap*6))/2;
-  const foundationY = pad;
-  const tableauY = pad+cardH+rowGap;
-  const stockY = mobile ? H-pad-cardH : pad;
-  const wasteY = stockY;
-  const tableauBottom = mobile ? stockY-rowGap : H-pad;
-  const budget = Math.max(0,tableauBottom-tableauY-cardH);
-  const baseDown = clamp(cardW*.135,4,13), baseUp = clamp(cardW*.31,8,28), fanDown = [], fanUp = [];
+  gap = Math.max(gap, Math.min(cardW*.2,(W-pad*2-cardW*7)/6));                 // use spare width when cards are capped
+  const originX = (W-(cardW*7+gap*6))/2, tableauY = pad+cardH+rowGap;
+  const budget = Math.max(0,H-pad-tableauY-cardH), baseDown = clamp(cardW*.135,4,13), baseUp = clamp(cardW*.31,8,28);
+  const fanDown = [], fanUp = [];
   for (let c=0;c<7;c++){
-    const pile=(tableau&&tableau[c])||[]; let down=0; while(down<pile.length&&!pile[down].faceUp) down++;
-    const extra=down*baseDown+Math.max(0,pile.length-down-1)*baseUp, scale=extra?Math.min(1,budget/extra):1;
+    const pile = (tableau&&tableau[c])||[]; let down = 0; while (down<pile.length && !pile[down].faceUp) down++;
+    const extra = down*baseDown+Math.max(0,pile.length-down-1)*baseUp, scale = extra ? Math.min(1,budget/extra) : 1;
     fanDown.push(Math.max(1.5,baseDown*scale)); fanUp.push(Math.max(3,baseUp*scale));
   }
-  const foundationX = [];
-  if(mobile){ const fw=cardW*4+gap*3, fx=(W-fw)/2; for(let i=0;i<4;i++) foundationX.push(fx+i*(cardW+gap)); }
-  else for(let i=0;i<4;i++) foundationX.push(originX+(3+i)*(cardW+gap));
-  const stockX = mobile ? W/2-cardW-gap/2 : originX;
-  const wasteX = mobile ? W/2+gap/2 : originX+(cardW+gap);
-  return {W,H,mobile,pad,gap,rowGap,cardW,cardH,originX,topY:foundationY,foundationY,foundationX,stockX,wasteX,stockY,wasteY,tableauY,tableauBottom,fanDown,fanUp,wasteFan:clamp(cardW*.2,8,26),radius:clamp(cardW*.055,3,8)};
+  return {W,H,pad,gap,rowGap,cardW,cardH,originX,topY:pad,tableauY,fanDown,fanUp,wasteFan:clamp(cardW*.2,8,26),radius:clamp(cardW*.055,3,8)};
 }
 
 /* =======================================================================
@@ -887,7 +669,6 @@ const core = {
     const order = o.order || (o.seed!=null ? Rules.orderFromSeed(o.seed) : Rules.orderRandom());
     S = Rules.deal(order,dm); S.seed = o.seed!=null ? (o.seed>>>0) : null;
     Clock.on = false; Clock.resume();
-    if (!o.instant && !reducedMotion()) ShuffleFX.run();
     afterChange({instant:!!o.instant, deal:!o.instant && !reducedMotion()});
     if (!o.quiet) toast('New deal');
     return Rules.toContract(S);
@@ -898,7 +679,6 @@ const core = {
     Auto.cancel(); history.length = 0; selected = null;
     const dm = S.drawMode, seed = S.seed; S = Rules.deal(S.deal,dm); S.seed = seed;
     Clock.on = false; Clock.resume();
-    if (!o.instant && !reducedMotion()) ShuffleFX.run();
     afterChange({instant:!!o.instant, deal:!o.instant && !reducedMotion()});
     if (!o.quiet) toast('Deal reset');
     return true;
@@ -916,7 +696,7 @@ const core = {
     if (!Rules.plan(S,m)) return false;
     const mm = {from:{zone:m.from.zone,index:m.from.index},to:{zone:m.to.zone,index:m.to.index},count:m.count==null?1:m.count};
     const res = transact('move',()=>Rules.apply(S,mm),o);
-    if (res && !o.instant){ FX.at(View.rectOf(mm.to.zone,mm.to.index)); AudioFX.play(mm.to.zone==='foundation'?'foundation':'drop',Math.min(1.35,.8+(mm.count||1)*.05)); AudioFX.haptic(mm.to.zone==='foundation'?11:7); }
+    if (res && !o.instant) FX.at(View.rectOf(mm.to.zone,mm.to.index));
     return !!res;
   },
   draw(o){
@@ -924,7 +704,7 @@ const core = {
     if (!S.stock.length && !S.waste.length) return false;
     let kind = null;
     const ok = transact('draw',()=>{ kind = Rules.draw(S).kind; },o);
-    if (ok && !o.instant){ FX.at(View.rectOf(kind==='recycle'?'stock':'waste',0),kind==='recycle'?1.4:(S.drawMode===3?1.3:1)); AudioFX.play(kind==='recycle'?'recycle':'draw'); AudioFX.haptic(kind==='recycle'?13:6); }
+    if (ok && !o.instant) FX.at(View.rectOf(kind==='recycle'?'stock':'waste',0),kind==='recycle'?1.4:(S.drawMode===3?1.3:1));
     if (ok && kind==='recycle' && !o.quiet) toast('Waste recycled');
     return !!ok;
   },
@@ -933,7 +713,7 @@ const core = {
     Auto.cancel();
     const prev = history.pop(), el = S.elapsedMs, dm = S.drawMode, deal = S.deal, seed = S.seed;
     S = prev; S.elapsedMs = el; S.drawMode = dm; S.deal = deal; S.seed = seed; selected = null;
-    afterChange(o); if (!(o&&o.instant)) AudioFX.play('undo'); if (!(o&&o.quiet)) toast('Undo'); return true;
+    afterChange(o); if (!(o&&o.quiet)) toast('Undo'); return true;
   },
   setDrawMode(n){
     S.drawMode = n===3?3:1; safeSet(KEY_DRAW,String(S.drawMode)); selected = null; afterChange({instant:true});
@@ -970,7 +750,7 @@ function toast(msg){ const t = $('#toast'); t.textContent = msg; t.classList.add
 const Win = (()=>{
   const el = $('#win'); let shown = false;
   return { sync(){
-    if (S.won && !shown){ shown = true; $('#winStats').textContent = 'All 52 cards are on the foundations · '+fmtTime(Clock.elapsedSec())+' · '+S.moves+' moves · score '+S.score; el.classList.add('show'); FX.celebrate(); AudioFX.play('win'); setTimeout(()=>{ try{ $('#winNew').focus() }catch(_){} },0); }
+    if (S.won && !shown){ shown = true; $('#winStats').textContent = 'All 52 cards are on the foundations · '+fmtTime(Clock.elapsedSec())+' · '+S.moves+' moves · score '+S.score; el.classList.add('show'); setTimeout(()=>{ try{ $('#winNew').focus() }catch(_){} },0); }
     else if (!S.won && shown){ shown = false; el.classList.remove('show'); }
   }};
 })();
@@ -979,70 +759,25 @@ const Win = (()=>{
    FX — canvas ripples under the cards. The rAF loop only runs while something is animating.
    ======================================================================= */
 const FX = (()=>{
-  const cv=$('#fieldFx'),ctx=cv.getContext('2d'),rip=[],sparks=[]; let w=1,h=1,raf=0;
-  const lowEnd=(navigator.deviceMemory||4)<=2||(navigator.hardwareConcurrency||4)<=2,maxRip=lowEnd?3:8;
-  const rgb=[['24,202,215','255,34,54','231,173,67'],['20,145,160','210,40,55','150,104,35']];
-  const col=(i,a)=>'rgba('+rgb[document.documentElement.dataset.theme==='light'?1:0][i%3]+','+a+')';
-  function resize(){const r=cv.getBoundingClientRect();w=Math.max(1,Math.round(r.width));h=Math.max(1,Math.round(r.height));const d=Math.min(devicePixelRatio||1,lowEnd?1:1.5);cv.width=Math.round(w*d);cv.height=Math.round(h*d);ctx.setTransform(d,0,0,d,0,0)}
-  function wake(){if(!raf)raf=requestAnimationFrame(loop)}
+  const cv = $('#fieldFx'), ctx = cv.getContext('2d'), rip = []; let w = 1, h = 1, raf = 0;
+  const lowEnd = (navigator.deviceMemory||4)<=2 || (navigator.hardwareConcurrency||4)<=2, maxRip = lowEnd?3:8;
+  const col = (i,a)=>{ const light = document.documentElement.dataset.theme==='light', c = light?['20,145,160','210,40,55','80,105,155']:['24,202,215','255,34,54','231,173,67']; return 'rgba('+c[i%3]+','+a+')'; };
+  function resize(){ const r = cv.getBoundingClientRect(); w = Math.max(1,Math.round(r.width)); h = Math.max(1,Math.round(r.height)); const d = Math.min(devicePixelRatio||1,lowEnd?1:1.5); cv.width = Math.round(w*d); cv.height = Math.round(h*d); ctx.setTransform(d,0,0,d,0,0); }
   function loop(ts){
-    raf=0;ctx.clearRect(0,0,w,h);
-    for(let i=rip.length-1;i>=0;i--){const r=rip[i],age=(ts-r.born)/1000;r.r+=.9*r.p;r.a*=.963;if(age>1.55||r.a<.015){rip.splice(i,1);continue}ctx.strokeStyle=col(i,r.a*.48);ctx.lineWidth=1.15;ctx.beginPath();ctx.arc(r.x,r.y,r.r,0,Math.PI*2);ctx.stroke()}
-    for(let i=sparks.length-1;i>=0;i--){const p=sparks[i],age=(ts-p.born)/1000;if(age>p.life){sparks.splice(i,1);continue}p.x+=p.vx;p.y+=p.vy;p.vy+=.035;p.vx*=.992;const a=1-age/p.life;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot+=p.spin);ctx.fillStyle=col(p.c,a*.78);ctx.fillRect(-p.s*.5,-p.s*.18,p.s,p.s*.36);ctx.restore()}
-    if(rip.length||sparks.length)raf=requestAnimationFrame(loop);else ctx.clearRect(0,0,w,h)
-  }
-  function burst(x,y,p=1,n){
-    if(reducedMotion()||Prefs.value.juice==='minimal'||document.hidden)return;
-    const count=n!=null?n:(lowEnd?4:Math.round(7*p*(Prefs.value.juice==='rich'?1.35:1)));
-    for(let i=0;i<count;i++){const a=Math.random()*Math.PI*2,sp=(.5+Math.random()*1.7)*p;sparks.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-.6,s:1.5+Math.random()*3.2,c:i%3,rot:Math.random()*6.2,spin:(Math.random()-.5)*.14,born:performance.now(),life:.45+Math.random()*.5})}
-    if(sparks.length>(lowEnd?50:150))sparks.splice(0,sparks.length-(lowEnd?50:150));wake();
+    raf = 0; ctx.clearRect(0,0,w,h);
+    for (let i=rip.length-1;i>=0;i--){
+      const r = rip[i], age = (ts-r.born)/1000; r.r += .9*r.p; r.a *= .965;
+      if (age>1.6||r.a<.015){ rip.splice(i,1); continue; }
+      ctx.strokeStyle = col(i,r.a*.5); ctx.lineWidth = 1.2; ctx.beginPath(); ctx.arc(r.x,r.y,r.r,0,Math.PI*2); ctx.stroke();
+      if (age<.35){ const k = 4+age*60, f = 1-age/.35; ctx.fillStyle = col(0,f); ctx.fillRect(r.x+k,r.y-2,3,3); ctx.fillStyle = col(1,f); ctx.fillRect(r.x-k-3,r.y-2,3,3); ctx.fillStyle = col(2,f); ctx.fillRect(r.x-2,r.y+k,3,3); ctx.fillStyle = 'rgba(255,255,255,'+f+')'; ctx.fillRect(r.x-2,r.y-k-3,3,3); }
+    }
+    if (rip.length) raf = requestAnimationFrame(loop); else ctx.clearRect(0,0,w,h);
   }
   return {
     resize,
-    at(rect,p){if(!rect||reducedMotion()||document.hidden)return;const x=rect.x+rect.w/2,y=rect.y+Math.min(rect.h/2,90);rip.push({x,y,r:4,a:.55,p:p||1.2,born:performance.now()});if(rip.length>maxRip)rip.shift();burst(x,y,p||1.2);wake()},
-    celebrate(){if(reducedMotion()||Prefs.value.juice==='minimal')return;for(let i=0;i<8;i++)setTimeout(()=>burst(w*(.15+Math.random()*.7),h*(.18+Math.random()*.55),1.8,lowEnd?8:18),i*90)},
-    get active(){return !!raf},get level(){return lowEnd?'low':Prefs.value.juice}
+    at(rect,p){ if (!rect||reducedMotion()||document.hidden) return; rip.push({x:rect.x+rect.w/2,y:rect.y+Math.min(rect.h/2,90),r:4,a:.55,p:p||1.2,born:performance.now()}); if (rip.length>maxRip) rip.shift(); if (!raf) raf = requestAnimationFrame(loop); },
+    get active(){ return !!raf; }, get level(){ return lowEnd?'low':'normal'; }
   };
-})();;
-
-
-/* =======================================================================
-   SHUFFLE / FIDGETS — cosmetic, cancellable, never part of authoritative state.
-   ======================================================================= */
-const ShuffleFX = (()=>{
-  const el=$('#shuffleFX'); let token=0,until=0;
-  function build(){ if(el.querySelector('.shuffleCard'))return; for(let i=0;i<16;i++){const c=document.createElement('div');c.className='shuffleCard';c.dataset.i=i;el.appendChild(c)} }
-  function run(){
-    if(reducedMotion()||Prefs.value.juice==='minimal')return; build(); const my=++token;until=performance.now()+1120;View&&View.el&&View.el.board.setAttribute('data-shuffling','true');el.classList.add('active');AudioFX.play('shuffle');
-    const cards=[...el.querySelectorAll('.shuffleCard')],rich=Prefs.value.juice==='rich';
-    cards.forEach((c,i)=>{const side=i<8?-1:1,j=i%8,spread=(j-3.5)*3.5; c.getAnimations().forEach(a=>a.cancel()); c.animate([
-      {transform:`translate(${side*42}px,${spread}px) rotate(${side*(8+j*.55)}deg)`,opacity:.05},
-      {transform:`translate(${side*58}px,${spread*.7}px) rotate(${side*(5+j*.35)}deg)`,opacity:1,offset:.22},
-      {transform:`translate(${side*(8+(j%2)*8)}px,${spread*.25}px) rotate(${side*(1.8+j*.12)}deg)`,opacity:1,offset:.55},
-      {transform:`translate(${(i%2?1:-1)*(rich?5:2)}px,${Math.sin(i)*4}px) rotate(${(i-7.5)*.22}deg)`,opacity:1,offset:.72},
-      {transform:`translate(0,18px) rotate(0deg)`,opacity:0}
-    ],{duration:1020,delay:j*11,easing:'cubic-bezier(.2,.78,.18,1)',fill:'both'})});
-    setTimeout(()=>{if(my!==token)return;el.classList.remove('active');if(View&&View.el)View.el.board.removeAttribute('data-shuffling')},1130)
-  }
-  build();
-  return {run,get active(){return performance.now()<until}};
-})();
-
-const Fidgets = (()=>{
-  const layer=$('#fidgets'); let active=null;
-  const defs=[{kind:'coin',label:'FTS',x:.92,y:.78},{kind:'crystal',label:'',x:.055,y:.77}];
-  function pos(el,x,y){el.dataset.x=x;el.dataset.y=y;el.style.transform=`translate3d(${x}px,${y}px,0) rotate(${el.dataset.r||0}deg)`}
-  function reset(el,i){const r=View.el.board.getBoundingClientRect(),d=defs[i],sz=el.offsetWidth||36;pos(el,clamp(r.width*d.x-sz/2,6,r.width-sz-6),clamp(r.height*d.y-sz/2,6,r.height-sz-6))}
-  function init(){
-    defs.forEach((d,i)=>{const el=document.createElement('div');el.className='fidget';el.dataset.kind=d.kind;el.dataset.r=String(i?17:-9);el.textContent=d.label;el.setAttribute('role','button');el.setAttribute('tabindex','0');el.setAttribute('aria-label','Decorative table fidget');layer.appendChild(el);requestAnimationFrame(()=>reset(el,i));
-      el.addEventListener('pointerdown',e=>{if(e.button!==undefined&&e.button!==0)return;AudioFX.ensure();const br=View.el.board.getBoundingClientRect();active={el,id:e.pointerId,ox:e.clientX-parseFloat(el.dataset.x||0)-br.left,oy:e.clientY-parseFloat(el.dataset.y||0)-br.top};try{el.setPointerCapture(e.pointerId)}catch(_){}});
-      el.addEventListener('dblclick',()=>reset(el,i)); el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();el.dataset.r=String((+el.dataset.r||0)+90);pos(el,+el.dataset.x,+el.dataset.y);AudioFX.play('drop',.55)}})
-    });
-    layer.addEventListener('pointermove',e=>{if(!active||e.pointerId!==active.id)return;e.preventDefault();const br=View.el.board.getBoundingClientRect(),sz=active.el.offsetWidth||36,x=clamp(e.clientX-br.left-active.ox,4,br.width-sz-4),y=clamp(e.clientY-br.top-active.oy,4,br.height-sz-4);active.el.dataset.r=String((+active.el.dataset.r||0)+(e.movementX||0)*.35);pos(active.el,x,y);AudioFX.play('slide',.4)});
-    const end=e=>{if(!active||e.pointerId!==active.id)return;AudioFX.play('drop',.55);AudioFX.haptic(5);active=null}; layer.addEventListener('pointerup',end);layer.addEventListener('pointercancel',end);
-  }
-  function relayout(){[...layer.children].forEach((el,i)=>{const r=View.el.board.getBoundingClientRect(),sz=el.offsetWidth||36,x=+el.dataset.x||0,y=+el.dataset.y||0;if(x>r.width-sz||y>r.height-sz)reset(el,i)})}
-  return {init,relayout};
 })();
 
 /* =======================================================================
@@ -1078,17 +813,16 @@ const View = (()=>{
   }
 
   const r2 = v=>Math.round(v*100)/100;
-  const transformAt = (x,y)=>'translate3d('+x+'px,'+y+'px,0) translate3d(var(--jtx,0px),var(--jty,0px),0) translate3d(var(--fx,0px),var(--fy,0px),0) rotate(calc(var(--jrot,0deg) + var(--frot,0deg)))';
-  const place = (el,x,y)=>{ el.style.transform = transformAt(x,y); stats.writes++; };
+  const place = (el,x,y)=>{ el.style.transform = 'translate3d('+x+'px,'+y+'px,0)'; stats.writes++; };
 
   function targets(s,L){
-    const t=Object.create(null),colX=i=>L.originX+i*(L.cardW+L.gap),add=(c,o)=>{const q=Simplex.pose(c.id,o.zone,o.pile,o.pos,L.cardW);t[c.id]={...o,jx:q.x,jy:q.y,jr:q.r}};
-    s.stock.forEach((c,i)=>add(c,{zone:'stock',pile:0,pos:i,x:L.stockX,y:L.stockY,z:1+i,up:false,vis:i===s.stock.length-1}));
-    const vis=Math.min(s.drawMode,3),wn=s.waste.length;
-    s.waste.forEach((c,i)=>{const k=i-(wn-vis),shown=k>=0;add(c,{zone:'waste',pile:0,pos:i,x:L.wasteX+(shown?k*L.wasteFan:0),y:L.wasteY,z:10+i,up:true,vis:shown})});
-    s.foundations.forEach((f,fi)=>f.forEach((c,i)=>add(c,{zone:'foundation',pile:fi,pos:i,x:L.foundationX[fi],y:L.foundationY,z:1+i,up:true,vis:i===f.length-1})));
-    s.tableau.forEach((p,col)=>{let y=L.tableauY;p.forEach((c,i)=>{add(c,{zone:'tableau',pile:col,pos:i,x:colX(col),y,z:1+i,up:c.faceUp,vis:true});y+=c.faceUp?L.fanUp[col]:L.fanDown[col]})});
-    for(const id in t){t[id].x=r2(t[id].x);t[id].y=r2(t[id].y);t[id].jx=r2(t[id].jx);t[id].jy=r2(t[id].jy);t[id].jr=r2(t[id].jr)}
+    const t = Object.create(null), colX = i=>L.originX+i*(L.cardW+L.gap);
+    s.stock.forEach((c,i)=>{ t[c.id] = {zone:'stock',pile:0,pos:i,x:colX(0),y:L.topY,z:1+i,up:false,vis:i===s.stock.length-1}; });
+    const vis = Math.min(s.drawMode,3), wn = s.waste.length;
+    s.waste.forEach((c,i)=>{ const k = i-(wn-vis), shown = k>=0; t[c.id] = {zone:'waste',pile:0,pos:i,x:colX(1)+(shown?k*L.wasteFan:0),y:L.topY,z:10+i,up:true,vis:shown}; });
+    s.foundations.forEach((f,fi)=>f.forEach((c,i)=>{ t[c.id] = {zone:'foundation',pile:fi,pos:i,x:colX(3+fi),y:L.topY,z:1+i,up:true,vis:i===f.length-1}; }));
+    s.tableau.forEach((p,col)=>{ let y = L.tableauY; p.forEach((c,i)=>{ t[c.id] = {zone:'tableau',pile:col,pos:i,x:colX(col),y,z:1+i,up:c.faceUp,vis:true}; y += c.faceUp?L.fanUp[col]:L.fanDown[col]; }); });
+    for (const id in t){ t[id].x = r2(t[id].x); t[id].y = r2(t[id].y); }
     return t;
   }
 
@@ -1115,24 +849,27 @@ const View = (()=>{
   }
 
   function positionStatic(){
-    const colX=i=>r2(L.originX+i*(L.cardW+L.gap));
-    const at=(el,x,y)=>{const v='translate3d('+r2(x)+'px,'+r2(y)+'px,0)';if(el.style.transform!==v)el.style.transform=v};
-    at(slotEls.stock,L.stockX,L.stockY);at(slotEls.waste,L.wasteX,L.wasteY);
-    for(let i=0;i<4;i++){at(slotEls.foundation[i],L.foundationX[i],L.foundationY);at(ringEls.foundation[i],L.foundationX[i],L.foundationY)}
-    for(let i=0;i<7;i++)at(slotEls.tableau[i],colX(i),L.tableauY);
-    at(stockBadge,L.stockX+L.cardW-12,L.stockY+L.cardH-12);
-    const n=String(S.stock.length);if(stockBadge.textContent!==n)stockBadge.textContent=n;const hide=S.stock.length?'':'none';if(stockBadge.style.display!==hide)stockBadge.style.display=hide;
+    const colX = i=>r2(L.originX+i*(L.cardW+L.gap));
+    const at = (el,x,y)=>{ const v = 'translate3d('+x+'px,'+y+'px,0)'; if (el.style.transform!==v) el.style.transform = v; };
+    at(slotEls.stock,colX(0),L.topY); at(slotEls.waste,colX(1),L.topY);
+    for (let i=0;i<4;i++){ at(slotEls.foundation[i],colX(3+i),L.topY); at(ringEls.foundation[i],colX(3+i),L.topY); }
+    for (let i=0;i<7;i++){ at(slotEls.tableau[i],colX(i),r2(L.tableauY)); }
+    at(stockBadge,r2(colX(0)+L.cardW-12),r2(L.topY+L.cardH-12));
+    const n = String(S.stock.length); if (stockBadge.textContent!==n) stockBadge.textContent = n;
+    const hide = S.stock.length ? '' : 'none'; if (stockBadge.style.display!==hide) stockBadge.style.display = hide;
   }
 
   function tableauTop(col){ const p = S.tableau[col]; if (!p.length) return {x:r2(L.originX+col*(L.cardW+L.gap)),y:r2(L.tableauY)}; const t = T[p[p.length-1].id]; return {x:t.x,y:t.y}; }
 
   // rect of a drop target in board coordinates
   function rectOf(zone,index){
-    if(!L)return null;const colX=i=>L.originX+i*(L.cardW+L.gap);
-    if(zone==='stock')return{x:L.stockX,y:L.stockY,w:L.cardW,h:L.cardH};
-    if(zone==='waste')return{x:L.wasteX,y:L.wasteY,w:L.cardW,h:L.cardH};
-    if(zone==='foundation')return{x:L.foundationX[index],y:L.foundationY,w:L.cardW,h:L.cardH};
-    if(zone==='tableau'){const p=tableauTop(index);return{x:p.x,y:p.y,w:L.cardW,h:L.cardH}} return null;
+    if (!L) return null;
+    const colX = i=>L.originX+i*(L.cardW+L.gap);
+    if (zone==='stock')  return {x:colX(0),y:L.topY,w:L.cardW,h:L.cardH};
+    if (zone==='waste')  return {x:colX(1),y:L.topY,w:L.cardW,h:L.cardH};
+    if (zone==='foundation') return {x:colX(3+index),y:L.topY,w:L.cardW,h:L.cardH};
+    if (zone==='tableau'){ const p = tableauTop(index); return {x:p.x,y:p.y,w:L.cardW,h:L.cardH}; }
+    return null;
   }
 
   function settle(){
@@ -1157,7 +894,7 @@ const View = (()=>{
 
     if (opts.deal && !instant){            // start every card on the stock, then fly out in deal order
       board.classList.add('noanim');
-      const sx = r2(L.stockX), sy = r2(L.stockY);
+      const sx = r2(L.originX), sy = r2(L.topY);
       for (const id of IDS){ const r = recs[id]; place(r.el,sx,sy); r.x = sx; r.y = sy; r.el.style.visibility = ''; r.vis = true; r.hideLater = false; r.el.dataset.up = 'false'; r.up = false; }
       void board.offsetWidth; board.classList.remove('noanim');
     }
@@ -1168,8 +905,6 @@ const View = (()=>{
     for (const id of IDS){
       const r = recs[id], tg = T[id], el = r.el;
       const moved = r.dirty || r.x!==tg.x || r.y!==tg.y;
-      const pjx=tg.jx+'px',pjy=tg.jy+'px',pjr=tg.jr+'deg';
-      if(el.style.getPropertyValue('--jtx')!==pjx){el.style.setProperty('--jtx',pjx);el.style.setProperty('--jty',pjy);el.style.setProperty('--jrot',pjr);stats.writes++;}
       if (moved){
         if (!instant){ r.flying = true; flyingAny = true; el.classList.add('flying'); }
         if (dealOrder && dealOrder[id]!==undefined) el.style.transitionDelay = (dealOrder[id]*22)+'ms';
@@ -1183,7 +918,7 @@ const View = (()=>{
         const apply = ()=>{ el.dataset.up = String(tg.up); el.setAttribute('aria-label',tg.up?RANK_NAME[CARD[id].rank]+' of '+SUITS[CARD[id].suit].name:ARIA_BACK); stats.writes++; };
         if (!firstTime && !instant && !reducedMotion()){
           if (dealOrder && tg.up){ clearTimeout(r.flipT); r.flipT = setTimeout(()=>{ apply(); el.classList.add('flip'); setTimeout(()=>el.classList.remove('flip'),260); },dealOrder[id]*22+MOVE_MS-40); }
-          else { apply(); el.classList.add('flip'); AudioFX.play('flip',.72); setTimeout(()=>el.classList.remove('flip'),260); }
+          else { apply(); el.classList.add('flip'); setTimeout(()=>el.classList.remove('flip'),260); }
         } else apply();
         r.up = tg.up;
       }
@@ -1205,24 +940,31 @@ const View = (()=>{
     const w = board.clientWidth, h = board.clientHeight; if (w===boardW && h===boardH) return;
     boardW = w; boardH = h;
     for (const id in recs) recs[id].dirty = true;
-    FX.resize(); sync({instant:true}); Fidgets.relayout();
+    FX.resize(); sync({instant:true});
   }
   function forceSync(){ for (const id in recs) recs[id].dirty = true; sync({instant:true}); }
 
   function locate(id){ return T&&T[id]||null; }
   function zoneAt(x,y){
-    if(!L)return null;const hit=rc=>x>=rc.x-4&&x<=rc.x+rc.w+4&&y>=rc.y-4&&y<=rc.y+rc.h+4;
-    if(hit(rectOf('stock',0)))return{zone:'stock',index:0};if(hit(rectOf('waste',0)))return{zone:'waste',index:0};
-    for(let i=0;i<4;i++)if(hit(rectOf('foundation',i)))return{zone:'foundation',index:i};
-    const colW=L.cardW+L.gap,rel=(x-L.originX+L.gap/2)/colW,col=Math.floor(rel);if(col<0||col>6)return null;
-    const inCol=x>=L.originX+col*colW-L.gap/2&&x<=L.originX+col*colW+L.cardW+L.gap/2;
-    if(inCol&&y>=L.tableauY-L.rowGap/2&&y<=L.tableauBottom+L.cardH)return{zone:'tableau',index:col};return null;
+    if (!L) return null;
+    const colW = L.cardW+L.gap, rel = (x-L.originX+L.gap/2)/colW, col = Math.floor(rel);
+    if (col<0||col>6) return null;
+    const inCol = x>=L.originX+col*colW-L.gap/2 && x<=L.originX+col*colW+L.cardW+L.gap/2;
+    if (!inCol) return null;
+    if (y>=L.topY-4 && y<=L.topY+L.cardH+L.rowGap/2){
+      if (col===0) return {zone:'stock',index:0};
+      if (col===1) return {zone:'waste',index:0};
+      if (col>=3) return {zone:'foundation',index:col-3};
+      return null;
+    }
+    if (y>=L.tableauY-L.rowGap/2) return {zone:'tableau',index:col};
+    return null;
   }
   function boardPoint(e){ const r = board.getBoundingClientRect(); return {x:e.clientX-r.left,y:e.clientY-r.top}; }
 
   // drag
   function dragStart(ids){ for (const id of ids){ const r = recs[id]; r.el.classList.add('dragging'); r.el.style.zIndex = String(1000+IDS.indexOf(id)); } }
-  function dragMove(ids,dx,dy){ for (const id of ids){ const r = recs[id]; r.el.style.transform = transformAt(r.x+dx,r.y+dy); } AudioFX.play('slide',.42); }
+  function dragMove(ids,dx,dy){ for (const id of ids){ const r = recs[id]; r.el.style.transform = 'translate3d('+(r.x+dx)+'px,'+(r.y+dy)+'px,0)'; } }
   function dragEnd(ids){ for (const id of ids){ const r = recs[id]; r.el.classList.remove('dragging'); r.el.style.zIndex = String(r.z); r.dirty = true; } }
   function leadRect(ids,dx,dy){ const r = recs[ids[0]]; return {x:r.x+dx,y:r.y+dy,w:L.cardW,h:L.cardH}; }
 
@@ -1301,11 +1043,11 @@ const Input = (()=>{
   function onPointerDown(e){
     if (e.button!==undefined && e.button!==0) return;
     if (e.isPrimary===false) return;
-    if (ShuffleFX.active) return; AudioFX.ensure(); Auto.cancel();
+    Auto.cancel();
     const cardEl = e.target.closest && e.target.closest('.card'); if (!cardEl) return;
     const loc = View.locate(cardEl.dataset.id); if (!loc || loc.zone==='stock') return;
     const src = sourceOf(loc.zone,loc.pile,loc.pos); if (!src) return;
-    const pt = View.boardPoint(e); AudioFX.play('lift',.65);
+    const pt = View.boardPoint(e);
     drag = {pointerId:e.pointerId, x0:pt.x, y0:pt.y, src, ids:idsOf(src), active:false, legal:null, hover:null, el:cardEl};
     try{ cardEl.setPointerCapture(e.pointerId); }catch(_){}
   }
@@ -1332,13 +1074,13 @@ const Input = (()=>{
     View.clearRings(); View.dragEnd(d.ids);
     let moved = false;
     if (target){ const [z,i] = target.split(':'); moved = core.move(asMove(d.src,{zone:z,index:+i})); }
-    if (!moved){ AudioFX.play('nope',.7); View.sync({}); }                                  // dragEnd marked the cards dirty → they glide back
+    if (!moved) View.sync({});                                  // dragEnd marked the cards dirty → they glide back
   }
 
   const isTarget = zone=>zone==='foundation'||zone==='tableau';
   function onClick(e){
     if (performance.now()<suppressUntil) return;
-    if (ShuffleFX.active) return; AudioFX.ensure(); Auto.cancel();
+    Auto.cancel();
     const cardEl = e.target.closest && e.target.closest('.card');
     let zone, idx, pos = -1;
     if (cardEl){ const loc = View.locate(cardEl.dataset.id); if (!loc) return; zone = loc.zone; idx = loc.pile; pos = loc.pos; }
@@ -1354,10 +1096,10 @@ const Input = (()=>{
       const samePile = zone===selected.zone && idx===selected.index;
       if (isTarget(zone) && !samePile){
         if (core.move(asMove(selected,{zone,index:idx}))) return;
-        View.nope(idsOf(selected)); AudioFX.play('nope',.8);
+        View.nope(idsOf(selected));
       }
     }
-    if (src){ selected = src; if(cardEl){cardEl.classList.remove('fidget-pop');void cardEl.offsetWidth;cardEl.classList.add('fidget-pop');setTimeout(()=>cardEl.classList.remove('fidget-pop'),360)} View.sync({}); }
+    if (src){ selected = src; View.sync({}); }
     else if (selected && !isTarget(zone)){ selected = null; View.sync({}); }
   }
 
@@ -1418,25 +1160,6 @@ const Input = (()=>{
   return {bind, get dragging(){ return !!(drag&&drag.active) }};
 })();
 
-
-/* ---------- settings ---------- */
-const Settings = (()=>{
-  const panel=$('#settingsPanel'),btn=$('#settingsBtn'),soundBtn=$('#soundBtn');
-  function sync(){const p=Prefs.value;$('#setSound').checked=p.sound;$('#setVolume').value=String(p.volume);$('#setHaptics').checked=p.haptics;$('#setJuice').value=p.juice;Prefs.apply()}
-  function show(on){panel.classList.toggle('show',on);btn.setAttribute('aria-expanded',String(on));if(on){sync();setTimeout(()=>$('#setSound').focus(),0)}}
-  function bind(){
-    btn.onclick=()=>show(!panel.classList.contains('show'));$('#closeSettings').onclick=()=>show(false);
-    soundBtn.onclick=()=>{Prefs.set('sound',!Prefs.value.sound);if(Prefs.value.sound){AudioFX.ensure();AudioFX.play('drop',.45)}sync()};
-    $('#setSound').onchange=e=>{Prefs.set('sound',e.target.checked);if(e.target.checked)AudioFX.ensure();sync()};
-    $('#setVolume').oninput=e=>{Prefs.set('volume',+e.target.value);AudioFX.ensure()};
-    $('#setHaptics').onchange=e=>Prefs.set('haptics',e.target.checked);$('#setJuice').onchange=e=>Prefs.set('juice',e.target.value);
-    document.addEventListener('pointerdown',e=>{if(panel.classList.contains('show')&&!panel.contains(e.target)&&e.target!==btn)show(false)});
-    document.addEventListener('keydown',e=>{if(e.key==='Escape'&&panel.classList.contains('show'))show(false)});
-    sync();
-  }
-  return {bind,sync,show};
-})();
-
 /* ---------- theme ---------- */
 function applyTheme(theme){
   theme = theme==='light' ? 'light' : 'dark';
@@ -1464,9 +1187,7 @@ if (DEV) (()=>{
     draw: ()=>core.draw({instant:true,quiet:true}),
     undo: ()=>core.undo({instant:true,quiet:true}),
     restart: ()=>core.restart({instant:true,quiet:true}),
-    errors: ()=>errors.slice(),
-    prefs: ()=>({...Prefs.value}),
-    shuffle: ()=>ShuffleFX.run()
+    errors: ()=>errors.slice()
   };
   window.__KLONDIKE_TEST__ = hook;
   // Compatibility shim for tooling written against v4 (dev-only now).
@@ -1569,12 +1290,6 @@ if (DEV) (()=>{
   T('layout / fits every viewport in the matrix (cards 5:7, inside the board, ≥ min size)',()=>[[320,480],[360,640],[390,844],[430,932],[768,1024],[1024,768],[844,296],[1280,800],[1920,1080],[2560,1440]].every(([w,h])=>{ const l = solveLayout(w,h,Rules.deal(Rules.orderFromSeed(1),1).tableau); return l.cardW*7+l.gap*6+l.pad*2<=w+0.5 && l.originX>=l.pad-0.5 && l.cardH*2+l.rowGap+l.pad*2<=h+0.5 && Math.abs(l.cardH/l.cardW-1.4)<1e-9 && l.cardW>=28 && l.cardW<=118; }));
   T('layout / worst-case column (6 down + 13 up) stays above the board bottom at every player viewport',()=>{ const worst = [[],[],[],[],[],[],IDS.slice(0,19).map((id,k)=>mk(id,k>5))]; return [[320,200],[360,240],[568,240],[844,240],[844,260],[896,300],[320,480],[390,700],[768,900],[1024,600],[1280,700],[1920,900]].every(([w,h])=>{ const l = solveLayout(w,h,worst); return l.tableauY+l.cardH+6*l.fanDown[6]+12*l.fanUp[6] <= h+0.5; }); });
   T('layout / card size does not change as piles grow (fans compress instead)',()=>{ const a = solveLayout(900,600,Rules.deal(Rules.orderFromSeed(1),1).tableau), big = [[],[],[],[],[],[],IDS.slice(0,19).map((id,i)=>mk(id,i>5))]; const b = solveLayout(900,600,big); return a.cardW===b.cardW && b.fanUp[6]<=a.fanUp[6]; });
-  T('layout / portrait foundations are centered top and stock + waste form a bottom thumb deck',()=>{const l=solveLayout(390,700,Rules.deal(Rules.orderFromSeed(2),1).tableau),mid=(l.foundationX[0]+l.foundationX[3]+l.cardW)/2;return l.mobile&&Math.abs(mid-195)<1&&l.stockY>l.tableauY+l.cardH&&l.wasteY===l.stockY&&l.stockX<l.wasteX});
-  T('cosmetic / simplex card pose is deterministic and bounded',()=>{const a=Simplex.pose('H7','tableau',3,5,84),b=Simplex.pose('H7','tableau',3,5,84);return JSON.stringify(a)===JSON.stringify(b)&&Math.abs(a.x)<4&&Math.abs(a.y)<4&&Math.abs(a.r)<3});
-  T('cosmetic / decorative fidgets are not card nodes or game-state cards',()=>document.querySelectorAll('.fidget').length===2&&document.querySelectorAll('#fidgets .card').length===0&&Rules.validate(S).length===0);
-  T('cosmetic / shuffle ghosts are separate from the 52 persistent card nodes',()=>document.querySelectorAll('.shuffleCard').length===16&&document.querySelectorAll('.cards .card').length===52);
-  T('settings / visual juice has a valid tier and sound preference is boolean',()=>['rich','balanced','minimal'].includes(Prefs.value.juice)&&typeof Prefs.value.sound==='boolean');
-
 
   T('assets / 54 images decoded, every one 250×350 (5:7), none failed',()=>Assets.ok===54 && !Assets.failed.length && Object.values(Assets.dims).every(([w,h])=>w===250&&h===350));
   T('assets / every card face and back renders atlas art (no text fallbacks)',()=>{ const cs = [...document.querySelectorAll('.card')]; return cs.length===52 && cs.every(e=>{ const f = e.querySelector('.front'), b = e.querySelector('.back'); return !f.classList.contains('noart') && /url\(/.test(getComputedStyle(f).backgroundImage) && /url\(/.test(getComputedStyle(b).backgroundImage); }); });
@@ -1652,7 +1367,7 @@ async function boot(){
   if (seedParam!=null && Number.isFinite(seedParam)) S = Rules.deal(Rules.orderFromSeed(seedParam>>>0),savedDraw), S.seed = seedParam>>>0;
   else S = restored || Rules.deal(Rules.orderRandom(),savedDraw);
   const fresh = !restored;
-  Input.bind(); Settings.bind(); Fidgets.init(); Prefs.apply();
+  Input.bind();
   if ('ResizeObserver' in window){ let raf = 0; new ResizeObserver(()=>{ cancelAnimationFrame(raf); raf = requestAnimationFrame(()=>View.relayout()); }).observe(View.el.board); }
   else window.addEventListener('resize',()=>View.relayout());
   Clock.resume();
