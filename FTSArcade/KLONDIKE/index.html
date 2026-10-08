@@ -641,6 +641,38 @@ html[data-uv-mobile="true"][data-theme="blacklight"] .card.dragging{box-shadow:0
   .board{--table-inset:2px}
 }
 
+
+/* UV 5.33: preserve the original desktop SVG neon renderer unchanged.
+   Mobile reconstructs the same eye-searing magenta/violet fluorescence with
+   local face tint and layered emission, without WebKit's parent SVG filter. */
+html[data-uv-mobile="true"][data-theme="blacklight"] .card{
+ --uv-card-a:164,64,255;--uv-card-b:248,23,255;
+ box-shadow:0 2px 8px rgba(0,0,0,.78),0 0 0 1px rgba(var(--uv-card-a),.96),0 0 5px 1px rgba(var(--uv-card-a),.9),0 0 13px 3px rgba(var(--uv-card-b),.72),0 0 25px 6px rgba(100,27,255,.43)!important;
+}
+html[data-uv-mobile="true"][data-theme="blacklight"] .card[data-suit="H"],
+html[data-uv-mobile="true"][data-theme="blacklight"] .card[data-suit="D"]{--uv-card-a:255,61,237;--uv-card-b:255,15,159;--uv-paper-a:255,0,221;--uv-paper-b:213,44,255}
+html[data-uv-mobile="true"][data-theme="blacklight"] .card[data-suit="C"],
+html[data-uv-mobile="true"][data-theme="blacklight"] .card[data-suit="S"]{--uv-card-a:111,65,255;--uv-card-b:190,21,255;--uv-paper-a:163,28,255;--uv-paper-b:219,33,255}
+html[data-uv-mobile="true"][data-theme="blacklight"] .card[data-up="true"] .front{
+ filter:saturate(2.25) contrast(1.2) brightness(.90) hue-rotate(0deg)!important;
+ -webkit-filter:saturate(2.25) contrast(1.2) brightness(.90) hue-rotate(0deg)!important;
+}
+html[data-uv-mobile="true"][data-theme="blacklight"] .card[data-up="true"] .front::before{
+ background:linear-gradient(125deg,rgba(226,27,255,.98),rgba(177,30,255,.95) 55%,rgba(255,12,221,.94))!important;
+ mix-blend-mode:multiply!important;opacity:.94!important;
+}
+html[data-uv-mobile="true"][data-theme="blacklight"] .card[data-up="true"] .front::after{
+ background:linear-gradient(145deg,rgba(255,63,253,.52),rgba(115,23,255,.20) 45%,rgba(246,39,255,.34))!important;
+ mix-blend-mode:screen!important;opacity:.70!important;
+}
+html[data-uv-mobile="true"][data-theme="blacklight"] .card[data-up="false"] .back{
+ filter:saturate(2.0) contrast(1.18) brightness(.91) hue-rotate(12deg)!important;
+ -webkit-filter:saturate(2.0) contrast(1.18) brightness(.91) hue-rotate(12deg)!important;
+}
+html[data-uv-mobile="true"][data-theme="blacklight"][data-uv-intensity="balanced"] .card{box-shadow:0 2px 8px rgba(0,0,0,.8),0 0 0 1px rgba(var(--uv-card-a),.8),0 0 8px rgba(var(--uv-card-a),.65),0 0 18px 3px rgba(var(--uv-card-b),.38)!important}
+html[data-uv-mobile="true"][data-theme="blacklight"][data-uv-intensity="low"] .card{box-shadow:0 2px 8px rgba(0,0,0,.8),0 0 0 1px rgba(var(--uv-card-a),.6),0 0 6px rgba(var(--uv-card-a),.25)!important}
+html[data-uv-mobile="true"][data-theme="blacklight"][data-card-glow="off"] .card{box-shadow:0 2px 8px rgba(0,0,0,.8),0 0 0 1px rgba(var(--uv-card-a),.65)!important}
+html[data-uv-mobile="true"][data-theme="blacklight"] .card.dragging{box-shadow:0 14px 30px rgba(0,0,0,.8),0 0 0 1px rgba(var(--uv-card-a),1),0 0 16px 4px rgba(var(--uv-card-b),.85),0 0 30px 8px rgba(120,35,255,.55)!important}
 </style>
 </head>
 <body>
