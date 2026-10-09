@@ -737,20 +737,6 @@ html[data-theme="blacklight"][data-card-glow="off"] .cardGlowGround{opacity:0!im
 .card.dragging + .cardGlowGround{opacity:inherit}
 @media(prefers-reduced-motion:reduce){.cardGlowGround{transition:none!important}}
 
-
-/* CEP 5.38: progressive enhancement, accessible quick-move chooser */
-.quickMovePicker[hidden]{display:none!important}
-.quickMovePicker{position:fixed;z-index:940;left:50%;top:50%;transform:translate(-50%,-50%);max-width:min(92vw,420px);padding:12px;background:rgba(3,8,14,.97);border:1px solid var(--gold);border-radius:12px;box-shadow:0 14px 45px rgba(0,0,0,.65);display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;color:#fff}
-.quickMovePicker button{min-height:44px;padding:9px 12px;border:1px solid #6e8294;border-radius:7px;background:#152638;color:#fff;font:700 12px system-ui}
-.quickMovePicker button:focus-visible{outline:3px solid #fff}
-html[data-show-telemetry="off"] .metrics,html[data-show-telemetry="off"] .compactMetrics{display:none!important}
-html[data-render-tier="economy"] .fieldFx{display:none!important}
-html[data-render-tier="economy"] .board::after{animation:none!important}
-html[data-render-tier="economy"] .uvEtch::after{display:none!important}
-html[data-render-tier="economy"] .card{will-change:auto!important}
-html[data-render-tier="balanced"]{--juice-opacity:.55}
-html[data-render-tier="ultra"]{--juice-opacity:1}
-@media(prefers-reduced-motion:reduce){.quickMovePicker{transition:none}}
 </style>
 <style>
 /* =====================================================================
@@ -909,8 +895,6 @@ html[data-display-mode="fullscreen"] body{background:#000;}
 
       <details class="settingGroup" open>
         <summary>Cards / Table</summary>
-        <label class="settingRow"><span>Rendering budget</span><select id="setQualityMode"><option value="auto">Adaptive (recommended)</option><option value="economy">Economy / data saver</option><option value="balanced">Balanced</option><option value="ultra">Ultra / streamer</option></select></label>
-        <label class="settingRow"><span>Show time and score</span><input id="setShowTelemetry" type="checkbox" checked></label>
         <label class="settingRow"><span>Card face</span><select id="setCardStyle"><option value="montecarlo">Monte Carlo</option><option value="red-eye">Red Eye</option><option value="intaglio">Intaglio Galactica</option><option value="ivory">Ivory</option><option value="high-contrast">High contrast</option></select></label>
         <label class="settingRow"><span>Card back</span><select id="setCardBack"><option value="galactica">Galactica</option><option value="red-eye">Red Eye</option><option value="blueprint">Blueprint</option><option value="obsidian">Obsidian</option><option value="classic">Classic pack</option></select></label>
         <label class="settingRow"><span>Table</span><select id="setTableStyle"><option value="montecarlo">Monte Carlo</option><option value="midnight">Midnight</option><option value="red-eye">Red Eye</option><option value="classic-green">Classic green</option></select></label>
@@ -938,8 +922,6 @@ html[data-display-mode="fullscreen"] body{background:#000;}
 
       <details class="settingGroup">
         <summary>Motion / Input</summary>
-        <label class="settingRow"><span>Double tap to move</span><input id="setDoubleTap" type="checkbox" checked></label>
-        <label class="settingRow"><span>Quick move destination</span><select id="setQuickMovePolicy"><option value="smart">Smart / reveal first</option><option value="foundation">Foundation first</option><option value="tableau">Tableau first</option><option value="ask">Ask if ambiguous</option></select></label>
         <label class="settingRow"><span>Haptics</span><input id="setHaptics" type="checkbox" checked></label>
         <label class="settingRow"><span>Motion</span><select id="setMotion"><option value="system">Follow system</option><option value="full">Full</option><option value="reduced">Reduced</option></select></label>
         <label class="settingRow"><span>Animation speed</span><select id="setAnimationSpeed"><option value="slow">Slow</option><option value="normal">Normal</option><option value="fast">Fast</option><option value="instant">Instant</option></select></label>
@@ -978,7 +960,6 @@ html[data-display-mode="fullscreen"] body{background:#000;}
   </div>
 </div>
 
-  <div class="quickMovePicker" id="quickMovePicker" role="group" aria-label="Choose a legal card destination" hidden></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div class="win" id="win" role="dialog" aria-modal="true" aria-labelledby="winTitle">
   <div class="winPanel"><h2 id="winTitle">Sequence complete</h2><p id="winStats">All 52 cards are on the foundations.</p><button class="control primary" id="winNew" type="button" style="margin:0 auto">Deal another</button></div>
@@ -1155,7 +1136,6 @@ const ASMRTexture = (()=>{
 const Prefs = (()=>{
   const base={
     sound:true,volume:.70,haptics:true,juice:'rich',tactile:'studio',
-    doubleTap:true,quickMovePolicy:'smart',qualityMode:'auto',showTelemetry:true,
     sfxCards:1,sfxFriction:.72,sfxImpact:.86,sfxDeal:.82,sfxSpinner:.70,sfxWin:.66,
     cardStyle:'montecarlo',cardBack:'galactica',tableStyle:'montecarlo',uvIntensity:'searing',cardGlow:true,feltEtch:true,spinner:true,
     motion:'system',animationSpeed:'normal',handedness:'right',contrast:'normal',largeControls:false,focusGlow:true,
@@ -1171,14 +1151,11 @@ const Prefs = (()=>{
   v.cardGlow=v.cardGlow!==false; v.feltEtch=v.feltEtch!==false; v.spinner=v.spinner!==false;
   enumv('motion',['system','full','reduced'],'system'); enumv('animationSpeed',['slow','normal','fast','instant'],'normal'); enumv('handedness',['right','left'],'right'); enumv('contrast',['normal','high'],'normal');
   v.largeControls=!!v.largeControls; v.focusGlow=v.focusGlow!==false;
-  v.doubleTap=v.doubleTap!==false;v.showTelemetry=v.showTelemetry!==false;
-  enumv('quickMovePolicy',['smart','foundation','tableau','ask'],'smart');enumv('qualityMode',['auto','economy','balanced','ultra'],'auto');
   Object.assign(v,GameRules.fromPrefs(v));
   const save=()=>{ try{ localStorage.setItem(KEY_PREFS,JSON.stringify(v)); }catch(_){} };
   function apply(){
     const r=document.documentElement;
     r.dataset.juice=v.juice; r.dataset.uvGlow=(v.juice!=='minimal'&&!reducedMotion())?'on':'off';
-    r.dataset.showTelemetry=v.showTelemetry?'on':'off';
     r.dataset.cardStyle=v.cardStyle; r.dataset.cardBack=v.cardBack; r.dataset.tableStyle=v.tableStyle; r.dataset.uvIntensity=v.uvIntensity; r.dataset.cardGlow=v.cardGlow?'on':'off'; r.dataset.feltEtch=v.feltEtch?'on':'off'; r.dataset.spinner=v.spinner?'on':'off';
     r.dataset.motion=v.motion; r.dataset.speed=v.animationSpeed; r.dataset.handedness=v.handedness; r.dataset.contrast=v.contrast; r.dataset.largeControls=v.largeControls?'on':'off'; r.dataset.focusGlow=v.focusGlow?'on':'off';
     const speed={slow:'430ms',normal:'280ms',fast:'165ms',instant:'0ms'}[v.animationSpeed]; r.style.setProperty('--move-ms',speed);
@@ -1930,42 +1907,6 @@ const Win = (()=>{
   }};
 })();
 
-/* CEP 5.38 — adaptive rendering. All graphics are local; no runtime asset downloads. */
-const AdaptiveQuality=(()=>{
-  const tiers=['economy','balanced','ultra'];
-  let tier='balanced',samples=[],last=0,down=0,up=0,frame=0;
-  const root=document.documentElement;
-  function initial(){
-    const memory=Number(navigator.deviceMemory||0),cores=Number(navigator.hardwareConcurrency||0);
-    const save=!!navigator.connection?.saveData;
-    if(save || (memory&&memory<=2) || (cores&&cores<=2) || reducedMotion())return 'economy';
-    if((memory>=8&&cores>=8)||(!memory&&cores>=8))return 'ultra';
-    return 'balanced';
-  }
-  function refresh(){
-    const mode=Prefs.value.qualityMode;
-    const proposed=mode==='auto'?initial():mode;
-    tier=tiers.includes(proposed)?proposed:'balanced';root.dataset.renderTier=tier;
-    samples=[];down=0;up=0;
-    return tier;
-  }
-  function observe(ts){
-    if(!last){last=ts;return;}const dt=ts-last;last=ts;
-    if(document.hidden||dt>250||Prefs.value.qualityMode!=='auto')return;
-    samples.push(dt);if(samples.length<90)return;
-    const mean=samples.reduce((a,b)=>a+b,0)/samples.length;samples=[];
-    // Hysteresis: repeated overload downshifts promptly, upgrades only after sustained headroom.
-    down=mean>27?down+1:0;up=mean<17.5?up+1:0;
-    let idx=tiers.indexOf(tier);
-    if(down>=2&&idx>0){tier=tiers[--idx];down=up=0;root.dataset.renderTier=tier;}
-    else if(up>=8&&idx<tiers.indexOf(initial())){tier=tiers[++idx];down=up=0;root.dataset.renderTier=tier;}
-  }
-  let frames=0;function loop(ts){observe(ts);if(++frames<100){frame=requestAnimationFrame(loop)}else{frames=0;last=0;setTimeout(()=>{if(!document.hidden)frame=requestAnimationFrame(loop)},8000)}}
-  document.addEventListener('visibilitychange',()=>{last=0;samples=[]});
-  refresh();frame=requestAnimationFrame(loop);
-  return {refresh,observe,get tier(){return tier},initial};
-})();
-
 /* =======================================================================
    FX — canvas ripples under the cards. The rAF loop only runs while something is animating.
    ======================================================================= */
@@ -1975,7 +1916,7 @@ const FX = (()=>{
   const rgb=[['24,202,215','255,34,54','231,173,67'],['20,145,160','210,40,55','150,104,35']];
   const col=(i,a)=>'rgba('+rgb[document.documentElement.dataset.theme==='light'?1:0][i%3]+','+a+')';
   const GRID=Object.freeze({step:lowEnd?24:18,fps:lowEnd?18:30,spatial:.105,drift:.035,time:.00019,phaseNoise:1.55,speedNoise:.32,baseAlpha:lowEnd?.026:.034,ampAlpha:lowEnd?.035:.052});
-  function gridEnabled(){return AdaptiveQuality.tier!=='economy'&&!reducedMotion()&&Prefs.value.juice!=='minimal'&&!document.hidden}
+  function gridEnabled(){return !reducedMotion()&&Prefs.value.juice!=='minimal'&&!document.hidden}
   // Simplex perturbs local phase AND local propagation rate so the grid breathes like a field, not synchronized rings.
   function gridSample(gx,gy,ts,w0=w,h0=h){
     const t=ts*GRID.time,px=gx*GRID.step,py=gy*GRID.step,cx=w0*.52,cy=h0*.46,dist=Math.hypot(px-cx,py-cy)/Math.max(1,Math.min(w0,h0));
@@ -1992,7 +1933,7 @@ const FX = (()=>{
       const q=gridSample(gx,gy,ts);ctx.fillStyle='rgba('+ink+','+q.alpha.toFixed(4)+')';ctx.beginPath();ctx.arc(x,y,q.radius,0,Math.PI*2);ctx.fill();
     }
   }
-  function resize(){const r=cv.getBoundingClientRect();w=Math.max(1,Math.round(r.width));h=Math.max(1,Math.round(r.height));const d=Math.min(devicePixelRatio||1,AdaptiveQuality.tier==='economy'?1:AdaptiveQuality.tier==='ultra'?2:1.25);cv.width=Math.round(w*d);cv.height=Math.round(h*d);ctx.setTransform(d,0,0,d,0,0);wake()}
+  function resize(){const r=cv.getBoundingClientRect();w=Math.max(1,Math.round(r.width));h=Math.max(1,Math.round(r.height));const d=Math.min(devicePixelRatio||1,lowEnd?1:1.5);cv.width=Math.round(w*d);cv.height=Math.round(h*d);ctx.setTransform(d,0,0,d,0,0);wake()}
   function wake(){if(!raf)raf=requestAnimationFrame(loop)}
   function loop(ts){
     raf=0;const gridDue=gridEnabled()&&(ts-lastGrid>=1000/GRID.fps);
@@ -2003,8 +1944,8 @@ const FX = (()=>{
     if(gridEnabled()||rip.length||sparks.length)raf=requestAnimationFrame(loop);else ctx.clearRect(0,0,w,h)
   }
   function burst(x,y,p=1,n){
-    if(AdaptiveQuality.tier==='economy'||reducedMotion()||Prefs.value.juice==='minimal'||document.hidden)return;
-    const count=n!=null?n:(AdaptiveQuality.tier==='ultra'?Math.round(16*p):Math.round(5*p));
+    if(reducedMotion()||Prefs.value.juice==='minimal'||document.hidden)return;
+    const count=n!=null?n:(lowEnd?4:Math.round(7*p*(Prefs.value.juice==='rich'?1.35:1)));
     for(let i=0;i<count;i++){const a=Math.random()*Math.PI*2,sp=(.5+Math.random()*1.7)*p;sparks.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-.6,s:1.5+Math.random()*3.2,c:i%3,rot:Math.random()*6.2,spin:(Math.random()-.5)*.14,born:performance.now(),life:.45+Math.random()*.5})}
     if(sparks.length>(lowEnd?50:150))sparks.splice(0,sparks.length-(lowEnd?50:150));wake();
   }
@@ -2342,7 +2283,7 @@ const DropMagnet = (()=>{
    INPUT — pointer drag, tap-to-move, double-click to foundation, keyboard
    ======================================================================= */
 const Input = (()=>{
-  let drag = null, suppressUntil = 0, armed = null, armTimer = 0, lastTap=null;
+  let drag = null, suppressUntil = 0, armed = null, armTimer = 0;
   const board = View.el.board;
 
   function sourceOf(zone,idx,pos){
@@ -2424,7 +2365,7 @@ const Input = (()=>{
     drag = null;
     try{ d.el.releasePointerCapture(d.pointerId); }catch(_){}
     if (!d.active) return;
-    suppressUntil = performance.now()+320;lastTap=null;
+    suppressUntil = performance.now()+320;
     const pt = View.boardPoint(e), dx = pt.x-d.x0, dy = pt.y-d.y0;
     const target = cancel ? null : bestDrop(d.legal,View.leadRect(d.ids,dx,dy),pt);
     View.clearRings(); View.dragEnd(d.ids); AudioFX.stopFriction();
@@ -2433,41 +2374,6 @@ const Input = (()=>{
     if (!moved){ if(!cancel){CardVoice.emit('reject'); AudioFX.haptic('reject');} View.sync({}); }                                  // dragEnd marked the cards dirty → they glide back
   }
 
-  function candidateMoves(src){
-    if(!src)return [];
-    const result=[];
-    for(let i=0;i<4;i++){const m=asMove(src,{zone:'foundation',index:i});if(Rules.plan(S,m))result.push(m);}
-    for(let i=0;i<7;i++){const m=asMove(src,{zone:'tableau',index:i});if(Rules.plan(S,m))result.push(m);}
-    return result.filter(m=>!(src.zone==='tableau'&&m.to.zone==='tableau'&&
-      src.count===S.tableau[src.index].length&&!S.tableau[m.to.index].length));
-  }
-  function quickMove(src){
-    const moves=candidateMoves(src);
-    if(!moves.length){toast('No legal destination');return false;}
-    const policy=Prefs.value.quickMovePolicy;
-    const sorted=moves.slice().sort((a,b)=>{
-      function rank(m){
-        const dst=m.to.zone==='foundation',reveal=src.zone==='tableau'&&S.tableau[src.index].length>src.count&&!S.tableau[src.index][S.tableau[src.index].length-src.count-1].faceUp;
-        if(policy==='tableau')return dst?2:0;
-        if(policy==='foundation')return dst?0:2;
-        return dst?(reveal?2:0):reveal?0:1;
-      }
-      return rank(a)-rank(b)||a.to.index-b.to.index;
-    });
-    if(policy==='ask'&&moves.length>1){
-      const picker=$('#quickMovePicker');picker.replaceChildren();
-      const caption=document.createElement('span');caption.textContent='Choose destination';picker.appendChild(caption);
-      for(const m of sorted){const b=document.createElement('button');b.type='button';b.textContent=m.to.zone==='foundation'?'Foundation '+(m.to.index+1):'Column '+(m.to.index+1);
-        b.addEventListener('click',()=>{picker.hidden=true;selected=null;core.move(m);},{once:true});picker.appendChild(b);}
-      const cancel=document.createElement('button');cancel.type='button';cancel.textContent='Cancel';cancel.onclick=()=>{picker.hidden=true;};picker.appendChild(cancel);picker.hidden=false;cancel.focus();return true;
-    }
-    selected=null;return core.move(sorted[0]);
-  }
-  function isDoubleTap(src,pt,now){
-    if(!Prefs.value.doubleTap||!src||!lastTap)return false;
-    return sameSel(src,lastTap.src)&&now-lastTap.time<360&&now-lastTap.time>25&&
-      Math.hypot(pt.x-lastTap.x,pt.y-lastTap.y)<Math.max(25,parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--cw'))*.55||25);
-  }
   const isTarget = zone=>zone==='foundation'||zone==='tableau';
   function onClick(e){
     if(performance.now()<suppressUntil||ShuffleFX.active)return;
@@ -2476,11 +2382,8 @@ const Input = (()=>{
     let zone=null,idx=-1,pos=-1;
     if(cardEl){const loc=View.locate(cardEl.dataset.id);if(!loc)return;zone=loc.zone;idx=loc.pile;pos=loc.pos;}
     else {const loc=View.zoneAt(point.x,point.y);if(loc){zone=loc.zone;idx=loc.index;}}
-    if(zone==='stock'){lastTap=null;selected=null;core.draw();return;}
+    if(zone==='stock'){selected=null;core.draw();return;}
     const src=cardEl?sourceOf(zone,idx,pos):null;
-    const now=performance.now();
-    if(isDoubleTap(src,point,now)){lastTap=null;quickMove(src);return;}
-    lastTap=src?{src,x:point.x,y:point.y,time:now}:null;
     if(selected){
       if(src&&sameSel(selected,src)){selected=null;View.sync({});return;}
       const dest=clickDestination(selected,zone,idx,point,cardEl);
@@ -2536,8 +2439,7 @@ const Input = (()=>{
     board.addEventListener('pointercancel',e=>finish(e,true));
     board.addEventListener('lostpointercapture',e=>{ if (drag && drag.active) finish(e,true); });
     board.addEventListener('click',onClick);
-    // Cross-platform double tap is handled in click; native dblclick must not execute twice.
-    board.addEventListener('dblclick',e=>e.preventDefault());
+    board.addEventListener('dblclick',onDblClick);
     board.addEventListener('dragstart',e=>e.preventDefault());
     board.addEventListener('contextmenu',e=>e.preventDefault());
     $('#newBtn').onclick = doNew; $('#winNew').onclick = ()=>core.newGame(); $('#undoBtn').onclick = ()=>core.undo();
@@ -2555,8 +2457,8 @@ const Settings = (()=>{
   const panel=$('#settingsPanel'),btn=$('#settingsBtn'),soundBtn=$('#soundBtn');
   const $id=id=>$('#'+id), pct=v=>Math.round(Number(v)*100)+'%';
   const audioKeys=['sfxCards','sfxFriction','sfxImpact','sfxDeal','sfxSpinner','sfxWin'];
-  const visualBindings={setQuickMovePolicy:'quickMovePolicy',setQualityMode:'qualityMode',setCardStyle:'cardStyle',setCardBack:'cardBack',setTableStyle:'tableStyle',setUvIntensity:'uvIntensity',setJuice:'juice',setMotion:'motion',setAnimationSpeed:'animationSpeed',setHandedness:'handedness',setContrast:'contrast'};
-  const boolBindings={setDoubleTap:'doubleTap',setShowTelemetry:'showTelemetry',setHaptics:'haptics',setCardGlow:'cardGlow',setFeltEtch:'feltEtch',setSpinner:'spinner',setLargeControls:'largeControls',setFocusGlow:'focusGlow'};
+  const visualBindings={setCardStyle:'cardStyle',setCardBack:'cardBack',setTableStyle:'tableStyle',setUvIntensity:'uvIntensity',setJuice:'juice',setMotion:'motion',setAnimationSpeed:'animationSpeed',setHandedness:'handedness',setContrast:'contrast'};
+  const boolBindings={setHaptics:'haptics',setCardGlow:'cardGlow',setFeltEtch:'feltEtch',setSpinner:'spinner',setLargeControls:'largeControls',setFocusGlow:'focusGlow'};
   function syncRange(id,key){const e=$id(id);if(!e)return;e.value=String(Prefs.value[key]);const o=$id('out'+id.slice(3));if(o)o.value=pct(Prefs.value[key]);}
   function sync(){
     const p=Prefs.value;$id('setSound').checked=p.sound;syncRange('setVolume','volume');
@@ -2564,7 +2466,7 @@ const Settings = (()=>{
     $id('setTactile').value=p.tactile; Object.entries(visualBindings).forEach(([id,k])=>$id(id).value=p[k]); Object.entries(boolBindings).forEach(([id,k])=>$id(id).checked=!!p[k]);
     $id('setTheme').value=document.documentElement.dataset.theme||'dark';
     const r=S?.rules||GameRules.fromPrefs(p);$id('setRuleProfile').value=r.profile;$id('setRuleDraw').value=String(S?.drawMode||Number(safeGet(KEY_DRAW)||1));$id('setRedeals').value=r.redealLimit===null?'unlimited':String(r.redealLimit);$id('setEmptyPolicy').value=r.emptyPolicy;$id('setBuildPolicy').value=r.buildPolicy;$id('setScoreMode').value=r.scoreMode;$id('setAutoFoundation').value=r.autoFoundation;
-    Prefs.apply(); AdaptiveQuality.refresh(); renderEngineBay();
+    Prefs.apply(); renderEngineBay();
   }
   function renderEngineBay(){ const host=$id('engineBay'); if(host.children.length)return; for(const e of SOLITAIRE_ENGINES){const chip=document.createElement('span');chip.className='engineChip '+e.status;chip.textContent=e.label+(e.status==='live'?' · LIVE':' · '+e.decks+' DECK ENGINE');host.appendChild(chip)} }
   function show(on){panel.classList.toggle('show',on);btn.setAttribute('aria-expanded',String(on));if(on){sync();setTimeout(()=>$id('setRuleProfile').focus(),0)}}
@@ -2576,8 +2478,8 @@ const Settings = (()=>{
     $id('setVolume').oninput=e=>{Prefs.set('volume',+e.target.value);AudioFX.ensure();syncRange('setVolume','volume')};
     audioKeys.forEach(k=>{const id='set'+k[0].toUpperCase()+k.slice(1);$id(id).oninput=e=>{Prefs.set(k,+e.target.value);AudioFX.ensure();syncRange(id,k)}});
     $id('setTactile').onchange=e=>Prefs.set('tactile',e.target.value);
-    Object.entries(visualBindings).forEach(([id,k])=>$id(id).onchange=e=>{Prefs.set(k,e.target.value);AdaptiveQuality.refresh();FX.refresh();if(k==='motion'||k==='animationSpeed')View.relayout()});
-    Object.entries(boolBindings).forEach(([id,k])=>$id(id).onchange=e=>{Prefs.set(k,e.target.checked);AdaptiveQuality.refresh();FX.refresh()});
+    Object.entries(visualBindings).forEach(([id,k])=>$id(id).onchange=e=>{Prefs.set(k,e.target.value);FX.refresh();if(k==='motion'||k==='animationSpeed')View.relayout()});
+    Object.entries(boolBindings).forEach(([id,k])=>$id(id).onchange=e=>{Prefs.set(k,e.target.checked);FX.refresh()});
     $id('setTheme').onchange=e=>applyTheme(e.target.value);
     $id('setRuleProfile').onchange=e=>profileToDraft(e.target.value);
     ['setRedeals','setEmptyPolicy','setBuildPolicy','setScoreMode','setAutoFoundation'].forEach(id=>$id(id).addEventListener('change',()=>{$id('setRuleProfile').value='custom'}));
@@ -2774,10 +2676,6 @@ if (DEV) (()=>{
   const ids = p=>p.map(c=>c.id).join();
 
   /* ---- regression suite ---- */
-  T('CEP 5.38 / double tap enabled by default and configurable',()=>typeof Prefs.value.doubleTap==='boolean'&&['smart','foundation','tableau','ask'].includes(Prefs.value.quickMovePolicy));
-  T('CEP 5.38 / quality tiers available with save-data escape hatch',()=>['auto','economy','balanced','ultra'].includes(Prefs.value.qualityMode)&&['economy','balanced','ultra'].includes(AdaptiveQuality.tier));
-  T('CEP 5.38 / double tap respects legal-move oracle',()=>String(Input.bind).includes('board.addEventListener')&&String(Rules.plan).includes('isRun'));
-
   const tests = [];
   const T = (name,fn)=>tests.push({name,fn});
 
