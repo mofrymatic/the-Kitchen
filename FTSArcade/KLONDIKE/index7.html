@@ -42,8 +42,6 @@
   if (/[?&]dev=1(&|$)/.test(location.search)) window['ga-disable-G-VH6GES5F1E'] = true;
   gtag('js', new Date());
   gtag('config', 'G-VH6GES5F1E');
-
-/* CEP 5.37: ground-plane UV bloom prevents card-to-card light contamination. */
 </script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-VH6GES5F1E"></script>
 
@@ -710,33 +708,6 @@ html[data-uv-mobile="true"][data-theme="blacklight"] .board[data-motion="draw"] 
 /* Do not scale a filtered face while its parent is also translating on WebKit. */
 html[data-uv-mobile="true"][data-theme="blacklight"] .board[data-motion="draw"] .card.flying.flip .face,
 html[data-uv-mobile="true"][data-theme="blacklight"] .board[data-motion="recycle"] .card.flying.flip .face{animation:none!important}
-
-
-/* =====================================================================
-   CEP 5.37 — GROUND-PLANE BLACKLIGHT BLOOM
-   Fluorescent emission belongs to the felt, not to neighboring cards.
-   A dedicated glow layer sits beneath every card and receives the same
-   transforms. Card shells retain only a tight edge/engraving treatment.
-   ===================================================================== */
-.cardGlows{position:absolute;inset:0;z-index:3;pointer-events:none;overflow:visible}
-.cardGlowGround{position:absolute;left:0;top:0;width:var(--cw);height:var(--ch);border-radius:var(--radius);opacity:0;visibility:hidden;pointer-events:none;will-change:transform,opacity;
-  background:transparent;
-  box-shadow:0 4px 11px rgba(0,0,0,.64),0 0 11px rgba(154,108,255,.18),0 0 24px rgba(255,46,117,.07);
-  transition:transform var(--move-ms) var(--ease),width var(--move-ms) var(--ease),height var(--move-ms) var(--ease),opacity .16s ease}
-.board.noanim .cardGlowGround{transition:none!important}
-html[data-theme="blacklight"] .cardGlowGround{opacity:.78;filter:blur(1.2px);-webkit-filter:blur(1.2px)}
-html[data-theme="blacklight"][data-uv-intensity="low"] .cardGlowGround{opacity:.42;box-shadow:0 3px 9px rgba(0,0,0,.60),0 0 7px rgba(154,108,255,.13)}
-html[data-theme="blacklight"][data-uv-intensity="balanced"] .cardGlowGround{opacity:.68;box-shadow:0 4px 10px rgba(0,0,0,.64),0 0 11px rgba(154,108,255,.21),0 0 19px rgba(255,46,117,.08)}
-html[data-theme="blacklight"][data-uv-intensity="searing"] .cardGlowGround{opacity:.92;box-shadow:0 4px 12px rgba(0,0,0,.68),0 0 13px 2px rgba(164,64,255,.36),0 0 28px 6px rgba(248,23,255,.22)}
-html[data-theme="blacklight"] .card{box-shadow:none!important;outline:1px solid rgba(145,217,255,.30);outline-offset:-1px}
-html[data-theme="blacklight"] .card[data-suit="H"],html[data-theme="blacklight"] .card[data-suit="D"]{outline-color:rgba(255,61,237,.42)}
-html[data-theme="blacklight"] .card.dragging{box-shadow:none!important;outline:1px solid rgba(216,197,255,.92);outline-offset:-1px}
-html[data-uv-mobile="true"][data-theme="blacklight"] .card{box-shadow:none!important}
-html[data-uv-mobile="true"][data-theme="blacklight"] .card.dragging{box-shadow:none!important}
-html[data-theme="blacklight"][data-card-glow="off"] .cardGlowGround{opacity:0!important}
-.card.dragging + .cardGlowGround{opacity:inherit}
-@media(prefers-reduced-motion:reduce){.cardGlowGround{transition:none!important}}
-
 </style>
 <style>
 /* =====================================================================
@@ -855,7 +826,6 @@ html[data-display-mode="fullscreen"] body{background:#000;}
         <div class="shuffleFX" id="shuffleFX" aria-hidden="true"><div class="shuffleGlow"></div></div>
         <div class="fidgets" id="fidgets" aria-hidden="true"></div>
         <div class="slots" id="slots" aria-hidden="true"></div>
-        <div class="cardGlows" id="cardGlows" aria-hidden="true"></div>
         <div class="cards" id="cards"></div>
         <div class="rings" id="rings" aria-hidden="true"></div>
         <div class="victoryFX" id="victoryFX" aria-hidden="true"></div>
@@ -2037,7 +2007,7 @@ const Fidgets = (()=>{
    Cards are positioned with transforms, so a move is a CSS transition, not a rebuild.
    ======================================================================= */
 const View = (()=>{
-  const board = $('#board'), layerCards = $('#cards'), layerGlows = $('#cardGlows'), layerSlots = $('#slots'), layerRings = $('#rings');
+  const board = $('#board'), layerCards = $('#cards'), layerSlots = $('#slots'), layerRings = $('#rings');
   const recs = Object.create(null), slotEls = {stock:null,waste:null,foundation:[],tableau:[]}, ringEls = {foundation:[],tableau:[]};
   const stats = {syncs:0,writes:0,lastMs:0,nodes:0};
   let L = null, T = null, boardW = 0, boardH = 0, settleTimer = 0, hintTimer = 0, stockBadge = null, stockNoise = null;
@@ -2052,8 +2022,7 @@ const View = (()=>{
       const back = document.createElement('div'); back.className = 'face back';
       const uvEtch = document.createElement('div'); uvEtch.className = 'uvEtch'; uvEtch.setAttribute('aria-hidden','true');
       el.append(front,back,uvEtch); layerCards.appendChild(el);
-      const glow = document.createElement('div'); glow.className = 'cardGlowGround'; glow.dataset.glowFor = id; layerGlows.appendChild(glow);
-      recs[id] = {el, glow, x:NaN, y:NaN, z:0, baseZ:0, up:null, vis:null, hideLater:false, sel:false, flying:false, dirty:true, flipT:0, pk:''};
+      recs[id] = {el, x:NaN, y:NaN, z:0, baseZ:0, up:null, vis:null, hideLater:false, sel:false, flying:false, dirty:true, flipT:0, pk:''};
     }
     const mkSlot = (zone,index,cls,label)=>{ const s = document.createElement('div'); s.className = 'slot '+cls; s.dataset.zone = zone; s.dataset.index = String(index); s.setAttribute('aria-label',label); layerSlots.appendChild(s); return s; };
     slotEls.stock = mkSlot('stock',0,'stock','Stock'); slotEls.waste = mkSlot('waste',0,'waste','Waste');
@@ -2130,7 +2099,7 @@ const View = (()=>{
     for (const id in recs){
       const r = recs[id];
       if (r.flying){ r.flying = false; r.el.classList.remove('flying'); r.el.style.transitionDelay = ''; if (r.z!==r.baseZ){ r.z = r.baseZ; r.el.style.zIndex = String(r.baseZ); stats.writes++; } }
-      if (r.hideLater){ r.hideLater = false; r.vis = false; r.el.style.visibility = 'hidden'; r.glow.style.visibility = 'hidden'; stats.writes++; }
+      if (r.hideLater){ r.hideLater = false; r.vis = false; r.el.style.visibility = 'hidden'; stats.writes++; }
     }
     delete board.dataset.motion;
   }
@@ -2151,7 +2120,7 @@ const View = (()=>{
     if (opts.deal && !instant){            // start every card on the stock, then fly out in deal order
       board.classList.add('noanim');
       const sx = r2(L.stockX), sy = r2(L.stockY);
-      for (const id of IDS){ const r = recs[id]; place(r.el,sx,sy); place(r.glow,sx,sy); r.x = sx; r.y = sy; r.el.style.visibility = ''; r.glow.style.visibility = ''; r.vis = true; r.hideLater = false; r.el.dataset.up = 'false'; r.up = false; }
+      for (const id of IDS){ const r = recs[id]; place(r.el,sx,sy); r.x = sx; r.y = sy; r.el.style.visibility = ''; r.vis = true; r.hideLater = false; r.el.dataset.up = 'false'; r.up = false; }
       void board.offsetWidth; board.classList.remove('noanim');
     }
 
@@ -2162,11 +2131,11 @@ const View = (()=>{
       const r = recs[id], tg = T[id], el = r.el;
       const moved = r.dirty || r.x!==tg.x || r.y!==tg.y;
       const pk=tg.jx+','+tg.jy+','+tg.jr;
-      if(r.pk!==pk){r.pk=pk;el.style.setProperty('--jtx',tg.jx+'px');el.style.setProperty('--jty',tg.jy+'px');el.style.setProperty('--jrot',tg.jr+'deg');r.glow.style.setProperty('--jtx',tg.jx+'px');r.glow.style.setProperty('--jty',tg.jy+'px');r.glow.style.setProperty('--jrot',tg.jr+'deg');stats.writes++;}
+      if(r.pk!==pk){r.pk=pk;el.style.setProperty('--jtx',tg.jx+'px');el.style.setProperty('--jty',tg.jy+'px');el.style.setProperty('--jrot',tg.jr+'deg');stats.writes++;}
       if (moved){
         if (!instant){ r.flying = true; flyingAny = true; el.classList.add('flying'); }
         if (dealOrder && dealOrder[id]!==undefined) el.style.transitionDelay = (dealOrder[id]*22)+'ms';
-        place(el,tg.x,tg.y); place(r.glow,tg.x,tg.y); r.x = tg.x; r.y = tg.y;
+        place(el,tg.x,tg.y); r.x = tg.x; r.y = tg.y;
       }
       r.baseZ = tg.z;
       const wantZ = moved && !instant ? 300+tg.z : (r.flying ? r.z : tg.z);
@@ -2180,9 +2149,9 @@ const View = (()=>{
         } else apply();
         r.up = tg.up;
       }
-      if (tg.vis){ if (r.vis!==true){ r.vis = true; el.style.visibility = ''; r.glow.style.visibility = ''; stats.writes++; } r.hideLater = false; }
+      if (tg.vis){ if (r.vis!==true){ r.vis = true; el.style.visibility = ''; stats.writes++; } r.hideLater = false; }
       else if (r.vis!==false){
-        if (instant || !r.flying && !moved){ r.vis = false; el.style.visibility = 'hidden'; r.glow.style.visibility = 'hidden'; stats.writes++; r.hideLater = false; }
+        if (instant || !r.flying && !moved){ r.vis = false; el.style.visibility = 'hidden'; stats.writes++; r.hideLater = false; }
         else r.hideLater = true;                         // stay visible until the covering card lands (no empty-slot flicker)
       }
       const isSel = sel.has(id);
@@ -2215,8 +2184,8 @@ const View = (()=>{
 
   // drag
   function dragStart(ids){ ids.forEach((id,i)=>{ const r = recs[id]; r.el.classList.add('dragging'); r.el.style.zIndex = String(1200+i); }); }
-  function dragMove(ids,dx,dy,tilt=0){ const rr=clamp(tilt,-4.5,4.5).toFixed(2)+'deg'; for (const id of ids){ const r = recs[id]; r.el.style.setProperty('--drag-r',rr); r.glow.style.setProperty('--drag-r',rr); r.el.style.transform = transformAt(r.x+dx,r.y+dy); r.glow.style.transform = transformAt(r.x+dx,r.y+dy); } }
-  function dragEnd(ids){ for (const id of ids){ const r = recs[id]; r.el.classList.remove('dragging'); r.el.style.removeProperty('--drag-r'); r.glow.style.removeProperty('--drag-r'); r.el.style.zIndex = String(r.z); r.dirty = true; } }
+  function dragMove(ids,dx,dy,tilt=0){ const rr=clamp(tilt,-4.5,4.5).toFixed(2)+'deg'; for (const id of ids){ const r = recs[id]; r.el.style.setProperty('--drag-r',rr); r.el.style.transform = transformAt(r.x+dx,r.y+dy); } }
+  function dragEnd(ids){ for (const id of ids){ const r = recs[id]; r.el.classList.remove('dragging'); r.el.style.removeProperty('--drag-r'); r.el.style.zIndex = String(r.z); r.dirty = true; } }
   function leadRect(ids,dx,dy){ const r = recs[ids[0]]; return {x:r.x+dx,y:r.y+dy,w:L.cardW,h:L.cardH}; }
 
   function destinationCard(zone,index){
@@ -2778,7 +2747,6 @@ if (DEV) (()=>{
   T('cep / engine registry exposes Klondike live and Spider 1/2/4-suit as explicit two-deck next engines',()=>SOLITAIRE_ENGINES.find(e=>e.id==='klondike'&&e.status==='live')&&['spider-1','spider-2','spider-4'].every(id=>SOLITAIRE_ENGINES.find(e=>e.id===id&&e.decks===2&&e.status==='next')));
   T('settings / granular SFX gains are finite normalized values',()=>['volume','sfxCards','sfxFriction','sfxImpact','sfxDeal','sfxSpinner','sfxWin'].every(k=>Number.isFinite(Prefs.value[k])&&Prefs.value[k]>=0&&Prefs.value[k]<=1));
   T('settings / presentation selectors are valid and applied as root data contracts',()=>document.documentElement.dataset.cardStyle===Prefs.value.cardStyle&&document.documentElement.dataset.cardBack===Prefs.value.cardBack&&document.documentElement.dataset.tableStyle===Prefs.value.tableStyle&&document.documentElement.dataset.uvIntensity===Prefs.value.uvIntensity);
-  T('CEP 5.37 blacklight bloom is rendered on a dedicated ground plane beneath all cards',()=>!!$('#cardGlows')&&$('#cardGlows').children.length===52&&getComputedStyle($('#cardGlows')).zIndex<getComputedStyle($('#cards')).zIndex);
   T('settings / control room is mobile-scrollable and groups game, cards, sound, motion, accessibility and data',()=>!!$('#settingsPanel .settingsScroll')&&$('#settingsPanel').querySelectorAll('.settingGroup').length>=6&&!!$('#applyRules')&&!!$('#setSfxFriction')&&!!$('#setCardStyle'));
   T('rules / presets normalize deterministically',()=>{const a=GameRules.preset('classic'),v=GameRules.preset('vegas'),r=GameRules.preset('relaxed');return a.emptyPolicy==='king'&&a.redealLimit===null&&v.scoreMode==='vegas'&&v.redealLimit===0&&r.emptyPolicy==='any'&&r.autoFoundation==='aggressive'});
   T('rules / Vegas starts at -52 and disallows recycle by default',()=>{const x=Rules.deal(Rules.orderFromSeed(7),1,GameRules.preset('vegas'));for(let i=0;i<24;i++)Rules.draw(x);return x.score===-52&&x.stock.length===0&&x.waste.length===24&&Rules.draw(x)===null});
