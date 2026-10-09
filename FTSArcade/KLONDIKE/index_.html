@@ -4,6 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no, interactive-widget=resizes-content">
 <meta name="theme-color" content="#05070a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Klondike">
+<meta name="application-name" content="Klondike">
 <meta name="color-scheme" content="dark light">
 
 <title>Klondike Solitaire · Red Eye · FTS Arcade</title>
@@ -745,6 +750,34 @@ html[data-uv-mobile="true"][data-theme="blacklight"] .board[data-motion="recycle
   .controls #restartBtn,.controls #hintBtn{display:none}
   .drawSelect{display:none}
 }
+
+
+/* =====================================================================
+   CEP 5.36 — SCREEN AUTHORITY / IOS WEB-APP ESCAPE HATCH
+   Browser chrome is not game chrome. In ordinary iPhone Safari the browser
+   owns it; installed web-app mode is the browserless interactive path.
+   ===================================================================== */
+html[data-display-mode="standalone"] .app,
+html[data-display-mode="fullscreen"] .app{inset:0;width:100vw;height:var(--app-h,100dvh);}
+html[data-display-mode="standalone"] body,
+html[data-display-mode="fullscreen"] body{background:#000;}
+.screenStatus{padding:9px 11px 2px;color:#74839a;font:700 8px/1.45 ui-monospace,monospace;text-transform:uppercase;letter-spacing:.08em}
+.screenStatus b{color:#dce7f5}
+.screenActions{display:flex;gap:7px;padding:8px 11px 11px}
+.screenActions .settingsAction{margin:0;flex:1 1 0}
+.screenCoach{position:fixed;inset:0;z-index:1200;display:none;place-items:center;padding:max(18px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) max(18px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left));background:rgba(0,0,0,.72);backdrop-filter:blur(16px)}
+.screenCoach.show{display:grid}
+.screenCoachCard{width:min(430px,92vw);border:1px solid rgba(216,174,97,.52);border-radius:12px;padding:18px;background:linear-gradient(145deg,rgba(7,10,15,.985),rgba(2,4,8,.985));box-shadow:0 28px 90px rgba(0,0,0,.72),0 0 32px rgba(57,247,255,.08);color:#eaf2ff}
+.screenCoachCard h2{margin:0 0 9px;font:900 17px/1.05 Arial Black,Arial,sans-serif}
+.screenCoachCard p{margin:0 0 10px;color:#9eacbd;font:700 10px/1.55 ui-monospace,monospace}
+.screenCoachCard ol{margin:10px 0 15px;padding-left:20px;color:#d9e4f2;font:700 11px/1.7 ui-monospace,monospace}
+.screenCoachCard .settingsAction{width:100%;margin:0}
+@media(max-height:560px) and (orientation:landscape){
+  html[data-display-mode="standalone"] .game,html[data-display-mode="fullscreen"] .game{grid-template-rows:minmax(0,1fr)!important}
+  html[data-display-mode="standalone"] .topbar,html[data-display-mode="fullscreen"] .topbar,
+  html[data-display-mode="standalone"] .gameHead,html[data-display-mode="fullscreen"] .gameHead{display:none!important}
+}
+
 </style>
 </head>
 <body>
@@ -872,6 +905,14 @@ html[data-uv-mobile="true"][data-theme="blacklight"] .board[data-motion="recycle
         <label class="settingRow"><span>Focus glow</span><input id="setFocusGlow" type="checkbox"></label>
       </details>
 
+
+
+      <details class="settingGroup">
+        <summary>Display / Screen</summary>
+        <div class="screenStatus" id="screenStatus">Mode: <b>checking</b></div>
+        <div class="screenActions"><button class="settingsAction primaryAction" id="screenAuthorityBtn" type="button">Use full screen</button></div>
+      </details>
+
       <details class="settingGroup">
         <summary>Data / Reset</summary>
         <div class="settingsButtons"><button class="settingsAction" id="resetAudio" type="button">Reset audio</button><button class="settingsAction" id="resetSettings" type="button">Reset all settings</button><button class="settingsAction dangerAction" id="clearSavedGame" type="button">Clear saved game</button></div>
@@ -879,6 +920,16 @@ html[data-uv-mobile="true"][data-theme="blacklight"] .board[data-motion="recycle
     </div>
   </div>
 </div>
+
+<div class="screenCoach" id="screenCoach" role="dialog" aria-modal="true" aria-labelledby="screenCoachTitle">
+  <div class="screenCoachCard">
+    <h2 id="screenCoachTitle">Full-table mode</h2>
+    <p>iPhone Safari reserves its browser chrome for normal tabs. Interactive HTML gets the browserless canvas when Klondike is launched as a Home Screen web app.</p>
+    <ol><li>Tap Safari’s Share button.</li><li>Choose Add to Home Screen.</li><li>Keep Open as Web App enabled.</li><li>Launch Klondike from its Home Screen icon, then rotate to landscape.</li></ol>
+    <button class="settingsAction primaryAction" id="screenCoachClose" type="button">Return to table</button>
+  </div>
+</div>
+
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div class="win" id="win" role="dialog" aria-modal="true" aria-labelledby="winTitle">
   <div class="winPanel"><h2 id="winTitle">Sequence complete</h2><p id="winStats">All 52 cards are on the foundations.</p><button class="control primary" id="winNew" type="button" style="margin:0 auto">Deal another</button></div>
@@ -897,7 +948,7 @@ const ASSETS=Object.freeze({"S1":"data:image/webp;base64,UklGRmo7AABXRUJQVlA4IF4
    ======================================================================= */
 const DEV = /[?&]dev=1(&|$)/.test(location.search);
 const QA = DEV && /[?&]qa=1(&|$)/.test(location.search);
-const BUILD = 'klondike-5.34.0-investor-motion-lock';
+const BUILD = 'klondike-5.36.0-screen-authority';
 const $ = (s,r=document)=>r.querySelector(s);
 const clamp = (n,a,b)=>Math.max(a,Math.min(b,n));
 const reducedMotion = ()=>{ const forced=document.documentElement.dataset.motion; if(forced==='reduced') return true; if(forced==='full') return false; try{ return matchMedia('(prefers-reduced-motion: reduce)').matches }catch(_){ return false } };
@@ -2415,11 +2466,13 @@ const Settings = (()=>{
 
 /* ---------- responsive viewport contract: REF mobile gate ---------- */
 const Viewport = (()=>{
-  let raf=0,fullscreenTried=false;
+  let raf=0,lastFullscreenTry=0;
   const root=document.documentElement;
   const coarse=()=>{try{return matchMedia('(pointer:coarse)').matches}catch(_){return false}};
   const touchCapable=()=>coarse()||Number(navigator.maxTouchPoints||0)>0;
   const landscape=()=>{const vv=window.visualViewport,w=vv?.width||innerWidth,h=vv?.height||innerHeight;return w>h};
+  const standalone=()=>navigator.standalone===true||matchMedia('(display-mode: standalone)').matches||matchMedia('(display-mode: fullscreen)').matches;
+  const fullscreen=()=>!!(document.fullscreenElement||document.webkitFullscreenElement);
   function measure(){
     const vv=window.visualViewport,w=Math.round(vv?.width||innerWidth),h=Math.round(vv?.height||innerHeight);
     root.style.setProperty('--app-w',Math.max(1,w)+'px');
@@ -2427,23 +2480,27 @@ const Viewport = (()=>{
     root.dataset.uvMobile=String(touchCapable()||w<=900);
     root.dataset.orientation=landscape()?'landscape':'portrait';
     root.dataset.compactLandscape=String(landscape()&&h<=560);
+    root.dataset.displayMode=fullscreen()?'fullscreen':standalone()?'standalone':'browser';
     return {w,h};
   }
-  function pin(){
-    if(scrollX||scrollY) try{scrollTo(0,0)}catch(_){}
-  }
-  function sync(){cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{measure();pin();if(View?.layout)View.relayout();Fidgets.relayout();});}
+  function pin(){ if(scrollX||scrollY) try{scrollTo(0,0)}catch(_){} }
+  function sync(){cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{measure();pin();if(View?.layout)View.relayout();Fidgets.relayout();ScreenAuthority?.sync?.();});}
   async function maybeFullscreen(){
-    if(fullscreenTried||!landscape()||!coarse()||document.fullscreenElement)return false;
+    if(!landscape()||!coarse()||fullscreen()||standalone())return false;
+    const now=performance.now(); if(now-lastFullscreenTry<900)return false; lastFullscreenTry=now;
     const el=document.documentElement, fn=el.requestFullscreen||el.webkitRequestFullscreen;
     if(typeof fn!=='function')return false;
-    fullscreenTried=true;
-    try{ await fn.call(el,{navigationUI:'hide'}); sync(); return true; }catch(_){ return false; }
+    try{
+      try{ await fn.call(el,{navigationUI:'hide'}); }
+      catch(first){ await fn.call(el); }
+      try{ if(screen.orientation?.lock) await screen.orientation.lock('landscape'); }catch(_){}
+      sync(); return fullscreen();
+    }catch(_){ return false; }
   }
   function preventGesture(e){e.preventDefault()}
   function preventPagePan(e){
     const t=e.target;
-    if(t&&t.closest&&t.closest('.settingsScroll,input[type="range"],select'))return;
+    if(t&&t.closest&&t.closest('.settingsScroll,.screenCoach,input[type="range"],select'))return;
     e.preventDefault();
   }
   function bind(){
@@ -2452,20 +2509,62 @@ const Viewport = (()=>{
     window.addEventListener('orientationchange',sync,{passive:true});
     window.addEventListener('scroll',pin,{passive:true});
     document.addEventListener('fullscreenchange',sync,{passive:true});
+    document.addEventListener('webkitfullscreenchange',sync,{passive:true});
     if(window.visualViewport){
       visualViewport.addEventListener('resize',sync,{passive:true});
       visualViewport.addEventListener('scroll',sync,{passive:true});
     }
+    try{matchMedia('(display-mode: standalone)').addEventListener('change',sync)}catch(_){}
+    try{matchMedia('(display-mode: fullscreen)').addEventListener('change',sync)}catch(_){}
     document.addEventListener('gesturestart',preventGesture,{passive:false});
     document.addEventListener('gesturechange',preventGesture,{passive:false});
     document.addEventListener('gestureend',preventGesture,{passive:false});
     document.addEventListener('touchmove',preventPagePan,{passive:false});
-    /* Fullscreen can only be requested from a user activation. One best-effort
-       request in compact landscape; unsupported iPhone Safari simply falls back. */
     document.addEventListener('pointerup',()=>{void maybeFullscreen()},{passive:true,capture:true});
   }
-  return {bind,measure,sync,maybeFullscreen,get landscape(){return landscape()}};
+  return {bind,measure,sync,maybeFullscreen,get landscape(){return landscape()},get standalone(){return standalone()},get fullscreen(){return fullscreen()}};
 })();
+
+/* ---------- screen authority: fullscreen when available, install path on iPhone Safari ---------- */
+const ScreenAuthority = (()=>{
+  let bound=false;
+  const $status=()=>document.getElementById('screenStatus');
+  const $button=()=>document.getElementById('screenAuthorityBtn');
+  const $coach=()=>document.getElementById('screenCoach');
+  function capability(){
+    const el=document.documentElement;
+    return typeof(el.requestFullscreen||el.webkitRequestFullscreen)==='function';
+  }
+  function mode(){ return Viewport.fullscreen?'fullscreen':Viewport.standalone?'standalone':'browser'; }
+  function sync(){
+    const m=mode(), status=$status(), btn=$button();
+    document.documentElement.dataset.displayMode=m;
+    if(status){
+      const label=m==='fullscreen'?'element fullscreen':m==='standalone'?'Home Screen web app':'Safari/browser tab';
+      status.innerHTML='Mode: <b>'+label+'</b>'+(m==='browser'&&!capability()?' · browser chrome is OS-owned here':'');
+    }
+    if(btn){
+      btn.textContent=m==='fullscreen'||m==='standalone'?'Full table active':capability()?'Enter full screen':'How to remove Safari chrome';
+      btn.disabled=m==='fullscreen'||m==='standalone';
+    }
+  }
+  function showCoach(on=true){ const c=$coach(); if(c)c.classList.toggle('show',!!on); }
+  async function engage(){
+    if(Viewport.fullscreen||Viewport.standalone){sync();return true;}
+    if(capability() && await Viewport.maybeFullscreen()){sync();return true;}
+    showCoach(true); sync(); return false;
+  }
+  function bind(){
+    if(bound)return; bound=true;
+    $button()?.addEventListener('click',()=>{void engage()});
+    document.getElementById('screenCoachClose')?.addEventListener('click',()=>showCoach(false));
+    $coach()?.addEventListener('pointerdown',e=>{if(e.target===$coach())showCoach(false)});
+    document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$coach()?.classList.contains('show'))showCoach(false)});
+    sync();
+  }
+  return {bind,sync,engage,showCoach,capability,mode};
+})();
+
 
 /* ---------- theme ---------- */
 const THEME_ORDER=Object.freeze(['dark','blacklight','light']);
@@ -2662,6 +2761,10 @@ if (DEV) (()=>{
   T('responsive / card-bloom switch removes wide mobile bloom without removing face grade or UV paper plate',()=>{const r=document.documentElement,c=document.querySelector('.card'),old={theme:r.dataset.theme,uvMobile:r.dataset.uvMobile,cardGlow:r.dataset.cardGlow,up:c.dataset.up};r.dataset.theme='blacklight';r.dataset.uvMobile='true';r.dataset.cardGlow='off';c.dataset.up='true';const f=c.querySelector('.front'),p=getComputedStyle(f,'::before'),ok=getComputedStyle(c).filter==='none'&&getComputedStyle(c).boxShadow!=='none'&&getComputedStyle(f).filter!=='none'&&p.content!=='none';c.dataset.up=old.up;Object.entries(old).forEach(([k,v])=>{if(k==='up')return;v==null?delete r.dataset[k]:r.dataset[k]=v});return ok;});
   T('responsive / wide touch-capable tablets opt into the WebKit-safe UV renderer',()=>String(Viewport.measure).includes('touchCapable()||w<=900')&&String(Viewport.measure).includes('uvMobile'));
   T('responsive / compact landscape fullscreen is user-gesture gated and failure-safe',()=>String(Viewport.bind).includes('pointerup')&&String(Viewport.maybeFullscreen).includes('requestFullscreen')&&String(Viewport.maybeFullscreen).includes('catch'));
+  T('responsive / installed iOS web-app metadata is present and status bar is translucent',()=>!!document.querySelector('meta[name="apple-mobile-web-app-capable"][content="yes"]')&&document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]')?.content==='black-translucent');
+  T('responsive / display mode distinguishes browser, standalone and fullscreen without UA sniffing',()=>String(Viewport.measure).includes('displayMode')&&String(ScreenAuthority.mode).includes('Viewport.standalone')&&!String(ScreenAuthority.capability).includes('userAgent'));
+  T('responsive / unsupported element fullscreen has a deterministic Home Screen web-app route',()=>document.getElementById('screenCoach')&&String(ScreenAuthority.engage).includes('showCoach(true)')&&document.getElementById('screenCoach')?.textContent.includes('Add to Home Screen'));
+  T('responsive / fullscreen request retries without navigationUI for WebKit variants',()=>String(Viewport.maybeFullscreen).includes("fn.call(el,{navigationUI:'hide'})")&&String(Viewport.maybeFullscreen).includes('await fn.call(el);'));
   T('responsive / compact landscape state derives from the visual viewport rather than UA sniffing',()=>{const m=Viewport.measure();return document.documentElement.dataset.orientation===(m.w>m.h?'landscape':'portrait')&&document.documentElement.dataset.compactLandscape===String(m.w>m.h&&m.h<=560);});
   T('responsive / compact landscape CSS removes full-width top and bottom chrome',()=>document.documentElement.innerHTML.includes('LANDSCAPE TABLE AUTHORITY')&&document.documentElement.innerHTML.includes('.topbar{display:none!important}')&&document.documentElement.innerHTML.includes('.controls{position:absolute'));
   T('responsive / safe-area insets exist for portrait and short landscape chrome',()=>document.documentElement.innerHTML.includes('env(safe-area-inset-left)')&&document.documentElement.innerHTML.includes('env(safe-area-inset-bottom)'));
@@ -2806,7 +2909,7 @@ async function boot(){
   else S = restored || Rules.deal(Rules.orderRandom(),savedDraw,GameRules.fromPrefs(Prefs.value));
   S.rules=GameRules.normalize(S.rules||GameRules.fromPrefs(Prefs.value)); S.redealsUsed=Math.max(0,+S.redealsUsed||0);
   const fresh = !restored;
-  Input.bind(); Settings.bind(); Prefs.apply(); Viewport.bind(); Fidgets.init();
+  Input.bind(); Settings.bind(); Prefs.apply(); Viewport.bind(); ScreenAuthority.bind(); Fidgets.init();
   if ('ResizeObserver' in window){ let raf = 0; new ResizeObserver(()=>{ cancelAnimationFrame(raf); raf = requestAnimationFrame(()=>View.relayout()); }).observe(View.el.board); }
   else window.addEventListener('resize',()=>View.relayout());
   Clock.resume();

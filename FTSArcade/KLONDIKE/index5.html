@@ -673,78 +673,6 @@ html[data-uv-mobile="true"][data-theme="blacklight"][data-uv-intensity="balanced
 html[data-uv-mobile="true"][data-theme="blacklight"][data-uv-intensity="low"] .card{box-shadow:0 2px 8px rgba(0,0,0,.8),0 0 0 1px rgba(var(--uv-card-a),.6),0 0 6px rgba(var(--uv-card-a),.25)!important}
 html[data-uv-mobile="true"][data-theme="blacklight"][data-card-glow="off"] .card{box-shadow:0 2px 8px rgba(0,0,0,.8),0 0 0 1px rgba(var(--uv-card-a),.65)!important}
 html[data-uv-mobile="true"][data-theme="blacklight"] .card.dragging{box-shadow:0 14px 30px rgba(0,0,0,.8),0 0 0 1px rgba(var(--uv-card-a),1),0 0 16px 4px rgba(var(--uv-card-b),.85),0 0 30px 8px rgba(120,35,255,.55)!important}
-
-/* CEP 5.34 — UV MOTION LOCK
-   iOS/WebKit can repaint a filtered face or wide shadow a frame behind a translated card.
-   During stock/waste travel, render a compact halo inside the card's transform layer,
-   suppress face-filter/flip sublayers, then restore the full eye-searing bloom at settle.
-   Desktop keeps the original parent SVG neon renderer untouched. */
-html[data-uv-mobile="true"][data-theme="blacklight"] .board[data-motion="draw"] .card.flying,
-html[data-uv-mobile="true"][data-theme="blacklight"] .board[data-motion="recycle"] .card.flying{
-  isolation:isolate;
-  -webkit-backface-visibility:hidden;backface-visibility:hidden;
-  transform-style:flat;
-  filter:none!important;-webkit-filter:none!important;
-  outline:1px solid rgba(var(--uv-card-a),.96);outline-offset:-1px;
-  box-shadow:
-    0 2px 8px rgba(0,0,0,.80),
-    0 0 0 1px rgba(var(--uv-card-a),.98),
-    0 0 4px 1px rgba(var(--uv-card-a),.92),
-    0 0 10px 3px rgba(var(--uv-card-b),.62)!important;
-}
-html[data-uv-mobile="true"][data-theme="blacklight"] .board[data-motion="draw"] .card.flying .front,
-html[data-uv-mobile="true"][data-theme="blacklight"] .board[data-motion="draw"] .card.flying .back,
-html[data-uv-mobile="true"][data-theme="blacklight"] .board[data-motion="recycle"] .card.flying .front,
-html[data-uv-mobile="true"][data-theme="blacklight"] .board[data-motion="recycle"] .card.flying .back{
-  filter:none!important;-webkit-filter:none!important;
-}
-html[data-uv-mobile="true"][data-theme="blacklight"] .board[data-motion="draw"] .card.flying .front::before{opacity:.98!important}
-html[data-uv-mobile="true"][data-theme="blacklight"] .board[data-motion="draw"] .card.flying .front::after{opacity:.64!important}
-/* Do not scale a filtered face while its parent is also translating on WebKit. */
-html[data-uv-mobile="true"][data-theme="blacklight"] .board[data-motion="draw"] .card.flying.flip .face,
-html[data-uv-mobile="true"][data-theme="blacklight"] .board[data-motion="recycle"] .card.flying.flip .face{animation:none!important}
-</style>
-<style>
-/* =====================================================================
-   CEP 5.35 — LANDSCAPE TABLE AUTHORITY / MANHATTAN DECK FENG SHUI
-   In short landscape, authored chrome becomes peripheral instrumentation.
-   The felt owns the viewport; cards spread laterally instead of clustering.
-   ===================================================================== */
-@media (orientation:landscape) and (max-height:560px){
-  .app{grid-template-rows:minmax(0,1fr);background:#010203}
-  .topbar{display:none!important}
-  .stage{grid-row:1;min-height:0}
-  .game{position:relative;grid-template-rows:minmax(0,1fr);min-height:0}
-  .board{grid-row:1;min-height:0;--table-inset:2px}
-
-  /* Telemetry is useful; title chrome is not. Float a quiet instrument cluster. */
-  .gameHead{position:absolute;z-index:30;top:max(5px,env(safe-area-inset-top));right:max(7px,env(safe-area-inset-right));height:auto;min-height:0;padding:0;border:0;background:transparent!important;backdrop-filter:none;pointer-events:none}
-  .gameIcon,.titleBlock{display:none!important}
-  .metrics{height:25px;margin:0;gap:3px;pointer-events:auto}
-  .metric{min-width:39px;padding:3px 6px;border:1px solid rgba(216,174,97,.22)!important;background:rgba(2,6,10,.50);backdrop-filter:blur(8px);border-radius:7px;text-align:center}
-  .metric strong{font-size:9px}.metric span{font-size:5px;margin-top:2px;letter-spacing:.11em}
-
-  /* Controls collapse to a thumb-accessible tool dock. No permanent full-width footer. */
-  .controls{position:absolute;z-index:35;right:max(7px,env(safe-area-inset-right));bottom:max(6px,env(safe-area-inset-bottom));left:auto;width:auto;max-width:calc(100vw - 14px);height:34px;min-height:34px;padding:2px;gap:1px;border:1px solid rgba(216,174,97,.20);border-radius:10px;background:rgba(2,6,10,.62)!important;backdrop-filter:blur(12px) saturate(1.1);box-shadow:0 8px 24px rgba(0,0,0,.28);overflow:visible}
-  .control,.drawSelect,.utilityBtn{height:28px!important;min-height:28px!important}
-  .control{flex:0 0 31px;width:31px;padding:0!important;border-radius:7px}
-  .control.primary{background:rgba(245,241,232,.92)}
-  .control .ico{font-size:13px}.control .label{display:none!important}.separator{display:none!important}
-  .drawSelect{width:58px;min-width:58px;margin-left:1px;padding:0 3px;font-size:7px;border-radius:7px}
-  .utilityBtn{width:29px;min-width:29px!important;padding:0;font-size:13px;border-radius:7px}
-
-  .settingsPanel{right:max(6px,env(safe-area-inset-right));bottom:46px;max-height:calc(var(--app-h,100dvh) - 54px)}
-  .settingsScroll{max-height:calc(var(--app-h,100dvh) - 108px)}
-  .toast{bottom:48px}
-
-  /* Table furniture may exist, but never compete with play. */
-  .fidget[data-kind="spinner"]{opacity:.74}
-}
-@media (orientation:landscape) and (max-height:420px){
-  .metrics .metric:nth-child(2){display:none}
-  .controls #restartBtn,.controls #hintBtn{display:none}
-  .drawSelect{display:none}
-}
 </style>
 </head>
 <body>
@@ -897,7 +825,7 @@ const ASSETS=Object.freeze({"S1":"data:image/webp;base64,UklGRmo7AABXRUJQVlA4IF4
    ======================================================================= */
 const DEV = /[?&]dev=1(&|$)/.test(location.search);
 const QA = DEV && /[?&]qa=1(&|$)/.test(location.search);
-const BUILD = 'klondike-5.34.0-investor-motion-lock';
+const BUILD = 'klondike-5.32.0-tech-week-gold';
 const $ = (s,r=document)=>r.querySelector(s);
 const clamp = (n,a,b)=>Math.max(a,Math.min(b,n));
 const reducedMotion = ()=>{ const forced=document.documentElement.dataset.motion; if(forced==='reduced') return true; if(forced==='full') return false; try{ return matchMedia('(prefers-reduced-motion: reduce)').matches }catch(_){ return false } };
@@ -1469,9 +1397,9 @@ const Rules = (()=>{
    ======================================================================= */
 function solveLayout(W,H,tableau){
   W = Math.max(240,W); H = Math.max(180,H);
-  const mobile = W<720 && H>W*.9, compactLandscape = !mobile && H<=560, shortLandscape = !mobile && H<320;
+  const mobile = W<720 && H>W*.9, shortLandscape = !mobile && H<320;
   // Landscape keeps a deliberate table-edge gutter. Spare width belongs to the perimeter first, then columns.
-  const pad = mobile ? clamp(W*.018,6,10) : compactLandscape ? clamp(W*.018,10,28) : (W<560 ? 8 : clamp(W*.06,32,110));
+  const pad = mobile ? clamp(W*.018,6,10) : (W<560 ? 8 : clamp(W*.06,32,110));
   // Vertical gutter is thinner than the horizontal one: copying `pad` onto the top/bottom edges cost a 1280×800 board 56 px per edge,
   // which is exactly the room the fan contract needs. (Portrait keeps its single, already-small pad.)
   const padY = mobile ? pad : shortLandscape ? Math.min(pad,10) : clamp(H*.035,12,pad);
@@ -1488,7 +1416,7 @@ function solveLayout(W,H,tableau){
     const cardH = cardW*CARD_H/CARD_W;
     // Horizontal rhythm: portrait may spend spare width between piles; landscape uses the familiar compact Klondike row
     // and gives the recovered width back to the outer table gutters.
-    const gap = mobile ? Math.min(Math.max(gap0,(W-pad*2-cardW*7)/6),cardW*.30) : compactLandscape ? clamp(Math.min((W-pad*2-cardW*7)/6,cardW*.46),cardW*.18,54) : clamp(Math.min(cardW*.078,(W-pad*2-cardW*7)/6),3.5,10);
+    const gap = mobile ? Math.min(Math.max(gap0,(W-pad*2-cardW*7)/6),cardW*.30) : clamp(Math.min(cardW*.078,(W-pad*2-cardW*7)/6),3.5,10);
     const originX = (W-(cardW*7+gap*6))/2;
     // Vertical manspread: three semantic lanes in portrait (foundations / work / stock), two in landscape.
     // Tall boards spend their slack as whitespace between tasks instead of pinning all play to the top edge.
@@ -1501,8 +1429,8 @@ function solveLayout(W,H,tableau){
     } else if (mobile){
       foundationY = pad; tableauY = foundationY+cardH+rowGap; stockY = H-pad-cardH;
     } else {
-      foundationY = compactLandscape ? Math.max(4,padY) : clamp(H*.06,padY,Math.max(padY,H-padY-cardH*2-rowGap));
-      tableauY = compactLandscape ? clamp(H*.34,foundationY+cardH+rowGap,H-padY-cardH) : clamp(H*.29,foundationY+cardH+rowGap,H-padY-cardH);
+      foundationY = shortLandscape ? padY : clamp(H*.06,padY,Math.max(padY,H-padY-cardH*2-rowGap));
+      tableauY = shortLandscape ? foundationY+cardH+rowGap : clamp(H*.29,foundationY+cardH+rowGap,H-padY-cardH);
       stockY = foundationY;
     }
     const tableauBottom = mobile ? stockY-rowGap : H-padY;
@@ -1729,8 +1657,7 @@ const core = {
     if (!S.stock.length && !S.waste.length) return false;
     let kind = null;
     const probe=Rules.draw(cloneState(S)); if(!probe){if(!o.quiet)toast('No redeals remaining');return false;}
-    const txOpts = {...o,motion:probe.kind};
-    const ok = transact('draw',()=>{ const rr=Rules.draw(S); if(!rr)throw new Error('draw blocked'); kind = rr.kind; },txOpts);
+    const ok = transact('draw',()=>{ const rr=Rules.draw(S); if(!rr)throw new Error('draw blocked'); kind = rr.kind; },o);
     if (ok && !o.instant){ FX.at(View.rectOf(kind==='recycle'?'stock':'waste',0),kind==='recycle'?1.4:(S.drawMode===3?1.3:1)); AudioFX.play(kind==='recycle'?'recycle':(S.drawMode===3?'draw3':'draw')); AudioFX.haptic(kind==='recycle'?'recycle':(S.drawMode===3?'draw3':'draw')); }
     if (ok && kind==='recycle' && !o.quiet) toast('Waste recycled');
     return !!ok;
@@ -2050,7 +1977,6 @@ const View = (()=>{
       if (r.flying){ r.flying = false; r.el.classList.remove('flying'); r.el.style.transitionDelay = ''; if (r.z!==r.baseZ){ r.z = r.baseZ; r.el.style.zIndex = String(r.baseZ); stats.writes++; } }
       if (r.hideLater){ r.hideLater = false; r.vis = false; r.el.style.visibility = 'hidden'; stats.writes++; }
     }
-    delete board.dataset.motion;
   }
 
   function sync(opts){
@@ -2060,8 +1986,7 @@ const View = (()=>{
     if (!boardW||!boardH) measure(); if (!boardW||!boardH) return;
     L = solveLayout(boardW,boardH,S.tableau);
     const instant = !!opts.instant || !board.dataset.ready;
-    if (instant){ holdNoAnim(); delete board.dataset.motion; }
-    else if (opts.motion) board.dataset.motion = opts.motion;
+    if (instant) holdNoAnim();
     applyLayoutVars(); T = targets(S,L); positionStatic();
     const sel = selectedIds(), delayMax = opts.deal ? 28*22 : 0;
     let flyingAny = false;
@@ -2663,14 +2588,13 @@ if (DEV) (()=>{
   T('responsive / wide touch-capable tablets opt into the WebKit-safe UV renderer',()=>String(Viewport.measure).includes('touchCapable()||w<=900')&&String(Viewport.measure).includes('uvMobile'));
   T('responsive / compact landscape fullscreen is user-gesture gated and failure-safe',()=>String(Viewport.bind).includes('pointerup')&&String(Viewport.maybeFullscreen).includes('requestFullscreen')&&String(Viewport.maybeFullscreen).includes('catch'));
   T('responsive / compact landscape state derives from the visual viewport rather than UA sniffing',()=>{const m=Viewport.measure();return document.documentElement.dataset.orientation===(m.w>m.h?'landscape':'portrait')&&document.documentElement.dataset.compactLandscape===String(m.w>m.h&&m.h<=560);});
-  T('responsive / compact landscape CSS removes full-width top and bottom chrome',()=>document.documentElement.innerHTML.includes('LANDSCAPE TABLE AUTHORITY')&&document.documentElement.innerHTML.includes('.topbar{display:none!important}')&&document.documentElement.innerHTML.includes('.controls{position:absolute'));
   T('responsive / safe-area insets exist for portrait and short landscape chrome',()=>document.documentElement.innerHTML.includes('env(safe-area-inset-left)')&&document.documentElement.innerHTML.includes('env(safe-area-inset-bottom)'));
   T('layout / portrait foundations are centered top and stock + waste form a bottom thumb deck',()=>{const l=solveLayout(390,700,Rules.deal(Rules.orderFromSeed(2),1).tableau),mid=(l.foundationX[0]+l.foundationX[3]+l.cardW)/2;return l.mobile&&Math.abs(mid-195)<1&&l.stockY>l.tableauY+l.cardH&&l.wasteY===l.stockY&&l.stockX<l.wasteX});
   T('layout / portrait lanes manspread through tall boards instead of top-stacking',()=>[[320,480],[360,640],[390,700],[390,844],[430,932],[600,1024]].every(([w,h])=>{const l=solveLayout(w,h,Rules.deal(Rules.orderFromSeed(2),1).tableau);return l.mobile&&l.foundationY/h>=.045&&l.foundationY/h<=.14&&l.tableauY/h>=.24&&l.tableauY/h<=.39&&l.stockY/h>=.70&&l.stockY/h<=.86&&l.tableauY>=l.foundationY+l.cardH+l.rowGap-0.5&&l.stockY>=l.tableauY+l.cardH+l.rowGap-0.5;}));
   T('layout / vertical anchors consume added portrait height while card scale stays width-led',()=>{const a=solveLayout(390,640,Rules.deal(Rules.orderFromSeed(2),1).tableau),b=solveLayout(390,900,Rules.deal(Rules.orderFromSeed(2),1).tableau);return a.mobile&&b.mobile&&Math.abs(a.cardW-b.cardW)<.01&&b.foundationY>a.foundationY+8&&b.tableauY>a.tableauY+45&&b.stockY>a.stockY+150;});
-  T('layout / tall landscape keeps the classic compact seven-column rhythm',()=>[[1024,768],[1280,800],[1648,690],[1920,1080],[2560,1440]].every(([w,h])=>{const l=solveLayout(w,h,Rules.deal(Rules.orderFromSeed(7),1).tableau);return !l.mobile&&h>560&&l.gap/l.cardW<=.105&&l.gap<=10.01;}));
-  T('layout / compact landscape spends recovered width between tableau lanes',()=>[[568,240],[667,280],[844,296],[896,390],[1280,520],[1536,520]].every(([w,h])=>{const l=solveLayout(w,h,Rules.deal(Rules.orderFromSeed(7),1).tableau),span=l.cardW*7+l.gap*6,right=w-(l.originX+span);return !l.mobile&&l.gap/l.cardW>=.18&&l.gap/l.cardW<=.47&&Math.abs(l.originX-right)<.01&&span/w>=.58;}));
-  T('layout / compact landscape reduces dead perimeter without sacrificing symmetry',()=>[[844,296],[1024,520],[1280,520],[1536,520]].every(([w,h])=>{const l=solveLayout(w,h,Rules.deal(Rules.orderFromSeed(7),1).tableau),right=w-(l.originX+l.cardW*7+l.gap*6);return !l.mobile&&l.originX/w<=.22&&right/w<=.22&&Math.abs(l.originX-right)<.01;}));
+  T('layout / wide boards give spare width to outer gutters while keeping the seven piles compact',()=>[[1024,768],[1280,800],[1648,690],[1920,1080],[2560,1440]].every(([w,h])=>{const l=solveLayout(w,h,Rules.deal(Rules.orderFromSeed(7),1).tableau),span=l.cardW*7+l.gap*6,right=w-(l.originX+span);return !l.mobile&&l.gap/l.cardW<=.105&&l.gap<=10.01&&Math.abs(l.originX-right)<.01&&l.foundationX.every((x,i)=>Math.abs(x-(l.originX+(3+i)*(l.cardW+l.gap)))<.01);}));
+  T('layout / extra landscape width grows gutters rather than stretching pile spacing',()=>{const ta=Rules.deal(Rules.orderFromSeed(7),1).tableau,a=solveLayout(1280,800,ta),b=solveLayout(1920,800,ta),span=x=>x.cardW*7+x.gap*6;return Math.abs(span(a)-span(b))<.01&&b.originX-a.originX>300&&Math.abs(a.gap-b.gap)<.01;});
+  T('layout / landscape preserves generous symmetric outer gutters',()=>[[844,296],[1024,600],[1280,800],[1648,690],[1920,1080]].every(([w,h])=>{const l=solveLayout(w,h,Rules.deal(Rules.orderFromSeed(7),1).tableau),right=w-(l.originX+l.cardW*7+l.gap*6);return !l.mobile&&l.originX/w>=.065&&right/w>=.065&&Math.abs(l.originX-right)<.01;}));
   T('layout / compact portrait fallback remains collision-free',()=>[[280,300],[320,360],[360,390]].every(([w,h])=>{const l=solveLayout(w,h,Rules.deal(Rules.orderFromSeed(3),1).tableau);return l.mobile&&l.foundationY>=l.pad-.5&&l.tableauY>=l.foundationY+l.cardH+l.rowGap-.5&&l.stockY>=l.tableauY+l.cardH+l.rowGap-.5&&l.stockY+l.cardH<=h-l.pad+.5;}));
   T('cosmetic / simplex card pose is deterministic and bounded',()=>{const a=Simplex.pose('H7','tableau',3,5,84),b=Simplex.pose('H7','tableau',3,5,84);return JSON.stringify(a)===JSON.stringify(b)&&Math.abs(a.x)<4&&Math.abs(a.y)<4&&Math.abs(a.r)<3});
   T('cosmetic / exactly one fidget exists and it is the spinner, never game state',()=>document.querySelectorAll('.fidget').length===1&&document.querySelectorAll('.fidget[data-kind="spinner"]').length===1&&document.querySelectorAll('#fidgets .card').length===0&&Rules.validate(S).length===0);
@@ -2731,11 +2655,6 @@ if (DEV) (()=>{
   T('dom / every card sits inside the board; page does not scroll',()=>{ const br = View.el.board.getBoundingClientRect(); return [...document.querySelectorAll('.card')].every(e=>{ const r = e.getBoundingClientRect(); return r.left>=br.left-1 && r.right<=br.right+1 && r.top>=br.top-1; }) && document.documentElement.scrollWidth<=innerWidth+1 && document.documentElement.scrollHeight<=innerHeight+1; });
   T('dom / at most three waste cards are visible',()=>{ const v = [...document.querySelectorAll('.card')].filter(e=>{ const t = View.locate(e.dataset.id); return t && t.zone==='waste' && getComputedStyle(e).visibility!=='hidden'; }); return v.length<=3; });
   T('clock / ignores Ctrl/Cmd/Alt shortcuts (Ctrl+R must not restart the deal)',()=>{ const before = S.moves, d = S.deal ? S.deal.join() : null; for (const k of ['r','n','u','a','h']){ window.dispatchEvent(new KeyboardEvent('keydown',{key:k,ctrlKey:true,bubbles:true})); window.dispatchEvent(new KeyboardEvent('keydown',{key:k,metaKey:true,bubbles:true})); } return S.moves===before && (S.deal?S.deal.join():null)===d; });
-
-  T('motion / stock and recycle transactions explicitly tag their visual flight mode',()=>String(core.draw).includes('motion:probe.kind')&&document.documentElement.innerHTML.includes('board.dataset.motion = opts.motion'));
-  T('motion / mobile UV draw flight uses compact card-local halo instead of the wide stationary bloom',()=>{const h=document.documentElement.innerHTML;return h.includes('.board[data-motion="draw"] .card.flying')&&h.includes('0 0 10px 3px rgba(var(--uv-card-b),.62)')&&h.includes('filter:none!important;-webkit-filter:none!important');});
-  T('motion / WebKit draw flight never runs the face scale flip while the card is translating',()=>document.documentElement.innerHTML.includes('.board[data-motion="draw"] .card.flying.flip .face')&&document.documentElement.innerHTML.includes('animation:none!important'));
-  T('motion / settle removes the temporary lighting mode and desktop neon filter remains authoritative',()=>document.documentElement.innerHTML.includes('delete board.dataset.motion')&&document.documentElement.innerHTML.includes('html[data-theme="blacklight"][data-uv-glow="on"] .cards{filter:url(#uvNeon)}'));
 
   Dev.runRegression = ()=>{
     const out = [];
