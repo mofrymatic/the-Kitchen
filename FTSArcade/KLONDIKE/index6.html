@@ -4,11 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no, interactive-widget=resizes-content">
 <meta name="theme-color" content="#05070a">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Klondike">
-<meta name="application-name" content="Klondike">
 <meta name="color-scheme" content="dark light">
 
 <title>Klondike Solitaire · Red Eye · FTS Arcade</title>
@@ -42,8 +37,6 @@
   if (/[?&]dev=1(&|$)/.test(location.search)) window['ga-disable-G-VH6GES5F1E'] = true;
   gtag('js', new Date());
   gtag('config', 'G-VH6GES5F1E');
-
-/* CEP 5.37: ground-plane UV bloom prevents card-to-card light contamination. */
 </script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-VH6GES5F1E"></script>
 
@@ -710,33 +703,6 @@ html[data-uv-mobile="true"][data-theme="blacklight"] .board[data-motion="draw"] 
 /* Do not scale a filtered face while its parent is also translating on WebKit. */
 html[data-uv-mobile="true"][data-theme="blacklight"] .board[data-motion="draw"] .card.flying.flip .face,
 html[data-uv-mobile="true"][data-theme="blacklight"] .board[data-motion="recycle"] .card.flying.flip .face{animation:none!important}
-
-
-/* =====================================================================
-   CEP 5.37 — GROUND-PLANE BLACKLIGHT BLOOM
-   Fluorescent emission belongs to the felt, not to neighboring cards.
-   A dedicated glow layer sits beneath every card and receives the same
-   transforms. Card shells retain only a tight edge/engraving treatment.
-   ===================================================================== */
-.cardGlows{position:absolute;inset:0;z-index:3;pointer-events:none;overflow:visible}
-.cardGlowGround{position:absolute;left:0;top:0;width:var(--cw);height:var(--ch);border-radius:var(--radius);opacity:0;visibility:hidden;pointer-events:none;will-change:transform,opacity;
-  background:transparent;
-  box-shadow:0 4px 11px rgba(0,0,0,.64),0 0 11px rgba(154,108,255,.18),0 0 24px rgba(255,46,117,.07);
-  transition:transform var(--move-ms) var(--ease),width var(--move-ms) var(--ease),height var(--move-ms) var(--ease),opacity .16s ease}
-.board.noanim .cardGlowGround{transition:none!important}
-html[data-theme="blacklight"] .cardGlowGround{opacity:.78;filter:blur(1.2px);-webkit-filter:blur(1.2px)}
-html[data-theme="blacklight"][data-uv-intensity="low"] .cardGlowGround{opacity:.42;box-shadow:0 3px 9px rgba(0,0,0,.60),0 0 7px rgba(154,108,255,.13)}
-html[data-theme="blacklight"][data-uv-intensity="balanced"] .cardGlowGround{opacity:.68;box-shadow:0 4px 10px rgba(0,0,0,.64),0 0 11px rgba(154,108,255,.21),0 0 19px rgba(255,46,117,.08)}
-html[data-theme="blacklight"][data-uv-intensity="searing"] .cardGlowGround{opacity:.92;box-shadow:0 4px 12px rgba(0,0,0,.68),0 0 13px 2px rgba(164,64,255,.36),0 0 28px 6px rgba(248,23,255,.22)}
-html[data-theme="blacklight"] .card{box-shadow:none!important;outline:1px solid rgba(145,217,255,.30);outline-offset:-1px}
-html[data-theme="blacklight"] .card[data-suit="H"],html[data-theme="blacklight"] .card[data-suit="D"]{outline-color:rgba(255,61,237,.42)}
-html[data-theme="blacklight"] .card.dragging{box-shadow:none!important;outline:1px solid rgba(216,197,255,.92);outline-offset:-1px}
-html[data-uv-mobile="true"][data-theme="blacklight"] .card{box-shadow:none!important}
-html[data-uv-mobile="true"][data-theme="blacklight"] .card.dragging{box-shadow:none!important}
-html[data-theme="blacklight"][data-card-glow="off"] .cardGlowGround{opacity:0!important}
-.card.dragging + .cardGlowGround{opacity:inherit}
-@media(prefers-reduced-motion:reduce){.cardGlowGround{transition:none!important}}
-
 </style>
 <style>
 /* =====================================================================
@@ -779,34 +745,6 @@ html[data-theme="blacklight"][data-card-glow="off"] .cardGlowGround{opacity:0!im
   .controls #restartBtn,.controls #hintBtn{display:none}
   .drawSelect{display:none}
 }
-
-
-/* =====================================================================
-   CEP 5.36 — SCREEN AUTHORITY / IOS WEB-APP ESCAPE HATCH
-   Browser chrome is not game chrome. In ordinary iPhone Safari the browser
-   owns it; installed web-app mode is the browserless interactive path.
-   ===================================================================== */
-html[data-display-mode="standalone"] .app,
-html[data-display-mode="fullscreen"] .app{inset:0;width:100vw;height:var(--app-h,100dvh);}
-html[data-display-mode="standalone"] body,
-html[data-display-mode="fullscreen"] body{background:#000;}
-.screenStatus{padding:9px 11px 2px;color:#74839a;font:700 8px/1.45 ui-monospace,monospace;text-transform:uppercase;letter-spacing:.08em}
-.screenStatus b{color:#dce7f5}
-.screenActions{display:flex;gap:7px;padding:8px 11px 11px}
-.screenActions .settingsAction{margin:0;flex:1 1 0}
-.screenCoach{position:fixed;inset:0;z-index:1200;display:none;place-items:center;padding:max(18px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) max(18px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left));background:rgba(0,0,0,.72);backdrop-filter:blur(16px)}
-.screenCoach.show{display:grid}
-.screenCoachCard{width:min(430px,92vw);border:1px solid rgba(216,174,97,.52);border-radius:12px;padding:18px;background:linear-gradient(145deg,rgba(7,10,15,.985),rgba(2,4,8,.985));box-shadow:0 28px 90px rgba(0,0,0,.72),0 0 32px rgba(57,247,255,.08);color:#eaf2ff}
-.screenCoachCard h2{margin:0 0 9px;font:900 17px/1.05 Arial Black,Arial,sans-serif}
-.screenCoachCard p{margin:0 0 10px;color:#9eacbd;font:700 10px/1.55 ui-monospace,monospace}
-.screenCoachCard ol{margin:10px 0 15px;padding-left:20px;color:#d9e4f2;font:700 11px/1.7 ui-monospace,monospace}
-.screenCoachCard .settingsAction{width:100%;margin:0}
-@media(max-height:560px) and (orientation:landscape){
-  html[data-display-mode="standalone"] .game,html[data-display-mode="fullscreen"] .game{grid-template-rows:minmax(0,1fr)!important}
-  html[data-display-mode="standalone"] .topbar,html[data-display-mode="fullscreen"] .topbar,
-  html[data-display-mode="standalone"] .gameHead,html[data-display-mode="fullscreen"] .gameHead{display:none!important}
-}
-
 </style>
 </head>
 <body>
@@ -855,7 +793,6 @@ html[data-display-mode="fullscreen"] body{background:#000;}
         <div class="shuffleFX" id="shuffleFX" aria-hidden="true"><div class="shuffleGlow"></div></div>
         <div class="fidgets" id="fidgets" aria-hidden="true"></div>
         <div class="slots" id="slots" aria-hidden="true"></div>
-        <div class="cardGlows" id="cardGlows" aria-hidden="true"></div>
         <div class="cards" id="cards"></div>
         <div class="rings" id="rings" aria-hidden="true"></div>
         <div class="victoryFX" id="victoryFX" aria-hidden="true"></div>
@@ -935,14 +872,6 @@ html[data-display-mode="fullscreen"] body{background:#000;}
         <label class="settingRow"><span>Focus glow</span><input id="setFocusGlow" type="checkbox"></label>
       </details>
 
-
-
-      <details class="settingGroup">
-        <summary>Display / Screen</summary>
-        <div class="screenStatus" id="screenStatus">Mode: <b>checking</b></div>
-        <div class="screenActions"><button class="settingsAction primaryAction" id="screenAuthorityBtn" type="button">Use full screen</button></div>
-      </details>
-
       <details class="settingGroup">
         <summary>Data / Reset</summary>
         <div class="settingsButtons"><button class="settingsAction" id="resetAudio" type="button">Reset audio</button><button class="settingsAction" id="resetSettings" type="button">Reset all settings</button><button class="settingsAction dangerAction" id="clearSavedGame" type="button">Clear saved game</button></div>
@@ -950,16 +879,6 @@ html[data-display-mode="fullscreen"] body{background:#000;}
     </div>
   </div>
 </div>
-
-<div class="screenCoach" id="screenCoach" role="dialog" aria-modal="true" aria-labelledby="screenCoachTitle">
-  <div class="screenCoachCard">
-    <h2 id="screenCoachTitle">Full-table mode</h2>
-    <p>iPhone Safari reserves its browser chrome for normal tabs. Interactive HTML gets the browserless canvas when Klondike is launched as a Home Screen web app.</p>
-    <ol><li>Tap Safari’s Share button.</li><li>Choose Add to Home Screen.</li><li>Keep Open as Web App enabled.</li><li>Launch Klondike from its Home Screen icon, then rotate to landscape.</li></ol>
-    <button class="settingsAction primaryAction" id="screenCoachClose" type="button">Return to table</button>
-  </div>
-</div>
-
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div class="win" id="win" role="dialog" aria-modal="true" aria-labelledby="winTitle">
   <div class="winPanel"><h2 id="winTitle">Sequence complete</h2><p id="winStats">All 52 cards are on the foundations.</p><button class="control primary" id="winNew" type="button" style="margin:0 auto">Deal another</button></div>
@@ -978,7 +897,7 @@ const ASSETS=Object.freeze({"S1":"data:image/webp;base64,UklGRmo7AABXRUJQVlA4IF4
    ======================================================================= */
 const DEV = /[?&]dev=1(&|$)/.test(location.search);
 const QA = DEV && /[?&]qa=1(&|$)/.test(location.search);
-const BUILD = 'klondike-5.36.0-screen-authority';
+const BUILD = 'klondike-5.34.0-investor-motion-lock';
 const $ = (s,r=document)=>r.querySelector(s);
 const clamp = (n,a,b)=>Math.max(a,Math.min(b,n));
 const reducedMotion = ()=>{ const forced=document.documentElement.dataset.motion; if(forced==='reduced') return true; if(forced==='full') return false; try{ return matchMedia('(prefers-reduced-motion: reduce)').matches }catch(_){ return false } };
@@ -2037,7 +1956,7 @@ const Fidgets = (()=>{
    Cards are positioned with transforms, so a move is a CSS transition, not a rebuild.
    ======================================================================= */
 const View = (()=>{
-  const board = $('#board'), layerCards = $('#cards'), layerGlows = $('#cardGlows'), layerSlots = $('#slots'), layerRings = $('#rings');
+  const board = $('#board'), layerCards = $('#cards'), layerSlots = $('#slots'), layerRings = $('#rings');
   const recs = Object.create(null), slotEls = {stock:null,waste:null,foundation:[],tableau:[]}, ringEls = {foundation:[],tableau:[]};
   const stats = {syncs:0,writes:0,lastMs:0,nodes:0};
   let L = null, T = null, boardW = 0, boardH = 0, settleTimer = 0, hintTimer = 0, stockBadge = null, stockNoise = null;
@@ -2052,8 +1971,7 @@ const View = (()=>{
       const back = document.createElement('div'); back.className = 'face back';
       const uvEtch = document.createElement('div'); uvEtch.className = 'uvEtch'; uvEtch.setAttribute('aria-hidden','true');
       el.append(front,back,uvEtch); layerCards.appendChild(el);
-      const glow = document.createElement('div'); glow.className = 'cardGlowGround'; glow.dataset.glowFor = id; layerGlows.appendChild(glow);
-      recs[id] = {el, glow, x:NaN, y:NaN, z:0, baseZ:0, up:null, vis:null, hideLater:false, sel:false, flying:false, dirty:true, flipT:0, pk:''};
+      recs[id] = {el, x:NaN, y:NaN, z:0, baseZ:0, up:null, vis:null, hideLater:false, sel:false, flying:false, dirty:true, flipT:0, pk:''};
     }
     const mkSlot = (zone,index,cls,label)=>{ const s = document.createElement('div'); s.className = 'slot '+cls; s.dataset.zone = zone; s.dataset.index = String(index); s.setAttribute('aria-label',label); layerSlots.appendChild(s); return s; };
     slotEls.stock = mkSlot('stock',0,'stock','Stock'); slotEls.waste = mkSlot('waste',0,'waste','Waste');
@@ -2130,7 +2048,7 @@ const View = (()=>{
     for (const id in recs){
       const r = recs[id];
       if (r.flying){ r.flying = false; r.el.classList.remove('flying'); r.el.style.transitionDelay = ''; if (r.z!==r.baseZ){ r.z = r.baseZ; r.el.style.zIndex = String(r.baseZ); stats.writes++; } }
-      if (r.hideLater){ r.hideLater = false; r.vis = false; r.el.style.visibility = 'hidden'; r.glow.style.visibility = 'hidden'; stats.writes++; }
+      if (r.hideLater){ r.hideLater = false; r.vis = false; r.el.style.visibility = 'hidden'; stats.writes++; }
     }
     delete board.dataset.motion;
   }
@@ -2151,7 +2069,7 @@ const View = (()=>{
     if (opts.deal && !instant){            // start every card on the stock, then fly out in deal order
       board.classList.add('noanim');
       const sx = r2(L.stockX), sy = r2(L.stockY);
-      for (const id of IDS){ const r = recs[id]; place(r.el,sx,sy); place(r.glow,sx,sy); r.x = sx; r.y = sy; r.el.style.visibility = ''; r.glow.style.visibility = ''; r.vis = true; r.hideLater = false; r.el.dataset.up = 'false'; r.up = false; }
+      for (const id of IDS){ const r = recs[id]; place(r.el,sx,sy); r.x = sx; r.y = sy; r.el.style.visibility = ''; r.vis = true; r.hideLater = false; r.el.dataset.up = 'false'; r.up = false; }
       void board.offsetWidth; board.classList.remove('noanim');
     }
 
@@ -2162,11 +2080,11 @@ const View = (()=>{
       const r = recs[id], tg = T[id], el = r.el;
       const moved = r.dirty || r.x!==tg.x || r.y!==tg.y;
       const pk=tg.jx+','+tg.jy+','+tg.jr;
-      if(r.pk!==pk){r.pk=pk;el.style.setProperty('--jtx',tg.jx+'px');el.style.setProperty('--jty',tg.jy+'px');el.style.setProperty('--jrot',tg.jr+'deg');r.glow.style.setProperty('--jtx',tg.jx+'px');r.glow.style.setProperty('--jty',tg.jy+'px');r.glow.style.setProperty('--jrot',tg.jr+'deg');stats.writes++;}
+      if(r.pk!==pk){r.pk=pk;el.style.setProperty('--jtx',tg.jx+'px');el.style.setProperty('--jty',tg.jy+'px');el.style.setProperty('--jrot',tg.jr+'deg');stats.writes++;}
       if (moved){
         if (!instant){ r.flying = true; flyingAny = true; el.classList.add('flying'); }
         if (dealOrder && dealOrder[id]!==undefined) el.style.transitionDelay = (dealOrder[id]*22)+'ms';
-        place(el,tg.x,tg.y); place(r.glow,tg.x,tg.y); r.x = tg.x; r.y = tg.y;
+        place(el,tg.x,tg.y); r.x = tg.x; r.y = tg.y;
       }
       r.baseZ = tg.z;
       const wantZ = moved && !instant ? 300+tg.z : (r.flying ? r.z : tg.z);
@@ -2180,9 +2098,9 @@ const View = (()=>{
         } else apply();
         r.up = tg.up;
       }
-      if (tg.vis){ if (r.vis!==true){ r.vis = true; el.style.visibility = ''; r.glow.style.visibility = ''; stats.writes++; } r.hideLater = false; }
+      if (tg.vis){ if (r.vis!==true){ r.vis = true; el.style.visibility = ''; stats.writes++; } r.hideLater = false; }
       else if (r.vis!==false){
-        if (instant || !r.flying && !moved){ r.vis = false; el.style.visibility = 'hidden'; r.glow.style.visibility = 'hidden'; stats.writes++; r.hideLater = false; }
+        if (instant || !r.flying && !moved){ r.vis = false; el.style.visibility = 'hidden'; stats.writes++; r.hideLater = false; }
         else r.hideLater = true;                         // stay visible until the covering card lands (no empty-slot flicker)
       }
       const isSel = sel.has(id);
@@ -2215,8 +2133,8 @@ const View = (()=>{
 
   // drag
   function dragStart(ids){ ids.forEach((id,i)=>{ const r = recs[id]; r.el.classList.add('dragging'); r.el.style.zIndex = String(1200+i); }); }
-  function dragMove(ids,dx,dy,tilt=0){ const rr=clamp(tilt,-4.5,4.5).toFixed(2)+'deg'; for (const id of ids){ const r = recs[id]; r.el.style.setProperty('--drag-r',rr); r.glow.style.setProperty('--drag-r',rr); r.el.style.transform = transformAt(r.x+dx,r.y+dy); r.glow.style.transform = transformAt(r.x+dx,r.y+dy); } }
-  function dragEnd(ids){ for (const id of ids){ const r = recs[id]; r.el.classList.remove('dragging'); r.el.style.removeProperty('--drag-r'); r.glow.style.removeProperty('--drag-r'); r.el.style.zIndex = String(r.z); r.dirty = true; } }
+  function dragMove(ids,dx,dy,tilt=0){ const rr=clamp(tilt,-4.5,4.5).toFixed(2)+'deg'; for (const id of ids){ const r = recs[id]; r.el.style.setProperty('--drag-r',rr); r.el.style.transform = transformAt(r.x+dx,r.y+dy); } }
+  function dragEnd(ids){ for (const id of ids){ const r = recs[id]; r.el.classList.remove('dragging'); r.el.style.removeProperty('--drag-r'); r.el.style.zIndex = String(r.z); r.dirty = true; } }
   function leadRect(ids,dx,dy){ const r = recs[ids[0]]; return {x:r.x+dx,y:r.y+dy,w:L.cardW,h:L.cardH}; }
 
   function destinationCard(zone,index){
@@ -2497,13 +2415,11 @@ const Settings = (()=>{
 
 /* ---------- responsive viewport contract: REF mobile gate ---------- */
 const Viewport = (()=>{
-  let raf=0,lastFullscreenTry=0;
+  let raf=0,fullscreenTried=false;
   const root=document.documentElement;
   const coarse=()=>{try{return matchMedia('(pointer:coarse)').matches}catch(_){return false}};
   const touchCapable=()=>coarse()||Number(navigator.maxTouchPoints||0)>0;
   const landscape=()=>{const vv=window.visualViewport,w=vv?.width||innerWidth,h=vv?.height||innerHeight;return w>h};
-  const standalone=()=>navigator.standalone===true||matchMedia('(display-mode: standalone)').matches||matchMedia('(display-mode: fullscreen)').matches;
-  const fullscreen=()=>!!(document.fullscreenElement||document.webkitFullscreenElement);
   function measure(){
     const vv=window.visualViewport,w=Math.round(vv?.width||innerWidth),h=Math.round(vv?.height||innerHeight);
     root.style.setProperty('--app-w',Math.max(1,w)+'px');
@@ -2511,27 +2427,23 @@ const Viewport = (()=>{
     root.dataset.uvMobile=String(touchCapable()||w<=900);
     root.dataset.orientation=landscape()?'landscape':'portrait';
     root.dataset.compactLandscape=String(landscape()&&h<=560);
-    root.dataset.displayMode=fullscreen()?'fullscreen':standalone()?'standalone':'browser';
     return {w,h};
   }
-  function pin(){ if(scrollX||scrollY) try{scrollTo(0,0)}catch(_){} }
-  function sync(){cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{measure();pin();if(View?.layout)View.relayout();Fidgets.relayout();ScreenAuthority?.sync?.();});}
+  function pin(){
+    if(scrollX||scrollY) try{scrollTo(0,0)}catch(_){}
+  }
+  function sync(){cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{measure();pin();if(View?.layout)View.relayout();Fidgets.relayout();});}
   async function maybeFullscreen(){
-    if(!landscape()||!coarse()||fullscreen()||standalone())return false;
-    const now=performance.now(); if(now-lastFullscreenTry<900)return false; lastFullscreenTry=now;
+    if(fullscreenTried||!landscape()||!coarse()||document.fullscreenElement)return false;
     const el=document.documentElement, fn=el.requestFullscreen||el.webkitRequestFullscreen;
     if(typeof fn!=='function')return false;
-    try{
-      try{ await fn.call(el,{navigationUI:'hide'}); }
-      catch(first){ await fn.call(el); }
-      try{ if(screen.orientation?.lock) await screen.orientation.lock('landscape'); }catch(_){}
-      sync(); return fullscreen();
-    }catch(_){ return false; }
+    fullscreenTried=true;
+    try{ await fn.call(el,{navigationUI:'hide'}); sync(); return true; }catch(_){ return false; }
   }
   function preventGesture(e){e.preventDefault()}
   function preventPagePan(e){
     const t=e.target;
-    if(t&&t.closest&&t.closest('.settingsScroll,.screenCoach,input[type="range"],select'))return;
+    if(t&&t.closest&&t.closest('.settingsScroll,input[type="range"],select'))return;
     e.preventDefault();
   }
   function bind(){
@@ -2540,62 +2452,20 @@ const Viewport = (()=>{
     window.addEventListener('orientationchange',sync,{passive:true});
     window.addEventListener('scroll',pin,{passive:true});
     document.addEventListener('fullscreenchange',sync,{passive:true});
-    document.addEventListener('webkitfullscreenchange',sync,{passive:true});
     if(window.visualViewport){
       visualViewport.addEventListener('resize',sync,{passive:true});
       visualViewport.addEventListener('scroll',sync,{passive:true});
     }
-    try{matchMedia('(display-mode: standalone)').addEventListener('change',sync)}catch(_){}
-    try{matchMedia('(display-mode: fullscreen)').addEventListener('change',sync)}catch(_){}
     document.addEventListener('gesturestart',preventGesture,{passive:false});
     document.addEventListener('gesturechange',preventGesture,{passive:false});
     document.addEventListener('gestureend',preventGesture,{passive:false});
     document.addEventListener('touchmove',preventPagePan,{passive:false});
+    /* Fullscreen can only be requested from a user activation. One best-effort
+       request in compact landscape; unsupported iPhone Safari simply falls back. */
     document.addEventListener('pointerup',()=>{void maybeFullscreen()},{passive:true,capture:true});
   }
-  return {bind,measure,sync,maybeFullscreen,get landscape(){return landscape()},get standalone(){return standalone()},get fullscreen(){return fullscreen()}};
+  return {bind,measure,sync,maybeFullscreen,get landscape(){return landscape()}};
 })();
-
-/* ---------- screen authority: fullscreen when available, install path on iPhone Safari ---------- */
-const ScreenAuthority = (()=>{
-  let bound=false;
-  const $status=()=>document.getElementById('screenStatus');
-  const $button=()=>document.getElementById('screenAuthorityBtn');
-  const $coach=()=>document.getElementById('screenCoach');
-  function capability(){
-    const el=document.documentElement;
-    return typeof(el.requestFullscreen||el.webkitRequestFullscreen)==='function';
-  }
-  function mode(){ return Viewport.fullscreen?'fullscreen':Viewport.standalone?'standalone':'browser'; }
-  function sync(){
-    const m=mode(), status=$status(), btn=$button();
-    document.documentElement.dataset.displayMode=m;
-    if(status){
-      const label=m==='fullscreen'?'element fullscreen':m==='standalone'?'Home Screen web app':'Safari/browser tab';
-      status.innerHTML='Mode: <b>'+label+'</b>'+(m==='browser'&&!capability()?' · browser chrome is OS-owned here':'');
-    }
-    if(btn){
-      btn.textContent=m==='fullscreen'||m==='standalone'?'Full table active':capability()?'Enter full screen':'How to remove Safari chrome';
-      btn.disabled=m==='fullscreen'||m==='standalone';
-    }
-  }
-  function showCoach(on=true){ const c=$coach(); if(c)c.classList.toggle('show',!!on); }
-  async function engage(){
-    if(Viewport.fullscreen||Viewport.standalone){sync();return true;}
-    if(capability() && await Viewport.maybeFullscreen()){sync();return true;}
-    showCoach(true); sync(); return false;
-  }
-  function bind(){
-    if(bound)return; bound=true;
-    $button()?.addEventListener('click',()=>{void engage()});
-    document.getElementById('screenCoachClose')?.addEventListener('click',()=>showCoach(false));
-    $coach()?.addEventListener('pointerdown',e=>{if(e.target===$coach())showCoach(false)});
-    document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$coach()?.classList.contains('show'))showCoach(false)});
-    sync();
-  }
-  return {bind,sync,engage,showCoach,capability,mode};
-})();
-
 
 /* ---------- theme ---------- */
 const THEME_ORDER=Object.freeze(['dark','blacklight','light']);
@@ -2778,7 +2648,6 @@ if (DEV) (()=>{
   T('cep / engine registry exposes Klondike live and Spider 1/2/4-suit as explicit two-deck next engines',()=>SOLITAIRE_ENGINES.find(e=>e.id==='klondike'&&e.status==='live')&&['spider-1','spider-2','spider-4'].every(id=>SOLITAIRE_ENGINES.find(e=>e.id===id&&e.decks===2&&e.status==='next')));
   T('settings / granular SFX gains are finite normalized values',()=>['volume','sfxCards','sfxFriction','sfxImpact','sfxDeal','sfxSpinner','sfxWin'].every(k=>Number.isFinite(Prefs.value[k])&&Prefs.value[k]>=0&&Prefs.value[k]<=1));
   T('settings / presentation selectors are valid and applied as root data contracts',()=>document.documentElement.dataset.cardStyle===Prefs.value.cardStyle&&document.documentElement.dataset.cardBack===Prefs.value.cardBack&&document.documentElement.dataset.tableStyle===Prefs.value.tableStyle&&document.documentElement.dataset.uvIntensity===Prefs.value.uvIntensity);
-  T('CEP 5.37 blacklight bloom is rendered on a dedicated ground plane beneath all cards',()=>!!$('#cardGlows')&&$('#cardGlows').children.length===52&&getComputedStyle($('#cardGlows')).zIndex<getComputedStyle($('#cards')).zIndex);
   T('settings / control room is mobile-scrollable and groups game, cards, sound, motion, accessibility and data',()=>!!$('#settingsPanel .settingsScroll')&&$('#settingsPanel').querySelectorAll('.settingGroup').length>=6&&!!$('#applyRules')&&!!$('#setSfxFriction')&&!!$('#setCardStyle'));
   T('rules / presets normalize deterministically',()=>{const a=GameRules.preset('classic'),v=GameRules.preset('vegas'),r=GameRules.preset('relaxed');return a.emptyPolicy==='king'&&a.redealLimit===null&&v.scoreMode==='vegas'&&v.redealLimit===0&&r.emptyPolicy==='any'&&r.autoFoundation==='aggressive'});
   T('rules / Vegas starts at -52 and disallows recycle by default',()=>{const x=Rules.deal(Rules.orderFromSeed(7),1,GameRules.preset('vegas'));for(let i=0;i<24;i++)Rules.draw(x);return x.score===-52&&x.stock.length===0&&x.waste.length===24&&Rules.draw(x)===null});
@@ -2793,10 +2662,6 @@ if (DEV) (()=>{
   T('responsive / card-bloom switch removes wide mobile bloom without removing face grade or UV paper plate',()=>{const r=document.documentElement,c=document.querySelector('.card'),old={theme:r.dataset.theme,uvMobile:r.dataset.uvMobile,cardGlow:r.dataset.cardGlow,up:c.dataset.up};r.dataset.theme='blacklight';r.dataset.uvMobile='true';r.dataset.cardGlow='off';c.dataset.up='true';const f=c.querySelector('.front'),p=getComputedStyle(f,'::before'),ok=getComputedStyle(c).filter==='none'&&getComputedStyle(c).boxShadow!=='none'&&getComputedStyle(f).filter!=='none'&&p.content!=='none';c.dataset.up=old.up;Object.entries(old).forEach(([k,v])=>{if(k==='up')return;v==null?delete r.dataset[k]:r.dataset[k]=v});return ok;});
   T('responsive / wide touch-capable tablets opt into the WebKit-safe UV renderer',()=>String(Viewport.measure).includes('touchCapable()||w<=900')&&String(Viewport.measure).includes('uvMobile'));
   T('responsive / compact landscape fullscreen is user-gesture gated and failure-safe',()=>String(Viewport.bind).includes('pointerup')&&String(Viewport.maybeFullscreen).includes('requestFullscreen')&&String(Viewport.maybeFullscreen).includes('catch'));
-  T('responsive / installed iOS web-app metadata is present and status bar is translucent',()=>!!document.querySelector('meta[name="apple-mobile-web-app-capable"][content="yes"]')&&document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]')?.content==='black-translucent');
-  T('responsive / display mode distinguishes browser, standalone and fullscreen without UA sniffing',()=>String(Viewport.measure).includes('displayMode')&&String(ScreenAuthority.mode).includes('Viewport.standalone')&&!String(ScreenAuthority.capability).includes('userAgent'));
-  T('responsive / unsupported element fullscreen has a deterministic Home Screen web-app route',()=>document.getElementById('screenCoach')&&String(ScreenAuthority.engage).includes('showCoach(true)')&&document.getElementById('screenCoach')?.textContent.includes('Add to Home Screen'));
-  T('responsive / fullscreen request retries without navigationUI for WebKit variants',()=>String(Viewport.maybeFullscreen).includes("fn.call(el,{navigationUI:'hide'})")&&String(Viewport.maybeFullscreen).includes('await fn.call(el);'));
   T('responsive / compact landscape state derives from the visual viewport rather than UA sniffing',()=>{const m=Viewport.measure();return document.documentElement.dataset.orientation===(m.w>m.h?'landscape':'portrait')&&document.documentElement.dataset.compactLandscape===String(m.w>m.h&&m.h<=560);});
   T('responsive / compact landscape CSS removes full-width top and bottom chrome',()=>document.documentElement.innerHTML.includes('LANDSCAPE TABLE AUTHORITY')&&document.documentElement.innerHTML.includes('.topbar{display:none!important}')&&document.documentElement.innerHTML.includes('.controls{position:absolute'));
   T('responsive / safe-area insets exist for portrait and short landscape chrome',()=>document.documentElement.innerHTML.includes('env(safe-area-inset-left)')&&document.documentElement.innerHTML.includes('env(safe-area-inset-bottom)'));
@@ -2941,7 +2806,7 @@ async function boot(){
   else S = restored || Rules.deal(Rules.orderRandom(),savedDraw,GameRules.fromPrefs(Prefs.value));
   S.rules=GameRules.normalize(S.rules||GameRules.fromPrefs(Prefs.value)); S.redealsUsed=Math.max(0,+S.redealsUsed||0);
   const fresh = !restored;
-  Input.bind(); Settings.bind(); Prefs.apply(); Viewport.bind(); ScreenAuthority.bind(); Fidgets.init();
+  Input.bind(); Settings.bind(); Prefs.apply(); Viewport.bind(); Fidgets.init();
   if ('ResizeObserver' in window){ let raf = 0; new ResizeObserver(()=>{ cancelAnimationFrame(raf); raf = requestAnimationFrame(()=>View.relayout()); }).observe(View.el.board); }
   else window.addEventListener('resize',()=>View.relayout());
   Clock.resume();
