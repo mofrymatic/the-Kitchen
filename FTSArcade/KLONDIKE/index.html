@@ -1411,7 +1411,7 @@ const ASSETS=Object.freeze({"S1":"data:image/webp;base64,UklGRmo7AABXRUJQVlA4IF4
    ======================================================================= */
 const DEV = /[?&]dev=1(&|$)/.test(location.search);
 const QA = DEV && /[?&]qa=1(&|$)/.test(location.search);
-const BUILD = 'klondike-5.42.0-uv-locked-trilobe';
+const BUILD = 'klondike-5.43.0-fuzzy-rts-motion-lock';
 const $ = (s,r=document)=>r.querySelector(s);
 const clamp = (n,a,b)=>Math.max(a,Math.min(b,n));
 const reducedMotion = ()=>{ const forced=document.documentElement.dataset.motion; if(forced==='reduced') return true; if(forced==='full') return false; try{ return matchMedia('(prefers-reduced-motion: reduce)').matches }catch(_){ return false } };
@@ -1428,7 +1428,8 @@ const SUITS = {S:{glyph:'♠',red:false,name:'spades'},H:{glyph:'♥',red:true,n
 const RANK_LABEL = ['','A','2','3','4','5','6','7','8','9','10','J','Q','K'];
 const RANK_NAME  = ['','Ace','2','3','4','5','6','7','8','9','10','Jack','Queen','King'];
 const CARD_W = 5, CARD_H = 7;                      // 2.5" x 3.5" poker card
-const MAX_CARD_W = 118, MIN_CARD_W = 28, MAX_UNDO = 96, MOVE_MS = 280;
+const MAX_CARD_W = 118, MIN_CARD_W = 28, MAX_UNDO = 96;
+const ANIMATION_MS = Object.freeze({slow:430,normal:280,fast:165,instant:0});
 
 /* ---------- FAN CONTRACT: where the index glyphs live on the shipped art, and what a covered card must still show ----------
    Measured off the 250×350 atlas (all 52 faces agree within ±2 px):
@@ -1595,13 +1596,23 @@ const Prefs = (()=>{
     r.dataset.showTelemetry=v.showTelemetry?'on':'off';
     r.dataset.cardStyle=v.cardStyle; r.dataset.cardBack=v.cardBack; r.dataset.tableStyle=v.tableStyle; r.dataset.uvIntensity=v.uvIntensity; r.dataset.cardGlow=v.cardGlow?'on':'off'; r.dataset.feltEtch=v.feltEtch?'on':'off'; r.dataset.feltPattern=v.feltPattern?'on':'off'; r.dataset.feltPatternMode=v.feltPatternMode; r.dataset.spinner=v.spinner?'on':'off';
     r.dataset.motion=v.motion; r.dataset.speed=v.animationSpeed; r.dataset.handedness=v.handedness; r.dataset.contrast=v.contrast; r.dataset.largeControls=v.largeControls?'on':'off'; r.dataset.focusGlow=v.focusGlow?'on':'off';
-    const speed={slow:'430ms',normal:'280ms',fast:'165ms',instant:'0ms'}[v.animationSpeed]; r.style.setProperty('--move-ms',speed);
+    const speed=(ANIMATION_MS[v.animationSpeed] ?? ANIMATION_MS.normal)+'ms'; r.style.setProperty('--move-ms',speed);
     const b=$('#soundBtn'); if(b){ b.setAttribute('aria-pressed',String(v.sound)); b.textContent=v.sound?'♫':'×'; }
   }
   function patch(o){v={...v,...o};Object.assign(v,GameRules.fromPrefs(v));save();apply();return {...v}}
   function reset(){v={...base};save();apply();return {...v}}
   return {get value(){return v},set(k,val){v[k]=val;save();apply();},patch,reset,apply,defaults:()=>({...base})};
 })();
+
+const MotionTiming = Object.freeze({
+  ms(speed=Prefs.value.animationSpeed){
+    if (reducedMotion() || speed==='instant') return 0;
+    return ANIMATION_MS[speed] ?? ANIMATION_MS.normal;
+  },
+  flipDelayMs(stagger=0){ return Math.max(0,stagger)+Math.max(0,this.ms()-40); },
+  settleDelayMs(stagger=0){ const ms=this.ms(); return ms ? ms+Math.max(0,stagger)+80 : 0; },
+  autoStepMs(){ const ms=this.ms(); return ms ? Math.max(110,ms+35) : 70; }
+});
 
 /* ---------- synthesized card-table audio: no external assets ---------- */
 const AudioFX = (()=>{
@@ -2281,7 +2292,7 @@ const core = {
     const my = ++Auto.token; let any = false;
     const step = ()=>{
       if (my!==Auto.token) return;
-      if (this.autoStep()){ any = true; setTimeout(step,110); }
+      if (this.autoStep()){ any = true; setTimeout(step,MotionTiming.autoStepMs()); }
       else if (!S.won) toast(any?'Auto complete':'No safe moves');
     };
     step();
@@ -2626,6 +2637,7 @@ const Fidgets = (()=>{
   function lossAlpha(w){const a=Math.abs(w);return (Config.frictionCoulombTorque+Config.frictionViscousTorque*a+Config.frictionAeroTorque*a*a)/Config.inertia}
   function decayOmega(w,dt){const a=Math.abs(w);if(a<=Config.stopOmega)return 0;return sign(w)*Math.max(0,a-lossAlpha(w)*dt)}
   function integrate(obj,dt){let remain=clamp(dt,0,Config.maxResumeDt);while(remain>1e-9){const h=Math.min(Config.maxStep,remain),before=obj.omega,after=decayOmega(before,h);obj.r+=((before+after)*.5)*h*RAD2DEG;obj.omega=after;remain-=h}}
+  function wheelAxisDelta(dx,dy){return Math.abs(dy)>=Math.abs(dx)?dy:dx}
   function wheelAngularImpulse(raw,modeScale=1){const v=raw*modeScale;if(!v)return 0;return sign(v)*Math.min(Config.maxWheelAngularImpulse,Math.pow(Math.abs(v),Config.wheelCurve)*Config.wheelAngularGain)}
   // Straight tangential swipes are converted to angular velocity using the visible rotor radius, not the expanded invisible halo radius.
   function swipeOmega(dx,dy,rx,ry,dt,visibleRadius=32){const rr=Math.hypot(rx,ry),den=Math.max(Config.minTorqueRadiusPx,Math.min(rr||visibleRadius,visibleRadius)),tx=rr?(-ry/rr):0,ty=rr?(rx/rr):1,tangent=dx*tx+dy*ty;return clamp((tangent/den)/Math.max(.008,dt)*Config.touchSpinGain,-Config.maxOmega,Config.maxOmega)}
@@ -2659,14 +2671,14 @@ const Fidgets = (()=>{
     el.addEventListener('pointerdown',down);
     // One global capture path avoids duplicate move processing and survives WebKit dropping element pointer capture during long-press.
     window.addEventListener('pointermove',move,{capture:true,passive:false}); window.addEventListener('pointerup',end,{capture:true}); window.addEventListener('pointercancel',end,{capture:true});
-    el.addEventListener('wheel',e=>{e.preventDefault();AudioFX.unlock();const now=performance.now(),raw=Math.abs(e.deltaY)>=Math.abs(e.deltaX)?-e.deltaY:e.deltaX,modeScale=e.deltaMode===1?16:e.deltaMode===2?innerHeight:1,requested=wheelAngularImpulse(raw,modeScale),dir=sign(requested);if(!dir)return;const fresh=now-wheelGesture.lastAt>Config.wheelGestureGapMs||dir!==wheelGesture.dir;if(fresh){wheelGesture.dir=dir;wheelGesture.total=0}const room=Math.max(0,Config.maxWheelGestureAngularImpulse-wheelGesture.total),j=dir*Math.min(Math.abs(requested),room);wheelGesture.total+=Math.abs(j);wheelGesture.lastAt=now;if(j){st.omega=clamp(st.omega+j/Config.inertia,-Config.maxOmega,Config.maxOmega);AudioFX.setBearing(st.omega)}paint()},{passive:false});
+    el.addEventListener('wheel',e=>{e.preventDefault();AudioFX.unlock();const now=performance.now(),raw=wheelAxisDelta(e.deltaX,e.deltaY),modeScale=e.deltaMode===1?16:e.deltaMode===2?innerHeight:1,requested=wheelAngularImpulse(raw,modeScale),dir=sign(requested);if(!dir)return;const fresh=now-wheelGesture.lastAt>Config.wheelGestureGapMs||dir!==wheelGesture.dir;if(fresh){wheelGesture.dir=dir;wheelGesture.total=0}const room=Math.max(0,Config.maxWheelGestureAngularImpulse-wheelGesture.total),j=dir*Math.min(Math.abs(requested),room);wheelGesture.total+=Math.abs(j);wheelGesture.lastAt=now;if(j){st.omega=clamp(st.omega+j/Config.inertia,-Config.maxOmega,Config.maxOmega);AudioFX.setBearing(st.omega)}paint()},{passive:false});
     el.addEventListener('dblclick',reset);el.addEventListener('contextmenu',e=>e.preventDefault());
     el.addEventListener('keydown',e=>{let handled=true;if(e.key===' '||e.key==='Enter')applyImpulse((e.shiftKey?-1:1)*(1.55e-3/Config.inertia),'keyboard');else if(e.key==='ArrowLeft')st.x-=8;else if(e.key==='ArrowRight')st.x+=8;else if(e.key==='ArrowUp')st.y-=8;else if(e.key==='ArrowDown')st.y+=8;else handled=false;if(handled){e.preventDefault();constrain();paint()}});
     raf=requestAnimationFrame(tick);
   }
   function relayout(){if(!st)return;const r=View.el.board.getBoundingClientRect(),newSize=st.el.offsetWidth||lastSize||64;if(active){constrain();paint();lastW=r.width;lastH=r.height;lastSize=newSize;return}const cxRatio=lastW?clamp((st.x+(lastSize||newSize)/2)/lastW,0,1):.91,cyRatio=lastH?clamp((st.y+(lastSize||newSize)/2)/lastH,0,1):.18;st.x=cxRatio*r.width-newSize/2;st.y=cyRatio*r.height-newSize/2;constrain();paint();lastW=r.width;lastH=r.height;lastSize=newSize}
   function coastTime(w0=Config.maxOmega){const q={omega:w0,r:0},dt=.05;let t=0;while(Math.abs(q.omega)>0&&t<300){integrate(q,dt);t+=dt}return t}
-  return {init,relayout,repaint:()=>{if(st)paint()},get body(){return bodyR},Config,decayOmega,coastTime,swipeOmega,get count(){return st?1:0},get state(){return st?{x:st.x,y:st.y,r:st.r,omega:st.omega}:null}};
+  return {init,relayout,repaint:()=>{if(st)paint()},get body(){return bodyR},Config,decayOmega,coastTime,swipeOmega,wheelAxisDelta,wheelAngularImpulse,get count(){return st?1:0},get state(){return st?{x:st.x,y:st.y,r:st.r,omega:st.omega}:null}};
 })();
 
 /* =======================================================================
@@ -2690,7 +2702,7 @@ const View = (()=>{
       const uvEtch = document.createElement('div'); uvEtch.className = 'uvEtch'; uvEtch.setAttribute('aria-hidden','true');
       el.append(front,back,uvEtch); layerCards.appendChild(el);
       const glow = document.createElement('div'); glow.className = 'cardGlowGround'; glow.dataset.glowFor = id; layerGlows.appendChild(glow);
-      recs[id] = {el, glow, x:NaN, y:NaN, z:0, baseZ:0, up:null, vis:null, hideLater:false, sel:false, flying:false, dirty:true, flipT:0, pk:''};
+      recs[id] = {el, glow, x:NaN, y:NaN, z:0, baseZ:0, up:null, pendingUp:null, vis:null, hideLater:false, sel:false, flying:false, dirty:true, flipT:0, pk:''};
     }
     const mkSlot = (zone,index,cls,label)=>{ const s = document.createElement('div'); s.className = 'slot '+cls; s.dataset.zone = zone; s.dataset.index = String(index); s.setAttribute('aria-label',label); layerSlots.appendChild(s); return s; };
     slotEls.stock = mkSlot('stock',0,'stock','Stock'); slotEls.waste = mkSlot('waste',0,'waste','Waste');
@@ -2764,6 +2776,7 @@ const View = (()=>{
   }
 
   function settle(){
+    clearTimeout(settleTimer); settleTimer = 0;
     for (const id in recs){
       const r = recs[id];
       if (r.flying){ r.flying = false; r.el.classList.remove('flying'); r.el.style.transitionDelay = ''; if (r.z!==r.baseZ){ r.z = r.baseZ; r.el.style.zIndex = String(r.baseZ); stats.writes++; } }
@@ -2778,8 +2791,8 @@ const View = (()=>{
     const t0 = performance.now();
     if (!boardW||!boardH) measure(); if (!boardW||!boardH) return;
     L = solveLayout(boardW,boardH,S.tableau);
-    const instant = !!opts.instant || !board.dataset.ready;
-    if (instant){ holdNoAnim(); delete board.dataset.motion; }
+    const instant = !!opts.instant || !board.dataset.ready || MotionTiming.ms()===0;
+    if (instant){ clearTimeout(settleTimer); settleTimer=0; settle(); holdNoAnim(); delete board.dataset.motion; }
     else if (opts.motion) board.dataset.motion = opts.motion;
     applyLayoutVars(); T = targets(S,L); positionStatic();
     const sel = selectedIds(), delayMax = opts.deal ? 28*22 : 0;
@@ -2808,14 +2821,17 @@ const View = (()=>{
       r.baseZ = tg.z;
       const wantZ = moved && !instant ? 300+tg.z : (r.flying ? r.z : tg.z);
       if (r.z!==wantZ){ r.z = wantZ; el.style.zIndex = String(wantZ); stats.writes++; }
-      if (r.up!==tg.up){
-        const firstTime = r.up===null;
-        const apply = ()=>{ el.dataset.up = String(tg.up); el.setAttribute('aria-label',tg.up?CardSemantics.label(id):ARIA_BACK); stats.writes++; };
-        if (!firstTime && !instant && !reducedMotion()){
-          if (dealOrder && tg.up){ clearTimeout(r.flipT); r.flipT = setTimeout(()=>{ apply(); el.classList.add('flip'); setTimeout(()=>el.classList.remove('flip'),260); },dealOrder[id]*22+MOVE_MS-40); }
-          else { apply(); el.classList.add('flip'); AudioFX.play('flip',.72); setTimeout(()=>el.classList.remove('flip'),260); }
+      if (r.pendingUp!==null && (instant || r.pendingUp!==tg.up)){ clearTimeout(r.flipT); r.flipT=0; r.pendingUp=null; }
+      if (r.up!==tg.up && r.pendingUp!==tg.up){
+        clearTimeout(r.flipT); r.flipT=0; r.pendingUp=null;
+        const firstTime = r.up===null, nextUp = tg.up;
+        const apply = ()=>{ if(r.pendingUp!==null && r.pendingUp!==nextUp)return; el.dataset.up = String(nextUp); el.setAttribute('aria-label',nextUp?CardSemantics.label(id):ARIA_BACK); r.up=nextUp; r.pendingUp=null; stats.writes++; };
+        if (!firstTime && !instant){
+          if (dealOrder && nextUp){
+            r.pendingUp=nextUp;
+            r.flipT = setTimeout(()=>{ r.flipT=0; if(r.pendingUp!==nextUp)return; apply(); el.classList.add('flip'); setTimeout(()=>el.classList.remove('flip'),260); },MotionTiming.flipDelayMs(dealOrder[id]*22));
+          } else { apply(); el.classList.add('flip'); AudioFX.play('flip',.72); setTimeout(()=>el.classList.remove('flip'),260); }
         } else apply();
-        r.up = tg.up;
       }
       if (tg.vis){ if (r.vis!==true){ r.vis = true; el.style.visibility = ''; r.glow.style.visibility = ''; stats.writes++; } r.hideLater = false; }
       else if (r.vis!==false){
@@ -2826,7 +2842,7 @@ const View = (()=>{
       if (r.sel!==isSel){ r.sel = isSel; el.classList.toggle('selected',isSel); stats.writes++; }
       r.dirty = false;
     }
-    if (flyingAny){ clearTimeout(settleTimer); settleTimer = setTimeout(settle,MOVE_MS+delayMax+80); }
+    if (flyingAny){ clearTimeout(settleTimer); settleTimer = setTimeout(settle,MotionTiming.settleDelayMs(delayMax)); }
     stats.syncs++; stats.lastMs = performance.now()-t0;
   }
 
@@ -3494,6 +3510,11 @@ if (DEV) (()=>{
   T('cosmetic / spinner is a traditional three-lobe rotor with a stationary cap',()=>document.querySelectorAll('.fidget[data-kind="spinner"] .spinnerLobe').length===3&&document.querySelectorAll('.fidget[data-kind="spinner"] .spinnerCap').length===1);
   T('spinner / invisible interaction halo exists and expands hit target by at least 24px',()=>{const h=document.querySelector('.spinnerHitHalo'),s=document.querySelector('.fidget[data-kind="spinner"]');return !!h&&!!s&&Fidgets.Config.hitPadPx>=24&&getComputedStyle(s).getPropertyValue('--spinner-hit-pad').trim()===Fidgets.Config.hitPadPx+'px'});
   T('spinner / tangential 80px phone swipe yields meaningful angular velocity',()=>Math.abs(Fidgets.swipeOmega(0,80,30,0,.12,32))>=18);
+  T('spinner / clockwise tangential swipes are positive at all four cardinal contact points',()=>{
+    const dt=.1,r=30,d=24;
+    return Fidgets.swipeOmega(0,d,r,0,dt,32)>0 && Fidgets.swipeOmega(-d,0,0,r,dt,32)>0 && Fidgets.swipeOmega(0,-d,-r,0,dt,32)>0 && Fidgets.swipeOmega(d,0,0,-r,dt,32)>0;
+  });
+  T('spinner / wheel and screen-space swipe directions share one sign convention',()=>Fidgets.wheelAxisDelta(0,120)>0&&Fidgets.wheelAxisDelta(0,-120)<0&&Fidgets.wheelAxisDelta(120,20)>0&&Fidgets.wheelAngularImpulse(Fidgets.wheelAxisDelta(0,120))>0);
   T('spinner / long-press drag has window-capture fallback and one-second hold contract',()=>Fidgets.Config.holdMs===1000&&String(Fidgets.init).includes("window.addEventListener('pointermove',move,{capture:true,passive:false})"));
   T('spinner / fine pointers cannot grab the invisible halo outside the visible rotor',()=>document.documentElement.innerHTML.includes('@media (pointer:fine){.spinnerHitHalo{pointer-events:none}}'));
   T('spinner / repositioning is pointer-local and never uses a center-delta orbit around the cursor',()=>String(Fidgets.init).includes('anchorX')&&String(Fidgets.init).includes('e.clientX-br.left-active.anchorX')&&!String(Fidgets.init).includes('grabDx'));
@@ -3551,6 +3572,11 @@ if (DEV) (()=>{
   T('dom / at most three waste cards are visible',()=>{ const v = [...document.querySelectorAll('.card')].filter(e=>{ const t = View.locate(e.dataset.id); return t && t.zone==='waste' && getComputedStyle(e).visibility!=='hidden'; }); return v.length<=3; });
   T('clock / ignores Ctrl/Cmd/Alt shortcuts (Ctrl+R must not restart the deal)',()=>{ const before = S.moves, d = S.deal ? S.deal.join() : null; for (const k of ['r','n','u','a','h']){ window.dispatchEvent(new KeyboardEvent('keydown',{key:k,ctrlKey:true,bubbles:true})); window.dispatchEvent(new KeyboardEvent('keydown',{key:k,metaKey:true,bubbles:true})); } return S.moves===before && (S.deal?S.deal.join():null)===d; });
 
+  T('motion / all animation speeds have one authoritative numeric timing table',()=>JSON.stringify(ANIMATION_MS)===JSON.stringify({slow:430,normal:280,fast:165,instant:0})&&String(Prefs.apply).includes('ANIMATION_MS[v.animationSpeed]'));
+  T('motion / settle timing follows selected card speed instead of a hard-coded duration',()=>String(View.sync).includes('MotionTiming.settleDelayMs(delayMax)')&&String(MotionTiming.settleDelayMs).includes('this.ms()'));
+  T('motion / delayed face flips are cancellable on target drift and separate pending DOM state from rendered state',()=>String(View.sync).includes('r.pendingUp!==tg.up')&&String(View.sync).includes('clearTimeout(r.flipT)')&&String(View.sync).includes('r.pendingUp!==nextUp'));
+  T('motion / instant or reduced-motion sync settles old flying state before writing the next frame',()=>String(View.sync).includes('MotionTiming.ms()===0')&&String(View.sync).includes('settle(); holdNoAnim()'));
+  T('motion / auto-foundation pacing cannot outrun the configured card transition',()=>String(core.autoRun).includes('MotionTiming.autoStepMs()')&&MotionTiming.autoStepMs()>=70);
   T('motion / stock and recycle transactions explicitly tag their visual flight mode',()=>String(core.draw).includes('motion:probe.kind')&&document.documentElement.innerHTML.includes('board.dataset.motion = opts.motion'));
   T('motion / mobile UV draw flight uses compact card-local halo instead of the wide stationary bloom',()=>{const h=document.documentElement.innerHTML;return h.includes('.board[data-motion="draw"] .card.flying')&&h.includes('0 0 10px 3px rgba(var(--uv-card-b),.62)')&&h.includes('filter:none!important;-webkit-filter:none!important');});
   T('motion / WebKit draw flight never runs the face scale flip while the card is translating',()=>document.documentElement.innerHTML.includes('.board[data-motion="draw"] .card.flying.flip .face')&&document.documentElement.innerHTML.includes('animation:none!important'));
