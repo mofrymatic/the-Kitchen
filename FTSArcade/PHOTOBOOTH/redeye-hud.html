@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>RED EYE - See More. Capture Truth.</title>
+    <meta name="description" content="RED EYE GAME" />
+    <link rel="icon" type="image/png" href="fts-favicon.png">
+    <link rel="shortcut icon" type="image/png" href="fts-favicon.png">
+    <link rel="apple-touch-icon" href="fts-favicon.png">
+    <meta property="og:title" content="FishTacoStand Arcade">
+    <meta property="og:description" content="Step up to the FishTacoStand Arcade: a retro cabinet hub for Neon Invaders, Astroids, Cave Racer, RED EYE, Packman, Tetris, and more.">
+    <meta property="og:url" content="https://frymatic.us/FTSArcade/redeye-hud.html">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="RED EYE">
+    <meta property="og:image" content="https://frymatic.us/FTSArcade/redeye-preview.png">
+    <meta property="og:image:alt" content="Augmented Reality Game">
+    <meta property="og:image:type" content="image/png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Augmented Reality Game">
+    <meta name="twitter:description" content="An Augmented Reality Game">
+    <meta name="twitter:image" content="https://frymatic.us/FTSArcade/redeye_preview.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        :root {
+            --red-accent: #FF2D2D; --steel-gray: #A6ADB8; --cool-blue: #38B2F6;
+            --dark-bg: #0A0E14; --darker-bg: #060810; --card-bg: rgba(15, 20, 30, 0.85);
+            --border-subtle: rgba(166, 173, 184, 0.15); --text-primary: #FFFFFF;
+            --text-secondary: #A6ADB8; --overlay-dark: rgba(0, 0, 0, 0.7);
+            --pass-green: #3ddc84;
+        }
+        body { font-family: 'Rajdhani', sans-serif; background: var(--darker-bg); color: var(--text-primary);
+            overflow: hidden; height: 100vh; width: 100vw; position: fixed;
+            -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+        #camera-container { position: fixed; inset: 0; background: var(--dark-bg); overflow: hidden; }
+        #camera-feed { width: 100%; height: 100%; object-fit: cover; transition: transform .15s linear; }
+        #camera-feed.mirrored { transform: scaleX(-1); }
+        #hud-overlay { position: fixed; inset: 0; pointer-events: none; z-index: 100; }
+        #top-bar { position: absolute; top: 0; left: 0; right: 0; display: flex; justify-content: space-between;
+            align-items: flex-start; padding: max(env(safe-area-inset-top), 1rem) 1rem 0.5rem;
+            background: linear-gradient(180deg, var(--overlay-dark) 0%, transparent 100%); pointer-events: auto; }
+        #logo { font-size: 1.5rem; font-weight: 700; letter-spacing: 0.1em; color: var(--text-primary); text-transform: uppercase; }
+        .logo-eye { color: var(--red-accent); display: inline-block; animation: pulse-eye 3s ease-in-out infinite; }
+        @keyframes pulse-eye { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        #mode-indicator { font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; font-weight: 500;
+            letter-spacing: 0.05em; color: var(--text-secondary); text-transform: uppercase; display: flex; align-items: center; gap: 0.5rem; }
+        .mode-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--red-accent); animation: blink 1.5s ease-in-out infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        #settings-btn { pointer-events: auto; background: none; border: none; color: var(--text-secondary);
+            cursor: pointer; padding: 0.5rem; margin: -0.5rem; transition: all 0.2s ease; }
+        #settings-btn:hover { color: var(--text-primary); transform: rotate(90deg); }
+        #bottom-controls { position: absolute; bottom: 0; left: 0; right: 0; display: flex; flex-direction: column;
+            align-items: center; padding: 0 1rem max(env(safe-area-inset-bottom), 2rem);
+            background: linear-gradient(0deg, var(--overlay-dark) 0%, transparent 100%); pointer-events: auto; }
+        #mode-switcher { display: flex; gap: 1.5rem; margin-bottom: 1.5rem; font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.8rem; font-weight: 500; letter-spacing: 0.1em; flex-wrap: wrap; justify-content: center; }
+        .mode-btn { background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 0.5rem 1rem;
+            transition: all 0.3s ease; text-transform: uppercase; position: relative; }
+        .mode-btn.active { color: var(--red-accent); }
+        .mode-btn.active::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+            width: 4px; height: 4px; background: var(--red-accent); border-radius: 50%; }
+        #capture-controls { display: flex; align-items: center; justify-content: center; gap: 3rem; margin-bottom: 1rem; }
+        #capture-btn { width: 70px; height: 70px; border-radius: 50%; border: 4px solid var(--text-primary);
+            background: transparent; cursor: pointer; position: relative; transition: all 0.2s ease; pointer-events: auto; }
+        #capture-btn:active { transform: scale(0.9); }
+        #capture-btn::before { content: ''; position: absolute; inset: 6px; border-radius: 50%; background: var(--text-primary); transition: all 0.2s ease; }
+        #capture-btn:hover::before { background: var(--red-accent); }
+        #capture-btn.recording { border-color: var(--red-accent); }
+        #capture-btn.recording::before { background: var(--red-accent); border-radius: 8px; animation: pulse 1s ease-in-out infinite; }
+        #capture-btn.sense-mode { border-color: var(--cool-blue); }
+        #capture-btn.sense-mode::before { background: var(--cool-blue); }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .secondary-btn { background: rgba(255, 255, 255, 0.1); border: 1px solid var(--border-subtle); color: var(--text-primary);
+            width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.2s ease; backdrop-filter: blur(10px); }
+        .secondary-btn:hover { background: rgba(255, 255, 255, 0.2); border-color: var(--text-primary); }
+        #video-timer { position: absolute; top: 1rem; right: 1rem; font-family: 'IBM Plex Mono', monospace; font-size: 0.9rem;
+            font-weight: 500; color: var(--red-accent); background: var(--card-bg); padding: 0.5rem 1rem; border-radius: 20px;
+            backdrop-filter: blur(10px); border: 1px solid rgba(255, 45, 45, 0.3); display: none; align-items: center; gap: 0.5rem; }
+        #video-timer.active { display: flex; }
+        .rec-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--red-accent); animation: blink 1s ease-in-out infinite; }
+        #advanced-controls { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); backdrop-filter: blur(20px);
+            border-top: 1px solid var(--border-subtle); padding: 1.5rem 1rem max(env(safe-area-inset-bottom), 1.5rem);
+            transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); pointer-events: auto; z-index: 200; }
+        #advanced-controls.visible { transform: translateY(0); }
+        #toggle-advanced { position: absolute; top: -40px; right: 1rem; background: var(--card-bg); backdrop-filter: blur(10px);
+            border: 1px solid var(--border-subtle); color: var(--text-primary); padding: 0.5rem 1rem; border-radius: 20px 20px 0 0;
+            cursor: pointer; font-size: 0.75rem; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; transition: all 0.2s ease; }
+        #toggle-advanced:hover { background: rgba(255, 255, 255, 0.1); }
+        .controls-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; max-width: 600px; margin: 0 auto; }
+        .control-item { display: flex; flex-direction: column; gap: 0.5rem; }
+        .control-label { font-size: 0.7rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-secondary); }
+        .control-input { background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-subtle); border-radius: 8px;
+            padding: 0.75rem; color: var(--text-primary); font-family: 'IBM Plex Mono', monospace; font-size: 0.85rem; transition: all 0.2s ease; }
+        .control-input:focus { outline: none; border-color: var(--red-accent); background: rgba(255, 45, 45, 0.1); }
+        select.control-input { cursor: pointer; appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%23A6ADB8' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 0.75rem center; padding-right: 2.5rem; }
+        #scan-overlay { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; pointer-events: none; z-index: 50; }
+        #scan-overlay.active { display: flex; }
+        .scan-frame { width: 250px; height: 250px; border: 2px solid var(--red-accent); border-radius: 12px; position: relative; animation: scan-pulse 2s ease-in-out infinite; }
+        @keyframes scan-pulse { 0%, 100% { opacity: 0.6; transform: scale(1); } 50% { opacity: 1; transform: scale(1.02); } }
+        .scan-corner { position: absolute; width: 20px; height: 20px; border: 3px solid var(--red-accent); }
+        .scan-corner.tl { top: -2px; left: -2px; border-right: none; border-bottom: none; }
+        .scan-corner.tr { top: -2px; right: -2px; border-left: none; border-bottom: none; }
+        .scan-corner.bl { bottom: -2px; left: -2px; border-right: none; border-top: none; }
+        .scan-corner.br { bottom: -2px; right: -2px; border-left: none; border-top: none; }
+        .scan-line { position: absolute; top: 0; left: 0; right: 0; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--red-accent), transparent); animation: scan-sweep 2s ease-in-out infinite; }
+        @keyframes scan-sweep { 0%, 100% { transform: translateY(0); opacity: 0; } 50% { transform: translateY(245px); opacity: 1; } }
+
+        /* SENSE mode */
+        #sense-overlay { position: fixed; inset: 0; display: none; flex-direction: column; align-items: center;
+            justify-content: center; pointer-events: none; z-index: 50; gap: .75rem; }
+        #sense-overlay.active { display: flex; }
+        #sense-label { font-family: 'IBM Plex Mono', monospace; font-size: 2.4rem; font-weight: 600; letter-spacing: .08em;
+            color: var(--cool-blue); text-transform: uppercase; background: var(--card-bg); padding: .6rem 1.4rem;
+            border-radius: 12px; border: 1px solid rgba(56,178,246,.35); backdrop-filter: blur(10px); opacity: 0; transition: opacity .2s ease; }
+        #sense-label.visible { opacity: 1; }
+        #sense-confidence { width: 220px; height: 6px; border-radius: 3px; background: rgba(255,255,255,.1); overflow: hidden; }
+        #sense-confidence-fill { height: 100%; width: 0%; background: var(--cool-blue); transition: width .1s linear; }
+        #cv-telemetry { position: absolute; bottom: max(env(safe-area-inset-bottom), .5rem) + 0.5rem; bottom: calc(env(safe-area-inset-bottom, 0px) + .5rem);
+            left: .5rem; right: .5rem; font-family: 'IBM Plex Mono', monospace; font-size: .62rem; color: var(--text-secondary);
+            text-align: center; pointer-events: none; opacity: .75; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        #toast-container { position: fixed; bottom: 8rem; left: 50%; transform: translateX(-50%); z-index: 300; pointer-events: none; }
+        .toast { background: var(--card-bg); backdrop-filter: blur(20px); border: 1px solid var(--border-subtle); padding: 1rem 1.5rem;
+            border-radius: 12px; font-family: 'IBM Plex Mono', monospace; font-size: 0.85rem; color: var(--text-primary); margin-bottom: 0.5rem;
+            animation: toast-in 0.3s ease-out; display: flex; align-items: center; gap: 0.75rem; }
+        @keyframes toast-in { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .toast-icon { width: 20px; height: 20px; border-radius: 50%; background: var(--red-accent); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        #permission-prompt { position: fixed; inset: 0; background: var(--darker-bg); display: flex; flex-direction: column;
+            align-items: center; justify-content: center; padding: 2rem; z-index: 1000; text-align: center; }
+        #permission-prompt.hidden { display: none; }
+        .prompt-logo { font-size: 3rem; font-weight: 700; letter-spacing: 0.1em; margin-bottom: 0.5rem; }
+        .prompt-tagline { color: var(--red-accent); font-size: 0.9rem; font-weight: 500; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 3rem; }
+        .prompt-text { color: var(--text-secondary); max-width: 400px; line-height: 1.6; margin-bottom: 2rem; }
+        .enable-camera-btn { background: var(--red-accent); color: var(--text-primary); border: none; padding: 1rem 2.5rem;
+            border-radius: 8px; font-family: 'Rajdhani', sans-serif; font-size: 1rem; font-weight: 600; letter-spacing: 0.05em;
+            text-transform: uppercase; cursor: pointer; transition: all 0.3s ease; }
+        .enable-camera-btn:hover { background: #ff4444; transform: translateY(-2px); box-shadow: 0 8px 20px rgba(255, 45, 45, 0.3); }
+        @media (max-width: 768px) {
+            #logo { font-size: 1.2rem; }
+            #mode-switcher { gap: 1rem; font-size: 0.7rem; }
+            #capture-btn { width: 60px; height: 60px; }
+            .secondary-btn { width: 40px; height: 40px; }
+            .controls-grid { grid-template-columns: 1fr; }
+            #sense-label { font-size: 1.6rem; }
+        }
+        @media (orientation: landscape) and (max-height: 500px) {
+            #bottom-controls { padding-bottom: 1rem; }
+            #capture-controls { gap: 2rem; margin-bottom: 0.5rem; }
+            #mode-switcher { margin-bottom: 0.75rem; }
+        }
+        .loading-spinner { width: 40px; height: 40px; border: 3px solid rgba(255, 255, 255, 0.1); border-top-color: var(--red-accent);
+            border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 1.5rem; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        #fts-tests { position: fixed; z-index: 999; left: 0; top: 0; max-width: 100vw; max-height: 100vh; overflow: auto;
+            background: #000; padding: 10px; font: 12px/1.45 monospace; white-space: pre-wrap; }
+
+        /* ===== BOOTH (QB2 backend) ===== */
+        [hidden] { display: none !important; }
+        #booth-chip { font-family: 'IBM Plex Mono', monospace; font-size: .62rem; letter-spacing: .06em; padding: .2rem .55rem;
+            border-radius: 999px; border: 1px solid var(--border-subtle); background: var(--card-bg); color: var(--text-secondary);
+            cursor: pointer; display: inline-flex; align-items: center; gap: .4rem; max-width: 34vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        #booth-chip i { width: 7px; height: 7px; border-radius: 50%; background: #666; flex-shrink: 0; }
+        #booth-chip.ok i { background: var(--pass-green); } #booth-chip.warn i { background: #ffb020; } #booth-chip.bad i { background: var(--red-accent); }
+        #relief-status { position: absolute; left: 0; right: 0; bottom: 13rem; text-align: center; font-family: 'IBM Plex Mono', monospace;
+            font-size: .9rem; letter-spacing: .15em; color: var(--text-primary); text-shadow: 0 0 12px rgba(255,45,45,.8); pointer-events: none; }
+        #logo { white-space: nowrap; }
+        @media (max-width: 768px) { #mode-switcher { gap: .1rem; flex-wrap: nowrap; } .mode-btn { padding: .5rem .55rem; } }
+        #capture-btn.relief-mode { border-color: var(--red-accent); }
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,.78); z-index: 900; display: flex; align-items: center; justify-content: center; padding: 1.25rem; }
+        .modal-card { background: #0f141e; border: 1px solid var(--border-subtle); border-radius: 14px; padding: 1.4rem; max-width: 420px; width: 100%; }
+        .modal-title { font-size: 1.4rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; margin-bottom: .6rem; }
+        .modal-card p, .modal-card li { color: var(--text-secondary); line-height: 1.5; font-size: 1rem; }
+        .modal-card ul { margin: .7rem 0 1.1rem 1.1rem; }
+        .modal-actions { display: flex; gap: .75rem; justify-content: flex-end; }
+        .ghost-btn { background: transparent; border: 1px solid var(--border-subtle); color: var(--text-primary); border-radius: 8px;
+            padding: .8rem 1.2rem; font: 600 .95rem 'Rajdhani', sans-serif; letter-spacing: .05em; text-transform: uppercase; cursor: pointer; }
+        #result-sheet { position: fixed; left: 0; right: 0; bottom: 0; max-height: 88vh; overflow: auto; z-index: 400; pointer-events: auto;
+            background: rgba(10,14,20,.96); backdrop-filter: blur(20px); border-top: 1px solid var(--border-subtle); border-radius: 18px 18px 0 0;
+            padding: 1rem 1rem max(env(safe-area-inset-bottom), 1.2rem); }
+        #res-banner { font-family: 'IBM Plex Mono', monospace; font-size: .8rem; letter-spacing: .08em; color: var(--pass-green); margin-bottom: .6rem; text-transform: uppercase; }
+        #res-banner.warn { color: #ffb020; }
+        .res-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
+        .res-grid canvas, .res-grid img { width: 100%; aspect-ratio: 3/4; object-fit: contain; background: #000; border-radius: 10px; border: 1px solid var(--border-subtle); }
+        #res-meta { font-family: 'IBM Plex Mono', monospace; font-size: .66rem; color: var(--text-secondary); margin: .6rem 0; line-height: 1.5; word-break: break-word; }
+        .res-actions { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
+        .res-actions button, .res-foot button { padding: .85rem .5rem; border-radius: 10px; border: 1px solid var(--border-subtle); background: rgba(255,255,255,.06);
+            color: var(--text-primary); font: 700 .85rem 'Rajdhani', sans-serif; letter-spacing: .08em; text-transform: uppercase; cursor: pointer; }
+        .res-actions button.primary { background: var(--red-accent); border-color: var(--red-accent); }
+        .res-actions button:disabled { opacity: .45; }
+        .res-qr { display: flex; align-items: center; gap: .9rem; margin: .8rem 0; color: var(--text-secondary); font-size: .85rem; }
+        .res-qr img { width: 104px; height: 104px; background: #fff; border-radius: 8px; padding: 4px; }
+        .res-foot { display: flex; gap: .6rem; } .res-foot button { flex: 1; } #act-delete { border-color: rgba(255,45,45,.5); color: #ff7b7b; }
+    </style>
+</head>
+<body>
+    <div id="permission-prompt">
+        <div class="prompt-logo">R<span class="logo-eye">E</span>D<span class="logo-eye">E</span>Y<span class="logo-eye">E</span></div>
+        <div class="prompt-tagline">See More. Capture Truth.</div>
+        <div class="loading-spinner" style="display: none;" id="loading-spinner"></div>
+        <p class="prompt-text">RED EYE transforms your camera into an intelligent, privacy-first visual tool. Nothing leaves your device until you consent. No accounts. No distractions.</p>
+        <button class="enable-camera-btn" id="enable-camera">Enable Camera</button>
+    </div>
+
+    <div id="camera-container">
+        <video id="camera-feed" autoplay playsinline muted></video>
+    </div>
+
+    <div id="hud-overlay">
+        <div id="top-bar">
+            <div id="logo">R<span class="logo-eye">E</span>D<span class="logo-eye">E</span>Y<span class="logo-eye">E</span></div>
+            <div id="mode-indicator"><span class="mode-dot"></span><span id="current-mode-text">PHOTO</span><button id="booth-chip" class="warn" title="Booth backend status — tap to recheck"><i></i><span id="booth-chip-text">BOOTH …</span></button></div>
+            <button id="settings-btn" aria-label="Settings">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path d="M10 12.5C11.3807 12.5 12.5 11.3807 12.5 10C12.5 8.61929 11.3807 7.5 10 7.5C8.61929 7.5 7.5 8.61929 7.5 10C7.5 11.3807 8.61929 12.5 10 12.5Z" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M16.25 10C16.25 10.625 16.75 11.125 17.375 11.125C18 11.125 18.5 10.625 18.5 10C18.5 9.375 18 8.875 17.375 8.875C16.75 8.875 16.25 9.375 16.25 10Z" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M1.5 10C1.5 10.625 2 11.125 2.625 11.125C3.25 11.125 3.75 10.625 3.75 10C3.75 9.375 3.25 8.875 2.625 8.875C2 8.875 1.5 9.375 1.5 10Z" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M8.75 3.125C8.75 3.75 9.25 4.25 9.875 4.25C10.5 4.25 11 3.75 11 3.125C11 2.5 10.5 2 9.875 2C9.25 2 8.75 2.5 8.75 3.125Z" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M8.75 16.875C8.75 17.5 9.25 18 9.875 18C10.5 18 11 17.5 11 16.875C11 16.25 10.5 15.75 9.875 15.75C9.25 15.75 8.75 16.25 8.75 16.875Z" stroke="currentColor" stroke-width="1.5"/>
+                </svg>
+            </button>
+        </div>
+
+        <div id="video-timer"><span class="rec-dot"></span><span id="timer-display">00:00:00</span></div>
+
+        <div id="scan-overlay">
+            <div class="scan-frame">
+                <div class="scan-corner tl"></div><div class="scan-corner tr"></div>
+                <div class="scan-corner bl"></div><div class="scan-corner br"></div>
+                <div class="scan-line"></div>
+            </div>
+        </div>
+
+        <div id="sense-overlay">
+            <div id="sense-label">—</div>
+            <div id="sense-confidence"><div id="sense-confidence-fill"></div></div>
+        </div>
+
+        <div id="cv-telemetry"></div>
+        <div id="relief-status"></div>
+
+        <div id="bottom-controls">
+            <div id="mode-switcher">
+                <button class="mode-btn" data-mode="scan">Scan</button>
+                <button class="mode-btn active" data-mode="photo">Photo</button>
+                <button class="mode-btn" data-mode="video">Video</button>
+                <button class="mode-btn" data-mode="sense">Sense</button>
+                <button class="mode-btn" data-mode="relief">Relief</button>
+            </div>
+            <div id="capture-controls">
+                <button class="secondary-btn" id="gallery-btn" aria-label="Gallery">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <rect x="2" y="2" width="16" height="16" rx="2" stroke="currentColor" stroke-width="1.5"/>
+                        <circle cx="7" cy="7" r="1.5" fill="currentColor"/>
+                        <path d="M2 14L6 10L10 14L14 10L18 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                </button>
+                <button id="capture-btn" aria-label="Capture"></button>
+                <button class="secondary-btn" id="flip-camera-btn" aria-label="Flip Camera">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path d="M15 8L18 5L15 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M5 12L2 15L5 18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M18 5H10C7.23858 5 5 7.23858 5 10V12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                        <path d="M2 15H10C12.7614 15 15 12.7614 15 10V8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                </button>
+            </div>
+            <button id="toggle-advanced">••• More</button>
+        </div>
+    </div>
+
+    <div id="advanced-controls">
+        <div class="controls-grid">
+            <div class="control-item">
+                <label class="control-label">Zoom</label>
+                <input type="range" class="control-input" id="zoom-control" min="1" max="3" step="0.1" value="1">
+            </div>
+            <div class="control-item">
+                <label class="control-label">Exposure</label>
+                <input type="range" class="control-input" id="exposure-control" min="-2" max="2" step="0.1" value="0">
+            </div>
+            <div class="control-item">
+                <label class="control-label">Resolution</label>
+                <select class="control-input" id="resolution-control">
+                    <option value="1080">1080p</option><option value="720">720p</option><option value="480">480p</option>
+                </select>
+            </div>
+            <div class="control-item">
+                <label class="control-label">Grid</label>
+                <select class="control-input" id="grid-control">
+                    <option value="none">None</option><option value="3x3">3×3</option><option value="4x4">4×4</option>
+                </select>
+            </div>
+            <div class="control-item">
+                <label class="control-label">Infer Hz (Sense)</label>
+                <input type="range" class="control-input" id="inferhz-control" min="1" max="15" step="1" value="8">
+            </div>
+        </div>
+    </div>
+
+    <div id="consent-modal" class="modal" hidden>
+        <div class="modal-card">
+            <div class="modal-title">Before we scan</div>
+            <p>RED EYE will send <b>one photo</b> of you to this booth's local box to find you in the frame and make a relief portrait.</p>
+            <ul>
+                <li>Nothing is posted anywhere without a second, separate tap.</li>
+                <li>You can delete everything, any time.</li>
+                <li>Photos live in the booth's memory only and are purged after 30 minutes.</li>
+            </ul>
+            <div class="modal-actions">
+                <button class="ghost-btn" id="consent-no">Not now</button>
+                <button class="enable-camera-btn" id="consent-yes">I consent</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="result-sheet" hidden>
+        <div id="res-banner"></div>
+        <div class="res-grid"><canvas id="res-src"></canvas><img id="res-relief" alt="Relief portrait"></div>
+        <div id="res-meta"></div>
+        <div class="res-actions">
+            <button id="act-discord" class="primary">Share to Discord</button>
+            <button id="act-barber">Book barber</button>
+            <button id="act-uber">Uber</button>
+            <button id="act-lyft">Lyft</button>
+        </div>
+        <div class="res-qr"><img id="res-qr" alt="Ticket QR"><span>Scan with your own phone to take the booking and ride links with you.</span></div>
+        <div class="res-foot"><button id="act-retake">Retake</button><button id="act-delete">Delete my data</button></div>
+    </div>
+
+    <div id="toast-container"></div>
+
+    <script>
+        /* ============================================================
+           CONFIG — query-param overridable, mirrors Arcade Floor's ?qs pattern
+           ============================================================ */
+        const qs = new URLSearchParams(location.search);
+        const CONFIG = {
+            inferHz: Number(qs.get('inferHz')) || 8,
+            voteWindow: Number(qs.get('vote')) || 8,
+            quorum: Number(qs.get('quorum')) || 0.6,
+            confThreshold: Number(qs.get('thr')) || 0.5,
+            cooldownMs: Number(qs.get('cooldown')) || 3000,
+            presenceLostMs: 1500,
+            evidenceCap: 200
+        };
+        const TFJS_URL = 'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js';
+        const MOBILENET_URL = 'https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.1/dist/mobilenet.min.js';
+        // NOTE: pin these versions before ship; not re-verified in this session (see spec doc, Backends & model).
+
+        const VERSION = 'redeye-hud-0.3.0-booth';
+        const RUNTIME_ERRORS = [];
+        addEventListener('error', e => { if (e.error || e.message) RUNTIME_ERRORS.push(String(e.error && e.error.stack || e.message || e.error)); });
+        addEventListener('unhandledrejection', e => RUNTIME_ERRORS.push(String(e.reason && e.reason.stack || e.reason || 'unhandled rejection')));
+
+        /* ============================================================
+           CORE LOGIC MODULES — lifted from the CV test suite verbatim
+           ============================================================ */
+        const CV_TRANSITIONS = {
+            IDLE: ['PERMISSION', 'ERROR'], PERMISSION: ['STREAMING', 'ERROR'],
+            STREAMING: ['MODEL_LOADING', 'ERROR', 'PAUSED', 'STREAMING'],
+            MODEL_LOADING: ['DETECTING', 'ERROR'],
+            DETECTING: ['PAUSED', 'ERROR', 'STREAMING'],
+            PAUSED: ['STREAMING', 'DETECTING', 'ERROR'],
+            ERROR: ['PERMISSION', 'IDLE']
+        };
+        function makeFSM(initial = 'IDLE') {
+            let state = initial; const history = [state];
+            return {
+                get state() { return state; },
+                can(next) { return (CV_TRANSITIONS[state] || []).includes(next); },
+                transition(next) {
+                    if (!this.can(next)) throw new Error(`illegal transition ${state} -> ${next}`);
+                    state = next; history.push(state); return state;
+                },
+                history: () => [...history]
+            };
+        }
+
+        // BUG FIX: nothing ever moved IDLE -> PERMISSION, so the FSM sat in IDLE forever and Sense could never reach DETECTING
+        function fsmToStreaming(f) {
+            if (f.state === 'IDLE' || f.state === 'ERROR') f.transition('PERMISSION');
+            if (f.can('STREAMING')) f.transition('STREAMING');
+            return f.state;
+        }
+
+        // BUG FIX 2: once the classifier is cached, ensureModel() returned early and the FSM stayed in STREAMING, so SENSE only ever worked once
+        function fsmToDetecting(f) {
+            if (f.state === 'PAUSED') f.transition('DETECTING');
+            else if (f.state === 'STREAMING') { f.transition('MODEL_LOADING'); f.transition('DETECTING'); }
+            return f.state;
+        }
+
+        function makeRingBuffer(size) {
+            const buf = new Array(size).fill(null); let idx = 0, filled = 0;
+            return {
+                push(item) { buf[idx] = item; idx = (idx + 1) % size; filled = Math.min(filled + 1, size); },
+                toArray() { return filled < size ? buf.slice(0, filled) : [...buf.slice(idx), ...buf.slice(0, idx)]; },
+                get length() { return filled; }
+            };
+        }
+
+        function temporalVote(window, { quorum = 0.6, confThreshold = 0.5 } = {}) {
+            if (window.length === 0) return null;
+            const tally = {};
+            for (const { label, confidence } of window) {
+                if (!tally[label]) tally[label] = { count: 0, confSum: 0 };
+                tally[label].count++; tally[label].confSum += confidence;
+            }
+            let best = null;
+            for (const [label, v] of Object.entries(tally)) {
+                const ratio = v.count / window.length, meanConf = v.confSum / v.count;
+                if (ratio >= quorum && meanConf >= confThreshold) {
+                    if (!best || v.count > best.count) best = { label, ratio, meanConf, count: v.count };
+                }
+            }
+            return best;
+        }
+
+        function makeCooldownGate(cooldownMs) {
+            let lastFired = -Infinity;
+            return { tryFire(label, nowMs) { if (nowMs - lastFired >= cooldownMs) { lastFired = nowMs; return true; } return false; } };
+        }
+
+        function makeEvidenceLog(maxEntries) {
+            const entries = [];
+            return {
+                append(entry) { entries.push({ ...entry, t: entry.t ?? Date.now() }); if (entries.length > maxEntries) entries.shift(); },
+                all() { return [...entries]; },
+                get length() { return entries.length; }
+            };
+        }
+
+        function makeBus() {
+            const listeners = {};
+            return {
+                on(evt, fn) { (listeners[evt] = listeners[evt] || []).push(fn); },
+                emit(evt, payload) { (listeners[evt] || []).forEach(fn => { try { fn(payload); } catch (e) { RUNTIME_ERRORS.push(String(e)); } }); }
+            };
+        }
+
+        /* ============================================================
+           CAT LABEL MATCHING — MobileNet ImageNet className strings
+           ============================================================ */
+        const CAT_RE = /\bcat\b/i;
+        const CAT_EXCLUDE = new Set(['Madagascar cat']); // lemur, false positive on the word "cat"
+        function catScoreFromPredictions(preds) {
+            let score = 0;
+            for (const p of preds) {
+                if (CAT_EXCLUDE.has(p.className)) continue;
+                if (CAT_RE.test(p.className)) score = Math.max(score, p.probability);
+            }
+            return score;
+        }
+
+        /* ============================================================
+           STATE
+           ============================================================ */
+        const state = {
+            currentMode: 'photo', isRecording: false, stream: null, facingMode: 'user',
+            recordingStartTime: null, timerInterval: null,
+            sense: {
+                fsm: makeFSM(), classifier: null, ring: makeRingBuffer(CONFIG.voteWindow),
+                cooldown: makeCooldownGate(CONFIG.cooldownMs), evidence: makeEvidenceLog(CONFIG.evidenceCap),
+                bus: makeBus(), backend: null, inFlight: false, lastInferAt: 0, loopHandle: null,
+                present: false, lastPresentAt: 0, lastInferMs: 0, drops: 0, ticks: 0, armed: false
+            }
+        };
+
+        const elements = {
+            permissionPrompt: document.getElementById('permission-prompt'),
+            enableCameraBtn: document.getElementById('enable-camera'),
+            loadingSpinner: document.getElementById('loading-spinner'),
+            cameraFeed: document.getElementById('camera-feed'),
+            captureBtn: document.getElementById('capture-btn'),
+            modeBtns: document.querySelectorAll('.mode-btn'),
+            modeIndicatorText: document.getElementById('current-mode-text'),
+            scanOverlay: document.getElementById('scan-overlay'),
+            senseOverlay: document.getElementById('sense-overlay'),
+            senseLabel: document.getElementById('sense-label'),
+            senseConfidenceFill: document.getElementById('sense-confidence-fill'),
+            cvTelemetry: document.getElementById('cv-telemetry'),
+            videoTimer: document.getElementById('video-timer'),
+            timerDisplay: document.getElementById('timer-display'),
+            flipCameraBtn: document.getElementById('flip-camera-btn'),
+            toggleAdvancedBtn: document.getElementById('toggle-advanced'),
+            advancedControls: document.getElementById('advanced-controls'),
+            toastContainer: document.getElementById('toast-container'),
+            galleryBtn: document.getElementById('gallery-btn'),   // BUG FIX: was undefined, threw, killed every listener below it
+            settingsBtn: document.getElementById('settings-btn')  // BUG FIX: same
+        };
+
+        /* ============================================================
+           CAMERA
+           ============================================================ */
+        async function initCamera() {
+            try {
+                elements.loadingSpinner.style.display = 'block';
+                const constraints = {
+                    video: { facingMode: state.facingMode, width: { ideal: 1920 }, height: { ideal: 1080 } },
+                    audio: false
+                };
+                state.stream = await navigator.mediaDevices.getUserMedia(constraints);
+                elements.cameraFeed.srcObject = state.stream;
+                // BUG FIX: only mirror the front camera; back camera should render true-to-life
+                elements.cameraFeed.classList.toggle('mirrored', state.facingMode === 'user');
+                elements.permissionPrompt.classList.add('hidden');
+                showToast('Camera ready');
+                state.sense.armed = true; // user gesture landed here; speechSynthesis can fire later
+                fsmToStreaming(state.sense.fsm);
+            } catch (error) {
+                console.error('Camera access error:', error);
+                showToast('Camera access denied');
+                if (state.sense.fsm.can('ERROR')) state.sense.fsm.transition('ERROR');
+            } finally {
+                elements.loadingSpinner.style.display = 'none';
+            }
+        }
+
+        function switchMode(mode) {
+            const leavingSense = state.currentMode === 'sense' && mode !== 'sense';
+            state.currentMode = mode;
+            elements.modeBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.mode === mode));
+            elements.modeIndicatorText.textContent = mode.toUpperCase();
+            elements.scanOverlay.classList.toggle('active', mode === 'scan' || mode === 'relief');
+            elements.captureBtn.classList.toggle('relief-mode', mode === 'relief');
+            elements.senseOverlay.classList.toggle('active', mode === 'sense');
+            elements.captureBtn.classList.toggle('sense-mode', mode === 'sense');
+            elements.cvTelemetry.style.display = mode === 'sense' ? 'block' : 'none';
+
+            if (mode !== 'video' && state.isRecording) stopRecording();
+            if (leavingSense) pauseSense();
+            if (mode === 'sense') startSense().catch(err => {
+                RUNTIME_ERRORS.push(String(err));
+                showToast('Sense unavailable: ' + (err.message || err));
+            });
+        }
+
+        function capture() {
+            switch (state.currentMode) {
+                case 'scan': performScan(); break;
+                case 'photo': takePhoto(); break;
+                case 'video': toggleRecording(); break;
+                case 'sense': /* no manual capture in sense mode — it announces on its own */ break;
+                case 'relief': reliefCapture(); break;
+            }
+        }
+
+        function performScan() {
+            showToast('Scanning for QR codes...');
+            setTimeout(() => showToast('No QR codes detected'), 1500);
+        }
+
+        function takePhoto() {
+            const canvas = document.createElement('canvas');
+            canvas.width = elements.cameraFeed.videoWidth;
+            canvas.height = elements.cameraFeed.videoHeight;
+            const ctx = canvas.getContext('2d');
+            // BUG FIX: only un-mirror when the source video was actually mirrored (front camera)
+            if (elements.cameraFeed.classList.contains('mirrored')) {
+                ctx.scale(-1, 1);
+                ctx.drawImage(elements.cameraFeed, -canvas.width, 0, canvas.width, canvas.height);
+            } else {
+                ctx.drawImage(elements.cameraFeed, 0, 0, canvas.width, canvas.height);
+            }
+            canvas.toBlob(blob => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url; a.download = `redeye-photo-${Date.now()}.png`; a.click();
+                showToast('Photo captured');
+            }, 'image/png');
+        }
+
+        function toggleRecording() { state.isRecording ? stopRecording() : startRecording(); }
+
+        function startRecording() {
+            state.isRecording = true; state.recordingStartTime = Date.now();
+            elements.captureBtn.classList.add('recording');
+            elements.videoTimer.classList.add('active');
+            state.timerInterval = setInterval(updateTimer, 100);
+            showToast('Recording started');
+        }
+
+        function stopRecording() {
+            state.isRecording = false;
+            elements.captureBtn.classList.remove('recording');
+            elements.videoTimer.classList.remove('active');
+            clearInterval(state.timerInterval);
+            elements.timerDisplay.textContent = '00:00:00';
+            showToast('Recording stopped');
+        }
+
+        function updateTimer() {
+            const elapsed = Date.now() - state.recordingStartTime;
+            const hours = Math.floor(elapsed / 3600000), minutes = Math.floor((elapsed % 3600000) / 60000), seconds = Math.floor((elapsed % 60000) / 1000);
+            elements.timerDisplay.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        async function flipCamera() {
+            state.facingMode = state.facingMode === 'user' ? 'environment' : 'user';
+            if (state.stream) state.stream.getTracks().forEach(track => track.stop()); // stop BEFORE reacquire — no leaked tracks
+            await initCamera();
+            showToast(`Switched to ${state.facingMode === 'user' ? 'front' : 'back'} camera`);
+        }
+
+        function showToast(message, duration = 2000) {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerHTML = `<div class="toast-icon">✓</div><span></span>`;
+            toast.querySelector('span').textContent = message; // avoid innerHTML injection of message text
+            elements.toastContainer.appendChild(toast);
+            setTimeout(() => { toast.style.animation = 'toast-in 0.3s ease-out reverse'; setTimeout(() => toast.remove(), 300); }, duration);
+        }
+
+        /* ============================================================
+           SENSE — camera → classifier → vote → announce
+           Deviation from spec doc: main thread, not a Worker (tfjs's WebGL
+           backend needs the page's GL context; a true off-thread path
+           needs OffscreenCanvas + a WebGL-in-worker setup, deferred to v0.1).
+           Deviation: tf.js/MobileNet via CDN, not ONNX Runtime Web — same
+           "no build step" shape, ships today, swappable later.
+           ============================================================ */
+        function loadScript(src) {
+            return new Promise((resolve, reject) => {
+                const s = document.createElement('script');
+                s.src = src; s.onload = resolve; s.onerror = () => reject(new Error('failed to load ' + src));
+                document.head.appendChild(s);
+            });
+        }
+
+        async function ensureModel() {
+            if (state.sense.classifier) { fsmToDetecting(state.sense.fsm); return; }
+            if (!('STREAMING' === state.sense.fsm.state || 'PAUSED' === state.sense.fsm.state)) {
+                // allow loading from STREAMING only; guard against double-entry
+            }
+            if (state.sense.fsm.can('MODEL_LOADING')) state.sense.fsm.transition('MODEL_LOADING');
+            const t0 = performance.now();
+            if (typeof tf === 'undefined') await loadScript(TFJS_URL);
+            if (typeof mobilenet === 'undefined') await loadScript(MOBILENET_URL);
+            await tf.ready();
+            state.sense.backend = tf.getBackend(); // tf.js auto-selects webgl > cpu; wasm/webgpu need extra backend packages (open item)
+            state.sense.classifier = await mobilenet.load({ version: 2, alpha: 1.0 });
+            state.sense.modelLoadMs = performance.now() - t0;
+            if (state.sense.fsm.can('DETECTING')) state.sense.fsm.transition('DETECTING');
+        }
+
+        async function startSense() {
+            if (state.sense.fsm.state === 'IDLE' || state.sense.fsm.state === 'PERMISSION') {
+                await initCamera();
+            }
+            if (state.sense.fsm.state === 'PAUSED') state.sense.fsm.transition('STREAMING');
+            await ensureModel();
+            wireSenseSubscribers();
+            senseTick();
+        }
+
+        function pauseSense() {
+            if (state.sense.loopHandle) cancelAnimationFrame(state.sense.loopHandle);
+            state.sense.loopHandle = null;
+            if (state.sense.fsm.can('PAUSED')) state.sense.fsm.transition('PAUSED');
+            elements.senseLabel.classList.remove('visible');
+        }
+
+        let senseSubscribersWired = false;
+        function wireSenseSubscribers() {
+            if (senseSubscribersWired) return;
+            senseSubscribersWired = true;
+            state.sense.bus.on('detect', ({ label, confidence }) => {
+                elements.senseLabel.textContent = label;
+                elements.senseLabel.classList.add('visible');
+                elements.senseConfidenceFill.style.width = Math.round(confidence * 100) + '%';
+                state.sense.evidence.append({ label, confidence, backend: state.sense.backend });
+                if (state.sense.armed && state.sense.cooldown.tryFire(label, performance.now())) {
+                    announce(label);
+                }
+            });
+            state.sense.bus.on('lost', () => { elements.senseLabel.classList.remove('visible'); });
+        }
+
+        function announce(label) {
+            if (!('speechSynthesis' in window)) return;
+            try {
+                const u = new SpeechSynthesisUtterance(label);
+                u.rate = 1; u.volume = 1;
+                speechSynthesis.speak(u);
+            } catch (e) { RUNTIME_ERRORS.push(String(e)); }
+        }
+
+        async function senseTick() {
+            if (state.currentMode !== 'sense' || state.sense.fsm.state !== 'DETECTING') return;
+            const now = performance.now();
+            const interval = 1000 / CONFIG.inferHz;
+            if (state.sense.inFlight || (now - state.sense.lastInferAt) < interval) {
+                state.sense.drops += state.sense.inFlight ? 1 : 0;
+                state.sense.loopHandle = requestAnimationFrame(senseTick);
+                return;
+            }
+            state.sense.inFlight = true;
+            state.sense.lastInferAt = now;
+            const t0 = performance.now();
+            try {
+                const preds = await state.sense.classifier.classify(elements.cameraFeed, 15);
+                const catScore = catScoreFromPredictions(preds);
+                state.sense.lastInferMs = performance.now() - t0;
+                state.sense.ticks++;
+                state.sense.ring.push({ label: catScore >= CONFIG.confThreshold ? 'cat' : 'none', confidence: catScore >= CONFIG.confThreshold ? catScore : 1 - catScore });
+                const vote = temporalVote(state.sense.ring.toArray(), { quorum: CONFIG.quorum, confThreshold: CONFIG.confThreshold });
+                const isPresent = !!(vote && vote.label === 'cat');
+                if (isPresent && !state.sense.present) {
+                    state.sense.present = true;
+                    state.sense.bus.emit('detect', { label: 'cat', confidence: vote.meanConf });
+                } else if (isPresent) {
+                    state.sense.lastPresentAt = now;
+                } else if (state.sense.present && (now - state.sense.lastPresentAt) > CONFIG.presenceLostMs) {
+                    state.sense.present = false;
+                    state.sense.bus.emit('lost', {});
+                }
+            } catch (err) {
+                RUNTIME_ERRORS.push(String(err));
+                if (state.sense.fsm.can('ERROR')) state.sense.fsm.transition('ERROR');
+                showToast('Sense error — see console');
+            } finally {
+                state.sense.inFlight = false;
+                updateTelemetry();
+                if (state.currentMode === 'sense') state.sense.loopHandle = requestAnimationFrame(senseTick);
+            }
+        }
+
+        function updateTelemetry() {
+            const s = state.sense;
+            elements.cvTelemetry.textContent =
+                `${VERSION} | ${s.backend || '...'} | infer ${s.lastInferMs.toFixed(0)}ms | hz ${CONFIG.inferHz} | drops ${s.drops} | ticks ${s.ticks} | vote ${s.ring.length}/${CONFIG.voteWindow} | ${s.present ? 'CAT' : '—'} | ${s.fsm.state}`;
+        }
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && state.currentMode === 'sense') pauseSense();
+            else if (!document.hidden && state.currentMode === 'sense' && state.sense.fsm.state === 'PAUSED') {
+                if (state.sense.classifier) fsmToDetecting(state.sense.fsm);   // was: STREAMING, which senseTick() ignores
+                senseTick();
+            }
+        });
+
+        /* ============================================================
+           BOOTH BACKEND — RELIEF mode talks to the QuietBox 2 (booth_server.py)
+           Same-origin when the HUD is served by the booth; otherwise ?api=https://….ngrok-free.app
+           (remembered in localStorage). Contract: CONTRACT.md. HUD polls /jobs for truth.
+           ============================================================ */
+        const BOOTH_KEY = 'redeye.booth_url';
+        const BOOTH_HEADERS = { 'ngrok-skip-browser-warning': '1' };
+        const JOB_ORDER = { queued: 0, processing: 1, complete: 2, failed: 2 };
+
+        function cleanBase(u) { return String(u || '').trim().replace(/\/+$/, ''); }
+        function apiCandidates({ qsApi, stored, origin }) {
+            const out = [];
+            for (const c of [qsApi, origin && origin !== 'null' ? origin : '', stored].map(cleanBase)) if (c && !out.includes(c)) out.push(c);
+            return out;
+        }
+        function fitWithin(w, h, maxEdge) { const k = Math.min(1, maxEdge / Math.max(w, h)); return { w: Math.round(w * k), h: Math.round(h * k) }; }
+        function acceptJobState(prev, next) { return next in JOB_ORDER && (prev == null || JOB_ORDER[next] >= JOB_ORDER[prev]); }
+        function mixedContentBlocked(pageProto, base) { return pageProto === 'https:' && /^http:/i.test(base); }
+        function summarizeResult(res) {
+            const people = (res.detections || []).filter(d => d.label === 'person');
+            return { people: people.length, top: people.length ? Math.max(...people.map(d => d.confidence)) : 0 };
+        }
+
+        const booth = { base: '', ok: false, info: null, sid: null, consented: false, busy: false, handoff: null, last: null, shareArmed: false, urls: [] };
+        const bx = {};
+        ['booth-chip', 'booth-chip-text', 'relief-status', 'consent-modal', 'consent-yes', 'consent-no', 'result-sheet', 'res-banner',
+         'res-src', 'res-relief', 'res-meta', 'res-qr', 'act-discord', 'act-barber', 'act-uber', 'act-lyft', 'act-retake', 'act-delete']
+            .forEach(id => bx[id] = document.getElementById(id));
+
+        const setChip = (kind, text, title) => { bx['booth-chip'].className = kind; bx['booth-chip-text'].textContent = text; bx['booth-chip'].title = title || text; };
+        const setStatus = t => { bx['relief-status'].textContent = t || ''; };
+
+        async function bjson(path, opt = {}) {
+            const r = await fetch(booth.base + path, { ...opt, headers: { ...BOOTH_HEADERS, ...(opt.headers || {}) } });
+            if (r.status === 204) return null;
+            let body = null; try { body = await r.json(); } catch (e) {}
+            if (!r.ok) throw new Error(`${r.status} ${(body && (body.detail || JSON.stringify(body))) || r.statusText}`);
+            return body;
+        }
+        async function bblobUrl(path) {
+            const r = await fetch(booth.base + path, { headers: BOOTH_HEADERS });
+            if (!r.ok) throw new Error(`${r.status} fetching ${path}`);
+            const u = URL.createObjectURL(await r.blob()); booth.urls.push(u); return u;
+        }
+
+        async function probe(base) {
+            if (mixedContentBlocked(location.protocol, base)) throw new Error('HTTPS page cannot call HTTP booth');
+            const ctl = new AbortController(), to = setTimeout(() => ctl.abort(), 3500), t0 = performance.now();
+            try {
+                const r = await fetch(base + '/health', { headers: BOOTH_HEADERS, signal: ctl.signal });
+                if (!r.ok) throw new Error('health ' + r.status);
+                const info = await r.json(); if (info.status !== 'ok') throw new Error('bad health body');
+                info.rtt = Math.round(performance.now() - t0); return info;
+            } finally { clearTimeout(to); }
+        }
+        async function boothHealth(rediscover) {
+            const stored = (() => { try { return localStorage.getItem(BOOTH_KEY) || ''; } catch (e) { return ''; } })();
+            const cands = rediscover || !booth.base ? apiCandidates({ qsApi: qs.get('api'), stored, origin: location.origin }) : [booth.base];
+            let lastErr = null;
+            for (const c of cands) {
+                try {
+                    booth.info = await probe(c); booth.base = c; booth.ok = true;
+                    try { localStorage.setItem(BOOTH_KEY, c); } catch (e) {}
+                    const stub = /stub/i.test(booth.info.model), ttDown = booth.info.remote_ok === false;
+                    setChip(stub || ttDown ? 'warn' : 'ok', `QB2 ${stub ? 'STUB' : ttDown ? 'CPU · TT✗' : /tenstorrent/i.test(booth.info.device) ? 'TT ✓' : 'CPU ✓'} ${booth.info.rtt}ms`, `${booth.info.model} on ${booth.info.device} @ ${c}`);
+                    return true;
+                } catch (e) { lastErr = e; }
+            }
+            booth.ok = false;
+            setChip('bad', 'QB2 OFFLINE', (lastErr && lastErr.message) + ' — tap to retry, ⚙ to set URL');
+            return false;
+        }
+        function boothSettings() {
+            const v = prompt('Booth URL (e.g. https://xxxx.ngrok-free.app). Blank = same origin.', booth.base || '');
+            if (v === null) return;
+            try { localStorage.setItem(BOOTH_KEY, cleanBase(v)); } catch (e) {}
+            booth.base = ''; boothHealth(true);
+        }
+
+        function grabFrameBlob(maxEdge = 1280) {
+            const v = elements.cameraFeed, { w, h } = fitWithin(v.videoWidth, v.videoHeight, maxEdge);
+            if (!w) throw new Error('camera has no frame yet');
+            const c = document.createElement('canvas'); c.width = w; c.height = h;
+            const ctx = c.getContext('2d');
+            if (v.classList.contains('mirrored')) { ctx.scale(-1, 1); ctx.drawImage(v, -w, 0, w, h); } else ctx.drawImage(v, 0, 0, w, h);
+            return new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(new Error('toBlob failed')), 'image/jpeg', 0.85));
+        }
+        const askConsent = () => new Promise(resolve => {
+            const m = bx['consent-modal']; m.hidden = false;
+            const done = v => { m.hidden = true; bx['consent-yes'].onclick = bx['consent-no'].onclick = null; resolve(v); };
+            bx['consent-yes'].onclick = () => { booth.consented = true; done(true); };
+            bx['consent-no'].onclick = () => done(false);
+        });
+        async function openSession() {
+            const r = await bjson('/sessions', { method: 'POST', headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ capture_mode: 'single', consent: true, camera_metadata: { ua: navigator.userAgent, facing: state.facingMode } }) });
+            booth.sid = r.session_id;
+        }
+        async function waitForJob(jobId, timeoutMs = 60000) {
+            const end = Date.now() + timeoutMs; let prev = null;
+            while (Date.now() < end) {
+                const j = await bjson('/jobs/' + jobId);
+                if (!acceptJobState(prev, j.state)) throw new Error('job state went backwards: ' + prev + ' → ' + j.state);
+                if (j.state !== prev) { prev = j.state; setStatus(j.state === 'queued' ? 'QUEUED…' : j.state === 'processing' ? 'YOLOX DETECTING…' : ''); }
+                if (j.state === 'complete') return bjson('/results/' + jobId);
+                if (j.state === 'failed') throw new Error('inference failed: ' + (j.error || 'unknown'));
+                await new Promise(r => setTimeout(r, 120));
+            }
+            throw new Error('timed out waiting for the QuietBox');
+        }
+
+        async function reliefCapture() {
+            if (booth.busy) return;
+            if (!state.stream) return showToast('Enable camera first');
+            if (!booth.ok && !(await boothHealth(true))) return showToast('Booth offline — tap the chip or ⚙', 3500);
+            if (!booth.consented && !(await askConsent())) return;
+            booth.busy = true;
+            try {
+                if (!booth.sid) await openSession();
+                setStatus('CAPTURING…');
+                const blob = await grabFrameBlob(1280);
+                setStatus('UPLOADING…');
+                const t0 = performance.now(), fd = new FormData();
+                fd.append('session_id', booth.sid);
+                fd.append('metadata', JSON.stringify({ view: 'front', timestamp: Date.now() / 1000, facing: state.facingMode }));
+                fd.append('image', blob, 'frame.jpg');
+                const { job_id } = await bjson('/frames', { method: 'POST', body: fd });
+                const res = await waitForJob(job_id);
+                res._e2e = Math.round(performance.now() - t0);
+                booth.last = { jobId: job_id, res, blob };
+                await showResult(res, blob);
+            } catch (e) {
+                RUNTIME_ERRORS.push(String(e));
+                if (/^404/.test(e.message)) { booth.sid = null; showToast('Session expired — tap capture again', 3500); }
+                else showToast('Booth: ' + e.message, 4500);
+            } finally { booth.busy = false; setStatus(''); }
+        }
+
+        async function showResult(res, blob) {
+            const { people, top } = summarizeResult(res), md = res.metadata || {}, t = md.timings_ms || {};
+            bx['res-banner'].className = people ? '' : 'warn';
+            bx['res-banner'].textContent = people ? `✓ ${people} person${people > 1 ? 's' : ''} found · ${top.toFixed(2)}` : '! no person found — step into frame and retake';
+            bx['res-meta'].textContent = `${md.model || '?'} @ ${md.device || '?'}${md.detector_path && md.detector_path !== 'single' ? ' [' + md.detector_path + ']' : ''} · stages ${(md.stages || []).join('+')} · yolox ${t.yolox ?? '?'}ms · total ${res._e2e}ms · relief: ${md.relief_method || 'n/a'}`;
+            const bmp = await createImageBitmap(blob), cv = bx['res-src'];
+            cv.width = 360; cv.height = Math.round(360 * bmp.height / bmp.width);
+            const g = cv.getContext('2d'); g.drawImage(bmp, 0, 0, cv.width, cv.height);
+            const k = cv.width / (res.image_size ? res.image_size[0] : bmp.width);
+            g.lineWidth = 3; g.strokeStyle = '#FF2D2D'; g.fillStyle = '#FF2D2D'; g.font = '14px monospace';
+            for (const d of res.detections || []) { const [x1, y1, x2, y2] = d.bbox.map(v => v * k); g.strokeRect(x1, y1, x2 - x1, y2 - y1); g.fillText(`${d.label} ${d.confidence.toFixed(2)}`, x1 + 4, y1 + 16); }
+            bx['res-relief'].src = await bblobUrl(res.relief_url);
+            booth.handoff = await bjson('/handoff/' + booth.sid);
+            bx['res-qr'].src = await bblobUrl(booth.handoff.qr_png_url);
+            booth.shareArmed = false; bx['act-discord'].textContent = 'Share to Discord'; bx['act-discord'].disabled = !!booth.handoff.discord.shared;
+            if (booth.handoff.discord.shared) bx['act-discord'].textContent = 'Posted ✓';
+            bx['result-sheet'].hidden = false;
+        }
+
+        const openLink = u => { if (u) window.open(u, '_blank', 'noopener'); };
+        bx['act-barber'].onclick = () => openLink(booth.handoff && booth.handoff.barber.url);
+        bx['act-uber'].onclick = () => openLink(booth.handoff && booth.handoff.ride.uber_url);
+        bx['act-lyft'].onclick = () => openLink(booth.handoff && booth.handoff.ride.lyft_url);
+        bx['act-retake'].onclick = () => { bx['result-sheet'].hidden = true; };
+        bx['act-discord'].onclick = async () => {
+            const b = bx['act-discord'];
+            if (!booth.shareArmed) {                       // second, separate consent: two taps
+                booth.shareArmed = true; b.textContent = 'Tap again — posts publicly';
+                setTimeout(() => { if (booth.shareArmed) { booth.shareArmed = false; b.textContent = 'Share to Discord'; } }, 4000);
+                return;
+            }
+            booth.shareArmed = false; b.disabled = true;
+            try {
+                const r = await bjson('/share/' + booth.sid, { method: 'POST', headers: { 'content-type': 'application/json' },
+                    body: JSON.stringify({ consent: true, job_id: booth.last && booth.last.jobId }) });
+                b.textContent = 'Posted ✓'; showToast(r.roast, 5000);
+            } catch (e) {
+                b.disabled = false; b.textContent = 'Share to Discord';
+                showToast(/^501/.test(e.message) ? 'Discord not configured on the booth' : 'Share failed: ' + e.message, 4000);
+            }
+        };
+        async function deleteMyData() {
+            const sid = booth.sid;
+            try { if (sid) await bjson('/sessions/' + sid, { method: 'DELETE' }); } catch (e) { RUNTIME_ERRORS.push(String(e)); }
+            booth.sid = null; booth.consented = false; booth.handoff = null; booth.last = null;      // next guest consents afresh
+            booth.urls.forEach(u => URL.revokeObjectURL(u)); booth.urls = [];
+            bx['res-relief'].removeAttribute('src'); bx['res-qr'].removeAttribute('src');
+            bx['result-sheet'].hidden = true; showToast('Deleted — nothing kept');
+        }
+        bx['act-delete'].onclick = deleteMyData;
+        bx['booth-chip'].onclick = () => boothHealth(true);
+        addEventListener('pagehide', () => { if (booth.sid && booth.ok) { try { fetch(booth.base + '/sessions/' + booth.sid, { method: 'DELETE', keepalive: true, headers: BOOTH_HEADERS }); } catch (e) {} } });
+
+        (function boothInit() {
+            try { boothHealth(true); setInterval(() => { if (!booth.busy) boothHealth(); }, 15000); }
+            catch (e) { RUNTIME_ERRORS.push(String(e)); }
+        })();
+
+        /* ============================================================
+           EVENT WIRING
+           ============================================================ */
+        elements.enableCameraBtn.addEventListener('click', initCamera);
+        elements.captureBtn.addEventListener('click', capture);
+        elements.flipCameraBtn.addEventListener('click', flipCamera);
+        elements.modeBtns.forEach(btn => btn.addEventListener('click', () => switchMode(btn.dataset.mode)));
+        elements.toggleAdvancedBtn.addEventListener('click', () => {
+            elements.advancedControls.classList.toggle('visible');
+            elements.toggleAdvancedBtn.textContent = elements.advancedControls.classList.contains('visible') ? '••• Less' : '••• More';
+        });
+        elements.galleryBtn.addEventListener('click', () => showToast('Gallery feature coming soon'));
+        elements.settingsBtn.addEventListener('click', () => boothSettings());
+        document.getElementById('zoom-control').addEventListener('input', (e) => {
+            const zoom = e.target.value;
+            const mirror = elements.cameraFeed.classList.contains('mirrored') ? 'scaleX(-1) ' : '';
+            elements.cameraFeed.style.transform = `${mirror}scale(${zoom})`;
+        });
+        document.getElementById('inferhz-control').addEventListener('input', (e) => { CONFIG.inferHz = Number(e.target.value); });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') { e.preventDefault(); capture(); }
+            else if (e.code === 'Digit1') switchMode('scan');
+            else if (e.code === 'Digit2') switchMode('photo');
+            else if (e.code === 'Digit3') switchMode('video');
+            else if (e.code === 'Digit4') switchMode('sense');
+            else if (e.code === 'Digit5') switchMode('relief');
+            else if (e.code === 'KeyF') flipCamera();
+        });
+
+        document.addEventListener('touchmove', (e) => { if (e.scale !== 1) e.preventDefault(); }, { passive: false });
+
+        /* ============================================================
+           TEST HARNESS — same ?test=1 pattern as Arcade Floor's runRefTests()
+           Pure-logic checks only; no camera/model required.
+           ============================================================ */
+        const REF_TESTS = {
+            fsmBootsIdle: () => makeFSM().state === 'IDLE',
+            fsmHappyPath: () => { const f = makeFSM(); f.transition('PERMISSION'); f.transition('STREAMING'); f.transition('MODEL_LOADING'); f.transition('DETECTING'); return f.state === 'DETECTING'; },
+            fsmRejectsIllegal: () => { const f = makeFSM(); try { f.transition('DETECTING'); return false; } catch (e) { return true; } },
+            fsmErrorReachableEverywhere: () => Object.keys(CV_TRANSITIONS).every(s => s === 'ERROR' || CV_TRANSITIONS[s].includes('ERROR')),
+            ringBufferEvicts: () => { const rb = makeRingBuffer(3); [1, 2, 3, 4].forEach(v => rb.push(v)); return rb.toArray().join(',') === '2,3,4'; },
+            ringBufferOrderAfterWrap: () => { const rb = makeRingBuffer(4); [10, 20, 30, 40, 50, 60].forEach(v => rb.push(v)); return rb.toArray().join(',') === '30,40,50,60'; },
+            temporalVoteFires: () => { const v = temporalVote([{ label: 'cat', confidence: .8 }, { label: 'cat', confidence: .7 }, { label: 'cat', confidence: .9 }, { label: 'dog', confidence: .6 }, { label: 'cat', confidence: .75 }], { quorum: .6, confThreshold: .5 }); return !!v && v.label === 'cat'; },
+            temporalVoteNoQuorum: () => temporalVote([{ label: 'cat', confidence: .9 }, { label: 'dog', confidence: .9 }, { label: 'cat', confidence: .9 }, { label: 'dog', confidence: .9 }, { label: 'bird', confidence: .9 }], { quorum: .6, confThreshold: .5 }) === null,
+            temporalVoteEmptyWindow: () => temporalVote([]) === null,
+            cooldownSuppresses: () => { const g = makeCooldownGate(2000); g.tryFire('cat', 0); return g.tryFire('cat', 500) === false; },
+            cooldownRefiresAfterWindow: () => { const g = makeCooldownGate(2000); g.tryFire('cat', 0); return g.tryFire('cat', 2001) === true; },
+            evidenceLogBounded: () => { const log = makeEvidenceLog(3); [1, 2, 3, 4, 5].forEach(t => log.append({ label: 'cat', confidence: .9, t })); return log.length === 3 && log.all().map(e => e.t).join(',') === '3,4,5'; },
+            catScoreMatchesTabby: () => catScoreFromPredictions([{ className: 'tabby, tabby cat', probability: .7 }]) === .7,
+            catScoreExcludesMadagascar: () => catScoreFromPredictions([{ className: 'Madagascar cat', probability: .9 }]) === 0,
+            catScoreExcludesCatamount: () => catScoreFromPredictions([{ className: 'lynx, catamount', probability: .9 }]) === 0,
+            catScoreZeroWhenNoMatch: () => catScoreFromPredictions([{ className: 'golden retriever', probability: .95 }]) === 0,
+            busEmitsToSubscribers: () => { let got = null; const b = makeBus(); b.on('x', p => got = p); b.emit('x', { a: 1 }); return got && got.a === 1; },
+            elementsGalleryDefined: () => !!elements.galleryBtn,   // regression check for the fixed bug
+            elementsSettingsDefined: () => !!elements.settingsBtn,
+            fsmDetectingFromPaused: () => { const f = makeFSM(); fsmToStreaming(f); f.transition('MODEL_LOADING'); f.transition('DETECTING'); f.transition('PAUSED'); return fsmToDetecting(f) === 'DETECTING'; },
+            fsmDetectingFromStreamingCached: () => { const f = makeFSM(); fsmToStreaming(f); return fsmToDetecting(f) === 'DETECTING'; },
+            fsmCameraBootReachesStreaming: () => fsmToStreaming(makeFSM()) === 'STREAMING',
+            fsmRecoversFromErrorToStreaming: () => { const f = makeFSM(); f.transition('ERROR'); return fsmToStreaming(f) === 'STREAMING'; },
+            fsmStreamingToDetectingPath: () => { const f = makeFSM(); fsmToStreaming(f); f.transition('MODEL_LOADING'); f.transition('DETECTING'); return f.state === 'DETECTING'; },
+            boothUiDefined: () => !!bx['booth-chip'] && !!bx['result-sheet'] && !!bx['consent-modal'] && !!bx['act-delete'],
+            boothStartsUnconsented: () => booth.consented === false && booth.sid === null,
+            apiOrderExplicitThenOriginThenStored: () => apiCandidates({ qsApi: 'https://a/', stored: 'https://b', origin: 'https://c' }).join() === 'https://a,https://c,https://b',
+            apiDedupesAndDropsFileOrigin: () => apiCandidates({ qsApi: '', stored: 'https://b/', origin: 'null' }).join() === 'https://b' && apiCandidates({ origin: 'https://c', stored: 'https://c/' }).length === 1,
+            fitWithinDownscales: () => { const r = fitWithin(4000, 3000, 1280); return r.w === 1280 && r.h === 960; },
+            fitWithinNeverUpscales: () => { const r = fitWithin(640, 480, 1280); return r.w === 640 && r.h === 480; },
+            jobStatesNeverBackwards: () => acceptJobState('processing', 'queued') === false && acceptJobState('queued', 'processing') && acceptJobState('complete', 'complete') && acceptJobState(null, 'queued') && !acceptJobState('queued', 'bogus'),
+            mixedContentDetected: () => mixedContentBlocked('https:', 'http://qb2.local:8000') && !mixedContentBlocked('https:', 'https://x.ngrok-free.app') && !mixedContentBlocked('http:', 'http://localhost:8000'),
+            summarizeIgnoresNonPerson: () => { const r = summarizeResult({ detections: [{ label: 'person', confidence: .9 }, { label: 'dog', confidence: .99 }, { label: 'person', confidence: .6 }] }); return r.people === 2 && r.top === .9; },
+            summarizeEmpty: () => { const r = summarizeResult({ detections: [] }); return r.people === 0 && r.top === 0; },
+            hudHasNoWebhook: () => !/discord(app)?\.com\/api\/webhooks/.test(document.documentElement.outerHTML.replace(/<pre id="fts-tests"[\s\S]*$/, ''))
+        };
+        function runRefTests() {
+            const results = {}, failures = [];
+            for (const [name, fn] of Object.entries(REF_TESTS)) {
+                try { results[name] = !!fn(); } catch (err) { results[name] = false; results[name + '_error'] = String(err && err.stack || err); }
+                if (results[name] === false) failures.push(name);
+            }
+            return { version: VERSION, pass: failures.length === 0, passed: Object.values(results).filter(v => v === true).length, total: Object.keys(REF_TESTS).length, failures, results, runtimeErrors: RUNTIME_ERRORS.slice() };
+        }
+        window.__REDEYE_CV__ = {
+            VERSION, CONFIG, state, elements, runRefTests,
+            makeFSM, makeRingBuffer, temporalVote, makeCooldownGate, makeEvidenceLog, makeBus, catScoreFromPredictions,
+            booth, apiCandidates, fitWithin, acceptJobState, summarizeResult, reliefCapture, deleteMyData,
+            simulateGpuLoss: () => { state.sense.backend = 'wasm-fallback-sim'; updateTelemetry(); }
+        };
+        if (qs.get('test') === '1') {
+            const r = runRefTests();
+            const pre = document.createElement('pre');
+            pre.id = 'fts-tests';
+            pre.style.color = r.pass ? '#53ff8a' : '#ff667a';
+            pre.textContent = JSON.stringify(r, null, 2);
+            document.body.appendChild(pre);
+        }
+    </script>
+</body>
+</html>
