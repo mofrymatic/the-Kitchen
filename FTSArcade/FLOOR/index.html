@@ -74,7 +74,7 @@
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{width:100%;height:100%;background:#04060a;overflow:hidden;overscroll-behavior:none;user-select:none;touch-action:none;-webkit-user-select:none}
 body{font-family:"Courier New",monospace}
-canvas{position:fixed;inset:0;width:100%;height:100%;display:block;image-rendering:pixelated;cursor:crosshair}
+canvas{position:fixed;z-index:0;inset:0;width:100%;height:100%;display:block;image-rendering:pixelated;cursor:crosshair}
 #telemetry{position:fixed;z-index:7;left:12px;top:10px;color:rgba(170,202,235,.72);font:10px/1.55 "Courier New",monospace;letter-spacing:.08em;text-shadow:0 0 7px rgba(35,105,255,.35);pointer-events:none}
 #brand{position:fixed;z-index:7;right:12px;top:10px;text-align:right;color:rgba(255,255,255,.64);font:10px/1.45 "Courier New",monospace;letter-spacing:.16em;pointer-events:none}
 #brand b{display:block;color:var(--gold);font-size:13px;letter-spacing:.22em}
@@ -82,7 +82,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;image-renderi
 #prompt.show{opacity:1;border-color:rgba(255,89,213,.55)}
 #prompt .kind{color:var(--pink)}
 #prompt .key{color:var(--gold)}
-#toolbar{position:fixed;z-index:9;right:12px;bottom:12px;display:flex;gap:6px}
+#toolbar{position:fixed;z-index:50;right:12px;bottom:12px;display:flex;gap:6px}
 #toolbar button{border:1px solid rgba(113,184,255,.3);background:rgba(6,9,15,.8);color:rgba(190,220,250,.82);padding:7px 9px;font:10px "Courier New",monospace;letter-spacing:.08em;cursor:pointer}
 #toolbar button.on{border-color:rgba(255,201,95,.7);color:var(--gold)}
 #lock{position:fixed;z-index:20;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 55%,rgba(10,18,35,.67),rgba(3,5,8,.93) 62%);cursor:pointer;text-align:center;color:#e8f3ff;font:13px/2 "Courier New",monospace;letter-spacing:.14em;text-shadow:0 0 10px rgba(60,150,255,.4)}
@@ -98,12 +98,15 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;image-renderi
 #modalActions{display:flex;justify-content:flex-end;gap:8px}
 #modalActions button{padding:9px 13px;border:1px solid rgba(113,184,255,.38);background:#080b12;color:#dceafa;font:11px "Courier New",monospace;letter-spacing:.09em;cursor:pointer}
 #modalActions #confirmBtn{border-color:rgba(255,201,95,.64);color:var(--gold)}
-#touchMove,#touchAct,#touchCrouch{display:none;position:fixed;z-index:15}
+#touchMove,#touchAct,#touchSprint,#touchJump,#touchCrouch{display:none;position:fixed;z-index:15}
 #touchMove{left:max(18px,env(safe-area-inset-left));bottom:max(22px,env(safe-area-inset-bottom));width:112px;height:112px;border:1px solid rgba(113,184,255,.26);border-radius:50%;background:rgba(6,10,18,.18)}
 #touchKnob{position:absolute;left:35px;top:35px;width:42px;height:42px;border:1px solid rgba(255,255,255,.35);border-radius:50%;background:rgba(100,150,230,.16)}
-#touchAct{right:max(20px,env(safe-area-inset-right));bottom:max(28px,env(safe-area-inset-bottom));width:82px;height:82px;border-radius:50%;border:1px solid rgba(255,89,213,.42);background:rgba(18,7,20,.28);color:#fff;font:bold 10px "Courier New",monospace;letter-spacing:.08em}
-#touchCrouch{right:max(112px,calc(env(safe-area-inset-right) + 92px));bottom:max(38px,calc(env(safe-area-inset-bottom) + 10px));width:68px;height:68px;border-radius:50%;border:1px solid rgba(113,184,255,.38);background:rgba(6,10,18,.3);color:#ddecff;font:bold 9px "Courier New",monospace;letter-spacing:.07em}
-@media(pointer:coarse){#touchMove,#touchAct,#touchCrouch{display:block}#toolbar{bottom:calc(120px + env(safe-area-inset-bottom))}#prompt{bottom:calc(124px + env(safe-area-inset-bottom))}#telemetry{font-size:8px;max-width:72vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#brand{display:none}}
+#touchAct{right:max(92px,calc(env(safe-area-inset-right) + 72px));bottom:max(214px,calc(env(safe-area-inset-bottom) + 186px));width:58px;height:38px;border-radius:19px;border:1px solid rgba(255,201,95,.54);background:rgba(18,12,5,.45);color:var(--gold);font:bold 9px "Courier New",monospace;letter-spacing:.08em}
+#touchSprint,#touchJump,#touchCrouch{right:max(20px,env(safe-area-inset-right));width:64px;height:64px;border-radius:50%;color:#fff;font:bold 9px "Courier New",monospace;letter-spacing:.06em}
+#touchSprint{bottom:max(170px,calc(env(safe-area-inset-bottom) + 142px));border:1px solid rgba(255,89,213,.62);background:rgba(32,7,31,.38);box-shadow:0 0 18px rgba(255,89,213,.18)}
+#touchJump{bottom:max(98px,calc(env(safe-area-inset-bottom) + 70px));border:1px solid rgba(255,201,95,.54);background:rgba(24,18,6,.36)}
+#touchCrouch{bottom:max(26px,env(safe-area-inset-bottom));border:1px solid rgba(113,184,255,.42);background:rgba(6,10,18,.34);color:#ddecff}
+@media(pointer:coarse){#touchMove,#touchSprint,#touchJump,#touchCrouch{display:block}#touchAct.show{display:block}#toolbar{top:max(12px,env(safe-area-inset-top));right:max(12px,env(safe-area-inset-right));bottom:auto;flex-direction:column;align-items:flex-end}#prompt{bottom:calc(124px + env(safe-area-inset-bottom))}#telemetry{font-size:8px;max-width:72vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#brand{display:none}}
 </style>
 </head>
 <body>
@@ -112,9 +115,9 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;image-renderi
 <div id="brand"><b>FTS ARCADE</b>CIRCULAR FLOOR / A-AQ CABINET PORTAL HUB</div>
 <div id="prompt"></div>
 <div id="toolbar"><button id="mapBtn">MAP: OFF</button><button id="audioBtn">AUDIO: OFF</button></div>
-<div id="lock"><div><b>FTS ARCADE</b><br><span class="pink">THE RING</span><br><br>WASD MOVE / MOUSE LOOK / SHIFT RUN<br>SPACE JUMP / CTRL OR C CROUCH + SLIDE<br>E OR CLICK INTERACT / M MAP / N SPATIAL AUDIO<br><span style="opacity:.55">DEV: K KALEIDO / P PLANE BACKEND / O KOI</span><br><br>CLICK TO WALK IN</div></div>
+<div id="lock"><div><b>FTS ARCADE</b><br><span class="pink">THE RING</span><br><br>WASD MOVE / MOUSE LOOK / SHIFT SPRINT (HOLD)<br>SPACE JUMP / CTRL OR C CROUCH + SLIDE<br>E OR CLICK INTERACT / M MAP / N SPATIAL AUDIO<br><span style="opacity:.55">DEV: K KALEIDO / P PLANE BACKEND / O KOI</span><br><br>CLICK TO WALK IN</div></div>
 <div id="modal"><div id="modalCard"><div id="modalEyebrow">LEAVE FTS ARCADE?</div><div id="modalTitle"></div><div id="modalCopy"></div><div id="modalActions"><button id="cancelBtn">STAY HERE</button><button id="confirmBtn">LEAVE ARCADE</button></div></div></div>
-<div id="touchMove"><div id="touchKnob"></div></div><button id="touchCrouch">SLIDE</button><button id="touchAct">ENTER</button>
+<div id="touchMove"><div id="touchKnob"></div></div><button id="touchSprint">SPRINT</button><button id="touchJump">JUMP</button><button id="touchCrouch">SLIDE</button><button id="touchAct">ENTER</button>
 <script>
 'use strict';
 
@@ -122,7 +125,7 @@ const RUNTIME_ERRORS=[];
 addEventListener('error',e=>{if(e.error||e.message)RUNTIME_ERRORS.push(String(e.error&&e.error.stack||e.message||e.error));});
 addEventListener('unhandledrejection',e=>RUNTIME_ERRORS.push(String(e.reason&&e.reason.stack||e.reason||'unhandled rejection')));
 
-const VERSION='fts-arcade-floor-1.6.0-walk-in-photo-booth';
+const VERSION='fts-arcade-floor-2.0.1-keyboard-axis-hotfix';
 const TAU=Math.PI*2, DEG=Math.PI/180;
 // Dimensional contract: 1 engine unit = 1 inch.
 // =============================================================================
@@ -137,11 +140,21 @@ const TAU=Math.PI*2, DEG=Math.PI/180;
 // re-packing of the pods. Walk the wider ring first, then author from feel.
 // =============================================================================
 const RING={outer:510,inner:118,sides:32,ceil:192};
-const PLAYER_R=11,PLAYER_H=74,EYE=69,CROUCH_EYE=44,SPEED_WALK=84,SPEED_RUN=387.2,ACCEL=10; // 22 mph sprint - LOCKED
+const MPH_TO_IPS=17.6,CM_TO_IN=1/2.54;
+const PLAYER_R=11,PLAYER_H=74,EYE=69,CROUCH_EYE=44;
+const SPEED_WALK=6.21*MPH_TO_IPS,SPEED_RUN=22*MPH_TO_IPS; // PRD 2.0: 6.21 mph cruise -> 22 mph sprint.
+const GRAVITY=386,JUMP_STAND_HEIGHT=55*CM_TO_IN,JUMP_RUN_HEIGHT=71*CM_TO_IN;
+// The fixed-step integrator advances position before gravity, so a continuous v=sqrt(2gh)
+// overshoots the requested apex by roughly half a frame. Solve the actual 60 Hz trajectory
+// once at boot so the authored 55 cm standing / 71 cm run-up contracts are the measured peaks.
+function jumpVelocityForApex(height){const dt=1/60,peak=v=>{let z=.01,vz=v,top=z;for(let i=0;i<180&&z>=0;i++){z+=vz*dt;vz-=GRAVITY*dt;if(z>top)top=z;}return top;};let lo=0,hi=Math.sqrt(2*GRAVITY*height);for(let i=0;i<28;i++){const mid=(lo+hi)/2;if(peak(mid)<height)lo=mid;else hi=mid;}return(lo+hi)/2;}
+const JUMP_STAND_VEL=jumpVelocityForApex(JUMP_STAND_HEIGHT),JUMP_RUN_VEL=jumpVelocityForApex(JUMP_RUN_HEIGHT);
 const KINETIC={
- simHz:60,walkSpeed:SPEED_WALK,sprintSpeed:SPEED_RUN,crouchSpeed:58,strafeFactor:.90,reverseFactor:.72,
- accelLambda:12,brakeLambda:18,reverseLambda:10,baseFov:76*Math.PI/180,sprintFov:84*Math.PI/180,
- crouchFov:74*Math.PI/180,slideFov:82*Math.PI/180,jumpVel:156,gravity:386,
+ simHz:60,walkSpeed:SPEED_WALK,sprintSpeed:SPEED_RUN,crouchSpeed:58,strafeFactor:1,reverseFactor:1,
+ sprintRampTime:1.4,sprintReleaseTime:1.4,accelLambda:30,brakeLambda:18,reverseLambda:14,
+ baseFov:76*Math.PI/180,sprintFov:84*Math.PI/180,crouchFov:74*Math.PI/180,slideFov:82*Math.PI/180,
+ jumpVel:JUMP_RUN_VEL,jumpStandVel:JUMP_STAND_VEL,gravity:GRAVITY,jumpBufferTime:.120,coyoteTime:.100,jumpReleaseGravityScale:2.65,
+ precisionRadius:28,precisionInner:10,precisionMinScale:.45,
 
  // 0.8.1 APEX-STYLE SLIDE MODEL
  // Sliding is speed/state driven rather than a canned crouch dash. A grounded
@@ -163,8 +176,11 @@ const KINETIC={
 //   hang     total airtime, seconds
 //   reach    horizontal distance covered by a full-speed sprint jump, inches
 const JUMP={
- apex:KINETIC.jumpVel*KINETIC.jumpVel/(2*KINETIC.gravity),
- hang:2*KINETIC.jumpVel/KINETIC.gravity,
+ standingHeight:JUMP_STAND_HEIGHT,runHeight:JUMP_RUN_HEIGHT,
+ standingVel:JUMP_STAND_VEL,runVel:JUMP_RUN_VEL,
+ apex:JUMP_RUN_HEIGHT,
+ hang:2*JUMP_RUN_VEL/KINETIC.gravity,
+ standingHang:2*JUMP_STAND_VEL/KINETIC.gravity,
  get reach(){return KINETIC.sprintSpeed*this.hang;}
 };
 // Render ranges are derived from the ring instead of hardcoded. 0.6.4 carried
@@ -1109,7 +1125,8 @@ const AUTHORING={
  // New content rides the open outer ring. Existing A-Z positions remain frozen.
  // 1.2.0 placement of AA-AE (polar, r=400): each one sat in front of an exit or floated alone. Kept for ?layout=legacy only.
   // Floor IV: the booth has an open center, physical walls, and a crouch-gated entrance.
-  photoBooth:{id:'CAT_CLUB_PEOPLES',enabled:true,x:-321,y:78,deg:0,w:112,d:76,h:105,stallRight:-56,stallLeft:-4,doorWidth:36,doorHeight:52},
+  // 2.0.0 FLOOR III: moved from the west bank to the south-east shoulder, rotated to match the approved plan while preserving the south egress spine.
+  photoBooth:{id:'CAT_CLUB_PEOPLES',enabled:true,x:152,y:-352,deg:65,w:112,d:76,h:105,stallRight:-56,stallLeft:-4,doorWidth:36,doorHeight:52},
   cabinetAdditions:[
   {letter:'AA',deg:0,r:400},
   {letter:'AB',deg:70,r:400},
@@ -1237,50 +1254,45 @@ function dealUrl(unit){return PORTALS.adDeal+'?inventory='+encodeURIComponent(un
 // Decorative art is flat; only the illuminated barber pole rotates volumetrically.
 // This structure deliberately is NOT a cabinet, and cannot change cabinet layout.
 // =============================================================================
+function boothPose(b,lx,ly,lang=0){const c=Math.cos(b.ang),ss=Math.sin(b.ang);return{x:b.x+c*lx-ss*ly,y:b.y+ss*lx+c*ly,ang:b.ang+lang};}
+function boothLocal(b,x,y){const c=Math.cos(b.ang),ss=Math.sin(b.ang),dx=x-b.x,dy=y-b.y;return{x:c*dx+ss*dy,y:-ss*dx+c*dy};}
 function makePhotoBooth(map){
  const a=AUTHORING.photoBooth;if(!a.enabled)return;
  const b={...a,ang:a.deg*DEG,parts:[],id:a.id};map.photoBooth=b;
  const black=MAT.BOOTH_INK,gold=MAT.BOOTH_TRIM,wall=MAT.BOOTH_WALLPAPER,cat=MAT.BOOTH_CAT,barber=MAT.BOOTH_BARBER;
- const add=(id,x,y,ang,w,d,z0,z1,front,back,side,collision=true,kind='booth-wall')=>{
-  const s={id:'PB_'+id,booth:true,kind,x,y,ang,w,d,collision,light:1.24,parts:[{role:id,w,d,of:0,ro:0,z0,z1,front,left:side??black,right:side??black,back:back??front,stretch:true}]};
+ const add=(id,lx,ly,lang,w,d,z0,z1,front,back,side,collision=true,kind='booth-wall')=>{
+  const p=boothPose(b,lx,ly,lang),s={id:'PB_'+id,booth:true,kind,x:p.x,y:p.y,ang:p.ang,w,d,collision,light:1.24,parts:[{role:id,w,d,of:0,ro:0,z0,z1,front,left:side??black,right:side??black,back:back??front,stretch:true}]};
   map.solids.push(s);b.parts.push(s);return s;
  };
- const x=b.x,y=b.y;
  // The checker floor is a non-colliding horizontal UV face; no BSP slivers or sector mutations.
- const floortile=add('CHECKER_FLOOR',x,y-30,0,49,72,0,.09,black,black,black,false,'booth-floor');floortile.parts[0].top=MAT.BOOTH_CHECKER;
- // Interior stall: x spans +/-38; right-hand photo cell faces the arcade core (+x).
- add('REAR',x-37,y-30,0,52,3,0,103,wall,cat,black);
- add('SOUTH',x,y-56,Math.PI/2,74,3,0,103,wall,cat,black);
- add('DIVIDER',x,y-4,-Math.PI/2,74,3,0,103,wall,barber,black);
- // Structural photo entry: 36-inch clear opening; no imaginary crossbar below 52 inches.
- add('DOOR_N_JAMB',x+37,y-8,0,8,3,0,103,cat,cat,black);
- add('DOOR_S_JAMB',x+37,y-52,0,8,3,0,103,cat,cat,black);
- add('ENTRY_LINTEL',x+37,y-30,0,36,3,52,83,MAT.BOOTH_TRIM,black,black,false,'booth-lintel');
- add('ENTRY_ARCH',x+37,y-30,0,36,3,83,103,MAT.BOOTH_ENTRANCE,black,black,false,'booth-lintel');
- // Full-size standing volume; roof underside uses a true underside horizontal face.
- const roof=add('ROOF',x,y-30,0,52,76,102,105,gold,black,black,false,'booth-roof');
+ const floortile=add('CHECKER_FLOOR',0,-30,0,49,72,0,.09,black,black,black,false,'booth-floor');floortile.parts[0].top=MAT.BOOTH_CHECKER;
+ // Interior stall: local x spans +/-38; the photo cell opens toward local +x.
+ add('REAR',-37,-30,0,52,3,0,103,wall,cat,black);
+ add('SOUTH',0,-56,Math.PI/2,74,3,0,103,wall,cat,black);
+ add('DIVIDER',0,-4,-Math.PI/2,74,3,0,103,wall,barber,black);
+ add('DOOR_N_JAMB',37,-8,0,8,3,0,103,cat,cat,black);
+ add('DOOR_S_JAMB',37,-52,0,8,3,0,103,cat,cat,black);
+ add('ENTRY_LINTEL',37,-30,0,36,3,52,83,MAT.BOOTH_TRIM,black,black,false,'booth-lintel');
+ add('ENTRY_ARCH',37,-30,0,36,3,83,103,MAT.BOOTH_ENTRANCE,black,black,false,'booth-lintel');
+ const roof=add('ROOF',0,-30,0,52,76,102,105,gold,black,black,false,'booth-roof');
  roof.parts[0].bottom=MAT.BOOTH_ROOF;roof.parts[0].top=MAT.BOOTH_INK;
- // Exterior barbershop occupies the left-hand half of the frontage.
- add('BARBER_FACADE',x+37,y+27,0,54,3,0,103,barber,black,black);
- add('BARBER_BACK',x-37,y+27,0,54,3,0,103,cat,barber,black);
- add('BARBER_END',x,y+56,Math.PI/2,74,3,0,103,cat,cat,black);
- const barberRoof=add('BARBER_ROOF',x,y+27,0,54,76,102,105,gold,black,black,false,'booth-roof');barberRoof.parts[0].bottom=MAT.BOOTH_INK;
- // Dressings are 3D planes with no movement collision.
- add('PRINT_DISPENSER',x-33.8,y-30,0,21,1,24,79,MAT.BOOTH_DISPENSER,black,black,false,'booth-detail');
- add('CURTAIN_N',x+31,y-16,0,9,1,5,77,MAT.BOOTH_CURTAIN,black,black,false,'booth-curtain');
- add('CURTAIN_S',x+31,y-44,0,9,1,5,77,MAT.BOOTH_CURTAIN,black,black,false,'booth-curtain');
- add('CURTAIN_TOP',x+31,y-30,0,26,1,78,89,MAT.BOOTH_CURTAIN,black,black,false,'booth-curtain');
- // Actual under-height doorway collision gate, activated only while standing.
- // Physically visible top fascia is separate so there is never an invisible solid.
- b.gate=add('CROUCH_GATE',x+37,y-30,0,36,3,0,b.doorHeight,black,black,black,true,'booth-gate');b.gate.parts=[];
- // A printable-photo service is an interactive destination, not a fake working printer.
- b.target={id:'PHOTO_BOOTH',kind:'booth',label:'CAT CLUB x PEOPLES PHOTO BOOTH',cta:'VIEW PHOTO SERVICE',x:x+37,y:y-30,ang:0,d:2,url:'',booth:true};map.targets.push(b.target);
- // Rotating hardware outside the photographed stall; collision-free but genuinely polygonal.
- const pole={id:'PB_BARBER_POLE',booth:true,kind:'booth-pole',x:x+42,y:y+1,ang:0,w:13,d:13,collision:false,light:1.65,parts:[]};
+ add('BARBER_FACADE',37,27,0,54,3,0,103,barber,black,black);
+ add('BARBER_BACK',-37,27,0,54,3,0,103,cat,barber,black);
+ add('BARBER_END',0,56,Math.PI/2,74,3,0,103,cat,cat,black);
+ const barberRoof=add('BARBER_ROOF',0,27,0,54,76,102,105,gold,black,black,false,'booth-roof');barberRoof.parts[0].bottom=MAT.BOOTH_INK;
+ add('PRINT_DISPENSER',-33.8,-30,0,21,1,24,79,MAT.BOOTH_DISPENSER,black,black,false,'booth-detail');
+ add('CURTAIN_N',31,-16,0,9,1,5,77,MAT.BOOTH_CURTAIN,black,black,false,'booth-curtain');
+ add('CURTAIN_S',31,-44,0,9,1,5,77,MAT.BOOTH_CURTAIN,black,black,false,'booth-curtain');
+ add('CURTAIN_TOP',31,-30,0,26,1,78,89,MAT.BOOTH_CURTAIN,black,black,false,'booth-curtain');
+ b.gate=add('CROUCH_GATE',37,-30,0,36,3,0,b.doorHeight,black,black,black,true,'booth-gate');b.gate.parts=[];
+ const targetPose=boothPose(b,37,-30,0);
+ b.target={id:'PHOTO_BOOTH',kind:'booth',label:'CAT CLUB x PEOPLES PHOTO BOOTH',cta:'VIEW PHOTO SERVICE',x:targetPose.x,y:targetPose.y,ang:targetPose.ang,d:2,url:'',booth:true};map.targets.push(b.target);
+ const polePose=boothPose(b,42,1,0),pole={id:'PB_BARBER_POLE',booth:true,kind:'booth-pole',x:polePose.x,y:polePose.y,ang:polePose.ang,w:13,d:13,collision:false,light:1.65,parts:[]};
  map.solids.push(pole);b.parts.push(pole);b.pole=pole;
  return b;
 }
-function photoBoothInside(b,x,y){return!!b&&x>b.x-35&&x<b.x+34&&y>b.y-52&&y<b.y-8;}
+function photoBoothInside(b,x,y){if(!b)return false;const p=boothLocal(b,x,y);return p.x>-35&&p.x<34&&p.y>-52&&p.y<-8;}
+
 function barberPolePose(b,t){
  if(!b||!b.pole)return;const s=b.pole,faces=[],sections=18,rot=t*1.8,baseAng=rot;
  const face=(j,r0,r1,z0,z1,tex,phase=0,uvscale=1)=>{
@@ -1368,8 +1380,8 @@ function solidAabb(s){const b=basis(s.ang),hx=Math.abs(b.f.x)*(s.d/2)+Math.abs(b
 function solidCorners(s){const b=basis(s.ang),hf=s.d/2,hr=s.w/2;return[
  {x:s.x+b.f.x*hf+b.r.x*hr,y:s.y+b.f.y*hf+b.r.y*hr},
  {x:s.x+b.f.x*hf-b.r.x*hr,y:s.y+b.f.y*hf-b.r.y*hr},
- {x:s.x-b.f.x*hf+b.r.x*hr,y:s.y-b.f.y*hf+b.r.y*hr},
- {x:s.x-b.f.x*hf-b.r.x*hr,y:s.y-b.f.y*hf-b.r.y*hr}
+ {x:s.x-b.f.x*hf-b.r.x*hr,y:s.y-b.f.y*hf-b.r.y*hr},
+ {x:s.x-b.f.x*hf+b.r.x*hr,y:s.y-b.f.y*hf+b.r.y*hr}
 ];}
 function rangeOnAxis(pts,ax){let lo=Infinity,hi=-Infinity;for(const p of pts){const v=p.x*ax.x+p.y*ax.y;if(v<lo)lo=v;if(v>hi)hi=v;}return{lo,hi};}
 function solidsOverlap(a,b,eps=.01){const pa=solidCorners(a),pb=solidCorners(b),axes=[basis(a.ang).f,basis(a.ang).r,basis(b.ang).f,basis(b.ang).r];
@@ -1401,13 +1413,22 @@ class Sim{
   this.sector=this.sectorAt(this.x,this.y);this.t=0;this.bob=0;this.steps=0;this.blocked=0;
   this.stance=0;this.eyeHeight=EYE;this.slideT=0;this.slideElapsed=0;this.slideRearm=0;
   this.slideDirX=0;this.slideDirY=0;this.slideBuffered=false;this.currentFov=FOV;
+  this.sprintPhase=0;this.sprintCurve=0;this.requestedGait='walk';this.effectiveGait='precision';
+  this.jumpBuffer=0;this.coyote=KINETIC.coyoteTime;this.jumpPeak=0;this.lastJumpImpulse=0;this._motionPath=null;
  }
  sectorAt(x,y){for(const s of this.map.sectors)if(Geom.pointInPoly(x,y,s.poly))return s.idx;
   for(const[dx,dy]of[[3e-4,1e-4],[-3e-4,-1e-4],[1e-4,-3e-4],[-1e-4,3e-4]])for(const s of this.map.sectors)if(Geom.pointInPoly(x+dx,y+dy,s.poly))return s.idx;return-1;}
  eyeZ(){const floor=this.sector>=0?this.map.sectors[this.sector].floor:0,bob=this.grounded&&this.slideT<=0?Math.sin(this.bob)*(1.2*(1-this.stance*.55)):0;return floor+this.eyeHeight+this.jumpZ+bob;}
  lineBlocks(ln){return ln.back<0||ln.blocking;}
- tryMove(nx,ny){const M=this.map,b=M.photoBooth;if(b&&b.gate&&!(this.crouchHeld&&this.grounded&&this.jumpZ<1)){const g=b.gate,side=this.x-g.x,finish=nx-g.x,span=g.w/2+PLAYER_R;if(side*finish<=0&&Math.abs(ny-g.y)<span&&Math.abs(this.y-g.y)<span)nx=g.x+(side>=0?1:-1)*(g.d/2+PLAYER_R+.05);}for(let pass=0;pass<3;pass++){let hit=false;for(const ln of M.lines){if(!this.lineBlocks(ln))continue;const a=M.verts[ln.v1],b=M.verts[ln.v2],c=Geom.closestOnSeg(nx,ny,a.x,a.y,b.x,b.y);if(c.d2>=PLAYER_R*PLAYER_R)continue;const d=Math.sqrt(c.d2)||.0001,p=(PLAYER_R-d)+.02;nx+=((nx-c.x)/d)*p;ny+=((ny-c.y)/d)*p;hit=true;}for(const s of M.solids){if(!s.collision||(s.kind==='booth-gate'&&(this.crouchHeld&&this.grounded&&this.jumpZ<1)))continue;const p=obbPush(nx,ny,s,PLAYER_R);if(p){nx=p.x;ny=p.y;hit=true;}}if(!hit)break;}
-  const sec=this.sectorAt(nx,ny);if(sec<0){this.blocked++;return false;}this.x=nx;this.y=ny;this.sector=sec;return true;}
+ tryMove(nx,ny){const M=this.map,b=M.photoBooth;if(b&&b.gate&&!(this.crouchHeld&&this.grounded&&this.jumpZ<1)){const g=b.gate,B=basis(g.ang),dx0=this.x-g.x,dy0=this.y-g.y,dx1=nx-g.x,dy1=ny-g.y,side=dx0*B.f.x+dy0*B.f.y,finish=dx1*B.f.x+dy1*B.f.y,lat0=dx0*B.r.x+dy0*B.r.y,lat1=dx1*B.r.x+dy1*B.r.y,span=g.w/2+PLAYER_R;if(side*finish<=0&&Math.abs(lat0)<span&&Math.abs(lat1)<span){const normal=(side>=0?1:-1)*(g.d/2+PLAYER_R+.05);nx=g.x+B.f.x*normal+B.r.x*lat1;ny=g.y+B.f.y*normal+B.r.y*lat1;}}for(let pass=0;pass<3;pass++){let hit=false;for(const ln of M.lines){if(!this.lineBlocks(ln))continue;const a=M.verts[ln.v1],b=M.verts[ln.v2],c=Geom.closestOnSeg(nx,ny,a.x,a.y,b.x,b.y);if(c.d2>=PLAYER_R*PLAYER_R)continue;const d=Math.sqrt(c.d2)||.0001,p=(PLAYER_R-d)+.02;nx+=((nx-c.x)/d)*p;ny+=((ny-c.y)/d)*p;hit=true;}for(const s of M.solids){if(!s.collision||(s.kind==='booth-gate'&&(this.crouchHeld&&this.grounded&&this.jumpZ<1)))continue;const p=obbPush(nx,ny,s,PLAYER_R);if(p){nx=p.x;ny=p.y;hit=true;}}if(!hit)break;}
+  // Alternating wall/solid projection can enter an impossible slot (for example a cabinet
+  // parked closer than one player diameter to the perimeter). Never commit a projected pose
+  // unless the final capsule footprint is clear of every active blocker; reject and let the
+  // axis fallback preserve the last known-good position instead of squeezing through geometry.
+  const rr=Math.max(0,PLAYER_R-.02),rr2=rr*rr;
+  for(const ln of M.lines){if(!this.lineBlocks(ln))continue;const a=M.verts[ln.v1],bb=M.verts[ln.v2],c=Geom.closestOnSeg(nx,ny,a.x,a.y,bb.x,bb.y);if(c.d2<rr2){this.blocked++;return false;}}
+  for(const s of M.solids){if(!s.collision||(s.kind==='booth-gate'&&(this.crouchHeld&&this.grounded&&this.jumpZ<1)))continue;if(obbPush(nx,ny,s,rr)){this.blocked++;return false;}}
+  const sec=this.sectorAt(nx,ny);if(sec<0){this.blocked++;return false;}this.x=nx;this.y=ny;this.sector=sec;if(this._motionPath)this._motionPath.push({x:this.x,y:this.y,z:this.jumpZ,grounded:this.grounded});return true;}
  look(dx,dy,sens){this.ang-=dx*sens;while(this.ang>Math.PI)this.ang-=TAU;while(this.ang<-Math.PI)this.ang+=TAU;this.pitch-=dy*sens*210;this.pitch=Math.max(-LOOK_DOWN,Math.min(LOOK_UP,this.pitch));}
  beginSlide(){
   if(!this.grounded){this.slideBuffered=true;return false;}
@@ -1426,83 +1447,73 @@ class Sim{
   if(this.slideT<=0)return;this.slideT=0;this.slideElapsed=0;
   if(rearm)this.slideRearm=Math.max(this.slideRearm,KINETIC.slideRearmDelay);
  }
-  jump(){
-   if(!this.grounded)return false;
-  const sliding=this.slideT>0;
-  if(sliding){this.vx*=KINETIC.slideJumpCarry;this.vy*=KINETIC.slideJumpCarry;this.endSlide(true);}
-  this.grounded=false;this.vz=KINETIC.jumpVel;this.jumpZ=.01;
-  this.slideBuffered=false;return true;
+ jumpImpulseForSpeed(speed){const u=Math.max(0,Math.min(1,(speed-KINETIC.walkSpeed)/(KINETIC.sprintSpeed-KINETIC.walkSpeed))),q=u*u*(3-2*u);return JUMP.standingVel+(JUMP.runVel-JUMP.standingVel)*q;}
+ queueJump(){this.jumpBuffer=KINETIC.jumpBufferTime;return this.consumeJumpBuffer();}
+ jump(){return this.queueJump();}
+ consumeJumpBuffer(){
+  if(this.jumpBuffer<=0||!(this.grounded||this.coyote>0))return false;
+  const sliding=this.slideT>0;if(sliding){this.vx*=KINETIC.slideJumpCarry;this.vy*=KINETIC.slideJumpCarry;this.endSlide(true);}
+  const impulse=this.jumpImpulseForSpeed(Math.hypot(this.vx,this.vy));this.grounded=false;this.vz=impulse;this.lastJumpImpulse=impulse;this.jumpZ=.01;this.jumpPeak=.01;this.coyote=0;this.jumpBuffer=0;this.slideBuffered=false;return true;
+ }
+ precisionScale(input,mag){
+  if(mag<=.01||input.run||this.sprintPhase>.04||!this.map.targets)return 1;
+  const ca=Math.cos(this.ang),sa=Math.sin(this.ang);let best=Infinity;
+  for(const t of this.map.targets){const tc=Math.cos(t.ang||0),ts=Math.sin(t.ang||0),dd=(t.d||10)/2+24,px=t.x+tc*dd,py=t.y+ts*dd,dx=px-this.x,dy=py-this.y,dist=Math.hypot(dx,dy);if(dist>KINETIC.precisionRadius||dist<1)continue;const dot=(dx*ca+dy*sa)/dist;if(dot<.20)continue;if(dist<best)best=dist;}
+  if(!Number.isFinite(best))return 1;const u=Math.max(0,Math.min(1,(best-KINETIC.precisionInner)/(KINETIC.precisionRadius-KINETIC.precisionInner)));return KINETIC.precisionMinScale+(1-KINETIC.precisionMinScale)*u*u*(3-2*u);
  }
  step(dt,input){
-   this.crouchHeld=!!input.crouch;this.t+=dt;this.slideRearm=Math.max(0,this.slideRearm-dt);
-  if(!input.crouch)this.slideBuffered=false;
-  else if(!this.grounded)this.slideBuffered=true;
+  this._motionPath=[{x:this.x,y:this.y,z:this.jumpZ,grounded:this.grounded}];this.crouchHeld=!!input.crouch;this.t+=dt;this.slideRearm=Math.max(0,this.slideRearm-dt);
+  this.jumpBuffer=Math.max(0,this.jumpBuffer-dt);if(this.grounded)this.coyote=KINETIC.coyoteTime;else this.coyote=Math.max(0,this.coyote-dt);
+  if(!input.crouch)this.slideBuffered=false;else if(!this.grounded)this.slideBuffered=true;
 
   const ca=Math.cos(this.ang),sa=Math.sin(this.ang);
-  let f=(input.fwd?1:0)-(input.back?1:0),r=(input.right?1:0)-(input.left?1:0),mag=Math.hypot(f,r);
+  let f=(Number(input.fwd)||0)-(Number(input.back)||0),r=(Number(input.right)||0)-(Number(input.left)||0),mag=Math.hypot(f,r);
   if(mag>1){f/=mag;r/=mag;mag=1;}
-  const crouched=!!input.crouch&&this.slideT<=0;
-  const base=crouched?KINETIC.crouchSpeed:(input.run?KINETIC.sprintSpeed:KINETIC.walkSpeed);
-  const forward=f*base*(f<0?KINETIC.reverseFactor:1),strafe=r*base*KINETIC.strafeFactor;
+  const sprintRequested=!!input.run&&!input.crouch;
+  this.requestedGait=sprintRequested?'sprint':'walk';
+  const ramp=sprintRequested?KINETIC.sprintRampTime:KINETIC.sprintReleaseTime,dir=sprintRequested?1:-1;
+  this.sprintPhase=Math.max(0,Math.min(1,this.sprintPhase+dir*dt/Math.max(.001,ramp)));
+  this.sprintCurve=this.sprintPhase*this.sprintPhase*(3-2*this.sprintPhase);
+  const crouched=!!input.crouch&&this.slideT<=0,precision=this.precisionScale(input,mag);
+  let gaitSpeed=KINETIC.walkSpeed+(KINETIC.sprintSpeed-KINETIC.walkSpeed)*this.sprintCurve;
+  // On Shift release, the requested target may still be microscopically above the realized
+  // velocity for one fixed step. Clamp it to current speed so sprint -> cruise is strictly
+  // monotone: no one-frame surge after the player has asked to slow down.
+  if(!sprintRequested&&mag>.001)gaitSpeed=Math.min(gaitSpeed,Math.max(KINETIC.walkSpeed,Math.hypot(this.vx,this.vy)));
+  const base=crouched?KINETIC.crouchSpeed:gaitSpeed*precision;
+  const forward=f*base,strafe=r*base;
   const tx=ca*forward+sa*strafe,ty=sa*forward-ca*strafe;
 
   if(this.slideT>0){
    this.slideElapsed+=dt;this.slideT=Math.max(0,KINETIC.slideMaxTime-this.slideElapsed);
-   const sp=Math.hypot(this.vx,this.vy);
-   const slowBand=Math.max(1,KINETIC.sprintSpeed-KINETIC.slideExitSpeed);
-   const slow=Math.max(0,Math.min(1,(KINETIC.sprintSpeed-sp)/slowBand));
-   const friction=KINETIC.slideFastFriction+(KINETIC.slideSlowFriction-KINETIC.slideFastFriction)*slow*slow;
-   const decay=Math.exp(-friction*dt);this.vx*=decay;this.vy*=decay;
-
-   // Steering rotates the velocity vector toward input without injecting free
-   // speed. This keeps wide Apex-like carving but rejects instant 90-degree snaps.
-   if(mag>.01){
-    const wx=ca*f+sa*r*KINETIC.strafeFactor,wy=sa*f-ca*r*KINETIC.strafeFactor,wl=Math.hypot(wx,wy)||1;
-    const cur=Math.hypot(this.vx,this.vy),dx=wx/wl*cur,dy=wy/wl*cur;
-    const steer=(1-Math.exp(-KINETIC.slideSteerLambda*dt))*KINETIC.slideSteerScale;
-    this.vx+=(dx-this.vx)*steer;this.vy+=(dy-this.vy)*steer;
-   }
+   const sp=Math.hypot(this.vx,this.vy),slowBand=Math.max(1,KINETIC.sprintSpeed-KINETIC.slideExitSpeed),slow=Math.max(0,Math.min(1,(KINETIC.sprintSpeed-sp)/slowBand));
+   const friction=KINETIC.slideFastFriction+(KINETIC.slideSlowFriction-KINETIC.slideFastFriction)*slow*slow,decay=Math.exp(-friction*dt);this.vx*=decay;this.vy*=decay;
+   if(mag>.01){const wx=ca*f+sa*r,wy=sa*f-ca*r,wl=Math.hypot(wx,wy)||1,cur=Math.hypot(this.vx,this.vy),dx=wx/wl*cur,dy=wy/wl*cur,steer=(1-Math.exp(-KINETIC.slideSteerLambda*dt))*KINETIC.slideSteerScale;this.vx+=(dx-this.vx)*steer;this.vy+=(dy-this.vy)*steer;}
    if(!input.crouch||Math.hypot(this.vx,this.vy)<KINETIC.slideExitSpeed||this.slideT<=0)this.endSlide(true);
   }else if(!this.grounded){
-   // Air movement keeps the launch velocity primary. Inputs bend the trajectory
-   // progressively; releasing movement adds only a trace of drag.
-   if(mag>.01){
-    const wx=ca*f+sa*r*KINETIC.strafeFactor,wy=sa*f-ca*r*KINETIC.strafeFactor,wl=Math.hypot(wx,wy)||1;
-    const sp=Math.hypot(this.vx,this.vy),desired=Math.min(KINETIC.airSpeedCap,Math.max(sp,input.run?KINETIC.sprintSpeed:KINETIC.walkSpeed));
-    const dx=wx/wl*desired,dy=wy/wl*desired,k=1-Math.exp(-KINETIC.airAccelLambda*dt);
-    this.vx+=(dx-this.vx)*k;this.vy+=(dy-this.vy)*k;
-    const capped=Math.hypot(this.vx,this.vy);
-    if(capped>KINETIC.airSpeedCap){const q=KINETIC.airSpeedCap/capped;this.vx*=q;this.vy*=q;}
-   }else{
-    const airDecay=Math.exp(-KINETIC.airDrag*dt);this.vx*=airDecay;this.vy*=airDecay;
-   }
+   if(mag>.01){const wx=ca*f+sa*r,wy=sa*f-ca*r,wl=Math.hypot(wx,wy)||1,sp=Math.hypot(this.vx,this.vy),desired=Math.min(KINETIC.airSpeedCap,Math.max(sp,gaitSpeed)),dx=wx/wl*desired,dy=wy/wl*desired,k=1-Math.exp(-KINETIC.airAccelLambda*dt);this.vx+=(dx-this.vx)*k;this.vy+=(dy-this.vy)*k;const capped=Math.hypot(this.vx,this.vy);if(capped>KINETIC.airSpeedCap){const q=KINETIC.airSpeedCap/capped;this.vx*=q;this.vy*=q;}}
+   else{const airDecay=Math.exp(-KINETIC.airDrag*dt);this.vx*=airDecay;this.vy*=airDecay;}
   }else{
-   const dot=this.vx*tx+this.vy*ty,lambda=mag<=.001?KINETIC.brakeLambda:(dot<0?KINETIC.reverseLambda:KINETIC.accelLambda),k=1-Math.exp(-lambda*dt);
-   this.vx+=(tx-this.vx)*k;this.vy+=(ty-this.vy)*k;
+   const dot=this.vx*tx+this.vy*ty,lambda=mag<=.001?KINETIC.brakeLambda:(dot<0?KINETIC.reverseLambda:KINETIC.accelLambda),k=1-Math.exp(-lambda*dt);this.vx+=(tx-this.vx)*k;this.vy+=(ty-this.vy)*k;
   }
 
+  this.consumeJumpBuffer();
   const ox=this.x,oy=this.y,nx=this.x+this.vx*dt,ny=this.y+this.vy*dt;
-  if(!this.tryMove(nx,ny)){
-   if(!this.tryMove(this.x+this.vx*dt,this.y))this.vx*=.18;
-   if(!this.tryMove(this.x,this.y+this.vy*dt))this.vy*=.18;
-  }
+  if(!this.tryMove(nx,ny)){if(!this.tryMove(this.x+this.vx*dt,this.y))this.vx*=.18;if(!this.tryMove(this.x,this.y+this.vy*dt))this.vy*=.18;}
 
   let landed=false,landingDown=0;
   if(!this.grounded){
-   this.jumpZ+=this.vz*dt;this.vz-=KINETIC.gravity*dt;
-   if(this.jumpZ<=0){landingDown=Math.max(0,-this.vz);this.jumpZ=0;this.vz=0;this.grounded=true;landed=true;}
+   this.jumpZ+=this.vz*dt;const g=(!input.jump&&this.vz>0)?KINETIC.gravity*KINETIC.jumpReleaseGravityScale:KINETIC.gravity;this.vz-=g*dt;this.jumpPeak=Math.max(this.jumpPeak,this.jumpZ);
+   if(this.jumpZ<=0){landingDown=Math.max(0,-this.vz);this.jumpZ=0;this.vz=0;this.grounded=true;this.coyote=KINETIC.coyoteTime;landed=true;}
   }
-  if(landed&&input.crouch&&this.slideBuffered&&this.slideRearm<=0){
-   const sp=Math.hypot(this.vx,this.vy);
-   if(sp>=KINETIC.slideLandMinSpeed&&landingDown>=KINETIC.slideLandMinDownVel)this.startSlide(sp);
-   else this.slideBuffered=false;
-  }
+  if(landed&&this.jumpBuffer>0)this.consumeJumpBuffer();
+  if(landed&&input.crouch&&this.slideBuffered&&this.slideRearm<=0){const sp=Math.hypot(this.vx,this.vy);if(sp>=KINETIC.slideLandMinSpeed&&landingDown>=KINETIC.slideLandMinDownVel)this.startSlide(sp);else this.slideBuffered=false;}
 
-  const moved=Math.hypot(this.x-ox,this.y-oy);
-  if(moved>.001&&this.grounded&&this.slideT<=0)this.bob+=moved*.05*(crouched?.68:1);
-  else if(moved<=.001)this.bob+=(Math.round(this.bob/Math.PI)*Math.PI-this.bob)*(1-Math.exp(-8*dt));
+  const moved=Math.hypot(this.x-ox,this.y-oy);if(moved>.001&&this.grounded&&this.slideT<=0)this.bob+=moved*.05*(crouched?.68:1);else if(moved<=.001)this.bob+=(Math.round(this.bob/Math.PI)*Math.PI-this.bob)*(1-Math.exp(-8*dt));
   const stanceTarget=(input.crouch||this.slideT>0)?1:0,stanceK=1-Math.exp(-KINETIC.stanceLambda*dt);this.stance+=(stanceTarget-this.stance)*stanceK;this.eyeHeight=EYE+(CROUCH_EYE-EYE)*this.stance;
-  const fovTarget=this.slideT>0?KINETIC.slideFov:(input.crouch?KINETIC.crouchFov:(input.run&&mag>.15?KINETIC.sprintFov:KINETIC.baseFov)),fovK=1-Math.exp(-KINETIC.fovLambda*dt);this.currentFov+=(fovTarget-this.currentFov)*fovK;
+  const fovBlend=Math.max(0,Math.min(1,(Math.hypot(this.vx,this.vy)-KINETIC.walkSpeed)/(KINETIC.sprintSpeed-KINETIC.walkSpeed))),fovTarget=this.slideT>0?KINETIC.slideFov:(input.crouch?KINETIC.crouchFov:(KINETIC.baseFov+(KINETIC.sprintFov-KINETIC.baseFov)*fovBlend)),fovK=1-Math.exp(-KINETIC.fovLambda*dt);this.currentFov+=(fovTarget-this.currentFov)*fovK;
+  const horizontalSpeed=Math.hypot(this.vx,this.vy);this.effectiveGait=this.slideT>0?'slide':(!this.grounded?'airborne':(crouched?'crouch':((precision<.98||horizontalSpeed<KINETIC.walkSpeed*.12)?'precision':(this.sprintPhase>=.995&&horizontalSpeed>KINETIC.sprintSpeed*.97?'sprint':(this.sprintPhase>.02?(sprintRequested?'accelerating':'decelerating'):'cruise')))));
+  const last=this._motionPath[this._motionPath.length-1];if(!last||Math.abs(last.z-this.jumpZ)>.001||last.grounded!==this.grounded)this._motionPath.push({x:this.x,y:this.y,z:this.jumpZ,grounded:this.grounded});
   return this;
  }
 }
@@ -1693,15 +1704,16 @@ function paint(sim,d){const v=d.view,w=v.w,h=v.h;ctx.fillStyle='#03050a';ctx.fil
  if(VIGNETTE){ctx.fillStyle=VIGNETTE;ctx.fillRect(0,0,w,h);}ctx.fillStyle='rgba(220,238,255,.62)';ctx.fillRect(w/2-5,h/2,3,1);ctx.fillRect(w/2+3,h/2,3,1);ctx.fillRect(w/2,h/2-5,1,3);ctx.fillRect(w/2,h/2+3,1,3);
 }
 
-function drawMap(sim,w,h){const sc=Math.min(w,h)*.34/RING.outer,ox=w-RING.outer*sc-16,oy=RING.outer*sc+16,P=(x,y)=>[ox+x*sc,oy-y*sc];ctx.fillStyle='rgba(2,5,10,.72)';ctx.beginPath();ctx.arc(ox,oy,RING.outer*sc+8,0,TAU);ctx.fill();ctx.font='bold 9px monospace';ctx.textAlign='center';ctx.textBaseline='middle';for(const [q,pose] of Object.entries(CROWD_ZONE_POSES)){const qp=P(pose.x*.72,pose.y*.72),current=q===crowdQuadrantAt(sim.x,sim.y),opposite=q===CROWD_OPPOSITE[crowdQuadrantAt(sim.x,sim.y)];ctx.fillStyle=opposite?'rgba(255,255,255,.20)':(current?'rgba(255,201,95,.95)':'rgba(113,184,255,.65)');ctx.fillText(q,qp[0],qp[1]);}ctx.textAlign='start';ctx.textBaseline='alphabetic';for(const ln of sim.map.lines){const a=sim.map.verts[ln.v1],b=sim.map.verts[ln.v2],p=P(a.x,a.y),q=P(b.x,b.y);ctx.strokeStyle=ln.back>=0?'rgba(80,140,220,.25)':'rgba(210,220,235,.65)';ctx.lineWidth=ln.back>=0?.6:1.2;ctx.beginPath();ctx.moveTo(p[0],p[1]);ctx.lineTo(q[0],q[1]);ctx.stroke();}if(sim.map.photoBooth){const b=sim.map.photoBooth,p=P(b.x,b.y),sc2=sc;ctx.strokeStyle='#ffc95f';ctx.lineWidth=1.5;ctx.strokeRect(p[0]-b.d/2*sc2,p[1]-b.w/2*sc2,b.d*sc2,b.w*sc2);ctx.font='bold 8px monospace';ctx.fillStyle='#ffc95f';ctx.fillText('PHOTO BOOTH',p[0]-18,p[1]-b.w/2*sc2-5);}
+function drawMap(sim,w,h){const sc=Math.min(w,h)*.34/RING.outer,ox=w-RING.outer*sc-16,oy=RING.outer*sc+16,P=(x,y)=>[ox+x*sc,oy-y*sc];ctx.fillStyle='rgba(2,5,10,.72)';ctx.beginPath();ctx.arc(ox,oy,RING.outer*sc+8,0,TAU);ctx.fill();ctx.font='bold 9px monospace';ctx.textAlign='center';ctx.textBaseline='middle';for(const [q,pose] of Object.entries(CROWD_ZONE_POSES)){const qp=P(pose.x*.72,pose.y*.72),current=q===crowdQuadrantAt(sim.x,sim.y),opposite=q===CROWD_OPPOSITE[crowdQuadrantAt(sim.x,sim.y)];ctx.fillStyle=opposite?'rgba(255,255,255,.20)':(current?'rgba(255,201,95,.95)':'rgba(113,184,255,.65)');ctx.fillText(q,qp[0],qp[1]);}ctx.textAlign='start';ctx.textBaseline='alphabetic';for(const ln of sim.map.lines){const a=sim.map.verts[ln.v1],b=sim.map.verts[ln.v2],p=P(a.x,a.y),q=P(b.x,b.y);ctx.strokeStyle=ln.back>=0?'rgba(80,140,220,.25)':'rgba(210,220,235,.65)';ctx.lineWidth=ln.back>=0?.6:1.2;ctx.beginPath();ctx.moveTo(p[0],p[1]);ctx.lineTo(q[0],q[1]);ctx.stroke();}if(sim.map.photoBooth){const b=sim.map.photoBooth,cs=solidCorners(b).map(q=>P(q.x,q.y)),p=P(b.x,b.y);ctx.strokeStyle='#ffc95f';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(cs[0][0],cs[0][1]);for(let i=1;i<cs.length;i++)ctx.lineTo(cs[i][0],cs[i][1]);ctx.closePath();ctx.stroke();ctx.font='bold 8px monospace';ctx.fillStyle='#ffc95f';ctx.fillText('PHOTO BOOTH',p[0]-18,p[1]-b.w*.52*sc-5);}
 for(const c of sim.map.cabinets){const p=P(c.x,c.y);ctx.fillStyle='rgba(255,90,210,.74)';ctx.fillRect(p[0]-2,p[1]-2,4,4);ctx.fillStyle='rgba(255,255,255,.9)';ctx.font='5px monospace';ctx.fillText(c.letter,p[0]+3,p[1]-3);}for(const f of sim.map.fixtures){const p=P(f.x,f.y);ctx.fillStyle='rgba(100,190,255,.55)';ctx.fillRect(p[0]-1.5,p[1]-1.5,3,3);}for(const a of sim.map.ads){const p=P(a.x,a.y);ctx.fillStyle='rgba(255,201,95,.82)';ctx.fillRect(p[0]-2,p[1]-2,4,4);}for(const e of sim.map.exits){const p=P(e.x,e.y);ctx.fillStyle='rgba(255,91,69,.95)';ctx.fillRect(p[0]-3,p[1]-3,6,6);}const p=P(sim.x,sim.y);ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(p[0],p[1]);ctx.lineTo(p[0]+Math.cos(sim.ang)*12,p[1]-Math.sin(sim.ang)*12);ctx.stroke();ctx.fillStyle='#fff';ctx.fillRect(p[0]-2,p[1]-2,4,4);}
 
 const map=buildLevel(),MAP_ERRORS=MapBuilder.validate(map),sim=new Sim(map);const input={fwd:0,back:0,left:0,right:0,run:0,crouch:0,jump:0};
+const HELD_CODES=new Set(),ACTIVE_POINTERS=new Set();
 
 function findTarget(){if(photoBoothInside(map.photoBooth,sim.x,sim.y))return map.photoBooth.target;const ca=Math.cos(sim.ang),sa=Math.sin(sim.ang),all=map.targets;let best=null,bscore=1e9;for(const t of all){const tc=Math.cos(t.ang),ts=Math.sin(t.ang),dd=(t.d||10)/2+24,px=t.x+tc*dd,py=t.y+ts*dd,dx=px-sim.x,dy=py-sim.y,d2=dx*dx+dy*dy;if(d2>6084)continue;const dist=Math.sqrt(d2),dot=(dx*ca+dy*sa)/(dist||1);if(dot<.28)continue;const score=dist-dot*16;if(score<bscore){bscore=score;best=t;}}return best;}
 function targetKind(t){return t.kind==='booth'?'PHOTO BOOTH':t.kind==='cabinet'?'CABINET '+t.letter:t.kind==='exit'?'EXIT':t.kind==='token'?'TOKEN VENDING':t.kind==='ad'?'AD INVENTORY':t.kind==='order'?'FOOD SERVICE':'WALL PORTAL';}
 let promptTargetKey='';
-function updatePrompt(){activeTarget=findTarget();const key=activeTarget?(activeTarget.id||activeTarget.letter||activeTarget.label):'';if(key===promptTargetKey)return;promptTargetKey=key;if(!activeTarget){promptEl.classList.remove('show');promptEl.textContent='';return;}const name=activeTarget.kind==='cabinet'?activeTarget.title:activeTarget.label,verb=activeTarget.pending?'COMING SOON':activeTarget.cta||(activeTarget.kind==='cabinet'?'ENTER GAME':'OPEN');promptEl.innerHTML='<span class="kind">'+targetKind(activeTarget)+'</span> '+name+' &nbsp; <span class="key">[E / CLICK]</span> '+verb;promptEl.classList.add('show');}
+function updatePrompt(){activeTarget=findTarget();const key=activeTarget?(activeTarget.id||activeTarget.letter||activeTarget.label):'';if(key===promptTargetKey)return;promptTargetKey=key;touchAct.classList.toggle('show',!!activeTarget);if(!activeTarget){promptEl.classList.remove('show');promptEl.textContent='';return;}const name=activeTarget.kind==='cabinet'?activeTarget.title:activeTarget.label,verb=activeTarget.pending?'COMING SOON':activeTarget.cta||(activeTarget.kind==='cabinet'?'ENTER GAME':'OPEN');promptEl.innerHTML='<span class="kind">'+targetKind(activeTarget)+'</span> '+name+' &nbsp; <span class="key">[E / CLICK]</span> '+verb;promptEl.classList.add('show');}
 function openConfirm(t){if(!t||(!t.url&&!t.pending&&t.kind!=='booth'))return;modalTarget=t;if(document.pointerLockElement===canvas)document.exitPointerLock();const name=t.kind==='cabinet'?(t.letter+' / '+t.title):t.label;modalTitle.textContent=name;confirmBtn.style.display='';cancelBtn.textContent='STAY HERE';if(t.kind==='booth'){modalEyebrow.textContent='CAT CLUB x PEOPLES';modalCopy.textContent='Walk through the low entrance while crouched, then stand inside. Photo-to-3D capture, reconstruction, and physical printing require a separate opt-in camera and printer service; those systems are not connected yet. No images are recorded or uploaded by this arcade build.';confirmBtn.style.display='none';cancelBtn.textContent='BACK TO BOOTH';}else if(t.pending){modalEyebrow.textContent='COMING SOON';modalCopy.textContent='Cabinet '+t.letter+' ('+t.title+') has no destination yet. Check back soon.';confirmBtn.textContent='';confirmBtn.style.display='none';cancelBtn.textContent='BACK';}else if(t.kind==='cabinet'){modalEyebrow.textContent='LEAVE FTS ARCADE?';modalCopy.textContent='Enter cabinet '+t.letter+' and navigate to '+t.title+'? Your browser will load '+t.url+'.';confirmBtn.textContent='ENTER CABINET';}else if(t.kind==='token'){modalEyebrow.textContent='TOKEN PURCHASE';modalCopy.textContent='Open the FTS token purchase portal? This leaves the arcade floor and loads '+t.url+'.';confirmBtn.textContent='BUY TOKENS';}else if(t.kind==='ad'){modalEyebrow.textContent='PROGRAMMATIC INVENTORY';modalCopy.textContent='Open the deal form for '+t.inventory+'? This leaves the arcade floor.';confirmBtn.textContent=t.cta||'OPEN DEAL FORM';}else if(t.kind==='order'){modalEyebrow.textContent='FOOD SERVICE';modalCopy.textContent='Order from '+t.label+'? This opens the ordering service and leaves the arcade floor.';confirmBtn.textContent=t.cta||'ORDER FOOD';}else if(t.kind==='dressing'){modalEyebrow.textContent='WALL PORTAL';modalCopy.textContent=(t.cta||'Open this link')+' — '+t.label+'.';confirmBtn.textContent=t.cta||'OPEN';}else{modalEyebrow.textContent='LEAVE FTS ARCADE?';modalCopy.textContent='Use this exit for '+name+'? This destination is off the arcade floor.';confirmBtn.textContent=t.cta||'LEAVE ARCADE';}modal.classList.add('show');}
 function closeConfirm(relock){modal.classList.remove('show');modalTarget=null;confirmBtn.style.display='';cancelBtn.textContent='STAY HERE';if(relock&&!coarse())setTimeout(()=>canvas.requestPointerLock&&canvas.requestPointerLock(),60);}
 function leaveArcade(){if(!modalTarget||!modalTarget.url)return;const t=modalTarget;try{sessionStorage.setItem('fts.arcade.return',JSON.stringify({x:sim.x,y:sim.y,ang:sim.ang,t:Date.now()}));}catch(e){}window.open(t.url, t.target || '_blank');closeConfirm(true);}
@@ -1709,8 +1721,15 @@ confirmBtn.addEventListener('click',leaveArcade);cancelBtn.addEventListener('cli
 
 function resize(){const vv=window.visualViewport,w=Math.round(vv&&vv.width||innerWidth||960),h=Math.round(vv&&vv.height||innerHeight||600),low=coarse()||PLATFORM.ios||((navigator.hardwareConcurrency||8)<=4);RSCALE=low?(h>900?PERF.coarseTallScale:PERF.coarseScale):(h>900?1.9:1.55);RW=Math.max(180,Math.round(w/RSCALE));RH=Math.max(120,Math.round(h/RSCALE));canvas.width=RW;canvas.height=RH;canvas.style.width=w+'px';canvas.style.height=h+'px';dl=new DrawLists(RW,RH);PLANE_SOFT.canvas=PLANE_SOFT.ctx=PLANE_SOFT.image=PLANE_SOFT.u32=null;PLANE_SOFT.width=PLANE_SOFT.height=0;ensureSoftwareFrame(RW,RH);VIGNETTE=ctx.createRadialGradient(RW/2,RH/2,Math.min(RW,RH)*.2,RW/2,RH/2,Math.max(RW,RH)*.72);VIGNETTE.addColorStop(0,'rgba(0,0,0,0)');VIGNETTE.addColorStop(1,'rgba(0,0,0,.34)');ctx.imageSmoothingEnabled=false;}
 const KEY={KeyW:'fwd',ArrowUp:'fwd',KeyS:'back',ArrowDown:'back',KeyA:'left',KeyD:'right'};
-addEventListener('keydown',e=>{if(modal.classList.contains('show')){if(e.code==='Enter'||e.code==='KeyY')leaveArcade();if(e.code==='Escape'||e.code==='KeyN')closeConfirm(true);return;}if(KEY[e.code]){input[KEY[e.code]]=1;e.preventDefault();}if(e.code==='ShiftLeft'||e.code==='ShiftRight')input.run=1;if(e.code==='ControlLeft'||e.code==='ControlRight'||e.code==='KeyC'){input.crouch=1;if(!e.repeat)sim.beginSlide();e.preventDefault();}if(e.code==='Space'){input.jump=1;if(!e.repeat)sim.jump();e.preventDefault();}if(e.code==='KeyE')openConfirm(activeTarget);if(e.code==='KeyM'){showMap=!showMap;mapBtn.textContent='MAP: '+(showMap?'ON':'OFF');mapBtn.classList.toggle('on',showMap);}if(e.code==='KeyN')toggleAudio();if(e.code==='KeyK'){togglePlaneMapping();e.preventDefault();}if(e.code==='KeyP'){togglePlaneBackend();e.preventDefault();}if(e.code==='KeyO'){toggleCelestialKoi();e.preventDefault();}});
-addEventListener('keyup',e=>{if(KEY[e.code])input[KEY[e.code]]=0;if(e.code==='ShiftLeft'||e.code==='ShiftRight')input.run=0;if(e.code==='ControlLeft'||e.code==='ControlRight'||e.code==='KeyC')input.crouch=0;if(e.code==='Space')input.jump=0;});
+const SHIFT_CODES=['ShiftLeft','ShiftRight'],CROUCH_CODES=['ControlLeft','ControlRight','KeyC'];
+// Multiple physical keys may map to one movement action (for example W + ArrowUp).
+// Aggregate aliases with OR semantics; never let an unheld alias overwrite a held key.
+function movementActionHeld(action){for(const [code,key] of Object.entries(KEY))if(key===action&&HELD_CODES.has(code))return 1;return 0;}
+function syncHeldInput(){input.fwd=movementActionHeld('fwd');input.back=movementActionHeld('back');input.left=movementActionHeld('left');input.right=movementActionHeld('right');input.run=SHIFT_CODES.some(k=>HELD_CODES.has(k))?1:0;input.crouch=CROUCH_CODES.some(k=>HELD_CODES.has(k))?1:0;input.jump=HELD_CODES.has('Space')?1:0;}
+function clearLiveInput(){HELD_CODES.clear();ACTIVE_POINTERS.clear();input.fwd=input.back=input.left=input.right=input.run=input.crouch=input.jump=0;movePid=lookPid=null;lastLook=null;touchKnob.style.transform='';}
+addEventListener('keydown',e=>{if(modal.classList.contains('show')){if(e.code==='Enter'||e.code==='KeyY')leaveArcade();if(e.code==='Escape'||e.code==='KeyN')closeConfirm(true);return;}const movement=KEY[e.code]||SHIFT_CODES.includes(e.code)||CROUCH_CODES.includes(e.code)||e.code==='Space';if(movement){const first=!HELD_CODES.has(e.code);HELD_CODES.add(e.code);syncHeldInput();if(first&&CROUCH_CODES.includes(e.code))sim.beginSlide();if(first&&e.code==='Space')sim.queueJump();e.preventDefault();}if(e.code==='KeyE')openConfirm(activeTarget);if(e.code==='KeyM'){showMap=!showMap;mapBtn.textContent='MAP: '+(showMap?'ON':'OFF');mapBtn.classList.toggle('on',showMap);}if(e.code==='KeyN')toggleAudio();if(e.code==='KeyK'){togglePlaneMapping();e.preventDefault();}if(e.code==='KeyP'){togglePlaneBackend();e.preventDefault();}if(e.code==='KeyO'){toggleCelestialKoi();e.preventDefault();}});
+addEventListener('keyup',e=>{if(HELD_CODES.delete(e.code)){syncHeldInput();e.preventDefault();}});
+addEventListener('blur',clearLiveInput);
 addEventListener('mousemove',e=>{if(document.pointerLockElement===canvas&&!modal.classList.contains('show'))sim.look(e.movementX||0,e.movementY||0,MOUSE_LOOK_SENS);});
 canvas.addEventListener('mousedown',e=>{if(e.button!==0)return;if(coarse())return;if(document.pointerLockElement!==canvas){canvas.requestPointerLock&&canvas.requestPointerLock();return;}if(activeTarget)openConfirm(activeTarget);});
 document.addEventListener('pointerlockchange',()=>{if(coarse())return;lockEl.classList.toggle('hidden',document.pointerLockElement===canvas||modal.classList.contains('show'));});
@@ -1780,16 +1799,19 @@ async function toggleAudio(){
  const ok=await SpatialCrowd.set(next);audioBtn.textContent='AUDIO: '+(SpatialCrowd.on&&ok?'SPATIAL':'OFF');audioBtn.classList.toggle('on',SpatialCrowd.on&&ok);
 }audioBtn.addEventListener('click',toggleAudio);
 
-// Coarse-pointer controls: left stick moves, right-side drag looks, ENTER uses the active portal.
-const touchMove=document.getElementById('touchMove'),touchKnob=document.getElementById('touchKnob'),touchAct=document.getElementById('touchAct'),touchCrouch=document.getElementById('touchCrouch');let movePid=null,lookPid=null,lastLook=null;
-function stickFromEvent(e){const r=touchMove.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,dx=e.clientX-cx,dy=e.clientY-cy,L=Math.hypot(dx,dy),m=Math.min(36,L),nx=L?dx/L:0,ny=L?dy/L:0;touchKnob.style.transform='translate('+(nx*m)+'px,'+(ny*m)+'px)';input.fwd=ny<-.2?1:0;input.back=ny>.2?1:0;input.left=nx<-.2?1:0;input.right=nx>.2?1:0;}
-touchMove.addEventListener('pointerdown',e=>{movePid=e.pointerId;touchMove.setPointerCapture(e.pointerId);stickFromEvent(e);});touchMove.addEventListener('pointermove',e=>{if(e.pointerId===movePid)stickFromEvent(e);});const releaseMove=e=>{if(e&&e.pointerId!==movePid)return;movePid=null;touchKnob.style.transform='';input.fwd=input.back=input.left=input.right=0;};touchMove.addEventListener('pointerup',releaseMove);touchMove.addEventListener('pointercancel',releaseMove);
-canvas.addEventListener('pointerdown',e=>{if(e.pointerType==='touch'&&e.clientX>innerWidth*.42){lookPid=e.pointerId;lastLook={x:e.clientX,y:e.clientY};canvas.setPointerCapture&&canvas.setPointerCapture(e.pointerId);}});canvas.addEventListener('pointermove',e=>{if(e.pointerId===lookPid&&lastLook){sim.look(e.clientX-lastLook.x,e.clientY-lastLook.y,TOUCH_LOOK_SENS);lastLook={x:e.clientX,y:e.clientY};}});const releaseLook=e=>{if(e&&e.pointerId!==lookPid)return;lookPid=null;lastLook=null;};canvas.addEventListener('pointerup',releaseLook);canvas.addEventListener('pointercancel',releaseLook);touchAct.addEventListener('click',()=>openConfirm(activeTarget));
-touchCrouch.addEventListener('pointerdown',e=>{input.crouch=1;sim.beginSlide();touchCrouch.setPointerCapture&&touchCrouch.setPointerCapture(e.pointerId);e.preventDefault();});
-touchCrouch.addEventListener('pointerup',e=>{input.crouch=0;e.preventDefault();});touchCrouch.addEventListener('pointercancel',()=>{input.crouch=0;});
+// Coarse-pointer controls: analog-ish left stick, look drag, and explicit Sprint / Jump / Slide actions.
+const touchMove=document.getElementById('touchMove'),touchKnob=document.getElementById('touchKnob'),touchAct=document.getElementById('touchAct'),touchSprint=document.getElementById('touchSprint'),touchJump=document.getElementById('touchJump'),touchCrouch=document.getElementById('touchCrouch');let movePid=null,lookPid=null,lastLook=null;
+function pointerOwned(e,on){if(!e)return;if(on)ACTIVE_POINTERS.add(e.pointerId);else ACTIVE_POINTERS.delete(e.pointerId);}
+function stickFromEvent(e){const r=touchMove.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,dx=e.clientX-cx,dy=e.clientY-cy,L=Math.hypot(dx,dy),m=Math.min(36,L),nx=L?dx/L:0,ny=L?dy/L:0;touchKnob.style.transform='translate('+(nx*m)+'px,'+(ny*m)+'px)';const a=Math.min(1,L/36);input.fwd=ny<-.12?-ny*a:0;input.back=ny>.12?ny*a:0;input.left=nx<-.12?-nx*a:0;input.right=nx>.12?nx*a:0;}
+touchMove.addEventListener('pointerdown',e=>{movePid=e.pointerId;pointerOwned(e,true);touchMove.setPointerCapture(e.pointerId);stickFromEvent(e);});touchMove.addEventListener('pointermove',e=>{if(e.pointerId===movePid)stickFromEvent(e);});const releaseMove=e=>{if(e&&e.pointerId!==movePid)return;pointerOwned(e,false);movePid=null;touchKnob.style.transform='';input.fwd=input.back=input.left=input.right=0;};touchMove.addEventListener('pointerup',releaseMove);touchMove.addEventListener('pointercancel',releaseMove);
+canvas.addEventListener('pointerdown',e=>{if(e.pointerType==='touch'&&e.clientX>innerWidth*.42){lookPid=e.pointerId;pointerOwned(e,true);lastLook={x:e.clientX,y:e.clientY};canvas.setPointerCapture&&canvas.setPointerCapture(e.pointerId);}});canvas.addEventListener('pointermove',e=>{if(e.pointerId===lookPid&&lastLook){sim.look(e.clientX-lastLook.x,e.clientY-lastLook.y,TOUCH_LOOK_SENS);lastLook={x:e.clientX,y:e.clientY};}});const releaseLook=e=>{if(e&&e.pointerId!==lookPid)return;pointerOwned(e,false);lookPid=null;lastLook=null;};canvas.addEventListener('pointerup',releaseLook);canvas.addEventListener('pointercancel',releaseLook);touchAct.addEventListener('click',()=>openConfirm(activeTarget));
+const bindHold=(el,on,off)=>{el.addEventListener('pointerdown',e=>{pointerOwned(e,true);el.setPointerCapture&&el.setPointerCapture(e.pointerId);on(e);e.preventDefault();});const up=e=>{pointerOwned(e,false);off(e);e.preventDefault();};el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up);};
+bindHold(touchSprint,()=>{input.run=1;},()=>{input.run=0;});
+bindHold(touchJump,()=>{input.jump=1;sim.queueJump();},()=>{input.jump=0;});
+bindHold(touchCrouch,()=>{input.crouch=1;sim.beginSlide();},()=>{input.crouch=0;});
 
-let last=0,fpsAcc=0,fpsN=0,fps=0,frames=0,simAcc=0;
-function loop(ts){const frameDt=Math.min((ts-last)/1000||.016,.12);last=ts;simAcc=Math.min(.20,simAcc+frameDt);const fixedDt=1/KINETIC.simHz;let simSteps=0;while(simAcc>=fixedDt&&simSteps<KINETIC.maxCatchupSteps){sim.step(fixedDt,input);simAcc-=fixedDt;simSteps++;}SpatialCrowd.update(sim);RenderCore.solve(sim,dl,RW,RH);paint(sim,dl);if(showMap)drawMap(sim,RW,RH);updatePrompt();fpsAcc+=frameDt;fpsN++;if(fpsAcc>.45){fps=fpsN/fpsAcc;fpsAcc=0;fpsN=0;}if((frames++&7)===0){const moveState=sim.slideT>0?'SLIDE':input.crouch?'CROUCH':input.run?'RUN':'WALK';telemetry.textContent=VERSION+' | '+RW+'x'+RH+' | '+fps.toFixed(0)+' fps | '+moveState+' | Z '+sim.jumpZ.toFixed(0)+' | SEC '+(sim.sector+1)+'/'+map.sectors.length+' | CAB '+map.cabinets.length+' A-'+LAST_CABINET+' | FIX '+map.fixtures.length+' | ADS '+map.ads.length+' | VIS '+dl.stats.sectors+'s '+dl.stats.solidFaces+'g/'+dl.stats.culledSolids+'c/'+dl.stats.lodParts+'l'+(dl.stats.grows?' GROW '+dl.stats.grows:'')+(dl.stats.dropped?' DROP '+dl.stats.dropped:'')+' | PLN '+PLANE_BACKEND.active.toUpperCase()+'/'+PLANE_MAPPING.mode.toUpperCase()+' | KOI '+(CELESTIAL_KOI.enabled?CELESTIAL_KOI_STATS.visible:'OFF')+' | ROOF '+CEILING_STATS.faces+'f | AUD '+(SpatialCrowd.on?(SpatialCrowd.quadrant||crowdQuadrantAt(sim.x,sim.y))+'>'+SpatialCrowd.activeZones().join(''):'OFF')+' | ART '+(IMG.ready?'ATLAS':'FALLBACK')+(MAP_ERRORS.length?' | MAP ERR '+MAP_ERRORS.length:'');}requestAnimationFrame(loop);}
+let last=0,fpsAcc=0,fpsN=0,fps=0,frames=0,simAcc=0,RTS_MANUAL=false,RTS_LAST_PATH=[];
+function loop(ts){const frameDt=Math.min((ts-last)/1000||.016,.12);last=ts;if(!RTS_MANUAL){simAcc=Math.min(.20,simAcc+frameDt);const fixedDt=1/KINETIC.simHz;let simSteps=0;while(simAcc>=fixedDt&&simSteps<KINETIC.maxCatchupSteps){sim.step(fixedDt,input);simAcc-=fixedDt;simSteps++;}}if(!RTS_MANUAL){SpatialCrowd.update(sim);RenderCore.solve(sim,dl,RW,RH);paint(sim,dl);if(showMap)drawMap(sim,RW,RH);updatePrompt();}fpsAcc+=frameDt;fpsN++;if(fpsAcc>.45){fps=fpsN/fpsAcc;fpsAcc=0;fpsN=0;}if((frames++&7)===0){const mph=Math.hypot(sim.vx,sim.vy)/MPH_TO_IPS;telemetry.textContent=VERSION+' | '+RW+'x'+RH+' | '+fps.toFixed(0)+' fps | '+sim.effectiveGait.toUpperCase()+' '+mph.toFixed(1)+'mph | Z '+sim.jumpZ.toFixed(0)+' | SEC '+(sim.sector+1)+'/'+map.sectors.length+' | CAB '+map.cabinets.length+' A-'+LAST_CABINET+' | FIX '+map.fixtures.length+' | ADS '+map.ads.length+' | VIS '+dl.stats.sectors+'s '+dl.stats.solidFaces+'g/'+dl.stats.culledSolids+'c/'+dl.stats.lodParts+'l'+(dl.stats.grows?' GROW '+dl.stats.grows:'')+(dl.stats.dropped?' DROP '+dl.stats.dropped:'')+' | PLN '+PLANE_BACKEND.active.toUpperCase()+'/'+PLANE_MAPPING.mode.toUpperCase()+' | KOI '+(CELESTIAL_KOI.enabled?CELESTIAL_KOI_STATS.visible:'OFF')+' | ROOF '+CEILING_STATS.faces+'f | AUD '+(SpatialCrowd.on?(SpatialCrowd.quadrant||crowdQuadrantAt(sim.x,sim.y))+'>'+SpatialCrowd.activeZones().join(''):'OFF')+' | ART '+(IMG.ready?'ATLAS':'FALLBACK')+(MAP_ERRORS.length?' | MAP ERR '+MAP_ERRORS.length:'');}requestAnimationFrame(loop);}
 addEventListener('resize',resize);if(window.visualViewport)visualViewport.addEventListener('resize',resize);
 const IMAGE_LOADS=[
  ['world',ASSET_FILES.world,'world'],['cab1',ASSET_FILES.cab1,'Cabinets01'],['cab2',ASSET_FILES.cab2,'Cabinets02'],['cab3',ASSET_FILES.cab3,'Cabinets03'],['cab4',ASSET_FILES.cab4,'Cabinets04'],['screen',ASSET_FILES.screen,'screen'],['fixture',ASSET_FILES.fixture,'fixture'],['fixture2',ASSET_FILES.fixture2,'fixture2'],['cabinetRef',ASSET_FILES.cabinetRef,'the-Cabinet'],['booth',ASSET_FILES.booth,'photo booth'],
@@ -1804,18 +1826,19 @@ resize();buildTextures();
 if(MAP_ERRORS.length)console.error('[FTS ARCADE] map validation',MAP_ERRORS);
 function screenPart(c){return c.parts.find(p=>p.role==='screen');}
 const REF_TESTS={
- // ---- 1.6.0 WALK-IN PHOTO BOOTH / RTS ----
+ // ---- 2.0.0 SOUTH-EAST WALK-IN PHOTO BOOTH / RTS ----
  boothPresent:()=>!!map.photoBooth&&!!map.photoBooth.pole&&map.photoBooth.parts.length>=12,
- boothWestQuadrant:()=>crowdQuadrantAt(map.photoBooth.x,map.photoBooth.y)==='IV',
+ boothSouthQuadrant:()=>crowdQuadrantAt(map.photoBooth.x,map.photoBooth.y)==='III',
+ boothPlanPose:()=>Math.abs(map.photoBooth.x-152)<.01&&Math.abs(map.photoBooth.y+352)<.01&&Math.abs(map.photoBooth.ang-65*DEG)<1e-9,
  boothAtlasEmbedded:()=>ASSET_FILES.booth.startsWith('data:image/webp;base64,')&&Object.keys(BOOTH_UV).length===16,
  boothArtBaked:()=>!IMG.artBaked||baseTile(MAT.BOOTH_CAT).width===256,
  boothClearOfCabinets:()=>!map.cabinets.some(c=>solidsOverlap(c,map.photoBooth,.01)),
  boothAvoidsExitApproach:()=>!Egress.blockers(map).some(b=>b.by.startsWith('PB_')),
- boothOpeningIsCrouchGated:()=>{const g=map.photoBooth.gate,stand=new Sim(map),crouch=new Sim(map);stand.x=crouch.x=g.x+PLAYER_R+g.d/2+3;stand.y=crouch.y=g.y;stand.sector=crouch.sector=stand.sectorAt(stand.x,stand.y);stand.crouchHeld=false;crouch.crouchHeld=true;stand.tryMove(g.x-3,g.y);crouch.tryMove(g.x-3,g.y);return stand.x>g.x+PLAYER_R&&crouch.x<g.x+3;},
- boothCanStandInside:()=>{const b=map.photoBooth,c=new Sim(map);c.x=b.x;c.y=b.y-30;c.sector=c.sectorAt(c.x,c.y);c.crouchHeld=false;return photoBoothInside(b,c.x,c.y)&&c.eyeZ()>=EYE-2&&b.h>PLAYER_H&&c.sector>=0;},
+ boothOpeningIsCrouchGated:()=>{const g=map.photoBooth.gate,B=basis(g.ang),stand=new Sim(map),crouch=new Sim(map),outside=g.d/2+PLAYER_R+3;stand.x=crouch.x=g.x+B.f.x*outside;stand.y=crouch.y=g.y+B.f.y*outside;stand.sector=crouch.sector=stand.sectorAt(stand.x,stand.y);stand.crouchHeld=false;crouch.crouchHeld=true;stand.tryMove(g.x-B.f.x*3,g.y-B.f.y*3);crouch.tryMove(g.x-B.f.x*3,g.y-B.f.y*3);const s=(stand.x-g.x)*B.f.x+(stand.y-g.y)*B.f.y,c=(crouch.x-g.x)*B.f.x+(crouch.y-g.y)*B.f.y;return s>PLAYER_R&&c<3;},
+ boothCanStandInside:()=>{const b=map.photoBooth,p=boothPose(b,0,-30),c=new Sim(map);c.x=p.x;c.y=p.y;c.sector=c.sectorAt(c.x,c.y);c.crouchHeld=false;return photoBoothInside(b,c.x,c.y)&&c.eyeZ()>=EYE-2&&b.h>PLAYER_H&&c.sector>=0;},
  boothNotRegisteredAsCabinet:()=>map.cabinets.every(c=>!c.booth)&&!map.cabinets.some(c=>c.letter==='PHOTO_BOOTH'),
  boothRotatingGeometry:()=>{const p=map.photoBooth.pole;barberPolePose(map.photoBooth,0);const x=p._render.faces[0].x1;barberPolePose(map.photoBooth,1);const r=p._render.faces;return r.length>=18*6&&Math.abs(r[0].x1-x)>1&&r.some(f=>f.tex===MAT.BOOTH_STRIPES);},
- boothEntranceClear:()=>{const b=map.photoBooth;return b.doorWidth>2*PLAYER_R+8&&b.doorHeight>CROUCH_EYE+5&&b.doorHeight<PLAYER_H&&map.solids.filter(s=>s.booth&&s.collision&&s.kind!=='booth-gate').every(s=>!solidsOverlap(s,{x:b.x+37,y:b.y-30,ang:0,w:b.doorWidth-4,d:2}));},
+ boothEntranceClear:()=>{const b=map.photoBooth,p=boothPose(b,37,-30);return b.doorWidth>2*PLAYER_R+8&&b.doorHeight>CROUCH_EYE+5&&b.doorHeight<PLAYER_H&&map.solids.filter(s=>s.booth&&s.collision&&s.kind!=='booth-gate').every(s=>!solidsOverlap(s,{x:p.x,y:p.y,ang:p.ang,w:b.doorWidth-4,d:2}));},
 
  // ---- 1.3.0 fire code / egress ----
  fireCodeMatchesSwissFigures:()=>{const f=AUTHORING.fireCode;return Math.abs(f.routeMin-120/2.54)<.1&&Math.abs(f.exitMin-90/2.54)<.1&&Math.abs(f.maxTravel-3500/2.54)<1&&map.exits.every(e=>e.w>=f.exitMin)&&f.exitApproach.width>=f.exitMin;},
@@ -1894,16 +1917,21 @@ const REF_TESTS={
  officeEntryFlanked:()=>{const d=AUTHORING.officeEntry.find(x=>x.id==='OFFICE_DOOR'),w=AUTHORING.officeEntry.find(x=>x.id==='WHITEBOARD'),b=AUTHORING.officeEntry.find(x=>x.id==='BULLETIN');return !!(d&&w&&b&&w.x<d.x&&b.x>d.x&&w.y===d.y&&b.y===d.y);},
  tightCabinetPacking:()=>AUTHORING.packing.sideGap<=.5&&AUTHORING.packing.backGap<=.5,
  wallDressingsInteractive:()=>map.fixtures.filter(f=>f.kind==='dressing').length===AUTHORING.posters.length+AUTHORING.wallPortals.length+AUTHORING.officeEntry.length+AUTHORING.nightlife.length&&map.fixtures.filter(f=>f.kind==='dressing').every(f=>f.url&&f.cta),
- // --- 0.7.0 feel-pass locks -------------------------------------------------
+ // --- 2.0 movement-contract locks -------------------------------------------
  runSpeed22mph:()=>Math.abs(SPEED_RUN-387.2)<.001,
  sprintUntouched:()=>KINETIC.sprintSpeed===SPEED_RUN&&Math.abs(SPEED_RUN/17.6-22)<1e-9,
  ringWidened:()=>RING.outer===510&&RING.inner===118&&RING.sides===32,
  ceilingRaised:()=>RING.ceil===192&&map.sectors.every(s=>s.ceil===192),
- jumpVelRaised:()=>KINETIC.jumpVel===156&&KINETIC.gravity===386,
+ jumpProfile20:()=>Math.abs(JUMP.standingHeight-55/2.54)<1e-6&&Math.abs(JUMP.runHeight-71/2.54)<1e-6&&KINETIC.gravity===386,
  // A jump must not punch the player's head through the ceiling plane, and the
  // headroom margin must stay generous enough that a future +jumpVel is safe.
  jumpClearsCeiling:()=>JUMP.apex+PLAYER_H<RING.ceil-6,
- jumpDerivations:()=>Math.abs(JUMP.apex-31.52)<.05&&Math.abs(JUMP.hang-.808)<.005,
+ jumpDerivations:()=>Math.abs(JUMP.apex-71/2.54)<.01&&Math.abs(JUMP.standingHeight-55/2.54)<.01&&JUMP.hang>.70&&JUMP.hang<.80,
+ jumpTimingWindows:()=>Math.abs(KINETIC.jumpBufferTime-.120)<1e-9&&Math.abs(KINETIC.coyoteTime-.100)<1e-9&&KINETIC.jumpReleaseGravityScale>1,
+ jumpMeasuredApex:()=>{const dt=1/KINETIC.simHz,make=()=>{const c=new Sim(map);c.x=-460;c.y=-170;c.ang=0;c.sector=c.sectorAt(c.x,c.y);return c;},hold={fwd:0,back:0,left:0,right:0,run:0,crouch:0,jump:1},stand=make();stand.queueJump();for(let n=0;n<120&&!stand.grounded||n===0;n++)stand.step(dt,hold);const run=make(),ri={fwd:1,back:0,left:0,right:0,run:1,crouch:0,jump:0};for(let n=0;n<84;n++)run.step(dt,ri);ri.jump=1;run.queueJump();for(let n=0;n<120&&(!run.grounded||n===0);n++)run.step(dt,ri);return Math.abs(stand.jumpPeak-JUMP.standingHeight)<.06&&Math.abs(run.jumpPeak-JUMP.runHeight)<.06;},
+ jumpEarlyRelease:()=>{const c=new Sim(map),dt=1/KINETIC.simHz,i={fwd:0,back:0,left:0,right:0,run:0,crouch:0,jump:1};c.x=-460;c.y=-170;c.sector=c.sectorAt(c.x,c.y);c.queueJump();for(let n=0;n<4;n++)c.step(dt,i);i.jump=0;for(let n=0;n<100&&!c.grounded;n++)c.step(dt,i);return c.jumpPeak<JUMP.standingHeight*.82&&c.jumpPeak>4;},
+ jumpBufferWorks:()=>{const c=new Sim(map),dt=1/KINETIC.simHz,i={fwd:0,back:0,left:0,right:0,run:0,crouch:0,jump:1};c.x=-460;c.y=-170;c.sector=c.sectorAt(c.x,c.y);c.grounded=false;c.jumpZ=4;c.vz=-100;c.coyote=0;const queued=!c.queueJump()&&c.jumpBuffer>0;for(let n=0;n<12;n++){c.step(dt,i);if(!c.grounded&&c.vz>0&&c.lastJumpImpulse>0)return queued;}return false;},
+ coyoteWindowWorks:()=>{const mk=t=>{const c=new Sim(map);c.x=-460;c.y=-170;c.sector=c.sectorAt(c.x,c.y);c.grounded=false;c.jumpZ=.01;c.vz=0;c.coyote=t;return c;},live=mk(KINETIC.coyoteTime*.5),expired=mk(0);return live.queueJump()===true&&live.vz>0&&expired.queueJump()===false;},
  // "Don't rearrange the cabinets tonight" as an executable assertion.
  cabinetLayoutFrozen:()=>cabinetLayoutSignature({cabinets:map.cabinets.filter(c=>c.letter.length===1)})===CABINET_LAYOUT_SNAPSHOT,
  // Wall dressing must still touch the wall after the ring grew.
@@ -1931,7 +1959,10 @@ const REF_TESTS={
  renderRangesTrackRing:()=>RENDER.solidCull>=2*RING.outer&&RENDER.fogFar>RING.outer&&!/\b860\b|\bdist\/780\b/.test(String(RenderCore._solids)),
  // The extra floor must actually be reachable, not walled off by the shift.
  widerFloorIsWalkable:()=>{const s=sim.sectorAt(0,-(RING.outer-30));return s>=0;},
- kineticMovement:()=>KINETIC.strafeFactor===.90&&KINETIC.reverseFactor===.72&&KINETIC.accelLambda===12&&KINETIC.brakeLambda===18&&KINETIC.reverseLambda===10,
+ kineticMovement:()=>Math.abs(KINETIC.walkSpeed/MPH_TO_IPS-6.21)<1e-9&&Math.abs(KINETIC.sprintSpeed/MPH_TO_IPS-22)<1e-9&&KINETIC.strafeFactor===1&&KINETIC.reverseFactor===1&&Math.abs(KINETIC.sprintRampTime-1.4)<1e-9&&Math.abs(KINETIC.sprintReleaseTime-1.4)<1e-9,
+ keyboardMovementAliases:()=>{const held=[...HELD_CODES],snap={...input};try{const check=(code,field)=>{HELD_CODES.clear();HELD_CODES.add(code);syncHeldInput();return input[field]===1&&['fwd','back','left','right'].filter(k=>k!==field).every(k=>input[k]===0);};const singles=check('KeyW','fwd')&&check('ArrowUp','fwd')&&check('KeyS','back')&&check('ArrowDown','back')&&check('KeyA','left')&&check('KeyD','right');HELD_CODES.clear();HELD_CODES.add('KeyW');HELD_CODES.add('ArrowUp');syncHeldInput();const shared=input.fwd===1;HELD_CODES.delete('KeyW');syncHeldInput();const survivesAliasRelease=input.fwd===1;return singles&&shared&&survivesAliasRelease;}finally{HELD_CODES.clear();for(const code of held)HELD_CODES.add(code);Object.assign(input,snap);}},
+ precisionNearTargets:()=>{const t=map.cabinets[0],tc=Math.cos(t.ang||0),ts=Math.sin(t.ang||0),dd=(t.d||10)/2+24,px=t.x+tc*dd,py=t.y+ts*dd,c=new Sim(map);c.x=px-tc*14;c.y=py-ts*14;c.ang=Math.atan2(py-c.y,px-c.x);c.sector=c.sectorAt(c.x,c.y);return c.precisionScale({fwd:1,back:0,left:0,right:0,run:0,crouch:0,jump:0},1)<.75;},
+ walkSprintWalkContract:()=>{const c=new Sim(map),i={fwd:1,back:0,left:0,right:0,run:0,crouch:0,jump:0},dt=1/KINETIC.simHz;c.x=-450;c.y=-155;c.ang=0;c.sector=c.sectorAt(c.x,c.y);for(let n=0;n<90;n++)c.step(dt,i);const w=Math.hypot(c.vx,c.vy);i.run=1;for(let n=0;n<84;n++)c.step(dt,i);const r=Math.hypot(c.vx,c.vy),up=c.sprintPhase;i.run=0;for(let n=0;n<84;n++)c.step(dt,i);const w2=Math.hypot(c.vx,c.vy);return Math.abs(w-KINETIC.walkSpeed)<2&&Math.abs(r-KINETIC.sprintSpeed)<3&&up>.99&&Math.abs(w2-KINETIC.walkSpeed)<3&&c.requestedGait==='walk';},
  crouchSlideSystem:()=>CROUCH_EYE<EYE&&KINETIC.slideMaxTime>.5&&typeof sim.beginSlide==='function'&&typeof sim.startSlide==='function'&&typeof sim.endSlide==='function'&&'stance' in sim&&'slideT' in sim,
  apexSlideModel:()=>KINETIC.slideMinSpeed>KINETIC.walkSpeed&&KINETIC.slideLandMinSpeed<KINETIC.slideMinSpeed&&KINETIC.slideBoostSpeed>0&&KINETIC.slideFastFriction<KINETIC.slideSlowFriction&&KINETIC.slideJumpCarry>.95&&KINETIC.slideJumpCarry<=1&&KINETIC.airAccelLambda<KINETIC.accelLambda,
  jumpSystem:()=>KINETIC.jumpVel>0&&KINETIC.gravity>0&&typeof sim.jump==='function'&&'jumpZ' in sim,
@@ -2025,14 +2056,31 @@ function runRefTests(){
  }
  return{version:VERSION,pass:failures.length===0,passed:Object.values(results).filter(v=>v===true).length,total:Object.keys(REF_TESTS).length,failures,results,mapErrors:MAP_ERRORS.slice(),assetErrors:IMG.errors.slice(),runtimeErrors:RUNTIME_ERRORS.slice(),screenAtlas:SCREEN_ATLAS_META};
 }
-window.__FTS_ARCADE__={baseTile,IMG,input,photoBoothInside,barberPolePose,BOOTH_UV,Cluster,Egress,Flooring,WorldAtlas,OPTS,WORLD_ATLAS_V2,ready:()=>!!IMG.artBaked,VERSION,map,sim,MapBuilder,Geom,RenderCore,DrawLists,MATERIALS,MAP_ERRORS,CABINET_ROSTER,CABINET_DIM,AISLE,PORTALS,ASSET_NAMES,CABINET_PART_RECTS,CABINET_REF_RECTS,PACKAGE_CABINETS,PACKAGE_ATLAS_META,PACKAGE_ATLAS_RECTS,PACKAGE_ASSET_KEYS,SCREEN_ATLAS_META,SCREEN_RECTS,screenRect,AUTHORING,FIXTURE_ART,FIXTURE_TEX,artSize,KINETIC,JUMP,RENDER,PERF,RING,CABINET_LAYOUT_SNAPSHOT,cabinetLayoutSignature:()=>cabinetLayoutSignature(map),PLATFORM,PLANE_BACKEND,PLANE_STATS,setPlaneBackend,togglePlaneBackend,PLANE_MAPPING,setPlaneMappingMode,togglePlaneMapping,MOUSE_LOOK_SENS,TOUCH_LOOK_SENS,SpatialCrowd,CROWD_AUDIO_URL,CROWD_QUADRANTS,CROWD_OPPOSITE,CROWD_ZONE_POSES,crowdQuadrantAt,crowdDesiredFor,INDUSTRIAL_CEILING,CEILING_MESH,CEILING_STATS,CELESTIAL_LAYER,KOI_SPHERE_CACHE,paintIndustrialCeiling,paintCelestialSphere,clipCelestialNear,CELESTIAL_KOI,CELESTIAL_KOI_MAP,CELESTIAL_KOI_SAMPLES,CELESTIAL_KOI_STATS,celestialKoiPoint,projectWorldPoint,getDrawList:()=>dl,setCelestialKoi,toggleCelestialKoi,paintCelestialKoi,solidAabb,cabinetClearOfOffice,exportAuthoring:()=>JSON.stringify(AUTHORING,null,2),tests:REF_TESTS,runTests:runRefTests};
+window.__FTS_ARCADE__={baseTile,IMG,input,photoBoothInside,boothPose,boothLocal,barberPolePose,BOOTH_UV,Cluster,Egress,Flooring,WorldAtlas,OPTS,WORLD_ATLAS_V2,ready:()=>!!IMG.artBaked,VERSION,map,sim,MapBuilder,Geom,RenderCore,DrawLists,MATERIALS,MAP_ERRORS,CABINET_ROSTER,CABINET_DIM,AISLE,PORTALS,ASSET_NAMES,CABINET_PART_RECTS,CABINET_REF_RECTS,PACKAGE_CABINETS,PACKAGE_ATLAS_META,PACKAGE_ATLAS_RECTS,PACKAGE_ASSET_KEYS,SCREEN_ATLAS_META,SCREEN_RECTS,screenRect,AUTHORING,FIXTURE_ART,FIXTURE_TEX,artSize,KINETIC,JUMP,RENDER,PERF,RING,CABINET_LAYOUT_SNAPSHOT,cabinetLayoutSignature:()=>cabinetLayoutSignature(map),PLATFORM,PLANE_BACKEND,PLANE_STATS,setPlaneBackend,togglePlaneBackend,PLANE_MAPPING,setPlaneMappingMode,togglePlaneMapping,MOUSE_LOOK_SENS,TOUCH_LOOK_SENS,SpatialCrowd,CROWD_AUDIO_URL,CROWD_QUADRANTS,CROWD_OPPOSITE,CROWD_ZONE_POSES,crowdQuadrantAt,crowdDesiredFor,INDUSTRIAL_CEILING,CEILING_MESH,CEILING_STATS,CELESTIAL_LAYER,KOI_SPHERE_CACHE,paintIndustrialCeiling,paintCelestialSphere,clipCelestialNear,CELESTIAL_KOI,CELESTIAL_KOI_MAP,CELESTIAL_KOI_SAMPLES,CELESTIAL_KOI_STATS,celestialKoiPoint,projectWorldPoint,getDrawList:()=>dl,setCelestialKoi,toggleCelestialKoi,paintCelestialKoi,solidAabb,cabinetClearOfOffice,exportAuthoring:()=>JSON.stringify(AUTHORING,null,2),tests:REF_TESTS,runTests:runRefTests};
+
+function rtsPoint(x,y){return{x,z:y};}
+function rtsWorld(){
+ const boundary=Array.from({length:RING.sides},(_,i)=>{const p=Geom.polar(RING.outer,i*TAU/RING.sides);return rtsPoint(p[0],p[1]);});
+ const obstacles=[{id:'OFFICE_CORE',polygon:[rtsPoint(-RING.inner,-RING.inner),rtsPoint(-RING.inner,RING.inner),rtsPoint(RING.inner,RING.inner),rtsPoint(RING.inner,-RING.inner)]}];
+ for(const solid of map.solids)if(solid.collision){const poly=solidCorners(solid);obstacles.push({id:solid.id,polygon:poly.map(p=>rtsPoint(p.x,p.y))});}
+ const cabinets=map.cabinets.map(c=>({id:c.letter,x:c.x,z:c.y,destination:c.url||('pending:'+c.letter)}));
+ const landmarks=[{id:'spawn',x:map.spawn.x,z:map.spawn.y},{id:'runway',x:-450,z:-155},{id:'direction-forward',x:-460,z:-170},{id:'direction-backward',x:460,z:-170},{id:'direction-strafe',x:460,z:-170},{id:'direction-diagonal',x:-460,z:-170},{id:'wall-approach',x:450,z:-170}];
+ if(map.photoBooth){const p=boothPose(map.photoBooth,72,-30);landmarks.push({id:'photo-booth',x:p.x,z:p.y});}
+ const sectors=map.sectors.map(sec=>({id:sec.id,polygon:sec.poly.map(p=>rtsPoint(p[0],p[1]))})),portals=[];
+ for(const ln of map.lines)if(ln.back>=0&&!ln.blocking){const a=map.verts[ln.v1],b=map.verts[ln.v2],A='P'+ln.idx+'A',B='P'+ln.idx+'B';portals.push({id:A,from:map.sectors[ln.front].id,to:map.sectors[ln.back].id,reciprocalId:B,a:rtsPoint(a.x,a.y),b:rtsPoint(b.x,b.y)});portals.push({id:B,from:map.sectors[ln.back].id,to:map.sectors[ln.front].id,reciprocalId:A,a:rtsPoint(b.x,b.y),b:rtsPoint(a.x,a.y)});}
+ return{revision:VERSION,units:'in',boundary,obstacles,cabinets,landmarks,map:{revision:VERSION,cabinetMarkers:cabinets.map(c=>({id:c.id,x:c.x,z:c.z}))},testSpawns:[{id:'spawn',x:map.spawn.x,z:map.spawn.y,ang:map.spawn.ang},{id:'runway',x:-450,z:-155,ang:0},{id:'direction-forward',x:-460,z:-170,ang:0},{id:'direction-backward',x:460,z:-170,ang:0},{id:'direction-strafe',x:460,z:-170,ang:-Math.PI/2},{id:'direction-diagonal',x:-460,z:-170,ang:Math.PI/4},{id:'wall-approach',x:450,z:-170,ang:0}],sectors,entrySector:map.sectors[sim.sectorAt(map.spawn.x,map.spawn.y)].id,portals};
+}
+function rtsReset(o={}){const defs={spawn:{x:map.spawn.x,y:map.spawn.y,ang:map.spawn.ang},runway:{x:-450,y:-155,ang:0},'direction-forward':{x:-460,y:-170,ang:0},'direction-backward':{x:460,y:-170,ang:0},'direction-strafe':{x:460,y:-170,ang:-Math.PI/2},'direction-diagonal':{x:-460,y:-170,ang:Math.PI/4},'wall-approach':{x:450,y:-170,ang:0}},p=defs[o.spawnId||'spawn'];if(!p)throw new Error('unknown test spawn '+o.spawnId);const fresh=new Sim(map);Object.assign(sim,fresh);sim.x=p.x;sim.y=p.y;sim.ang=p.ang;sim.sector=sim.sectorAt(sim.x,sim.y);if(sim.sector<0)throw new Error('test spawn outside world '+(o.spawnId||'spawn'));clearLiveInput();simAcc=0;RTS_LAST_PATH=[{x:sim.x,y:sim.jumpZ,z:sim.y,grounded:sim.grounded}];return window.__FLOOR_RTS__.snapshot();}
+function rtsSnapshot(){const path=(RTS_LAST_PATH&&RTS_LAST_PATH.length?RTS_LAST_PATH:[{x:sim.x,y:sim.jumpZ,z:sim.y,grounded:sim.grounded}]);return{schemaVersion:1,units:'in',simTime:sim.t,worldRevision:VERSION,player:{x:sim.x,y:sim.jumpZ,z:sim.y,vx:sim.vx,vy:sim.vz,vz:sim.vy,radius:PLAYER_R,height:input.crouch?CROUCH_EYE:PLAYER_H,grounded:!!sim.grounded,requestedGait:sim.requestedGait,effectiveGait:sim.effectiveGait},input:{forward:(Number(input.fwd)||0)-(Number(input.back)||0),strafe:(Number(input.right)||0)-(Number(input.left)||0),sprint:!!input.run,crouch:!!input.crouch,jump:!!input.jump,heldCodes:Array.from(HELD_CODES).sort(),pointers:Array.from(ACTIVE_POINTERS).sort((a,b)=>a-b)},motionPath:path};}
+function rtsStep(dt){if(!RTS_MANUAL)throw new Error('manual clock not owned');const frameDt=Math.min(Number(dt)||0,.12);if(!(frameDt>0))throw new Error('invalid dt');simAcc=Math.min(.20,simAcc+frameDt);const fixedDt=1/KINETIC.simHz,all=[{x:sim.x,y:sim.jumpZ,z:sim.y,grounded:sim.grounded}];let steps=0;while(simAcc>=fixedDt&&steps<KINETIC.maxCatchupSteps){sim.step(fixedDt,input);for(const p of sim._motionPath.slice(1))all.push({x:p.x,y:p.z,z:p.y,grounded:p.grounded});simAcc-=fixedDt;steps++;}RTS_LAST_PATH=all;return rtsSnapshot();}
+if(new URLSearchParams(location.search).get('rts')==='1')window.__FLOOR_RTS__={schemaVersion:1,capabilities:['accepted-motion-path','portal-graph'],enterTestMode(){RTS_MANUAL=true;simAcc=0;last=performance.now();return{manualClock:true};},exitTestMode(){RTS_MANUAL=false;simAcc=0;last=performance.now();clearLiveInput();return{manualClock:false};},reset:rtsReset,input(cmd={}){input.fwd=cmd.forward>0?Math.min(1,cmd.forward):0;input.back=cmd.forward<0?Math.min(1,-cmd.forward):0;input.right=cmd.strafe>0?Math.min(1,cmd.strafe):0;input.left=cmd.strafe<0?Math.min(1,-cmd.strafe):0;input.run=cmd.sprint?1:0;input.crouch=cmd.crouch?1:0;input.jump=cmd.jump?1:0;if(cmd.jump)sim.queueJump();if(cmd.crouch)sim.beginSlide();return rtsSnapshot();},step:rtsStep,snapshot:rtsSnapshot,world:rtsWorld};
 const qs=new URLSearchParams(location.search);
 setPlaneBackend(qs.get('planeBackend')||qs.get('backend')||'auto');
 setPlaneMappingMode(qs.get('planes')||qs.get('plane')||'world');
 if(qs.get('koi')==='0'||qs.get('koi')==='off')setCelestialKoi(false);
 if(qs.get('koi')==='1'||qs.get('koi')==='on')setCelestialKoi(true);
-if(qs.get('view')==='booth'){const b=map.photoBooth;sim.x=b.x+102;sim.y=b.y-29;sim.ang=Math.PI;sim.sector=sim.sectorAt(sim.x,sim.y);}
-if(qs.get('view')==='boothinside'){const b=map.photoBooth;sim.x=b.x;sim.y=b.y-30;sim.ang=Math.PI;sim.sector=sim.sectorAt(sim.x,sim.y);}
+if(qs.get('view')==='booth'){const b=map.photoBooth,p=boothPose(b,120,-30);sim.x=p.x;sim.y=p.y;sim.ang=b.ang+Math.PI;sim.sector=sim.sectorAt(sim.x,sim.y);}
+if(qs.get('view')==='boothinside'){const b=map.photoBooth,p=boothPose(b,0,-30);sim.x=p.x;sim.y=p.y;sim.ang=b.ang;sim.sector=sim.sectorAt(sim.x,sim.y);}
 if(qs.get('preview')==='1')lockEl.classList.add('hidden');
 if(qs.get('ceiling')==='0')INDUSTRIAL_CEILING.enabled=false;
 // Optional shareable ceiling preview; normal gameplay spawn/view are unchanged.
