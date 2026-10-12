@@ -125,7 +125,7 @@ const RUNTIME_ERRORS=[];
 addEventListener('error',e=>{if(e.error||e.message)RUNTIME_ERRORS.push(String(e.error&&e.error.stack||e.message||e.error));});
 addEventListener('unhandledrejection',e=>RUNTIME_ERRORS.push(String(e.reason&&e.reason.stack||e.reason||'unhandled rejection')));
 
-const VERSION='fts-arcade-floor-2.0.1-keyboard-axis-hotfix';
+const VERSION='fts-arcade-floor-2.1.0-first-glb-cabinet';
 const TAU=Math.PI*2, DEG=Math.PI/180;
 // Dimensional contract: 1 engine unit = 1 inch.
 // =============================================================================
@@ -1127,6 +1127,8 @@ const AUTHORING={
   // Floor IV: the booth has an open center, physical walls, and a crouch-gated entrance.
   // 2.0.0 FLOOR III: moved from the west bank to the south-east shoulder, rotated to match the approved plan while preserving the south egress spine.
   photoBooth:{id:'CAT_CLUB_PEOPLES',enabled:true,x:152,y:-352,deg:65,w:112,d:76,h:105,stallRight:-56,stallLeft:-4,doorWidth:36,doorHeight:52},
+  // 2.1.0 first true 3D cabinet. Approved south-east shoulder: between the east exit/pizzeria face and photo booth, front aimed into the ring.
+  glbCabinets:[{id:'THIATRIS_GLB',label:'THIATRIS',src:'thiatris.glb',x:370,y:-190,deg:153,w:34,d:34,h:74,url:'https://frymatic.us/FTSArcade/ZITTRIS',cta:'PLAY ZITTRIS'}],
   cabinetAdditions:[
   {letter:'AA',deg:0,r:400},
   {letter:'AB',deg:70,r:400},
@@ -1329,6 +1331,8 @@ function buildLevel(){
  const islandN=(def)=>{const ang=def.deg*DEG,f={x:Math.cos(ang),y:Math.sin(ang)},r={x:Math.sin(ang),y:-Math.cos(ang)},pitch=CABINET_DIM.w+AUTHORING.packing.sideGap,put=(row,sgn)=>row.forEach((L,i)=>{const rs=(i-(row.length-1)/2)*pitch;addCab(L,def.cx+sgn*f.x*backSep+r.x*rs,def.cy+sgn*f.y*backSep+r.y*rs,ang+(sgn<0?Math.PI:0));});put(def.front,1);put(def.back,-1);
   for(const cp of(def.caps||[])){const sg=cp.side==='left'?-1:1,W=Math.max(def.front.length,def.back.length)*pitch-AUTHORING.packing.sideGap,off=sg*(W/2+AUTHORING.packing.sideGap+CABINET_DIM.d/2);addCab(cp.letter,def.cx+r.x*off,def.cy+r.y*off,Math.atan2(r.y*sg,r.x*sg));}};
  AUTHORING.cabinetSingles.forEach(c=>addCab(c.letter,c.x,c.y,c.deg*DEG));
+ // True GLB cabinets use their measured physical footprint for collision/interaction; visual triangles are loaded separately.
+ (AUTHORING.glbCabinets||[]).forEach(d=>{const g=boxSolid(d.id,d.x,d.y,d.deg*DEG,d.w,d.d,d.h,MAT.OFFICE_DARK,MAT.OFFICE_DARK,{kind:'cabinet',letter:'GLB',title:d.label,label:d.label,url:d.url,target:'_blank',cta:d.cta,collision:true,glb:true,glbSrc:d.src});g.parts=[];map.solids.push(g);map.targets.push(g);(map.glbCabinets||(map.glbCabinets=[])).push(g);});
  if(OPTS.layout==='nightlife')(AUTHORING.cabinetIslands||[]).forEach(islandN); // after A-Z so map.cabinets keeps its order
  if(OPTS.layout==='legacy')AUTHORING.cabinetAdditions.forEach(c=>{const a=c.deg*DEG;addCab(c.letter,Math.cos(a)*c.r,Math.sin(a)*c.r,a+Math.PI);});
 
@@ -1684,6 +1688,29 @@ function drawAffineTri(tex,s0,s1,s2,d0,d1,d2){
 function paintHorizontalFace(hf,shadeOf){const tex=wallTexture(hf.tex,shadeOf(hf.dist,hf.light),0);if(!tex)return;const p=hf.p,tw=tex.width,th=tex.height;drawAffineTri(tex,[0,0],[tw,0],[tw,th],p[0],p[1],p[2]);drawAffineTri(tex,[0,0],[tw,th],[0,th],p[0],p[2],p[3]);}
 
 // Plane backend split is deliberate: software path must never touch CanvasPattern.setTransform().
+// ---- 2.1.0 native GLB cabinet path ---------------------------------------------------------
+// No framework and no remote loader: parse the same-directory GLB directly, keep one textured mesh,
+// and project its triangles through the arcade's existing camera/depth contract.
+const GLB3D={items:[],ready:false,error:null,triangles:0};
+async function loadGLBCabinet(def){
+ try{
+  const ab=await fetch(def.glbSrc,{cache:'force-cache'}).then(r=>{if(!r.ok)throw Error(def.glbSrc+' HTTP '+r.status);return r.arrayBuffer();}),dv=new DataView(ab);
+  if(dv.getUint32(0,true)!==0x46546c67||dv.getUint32(4,true)!==2)throw Error('not glTF 2.0 binary');
+  const jl=dv.getUint32(12,true),jt=dv.getUint32(16,true);if(jt!==0x4e4f534a)throw Error('missing JSON chunk');
+  const json=JSON.parse(new TextDecoder().decode(new Uint8Array(ab,20,jl)).replace(/\0+$/,'')),bo=20+jl,bl=dv.getUint32(bo,true),bt=dv.getUint32(bo+4,true);if(bt!==0x004e4942)throw Error('missing BIN chunk');const bin=bo+8;
+  const acc=i=>{const a=json.accessors[i],v=json.bufferViews[a.bufferView],n={SCALAR:1,VEC2:2,VEC3:3,VEC4:4}[a.type],C={5126:Float32Array,5125:Uint32Array,5123:Uint16Array,5121:Uint8Array}[a.componentType];if(!C)throw Error('unsupported GLB component '+a.componentType);return new C(ab,bin+(v.byteOffset||0)+(a.byteOffset||0),a.count*n);};
+  const prim=json.meshes[0].primitives[0],pos=acc(prim.attributes.POSITION),uv=acc(prim.attributes.TEXCOORD_0),idx=acc(prim.indices),mat=json.materials[prim.material||0],tex=json.textures[mat.pbrMetallicRoughness.baseColorTexture.index],im=json.images[tex.source],bv=json.bufferViews[im.bufferView],blob=new Blob([new Uint8Array(ab,bin+(bv.byteOffset||0),bv.byteLength)],{type:im.mimeType||'image/png'}),image=await createImageBitmap(blob);
+  const min=json.accessors[prim.attributes.POSITION].min,max=json.accessors[prim.attributes.POSITION].max,height=max[1]-min[1],scale=def.h/height;
+  const item={def,pos,uv,idx,image,scale,min,max,order:new Array(idx.length/3)};GLB3D.items.push(item);GLB3D.triangles+=item.order.length;GLB3D.ready=true;return item;
+ }catch(err){GLB3D.error=String(err&&err.message||err);console.error('[FTS ARCADE] GLB cabinet',err);return null;}
+}
+function paintGLBCabinets(sim,d){if(!GLB3D.ready)return;const v=d.view,w=v.w,h=v.h;
+ for(const it of GLB3D.items){const D=it.def,ang=D.deg*DEG,fx=Math.cos(ang),fy=Math.sin(ang),rx=Math.sin(ang),ry=-Math.cos(ang),P=it.pos,U=it.uv,I=it.idx,S=it.scale,baseY=it.min[1],tris=it.order;let n=0;
+  for(let k=0;k<I.length;k+=3){const ids=[I[k],I[k+1],I[k+2]],q=[],uv=[];let depth=0,valid=true;for(const id of ids){const j=id*3,lx=P[j],lz=P[j+2],wx=D.x+fx*lz*S+rx*lx*S,wy=D.y+fy*lz*S+ry*lx*S,wz=(P[j+1]-baseY)*S,dx=wx-sim.x,dy=wy-sim.y,tz=dx*v.cosA+dy*v.sinA;if(tz<=NEAR+1){valid=false;break;}q.push({x:v.halfW+((dx*v.sinA-dy*v.cosA)/tz)*v.projDist,y:v.horizon-((wz-v.pz)*v.projDist)/tz,z:tz});uv.push([U[id*2]*it.image.width,(1-U[id*2+1])*it.image.height]);depth+=tz;}
+   if(!valid)continue;depth/=3;const cx=(q[0].x+q[1].x+q[2].x)/3,cy=(q[0].y+q[1].y+q[2].y)/3;if(cx<-20||cx>w+20||cy<-20||cy>h+20)continue;const ix=Math.max(0,Math.min(w-1,cx|0)),iy=Math.max(0,Math.min(h-1,cy|0)),occ=d.pixelDepth[iy*w+ix];if(Number.isFinite(occ)&&depth>occ+2)continue;tris[n++]={q,uv,depth};}
+  tris.length=n;tris.sort((a,b)=>b.depth-a.depth);ctx.imageSmoothingEnabled=true;for(const t of tris)drawAffineTri(it.image,t.uv[0],t.uv[1],t.uv[2],t.q[0],t.q[1],t.q[2]);ctx.imageSmoothingEnabled=false;
+ }}
+
 function paint(sim,d){const v=d.view,w=v.w,h=v.h;ctx.fillStyle='#03050a';ctx.fillRect(0,0,w,h);ctx.imageSmoothingEnabled=false;const zbuf=d.pixelDepth;zbuf.fill(Infinity);const shadeOf=(dist,light)=>Math.min(SHADES-1,Math.max(0,((Math.min(1,dist/RENDER.fogFar+(1-light)*.7))*(SHADES-1))|0));
  PLANE_STATS.patternTransforms=PLANE_STATS.softwareSpans=PLANE_STATS.softwarePixels=0;
  const planePattern=i=>{const y=d.sY[i],x0=d.sX0[i],x1=d.sX1[i],dist=d.sDist[i];if(y<0||y>=h||x1<x0)return;const p=flatPattern(d.sFlat[i],shadeOf(dist,d.sLight[i]));if(!p)return;const sec=sim.map.sectors[d.sSec[i]],frame=Geom.planeMaterialFrame(sec,PLANE_MAPPING.mode,sim.ang);const m=Geom.planePatternTransform(sim.x,sim.y,v.cosA,v.sinA,v.halfW,v.projDist,y,dist,frame.ang,frame.ox,frame.oy);if(m&&p.setTransform){PLANE_STATS.patternTransforms++;const pm=typeof DOMMatrix==='function'?new DOMMatrix([m.a,m.b,m.c,m.d,m.e,m.f]):m;p.setTransform(pm);}ctx.fillStyle=p;ctx.fillRect(x0,y,x1-x0+1,1);const off=y*w;for(let x=Math.max(0,x0);x<=Math.min(w-1,x1);x++)if(dist<zbuf[off+x])zbuf[off+x]=dist;};
@@ -1695,6 +1722,7 @@ function paint(sim,d){const v=d.view,w=v.w,h=v.h;ctx.fillStyle='#03050a';ctx.fil
  }else{
   PAINT_ORDER.length=d.sN+d.wN+d.hFaces.length;let on=0;for(let i=0;i<d.sN;i++)PAINT_ORDER[on++]=i;for(let i=0;i<d.wN;i++)PAINT_ORDER[on++]=0x1000000|i;for(let i=0;i<d.hFaces.length;i++)PAINT_ORDER[on++]=0x2000000|i;PAINT_ORDER.sort((a,b)=>{const ak=a>>>24,bk=b>>>24,ai=a&0xffffff,bi=b&0xffffff,ad=ak===0?d.sDist[ai]:(ak===1?d.wDist[ai]:d.hFaces[ai].dist),bd=bk===0?d.sDist[bi]:(bk===1?d.wDist[bi]:d.hFaces[bi].dist);return bd-ad||ak-bk;});for(const code of PAINT_ORDER){const k=code>>>24,i=code&0xffffff;if(k===0)planePattern(i);else if(k===1)wall(i);else paintHorizontalFace(d.hFaces[i],shadeOf);}
  }
+ paintGLBCabinets(sim,d);
  // Roof choreography is painted after opaque world geometry so its points can
  // consult the completed depth buffer, then the CRT treatment sits on top.
  const celestial=beginCelestialLayer(w,h);
@@ -1707,7 +1735,8 @@ function paint(sim,d){const v=d.view,w=v.w,h=v.h;ctx.fillStyle='#03050a';ctx.fil
 function drawMap(sim,w,h){const sc=Math.min(w,h)*.34/RING.outer,ox=w-RING.outer*sc-16,oy=RING.outer*sc+16,P=(x,y)=>[ox+x*sc,oy-y*sc];ctx.fillStyle='rgba(2,5,10,.72)';ctx.beginPath();ctx.arc(ox,oy,RING.outer*sc+8,0,TAU);ctx.fill();ctx.font='bold 9px monospace';ctx.textAlign='center';ctx.textBaseline='middle';for(const [q,pose] of Object.entries(CROWD_ZONE_POSES)){const qp=P(pose.x*.72,pose.y*.72),current=q===crowdQuadrantAt(sim.x,sim.y),opposite=q===CROWD_OPPOSITE[crowdQuadrantAt(sim.x,sim.y)];ctx.fillStyle=opposite?'rgba(255,255,255,.20)':(current?'rgba(255,201,95,.95)':'rgba(113,184,255,.65)');ctx.fillText(q,qp[0],qp[1]);}ctx.textAlign='start';ctx.textBaseline='alphabetic';for(const ln of sim.map.lines){const a=sim.map.verts[ln.v1],b=sim.map.verts[ln.v2],p=P(a.x,a.y),q=P(b.x,b.y);ctx.strokeStyle=ln.back>=0?'rgba(80,140,220,.25)':'rgba(210,220,235,.65)';ctx.lineWidth=ln.back>=0?.6:1.2;ctx.beginPath();ctx.moveTo(p[0],p[1]);ctx.lineTo(q[0],q[1]);ctx.stroke();}if(sim.map.photoBooth){const b=sim.map.photoBooth,cs=solidCorners(b).map(q=>P(q.x,q.y)),p=P(b.x,b.y);ctx.strokeStyle='#ffc95f';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(cs[0][0],cs[0][1]);for(let i=1;i<cs.length;i++)ctx.lineTo(cs[i][0],cs[i][1]);ctx.closePath();ctx.stroke();ctx.font='bold 8px monospace';ctx.fillStyle='#ffc95f';ctx.fillText('PHOTO BOOTH',p[0]-18,p[1]-b.w*.52*sc-5);}
 for(const c of sim.map.cabinets){const p=P(c.x,c.y);ctx.fillStyle='rgba(255,90,210,.74)';ctx.fillRect(p[0]-2,p[1]-2,4,4);ctx.fillStyle='rgba(255,255,255,.9)';ctx.font='5px monospace';ctx.fillText(c.letter,p[0]+3,p[1]-3);}for(const f of sim.map.fixtures){const p=P(f.x,f.y);ctx.fillStyle='rgba(100,190,255,.55)';ctx.fillRect(p[0]-1.5,p[1]-1.5,3,3);}for(const a of sim.map.ads){const p=P(a.x,a.y);ctx.fillStyle='rgba(255,201,95,.82)';ctx.fillRect(p[0]-2,p[1]-2,4,4);}for(const e of sim.map.exits){const p=P(e.x,e.y);ctx.fillStyle='rgba(255,91,69,.95)';ctx.fillRect(p[0]-3,p[1]-3,6,6);}const p=P(sim.x,sim.y);ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(p[0],p[1]);ctx.lineTo(p[0]+Math.cos(sim.ang)*12,p[1]-Math.sin(sim.ang)*12);ctx.stroke();ctx.fillStyle='#fff';ctx.fillRect(p[0]-2,p[1]-2,4,4);}
 
-const map=buildLevel(),MAP_ERRORS=MapBuilder.validate(map),sim=new Sim(map);const input={fwd:0,back:0,left:0,right:0,run:0,crouch:0,jump:0};
+const map=buildLevel(),MAP_ERRORS=MapBuilder.validate(map),sim=new Sim(map);
+(AUTHORING.glbCabinets||[]).forEach(loadGLBCabinet);const input={fwd:0,back:0,left:0,right:0,run:0,crouch:0,jump:0};
 const HELD_CODES=new Set(),ACTIVE_POINTERS=new Set();
 
 function findTarget(){if(photoBoothInside(map.photoBooth,sim.x,sim.y))return map.photoBooth.target;const ca=Math.cos(sim.ang),sa=Math.sin(sim.ang),all=map.targets;let best=null,bscore=1e9;for(const t of all){const tc=Math.cos(t.ang),ts=Math.sin(t.ang),dd=(t.d||10)/2+24,px=t.x+tc*dd,py=t.y+ts*dd,dx=px-sim.x,dy=py-sim.y,d2=dx*dx+dy*dy;if(d2>6084)continue;const dist=Math.sqrt(d2),dot=(dx*ca+dy*sa)/(dist||1);if(dot<.28)continue;const score=dist-dot*16;if(score<bscore){bscore=score;best=t;}}return best;}
@@ -1945,7 +1974,7 @@ const REF_TESTS={
  // Stage, DJ booth, speakers and their two signs are gone; nothing else references them.
  stageRemoved:()=>!map.solids.some(s=>/^(STAGE_|DJ_|SPEAKER_)/.test(s.id))&&!map.fixtures.some(f=>/^(STAGE_SIGN|DJ_SIGN)$/.test(f.id))&&AUTHORING.stageRotateDeg===undefined&&!/addStageBox|rotatePose/.test(String(buildLevel)),
  // Wall dressing, amenities, exits and cabinets never occupy the same footprint.
- wallItemsDisjoint:()=>{const items=map.solids.filter(s=>s.mount||s.kind==='exit'||s.kind==='cabinet');for(let i=0;i<items.length;i++)for(let j=i+1;j<items.length;j++)if(solidsOverlap(items[i],items[j]))return false;return items.length===map.cabinets.length+AUTHORING.windowFacets.length+AUTHORING.posters.length+AUTHORING.officeEntry.length+AUTHORING.amenities.length+AUTHORING.nightlife.length+map.exits.length;},
+ wallItemsDisjoint:()=>{const items=map.solids.filter(s=>s.mount||s.kind==='exit'||s.kind==='cabinet');for(let i=0;i<items.length;i++)for(let j=i+1;j<items.length;j++)if(solidsOverlap(items[i],items[j]))return false;return items.length===map.cabinets.length+(map.glbCabinets||[]).length+AUTHORING.windowFacets.length+AUTHORING.posters.length+AUTHORING.officeEntry.length+AUTHORING.amenities.length+AUTHORING.nightlife.length+map.exits.length;},
  // Every provided art piece is placed at least once, and no face is stretched off its source aspect.
  atlasFullyPlaced:()=>{const placed=new Set(map.solids.filter(s=>s.art).map(s=>s.art));AUTHORING.officeEntry.forEach(d=>placed.add(d.mat.replace(/^FIX_/,'')));return Object.keys(FIXTURE_ART).length===25&&Object.keys(FIXTURE_ART).every(k=>placed.has(k));},
  fixtureArtAspect:()=>{const a=map.solids.filter(s=>s.art);return a.length===AUTHORING.amenities.length+AUTHORING.posters.length+AUTHORING.windowFacets.length+AUTHORING.nightlife.length&&a.every(s=>{const r=FIXTURE_ART[s.art].rect,p=s.parts[0];return Math.abs(s.w/(p.z1-p.z0)-r[2]/r[3])<.01;})&&AUTHORING.officeEntry.every(d=>{const r=FIXTURE_ART[d.mat.replace(/^FIX_/,'')].rect;return Math.abs(d.w/(d.z1-d.z0)-r[2]/r[3])<.01;});},
@@ -2015,7 +2044,7 @@ const REF_TESTS={
  // The 8 ring windows are ordering windows: unique unit ids, order URL with ?window=, none left in the ad list.
  orderWindows:()=>{const w=map.fixtures.filter(f=>f.kind==='order');return w.length===8&&w.length===AUTHORING.windowFacets.length&&new Set(w.map(x=>x.window)).size===8&&w.every(x=>x.url===orderUrl(x.window)&&x.url.startsWith(PORTALS.order)&&x.cta==='ORDER FOOD'&&map.targets.includes(x)&&!map.ads.includes(x)&&/^FTS-RING-0[1-8]$/.test(x.window));},
  // EVERYTHING has a context menu: every solid on the floor is a target with a destination and a name.
- everySolidHasContextMenu:()=>{const known=new Set(['cabinet','exit','token','ad','order','dressing']);return map.solids.filter(s=>!s.booth).length===map.cabinets.length+map.exits.length+AUTHORING.posters.length+AUTHORING.officeEntry.length+AUTHORING.wallPortals.length+AUTHORING.amenities.length+AUTHORING.windowFacets.length+AUTHORING.nightlife.length&&map.solids.filter(s=>!s.booth).every(s=>map.targets.includes(s)&&(!!s.url||s.pending===true)&&!!(s.label||s.title)&&known.has(s.kind));},
+ everySolidHasContextMenu:()=>{const known=new Set(['cabinet','exit','token','ad','order','dressing']);return map.solids.filter(s=>!s.booth).length===map.cabinets.length+(map.glbCabinets||[]).length+map.exits.length+AUTHORING.posters.length+AUTHORING.officeEntry.length+AUTHORING.wallPortals.length+AUTHORING.amenities.length+AUTHORING.windowFacets.length+AUTHORING.nightlife.length&&map.solids.filter(s=>!s.booth).every(s=>map.targets.includes(s)&&(!!s.url||s.pending===true)&&!!(s.label||s.title)&&known.has(s.kind));},
  // ...and every menu resolves to its own confirm copy (no fixture falls through to the generic EXIT dialog).
  contextMenusResolve:()=>{const eb={booth:'CAT CLUB x PEOPLES',cabinet:'LEAVE FTS ARCADE?',exit:'LEAVE FTS ARCADE?',token:'TOKEN PURCHASE',ad:'PROGRAMMATIC INVENTORY',order:'FOOD SERVICE',dressing:'WALL PORTAL'};let ok=map.targets.filter(t=>t.kind!=='booth').length===map.solids.filter(s=>!s.booth).length,opens=0;const wo=window.open;window.open=()=>{opens++;return null;};try{for(const t of map.targets){openConfirm(t);const shown=modal.classList.contains('show')&&modalTarget===t&&modalTitle.textContent.length>1&&modalEyebrow.textContent===(t.pending?'COMING SOON':eb[t.kind])&&(t.pending||t.kind==='booth'?confirmBtn.style.display==='none':confirmBtn.textContent.length>1)&&(t.kind==='cabinet'||t.kind==='exit'||modalCopy.textContent.indexOf('Use this exit')<0);if(t.pending){const before=opens;leaveArcade();if(opens!==before)ok=false;}closeConfirm(false);if(!shown)ok=false;}}finally{window.open=wo;}return ok&&opens===0&&!modal.classList.contains('show')&&modalTarget===null&&confirmBtn.style.display==='';},
  // A cabinet with no destination yet (AC) is menu-only: it must never navigate.
@@ -2029,7 +2058,7 @@ const REF_TESTS={
  assetDimensions:()=>{const m=IMG.meta;return m.world&&((m.world[0]===1024&&m.world[1]===1024)||Math.abs(m.world[0]/m.world[1]-WORLD_ATLAS_V2.ref[0]/WORLD_ATLAS_V2.ref[1])<.03)&&['cab1','cab2','cab3','cab4'].every(k=>m[k]&&m[k][0]===1254&&m[k][1]===1254)&&m.screen&&m.screen[0]===2048&&m.screen[1]===1433&&m.fixture&&Math.abs(m.fixture[0]/m.fixture[1]-FIXTURE_ATLAS_META.width/FIXTURE_ATLAS_META.height)<.002&&m.fixture[0]>=1024&&m.fixture2&&Math.abs(m.fixture2[0]/m.fixture2[1]-FIXTURE2_META.width/FIXTURE2_META.height)<.002&&m.cabinetRef&&m.cabinetRef[0]===767&&m.cabinetRef[1]===1432&&PACKAGE_ASSET_KEYS.every(k=>m[k]&&m[k][0]===1024&&m[k][1]===1024);},
  assetsReady:()=>IMG.ready&&IMG.errors.length===0,
  sourceAtlasesReleased:()=>!IMG.artBaked||IMG.sourcesReleased,
- staticRenderGeometry:()=>map.solids.every(s=>s._render&&(s.kind==='booth-gate'||s._render.faces.length>0)&&Number.isFinite(s._render.radius)),
+ staticRenderGeometry:()=>map.solids.every(s=>s._render&&(s.glb||s.kind==='booth-gate'||s._render.faces.length>0)&&Number.isFinite(s._render.radius)),
  leanWallReserve:()=>!dl||dl.wX.length<=RW*PERF.wallSpanMaxFactor,
  lazyShadeBanks:()=>texBank.length===MATERIALS.length&&flatBank.length===MATERIALS.length&&shadeTileBank.length===MATERIALS.length,
  noFrameOriginTrap:()=>document.querySelectorAll('iframe,frame').length===0,
@@ -2046,6 +2075,10 @@ const REF_TESTS={
  westBankIsStraight:()=>{const b=['K','J','L'].map(L=>map.cabinets.find(c=>c.letter===L));return b.every(Boolean)&&b.every(c=>Math.abs(c.x-b[0].x)<.01&&Math.abs(c.ang-b[0].ang)<1e-9)&&Math.abs((b[0].y-b[1].y)-(b[1].y-b[2].y))<.01&&cabinetClearOfOffice(b[0])&&cabinetClearOfOffice(b[1])&&cabinetClearOfOffice(b[2]);},
  amenityScaleWithinIndustryRange:()=>Object.entries(INDUSTRY_DIMS_IN).every(([k,R])=>{const F=artSize(k);return F.h>=R.h[0]&&F.h<=R.h[1]&&F.w>=R.w[0]&&F.w<=R.w[1];})&&artSize('JUKEBOX').h<=PLAYER_H&&artSize('VEND_SNACK').h<=PLAYER_H+2,
  nightlifeFacetsClearOfExits:()=>{const step=TAU/RING.sides;return AUTHORING.nightlife.every(d=>{const am=(d.facet+.5)*step;return map.exits.every(e=>{let da=Math.abs(Math.atan2(Math.sin(am-Math.atan2(e.y,e.x)),Math.cos(am-Math.atan2(e.y,e.x))));return da>step*1.4;});});},
+ glbCabinetAuthored:()=>AUTHORING.glbCabinets.length===1&&AUTHORING.glbCabinets[0].src==='thiatris.glb'&&AUTHORING.glbCabinets[0].url.endsWith('/ZITTRIS'),
+ glbCabinetPlaced:()=>{const g=(map.glbCabinets||[])[0];return !!g&&g.x>0&&g.y<0&&g.h===74&&!map.cabinets.some(c=>solidsOverlap(c,g,.01))&&!Egress.blockers(map).some(b=>b.by===g.id);},
+ glbCabinetInteractive:()=>{const g=(map.glbCabinets||[])[0];return !!g&&map.targets.includes(g)&&g.kind==='cabinet'&&g.collision===true;},
+ glbRuntimeContract:()=>!GLB3D.error&&(!GLB3D.ready||GLB3D.triangles>100),
  runtimeClean:()=>RUNTIME_ERRORS.length===0
 };
 function runRefTests(){
@@ -2056,7 +2089,7 @@ function runRefTests(){
  }
  return{version:VERSION,pass:failures.length===0,passed:Object.values(results).filter(v=>v===true).length,total:Object.keys(REF_TESTS).length,failures,results,mapErrors:MAP_ERRORS.slice(),assetErrors:IMG.errors.slice(),runtimeErrors:RUNTIME_ERRORS.slice(),screenAtlas:SCREEN_ATLAS_META};
 }
-window.__FTS_ARCADE__={baseTile,IMG,input,photoBoothInside,boothPose,boothLocal,barberPolePose,BOOTH_UV,Cluster,Egress,Flooring,WorldAtlas,OPTS,WORLD_ATLAS_V2,ready:()=>!!IMG.artBaked,VERSION,map,sim,MapBuilder,Geom,RenderCore,DrawLists,MATERIALS,MAP_ERRORS,CABINET_ROSTER,CABINET_DIM,AISLE,PORTALS,ASSET_NAMES,CABINET_PART_RECTS,CABINET_REF_RECTS,PACKAGE_CABINETS,PACKAGE_ATLAS_META,PACKAGE_ATLAS_RECTS,PACKAGE_ASSET_KEYS,SCREEN_ATLAS_META,SCREEN_RECTS,screenRect,AUTHORING,FIXTURE_ART,FIXTURE_TEX,artSize,KINETIC,JUMP,RENDER,PERF,RING,CABINET_LAYOUT_SNAPSHOT,cabinetLayoutSignature:()=>cabinetLayoutSignature(map),PLATFORM,PLANE_BACKEND,PLANE_STATS,setPlaneBackend,togglePlaneBackend,PLANE_MAPPING,setPlaneMappingMode,togglePlaneMapping,MOUSE_LOOK_SENS,TOUCH_LOOK_SENS,SpatialCrowd,CROWD_AUDIO_URL,CROWD_QUADRANTS,CROWD_OPPOSITE,CROWD_ZONE_POSES,crowdQuadrantAt,crowdDesiredFor,INDUSTRIAL_CEILING,CEILING_MESH,CEILING_STATS,CELESTIAL_LAYER,KOI_SPHERE_CACHE,paintIndustrialCeiling,paintCelestialSphere,clipCelestialNear,CELESTIAL_KOI,CELESTIAL_KOI_MAP,CELESTIAL_KOI_SAMPLES,CELESTIAL_KOI_STATS,celestialKoiPoint,projectWorldPoint,getDrawList:()=>dl,setCelestialKoi,toggleCelestialKoi,paintCelestialKoi,solidAabb,cabinetClearOfOffice,exportAuthoring:()=>JSON.stringify(AUTHORING,null,2),tests:REF_TESTS,runTests:runRefTests};
+window.__FTS_ARCADE__={GLB3D,loadGLBCabinet,paintGLBCabinets,baseTile,IMG,input,photoBoothInside,boothPose,boothLocal,barberPolePose,BOOTH_UV,Cluster,Egress,Flooring,WorldAtlas,OPTS,WORLD_ATLAS_V2,ready:()=>!!IMG.artBaked,VERSION,map,sim,MapBuilder,Geom,RenderCore,DrawLists,MATERIALS,MAP_ERRORS,CABINET_ROSTER,CABINET_DIM,AISLE,PORTALS,ASSET_NAMES,CABINET_PART_RECTS,CABINET_REF_RECTS,PACKAGE_CABINETS,PACKAGE_ATLAS_META,PACKAGE_ATLAS_RECTS,PACKAGE_ASSET_KEYS,SCREEN_ATLAS_META,SCREEN_RECTS,screenRect,AUTHORING,FIXTURE_ART,FIXTURE_TEX,artSize,KINETIC,JUMP,RENDER,PERF,RING,CABINET_LAYOUT_SNAPSHOT,cabinetLayoutSignature:()=>cabinetLayoutSignature(map),PLATFORM,PLANE_BACKEND,PLANE_STATS,setPlaneBackend,togglePlaneBackend,PLANE_MAPPING,setPlaneMappingMode,togglePlaneMapping,MOUSE_LOOK_SENS,TOUCH_LOOK_SENS,SpatialCrowd,CROWD_AUDIO_URL,CROWD_QUADRANTS,CROWD_OPPOSITE,CROWD_ZONE_POSES,crowdQuadrantAt,crowdDesiredFor,INDUSTRIAL_CEILING,CEILING_MESH,CEILING_STATS,CELESTIAL_LAYER,KOI_SPHERE_CACHE,paintIndustrialCeiling,paintCelestialSphere,clipCelestialNear,CELESTIAL_KOI,CELESTIAL_KOI_MAP,CELESTIAL_KOI_SAMPLES,CELESTIAL_KOI_STATS,celestialKoiPoint,projectWorldPoint,getDrawList:()=>dl,setCelestialKoi,toggleCelestialKoi,paintCelestialKoi,solidAabb,cabinetClearOfOffice,exportAuthoring:()=>JSON.stringify(AUTHORING,null,2),tests:REF_TESTS,runTests:runRefTests};
 
 function rtsPoint(x,y){return{x,z:y};}
 function rtsWorld(){
