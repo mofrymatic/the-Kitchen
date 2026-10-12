@@ -125,7 +125,7 @@ const RUNTIME_ERRORS=[];
 addEventListener('error',e=>{if(e.error||e.message)RUNTIME_ERRORS.push(String(e.error&&e.error.stack||e.message||e.error));});
 addEventListener('unhandledrejection',e=>RUNTIME_ERRORS.push(String(e.reason&&e.reason.stack||e.reason||'unhandled rejection')));
 
-const VERSION='fts-arcade-floor-2.1.0-first-glb-cabinet';
+const VERSION='fts-arcade-floor-2.1.1-glb-loader-contract';
 const TAU=Math.PI*2, DEG=Math.PI/180;
 // Dimensional contract: 1 engine unit = 1 inch.
 // =============================================================================
@@ -1691,17 +1691,18 @@ function paintHorizontalFace(hf,shadeOf){const tex=wallTexture(hf.tex,shadeOf(hf
 // ---- 2.1.0 native GLB cabinet path ---------------------------------------------------------
 // No framework and no remote loader: parse the same-directory GLB directly, keep one textured mesh,
 // and project its triangles through the arcade's existing camera/depth contract.
-const GLB3D={items:[],ready:false,error:null,triangles:0};
+const GLB3D={items:[],ready:false,error:null,triangles:0,expectedTriangles:2752,loaded:0};
 async function loadGLBCabinet(def){
  try{
-  const ab=await fetch(def.glbSrc,{cache:'force-cache'}).then(r=>{if(!r.ok)throw Error(def.glbSrc+' HTTP '+r.status);return r.arrayBuffer();}),dv=new DataView(ab);
+  const glbSrc=def.glbSrc||def.src;if(!glbSrc)throw Error('GLB cabinet missing src');
+  const ab=await fetch(glbSrc,{cache:'force-cache'}).then(r=>{if(!r.ok)throw Error(glbSrc+' HTTP '+r.status);return r.arrayBuffer();}),dv=new DataView(ab);
   if(dv.getUint32(0,true)!==0x46546c67||dv.getUint32(4,true)!==2)throw Error('not glTF 2.0 binary');
   const jl=dv.getUint32(12,true),jt=dv.getUint32(16,true);if(jt!==0x4e4f534a)throw Error('missing JSON chunk');
   const json=JSON.parse(new TextDecoder().decode(new Uint8Array(ab,20,jl)).replace(/\0+$/,'')),bo=20+jl,bl=dv.getUint32(bo,true),bt=dv.getUint32(bo+4,true);if(bt!==0x004e4942)throw Error('missing BIN chunk');const bin=bo+8;
   const acc=i=>{const a=json.accessors[i],v=json.bufferViews[a.bufferView],n={SCALAR:1,VEC2:2,VEC3:3,VEC4:4}[a.type],C={5126:Float32Array,5125:Uint32Array,5123:Uint16Array,5121:Uint8Array}[a.componentType];if(!C)throw Error('unsupported GLB component '+a.componentType);return new C(ab,bin+(v.byteOffset||0)+(a.byteOffset||0),a.count*n);};
   const prim=json.meshes[0].primitives[0],pos=acc(prim.attributes.POSITION),uv=acc(prim.attributes.TEXCOORD_0),idx=acc(prim.indices),mat=json.materials[prim.material||0],tex=json.textures[mat.pbrMetallicRoughness.baseColorTexture.index],im=json.images[tex.source],bv=json.bufferViews[im.bufferView],blob=new Blob([new Uint8Array(ab,bin+(bv.byteOffset||0),bv.byteLength)],{type:im.mimeType||'image/png'}),image=await createImageBitmap(blob);
   const min=json.accessors[prim.attributes.POSITION].min,max=json.accessors[prim.attributes.POSITION].max,height=max[1]-min[1],scale=def.h/height;
-  const item={def,pos,uv,idx,image,scale,min,max,order:new Array(idx.length/3)};GLB3D.items.push(item);GLB3D.triangles+=item.order.length;GLB3D.ready=true;return item;
+  const item={def,pos,uv,idx,image,scale,min,max,order:new Array(idx.length/3)};GLB3D.items.push(item);GLB3D.triangles+=item.order.length;GLB3D.loaded++;GLB3D.ready=GLB3D.loaded===(AUTHORING.glbCabinets||[]).length;return item;
  }catch(err){GLB3D.error=String(err&&err.message||err);console.error('[FTS ARCADE] GLB cabinet',err);return null;}
 }
 function paintGLBCabinets(sim,d){if(!GLB3D.ready)return;const v=d.view,w=v.w,h=v.h;
@@ -2078,7 +2079,7 @@ const REF_TESTS={
  glbCabinetAuthored:()=>AUTHORING.glbCabinets.length===1&&AUTHORING.glbCabinets[0].src==='thiatris.glb'&&AUTHORING.glbCabinets[0].url.endsWith('/ZITTRIS'),
  glbCabinetPlaced:()=>{const g=(map.glbCabinets||[])[0];return !!g&&g.x>0&&g.y<0&&g.h===74&&!map.cabinets.some(c=>solidsOverlap(c,g,.01))&&!Egress.blockers(map).some(b=>b.by===g.id);},
  glbCabinetInteractive:()=>{const g=(map.glbCabinets||[])[0];return !!g&&map.targets.includes(g)&&g.kind==='cabinet'&&g.collision===true;},
- glbRuntimeContract:()=>!GLB3D.error&&(!GLB3D.ready||GLB3D.triangles>100),
+ glbRuntimeContract:()=>!GLB3D.error&&GLB3D.ready&&GLB3D.loaded===AUTHORING.glbCabinets.length&&GLB3D.triangles===GLB3D.expectedTriangles&&GLB3D.items.every(it=>it.image&&it.image.width>0&&it.image.height>0),
  runtimeClean:()=>RUNTIME_ERRORS.length===0
 };
 function runRefTests(){
