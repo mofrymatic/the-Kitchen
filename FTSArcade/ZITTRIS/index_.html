@@ -6,6 +6,10 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ZITTRIS">
+<link rel="apple-touch-icon" href="./zittris-icon-192.png">
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="theme-color" content="#020813">
 <title>ZITTRIS · FTS ARCADE</title>
 
 <!-- ── Primary Meta ─────────────────────────────────────────────── -->
@@ -219,6 +223,24 @@ body.theme-night #dpad-art[data-dir] .dp-arrow[data-arrow]{filter:none}
   body.nui-active #nui-pause{top:max(6px,env(safe-area-inset-top));right:max(8px,env(safe-area-inset-right))}
   body.nui-active #btn-settings-floating{top:max(6px,env(safe-area-inset-top));right:max(62px,calc(env(safe-area-inset-right) + 60px))}
 }
+/* Router-cut legends: the letterforms are recessed into the button material.
+   No separate badge/plaque is drawn, so the label reads as moulded hardware. */
+.nb-act .nb-lbl{
+  display:inline-block;max-width:94%;white-space:nowrap;padding:1px 2px 0;
+  font:950 clamp(8px,1.55vw,10px)/1.08 ui-monospace,'SFMono-Regular',Menlo,monospace;
+  letter-spacing:.055em;text-transform:uppercase;background:none;border:0;box-shadow:none;
+  color:var(--engrave-face,rgba(2,15,24,.72));
+  -webkit-text-stroke:.28px var(--engrave-edge,rgba(0,0,0,.32));
+  text-shadow:
+    0 -1px 0 var(--engrave-shadow,rgba(0,0,0,.72)),
+    0  1px 0 var(--engrave-lift,rgba(255,255,255,.34)),
+    1px 0 0 rgba(0,0,0,.12),-1px 0 0 rgba(255,255,255,.08);
+  -webkit-font-smoothing:antialiased;opacity:.96;
+}
+.nb-hold{--engrave-face:#68430b;--engrave-shadow:#2d1904;--engrave-lift:#ffe7a8b8;--engrave-edge:#4a2a06}
+.nb-rotate-gc{--engrave-face:#073f54;--engrave-shadow:#012a39;--engrave-lift:#b9fbffb8;--engrave-edge:#045069}
+.nb-slam{--engrave-face:#781326;--engrave-shadow:#430714;--engrave-lift:#ffd6d0b8;--engrave-edge:#8e2030}
+@media(orientation:landscape) and (max-height:360px){.nb-act .nb-lbl{padding:0 1px;font-size:8px}}
 @media(prefers-reduced-motion:reduce){.nb-act{transition:none}}
 /* FTS control pigments and a shorter portrait deck leave more room for the well. */
 #dpad{--dp-shell-hi:#b7d2df;--dp-shell-mid:#4886a7;--dp-shell-lo:#102d49;--dp-olive-hi:#65e8ff;--dp-olive-lo:#087caa;--dp-key-hi:#416b84;--dp-key-mid:#204158;--dp-key-lo:#0b233a;--dp-arrow:#85d9ed;--dp-arrow-on:#fff7e2}
@@ -375,6 +397,28 @@ body::after{
 #crt{background:repeating-linear-gradient(rgba(0,0,0,0) 0 2px,rgba(0,0,0,.13) 3px 4px),radial-gradient(ellipse at center,rgba(0,0,0,0) 52%,rgba(0,0,0,.64) 100%);mix-blend-mode:normal}
 @media(max-width:900px){#menu-layer::before,#menu-layer::after{display:none}}
 
+
+/* Light-footprint install guide. Ordinary browser tab is always playable. */
+#install-backdrop{z-index:115}
+.install-panel{width:min(570px,94vw);max-height:calc(100dvh - 22px);overflow:auto;
+  background:linear-gradient(160deg,#071b31,#020811);border:1px solid #48dcff;
+  border-radius:14px;padding:clamp(18px,4vw,30px);color:#e1f5ff;
+  box-shadow:0 0 25px #119aff36;font-family:ui-monospace,'SFMono-Regular',Menlo,monospace}
+.install-panel h2{color:#70ebff;font-size:clamp(21px,3vw,33px);line-height:1.12;margin-bottom:10px}
+.install-panel p{color:#bad9ec;font-size:13px;line-height:1.6;margin-bottom:14px}
+.install-panel ol{padding-left:25px;margin-bottom:18px}
+.install-panel li{padding:6px 0;font-size:14px;line-height:1.45}
+.install-actions{display:flex;gap:9px;flex-wrap:wrap}
+.install-actions button{flex:1;min-width:112px}
+.install-meta{margin-bottom:12px;color:#ffc449;font-size:11px;font-weight:800;letter-spacing:.08em}
+#settings-install{min-height:44px;font-size:12px;justify-content:center}
+.install-route-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;margin:0 0 12px;padding:9px 10px;border:1px solid rgba(72,220,255,.22);background:rgba(2,9,20,.62)}
+.install-route-row label{font-size:10px;color:#85bdd7;letter-spacing:.08em;font-weight:900;text-transform:uppercase}
+.install-route-row select{max-width:260px;background:#061327;color:#e8fbff;border:1px solid rgba(65,207,255,.48);padding:8px 9px;font-weight:800}
+#install-nudge{position:fixed;left:50%;bottom:max(12px,env(safe-area-inset-bottom));z-index:92;transform:translateX(-50%);width:min(560px,calc(100vw - 24px));padding:12px;display:flex;align-items:center;gap:12px;border:1px solid rgba(72,220,255,.56);background:linear-gradient(180deg,rgba(5,22,44,.97),rgba(2,8,20,.98));box-shadow:0 10px 30px rgba(0,0,0,.48),0 0 22px rgba(22,155,255,.18);font-family:ui-monospace,'SFMono-Regular',Menlo,monospace}
+#install-nudge strong{display:block;color:#70ebff;font-size:12px;letter-spacing:.06em}#install-nudge small{display:block;color:#94b9cd;font-size:10px;line-height:1.4;margin-top:3px}.install-nudge-actions{margin-left:auto;display:flex;gap:7px;flex:0 0 auto}.install-nudge-actions button{min-height:34px;padding:6px 9px;font-size:10px}
+@media(max-width:620px){#install-nudge{align-items:stretch;flex-direction:column}.install-nudge-actions{margin-left:0;width:100%}.install-nudge-actions button{flex:1}.install-route-row{grid-template-columns:1fr}.install-route-row select{max-width:none;width:100%}}
+
 </style>
 </head>
 <body>
@@ -398,6 +442,8 @@ body::after{
       <button class="arcade-btn primary" id="menu-start">▶ START GAME</button>
       <button class="arcade-btn" id="menu-settings">⚙ SETTINGS</button>
       <button class="arcade-btn" id="menu-how">? HOW TO PLAY</button>
+      <button class="arcade-btn" id="menu-focus">⛶ FOCUS MODE</button>
+      <button class="arcade-btn" id="menu-install">⌂ ADD TO HOME SCREEN</button>
       <button class="arcade-btn" id="menu-back">↩ BACK TO ARCADE</button>
     </div>
     <div class="start-options">
@@ -444,7 +490,7 @@ body::after{
 
         <section class="settings-group"><h3>Audio & Feedback</h3>
           <label class="setting-row"><span class="setting-copy"><strong>Music Theme</strong><small>Select the melodic composition independently from its arrangement. Every theme can be played through every music style.</small><small id="music-theme-detail" class="music-style-detail">Theme A · source-derived 8-bar contour.</small></span><span class="setting-control"><select name="musicTheme"><option value="theme_a">THEME A</option><option value="theme_b">THEME B</option><option value="theme_c">THEME C</option></select></span></label>
-          <label class="setting-row"><span class="setting-copy"><strong>Music Style</strong><small>Seventeen subgenre arrangements, all filtered through 42% Intaglio Galactica, frymatic legato bass, and the eardar-safe transient contour.</small><small id="music-style-detail" class="music-style-detail">Med Wave — exotic electronic music blending classical piano, electronic beats, and Greek folk traditions; hypnotic, cinematic, and ritualistic.</small></span><span class="setting-control"><select name="musicStyle"><option value="med_wave">MED WAVE</option><option value="witch_house">WITCH HOUSE</option><option value="g_funk">G-FUNK</option><option value="klezmer">KLEZMER</option><option value="jungle">JUNGLE</option><option value="uk_rnb">UK R&amp;B</option><option value="acidcore">ACIDCORE</option><option value="deep_house">DEEP HOUSE</option><option value="trap">TRAP</option><option value="uk_drill">UK DRILL</option><option value="psytrance">PSYTRANCE</option><option value="triphop">TRIP-HOP</option><option value="dubstep">DUBSTEP</option><option value="liquid_dnb">LIQUID D&amp;B</option><option value="viking_metal">VIKING METAL</option><option value="industrial_techno">INDUSTRIAL TECHNO</option><option value="thaitris">THAITRIS</option></select></span></label>
+          <label class="setting-row"><span class="setting-copy"><strong>Music Style</strong><small>Eighteen selectable subgenre arrangements, all filtered through 42% Intaglio Galactica, frymatic legato bass, and the eardar-safe transient contour.</small><small id="music-style-detail" class="music-style-detail">Med Wave — exotic electronic music blending classical piano, electronic beats, and Greek folk traditions; hypnotic, cinematic, and ritualistic.</small></span><span class="setting-control"><select name="musicStyle"><option value="med_wave">MED WAVE</option><option value="witch_house">WITCH HOUSE</option><option value="g_funk">G-FUNK</option><option value="klezmer">KLEZMER</option><option value="jungle">JUNGLE</option><option value="uk_rnb">UK R&amp;B</option><option value="acidcore">ACIDCORE</option><option value="deep_house">DEEP HOUSE</option><option value="trap">TRAP</option><option value="uk_drill">UK DRILL</option><option value="psytrance">PSYTRANCE</option><option value="triphop">TRIP-HOP</option><option value="dubstep">DUBSTEP</option><option value="liquid_dnb">LIQUID D&amp;B</option><option value="viking_metal">VIKING METAL</option><option value="industrial_techno">INDUSTRIAL TECHNO</option><option value="thaitris_bra">THAITRIS · BRA (SAMBA)</option><option value="thaitris_ita">THAITRIS · ITA (MANDOLIN)</option></select></span></label>
           <label class="setting-row"><span class="setting-copy"><strong>Sound Effects</strong><small>Movement, rotation, landing, line-clear, and game-over synthesis.</small></span><span class="setting-control"><span class="switch"><input name="sfxEnabled" type="checkbox"><span></span></span></span></label>
           <label class="setting-row"><span class="setting-copy"><strong>Background Music</strong><small>Adaptive 128 BPM arrangement during active, unpaused play.</small></span><span class="setting-control"><span class="switch"><input name="bgmEnabled" type="checkbox"><span></span></span></span></label>
           <label class="setting-row"><span class="setting-copy"><strong>Touch Haptics</strong><small>Use short vibration cues for locks and clears where supported.</small></span><span class="setting-control"><span class="switch"><input name="hapticsEnabled" type="checkbox"><span></span></span></span></label>
@@ -472,6 +518,7 @@ body::after{
         </section>
       </div>
       <footer class="settings-foot">
+        <button type="button" class="arcade-btn" id="settings-install">⌂ INSTALL GUIDE</button>
         <button type="button" class="arcade-btn" id="settings-reset">↻ RESET DEFAULTS</button>
         <button type="button" class="arcade-btn" id="settings-cancel">× CANCEL</button>
         <button type="submit" class="arcade-btn save">▣ SAVE & CLOSE</button>
@@ -484,6 +531,27 @@ body::after{
   <section class="how-panel" role="dialog" aria-modal="true" aria-labelledby="how-title"><h2 id="how-title">HOW TO PLAY</h2><p>Stack tetrominoes into complete horizontal lines. Keep the well open, chain difficult clears, and use the selected rotation system deliberately.</p><ul><li><span class="kbd">← →</span> Move · <span class="kbd">↓</span> Soft drop · <span class="kbd">SPACE</span> Hard drop</li><li><span class="kbd">↑ / X</span> Rotate clockwise · <span class="kbd">Z</span> Counter-clockwise · <span class="kbd">A</span> 180°</li><li><span class="kbd">C / SHIFT</span> Hold · <span class="kbd">P / ESC</span> Pause · <span class="kbd">O / S</span> Settings</li><li><b>SRS</b> supports modern wall/floor kicks. <b>ARS</b> is tighter, right-biased, and favors TGM-style placement discipline.</li></ul><button class="arcade-btn" id="how-close">CLOSE</button></section>
 </div>
 
+
+
+<div class="modal-backdrop ui-hidden" id="install-backdrop" role="presentation">
+  <section class="install-panel" role="dialog" aria-modal="true" aria-labelledby="install-title">
+    <div class="install-meta">FTS ARCADE · OPTIONAL · FREE FOREVER</div>
+    <h2 id="install-title">MAKE ZITTRIS YOURS</h2>
+    <p id="install-caption">Play in your browser now. Optionally add to your Home Screen for a cleaner, app-like window.</p>
+    <div class="install-route-row"><label for="install-route">Instructions for</label><select id="install-route" aria-label="Choose installation instructions"><option value="auto">AUTO DETECT</option><option value="ios_safari">IPHONE / IPAD · SAFARI</option><option value="ios_other">IPHONE / IPAD · OTHER</option><option value="android_chrome">ANDROID · CHROME</option><option value="android_firefox">ANDROID · FIREFOX</option><option value="android_samsung">ANDROID · SAMSUNG INTERNET</option><option value="mac_safari">MAC · SAFARI</option><option value="desktop_chromium">DESKTOP · CHROME / EDGE</option><option value="other">OTHER BROWSER</option></select></div>
+    <ol id="install-steps"></ol>
+    <div class="install-actions">
+      <button class="arcade-btn primary ui-hidden" id="install-native">INSTALL</button>
+      <button class="arcade-btn" id="install-close">SKIP / CLOSE</button>
+      <button class="arcade-btn" id="install-never">DON'T SHOW AGAIN</button>
+    </div>
+  </section>
+</div>
+
+<div id="install-nudge" class="ui-hidden" role="region" aria-label="Optional install tutorial">
+  <div><strong>MAKE ZITTRIS YOURS</strong><small>Optional: see device-specific Home Screen steps for a cleaner, app-like window.</small></div>
+  <div class="install-nudge-actions"><button class="arcade-btn primary" id="install-nudge-show">SHOW ME HOW</button><button class="arcade-btn" id="install-nudge-later">NOT NOW</button></div>
+</div>
 
 <div id="nui" aria-label="Game controls" role="group">
   <div id="nui-cluster">
@@ -711,7 +779,7 @@ const DEFAULT_SETTINGS = Object.freeze({
 const SETTING_ENUMS = {
   rotationSystem:['srs','ars'], randomizer:['bag','history'], hardDropMode:['lock','sonic'],
   musicTheme:['theme_a','theme_b','theme_c'],
-  musicStyle:['med_wave','witch_house','g_funk','klezmer','jungle','uk_rnb','acidcore','deep_house','trap','uk_drill','psytrance','triphop','dubstep','liquid_dnb','viking_metal','industrial_techno','thaitris'],
+  musicStyle:['med_wave','witch_house','g_funk','klezmer','jungle','uk_rnb','acidcore','deep_house','trap','uk_drill','psytrance','triphop','dubstep','liquid_dnb','viking_metal','industrial_techno','thaitris_bra','thaitris_ita'],
   queueCount:[1,2,3,4,5], softDropFactor:[5,10,20,40,999], lockResetLimit:[0,8,15,30],
   brickStyle:['obliteratus','classic','glass','alloy','lcd','thaitris'], effectsQuality:['auto','full','low','off'], touchMode:['buttons','gestures','both'],
   gestureTap:['rotateCW','rotateCCW','hold','hardDrop','none'],gestureUp:['hold','rotateCW','rotateCCW','hardDrop','none'],
@@ -719,7 +787,7 @@ const SETTING_ENUMS = {
 };
 const LEGACY_MUSIC_STYLES=Object.freeze({
   neon_lagoon:'med_wave',west_coast_bass:'g_funk',rnb:'uk_rnb',acid_core:'acidcore',
-  drill_beat:'uk_drill',drum_n_bass:'liquid_dnb',zittristein:'industrial_techno'
+  drill_beat:'uk_drill',drum_n_bass:'liquid_dnb',zittristein:'industrial_techno',thaitris:'thaitris_ita'
 });
 const settingClamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
 function safeStorageGet(key,fallback=null){try{const v=localStorage.getItem(key);return v===null?fallback:v}catch(e){return fallback}}
@@ -1018,6 +1086,7 @@ function syncViewportGeometry(releaseInputs=false){
 }
 window.addEventListener('resize',()=>syncViewportGeometry(false));
 window.addEventListener('orientationchange',()=>syncViewportGeometry(true));
+document.addEventListener('fullscreenchange',()=>syncViewportGeometry(true));
 if(window.visualViewport){
   window.visualViewport.addEventListener('resize',()=>syncViewportGeometry(false));
   window.visualViewport.addEventListener('scroll',()=>syncViewportGeometry(false));
@@ -1044,7 +1113,7 @@ const AUX_MANIFEST = Object.freeze({
   polyphony_limit:8, core_polyphony:6, intaglio_relief_voices:2, working_depth:'32_bit_float', delivery_depth:'16_bit',
   sample_rate_hz:48000, composition:'user_supplied_midi_adaptation', source_midis:['Tetris - A Theme(2).mid','Tetris - B Theme.mid','Tetris - C Theme.mid'],
   themes:['theme_a','theme_b','theme_c'],
-  styles:['med_wave','witch_house','g_funk','klezmer','jungle','uk_rnb','acidcore','deep_house','trap','uk_drill','psytrance','triphop','dubstep','liquid_dnb','viking_metal','industrial_techno','thaitris'],
+  styles:['med_wave','witch_house','g_funk','klezmer','jungle','uk_rnb','acidcore','deep_house','trap','uk_drill','psytrance','triphop','dubstep','liquid_dnb','viking_metal','industrial_techno','thaitris_bra','thaitris_ita'],
   aesthetic_overlay:{name:'intaglio_galactica',amount:.42,traits:['engraved_depth','orbital_spacing','metallic_relief','mosaic_counterline']},
   states:['idle','playing','stack_rising','danger','combo','game_over'],
   sfx:['move','rotate','soft_drop','hard_drop','hold','line_clear','combo','level_up','danger','game_over']
@@ -1084,7 +1153,9 @@ const MUSIC_STYLE_INFO=Object.freeze({
   liquid_dnb:'Liquid drum & bass — double-time breakbeat flow, short bass replies, liquid pads, and softened cymbal motion.',
   viking_metal:'Viking metal — low guitar gallops, war drums, modal fifths, and a broad heroic melody treatment.',
   industrial_techno:'Industrial techno — severe silence, clipped analog bass, low-metal impacts, and minimal machine rhythm.',
-  thaitris:'Thaitris — Tuscan tarantella energy: mandolin-like plucks, warm accordion harmony, hand percussion, and buoyant legato bass.'
+  thaitris:'Legacy Thaitris — compatibility mode for saved presets; maps to the new ITA arrangement.',
+  thaitris_bra:'THAITRIS · BRA — original samba phrasing from the MIDI harmony and Frymatic legato bass: surdo pulse, pandeiro texture, cavaquinho and warm melodic replies.',
+  thaitris_ita:'THAITRIS · ITA — original cinematic mandolin phrasing from the MIDI harmony and Frymatic legato bass: singing treble, restrained accordion and gentle frame percussion.'
 });
 function updateMusicStyleDetail(){
   const f=document.getElementById('settings-form'),styleEl=document.getElementById('music-style-detail'),themeEl=document.getElementById('music-theme-detail');
@@ -1286,7 +1357,7 @@ const audioEngine={
   },
   thaitrisMandolin(note,time,dur=.16,gain=.0075,accent=false){
     const n=note+(accent?12:0);
-    this.osc({freq:this.midi(n),type:'triangle',time,dur,gain,bus:'music',attack:.010,lowpass:2500,detune:-4,sweep:this.midi(n-1)});
+    this.osc({freq:this.midi(n),type:'triangle',time,dur,gain,bus:'music',attack:.010,lowpass:2500,detune:-4});
     this.osc({freq:this.midi(n),type:'sine',time:time+.010,dur:dur*.72,gain:gain*.34,bus:'music',attack:.018,lowpass:2800,detune:5});
   },
   thaitrisAccordion(root,time,intensity=1,bright=false){
@@ -1296,6 +1367,60 @@ const audioEngine={
   thaitrisTambourine(time,gain=.006){
     this.noise({time:time+.018,dur:.100,gain:gain*.42*TREBLE_HIT_AMOUNT,frequency:2050,q:.28,type:'bandpass',bus:'music',attack:.030});
     this.noise({time:time+.032,dur:.135,gain:gain*.26,frequency:1180,q:.24,type:'bandpass',bus:'music',attack:.042});
+  },
+
+  // Original, deterministic MIDI-note variants. The selected source theme's
+  // bass/harmony is authoritative; no unrelated major chords or chromatic
+  // ornaments can collide with its progression.
+  thaitrisMelodyCache:new Map(),
+  thaitrisMelody(phrase,style){
+    const theme=this.themeData();
+    const kind=style==='thaitris_bra'?'bra':'ita';
+    const key=settings.musicTheme+':'+kind;
+    if(!this.thaitrisMelodyCache.has(key)){
+      const notes=Array(theme.steps).fill(-1);
+      const rhythm=kind==='bra'?[0,3,6,10,12,14]:[0,4,8,12];
+      const intervals=kind==='bra'?[0,4,7,4,2,0]:[0,7,4,3];
+      let recentBass=theme.harmony[0]?.root-12||40,previous=69;
+      for(let i=0;i<theme.steps;i++){
+        const raw=theme.bass[i];
+        if(raw>=0)recentBass=raw>55?raw-12:raw;
+        const ix=rhythm.indexOf(i%16);
+        if(ix<0)continue;
+        const chord=theme.harmony[Math.floor(i/4)%theme.harmony.length];
+        const pcs=new Set([chord.root,...chord.tones].map(n=>((n%12)+12)%12));
+        const bassAnchor=this.fitMidiRange(recentBass+24,60,72);
+        const target=bassAnchor+intervals[ix];
+        const ending=i%16>=12;
+        let candidates=[];
+        for(let n=60;n<=82;n++) if(pcs.has(n%12))candidates.push(n);
+        if(!candidates.length)candidates=[this.fitMidiRange(chord.root+12,60,82)];
+        const rootPc=((chord.root%12)+12)%12;
+        candidates.sort((a,b)=>{
+          const cost=n=>Math.abs(n-target)*1.5+Math.abs(n-previous)*.68+
+             (Math.abs(n-previous)>8?15:0)+(ending&&n%12!==rootPc?2.5:0);
+          return cost(a)-cost(b)||a-b;
+        });
+        notes[i]=candidates[0];previous=notes[i];
+      }
+      this.thaitrisMelodyCache.set(key,notes);
+    }
+    return this.thaitrisMelodyCache.get(key)[phrase%theme.steps];
+  },
+  thaitrisHarmony(phrase,time,intensity=1){
+    const h=this.themeBeatData(phrase),pcs=new Set();
+    for(const note of [h.root,...h.tones]) pcs.add(((note%12)+12)%12);
+    // Only 2 or 3 actual chord tones. Quiet enough to leave melodic space.
+    const triad=[...pcs].slice(0,3).map(pc=>{
+      let n=60+pc;while(n>71)n-=12;while(n<48)n+=12;return n;
+    });
+    triad.forEach((n,i)=>this.osc({freq:this.midi(n),type:i===0?'triangle':'sine',time:time+i*.010,
+      dur:.36,gain:(.0025+.0002*intensity)*(i===0?1:.65),bus:'music',attack:.045,lowpass:1650}));
+  },
+  thaitrisCavaquinho(note,time,intensity=1){
+    const freq=this.midi(note);
+    this.osc({freq,type:'triangle',time,dur:.17,gain:.0060+.0004*intensity,bus:'music',attack:.010,lowpass:2200});
+    this.osc({freq,type:'sine',time:time+.012,dur:.12,gain:.0022,bus:'music',attack:.018});
   },
 
   medPiano(note,time,dur=.30,gain=.013,answer=false){
@@ -1483,7 +1608,7 @@ const audioEngine={
   },
   frymaticBassProfile(style,intensity){
     const heavy=['witch_house','g_funk','dubstep','liquid_dnb','uk_drill','triphop','viking_metal','industrial_techno'].includes(style);
-    const light=style==='klezmer'||style==='uk_rnb'||style==='deep_house'||style==='thaitris';
+    const light=style==='klezmer'||style==='uk_rnb'||style==='deep_house'||['thaitris','thaitris_bra','thaitris_ita'].includes(style);
     const weight=heavy?1.08:light?.74:.88;
     return{
       sub:(.0108+.0011*intensity)*weight,
@@ -1554,6 +1679,11 @@ const audioEngine={
     this.noise({time:time+.006,dur:.052,gain:gain*.30*TREBLE_HIT_AMOUNT,frequency:Math.min(2400,this.midi(note)*1.8),q:7,type:'bandpass',bus:'ig'});
   },
   applyIntaglioGalactica({beat,bar,ln,bn,time,intensity,style}){
+    if(['thaitris','thaitris_bra','thaitris_ita'].includes(style)){
+      if(beat===0&&bar%4===0){const h=this.themeBeatData((bar*16)%this.themeData().steps);
+        this.igRelief(h.root-24,time,.38,.0055,7);}
+      return; // No melodic counterlines against the disciplined Thaitris theme.
+    }
     const dark=style==='witch_house'||style==='triphop'||style==='uk_drill'||style==='dubstep'||style==='viking_metal'||style==='industrial_techno';
     const bright=style==='klezmer'||style==='med_wave'||style==='deep_house';
     const root=bn>=0?bn-12:45;
@@ -1587,7 +1717,7 @@ const audioEngine={
     // Literal five-percent pass: no stochastic notes and no decorative cluster.
     // A rare, low-level shadow reinforces an existing melody/root pitch so the
     // arrangements feel more authored without announcing another instrument.
-    if(['klezmer','jungle','uk_rnb','acidcore'].includes(style))return;
+    if(['klezmer','jungle','uk_rnb','acidcore','thaitris','thaitris_bra','thaitris_ita'].includes(style))return;
     const dark=style==='witch_house'||style==='uk_drill'||style==='triphop'||style==='dubstep'||style==='viking_metal'||style==='industrial_techno';
     if(ln>=0&&beat===8&&bar%4===2){
       this.osc({freq:this.midi(ln-(dark?24:12)),type:'sine',time:time+.010,dur:.24,
@@ -1728,16 +1858,24 @@ const audioEngine={
       if(bn>=0&&[0,8].includes(beat))this.osc({freq:this.midi(bn-36),type:'sine',time,dur:.38,gain:.037+.0035*intensity,bus:'music',attack:.016});
       if(ln>=0&&[2,6,10,14].includes(beat))this.osc({freq:this.midi(ln-24),type:'sawtooth',time:time+.016,dur:.095,gain:.0085+.0012*intensity,bus:'music',attack:.012,sweep:this.midi(ln-27),lowpass:1350});
       if(bar%4===3&&beat===15)this.noise({time,dur:.30,gain:.009,frequency:590,q:2.2,type:'bandpass',bus:'music',attack:.035});
-    }else if(style==='thaitris'){
-      // Thaitris: an Italian dance-room arrangement with warm pizzeria-house-band
-      // colors: mandolin-like lead, accordion beds, dark tambourine and buoyant bass.
-      const tStep=step%12,tBeat=Math.floor(tStep/3),tPulse=tStep%3;
-      if(tStep===0||tStep===6)this.kick(time,tStep===0?.080+.005*intensity:.058+.004*intensity);
-      if(tStep===3||tStep===9)this.klezmerFrameHit(time,.020+.002*intensity);
-      if([2,5,8,11].includes(tStep))this.thaitrisTambourine(time,.0048+.0004*intensity);
-      if(bn>=0&&[0,3,6,9].includes(tStep))this.bass(bn-12,time,.23,.041+.0045*intensity,tStep===0);
-      if(bn>=0&&(tStep===0||tStep===6))this.thaitrisAccordion(bn-12,time+.012,intensity,tStep===6);
-      if(ln>=0&&([0,2,3,5,6,8,9,11].includes(tStep)))this.thaitrisMandolin(ln,time+.008,.14,.0068+.0007*intensity,tPulse===0&&tBeat%2===0);
+    }else if(style==='thaitris_bra'){
+      // BRA: a restrained original samba arrangement. The Frymatic legato bass
+      // remains authoritative; melody notes are generated from its MIDI harmony.
+      if([0,7,10].includes(beat))this.kick(time,(beat===0?.072:.047)+.003*intensity);
+      if([4,12].includes(beat))this.klezmerFrameHit(time,.015+.001*intensity);
+      if([2,5,8,11,14].includes(beat))this.thaitrisTambourine(time,.0042);
+      const n=this.thaitrisMelody(phrase,style);
+      if(n>=0)this.thaitrisCavaquinho(n,time+.014,intensity);
+      if(beat===6&&bar%2===0)this.thaitrisHarmony(phrase,time+.018,intensity);
+    }else if(style==='thaitris_ita'||style==='thaitris'){
+      // ITA: original, cinematic mandolin lead, with sparse authentic chord
+      // tones and half-time phrasing. No copyrighted film melody is reproduced.
+      if(beat===0)this.kick(time,.051+.002*intensity);
+      if(beat===8)this.klezmerFrameHit(time,.011+.001*intensity);
+      if([6,14].includes(beat))this.thaitrisTambourine(time,.0028);
+      if(beat===0||beat===8)this.thaitrisHarmony(phrase,time+.020,intensity);
+      const n=this.thaitrisMelody(phrase,style);
+      if(n>=0)this.thaitrisMandolin(n,time+.024,.30,.0090+.0005*intensity,false);
     }else if(style==='deep_house'){
       // Deep house: warm four-on-floor, long bass, offbeat minor-seventh
       // stabs and a soft shaker that sits behind the chord envelope.
@@ -2563,6 +2701,7 @@ function clearHeldInputState(){
   dasDir=0;dasTimer=0;arrTimer=0;dasInstantFired=false;softDropHeld=false;
 }
 window.addEventListener('keydown',e=>{
+  if(installOpen){if(e.code==='Escape'){e.preventDefault();closeInstallGuide(false)}return;}
   if(settingsOpen){
     if(capturingBinding){e.preventDefault();commitBinding(e.code);return}
     if(e.code==='Escape'){e.preventDefault();closeSettings(false)}return
@@ -2647,6 +2786,7 @@ function ghostY(){if(!gs.current)return 0;let dy=0;while(canPlace(gs.current,0,d
 // ── Game flow ──────────────────────────────────────────────────────────
 function startGame(){
   try{AC().resume()}catch(e){}
+  hideInstallNudge();
   clearHeldInputState();clearPauseReasons();initGS();gs.level=titleLevel;applyStartHeight(titleHeight);gs.state='playing';spawnNext();
   resetSimulationClock();updateChromeVisibility();resize();reconcileBGM();
 }
@@ -3639,6 +3779,7 @@ function installRegressionAdapter(){
       resetRandomizer:()=>{resetRandomizer();return true;},
       pieceKeys:[...PIECE_KEYS],
       palettes:{thaitris:JSON.parse(JSON.stringify(THAITRIS_PALETTE))},
+      thaitrisNotes:(style='thaitris_ita',theme='theme_a')=>{const previous=settings.musicTheme;settings.musicTheme=theme;try{return [...Array(ZITTRIS_THEMES[theme].steps).keys()].map(i=>audioEngine.thaitrisMelody(i,style))}finally{settings.musicTheme=previous}},
       layout:()=>({
         viewport:viewportMetrics(),landscape:landscapeTouchLayout(),pixelScale:PIXEL_SCALE,
         board:{x:BOARD_X,y:BOARD_Y,w:BOARD_W,h:BOARD_H,bottom:BOARD_Y+BOARD_H},
@@ -3651,13 +3792,110 @@ function installRegressionAdapter(){
 }
 installRegressionAdapter();
 
+let installOpen=false,installReturnFocus=null,deferredInstallPrompt=null,installNudgeTimer=0;
+window.addEventListener('beforeinstallprompt',event=>{
+  event.preventDefault();deferredInstallPrompt=event;
+  if(installOpen)document.getElementById('install-native')?.classList.remove('ui-hidden');
+});
+window.addEventListener('appinstalled',()=>{deferredInstallPrompt=null;safeStorageSet('zittris_install_dismissed','1');hideInstallNudge();if(installOpen)closeInstallGuide(false)});
+const installedMode=()=>matchMedia('(display-mode: standalone)').matches||matchMedia('(display-mode: fullscreen)').matches||navigator.standalone===true;
+const INSTALL_ROUTES=Object.freeze({
+  ios_safari:{label:'iPhone / iPad · Safari',steps:['Open Safari’s Page Menu, then tap Share (or tap the Share button directly).','Select Add to Home Screen.','Turn on Open as Web App, then tap Add.','In an ordinary Safari tab, Page Menu → Hide Toolbar gives the cleanest browser view when available.']},
+  ios_other:{label:'iPhone / iPad · Other Browser',steps:['Open the browser Share menu.','Choose Add to Home Screen when available.','Confirm Add; if unavailable, open this page in Safari and use its Share menu.']},
+  android_chrome:{label:'Android · Chrome',steps:['Open the three-dot browser menu.','Choose Install app or Add to Home screen.','Confirm Install or Add.']},
+  android_firefox:{label:'Android · Firefox',steps:['Open the browser menu.','Tap Add to Home screen or Install.','Confirm Add.']},
+  android_samsung:{label:'Android · Samsung Internet',steps:['Open the browser menu.','Choose Add page to → Home screen (the label may vary by version).','Confirm Add.']},
+  mac_safari:{label:'Mac · Safari',steps:['In the Safari menu bar, choose File.','Select Add to Dock.','Confirm the web app name.']},
+  desktop_chromium:{label:'Desktop · Chrome / Edge',steps:['Use the install icon near the address bar or open the browser menu.','Choose Install ZITTRIS or Apps → Install this site as an app.','Confirm Install.']},
+  other:{label:'Other browser',steps:['Check the browser menu for Install, Add to Home Screen, or Create shortcut.','If no install command is offered, keep playing in this browser—installation is optional.']}
+});
+function detectedInstallRoute(){
+  // Capability wins: if Chromium offers a native prompt, use that path regardless
+  // of UA branding. UA is only a fallback for the wording of manual browser UI.
+  if(deferredInstallPrompt)return 'desktop_chromium';
+  const ua=navigator.userAgent||'',ios=/iPad|iPhone|iPod/.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  const android=/Android/i.test(ua),firefox=/Firefox|FxiOS/i.test(ua),edge=/Edg\//i.test(ua),samsung=/SamsungBrowser/i.test(ua);
+  const chrome=/Chrome|CriOS/i.test(ua),safari=/Safari/i.test(ua)&&!chrome&&!firefox&&!edge;
+  if(ios&&safari)return 'ios_safari';
+  if(ios)return 'ios_other';
+  if(android&&samsung)return 'android_samsung';
+  if(android&&firefox)return 'android_firefox';
+  if(android&&chrome)return 'android_chrome';
+  if(/Macintosh/.test(ua)&&safari)return 'mac_safari';
+  if(chrome||edge)return 'desktop_chromium';
+  return 'other';
+}
+function installGuideRoute(override='auto'){
+  if(installedMode())return{key:'installed',label:'Already installed',steps:['You are already using an app-like window. Enjoy the game.']};
+  const key=override&&override!=='auto'&&INSTALL_ROUTES[override]?override:detectedInstallRoute();
+  return{key,...INSTALL_ROUTES[key]};
+}
+function renderInstallGuide(fromFocus=false){
+  const chooser=document.getElementById('install-route');
+  const r=installGuideRoute(chooser?.value||'auto'),node=document.getElementById('install-steps');
+  document.getElementById('install-title').textContent=fromFocus?'FOCUS MODE / INSTALL':'MAKE ZITTRIS YOURS';
+  document.getElementById('install-caption').textContent=(fromFocus?'This browser cannot give the page more chrome authority from here. ':'')+'You can play now without installing. A Home Screen/web-app launch normally gives ZITTRIS a cleaner viewport.';
+  node.replaceChildren();
+  for(const instruction of r.steps){const li=document.createElement('li');li.textContent=instruction;node.append(li)}
+  document.querySelector('.install-meta').textContent='FTS ARCADE · '+r.label+' · OPTIONAL';
+  document.getElementById('install-native').classList.toggle('ui-hidden',!deferredInstallPrompt||r.key==='installed');
+}
+function openInstallGuide(fromFocus=false){
+  if(installedMode())return;
+  hideInstallNudge();installReturnFocus=document.activeElement;installOpen=true;
+  const chooser=document.getElementById('install-route');if(chooser)chooser.value='auto';
+  renderInstallGuide(fromFocus);
+  document.getElementById('install-backdrop').classList.remove('ui-hidden');
+  if(gs?.state==='playing')setPauseReason('install-guide',true);
+  document.getElementById('install-close')?.focus();
+}
+function closeInstallGuide(persist=false){
+  if(!installOpen)return;
+  installOpen=false;
+  document.getElementById('install-backdrop').classList.add('ui-hidden');
+  if(persist)safeStorageSet('zittris_install_dismissed','1');
+  setPauseReason('install-guide',false);
+  installReturnFocus?.focus?.();installReturnFocus=null;
+}
+function hideInstallNudge(){
+  if(installNudgeTimer){clearTimeout(installNudgeTimer);installNudgeTimer=0;}
+  document.getElementById('install-nudge')?.classList.add('ui-hidden');
+}
+function scheduleInstallNudge(){
+  hideInstallNudge();
+  if(installedMode()||safeStorageGet('zittris_install_dismissed')==='1')return;
+  installNudgeTimer=setTimeout(()=>{
+    installNudgeTimer=0;
+    if(gs?.state==='title'&&!settingsOpen&&!howOpen&&!installOpen)document.getElementById('install-nudge')?.classList.remove('ui-hidden');
+  },2200);
+}
+
+// Browser chrome belongs to the browser, never the game. Fullscreen can
+// only be requested on supported browsers from a real user gesture.
+async function requestFocusMode(){
+  const root=document.documentElement;
+  if(document.fullscreenEnabled&&typeof root.requestFullscreen==='function'){
+    try {await root.requestFullscreen({navigationUI:'hide'});syncViewportGeometry(true);return;}catch(_){/* Offer the manual route. */}
+  }
+  openInstallGuide(true);
+}
+
 // ── DOM command deck / settings bindings ─────────────────────────────
 function bindUI(){
   const on=(id,event,fn)=>document.getElementById(id)?.addEventListener(event,fn);
   on('menu-start','click',startGame);
   on('menu-settings','click',e=>openSettings(e.currentTarget));
   on('btn-settings-floating','click',e=>openSettings(e.currentTarget));
-  on('menu-how','click',openHow);on('how-close','click',closeHow);
+  on('menu-how','click',()=>{const title=document.getElementById('how-title'),p=document.querySelector('#how-backdrop .how-panel p');if(title)title.textContent='HOW TO PLAY';if(p)p.textContent='Stack tetrominoes into complete horizontal lines. Keep the well open, chain difficult clears, and use the selected rotation system deliberately.';openHow();});on('how-close','click',closeHow);
+  on('menu-focus','click',requestFocusMode);
+  on('menu-install','click',()=>openInstallGuide(false));
+  on('settings-install','click',()=>openInstallGuide(false));
+  on('install-close','click',()=>closeInstallGuide(false));
+  on('install-never','click',()=>closeInstallGuide(true));
+  on('install-nudge-show','click',()=>openInstallGuide(false));
+  on('install-nudge-later','click',hideInstallNudge);
+  on('install-route','change',()=>renderInstallGuide(false));
+  on('install-native','click',async()=>{if(!deferredInstallPrompt)return;const e=deferredInstallPrompt;deferredInstallPrompt=null;try{await e.prompt();await e.userChoice}catch(_){ }closeInstallGuide(false)});
   on('menu-back','click',()=>{if(document.referrer)history.back();else location.href='/FTSArcade/'});
   on('level-down','click',()=>{adjustStartLevel(-1);renderMenuData()});
   on('level-up','click',()=>{adjustStartLevel(1);renderMenuData()});
@@ -3670,10 +3908,11 @@ function bindUI(){
   document.getElementById('settings-form')?.addEventListener('input',e=>{updateRangeOutputs();if(e.target?.name==='musicStyle'||e.target?.name==='musicTheme')updateMusicStyleDetail();});
   document.getElementById('settings-backdrop')?.addEventListener('pointerdown',e=>{if(e.target.id==='settings-backdrop')closeSettings(false)});
   document.getElementById('how-backdrop')?.addEventListener('pointerdown',e=>{if(e.target.id==='how-backdrop')closeHow()});
+  document.getElementById('install-backdrop')?.addEventListener('pointerdown',e=>{if(e.target.id==='install-backdrop')closeInstallGuide(false)});
 }
 
 // ── Go ─────────────────────────────────────────────────────────────────
-bindUI();applySettingsPresentation();setupNUI();resize();renderMenuData();updateChromeVisibility();
+bindUI();applySettingsPresentation();setupNUI();resize();renderMenuData();updateChromeVisibility();scheduleInstallNudge();
 requestAnimationFrame(ts=>{lastTs=ts;requestAnimationFrame(loop)});
 
 </script>
