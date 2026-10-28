@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ZITTRIS">
 <link rel="apple-touch-icon" href="./zittris-icon-192.png">
-<link rel="manifest" href="./manifest.webmanifest">
+<link rel="manifest" href="./zittris-staging.webmanifest">
 <meta name="theme-color" content="#020813">
 <title>ZITTRIS · FTS ARCADE</title>
 
@@ -993,6 +993,20 @@ function readSafeAreaInsets(){
 function landscapeTouchLayout(){
   return nuiActive&&window.innerWidth>window.innerHeight;
 }
+// Safe-area env() insets are measured from the *layout* viewport. Safari's
+// visual viewport may already have clipped some of that region (browser chrome,
+// split view or pan). Intersect the two rectangles instead of reserving the
+// same unavailable strip twice. A missing visualViewport retains the raw inset.
+function visibleSafeArea(raw,vm){
+  if(!vm.visual)return raw;
+  const limit=(x,max)=>Math.max(0,Math.min(max,x));
+  return{
+    top:limit(raw.top-vm.offsetTop,raw.top),
+    bottom:limit(vm.offsetTop+vm.height-(window.innerHeight-raw.bottom),raw.bottom),
+    left:limit(raw.left-vm.offsetLeft,raw.left),
+    right:limit(vm.offsetLeft+vm.width-(window.innerWidth-raw.right),raw.right)
+  };
+}
 function viewportMetrics(){
   // Portrait intentionally retains the legacy layout viewport contract.
   // Landscape alone adopts the visual viewport so Safari chrome, split-view,
@@ -1006,7 +1020,7 @@ function viewportMetrics(){
 function resize() {
   const vm=viewportMetrics(),winW=vm.width,winH=vm.height;
   const landscape=landscapeTouchLayout();
-  const safe=landscape?readSafeAreaInsets():{top:0,right:0,bottom:0,left:0};
+  const safe=landscape?visibleSafeArea(readSafeAreaInsets(),vm):{top:0,right:0,bottom:0,left:0};
   const root=document.documentElement;
   root.style.setProperty('--landscape-vv-width',`${winW}px`);
   root.style.setProperty('--landscape-vv-height',`${winH}px`);
@@ -1042,13 +1056,24 @@ function resize() {
   const safeRight=landscape?safe.right/PIXEL_SCALE:0;
 
   const hudW        = settings.minimalHud?0:clamp(88 / PIXEL_SCALE, 80 / PIXEL_SCALE, W * 0.25);
-  const cellByHeight = Math.floor((H - nuiH - bottomGap - safeTop - safeBottom) / ROWS);
   const usableWidth = W - safeLeft - safeRight;
-  const cellByWidth  = Math.floor((usableWidth - gutter * 2 - hudW) / COLS);
+  // Brazen v0.6: do NOT discard a fraction of a pixel from each of 20 rows.
+  // Integer truncation in the half-resolution buffer used to abandon up to
+  // ~40 CSS pixels at the well's top on iPhone landscape. Draw at fractional
+  // backbuffer coordinates instead: square cells, no stretched physics, no
+  // larger canvas and no additional textures/frames. Portrait preserves its
+  // earlier integer-pixel layout and full-width bottom touch deck.
+  const cellHeightRaw=(H - nuiH - bottomGap - safeTop - safeBottom) / ROWS;
+  const cellWidthRaw=(usableWidth - gutter*2 - hudW) / COLS;
+  const cellByHeight=landscape?cellHeightRaw:Math.floor(cellHeightRaw);
+  const cellByWidth=landscape?cellWidthRaw:Math.floor(cellWidthRaw);
   CELL = Math.max(2, Math.min(cellByHeight, cellByWidth));
 
   BOARD_W = CELL * COLS;
   BOARD_H = CELL * ROWS;
+  // Height-limited landscape begins exactly at the usable top edge. When
+  // limited by width, keep the well anchored to the floor (do not stretch
+  // tetrominoes non-uniformly just to fill an impossible aspect ratio).
   BOARD_Y = landscape?Math.max(safeTop, H-safeBottom-bottomGap-BOARD_H):0;
 
   const contentW = BOARD_W + (settings.minimalHud?0:gutter + hudW);
@@ -1066,10 +1091,12 @@ function resize() {
     const rightRoom=Math.max(0,winW-safe.right-contentRightPx-8);
     const pod=Math.max(84,Math.min(154,winH*.40,leftRoom,rightRoom));
     root.style.setProperty('--landscape-control-size',`${Math.round(pod)}px`);
-    root.dataset.layoutMode='landscape-overlay';
+    root.dataset.layoutMode='landscape-edge-fit';
+    root.dataset.layoutLimit=cellByWidth<cellByHeight?'width':'height';
   }else{
     root.style.removeProperty('--landscape-control-size');
     root.dataset.layoutMode='portrait-legacy';
+    root.dataset.layoutLimit='portrait';
   }
 
   grid.init();
@@ -3783,8 +3810,11 @@ function installRegressionAdapter(){
       layout:()=>({
         viewport:viewportMetrics(),landscape:landscapeTouchLayout(),pixelScale:PIXEL_SCALE,
         board:{x:BOARD_X,y:BOARD_Y,w:BOARD_W,h:BOARD_H,bottom:BOARD_Y+BOARD_H},
-        hud:{x:HUD_X,w:HUD_W},safe:landscapeTouchLayout()?readSafeAreaInsets():{top:0,right:0,bottom:0,left:0},
-        mode:document.documentElement.dataset.layoutMode||''
+        hud:{x:HUD_X,w:HUD_W},safe:landscapeTouchLayout()?visibleSafeArea(readSafeAreaInsets(),viewportMetrics()):{top:0,right:0,bottom:0,left:0},
+        mode:document.documentElement.dataset.layoutMode||'',
+        limiter:document.documentElement.dataset.layoutLimit||'',
+        topUnusedPx:(BOARD_Y*PIXEL_SCALE)-(landscapeTouchLayout()?visibleSafeArea(readSafeAreaInsets(),viewportMetrics()).top:0),
+        boardCoverage:BOARD_H*PIXEL_SCALE/Math.max(1,viewportMetrics().height)
       })
     }
   };
